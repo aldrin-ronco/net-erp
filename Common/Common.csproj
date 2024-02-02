@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Interfaces\" />
+    <Folder Include="Extensions\" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Using Remove="System.Windows.Forms" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
+	  <PackageReference Include="GraphQL.Client" Version="6.0.2" />
+	  <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.0.2" />
+	</ItemGroup>
+
+</Project>

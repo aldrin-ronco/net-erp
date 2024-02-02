@@ -1,0 +1,12 @@
+C:\Users\sebas\source\repos\NetErp\Common\bin\Debug\net8.0-windows\Common.deps.json
+C:\Users\sebas\source\repos\NetErp\Common\bin\Debug\net8.0-windows\Common.dll
+C:\Users\sebas\source\repos\NetErp\Common\bin\Debug\net8.0-windows\Common.pdb
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.csproj.AssemblyReference.cache
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.AssemblyInfoInputs.cache
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.AssemblyInfo.cs
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.csproj.CoreCompileInputs.cache
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.dll
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\refint\Common.dll
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.pdb
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\ref\Common.dll

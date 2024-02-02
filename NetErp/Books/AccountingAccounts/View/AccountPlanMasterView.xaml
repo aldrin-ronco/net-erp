@@ -1,0 +1,209 @@
+﻿<UserControl x:Class="NetErp.Books.AccountingAccounts.View.AccountPlanMasterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"    
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:ioc="clr-namespace:NetErp.IoC"
+             xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
+             xmlns:viewmodels="clr-namespace:NetErp.Books.AccountingAccounts.ViewModel"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:model="clr-namespace:NetErp.Books.AccountingAccounts.DTO"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:dxwuin="http://schemas.devexpress.com/winfx/2008/xaml/windowsui/navigation"             
+             DataContext="{ioc:DISource Type=viewmodels:AccountPlanMasterViewModel}"
+             mc:Ignorable="d" 
+             FontFamily="Verdana" FontWeight="Light" FontSize="13"
+             d:DesignHeight="450" d:DesignWidth="800" Background="White">
+    <!--<UserControl.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding CreateCommand}"/>
+        <KeyBinding Key="F2" Command="{Binding EditCommand}" CommandParameter="{Binding Code}"/>
+    </UserControl.InputBindings>-->
+    <UserControl.Resources>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+    </UserControl.Resources>
+    <dxwui:NavigationFrame AnimationType="None" NavigationCacheMode="Required">
+        <dxmvvm:Interaction.Behaviors>
+            <h:AttachServiceBehavior AtachableService="{Binding NavigationService}"/>
+        </dxmvvm:Interaction.Behaviors>
+
+        <Grid Name="GridMain">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/> <!--Busqueda-->
+            <RowDefinition Height="*"/> <!--Arbol-->
+            <RowDefinition Height="20"/> <!--Pie de Control-->
+        </Grid.RowDefinitions>
+        <ToolBarTray Grid.Row="0" FlowDirection="LeftToRight" ToolBarTray.IsLocked="True" Grid.ColumnSpan="3" Background="Transparent" Margin="0 10 10 10">
+            <ToolBar Band="1" BandIndex="0" Background="Transparent" Loaded="ToolBar_Loaded">
+                <Button Content="Prueba" Command="{Binding NavigateToAccountingPlanDetailViewCommand}"/>
+                <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding CreateCommand}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/New_32x32.png" Stretch="None" Margin="2">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Nuevo" Margin="2" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.ToolTip>
+                        <ToolTip Content="Crear nueva cuenta contable"/>
+                    </Button.ToolTip>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        <TreeView x:Name="BooksAccountingAccounts"
+                  h:TreeViewHelper.SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  h:TreeViewExtension.SelectItemOnRightClick="True"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"                  
+                  BorderThickness="0"
+                  Grid.Column="0"
+                  Grid.Row="1"
+                  Margin="0 5 0 0">
+
+            <!--Tag="{Binding DataContext, ElementName=GridLayout}"-->
+
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <!--<Setter Property="IsExpanded" Value="True"></Setter>-->
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Setter Property="Tag" Value="{Binding Path=DataContext, ElementName=BooksAccountingAccounts}"/>
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsExpanded}" Value="true"/>
+                                <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Foreground" Value="Blue"/>
+                        </MultiDataTrigger>
+                    </Style.Triggers>                    
+                </Style>
+            </TreeView.ItemContainerStyle>
+            <TreeView.Resources>
+                <HierarchicalDataTemplate  DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens}">
+                    <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
+                        <Image>
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <!--Close Folder-->
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
+                                                <Condition Binding="{Binding IsExpanded}" Value="false"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <!--PlaceHolderImage-->
+                                            <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Close_32x32.png"/>
+                                        </MultiDataTrigger>
+                                        <!--Open Folder-->
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
+                                                <Condition Binding="{Binding IsExpanded}" Value="true"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Open2_32x32.png"/>
+                                        </MultiDataTrigger>
+                                        <!--Cuenta Auxiliar-->
+                                        <DataTrigger Binding="{Binding IsAuxiliary}" Value="true">
+                                            <!--PlaceHolderImage-->
+                                            <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Mail/Feeds_32x32.png"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="{Binding Code}" Margin="4 0 0 0" 
+                                   ContextMenuService.Placement="MousePoint">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"/>
+                                    <Separator/>
+                                    <MenuItem Command="{Binding Path=Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                              CommandParameter="{Binding Code}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Modificar cuenta : "/>
+                                                <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
+                                              CommandParameter="{Binding Id}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Eliminar cuenta : "/>
+                                                <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
+                        </TextBlock>
+                        <TextBlock Text=" - "/>
+                        <TextBlock Text="{Binding Name}" 
+                                   ContextMenuService.Placement="MousePoint">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"/>
+                                    <Separator/>
+                                    <MenuItem Command="{Binding Path=Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                              CommandParameter="{Binding Code}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Modificar cuenta : "/>
+                                                <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
+                                              CommandParameter="{Binding Id}">
+                                        <MenuItem.Header>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Eliminar cuenta : "/>
+                                                <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
+                                                <TextBlock Text=" - "/>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </StackPanel>
+                                        </MenuItem.Header>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
+                        </TextBlock>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
+        </TreeView>
+        <DockPanel HorizontalAlignment="Stretch" Grid.Row="2" Grid.Column="0">
+            <StatusBar DockPanel.Dock="Bottom">
+                <StatusBarItem>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="SelectedItem_Code"/>
+                        <TextBlock Text=" - " />
+                        <TextBlock x:Name="SelectedItem_Name"/>
+                        <TextBlock Text=" - "/>
+                        <TextBlock x:Name="SelectedItem_Childrens_Count"/>
+                    </StackPanel>                     
+                </StatusBarItem>
+            </StatusBar>
+        </DockPanel>
+    </Grid> <!--Fin GridMain-->
+    </dxwui:NavigationFrame>
+</UserControl>

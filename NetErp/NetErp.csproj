@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>false</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Helpers\BooleanToStringConverter.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Books\AccountingAccounts\View\" />
+    <Folder Include="Billing\" />
+    <Folder Include="Inventory\" />
+    <Folder Include="Treasury\" />
+    <Folder Include="Suppliers\" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<Using Remove="System.Windows.Forms" />
+		<Using Include="System.Windows" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
+    <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
+    <PackageReference Include="Ninject" Version="3.3.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
+    <ProjectReference Include="..\Extensions\Extensions.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Services\Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="DevExpress.Images.v23.2">
+      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 23.2\Components\Bin\Framework\DevExpress.Images.v23.2.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
