@@ -27,7 +27,7 @@
         </Grid.RowDefinitions>
         <ToolBarTray Grid.Row="0" FlowDirection="LeftToRight" ToolBarTray.IsLocked="True" Grid.ColumnSpan="3" Background="Transparent" Margin="0 10 10 10">
             <ToolBar Band="1" BandIndex="0" Background="Transparent" Loaded="ToolBar_Loaded">
-                <Button Margin="2" ToolBar.OverflowMode="AsNeeded" x:Name="Cancel" Command="">
+                <Button Margin="2" ToolBar.OverflowMode="AsNeeded" x:Name="Cancel" Command="{Binding ReturnToAccountingAccountPlanMasterCommand}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Navigation/Backward_32x32.png" Stretch="None" Margin="2">

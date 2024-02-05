@@ -9,3 +9,4 @@ C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.dl
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\refint\Dictionaries.dll
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.pdb
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\ref\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.sourcelink.json
