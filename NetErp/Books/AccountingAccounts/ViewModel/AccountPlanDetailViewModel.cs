@@ -3,21 +3,17 @@ using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Mvvm.POCO;
+using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using Models.Books;
-using NetErp.Books.AccountingAccounts.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Navigation;
 
 namespace NetErp.Books.AccountingAccounts.ViewModel
 {
-    //[POCOViewModel]
     public class AccountPlanDetailViewModel: ViewModelBase
     {
 
@@ -30,7 +26,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
         }
 
         #region "Variables Privadas"
-        //private IEventAggregator _eventAggregator;
 
         public Dictionary<char, string> AccountNature => Dictionaries.BooksDictionaries.AccountNatureDictionary;
 
@@ -40,269 +35,186 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
 
         #region "Propiedades"
 
-        //private char _selectedAccountNature;
+        private char _selectedAccountNature;
 
-        //public char SelectedAccountNature
-        //{
-        //    get
-        //    {
-        //        return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? 'D' : 'C' : _selectedAccountNature;
-        //    }
-        //    set
-        //    {
-        //        SetValue(ref _selectedAccountNature, value);
-        //    }
-        //}
+        public char SelectedAccountNature
+        {
+            get
+            {
+                return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? 'D' : 'C' : _selectedAccountNature;
+            }
+            set
+            {
+                SetValue(ref _selectedAccountNature, value);
+            }
+        }
 
-        public virtual char SelectedAccountNature { get; set; }
-        //private ICommand _populateInfoCommand;
-        //public ICommand PopulateInfoCommand
-        //{
-        //    get
-        //    {
-        //        if (_populateInfoCommand == null)
-        //        {
-        //            _populateInfoCommand = new RelayCommand(CanPopulateInfoCommand, PopulateInfoCmd);
-        //        }
-        //        return _populateInfoCommand;
-        //    }
-        //}
-
-        //private AccountPlanViewModel _context;
-        //public AccountPlanViewModel Context
-        //{
-        //    get { return _context; }
-        //    set
-        //    {
-        //        SetValue(ref _context, value);
-        //    }
-        //}
-
-        //private string _code = string.Empty;
-        //public string Code
-        //{
-        //    get { return _code; }
-        //    set
-        //    {
-        //        SetValue(ref _code, value, changedCallback: OnCodeChanged);
-        //    }
-        //}
-
-        // TODO remover inicializacion
-        public virtual string Code { get; set; } = string.Empty;
+        private string _code = string.Empty;
+        public string Code
+        {
+            get { return _code; }
+            set
+            {
+                SetValue(ref _code, value, changedCallback: OnCodeChanged);
+            }
+        }
 
         protected void OnCodeChanged()
         {
-            this.RaisePropertyChanged(x => x.IsNewRecord);
-            this.RaisePropertyChanged(x => x.Lv1Visibility);
-            this.RaisePropertyChanged(x => x.Lv2Visibility);
-            this.RaisePropertyChanged(x => x.Lv3Visibility);
-            this.RaisePropertyChanged(x => x.Lv4Visibility);
-            this.RaisePropertyChanged(x => x.Lv5Visibility);
-            //RaisePropertyChanged(nameof(IsNewRecord));
-            //RaisePropertyChanged(nameof(Lv1Visibility));
-            //RaisePropertyChanged(nameof(Lv2Visibility));
-            //RaisePropertyChanged(nameof(Lv3Visibility));
-            //RaisePropertyChanged(nameof(Lv4Visibility));
-            //RaisePropertyChanged(nameof(Lv5Visibility));
+            RaisePropertyChanged(nameof(IsNewRecord));
+            RaisePropertyChanged(nameof(Lv1Visibility));
+            RaisePropertyChanged(nameof(Lv2Visibility));
+            RaisePropertyChanged(nameof(Lv3Visibility));
+            RaisePropertyChanged(nameof(Lv4Visibility));
+            RaisePropertyChanged(nameof(Lv5Visibility));
         }
 
         // Focus handling
-        //private bool _lv5CodeIsFocused;
-        //public bool Lv5CodeIsFocused
-        //{
-        //    get { return _lv5CodeIsFocused; }
-        //    set { SetValue(ref _lv5CodeIsFocused, value); }
-        //}
-        public virtual bool Lv5CodeIsFocused { get; set; }
-
-        // Visibilidad
-        //private Visibility _lv1Visibility;
-        //public Visibility Lv1Visibility
-        //{
-        //    get { return this._code.Length >= 1 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-        //    set
-        //    {
-        //        SetValue(ref _lv1Visibility, value);
-        //    }
-        //}
-
-        public  virtual Visibility Lv1Visibility {get { return this.Code.Length >= 1 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; } 
-            set {
-                if (Lv1Visibility == value) return;
-                Lv1Visibility = value;
-                this.RaisePropertyChanged(x => x.Lv1Visibility);
-            } }
-
-        //private Visibility _lv2Visibility;
-        //public Visibility Lv2Visibility
-        //{
-        //    get { return this._code.Length >= 2 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-        //    set
-        //    {
-        //        SetValue(ref _lv2Visibility, value);
-        //    }
-        //}
-
-        public virtual Visibility Lv2Visibility { get { return this.Code.Length >= 2 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set {
-                if (Lv2Visibility == value) return;
-                Lv2Visibility = value;
-                this.RaisePropertyChanged(x => x.Lv2Visibility);
-            }
+        private bool _lv5CodeIsFocused;
+        public bool Lv5CodeIsFocused
+        {
+            get { return _lv5CodeIsFocused; }
+            set { SetValue(ref _lv5CodeIsFocused, value); }
         }
 
-        //private Visibility _lv3Visibility;
-        //public Visibility Lv3Visibility
-        //{
-        //    get { return this._code.Length >= 4 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-        //    set
-        //    {
-        //        SetValue(ref _lv3Visibility, value);
-        //    }
-        //}
+        //Visibilidad
 
-        public virtual Visibility Lv3Visibility { get { return this.Code.Length >= 4 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
+        private Visibility _lv1Visibility;
+        public Visibility Lv1Visibility
+        {
+            get { return this._code.Length >= 1 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                if (Lv3Visibility == value) return;
-                Lv3Visibility = value;
-                this.RaisePropertyChanged(x => x.Lv3Visibility);
+                SetValue(ref _lv1Visibility, value);
             }
         }
 
-        //private Visibility _lv4Visibility;
-        //public Visibility Lv4Visibility
-        //{
-        //    get { return this._code.Length >= 6 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-        //    set
-        //    {
-        //        SetValue(ref _lv4Visibility, value);
-        //    }
-        //}
 
-        public virtual Visibility Lv4Visibility { get { return this.Code.Length >= 6 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
+        private Visibility _lv2Visibility;
+        public Visibility Lv2Visibility
+        {
+            get { return this._code.Length >= 2 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                if (Lv4Visibility == value) return;
-                Lv4Visibility = value;
-                this.RaisePropertyChanged(x => x.Lv4Visibility);
+                SetValue(ref _lv2Visibility, value);
             }
         }
 
-        //private Visibility _lv5Visibility;
-        //public Visibility Lv5Visibility
-        //{
-        //    get { return this._code.Length >= 8 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-        //    set
-        //    {
-        //        SetValue(ref _lv5Visibility, value);
-        //    }
-        //}
 
-        public virtual Visibility Lv5Visibility { get { return this.Code.Length >= 8 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
+        private Visibility _lv3Visibility;
+        public Visibility Lv3Visibility
+        {
+            get { return this._code.Length >= 4 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                if (Lv5Visibility == value) return;
-                Lv5Visibility = value;
-                this.RaisePropertyChanged(x => x.Lv5Visibility);
+                SetValue(ref _lv3Visibility, value);
             }
         }
+
+        private Visibility _lv4Visibility;
+        public Visibility Lv4Visibility
+        {
+            get { return this._code.Length >= 6 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                SetValue(ref _lv4Visibility, value);
+            }
+        }
+
+
+        private Visibility _lv5Visibility;
+        public Visibility Lv5Visibility
+        {
+            get { return this._code.Length >= 8 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                SetValue(ref _lv5Visibility, value);
+            }
+        }
+
 
         // Seleccion de Texto para Lv5 (Auxiliar)
 
-        //private int _selectionStart;
-        //public int SelectionStart
-        //{
-        //    get { return _selectionStart; }
-        //    set
-        //    {
-        //        SetValue(ref _selectionStart, value);
-        //    }
-        //}
-
-        public virtual int SelectionStart { get; set; }
-
-        //private int _selectionLength;
-        //public int SelectionLength
-        //{
-        //    get { return _selectionLength; }
-        //    set
-        //    {
-        //        SetValue(ref _selectionLength, value);
-        //    }
-        //}
-
-        public virtual int SelectionLength { get; set; }
-        // Codigos de cuentas
-
-        //private string _lv1Code = string.Empty;
-        //public string Lv1Code
-        //{
-        //    get { return _lv1Code; }
-        //    set
-        //    {
-        //        SetValue(ref _lv1Code, value, changedCallback: OnLV1CodeChanged);
-        //    }
-        //}
-
-        public virtual string Lv1Code { get; set; } 
-        protected void OnLV1CodeChanged()
+        private int _selectionStart;
+        public int SelectionStart
         {
-            this.RaisePropertyChanged(x => x.SelectedAccountNature);
-            //RaisePropertyChanged(nameof(SelectedAccountNature));
+            get { return _selectionStart; }
+            set
+            {
+                SetValue(ref _selectionStart, value);
+            }
         }
 
-        //private string _lv2Code = string.Empty;
-        //public string Lv2Code
-        //{
-        //    get { return _lv2Code; }
-        //    set
-        //    {
-        //        SetValue(ref _lv2Code, value);
-        //    }
-        //}
-        public virtual string Lv2Code { get; set; }
+        private int _selectionLength;
+        public int SelectionLength
+        {
+            get { return _selectionLength; }
+            set
+            {
+                SetValue(ref _selectionLength, value);
+            }
+        }
 
-        //private string _lv3Code = string.Empty;
-        //public string Lv3Code
-        //{
-        //    get { return _lv3Code; }
-        //    set
-        //    {
-        //        SetValue(ref _lv3Code, value);
-        //    }
-        //}
+        // Codigos de cuentas
 
-        public virtual string Lv3Code { get; set; }
+        private string _lv1Code = string.Empty;
+        public string Lv1Code
+        {
+            get { return _lv1Code; }
+            set
+            {
+                SetValue(ref _lv1Code, value, changedCallback: OnLV1CodeChanged);
+            }
+        }
 
-        //private string _lv4Code = string.Empty;
-        //public string Lv4Code
-        //{
-        //    get { return _lv4Code; }
-        //    set
-        //    {
-        //        SetValue(ref _lv4Code, value);
-        //    }
-        //}
-        public virtual string Lv4Code { get; set; }
+        protected void OnLV1CodeChanged()
+        {
+            RaisePropertyChanged(nameof(SelectedAccountNature));
+        }
 
-        //private string _lv5Code = string.Empty;
-        //public string Lv5Code
-        //{
-        //    get { return _lv5Code; }
-        //    set
-        //    {
-        //        SetValue(ref _lv5Code, value, changedCallback: OnLv5CodeChanged);
-        //    }
-        //}
+        private string _lv2Code = string.Empty;
+        public string Lv2Code
+        {
+            get { return _lv2Code; }
+            set
+            {
+                SetValue(ref _lv2Code, value);
+            }
+        }
 
-        public virtual string Lv5Code { get; set; }
+        private string _lv3Code = string.Empty;
+        public string Lv3Code
+        {
+            get { return _lv3Code; }
+            set
+            {
+                SetValue(ref _lv3Code, value);
+            }
+        }
+
+        private string _lv4Code = string.Empty;
+        public string Lv4Code
+        {
+            get { return _lv4Code; }
+            set
+            {
+                SetValue(ref _lv4Code, value);
+            }
+        }
+
+        private string _lv5Code = string.Empty;
+        public string Lv5Code
+        {
+            get { return _lv5Code; }
+            set
+            {
+                SetValue(ref _lv5Code, value, changedCallback: OnLv5CodeChanged);
+            }
+        }
 
         protected void OnLv5CodeChanged()
         {
-            this.RaisePropertyChanged(x => x.CanSave);
-            //RaisePropertyChanged(nameof(CanSave));
+            RaisePropertyChanged(nameof(CanSave));
             if (IsNewRecord)
             {
                 if (Lv5Code.Length <= 1) Task.Run(() => PopulateInfoLv1(Lv5Code))
@@ -334,215 +246,194 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
 
         // Nombres de las cuentas
 
-        //private string _lv1Name = string.Empty;
-        //public string Lv1Name
-        //{
-        //    get { return _lv1Name; }
-        //    set
-        //    {
-        //        SetValue(ref _lv1Name, value, changedCallback: OnAccountingAccountNameChanged);
-        //    }
-        //}
-        [BindableProperty(OnPropertyChangedMethodName = "OnAccountingAccountNameChanged")]
-        public virtual string Lv1Name { get; set; }
+        private string _lv1Name = string.Empty;
+        public string Lv1Name
+        {
+            get { return _lv1Name; }
+            set
+            {
+                SetValue(ref _lv1Name, value, changedCallback: OnAccountingAccountNameChanged);
+            }
+        }
 
-        //private string _lv2Name = string.Empty;
-        //public string Lv2Name
-        //{
-        //    get { return _lv2Name; }
-        //    set
-        //    {
-        //        SetValue(ref _lv2Name, value, changedCallback: OnAccountingAccountNameChanged);
-        //    }
-        //}
-        [BindableProperty(OnPropertyChangedMethodName = "OnAccountingAccountNameChanged")]
-        public virtual string Lv2Name {  get; set; }
+        private string _lv2Name = string.Empty;
+        public string Lv2Name
+        {
+            get { return _lv2Name; }
+            set
+            {
+                SetValue(ref _lv2Name, value, changedCallback: OnAccountingAccountNameChanged);
+            }
+        }
 
-        //private string _lv3Name = string.Empty;
-        //public string Lv3Name
-        //{
-        //    get { return _lv3Name; }
-        //    set
-        //    {
-        //        SetValue(ref _lv3Name, value, changedCallback: OnAccountingAccountNameChanged);
-        //    }
-        //}
-        [BindableProperty(OnPropertyChangedMethodName = "OnAccountingAccountNameChanged")]
-        public virtual string Lv3Name {  get; set; }
+        private string _lv3Name = string.Empty;
+        public string Lv3Name
+        {
+            get { return _lv3Name; }
+            set
+            {
+                SetValue(ref _lv3Name, value, changedCallback: OnAccountingAccountNameChanged);
+            }
+        }
 
-        //private string _lv4Name = string.Empty;
-        //public string Lv4Name
-        //{
-        //    get { return _lv4Name; }
-        //    set
-        //    {
-        //        SetValue(ref _lv4Name, value, changedCallback: OnAccountingAccountNameChanged);
-        //    }
-        //}
-        [BindableProperty(OnPropertyChangedMethodName = "OnAccountingAccountNameChanged")]
-        public virtual string Lv4Name { get; set; }
+        private string _lv4Name = string.Empty;
+        public string Lv4Name
+        {
+            get { return _lv4Name; }
+            set
+            {
+                SetValue(ref _lv4Name, value, changedCallback: OnAccountingAccountNameChanged);
+            }
+        }
 
-        //private string _lv5Name = string.Empty;
-        //public string Lv5Name
-        //{
-        //    get { return _lv5Name; }
-        //    set
-        //    {
-        //        SetValue(ref _lv5Name, value, changedCallback: OnAccountingAccountNameChanged);
-        //    }
-        //}
-        [BindableProperty(OnPropertyChangedMethodName = "OnAccountingAccountNameChanged")]
-        public virtual string Lv5Name {  get; set; }
+        private string _lv5Name = string.Empty;
+        public string Lv5Name
+        {
+            get { return _lv5Name; }
+            set
+            {
+                SetValue(ref _lv5Name, value, changedCallback: OnAccountingAccountNameChanged);
+            }
+        }
         protected void OnAccountingAccountNameChanged()
         {
-            this.RaisePropertyChanged(x => x.CanSave);
-            //RaisePropertyChanged(nameof(CanSave));
+            RaisePropertyChanged(nameof(CanSave));
         }
 
         // Focos en codigos de las cuentas
-        //private bool _isFocusedLv5Code;
-        //public bool IsFocusedLv5Code
-        //{
-        //    get { return _isFocusedLv5Code; }
-        //    set
-        //    {
-        //        SetValue(ref _isFocusedLv5Code, value);
-        //    }
-        //}
-        public virtual bool IsFocusedLv5Code {  get; set; }
+
+        private bool _isFocusedLv5Code;
+        public bool IsFocusedLv5Code
+        {
+            get { return _isFocusedLv5Code; }
+            set
+            {
+                SetValue(ref _isFocusedLv5Code, value);
+            }
+        }
 
         // IsReadonly Name
-        //private bool _isReadOnlyLv1Name;
-        //public bool IsReadOnlyLv1Name
-        //{
-        //    get { return _isReadOnlyLv1Name; }
-        //    set
-        //    {
-        //        SetValue(ref _isReadOnlyLv1Name, value);
-        //    }
-        //}
-        public virtual bool IsReadOnlyLv1Name { get; set; }
 
-        //private bool _isReadOnlyLv2Name;
-        //public bool IsReadOnlyLv2Name
-        //{
-        //    get { return _isReadOnlyLv2Name; }
-        //    set
-        //    {
-        //        SetValue(ref _isReadOnlyLv2Name, value);
-        //    }
-        //}
-        public virtual bool IsReadOnlyLv2Name { get; set; }
+        private bool _isReadOnlyLv1Name;
+        public bool IsReadOnlyLv1Name
+        {
+            get { return _isReadOnlyLv1Name; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv1Name, value);
+            }
+        }
 
-        //private bool _isReadOnlyLv3Name;
-        //public bool IsReadOnlyLv3Name
-        //{
-        //    get { return _isReadOnlyLv3Name; }
-        //    set
-        //    {
-        //        SetValue(ref _isReadOnlyLv3Name, value);
-        //    }
-        //}
-        public virtual bool IsReadOnlyLv3Name { get; set; }
+        private bool _isReadOnlyLv2Name;
+        public bool IsReadOnlyLv2Name
+        {
+            get { return _isReadOnlyLv2Name; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv2Name, value);
+            }
+        }
 
-        //private bool _isReadOnlyLv4Name;
-        //public bool IsReadOnlyLv4Name
-        //{
-        //    get { return _isReadOnlyLv4Name; }
-        //    set
-        //    {
-        //        SetValue( ref _isReadOnlyLv4Name, value);
-        //    }
-        //}
+        private bool _isReadOnlyLv3Name;
+        public bool IsReadOnlyLv3Name
+        {
+            get { return _isReadOnlyLv3Name; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv3Name, value);
+            }
+        }
 
-        public virtual bool IsReadOnlyLv4Name { get; set; }
+        private bool _isReadOnlyLv4Name;
+        public bool IsReadOnlyLv4Name
+        {
+            get { return _isReadOnlyLv4Name; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv4Name, value);
+            }
+        }
 
-        //private bool _isReadOnlyLv5Name;
-        //public bool IsReadOnlyLv5Name
-        //{
-        //    get { return _isReadOnlyLv5Name; }
-        //    set
-        //    {
-        //        SetValue(ref _isReadOnlyLv5Name, value);
-        //    }
-        //}
 
-        public virtual bool IsReadOnlyLv5Name { get; set; }
+        private bool _isReadOnlyLv5Name;
+        public bool IsReadOnlyLv5Name
+        {
+            get { return _isReadOnlyLv5Name; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv5Name, value);
+            }
+        }
+
 
         // IsReadOnly Code
-        //private bool _isReadOnlyLv5Code;
-        //public bool IsReadOnlyLv5Code
-        //{
-        //    get { return _isReadOnlyLv5Code; }
-        //    set
-        //    {
-        //        SetValue(ref _isReadOnlyLv5Code, value);
-        //    }
-        //}
 
-        public virtual bool IsReadOnlyLv5Code { get; set; }
+        private bool _isReadOnlyLv5Code;
+        public bool IsReadOnlyLv5Code
+        {
+            get { return _isReadOnlyLv5Code; }
+            set
+            {
+                SetValue(ref _isReadOnlyLv5Code, value);
+            }
+        }
+
 
         // Es nuevo registro ?
 
-        //private bool _isNewRecord;
-        //public bool IsNewRecord
-        //{
-        //    get { return string.IsNullOrEmpty(_code); }
-        //    set
-        //    {
-        //        SetValue(ref _isNewRecord, value);
-        //    }
-        //}
+        private bool _isNewRecord;
+        public bool IsNewRecord
+        {
+            get { return string.IsNullOrEmpty(_code); }
+            set
+            {
+                SetValue(ref _isNewRecord, value);
+            }
+        }
 
-        public virtual bool IsNewRecord { get {return string.IsNullOrEmpty(Code); } }
 
         // Styles
 
-        //private string _lv5NameStyle = "TextBoxDefault";
-        //public string Lv5NameStyle
-        //{
-        //    get { return _lv5NameStyle; }
-        //    set
-        //    {
-        //        SetValue(ref _lv5NameStyle, value);
-        //    }
-        //}
+        private string _lv5NameStyle = "TextBoxDefault";
+        public string Lv5NameStyle
+        {
+            get { return _lv5NameStyle; }
+            set
+            {
+                SetValue(ref _lv5NameStyle, value);
+            }
+        }
 
-        public virtual string Lv5NameStyle {  get; set; } = "TextBoxDefault";
 
-        //private bool _isBusy = false;
-        //public bool IsBusy
-        //{
-        //    get { return _isBusy; }
-        //    set
-        //    {
-        //        SetValue(ref _isBusy, value, changedCallback: OnIsBusyChanged);
-        //    }
-        //}
+        private bool _isBusy = false;
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set
+            {
+                SetValue(ref _isBusy, value, changedCallback: OnIsBusyChanged);
+            }
+        }
 
-        public virtual bool IsBusy {  get; set; }
 
-        // TODO check property definition
-        //private AccountPlanMasterViewModel _parent = null!;
+        // TODO check property definition - can refactor to a local variable ?
+        private AccountPlanMasterViewModel _parent = null!;
 
-        //public AccountPlanMasterViewModel Parent
-        //{
-        //    get { return _parent; }
-        //    set 
-        //    {
-        //       SetValue(ref _parent, value) ; 
-        //    }
-        //}
+        public AccountPlanMasterViewModel Parent
+        {
+            get { return _parent; }
+            set
+            {
+                SetValue(ref _parent, value);
+            }
+        }
 
-        public virtual AccountPlanMasterViewModel Parent { get; set; }
 
         protected void OnIsBusyChanged()
         {
-            this.RaisePropertyChanged(x => x.CanSave);
-            //RaisePropertyChanged(nameof(CanSave));
+            RaisePropertyChanged(nameof(CanSave));
         }
 
-        //public object Parameter {  get; set; }
 
         protected override void OnParameterChanged(object parameter)
         {
@@ -550,19 +441,21 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             base.OnParameterChanged(parameter);
         }
 
+        [Command]
+        public void ReturnToAccountingAccountPlanMaster()
+        {
+            NavigationService.GoBack();
+        }
+
+        public bool CanReturnToAccountingAccountPlanMaster() => true;
         #endregion
 
         #region "Constructores"
-        //AccountPlanViewModel context,
+
         public AccountPlanDetailViewModel(IGenericDataAccess<AccountingAccountGraphQLModel> accountingAccountService, DevExpress.Mvvm.INavigationService navigationService)
         {
-            //this.Context = context;
-            //NavigationService = navigationService;
             AccountingAccountService = accountingAccountService;
             //Parent = NavigationService.GetParentViewModel<AccountPlanMasterViewModel>();
-            //var x = NavigationService.GetParentViewModel<AccountPlanMasterViewModel>().accounts;
-
-            //this._eventAggregator = eventAggregator;
         }
 
         #endregion
@@ -642,20 +535,18 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
                 {
                     var result = await Task.Run(() => this.Insert());
                     Messenger.Default.Send(new AccountingAccountCreateListMessage() { CreatedAccountingAccountList = result });
-                    //await this._eventAggregator.PublishOnUIThreadAsync(new AccountingAccountCreateListMessage() { CreatedAccountingAccountList = result });
                 }
                 else
                 {
                     if (Parent.SelectedItem is null) throw new ArgumentException(nameof(Parent.SelectedItem));
                     var result = await Task.Run(() => this.Update());
                     Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpdatedAccountingAccount = result });
-                    //await this._eventAggregator.PublishOnUIThreadAsync(new AccountingAccountUpdateMessage() { UpdatedAccountingAccount = result });
                 }
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {
@@ -963,7 +854,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv1" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv1" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1000,7 +891,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv2" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv2" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1038,7 +929,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv3" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv3" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1075,7 +966,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv4" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv4" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1115,7 +1006,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoNameLv5" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoNameLv5" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1252,7 +1143,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfo" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfo" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1324,7 +1215,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "SetLevelFocus" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "SetLevelFocus" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1355,7 +1246,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "SetReadOnlyState" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "SetReadOnlyState" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1387,7 +1278,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxNameStyleForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxNameStyleForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1409,7 +1300,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxSelectionForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxSelectionForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1449,7 +1340,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "CleanUpControls" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "CleanUpControls" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1480,7 +1371,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "OnViewReady" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "OnViewReady" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -1619,7 +1510,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoCmd" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoCmd" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 

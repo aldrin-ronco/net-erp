@@ -1,23 +1,17 @@
 ﻿using Common.Extensions;
-using Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using GraphQL.Client.Http;
 using Models.Books;
 using NetErp.Books.AccountingAccounts.DTO;
-using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Extensions.Books;
-using System.Windows.Navigation;
-using DevExpress.Mvvm.POCO;
+using DevExpress.Xpf.Core;
 
 namespace NetErp.Books.AccountingAccounts.ViewModel
 {
@@ -25,30 +19,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
     {
         #region "Variables Privadas"
         public List<AccountingAccountGraphQLModel> accounts = [];
-        //private ICommand _editComand;
-        //private ICommand _createCommand;
-        //private ICommand _deleteCommand;
-        //public /*IBooksAccountingAccount*/ BooksAccountingAccount;
         public IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = null!;
-        public DevExpress.Mvvm.INavigationService NavigationService { get; } = null!;
+        public INavigationService NavigationService { get; } = null!;
 
         #endregion
 
         #region "Propiedades"
-
-        //private IEventAggregator _eventAggregator;
-
-        //public ICommand NavigateToAccountingPlanDetailViewCommand { get; } = null!;
-
-        //private AccountPlanViewModel _context;
-        //public AccountPlanViewModel Context
-        //{
-        //    get { return _context; }
-        //    set
-        //    {
-        //        SetValue(ref _context, value);
-        //    }
-        //}
 
         private ObservableCollection<AccountingAccountDTO> _accountingAccounts = [];
         public ObservableCollection<AccountingAccountDTO> AccountingAccounts
@@ -69,38 +45,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
                 SetValue(ref _selectedItem, value);
             }
         }
-
-        //public ICommand EditCommand
-        //{
-        //    get
-        //    {
-        //        if (_editComand == null)
-        //        {
-        //            _editComand = new RelayCommand(CanEdit, Edit);
-        //        }
-        //        return _editComand;
-        //    }
-        //}
-
-        //public ICommand CreateCommand
-        //{
-        //    get
-        //    {
-        //        if (_createCommand == null)
-        //            _createCommand = new RelayCommand(CanCreate, Create);
-        //        return _createCommand;
-        //    }
-        //}
-
-        //public ICommand DeleteCommand
-        //{
-        //    get
-        //    {
-        //        if (_deleteCommand == null)
-        //            _deleteCommand = new RelayCommand(CanDelete, Delete);
-        //        return _deleteCommand;
-        //    }
-        //}
 
         // Is Busy
         private bool _isBusy = false;
@@ -163,8 +107,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "PopulateAccountingAccountDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
- 
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateAccountingAccountDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             return accountsDTO;
         }
@@ -248,9 +191,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountFromAccountsDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
-               
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountFromAccountsDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -294,54 +236,42 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             {
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null) {
-                    App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));                    
+                if (graphQLError != null && currentMethod != null) {                    
+                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
                 } else {
                     throw;
                 }
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "Initialize" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
-
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "Initialize" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
         [Command]
         public void NavigateToAccountingPlanDetailView() 
         { 
-            //AccountPlanDetailViewModel.SetParentViewModel(this);
             NavigationService.Navigate("AccountPlanDetailView", this, this, true); 
         }
 
         public bool CanNavigateToAccountingPlanDetailView() => true;
 
-        //public AccountPlanDetailViewModel AccountPlanDetailViewModel { get; set; }
-
-        //AccountPlanViewModel context,
         public AccountPlanMasterViewModel(IGenericDataAccess<AccountingAccountGraphQLModel> accountingAccountService, INavigationService navigationService)
         {
             try
             {
-                //DevExpress.Mvvm.INavigationService navigationService
-                //this.Context = context;
-                //this._eventAggregator = IoC.Get<IEventAggregator>();
-                //this._eventAggregator.SubscribeOnUIThread(this);
                 Messenger.Default.Register<AccountingAccountCreateListMessage>(this, OnAccountingAccountCreateListMessage);
                 Messenger.Default.Register<AccountingAccountUpdateMessage>(this, OnAccountingAccountUpdateMessage);
 
                 // Everithing else
                 AccountingAccountService = accountingAccountService;
                 NavigationService = navigationService;
-                //AccountPlanDetailViewModel = new(accountingAccountService, navigationService);
-                //NavigateToAccountingPlanDetailViewCommand = new DelegateCommand(NavigateToAccountingPlanDetailView);
-                //this.BooksAccountingAccount = IoC.Get<IBooksAccountingAccount>();
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "AccountPlanMasterViewModel" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();               
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "AccountPlanMasterViewModel" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -403,8 +333,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "LoadChildren" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));    
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "LoadChildren" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 
@@ -521,8 +451,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "SearchAccount" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "SearchAccount" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
 
         }
@@ -535,7 +465,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
         [Command]
         public void Create(object parameter)
         {
-            //await this.Context.ActivateDetailViewModel("");
             NavigationService.Navigate("AccountPlanDetailView", "", this);
 
         }
@@ -548,7 +477,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
         [Command]
         public void Edit(object code)
         {
-            //await this.Context.ActivateDetailViewModel((string)code);
             NavigationService.Navigate("AccountPlanDetailView", (string)code, this);
         }
 
@@ -582,13 +510,13 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
 
                 if (validation.CanDelete)
                 {
-                    MessageBoxResult result = Xceed.Wpf.Toolkit.MessageBox.Show("¿ Confirma que desea eliminar la cuenta contable ?", "Atención !", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    MessageBoxResult result = DXMessageBox.Show(caption: "Atención!", messageBoxText: "¿Confirma que desea eliminar la cuenta contable?", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
-                    App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show("Esta cuenta contable no puede ser eliminada" +
-                        (char)13 + (char)13 + validation.Message, "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: "Esta cuenta contable no puede ser eliminada" +
+                        (char)13 + (char)13 + validation.Message, button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
                     return;
                 }
 
@@ -596,12 +524,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
                 //TODO this.Refresh();
                 var deletedAccountingAccount = await Task.Run(() => this.ExecuteDelete((int)id));
                 Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = deletedAccountingAccount });    
-                //await this._eventAggregator.PublishOnUIThreadAsync(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = deletedAccountingAccount });
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "Delete" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "Delete" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {
@@ -655,21 +582,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
         /// <returns></returns>
         /// 
 
-        //.ContinueWith(antecedent => this.Context.ActivateMasterViewModel())
         void OnAccountingAccountCreateListMessage(AccountingAccountCreateListMessage message)
         {
              Task.Run(() => accounts.AddRange(message.CreatedAccountingAccountList))
                 .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                 .ContinueWith(antecedent => SearchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
         }
-
-        //public Task HandleAsync(AccountingAccountCreateListMessage message, CancellationToken cancellationToken)
-        //{
-        //    return Task.Run(() => this.Context.AccountPlanMasterViewModel.accounts.AddRange(message.CreatedAccountingAccountList))
-        //        .ContinueWith(antecedent => this.AccountingAccounts = this.PopulateAccountingAccountDTO(this.Context.AccountPlanMasterViewModel.accounts))
-        //        .ContinueWith(antecedent => this.Context.ActivateMasterViewModel())
-        //        .ContinueWith(antecedent => this.searchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
-        //}
 
         /// <summary>
         /// Recibe el resultado de la actualizacion de una cuenta contable existente
@@ -679,20 +597,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
         /// <returns></returns>
         /// 
 
-        //.ContinueWith(antecedent => this.Context.ActivateMasterViewModel())
         void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message) 
         {
             Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
                 .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                 .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
         }
-        //public Task HandleAsync(AccountingAccountUpdateMessage message, CancellationToken cancellationToken)
-        //{
-        //    return Task.Run(() => this.Context.AccountPlanMasterViewModel.accounts.Replace(message.UpdatedAccountingAccount))
-        //        .ContinueWith(antecedent => this.AccountingAccounts = this.PopulateAccountingAccountDTO(this.Context.AccountPlanMasterViewModel.accounts))
-        //        .ContinueWith(antecedent => this.Context.ActivateMasterViewModel())
-        //        .ContinueWith(antecedent => this.searchAccount(message.UpdatedAccountingAccount.Code));
-        //}
 
         private void RemoveAccountInMemory(List<AccountingAccountGraphQLModel> accounts, int id)
         {
@@ -704,7 +614,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModel
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{(currentMethod is null ? "RemoveAccountInMemory" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "RemoveAccountInMemory" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
         }
 

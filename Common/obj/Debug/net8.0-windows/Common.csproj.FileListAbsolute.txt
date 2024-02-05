@@ -10,3 +10,4 @@ C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.dll
 C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\refint\Common.dll
 C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.pdb
 C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\ref\Common.dll
+C:\Users\sebas\source\repos\NetErp\Common\obj\Debug\net8.0-windows\Common.sourcelink.json

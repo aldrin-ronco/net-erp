@@ -97,3 +97,4 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\refint\NetErp
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\NetErp.pdb
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\NetErp.genruntimeconfig.cache
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\ref\NetErp.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\NetErp.sourcelink.json
