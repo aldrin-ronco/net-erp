@@ -1,8 +1,10 @@
 ﻿C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.i.cs
-
-FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\View\AccountPlanDetailView.xaml;;
-FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\View\AccountPlanMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\App.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\Views\AccountPlanView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Dictionaries\Views.xaml;;
-FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\View\MainMenuView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\Views\MainMenuView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Shell\Views\ShellView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\MainWindow.xaml;;
 

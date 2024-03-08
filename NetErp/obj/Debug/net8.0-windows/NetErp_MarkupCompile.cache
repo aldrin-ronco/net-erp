@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\sebas\source\repos\NetErp\NetErp\App.xaml
-51232262070
+7-1368895558
 
-21-496411480
-245-1890911854
-Books\AccountingAccounts\View\AccountPlanDetailView.xaml;Books\AccountingAccounts\View\AccountPlanMasterView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\View\MainMenuView.xaml;MainWindow.xaml;
+27-970380546
+245-955607807
+Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;
 
 False
 

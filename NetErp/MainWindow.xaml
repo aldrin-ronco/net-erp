@@ -4,12 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NetErp"
-        xmlns:ioc="clr-namespace:NetErp.IoC"
+        xmlns:ioc="clr-namespace:NetErp.IoContainer"
         xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
         xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
         xmlns:viewModel="clr-namespace:NetErp"
         xmlns:h="clr-namespace:NetErp.Helpers"
-        xmlns:views="clr-namespace:NetErp.Global.MainMenu.View"
+        xmlns:views="clr-namespace:NetErp.Global.MainMenu.Views"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" WindowState="Maximized">
     <views:MainMenuView/>

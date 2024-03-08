@@ -5,8 +5,8 @@ C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.Ge
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.AssemblyInfoInputs.cache
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.AssemblyInfo.cs
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.csproj.CoreCompileInputs.cache
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.sourcelink.json
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.dll
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\refint\Dictionaries.dll
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.pdb
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\ref\Dictionaries.dll
-C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0\Dictionaries.sourcelink.json
