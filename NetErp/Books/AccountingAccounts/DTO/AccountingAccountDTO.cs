@@ -1,5 +1,5 @@
 ﻿using DevExpress.Mvvm;
-using NetErp.Books.AccountingAccounts.ViewModel;
+using NetErp.Books.AccountingAccounts.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,8 +19,8 @@ namespace NetErp.Books.AccountingAccounts.DTO
             set {  SetValue(ref _context, value);   }
         }
 
-        private Boolean _isDummyChild = false;
-        public Boolean IsDummyChild
+        private bool _isDummyChild = false;
+        public bool IsDummyChild
         {
             get { return _isDummyChild; }
             set { SetValue(ref _isDummyChild, value); }
@@ -79,8 +79,8 @@ namespace NetErp.Books.AccountingAccounts.DTO
             }
         }
 
-        private string _code;
-        public string Code
+        private string _code = string.Empty;
+        public string Code 
         {
             get { return _code; }
             set

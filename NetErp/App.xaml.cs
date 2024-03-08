@@ -1,6 +1,6 @@
 ﻿using Common.Interfaces;
 using Models.Books;
-using NetErp.IoC;
+using NetErp.IoContainer;
 using Ninject;
 using Ninject.Modules;
 using System;
@@ -13,7 +13,7 @@ using BooksServicesPostgreSQL = Services.Books.DAL.PostgreSQL;
 using BooksServicesSQLServer = Services.Books.DAL.SQLServer;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using Services.Books.DAL.PostgreSQL;
-using NetErp.Books.AccountingAccounts.ViewModel;
+using NetErp.Books.AccountingAccounts.ViewModels;
 using DevExpress.Mvvm;
 
 namespace NetErp
@@ -51,6 +51,7 @@ namespace NetErp
             Bind(typeof(AccountPlanMasterViewModel)).To(typeof(AccountPlanMasterViewModel)).InTransientScope();
             Bind(typeof(AccountPlanDetailViewModel)).To(typeof(AccountPlanDetailViewModel)).InTransientScope();
             Bind(typeof(INavigationService)).To(typeof(FrameNavigationService)).InTransientScope();
+            //Bind(typeof(IEventAggregator)).To(typeof(EventAggregator)).InSingletonScope();
         }
     }
 }

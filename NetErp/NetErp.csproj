@@ -13,8 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Books\AccountingAccounts\View\" />
     <Folder Include="Billing\" />
+    <Folder Include="Books\AccountingAccounts\Views\" />
+    <Folder Include="Books\AccountingAccounts\ViewModels\" />
     <Folder Include="Inventory\" />
     <Folder Include="Treasury\" />
     <Folder Include="Suppliers\" />
@@ -26,10 +27,12 @@
 	</ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="BusyIndicators" Version="2.1.2" />
     <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="Ninject" Version="3.3.6" />
   </ItemGroup>
 

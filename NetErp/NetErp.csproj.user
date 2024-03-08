@@ -7,7 +7,10 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Global\MainMenu\View\MainMenuView.xaml.cs">
+    <Compile Update="Global\MainMenu\Views\MainMenuView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\Shell\Views\ShellView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -15,7 +18,10 @@
     <Page Update="Global\Dictionaries\Views.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Global\MainMenu\View\MainMenuView.xaml">
+    <Page Update="Global\MainMenu\Views\MainMenuView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Shell\Views\ShellView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MainWindow.xaml">

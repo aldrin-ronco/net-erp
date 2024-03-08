@@ -9,7 +9,8 @@ namespace Common.Extensions
     {
         public static string Between(this string STR, string FirstString, string LastString)
         {
-            string FinalString;
+            if (!STR.Contains(FirstString) && !STR.Contains(LastString)) { return STR; }
+            string FinalString = "";
             int Pos1 = STR.IndexOf(FirstString) + FirstString.Length;
             int Pos2 = STR.IndexOf(LastString);
             FinalString = STR.Substring(Pos1, Pos2 - Pos1);

@@ -2,9 +2,11 @@
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -109,6 +111,9 @@ namespace Common.Interfaces
             try
             {
                 GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
+                client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+                ObservableCollection<TModel> models = new();
+                models.ToList();
                 var result = await client.SendMutationAsync<ListItemResponseType>(new GraphQLRequest()
                 {
                     Query = query,

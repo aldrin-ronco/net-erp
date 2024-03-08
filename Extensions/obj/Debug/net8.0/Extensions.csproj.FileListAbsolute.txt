@@ -8,9 +8,9 @@ C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.Genera
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.AssemblyInfoInputs.cache
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.AssemblyInfo.cs
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.csproj.CoreCompileInputs.cache
-C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.csproj.CopyComplete
+C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.sourcelink.json
+C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.csproj.Up2Date
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.dll
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\refint\Extensions.dll
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.pdb
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\ref\Extensions.dll
-C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.sourcelink.json
