@@ -31,7 +31,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
 
-        public async void ActivateMasterViewModel()
+        public async Task ActivateMasterViewModel()
         {
             try
             {                
@@ -48,8 +48,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                AccountPlanDetailViewModel instance = new(this);
-                instance.Code = accountCode;
+                AccountPlanDetailViewModel instance = new(this)
+                {
+                    Code = accountCode
+                };
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new CancellationToken());
             }

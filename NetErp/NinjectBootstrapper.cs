@@ -4,11 +4,16 @@ using Common.Interfaces;
 using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
 using DevExpress.Xpf.Editors;
+using DTOLibrary.Books;
 using Models.Books;
+using Models.Global;
+using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
+using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +53,9 @@ namespace NetErp
             _ = kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGraphQLModel>>().To<AccountingAccountService>().InSingletonScope();
-
+            _ = kernel.Bind<IGenericDataAccess<AccountingEntityGraphQLModel>>().To<AccountingEntityService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -110,6 +117,14 @@ namespace NetErp
             .Where(type => type.Name.EndsWith("ViewModel"))
             .ToList()
             .ForEach(viewModelType => kernel.Bind(viewModelType).ToSelf().InTransientScope());
+
+            var config = new MapperConfiguration(cfg =>
+            {
+                _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
+                _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
+            });
+
+            _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());
         }
 
             // Automapper config

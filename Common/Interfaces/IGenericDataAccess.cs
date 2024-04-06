@@ -27,7 +27,15 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    //throw new Exception(result.Errors[0].Message);
+                    if (result.Errors[0].Extensions != null)
+                    {
+                        throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                    }
+                    else
+                    {
+                        throw new Exception(result.Errors[0].Message);
+                    }
                 }
                 return result.Data.CreateResponse;
             }
@@ -50,7 +58,14 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    if (result.Errors[0].Extensions != null)
+                    {
+                        throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                    }
+                    else
+                    {
+                        throw new Exception(result.Errors[0].Message);
+                    }
                 }
                 return result.Data.UpdateResponse;
             }

@@ -1,0 +1,71 @@
+﻿<UserControl x:Class="NetErp.UserControls.GridPaging"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             x:Name="GPaging"
+             mc:Ignorable="d" 
+             d:DesignHeight="36" d:DesignWidth="722">
+
+    <Border BorderThickness="0" BorderBrush="LightGray">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <Label Content="-" HorizontalAlignment="Left" Margin="0"
+                   Name="lTotal" VerticalAlignment="Bottom" 
+                   ToolTip="Total Rows"
+                   FontSize="14"/>
+        </StackPanel>
+        <Grid Name="ButtonGrid" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="AUTO"/>
+                <ColumnDefinition Width="AUTO"/>
+                <ColumnDefinition Width="AUTO"/>
+                <ColumnDefinition Width="AUTO"/>
+                <ColumnDefinition Width="AUTO"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Label Content="1" Grid.Column="2" HorizontalAlignment="Center" Margin="1,1,0,0" 
+                   Name="lPagina" VerticalAlignment="Center" FontSize="14"
+                   ToolTip="Actual Page"
+                   />
+                <Label Content="-" Grid.Column="3" HorizontalAlignment="Center" Margin="1,1,0,0" 
+                   VerticalAlignment="Center" FontSize="10"
+                   ToolTip="Página Actual"
+                   />
+                <Label Content="1" Grid.Column="4" HorizontalAlignment="Center" Margin="1,1,0,0" 
+                   Name="lTotalPagina" VerticalAlignment="Center" FontSize="14"
+                   ToolTip="Total Pages"
+                   />
+                <Button Content="&gt;&gt;" Grid.Column="6" Height="23" HorizontalAlignment="Left" Margin="1,1,1,1" 
+                    Name="btnLast" VerticalAlignment="Center" Width="43" Click="BtnLastClick" />
+            <Button Content="&gt;" Grid.Column="5" Height="23" HorizontalAlignment="Left" Margin="10,1,4,1" 
+                    Name="btnNext" VerticalAlignment="Center" Width="43" Click="BtnNextClick" />
+            
+            <Button Content="&lt;" Grid.Column="1" Height="23" HorizontalAlignment="Left" Margin="4,1,10,1" 
+                    Name="btnPrevious" VerticalAlignment="Center" Width="43"
+                    Click="BtnPreviousClick" />
+            <Button Content="&lt;&lt;" Grid.Column="0" Height="23" HorizontalAlignment="Right" Margin="1,1,1,1" 
+                    Name="btnFirst" VerticalAlignment="Center" Width="43" Click="BtnFirstClick" />
+        </Grid>
+        <!-- Page Size Selector -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" 
+                        VerticalAlignment="Center">
+                <TextBlock Text="Tamaño de Página ( Registros por página )" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                <ComboBox Width="60" FontSize="14" ToolTip="Rows x Page" Name="cbPageSize"
+                          IsEditable="False" SelectionChanged="ComboBoxSelectionChanged"
+                          VerticalAlignment="Center" Margin="0,0,5,0" Height="23" HorizontalContentAlignment="Center">
+                    <ComboBoxItem Content="50" IsSelected="False" />
+                    <ComboBoxItem Content="100" IsSelected="True" />
+                    <ComboBoxItem Content="500" />
+                    <ComboBoxItem Content="1000" />
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

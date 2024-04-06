@@ -16,7 +16,9 @@
     <Folder Include="Billing\" />
     <Folder Include="Books\AccountingAccounts\Views\" />
     <Folder Include="Books\AccountingAccounts\ViewModels\" />
+    <Folder Include="Books\AccountingEntities\Views\" />
     <Folder Include="Inventory\" />
+    <Folder Include="UserControls\" />
     <Folder Include="Treasury\" />
     <Folder Include="Suppliers\" />
   </ItemGroup>
@@ -32,13 +34,17 @@
     <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
+    <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.9.28" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="Ninject" Version="3.3.6" />
   </ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
+    <ProjectReference Include="..\DTOLibrary\DTOLibrary.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />

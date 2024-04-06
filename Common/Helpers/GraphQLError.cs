@@ -14,12 +14,20 @@ namespace Common.Helpers
         {
             public string Message { get; set; }
             public Location[] Locations { get; set; }
+
+            public Extensions Extensions { get; set; }
         }
 
         public class Location
         {
             public int Line { get; set; }
             public int Column { get; set; }
+        }
+
+        public class Extensions
+        {
+            public string Message { get; set; }
+
         }
     }
 }

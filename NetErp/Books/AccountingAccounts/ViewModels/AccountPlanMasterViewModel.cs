@@ -4,7 +4,6 @@ using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using GraphQL.Client.Http;
 using Models.Books;
-using NetErp.Books.AccountingAccounts.DTO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,6 +14,7 @@ using DevExpress.Xpf.Core;
 using System.Dynamic;
 using System.Threading;
 using Caliburn.Micro;
+using NetErp.Books.AccountingAccounts.DTO;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {

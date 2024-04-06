@@ -11,9 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dictionaries", "Dictionarie
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Extensions", "Extensions\Extensions.csproj", "{87E65A78-F640-4602-9384-AD48B19C2563}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{1552B138-0AB0-4A23-B412-A282665AC06D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "Services\Services.csproj", "{1552B138-0AB0-4A23-B412-A282665AC06D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Models", "Models\Models.csproj", "{40739804-DE0B-49FE-8AD5-542F9C044A74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models.csproj", "{40739804-DE0B-49FE-8AD5-542F9C044A74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DTOLibrary", "DTOLibrary\DTOLibrary.csproj", "{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

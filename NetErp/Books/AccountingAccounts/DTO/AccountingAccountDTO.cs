@@ -16,7 +16,7 @@ namespace NetErp.Books.AccountingAccounts.DTO
         public AccountPlanMasterViewModel Context
         {
             get { return _context; }
-            set {  SetValue(ref _context, value);   }
+            set { SetValue(ref _context, value); }
         }
 
         private bool _isDummyChild = false;
@@ -38,15 +38,6 @@ namespace NetErp.Books.AccountingAccounts.DTO
             set
             {
                 SetValue(ref _isExpanded, value, changedCallback: OnIsExpandedChanged);
-
-                //if (_childrens != null)
-                //{
-                //    if (_isExpanded && _childrens.Count > 0)
-                //    {
-                //        if (_childrens[0].IsDummyChild)
-                //            _context.LoadChildren(this, _context.accounts);
-                //    }
-                //}
             }
         }
 
@@ -80,7 +71,7 @@ namespace NetErp.Books.AccountingAccounts.DTO
         }
 
         private string _code = string.Empty;
-        public string Code 
+        public string Code
         {
             get { return _code; }
             set

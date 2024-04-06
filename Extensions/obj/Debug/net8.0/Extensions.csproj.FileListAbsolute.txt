@@ -14,3 +14,7 @@ C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.dll
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\refint\Extensions.dll
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\Extensions.pdb
 C:\Users\sebas\source\repos\NetErp\Extensions\obj\Debug\net8.0\ref\Extensions.dll
+C:\Users\sebas\source\repos\NetErp\Extensions\bin\Debug\net8.0\DTOLibrary.dll
+C:\Users\sebas\source\repos\NetErp\Extensions\bin\Debug\net8.0\DTOLibrary.pdb
+C:\Users\sebas\source\repos\NetErp\Extensions\bin\Debug\net8.0\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Extensions\bin\Debug\net8.0\Dictionaries.pdb

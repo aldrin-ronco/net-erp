@@ -13,6 +13,7 @@ using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
 using NetErp.Books.AccountingAccounts.ViewModels;
+using NetErp.Books.AccountingEntities.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
 
@@ -73,6 +74,26 @@ namespace NetErp.Global.MainMenu.ViewModels
             catch(Exception ex)
             {
                 DXMessageBox.Show(ex.Message,"Atencion!", button: MessageBoxButton.OK, icon: MessageBoxImage.Information);
+            }
+        }
+        public async void OpenAccountingEntities()
+        {
+            try
+            {
+                AccountingEntityViewModel instance = IoC.Get<AccountingEntityViewModel>();
+                instance.DisplayName = "Terceros";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = Xceed.Wpf.Toolkit.MessageBox.Show(ex.Message, "Atencion !", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }
