@@ -82,6 +82,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 Messenger.Default.Register<AccountingAccountCreateListMessage>(this, OnAccountingAccountCreateListMessage);
                 Messenger.Default.Register<AccountingAccountUpdateMessage>(this, OnAccountingAccountUpdateMessage);
+                Messenger.Default.Register<AccountingAccountDeleteMessage>(this, OnAccountingAccountDeleteMessage);
                 this.Context = context;
             }
             catch (Exception ex)
@@ -449,7 +450,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 var deletedAccountingAccount = await AccountingAccountService.Delete(query, variables);
                 RemoveAccountInMemory(accounts, (int)id);
-                await DeleteAccountFromAccountsDTO(deletedAccountingAccount.Code);
 
                 return deletedAccountingAccount;
             }
@@ -629,6 +629,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
                 .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                 .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
+        }
+
+        async void OnAccountingAccountDeleteMessage(AccountingAccountDeleteMessage message)
+        {
+            await DeleteAccountFromAccountsDTO(message.DeletedAccountingAccount.Code);
         }
 
         private void RemoveAccountInMemory(List<AccountingAccountGraphQLModel> accounts, int id)
