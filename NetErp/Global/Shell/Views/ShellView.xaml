@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NetErp.Global.Shell.Views"
         mc:Ignorable="d"
-        Title="ShellView" Width="auto" Height="auto">
-    
-    <ContentControl x:Name="ActiveItem" Width="auto" Height="auto"/>
+        Title="ShellView" Width="auto" Height="auto" WindowState="Maximized">
+
+    <ContentControl x:Name="ActiveItem" Width="auto" Height="auto" />
 </Window>

@@ -339,7 +339,15 @@
           "Common.dll": {}
         }
       },
+      "Dictionaries/1.0.0": {
+        "runtime": {
+          "Dictionaries.dll": {}
+        }
+      },
       "Models/1.0.0": {
+        "dependencies": {
+          "Dictionaries": "1.0.0"
+        },
         "runtime": {
           "Models.dll": {}
         }
@@ -570,6 +578,11 @@
       "hashPath": "system.servicemodel.primitives.4.10.2.nupkg.sha512"
     },
     "Common/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Dictionaries/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

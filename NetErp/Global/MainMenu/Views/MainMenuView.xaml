@@ -34,6 +34,7 @@
         <Menu Grid.Row="0">
             <MenuItem Header="Opciones">
                 <MenuItem Header="Open Something" x:Name="OpenOption1"/>
+                <MenuItem Header="Terceros" x:Name="OpenAccountingEntities"></MenuItem>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

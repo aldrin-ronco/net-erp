@@ -7,7 +7,7 @@ namespace Dictionaries
         /// <summary>
         /// Naturalezas de las cuentas contables
         /// </summary>
-        public static Dictionary<char, string> AccountNatureDictionary = new Dictionary<char, string>()
+        public static Dictionary<char, string> AccountNatureDictionary = new()
         {
             { 'D', "DÉBITO" },
             { 'C', "CRÉDITO" }
@@ -16,7 +16,7 @@ namespace Dictionaries
         /// <summary>
         /// Tipos de anulaciones de documentos
         /// </summary>
-        public static Dictionary<char, string> AnnulmentTypeDictionary = new Dictionary<char, string>()
+        public static Dictionary<char, string> AnnulmentTypeDictionary = new()
         {
             { 'A', "CON DOCUMENTO ADICIONAL" },
             { 'X', "SIN DOCUMENTO ADICIONAL" }
@@ -25,7 +25,7 @@ namespace Dictionaries
         /// <summary>
         /// Regimenes de tributacion
         /// </summary>
-        public static Dictionary<char, string> RegimeDictionary = new Dictionary<char, string>()
+        public static Dictionary<char, string> RegimeDictionary = new()
         {
             { 'R', "RESPONSABLE DE IVA" },
             { 'N', "NO RESPONSABLE DE IVA" }
@@ -36,7 +36,7 @@ namespace Dictionaries
         /// </summary>
         public enum CaptureTypeEnum { PN, RS }
 
-        public static Dictionary<string, string> RetentionGroupDictionary = new Dictionary<string, string>()
+        public static Dictionary<string, string> RetentionGroupDictionary = new()
         {
             { "RTFTE", "Retención de Renta" },
             { "RTIVA", "Retención de IVA" },

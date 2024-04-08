@@ -49,7 +49,7 @@ namespace NetErp
 
             Bind(typeof(IGenericDataAccess<AccountingAccountGraphQLModel>)).To(SQLEngine == "POSTGRESQL" ? typeof(BooksServicesPostgreSQL.AccountingAccountService) : typeof(BooksServicesSQLServer.AccountingAccountService)).InSingletonScope();
             Bind(typeof(AccountPlanMasterViewModel)).To(typeof(AccountPlanMasterViewModel)).InTransientScope();
-            Bind(typeof(AccountPlanDetailViewModel)).To(typeof(AccountPlanDetailViewModel)).InTransientScope();
+            //Bind(typeof(AccountPlanDetailViewModel)).To(typeof(AccountPlanDetailViewModel)).InTransientScope();
             Bind(typeof(INavigationService)).To(typeof(FrameNavigationService)).InTransientScope();
             //Bind(typeof(IEventAggregator)).To(typeof(EventAggregator)).InSingletonScope();
         }

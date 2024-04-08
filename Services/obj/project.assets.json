@@ -589,9 +589,22 @@
           "Microsoft.WindowsDesktop.App"
         ]
       },
+      "Dictionaries/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/Dictionaries.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Dictionaries.dll": {}
+        }
+      },
       "Models/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Dictionaries": "1.0.0"
+        },
         "compile": {
           "bin/placeholder/Models.dll": {}
         },
@@ -1440,6 +1453,11 @@
       "type": "project",
       "path": "../Common/Common.csproj",
       "msbuildProject": "../Common/Common.csproj"
+    },
+    "Dictionaries/1.0.0": {
+      "type": "project",
+      "path": "../Dictionaries/Dictionaries.csproj",
+      "msbuildProject": "../Dictionaries/Dictionaries.csproj"
     },
     "Models/1.0.0": {
       "type": "project",

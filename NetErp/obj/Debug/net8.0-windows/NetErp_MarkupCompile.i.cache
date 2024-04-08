@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\sebas\source\repos\NetErp\NetErp\App.xaml
-7-1368895558
+111621189942
 
-29230541424
-245-955607807
-Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;
+41714185277
+256-1388647806
+Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;Books\AccountingEntities\Views\AccountingEntityView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;UserControls\GridPaging.xaml;
 
-True
+False
 
