@@ -16,5 +16,5 @@ C:\Users\sebas\source\repos\NetErp\NetErp\App.xaml
 256-1388647806
 Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;Books\AccountingEntities\Views\AccountingEntityView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;UserControls\GridPaging.xaml;
 
-False
+True
 
