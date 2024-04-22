@@ -60,7 +60,7 @@ namespace Common.Interfaces
                 {
                     if (result.Errors[0].Extensions != null)
                     {
-                        throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                        throw new Exception(result.Errors[0].Extensions.Values.ToString());
                     }
                     else
                     {
@@ -117,6 +117,30 @@ namespace Common.Interfaces
             }
             catch (Exception)
             {
+                throw;
+            }
+        }
+
+        public async Task<TModel> GetDataContext<TModel>(string query, object variables)
+        {
+            try
+            {
+                GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
+                client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+                GraphQLResponse<TModel> result = await client.SendQueryAsync<TModel>(new GraphQLRequest()
+                {
+                    Query = query,
+                    Variables = variables
+                });
+                if (result.Errors != null)
+                {
+                    throw new Exception(result.Errors[0].Message);
+                }
+                return result.Data;
+            }
+            catch (Exception)
+            {
+
                 throw;
             }
         }

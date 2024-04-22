@@ -5,6 +5,7 @@ using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
 using DevExpress.Xpf.Editors;
 using DTOLibrary.Books;
+using Models.Billing;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntities.ViewModels;
@@ -12,6 +13,7 @@ using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using Ninject;
+using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -56,6 +58,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingEntityGraphQLModel>>().To<AccountingEntityService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CustomerGraphQLModel>>().To<CustomerService>().InSingletonScope();   
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -122,6 +125,8 @@ namespace NetErp
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
                 _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
+                _ = cfg.CreateMap<CustomerGraphQLModel, CustomerDTO>();
+                _ = cfg.CreateMap<RetentionTypeGraphQLModel, RetentionTypeDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

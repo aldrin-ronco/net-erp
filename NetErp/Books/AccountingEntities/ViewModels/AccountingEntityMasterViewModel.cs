@@ -291,7 +291,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.QueryFilter = FilterSearch == "" ?  "" :  $"WHERE entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
+                variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();

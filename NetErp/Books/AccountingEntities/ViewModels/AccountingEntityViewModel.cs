@@ -27,7 +27,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             get
             {
-                if (_accountingEntityMasterViewModel == null) _accountingEntityMasterViewModel = new AccountingEntityMasterViewModel(this);
+                if (_accountingEntityMasterViewModel is null) _accountingEntityMasterViewModel = new AccountingEntityMasterViewModel(this);
                 return _accountingEntityMasterViewModel;
             }
         }
