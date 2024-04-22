@@ -12,6 +12,7 @@ using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
+using NetErp.Billing.Customers.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using Ninject;
@@ -53,7 +54,7 @@ namespace NetErp.Global.MainMenu.ViewModels
 
         //public bool CanOpenPlanMasterView() => true;
 
-        public async Task OpenOption1()
+        public async Task OpenAccountingAccounts()
         {
             try
             {
@@ -81,7 +82,28 @@ namespace NetErp.Global.MainMenu.ViewModels
             try
             {
                 AccountingEntityViewModel instance = IoC.Get<AccountingEntityViewModel>();
-                instance.DisplayName = "Terceros";
+                instance.DisplayName = "Administración de terceros";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = Xceed.Wpf.Toolkit.MessageBox.Show(ex.Message, "Atencion !", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async Task OpenCustomer()
+        {
+            try
+            {
+                CustomerViewModel instance = IoC.Get<CustomerViewModel>();
+                instance.DisplayName = "Administración de clientes";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;

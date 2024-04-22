@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\sebas\source\repos\NetErp\NetErp\App.xaml
-111621189942
+141549380751
 
-41714185277
+47644821305
 256-1388647806
-Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;Books\AccountingEntities\Views\AccountingEntityView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;UserControls\GridPaging.xaml;
+Billing\Customers\Views\CustomerDetailView.xaml;Billing\Customers\Views\CustomerMasterView.xaml;Billing\Customers\Views\CustomerView.xaml;Books\AccountingAccounts\Views\AccountPlanDetailView.xaml;Books\AccountingAccounts\Views\AccountPlanMasterView.xaml;Books\AccountingAccounts\Views\AccountPlanView.xaml;Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;Books\AccountingEntities\Views\AccountingEntityView.xaml;Global\Dictionaries\Views.xaml;Global\MainMenu\Views\MainMenuView.xaml;Global\Shell\Views\ShellView.xaml;MainWindow.xaml;UserControls\GridPaging.xaml;
 
 True
 

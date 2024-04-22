@@ -11,9 +11,9 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:uc="clr-namespace:NetErp.UserControls"
              d:DataContext="{d:DesignInstance Type=local:AccountingEntityMasterViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
