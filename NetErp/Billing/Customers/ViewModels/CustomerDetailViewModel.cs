@@ -22,13 +22,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.VisualStudio.Threading;
+using DevExpress.Xpf.Core;
+using DevExpress.Mvvm;
+using System.Windows.Threading;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
     public class CustomerDetailViewModel : Screen,
-        INotifyDataErrorInfo,
-        IHandle<CustomerCreateMessage>,
-        IHandle<CustomerUpdateMessage>
+        INotifyDataErrorInfo
     {
         public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
 
@@ -41,6 +42,25 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 if (_deleteMailCommand == null) _deleteMailCommand = new RelayCommand(CanRemoveEmail, RemoveEmail);
                 return _deleteMailCommand;
+            }
+        }
+        private ICommand _goBackCommand;
+        public ICommand GoBackCommand
+        {
+            get
+            {
+                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
+                return _goBackCommand;
+            }
+        }
+
+        private ICommand _saveCommand;
+        public ICommand SaveCommand
+        {
+            get
+            {
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                return _saveCommand;
             }
         }
 
@@ -62,6 +82,20 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     _isBusy = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
+
+        private int _selectedIndexPage = 0;
+        public int SelectedIndexPage
+        {
+            get => _selectedIndexPage;
+            set
+            {
+                if (_selectedIndexPage != value)
+                {
+                    _selectedIndexPage = value;
+                    NotifyOfPropertyChange(nameof(SelectedIndexPage));
                 }
             }
         }
@@ -562,7 +596,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                IsBusy = true;
+                //IsBusy = true;
                 Refresh();
                 CustomerGraphQLModel result = await ExecuteSave();
                 if (IsNewRecord)
@@ -578,16 +612,18 @@ namespace NetErp.Billing.Customers.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
-            finally
-            {
-                IsBusy = false;
-            }
+            //finally
+            //{
+            //    IsBusy = false;
+            //}
         }
 
         public async Task<CustomerGraphQLModel> ExecuteSave()
@@ -639,9 +675,9 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 // Entity Data
                 variables.Data.Entity.IdentificationNumber = IdentificationNumber;
-                variables.Data.Entity.VerificationDigit = VerificationDigit;
+                variables.Data.Entity.VerificationDigit = SelectedIdentificationType.HasVerificationDigit ? VerificationDigit : "";
                 variables.Data.Entity.CaptureType = SelectedCaptureType;
-                variables.Data.Entity.BusinessName = BusinessName;
+                variables.Data.Entity.BusinessName = CaptureInfoAsRS ? BusinessName : "";
                 variables.Data.Entity.FirstName = CaptureInfoAsPN ? FirstName : "";
                 variables.Data.Entity.MiddleName = CaptureInfoAsPN ? MiddleName : "";
                 variables.Data.Entity.FirstLastName = CaptureInfoAsPN ? FirstLastName : "";
@@ -821,13 +857,28 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        protected override void OnViewReady(object view)
+        //protected override void OnViewReady(object view)
+        //{
+        //    base.OnViewReady(view);
+        //    ValidateProperties();
+        //    _ = IsNewRecord
+        //        ? this.SetFocus(nameof(IdentificationNumber))
+        //        : CaptureInfoAsPN ? this.SetFocus(nameof(FirstName)) : this.SetFocus(nameof(BusinessName));
+        //}
+
+        protected override void OnViewAttached(object view, object context)
         {
-            base.OnViewReady(view);
+            base.OnViewAttached(view, context);
             ValidateProperties();
-            _ = IsNewRecord
-                ? this.SetFocus(nameof(IdentificationNumber))
-                : CaptureInfoAsPN ? this.SetFocus(nameof(FirstName)) : this.SetFocus(nameof(BusinessName));
+            _ = Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                SelectedIndexPage = 0; // Selecciona el primer TAB page
+                _ = IsNewRecord
+                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
+                      : CaptureInfoAsPN
+                          ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
+                          : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
+            });
         }
 
         public CustomerDetailViewModel(CustomerViewModel context)
@@ -852,7 +903,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
             }
         }
 
@@ -860,7 +911,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                if (Xceed.Wpf.Toolkit.MessageBox.Show($"¿ Confirma que desea eliminar el email : {SelectedEmail.Email} ?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                if (DXMessageBox.Show($"¿ Confirma que desea eliminar el email : {SelectedEmail.Email} ?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 if(SelectedEmail != null)
                 {
                     EmailDTO? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
@@ -870,7 +921,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
             }
         }
 
@@ -923,17 +974,17 @@ namespace NetErp.Billing.Customers.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
 
-        public async Task GoBack()
+        public void GoBack(object p)
         {
-            await Context.ActivateMasterView();
+            _ = Task.Run(() => Context.ActivateMasterView());
         }
 
         public void CleanUpControls()
@@ -1006,7 +1057,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
             }
         }
 
@@ -1051,6 +1102,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
         private void ValidateProperty(string propertyName, string value)
         {
+            if(string.IsNullOrEmpty(value)) value = string.Empty.Trim();
             try
             {
                 ClearErrors(propertyName);
@@ -1095,7 +1147,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
 
@@ -1109,15 +1161,9 @@ namespace NetErp.Billing.Customers.ViewModels
                 ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
             }
         }
-
-        public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+        public bool CanGoBack(object p)
         {
-            return Task.Run(() => Application.Current.Dispatcher.Invoke(() => Context.CustomerMasterViewModel.LoadCustomers()));
-        }
-
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return Task.Run(() => Application.Current.Dispatcher.Invoke(() => Context.CustomerMasterViewModel.Customers.Replace(Context.AutoMapper.Map<CustomerDTO>(message.UpdatedCustomer))));
+            return !IsBusy;
         }
 
         #endregion

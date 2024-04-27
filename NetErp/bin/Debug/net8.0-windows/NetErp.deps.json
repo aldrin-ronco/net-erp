@@ -24,7 +24,8 @@
           "Ninject": "3.3.6",
           "Services": "1.0.0",
           "DevExpress.Wpf.Grid.Core": "23.2.3",
-          "DevExpress.Images.v23.2": "23.2.3.0"
+          "DevExpress.Images.v23.2": "23.2.3.0",
+          "DevExpress.Xpf.Ribbon.v23.2": "23.2.3.0"
         },
         "runtime": {
           "NetErp.dll": {}
@@ -795,6 +796,14 @@
             "fileVersion": "23.2.3.0"
           }
         }
+      },
+      "DevExpress.Xpf.Ribbon.v23.2/23.2.3.0": {
+        "runtime": {
+          "DevExpress.Xpf.Ribbon.v23.2.dll": {
+            "assemblyVersion": "23.2.3.0",
+            "fileVersion": "23.2.3.0"
+          }
+        }
       }
     }
   },
@@ -1262,6 +1271,11 @@
       "sha512": ""
     },
     "DevExpress.Images.v23.2/23.2.3.0": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "DevExpress.Xpf.Ribbon.v23.2/23.2.3.0": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

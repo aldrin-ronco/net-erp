@@ -44,6 +44,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
+                AccountingEntityMasterViewModel.PageIndex = 1;
+                await AccountingEntityMasterViewModel.LoadAccountingEntities();
                 await ActivateItemAsync(AccountingEntityMasterViewModel, new System.Threading.CancellationToken());
             }
             catch (Exception)

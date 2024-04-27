@@ -1,0 +1,129 @@
+﻿<UserControl x:Class="NetErp.Suppliers.Suppliers.Views.SupplierMasterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Suppliers.Suppliers.Views"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors" 
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common"
+             xmlns:viewmodels="clr-namespace:NetErp.Suppliers.Suppliers.ViewModels" 
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             d:DataContext="{d:DesignInstance Type=viewmodels:SupplierMasterViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" d:Background="White">
+    <Grid> 
+        <Grid Width="auto" Height="auto">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <!--ToolBarTray-->
+                <RowDefinition Height="auto"/>
+                <!--Filtros-->
+                <RowDefinition Height="auto"/>
+                <!--Buscar-->
+                <RowDefinition Height="*"/>
+                <!--DataGridView-->
+                <RowDefinition Height="40"/>
+                <!--StatusBar-->
+            </Grid.RowDefinitions>
+            <!--Toolbar-->
+            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+                <dxr:RibbonPage Caption="General">
+
+                    <dxr:RibbonPageGroup Caption="Acciones">
+                        <dxb:BarButtonItem Glyph="{dx:DXImage Image=New_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
+                                           Content="Nuevo"
+                                           RibbonStyle="Large"
+                                           IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
+                                           Hint="Crear un nuevo porveedor">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=CreateSupplierCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Eliminar" 
+                                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                                           Description="Eliminar"
+                                           Hint="Elimina el proveedor seleccionado"    
+                                           IsEnabled="{Binding Path=CanDeleteSupplier, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           RibbonStyle="Large">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteSupplierCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
+            <!--Text de Busqueda-->
+            <StackPanel Grid.Row="2" Orientation="Vertical">
+                <dxe:TextEdit x:Name="FilterSearch"
+                              EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
+                              ShowNullTextForEmptyValue="True"
+                              ShowNullTextIfFocused="True"
+                              EditValuePostMode="Delayed"
+                              CharacterCasing="Upper"
+                              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                              EditValuePostDelay="1000"/>
+            </StackPanel>
+
+            <!--DataGridView Terceros-->
+            <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            Grid.Row="3">
+                <dxg:GridControl Grid.Row="3"
+                             Margin="0 8 0 0"
+                             AutoGenerateColumns="None"                             
+                             ItemsSource="{Binding Path=Suppliers, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                             SelectedItem="{Binding Path=SelectedSupplier, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView ShowSearchPanelMode="Never" AllowCascadeUpdate="True" ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                    </dxg:GridControl.View>
+                    <dxg:GridColumn Header="NIT" Binding="{Binding Entity.IdentificationNumberWithVerificationDigit, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Header="Nombre del tercero" Binding="{Binding Path=Entity.SearchName, Mode=OneWay}" AllowBestFit="true" Width="*"/>
+                    <dxg:GridColumn Header="Dirección" Binding="{Binding Path=Entity.Address, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Header="Información telefónica" Binding="{Binding Path=Entity.TelephonicInformation, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Width="30" FixedWidth="True">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Padding="2" Margin="2"
+                                    cal:Message.Attach="[Event Click] = [Action EditSupplier]">
+                                    <Button.Content>
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v23.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                    </Button.Content>
+                                </Button>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
+
+                </dxg:GridControl>
+            </busyIndicator:BusyMask>
+           
+            <!--Paginacion-->
+            <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+                       HorizontalAlignment="Stretch" 
+                       ChangedIndexCommand="{Binding PaginationCommand}" 
+                       PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                       PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                       TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                       ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+    </Grid>
+</UserControl>

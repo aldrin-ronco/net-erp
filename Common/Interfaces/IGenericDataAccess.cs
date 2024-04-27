@@ -30,7 +30,7 @@ namespace Common.Interfaces
                     //throw new Exception(result.Errors[0].Message);
                     if (result.Errors[0].Extensions != null)
                     {
-                        throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                        throw new Exception(result.Errors[0].Extensions.Values.ToString());
                     }
                     else
                     {

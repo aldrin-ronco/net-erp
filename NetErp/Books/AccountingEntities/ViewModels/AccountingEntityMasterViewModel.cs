@@ -24,10 +24,12 @@ using Services.Books.DAL.PostgreSQL;
 using Common.Helpers;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
+using Models.Billing;
+using Models.Suppliers;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
-    public class AccountingEntityMasterViewModel : ViewModelBase
+    public class AccountingEntityMasterViewModel : ViewModelBase, IHandle<CustomerCreateMessage>, IHandle<SupplierCreateMessage>
     {
 
         public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
@@ -110,6 +112,27 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
+        private ICommand _createAccountingEntityCommand;
+        public ICommand CreateAccountingEntityCommand
+        {
+            get
+            {
+                if (_createAccountingEntityCommand is null) _createAccountingEntityCommand = new AsyncCommand(CreateAccountingEntity, CanCreateAccountingEntity);
+                return _createAccountingEntityCommand;
+            }
+
+        }
+
+        private ICommand _deleteAccountingEntityCommand;
+        public ICommand DeleteAccountingEntityCommand
+        {
+            get
+            {
+                if (_deleteAccountingEntityCommand is null) _deleteAccountingEntityCommand = new AsyncCommand(DeleteAccountingEntity, CanDeleteAccountingEntity);
+                return _deleteAccountingEntityCommand;
+            }
+        }
+
         #endregion
 
         #region Propiedades
@@ -147,7 +170,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 IsBusy = false;
             };
         }
-
+        public bool CanCreateAccountingEntity() => !IsBusy;
 
         #endregion
 
@@ -213,6 +236,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 Messenger.Default.Register<AccountingEntityCreateMessage>(this, OnAccountingEntityCreateMessage);
                 Messenger.Default.Register<AccountingentityUpdateMessage>(this, OnAccountingEntityUpdateMessage);
                 Messenger.Default.Register<AccountingEntityDeleteMessage>(this, OnAccountingEntityDeleteMessage);
+                Context.EventAggregator.SubscribeOnUIThread(this);
             }
             catch (Exception)
             {
@@ -316,13 +340,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-                await ExecuteEditAccountingEntity();
-                IsBusy = false;
+                await Task.Run(() => ExecuteEditAccountingEntity());
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditAccountingEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+            }
+            finally
+            {
                 IsBusy = false;
             }
         }
@@ -333,6 +359,23 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         public async Task CreateAccountingEntity()
+        {
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ExecuteCreateAccountingEntity());
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task ExecuteCreateAccountingEntity()
         {
             await Context.ActivateDetailViewForNew(); // Mostrar la Vista
         }
@@ -438,6 +481,18 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             await OnAccountingEntityUpdateMessageAsync(message);
         }
         async Task OnAccountingEntityUpdateMessageAsync(AccountingentityUpdateMessage message)
+        {
+            PageIndex = 1;
+            await LoadAccountingEntities();
+        }
+
+        public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+        {
+            PageIndex = 1;
+            await LoadAccountingEntities();
+        }
+
+        public async Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
         {
             PageIndex = 1;
             await LoadAccountingEntities();
