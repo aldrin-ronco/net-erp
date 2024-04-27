@@ -3,28 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\mainmenu\\views\\mainmenuview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\mainmenu\\views\\mainmenuview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\mainmenu\\viewmodels\\mainmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\mainmenu\\viewmodels\\mainmenuviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\customers\\viewmodels\\customermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\viewmodels\\customermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingentities\\views\\accountingentitymasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\views\\accountingentitymasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\customers\\views\\customermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\views\\customermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,35 +22,36 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SellerViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
+              "ViewState": "AQIAADsAAAAAAAAAAAAswFwAAAA9AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-04-27T17:45:15.332Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "MainMenuView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\MainMenu\\Views\\MainMenuView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\MainMenu\\Views\\MainMenuView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\MainMenu\\Views\\MainMenuView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\MainMenu\\Views\\MainMenuView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-04-22T14:56:49.871Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "MainMenuViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\MainMenu\\ViewModels\\MainMenuViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\MainMenu\\ViewModels\\MainMenuViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\MainMenu\\ViewModels\\MainMenuViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\MainMenu\\ViewModels\\MainMenuViewModel.cs",
-              "ViewState": "AQIAACUAAAAAAAAAAAAQwDgAAAAwAAAA",
+              "Title": "SellerMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
+              "ViewState": "AQIAALUAAAAAAAAAAAAswM4AAAAvAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-22T14:56:01.649Z",
+              "WhenOpened": "2024-04-27T16:51:55.597Z",
               "EditorCaption": ""
             },
             {
@@ -73,46 +62,9 @@
               "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
-              "ViewState": "AQIAAJoBAAAAAAAAAAAAwL8BAAAQAAAA",
+              "ViewState": "AQIAAAoBAAAAAAAAAAAQwCIBAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-22T14:50:51.289Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AccountingEntityMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ViewState": "AQIAAFkAAAAAAAAAAAApwHoAAAANAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-22T14:49:39.785Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "CustomerMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\Views\\CustomerMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\Views\\CustomerMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\Views\\CustomerMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Billing\\Customers\\Views\\CustomerMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-04-22T14:40:06.282Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "AccountingEntityMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-04-22T14:42:34.398Z",
+              "WhenOpened": "2024-04-27T16:51:53.467Z",
               "EditorCaption": ""
             }
           ]

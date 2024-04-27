@@ -36,6 +36,7 @@
                 <MenuItem Header="Plan único de cuentas" x:Name="OpenAccountingAccounts"/>
                 <MenuItem Header="Adminitración de terceros" x:Name="OpenAccountingEntities"></MenuItem>
                 <MenuItem Header="Administración de clientes" x:Name="OpenCustomer"></MenuItem>
+                <MenuItem Header="Administración de proveedores" x:Name="OpenSupplier"></MenuItem>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

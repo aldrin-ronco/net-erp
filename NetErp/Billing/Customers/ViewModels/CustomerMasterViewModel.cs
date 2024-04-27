@@ -16,10 +16,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Media.Converters;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
-    public class CustomerMasterViewModel : Screen, IHandle<CustomerDeleteMessage>, IHandle<CustomerCreateMessage>
+    public class CustomerMasterViewModel : Screen, IHandle<CustomerDeleteMessage>, IHandle<CustomerCreateMessage>, IHandle<CustomerUpdateMessage>
     {
 
         public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
@@ -78,19 +79,61 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
+        public bool CanCreateCustomer() => !IsBusy;
+
         public CustomerMasterViewModel(CustomerViewModel context)
         {
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => LoadCustomers());
+            //_ = Task.Run(() => LoadCustomers());
+        }
+
+        private ICommand _createCustomerCommand;
+        public ICommand CreateCustomerCommand
+        {
+            get
+            {
+                if (_createCustomerCommand is null) _createCustomerCommand = new AsyncCommand(CreateCustomer, CanCreateCustomer);
+                return _createCustomerCommand;
+            }
+
+        }
+
+        private ICommand _deleteCustomerCommand;
+        public ICommand DeleteCustomerCommand
+        {
+            get
+            {
+                if (_deleteCustomerCommand is null) _deleteCustomerCommand = new AsyncCommand(DeleteCustomer, CanDeleteCustomer);
+                return _deleteCustomerCommand;
+            }
         }
 
         #region Metodos
 
         public async Task CreateCustomer()
         {
-            await Context.ActivateDetailViewForNew(); // Mostrar la Vista
-            SelectedCustomer = null;
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                await Task.Run(() => ExecuteCreateCustomer());
+                SelectedCustomer = null;
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task ExecuteCreateCustomer()
+        {
+            await Context.ActivateDetailViewForNew();
         }
 
         public async Task EditCustomer()
@@ -99,7 +142,7 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await ExecuteEditCustomer();
+                await Task.Run(() => ExecuteEditCustomer());
                 SelectedCustomer = null;
             }
             catch (Exception ex)
@@ -336,6 +379,7 @@ namespace NetErp.Billing.Customers.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            _ = Task.Run(() => LoadCustomers());
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
@@ -367,6 +411,12 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             PageIndex = 1;
             return LoadCustomers();   
+        }
+
+        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            PageIndex = 1;
+            return LoadCustomers();
         }
 
         #endregion

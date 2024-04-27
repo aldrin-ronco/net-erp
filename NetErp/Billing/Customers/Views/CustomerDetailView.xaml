@@ -7,7 +7,16 @@
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:cal="http://caliburnmicro.com"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"             
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common" 
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" 
              d:DesignHeight="650" d:DesignWidth="800" d:Background="White">
     <UserControl.Resources>
@@ -30,7 +39,7 @@
                     <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
                 </Trigger>
             </Style.Triggers>
-        </Style>        
+        </Style>       
     </UserControl.Resources>
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -54,33 +63,37 @@
             </Grid.ColumnDefinitions>
 
             <!--Toolbar-->
-            <ToolBarTray IsLocked="True" Grid.Row="0" Grid.ColumnSpan="3" Background="White" Margin="10">
-                <ToolBar Band="1" BandIndex="0" Background="Transparent" Width="auto" Loaded="ToolBar_Loaded">
-                    <Button ToolBar.OverflowMode="Never" x:Name="GoBack">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Navigation/Backward_32x32.png" Stretch="None"/>
-                                <TextBlock Text="Regresar" FontSize="15" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button.Content>
-                        <Button.ToolTip>
-                            <ToolTip Content="Regresar"/>
-                        </Button.ToolTip>
-                    </Button>
-                    <Separator Margin="5 0 5 0"/>
-                    <Button ToolBar.OverflowMode="Never" x:Name="Save">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Save/Save_32x32.png" Stretch="None" Margin="0 0 5 0"/>
-                                <TextBlock Text="Guardar" FontSize="15" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button.Content>
-                        <Button.ToolTip>
-                            <ToolTip Content="Guardar cambios"/>
-                        </Button.ToolTip>
-                    </Button>
-                </ToolBar>
-            </ToolBarTray>
+            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+                <dxr:RibbonPage Caption="General">
+
+                    <dxr:RibbonPageGroup Caption="Acciones">
+                        <dxb:BarButtonItem x:Name="btnBack" 
+                                       Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
+                                       LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
+                                       Content="Regresar"
+                                       RibbonStyle="Large"
+                                       Hint="Regresa a la lista de proveedores"
+                                       Command="{Binding Path=GoBackCommand}"/>
+                        <dxb:BarItemSeparator/>
+
+                        <dxb:BarButtonItem Content="Guardar" 
+                                           Glyph="{dxc:DXImage Image=Save_16x16.png}" 
+                                           LargeGlyph="{dxc:DXImage Image=Save_32x32.png}"                                             
+                                           Description="Creates a new document."
+                                           Hint="Guardda los cambios realizados"    
+                                           IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           RibbonStyle="Large">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
 
             <!--Detalle de fuente contable-->
             <!--<xctk:BusyIndicator Grid.Row="1" Grid.Column="1" IsBusy="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">-->
@@ -138,57 +151,68 @@
                      SelectedItem="{Binding Path=SelectedIdentificationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!--Numero de documento-->
-                <TextBlock Grid.Column="0" Grid.Row="3" 
-                       Text="Número" 
-                       VerticalAlignment="Center" 
-                       Margin="4" Padding="3"/>
-                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3" Margin="4">
-                    <TextBox  
-                     Width="auto"
-                     MinWidth="60"
-                     VerticalAlignment="Center" 
-                     Padding="3"
-                     CharacterCasing="Upper"
-                     MaxLength="15"
-                     IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"
-                     x:Name="IdentificationNumber"/>
-                    <TextBox Width="20" Margin="6 0 0 0" 
-                 Text="{Binding VerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                 IsReadOnly="True"
-                 IsTabStop="False"
-                 VerticalContentAlignment="Center"
-                 HorizontalContentAlignment="Center"
-                 Visibility="{Binding SelectedIdentificationType.HasVerificationDigit, 
-                 Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <TextBlock Grid.Column="0" Grid.Row="3"
+                           Text="Número" 
+                           VerticalAlignment="Center" 
+                           Margin="4 4 0 2" Padding="3"
+                           FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3" Margin="4 0 4 0">
+                    <dxe:SpinEdit x:Name="IdentificationNumber" 
+                              Width="auto" MinWidth="60" 
+                              Padding="3" Margin="0 2 0 2"
+                              MaskType="Numeric"
+                              MinValue="0"
+                              Mask="n0"
+                              AllowDefaultButton="False"
+                              dxe:NumericMaskOptions.AlwaysShowDecimalSeparator="False"
+                              dxe:NumericMaskOptions.HideInsignificantZeros="True"
+                              FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                              MaxLength="15"
+                              VerticalContentAlignment="Center"
+                              IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"/>
+                    <TextBox Width="20" Margin="6 2 0 2"
+                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                             Text="{Binding Path=VerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                             IsReadOnly="True"
+                             IsTabStop="False"
+                             VerticalContentAlignment="Center"
+                            Visibility="{Binding SelectedIdentificationType.HasVerificationDigit, 
+                                         Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}"
+                             HorizontalContentAlignment="Center"/>
                 </StackPanel>
 
-                <!--Codigo Largo-->
-                <TextBlock Grid.Column="0" Grid.Row="4" 
-                       Text="Tipo de captura" 
-                       VerticalAlignment="Center" 
-                       Margin="4" Padding="3"/>
-                <StackPanel Orientation="Horizontal" Grid.Column="1" 
-                       Grid.Row="4" 
-                       Width="auto"                       
-                       VerticalAlignment="Center" 
-                       Margin="4">
+                <!--Tipo de Captura-->
+                <TextBlock Grid.Column="0" Grid.Row="4"
+                           Text="Tipo de captura" 
+                           VerticalAlignment="Center" 
+                           Margin="4 4 0 2" Padding="3"
+                           FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Orientation="Horizontal" 
+                            Grid.Column="1" Grid.Row="4" 
+                            Width="auto"                       
+                            VerticalAlignment="Center" 
+                            Margin="4">
                     <RadioButton Content="Persona Natural"
-                             GroupName="CaptureType"
-                             IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                             Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
+                                 GroupName="CaptureType"
+                                 FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                 IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
+                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
                     <RadioButton Content="Rason Social"
-                             GroupName="CaptureType"
-                             IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                             Converter={StaticResource EnumBooleanConverter}, ConverterParameter=RS}"
-                             Margin="5 0 0 0"/>
+                                 GroupName="CaptureType"
+                                 IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
+                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=RS}"
+                                 Margin="5 0 0 0"
+                                 FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
-                <!--<TextBlock Text="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>-->
+
                 <!--Pages de datos de tercero-->
             </Grid>
-
-            <TabControl Grid.Column="1" Grid.Row="2" Margin="4 4 4 4">
-                <!--Datos Basicos-->
-                <TabItem Header="Datos Basicos">
+            <dx:DXTabControl Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" 
+             Margin="4,4,4,4" Padding="8" 
+             TabContentCacheMode="CacheTabsOnSelecting" 
+             SelectedIndex="{Binding Path=SelectedIndexPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                <dx:DXTabItem Header="Datos Básicos"
+              TextBlock.FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -214,6 +238,461 @@
                         </Grid.RowDefinitions>
                         <!--Razon Social-->
                         <TextBlock Text="Razon Social" 
+                           Grid.Column="0" Grid.Row="0"
+                           Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                           Margin="0 4 4 2"/>
+                        <dxe:TextEdit x:Name="BusinessName" 
+                            CharacterCasing="Upper"
+                            Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
+                            Margin="0 0 0 0" Padding="3"
+                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!--Nombres y Apellidos-->
+                        <!--Primer Nombre-->
+                        <TextBlock Text="Primer Nombre" 
+                            Grid.Column="0" Grid.Row="2"
+                            Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="0 4 4 2"
+                            FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="FirstName"
+                            CharacterCasing="Upper"
+                            Grid.Column="0" Grid.Row="3" 
+                            Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="0 0 4 0" Padding="3"
+                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!--Segundo Nombre-->
+                        <TextBlock Text="Segundo Nombre" 
+                            Grid.Column="1" Grid.Row="2"
+                            Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="4 4 4 2"
+                            FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="MiddleName" 
+                            CharacterCasing="Upper"
+                            Grid.Column="1" Grid.Row="3" 
+                            Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="4 0 4 0" Padding="3"
+                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!--Primer Apellido-->
+                        <TextBlock Text="Primer Apellido"
+                            Grid.Column="2" Grid.Row="2"
+                            Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Margin="4 4 4 2"
+                            FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="FirstLastName" 
+                 CharacterCasing="Upper"
+                 Grid.Column="2" Grid.Row="3" 
+                 Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                 Margin="4 0 4 0" Padding="3"
+                 FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!--Segundo Apellido-->
+                        <TextBlock Text="Segundo Apellido" 
+                   Grid.Column="3" Grid.Row="2"
+                   Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                   Margin="4 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="MiddleLastName" 
+                 CharacterCasing="Upper"
+                 Grid.Column="3" Grid.Row="3" 
+                 Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                 Margin="4 0 0 0" Padding="3"
+                 FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!--Informacion Telefonica-->
+                        <!--Telefono fijo 1-->
+                        <TextBlock Text="Telefono Fijo No. 1" 
+                   Grid.Column="0" Grid.Row="4" 
+                   Margin="0 4 4 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="Phone1" 
+                  MaxLength="10"
+                  MaskType="Simple"
+                  Mask="000 00 00"
+                  Grid.Column="0" Grid.Row="5"
+                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
+                  Margin="0 0 4 0" Padding="3"
+                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                  Validation.ErrorTemplate="{x:Null}">
+                        </dxe:TextEdit>
+                        <!--Telefono fijo No 2-->
+                        <TextBlock Text="Telefono Fijo No. 2" 
+                   Grid.Column="1" Grid.Row="4"
+                   Margin="4 4 4 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="Phone2" 
+                  MaxLength="10"
+                  Grid.Column="1" Grid.Row="5"
+                  MaskType="Simple"
+                  Mask="000 00 00"
+                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
+                  Margin="4 0 4 0" Padding="3"
+                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                  Validation.ErrorTemplate="{x:Null}"/>
+                        <!--Telefono Celular No 1-->
+                        <TextBlock Text="Telefono Celular No. 1" 
+                   Grid.Column="2" Grid.Row="4" 
+                   Margin="4 4 4 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="CellPhone1" 
+                  MaxLength="14"
+                  MaskType="Simple"
+                  Mask="000 000 00 00"
+                  Grid.Column="2" Grid.Row="5" 
+                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
+                  Margin="4 0 4 0" Padding="3"
+                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                  Validation.ErrorTemplate="{x:Null}"/>
+                        <!--Telefono Celular No 2-->
+                        <TextBlock Text="Telefono Celular No. 2" 
+                   Grid.Column="3" Grid.Row="4" 
+                   Margin="4 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="CellPhone2" 
+                  MaxLength="14"
+                  MaskType="Simple"
+                  Mask="000 000 00 00"
+                  Grid.Column="3" Grid.Row="5"
+                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
+                  Margin="4 0 0 0" Padding="3"
+                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                  Validation.ErrorTemplate="{x:Null}"/>
+                        <!--Pais-->
+                        <TextBlock Text="Pais" 
+                   Grid.Column="0" Grid.Row="6" 
+                   Margin="0 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="7" 
+                      Margin="0" Padding="3"
+                      AllowSpin="True"
+                      AutoPopulateColumns="False"  
+                      IsCaseSensitiveSearch="False"
+                      IncrementalFiltering="True"
+                      IncrementalSearch="True"
+                      ValidateOnTextInput="False"
+                      FilterCondition="Contains"
+                      ImmediatePopup="True"
+                      ClearSelectionOnBackspace="True"
+                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                      ItemsSource="{Binding Path=Countries, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                      DisplayMember="Name"
+                      ValueMember="Id"
+                      SelectedItem="{Binding Path=SelectedCountry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                        <!--Departamento-->
+                        <TextBlock Text="Departamento" 
+                   Grid.Column="0" Grid.Row="8" 
+                   Margin="0 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:LookUpEdit
+            Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="9" 
+            Margin="0" Padding="3"
+            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+            ItemsSource="{Binding Path=SelectedCountry.Departments, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+            IsCaseSensitiveSearch="False"                            
+            AutoPopulateColumns="False"
+            IsCaseSensitiveFilter="False"
+            CharacterCasing="Upper"
+            FilterCondition="Contains"
+            ImmediatePopup="True"
+            ClearSelectionOnBackspace="True"
+            DisplayMember="Name"
+            ValueMember="Id"
+            SelectedItem="{Binding SelectedDepartment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AllowCascadeUpdate="True" ShowSearchPanelMode="Never" AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                        <!--Municipio-->
+                        <TextBlock Text="Municipio" 
+                   Grid.Column="0" Grid.Row="10" 
+                   Margin="0 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" 
+                    Grid.Row="11"
+                    Margin="0" Padding="3"
+                    ClearSelectionOnBackspace="True"
+                    FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding Path=SelectedDepartment.Cities, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    FilterCondition="Contains"
+                    IsCaseSensitiveFilter="False"
+                    AutoPopulateColumns="False"
+                    CharacterCasing="Upper"
+                    ImmediatePopup="True"
+                    DisplayMember="Name"
+                    ValueMember="Id"
+                    EditValue="{Binding SelectedCityId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AllowCascadeUpdate="True" ShowSearchPanelMode="Never" AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                        <!--Direccion-->
+                        <TextBlock Text="Direccion" 
+                   Grid.Column="0" Grid.Row="12" 
+                   Margin="0 4 0 2"
+                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="Address"
+                     Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="13" 
+                     Margin="0" Padding="3"                                 
+                     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+                </dx:DXTabItem>
+                <dx:DXTabItem Header="Retenciones"
+              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ListView ItemsSource="{Binding Path=RetentionTypes, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Width="auto">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="auto" Header="Nombre" DisplayMemberBinding="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </dx:DXTabItem>
+
+                <dx:DXTabItem Header="Emails"
+              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0" Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Descripción" 
+                       Grid.Column="0" Grid.Row="0" 
+                       Margin="0 0 0 2"
+                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                <TextBlock Text=" ( Ej: Gerencia, Compras )" Foreground="Gray"/>
+            </TextBlock>
+                            <TextBlock Text="Email" 
+                       Grid.Column="1"  Grid.Row="0" 
+                       Margin="0 0 0 2"
+                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                <TextBlock Text=" ( Ej: micorreo@gmail.com )" Foreground="Gray"/>
+            </TextBlock>
+                            <TextBox x:Name="EmailDescription" 
+                     Text="{Binding Path=EmailDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                     Grid.Column="0" Grid.Row="1" 
+                     Width="auto" Margin="0 2 4 2" Padding="4" 
+                     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                     Grid.Column="1" Grid.Row="1" 
+                     Width="auto" Margin="0 2 0 2" Padding="4" 
+                     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="2" Grid.Row="1" Margin="4 2 4 2" Padding="4" Width="auto" x:Name="AddEmail">
+                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value=".5"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </Button>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1" Grid.Column="0" Margin="0 4 0 4"
+              AutoGenerateColumns="False"
+              VerticalGridLinesBrush="LightGray"
+              HorizontalGridLinesBrush="LightGray"
+              BorderThickness="0"
+              CanUserAddRows="False"
+              SelectionMode="Single"
+              SelectionUnit="FullRow"     
+              MinRowHeight="30"
+              AlternatingRowBackground="Beige"
+              Background="Transparent"
+              CanUserDeleteRows="False"                                  
+              cal:Message.Attach="[Event CellEditEnding] = [Action EndRowEditing]"
+              ItemsSource="{Binding Path=Emails, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+              SelectedItem="{Binding Path=SelectedEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <DataGrid.Columns>
+
+                                <DataGridTemplateColumn Header="Descripción"
+                    Width="1*"
+                    >
+                                    <DataGridTemplateColumn.HeaderStyle>
+                                        <Style TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.HeaderStyle>
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                       FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"
+                                       Padding="3"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                     VerticalAlignment="Center" 
+                                     Padding="3"
+                                     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="Email"
+                    Width="1*">
+                                    <DataGridTemplateColumn.HeaderStyle>
+                                        <Style TargetType="{x:Type DataGridColumnHeader}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.HeaderStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Path=Email, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"
+                                       Padding="3"
+                                       FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     VerticalAlignment="Center"
+                                     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!--Delete Button-->
+                                <DataGridTemplateColumn Width="40">
+                                    <DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                        </Style>
+                                    </DataGridTemplateColumn.CellStyle>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Margin="4" Padding="4" Command="{Binding Data.DeleteMailCommand, Source={StaticResource DataContextProxy}}">
+                                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Trash_16x16.png" Stretch="None" Margin="3 0 3 0"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </dx:DXTabItem>
+            </dx:DXTabControl>
+            <!--<TabControl Grid.Column="1" Grid.Row="2" Margin="4 4 4 4">
+                --><!--Datos Basicos--><!--
+                <TabItem Header="Datos Basicos">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        --><!--Razon Social--><!--
+                        <TextBlock Text="Razon Social" 
                                    Grid.Column="0" Grid.Row="0"
                                    Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="4"/>
@@ -222,8 +701,8 @@
                                  Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
                                  Margin="4" Padding="3"/>
-                        <!--Nombres y Apellidos-->
-                        <!--Primer Nombre-->
+                        --><!--Nombres y Apellidos-->
+                        <!--Primer Nombre--><!--
                         <TextBlock Text="Primer Nombre" 
                                    Grid.Column="0" Grid.Row="2"
                                    Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -233,7 +712,7 @@
                                  Grid.Column="0" Grid.Row="3" 
                                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Margin="4" Padding="3" />
-                        <!--Segundo Nombre-->
+                        --><!--Segundo Nombre--><!--
                         <TextBlock Text="Segundo Nombre" 
                                    Grid.Column="1" Grid.Row="2"
                                    Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -243,7 +722,7 @@
                                  Grid.Column="1" Grid.Row="3" 
                                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Margin="4" Padding="3"/>
-                        <!--Primer Apellido-->
+                        --><!--Primer Apellido--><!--
                         <TextBlock Text="Primer Apellido"
                                    Grid.Column="2" Grid.Row="2"
                                    Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -253,7 +732,7 @@
                                  Grid.Column="2" Grid.Row="3" 
                                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Margin="4" Padding="3"/>
-                        <!--Segundo Apellido-->
+                        --><!--Segundo Apellido--><!--
                         <TextBlock Text="Segundo Apellido" 
                                    Grid.Column="3" Grid.Row="2"
                                    Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -263,8 +742,8 @@
                                  Grid.Column="3" Grid.Row="3" 
                                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Margin="4" Padding="3"/>
-                        <!--Informacion Telefonica-->
-                        <!--Telefono fijo 1-->
+                        --><!--Informacion Telefonica-->
+                        <!--Telefono fijo 1--><!--
                         <TextBlock Text="Telefono Fijo No. 1" Grid.Column="0" Grid.Row="4" Margin="4"/>
                         <TextBox x:Name="Phone1" 
                                  MaxLength="10"
@@ -272,7 +751,7 @@
                                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                  Margin="4" Padding="3" Validation.ErrorTemplate="{x:Null}">
                         </TextBox>
-                        <!--Telefono fijo No 2-->
+                        --><!--Telefono fijo No 2--><!--
                         <TextBlock Text="Telefono Fijo No. 2" 
                                    Grid.Column="1" Grid.Row="4"
                                    Margin="4"/>
@@ -281,21 +760,21 @@
                                  Grid.Column="1" Grid.Row="5" 
                                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                  Margin="4" Padding="3" Validation.ErrorTemplate="{x:Null}"/>
-                        <!--Telefono Celular No 1-->
+                        --><!--Telefono Celular No 1--><!--
                         <TextBlock Text="Telefono Celular No. 1" Grid.Column="2" Grid.Row="4" Margin="4"/>
                         <TextBox x:Name="CellPhone1" 
                                  MaxLength="14"
                                  Grid.Column="2" Grid.Row="5" 
                                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                  Margin="4" Padding="3" Validation.ErrorTemplate="{x:Null}"/>
-                        <!--Telefono Celular No 2-->
+                        --><!--Telefono Celular No 2--><!--
                         <TextBlock Text="Telefono Celular No. 2" Grid.Column="3" Grid.Row="4" Margin="4"/>
                         <TextBox x:Name="CellPhone2" 
                                  MaxLength="14"
                                  Grid.Column="3" Grid.Row="5"
                                  cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                  Margin="4" Padding="3" Validation.ErrorTemplate="{x:Null}"/>
-                        <!--Pais-->
+                        --><!--Pais--><!--
                         <TextBlock Text="Pais" Grid.Column="0" Grid.Row="6" Margin="4"/>
                         <ComboBox Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="7" 
                                                 Margin="4" Padding="3"
@@ -309,7 +788,7 @@
                                 </ItemsPanelTemplate>
                             </ComboBox.ItemsPanel>
                         </ComboBox>
-                        <!--Departamento-->
+                        --><!--Departamento--><!--
                         <TextBlock Text="Departamento" Grid.Column="0" Grid.Row="8" Margin="4"/>
                         <ComboBox 
                             Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="9" 
@@ -324,7 +803,7 @@
                                 </ItemsPanelTemplate>
                             </ComboBox.ItemsPanel>
                         </ComboBox>
-                        <!--Municipio-->
+                        --><!--Municipio--><!--
                         <TextBlock Text="Municipio" Grid.Column="0" Grid.Row="10" Margin="4"/>
                         <ComboBox Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="11" 
                                                 Margin="4"                                                
@@ -332,14 +811,14 @@
                                                 DisplayMemberPath="Name"
                                                 SelectedValuePath="Id"
                                                 SelectedValue="{Binding SelectedCityId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <!--Direccion-->
+                        --><!--Direccion--><!--
                         <TextBlock Text="Direccion" Grid.Column="0" Grid.Row="12" Margin="4"/>
                         <TextBox x:Name="Address"
                                  Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="13" 
                                  Margin="4" Padding="3"/>
                     </Grid>
                 </TabItem>
-                <!--Otros Datos-->
+                --><!--Otros Datos--><!--
                 <TabItem Header="Retenciones">
                     <ListView Margin="4" ItemsSource="{Binding Path=RetentionTypes, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                         <ListView.View>
@@ -356,7 +835,7 @@
                         </ListView.View>
                     </ListView>
                 </TabItem>
-                <!--Emails-->
+                --><!--Emails--><!--
                 <TabItem Header="Emails" Height="20" VerticalAlignment="Bottom">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -414,7 +893,7 @@
                               SelectedItem="{Binding Path=SelectedEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <DataGrid.Columns>
 
-                                <!--Descripción-->
+                                --><!--Descripción--><!--
                                 <DataGridTemplateColumn Header="Descripción"
                                     Width="1*"
                                     >
@@ -446,7 +925,7 @@
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!--Email-->
+                                --><!--Email--><!--
                                 <DataGridTemplateColumn Header="Email"
                                     Width="1*">
                                     <DataGridTemplateColumn.HeaderStyle>
@@ -478,7 +957,7 @@
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!-- Send Electronic Invoice -->
+                                --><!-- Send Electronic Invoice --><!--
                                 <DataGridTemplateColumn Width="auto">
                                     <DataGridTemplateColumn.HeaderStyle>
                                         <Style TargetType="{x:Type DataGridColumnHeader}">
@@ -498,7 +977,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!--Delete Button-->
+                                --><!--Delete Button--><!--
                                 <DataGridTemplateColumn Width="40">
                                     <DataGridTemplateColumn.CellStyle>
                                         <Style TargetType="DataGridCell">
@@ -521,7 +1000,7 @@
                         </DataGrid>
                     </Grid>
                 </TabItem>
-            </TabControl>
+            </TabControl>-->
 
             <!--</xctk:BusyIndicator>-->
 

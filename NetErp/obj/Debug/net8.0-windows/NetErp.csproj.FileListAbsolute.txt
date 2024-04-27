@@ -155,3 +155,11 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\refint\NetErp
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\NetErp.pdb
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\NetErp.genruntimeconfig.cache
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\ref\NetErp.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DevExpress.Xpf.Ribbon.v23.2.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DevExpress.Xpf.Ribbon.v23.2.xml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierView.baml

@@ -31,7 +31,7 @@ using static Dictionaries.BooksDictionaries;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
-    public class AccountingEntityDetailViewModel : ViewModelBase
+    public class AccountingEntityDetailViewModel : ViewModelBase, INotifyDataErrorInfo
     {
         public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
 
@@ -49,6 +49,26 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 if (_deleteMailCommand == null) this._deleteMailCommand = new RelayCommand(CanRemoveEmail, RemoveEmail);
                 return _deleteMailCommand;
+            }
+        }
+
+        private ICommand _goBackCommand;
+        public ICommand GoBackCommand
+        {
+            get
+            {
+                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
+                return _goBackCommand;
+            }
+        }
+
+        private ICommand _saveCommand;
+        public ICommand SaveCommand
+        {
+            get
+            {
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                return _saveCommand;
             }
         }
 
@@ -92,6 +112,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             set 
             {
                 SetValue(ref _firstNameIsFocused, value);
+            }
+        }
+        private int _selectedIndexPage = 0;
+        public int SelectedIndexPage
+        {
+            get => _selectedIndexPage;
+            set
+            {
+                SetValue(ref _selectedIndexPage, value);
             }
         }
 
@@ -610,7 +639,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         #endregion
 
         [Command]
-        public async void OnViewReady()
+        public async Task OnViewReady()
         {
             if (IsNewRecord)
             {
@@ -629,6 +658,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 }
             }
         }
+
         public async Task Initialize()
         {
             // Validaciones
@@ -786,7 +816,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -1010,6 +1039,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
+        public void GoBack(object p)
+        {
+            _ = Task.Run(() => Context.ActivateMasterView());
+        }
+
+        public bool CanGoBack(object p)
+        {
+            return !IsBusy;
+        }
         public IEnumerable GetErrors(string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;

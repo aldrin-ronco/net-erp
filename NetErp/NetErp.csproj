@@ -14,13 +14,17 @@
 
   <ItemGroup>
     <Folder Include="Billing\Customers\Views\" />
+    <Folder Include="Billing\Sellers\Views\" />
+    <Folder Include="Billing\Sellers\ViewModels\" />
     <Folder Include="Books\AccountingAccounts\Views\" />
     <Folder Include="Books\AccountingAccounts\ViewModels\" />
     <Folder Include="Books\AccountingEntities\Views\" />
     <Folder Include="Inventory\" />
+    <Folder Include="Suppliers\Suppliers\" />
+    <Folder Include="Suppliers\Suppliers\Views\" />
+    <Folder Include="Suppliers\Suppliers\ViewModels\" />
     <Folder Include="UserControls\" />
     <Folder Include="Treasury\" />
-    <Folder Include="Suppliers\" />
   </ItemGroup>
 
 	<ItemGroup>
@@ -53,6 +57,9 @@
   <ItemGroup>
     <Reference Include="DevExpress.Images.v23.2">
       <HintPath>..\..\..\..\..\..\Program Files\DevExpress 23.2\Components\Bin\Framework\DevExpress.Images.v23.2.dll</HintPath>
+    </Reference>
+    <Reference Include="DevExpress.Xpf.Ribbon.v23.2">
+      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 23.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v23.2.dll</HintPath>
     </Reference>
   </ItemGroup>
 
