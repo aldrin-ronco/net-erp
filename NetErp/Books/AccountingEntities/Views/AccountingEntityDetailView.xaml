@@ -40,10 +40,6 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <dxmvvm:Interaction.Behaviors>
-        <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding OnViewReadyCommand}"/>
-    </dxmvvm:Interaction.Behaviors>
-
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
@@ -77,7 +73,7 @@
                                        LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
                                        Content="Regresar"
                                        RibbonStyle="Large"
-                                       Hint="Regresa a la lista de proveedores"
+                                       Hint="Regresa a la lista de terceros"
                                        Command="{Binding Path=GoBackCommand}"/>
                         <dxb:BarItemSeparator/>
 
@@ -85,7 +81,7 @@
                                            Glyph="{dxc:DXImage Image=Save_16x16.png}" 
                                            LargeGlyph="{dxc:DXImage Image=Save_32x32.png}"                                             
                                            Description="Creates a new document."
-                                           Hint="Guardda los cambios realizados"    
+                                           Hint="Guarda los cambios realizados"    
                                            IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                            RibbonStyle="Large">
                             <dxmvvm:Interaction.Behaviors>
@@ -171,11 +167,7 @@
                               FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                               MaxLength="15"
                               VerticalContentAlignment="Center"
-                              IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="IdentificationNumberIsFocused"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxe:SpinEdit>
+                              IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"/>
                     <TextBox Width="20" Margin="6 2 0 2"
                              FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                              Text="{Binding Path=VerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -253,11 +245,7 @@
                             Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
                             Margin="0 0 0 0" Padding="3"
-                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="BusinessNameIsFocused"/>
-                            </dxmvvm:Interaction.Behaviors>
-                        </dxe:TextEdit>
+                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Nombres y Apellidos-->
                         <!--Primer Nombre-->
                         <TextBlock Text="Primer Nombre" 
@@ -270,11 +258,7 @@
                             Grid.Column="0" Grid.Row="3" 
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="0 0 4 0" Padding="3"
-                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="FirstNameIsFocused"/>
-                            </dxmvvm:Interaction.Behaviors>
-                        </dxe:TextEdit>
+                            FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Segundo Nombre-->
                         <TextBlock Text="Segundo Nombre" 
                             Grid.Column="1" Grid.Row="2"
@@ -494,9 +478,8 @@
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
                 </dx:DXTabItem>
-                <dx:DXTabItem Header="Otros Datos"/>
                 <!--Otros Datos-->
-                <TabItem Header="Otros Datos"/>
+                <dx:DXTabItem Header="Otros Datos"/>
                 <!--Emails-->
                 <dx:DXTabItem Header="Emails">
                     <Grid>
@@ -521,11 +504,7 @@
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Descripción" Grid.Column="0"  Grid.Row="0" Margin="4 0 0 0"/>
                             <TextBlock Text="Email" Grid.Column="1"  Grid.Row="0" Margin="4 0 0 0"/>
-                            <TextBox x:Name="EmailDescription" Text="{Binding Path=EmailDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0" Grid.Row="1" Width="auto" Margin="4" Padding="4" FontSize="14">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="EmailDescriptionIsFocused"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </TextBox>
+                            <TextBox x:Name="EmailDescription" Text="{Binding Path=EmailDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0" Grid.Row="1" Width="auto" Margin="4" Padding="4" FontSize="14"/>
                             <TextBox Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Grid.Row="1" Width="auto" Margin="4" Padding="4" FontSize="14"/>
                             <Button Grid.Column="2" Grid.Row="1" Margin="4" Padding="4" Width="auto" x:Name="AddEmail">
                                 <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">

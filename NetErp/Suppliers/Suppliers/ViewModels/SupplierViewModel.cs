@@ -38,6 +38,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _ = Task.Run(() => ActivateMasterView());
         }
 
+        private bool _enableOnViewReady = true;
+
+        public bool EnableOnViewReady
+        {
+            get { return _enableOnViewReady; }
+            set
+            {
+                _enableOnViewReady = value;
+            }
+        }
         public async Task ActivateMasterView()
         {
             try
@@ -54,7 +64,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public async Task ActivateDetailViewForNew()
         {
             SupplierDetailViewModel instance = new(this);
-            instance.CleanUpControls();
+            instance.CleanUpControlsForNew();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 

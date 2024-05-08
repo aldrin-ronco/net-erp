@@ -163,3 +163,9 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Sup
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierDetailView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierMasterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerView.baml

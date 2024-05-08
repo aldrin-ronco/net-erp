@@ -14,6 +14,7 @@ using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
 using NetErp.Helpers;
+using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
@@ -27,11 +28,12 @@ using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Threading;
 using static Dictionaries.BooksDictionaries;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
-    public class AccountingEntityDetailViewModel : ViewModelBase, INotifyDataErrorInfo
+    public class AccountingEntityDetailViewModel : Screen, INotifyDataErrorInfo
     {
         public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
 
@@ -82,7 +84,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _context; }
             set
             {
-                SetValue(ref _context, value);  
+                if(_context  != value)
+                {
+                    _context = value;
+                    NotifyOfPropertyChange(nameof(Context));
+                }
             }
         }
 
@@ -93,7 +99,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _id; }
             set
             {
-                SetValue(ref _id, value, changedCallback: OnIdChanged);
+                if(_id != value)
+                {
+                    _id = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
             }
         }
 
@@ -101,7 +112,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public bool IdentificationNumberIsFocused
         {
             get { return _identificationNumberIsFocused; }
-            set { SetValue(ref _identificationNumberIsFocused, value); }
+            set 
+            {
+                if(_identificationNumberIsFocused != value)
+                {
+                    _identificationNumberIsFocused = value;
+                    NotifyOfPropertyChange(nameof(IdentificationNumberIsFocused));
+                }
+            }
         }
 
         private bool _firstNameIsFocused;
@@ -111,7 +129,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _firstNameIsFocused; }
             set 
             {
-                SetValue(ref _firstNameIsFocused, value);
+                if(_firstNameIsFocused != value)
+                {
+                    _firstNameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(FirstNameIsFocused));
+                }
             }
         }
         private int _selectedIndexPage = 0;
@@ -120,7 +142,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _selectedIndexPage;
             set
             {
-                SetValue(ref _selectedIndexPage, value);
+                if(_selectedIndexPage != value)
+                {
+                    _selectedIndexPage = value;
+                    NotifyOfPropertyChange(nameof(SelectedIndexPage));
+                }
             }
         }
 
@@ -131,7 +157,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _businessNameIsFocused; }
             set
             {
-                SetValue(ref _businessNameIsFocused, value);
+                if(_businessNameIsFocused != value)
+                {
+                    _businessNameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(BusinessNameIsFocused));
+                }
             }
         }
 
@@ -142,14 +172,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _emailDescriptionIsFocused; }
             set 
             { 
-                SetValue(ref _emailDescriptionIsFocused, value);
+                if(_emailDescriptionIsFocused != value)
+                {
+                    _emailDescriptionIsFocused = value;
+                    NotifyOfPropertyChange(nameof(EmailDescriptionIsFocused));
+                }
             }
-        }
-
-
-        public void OnIdChanged()
-        {
-            RaisePropertyChanged(nameof(IsNewRecord));
         }
 
         // Control de visibilidad de panels de captura de datos
@@ -165,42 +193,43 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _selectedCaptureType; }
             set
             {
-                SetValue(ref _selectedCaptureType, value, changedCallback:OnSelectedCaptureTypeChanged);
-            }
-        }
-        public void OnSelectedCaptureTypeChanged()
-        {
-            RaisePropertyChanged(nameof(CaptureInfoAsPN));
-            RaisePropertyChanged(nameof(CaptureInfoAsRS));
-            if (CaptureInfoAsPN)
-            {
-                ClearErrors(nameof(BusinessName));
-                ValidateProperty(nameof(FirstName), FirstName);
-                ValidateProperty(nameof(FirstLastName), FirstLastName);
-            }
-            if (CaptureInfoAsRS)
-            {
-                ClearErrors(nameof(FirstName));
-                ClearErrors(nameof(FirstLastName));
-                ValidateProperty(nameof(BusinessName), BusinessName);
-            }
-            RaisePropertyChanged(nameof(CanSave));
-            ValidateProperties();
-            if (string.IsNullOrEmpty(IdentificationNumber))
-            {
-                this.SetFocus(() => IdentificationNumber);
-            }
-            else
-            {
-                if (CaptureInfoAsPN)
+                if(_selectedCaptureType != value)
                 {
-                    this.SetFocus(() => FirstName);
-                }
-                else
-                {
-                    this.SetFocus(() => BusinessName);
-                }
+                    _selectedCaptureType = value;
+                    NotifyOfPropertyChange(nameof(SelectedCaptureType));
+                    NotifyOfPropertyChange(nameof(CaptureInfoAsPN));
+                    NotifyOfPropertyChange(nameof(CaptureInfoAsRS));
+                    if (CaptureInfoAsPN)
+                    {
+                        ClearErrors(nameof(BusinessName));
+                        ValidateProperty(nameof(FirstName), FirstName);
+                        ValidateProperty(nameof(FirstLastName), FirstLastName);
+                    }
+                    if (CaptureInfoAsRS)
+                    {
+                        ClearErrors(nameof(FirstName));
+                        ClearErrors(nameof(FirstLastName));
+                        ValidateProperty(nameof(BusinessName), BusinessName);
+                    }
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperties();
+                    if (string.IsNullOrEmpty(IdentificationNumber))
+                    {
+                        _ = this.SetFocus(nameof(IdentificationNumber));
+                    }
+                    else
+                    {
+                        if (CaptureInfoAsPN)
+                        {
+                            _ = this.SetFocus(nameof(FirstName));
+                        }
+                        else
+                        {
+                            _ = this.SetFocus(nameof(BusinessName));
+                        }
 
+                    }
+                }
             }
         }
 
@@ -239,13 +268,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _selectedRegime; }
             set
             {
-                SetValue(ref _selectedRegime, value, changedCallback: OnSelectedRegimeChange);               
+                if (_selectedRegime != value)
+                {
+                    _selectedRegime = value;
+                    NotifyOfPropertyChange(nameof(SelectedRegime));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }             
             }
-        }
-
-        public void OnSelectedRegimeChange()
-        {
-            RaisePropertyChanged(nameof(CanSave));
         }
 
         /// <summary>
@@ -257,7 +286,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _identificationTypes; }
             set
             {
-                SetValue(ref _identificationTypes, value);
+                if (_identificationTypes != value)
+                {
+                    _identificationTypes = value;
+                    NotifyOfPropertyChange(nameof(IdentificationTypes));
+                }
             }
         }
 
@@ -270,7 +303,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _selectedEmail; }
             set
             {
-                SetValue(ref _selectedEmail, value);
+                if (_selectedEmail != value)
+                {
+                    _selectedEmail = value;
+                    NotifyOfPropertyChange(nameof(SelectedEmail));
+                }
             }
         }
 
@@ -281,16 +318,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _selectedIdentificationType; }
             set
             {
-                SetValue(ref _selectedIdentificationType, value, changedCallback: OnSelectedIdentificationType);
-            }
-        }
-
-        public void OnSelectedIdentificationType()
-        {
-            RaisePropertyChanged(nameof(CanSave));
-            if (IsNewRecord)
-            {
-                this.SetFocus(() => IdentificationNumber);
+                if (_selectedIdentificationType != value)
+                {
+                    _selectedIdentificationType = value;
+                    NotifyOfPropertyChange(nameof(SelectedIdentificationType));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    if (IsNewRecord)
+                    {
+                        _ = this.SetFocus(nameof(IdentificationNumber));
+                    }
+                }
             }
         }
 
@@ -301,13 +338,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _emails; }
             set
             {
-                SetValue(ref _emails, value, changedCallback: OnEmailsChanged);
+                if (_emails != value)
+                {
+                    _emails = value;
+                    NotifyOfPropertyChange(nameof(Emails));
+                    NotifyOfPropertyChange(nameof(FilteredEmails));
+                }
             }
-        }
-
-        public void OnEmailsChanged()
-        {
-            RaisePropertyChanged(nameof(FilteredEmails));
         }
 
         // emails filtrados
@@ -332,13 +369,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _emailDescription; }
             set
             {
-                SetValue(ref _emailDescription, value, changedCallback: OnEmailDescriptionChanged);
+                if (_emailDescription != value)
+                {
+                    _emailDescription = value;
+                    NotifyOfPropertyChange(nameof(EmailDescription));
+                    NotifyOfPropertyChange(nameof(CanAddEmail));
+                }
             }
-        }
-
-        public void OnEmailDescriptionChanged()
-        {
-            RaisePropertyChanged(nameof(CanAddEmail));
         }
 
         /// Email (Para agregar)
@@ -348,13 +385,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _email; }
             set
             {
-                SetValue(ref _email, value, changedCallback: OnEmailChanged);
+                if (_email != value)
+                {
+                    _email = value;
+                    NotifyOfPropertyChange(nameof(Email));
+                    NotifyOfPropertyChange(nameof(CanAddEmail));
+                }
             }
-        }
-
-        public void OnEmailChanged()
-        {
-            RaisePropertyChanged(nameof(CanAddEmail));
         }
 
         /// <summary>
@@ -366,15 +403,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _identificationNumber;
             set
             {
-                ValidateProperty(nameof(IdentificationNumber), value);
-                SetValue(ref _identificationNumber, value, changedCallback: OnIdentificationNumberChanged);
+                if (_identificationNumber != value)
+                {
+                    _identificationNumber = value;
+                    ValidateProperty(nameof(IdentificationNumber), value);
+                    NotifyOfPropertyChange(nameof(IdentificationNumber));
+                    NotifyOfPropertyChange(nameof(VerificationDigit));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
-        }
-
-        public void OnIdentificationNumberChanged()
-        {
-            RaisePropertyChanged(nameof(VerificationDigit));
-            RaisePropertyChanged(nameof(CanSave));
         }
 
         /// <summary>
@@ -385,7 +422,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             set
             {
-                SetValue(ref _verificationDigit, value);
+                if (_verificationDigit != value)
+                {
+                    _verificationDigit = value;
+                    NotifyOfPropertyChange(nameof(VerificationDigit));
+                }
             }
             get => !IsNewRecord
                    ? _verificationDigit
@@ -396,10 +437,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                    : string.Empty;
         }
 
-        public void OnRequiredFieldsChanged()
-        {
-            RaisePropertyChanged(nameof(CanSave));
-        }
         /// <summary>
         /// Razon Social
         /// </summary>
@@ -409,8 +446,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _businessName;
             set
             {
+                if (_businessName != value)
+                {
+                    _businessName = value;
+                    NotifyOfPropertyChange(nameof(BusinessName));
                     ValidateProperty(nameof(BusinessName), value);
-                    SetValue(ref _businessName, value, changedCallback: OnRequiredFieldsChanged);                
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }               
             }
         }
 
@@ -423,8 +465,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _firstName; 
             set
             {
-                ValidateProperty(nameof(FirstName), value);
-                SetValue(ref _firstName, value, changedCallback: OnRequiredFieldsChanged);   
+                if (_firstName != value)
+                {
+                    _firstName = value;
+                    NotifyOfPropertyChange(nameof(FirstName));
+                    ValidateProperty(nameof(FirstName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
@@ -439,7 +486,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _middleName;
             set
             {
-                SetValue(ref _middleName, value, changedCallback: OnRequiredFieldsChanged);
+                if (_middleName != value)
+                {
+                    _middleName = value;
+                    NotifyOfPropertyChange(nameof(MiddleName));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
@@ -452,8 +504,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _firstLastName;
             set
             {
-                ValidateProperty(nameof(FirstLastName), value);
-                SetValue(ref _firstLastName, value, changedCallback: OnRequiredFieldsChanged);
+                if (_firstLastName != value)
+                {
+                    _firstLastName = value;
+                    NotifyOfPropertyChange(nameof(FirstLastName));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(FirstLastName), value);
+                }
             }
         }
 
@@ -466,7 +523,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _middleLastName;
             set
             {
-                SetValue(ref _middleLastName, value, changedCallback: OnRequiredFieldsChanged);
+                if (_middleLastName != value)
+                {
+                    _middleLastName = value;
+                    NotifyOfPropertyChange(nameof(MiddleLastName));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
@@ -480,8 +542,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _phone1;
             set
             {
-                ValidateProperty(nameof(Phone1), value);
-                SetValue(ref _phone1, value, changedCallback: OnRequiredFieldsChanged);
+                if (_phone1 != value)
+                {
+                    _phone1 = value;
+                    NotifyOfPropertyChange(nameof(Phone1));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(Phone1), value);
+                }
             }
         }
 
@@ -494,8 +561,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _phone2; 
             set
             {
-                ValidateProperty(nameof(Phone2), value);
-                SetValue(ref _phone2, value, changedCallback: OnRequiredFieldsChanged);
+                if (_phone2 != value)
+                {
+                    _phone2 = value;
+                    NotifyOfPropertyChange(nameof(Phone2));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(Phone2), value);
+                }
             }
         }
 
@@ -508,8 +580,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _cellPhone1;
             set
             {
-                ValidateProperty(nameof(CellPhone1), value);
-                SetValue(ref _cellPhone1, value, changedCallback: OnRequiredFieldsChanged);
+                if (_cellPhone1 != value)
+                {
+                    _cellPhone1 = value;
+                    NotifyOfPropertyChange(nameof(CellPhone1));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(CellPhone1), value);
+                }
             }
         }
 
@@ -522,8 +599,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _cellPhone2;
             set
             {
-                ValidateProperty(nameof(CellPhone2), value);
-                SetValue(ref _cellPhone2, value, changedCallback: OnRequiredFieldsChanged);
+                if (_cellPhone2 != value)
+                {
+                    _cellPhone2 = value;
+                    NotifyOfPropertyChange(nameof(CellPhone2));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(CellPhone2), value);
+                }
             }
         }
 
@@ -536,7 +618,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _address;
             set
             {
-                SetValue(ref _address, value, changedCallback: OnRequiredFieldsChanged);
+                if (_address != value)
+                {
+                    _address = value;
+                    NotifyOfPropertyChange(nameof(Address));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
@@ -549,7 +636,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _isBusy;
             set
             {
-                SetValue(ref _isBusy, value);
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
             }
         }
 
@@ -562,7 +653,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _countries;
             set
             {
-                SetValue(ref _countries, value);
+                if (_countries != value)
+                {
+                    _countries = value;
+                    NotifyOfPropertyChange(nameof(Countries));
+                }
             }
         }
 
@@ -573,18 +668,18 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _selectedCountry;
             set
             {
-                SetValue(ref _selectedCountry, value, changedCallback: OnSelectedCountryChanged);
+                if (_selectedCountry != value)
+                {
+                    _selectedCountry = value;
+                    NotifyOfPropertyChange(nameof(SelectedCountry));
+                    if (_selectedCountry != null)
+                    {
+                        SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.CountryId == _selectedCountry.Id);
+                        NotifyOfPropertyChange(nameof(SelectedDepartment));
+                    }
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
-        }
-
-        public void OnSelectedCountryChanged()
-        {
-            if (_selectedCountry != null)
-            {
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.CountryId == _selectedCountry.Id);
-                RaisePropertyChanged(nameof(SelectedDepartment));
-            }
-            RaisePropertyChanged(nameof(CanSave));
         }
 
         /// <summary>
@@ -596,7 +691,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _departments;
             set
             {
-                SetValue(ref _departments, value);
+                if (_departments != value)
+                {
+                    _departments = value;
+                    NotifyOfPropertyChange(nameof(Departments));
+                }
             }
         }
         // departamento Seleccionado
@@ -608,19 +707,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 if (_selectedDepartment != value)
                 {
-                    SetValue(ref _selectedDepartment, value, changedCallback: OnSelectedDepartmentChanged);
+                    _selectedDepartment = value;
+                    NotifyOfPropertyChange(nameof(SelectedDepartment));
+                    if (_selectedDepartment != null)
+                    {
+                        SelectedCityId = SelectedDepartment.Cities.FirstOrDefault().Id;
+                        NotifyOfPropertyChange(nameof(SelectedCityId));
+                    }
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        public void OnSelectedDepartmentChanged()
-        {
-            if (_selectedDepartment != null)
-            {
-                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault().Id;
-                RaisePropertyChanged(nameof(SelectedCityId));
-            }
-            RaisePropertyChanged(nameof(CanSave));
         }
 
         /// <summary>
@@ -632,86 +728,123 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get => _selectedCityId;
             set
             {
-                SetValue(ref _selectedCityId, value, changedCallback: OnRequiredFieldsChanged);
+                if (_selectedCityId != value)
+                {
+                    _selectedCityId = value;
+                    NotifyOfPropertyChange(nameof(SelectedCityId));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
         #endregion
 
-        [Command]
-        public async Task OnViewReady()
+        protected override void OnViewAttached(object view, object context)
         {
-            if (IsNewRecord)
+            base.OnViewAttached(view, context);
+            ValidateProperties();
+            _ = Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(() => IdentificationNumber);
-                ValidateProperties();
-            }
-            else
-            {
-                if (this.SelectedCaptureType.Equals(CaptureTypeEnum.PN))
-                {
-                    this.SetFocus(() => FirstName);
-                }
-                else
-                {
-                    this.SetFocus(() => BusinessName);
-                }
-            }
+                SelectedIndexPage = 0; // Selecciona el primer TAB page
+                _ = IsNewRecord
+                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
+                      : CaptureInfoAsPN
+                          ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
+                          : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
+            });
         }
 
         public async Task Initialize()
         {
-            // Validaciones
-            this._errors = new Dictionary<string, List<string>>();
-            string query = @"
-			query{
-			    ListResponse: identificationTypes{
-			    id
-			    code
-			    name
-			    hasVerificationDigit
-			    minimumDocumentLength
-			    }
-			}";
+            try
+            {
+                // Validaciones
+                string query = @"
+			    query{
+			        ListResponse: identificationTypes{
+			        id
+			        code
+			        name
+			        hasVerificationDigit
+			        minimumDocumentLength
+			        }
+			    }";
 
-            IEnumerable<IdentificationTypeGraphQLModel> result = await IdentificationTypeService.GetList(query, new object { });
-            IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result);
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-            string countriesQuery = @"
-                query{
-                ListResponse: countries{
-                id
-                code
-                name
-                departments {
-                  id
-                  code
-                  name
-                  cities {
+                IEnumerable<IdentificationTypeGraphQLModel> result = await IdentificationTypeService.GetList(query, new object { });
+                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result);
+                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+                string countriesQuery = @"
+                    query{
+                    ListResponse: countries{
                     id
                     code
                     name
-                  }
-                }
-              }
-            }";
-            Countries = new ObservableCollection<CountryGraphQLModel>(await CountryService.GetList(countriesQuery, new object { }));
+                    departments {
+                        id
+                        code
+                        name
+                        cities {
+                        id
+                        code
+                        name
+                        }
+                    }
+                    }
+                }";
+                Countries = new ObservableCollection<CountryGraphQLModel>(await CountryService.GetList(countriesQuery, new object { }));
 
-            //this.Detail.GlobalCountryId = 46;
-            //var dptId = from city in this.Departments where city.Id == this.Detail.GlobalCityId select city.Id;
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id;// 001 es el Codigo de Barranquilla
+                //this.Detail.GlobalCountryId = 46;
+                //var dptId = from city in this.Departments where city.Id == this.Detail.GlobalCityId select city.Id;
+                SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id;// 001 es el Codigo de Barranquilla
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
         }
 
         public AccountingEntityDetailViewModel(AccountingEntityViewModel context)
         {
+            _errors = new Dictionary<string, List<string>>();
             Context = context;
+            Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
         }
 
         public void CleanUpControls()
+        {
+            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+            SelectedRegime = 'R';
+            VerificationDigit = "";
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            IdentificationNumber = "";
+            SelectedCaptureType = CaptureTypeEnum.Undefined;
+            BusinessName = "";
+            FirstName = "";
+            MiddleName = "";
+            FirstLastName = "";
+            MiddleLastName = "";
+            Phone1 = "";
+            Phone2 = "";
+            CellPhone1 = "";
+            CellPhone2 = "";
+            Address = "";
+            Emails = new ObservableCollection<EmailDTO>();
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+        }
+
+        public void CleanUpControlsForNew()
         {
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
             SelectedRegime = 'R';
@@ -736,10 +869,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
 
-        public async Task Cancel()
-        {
-            await Context.ActivateMasterView();
-        }
+        //public async Task Cancel()
+        //{
+        //    await Context.ActivateMasterView();
+        //}
 
         public void EndRowEditing()
         {
@@ -784,8 +917,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 Email = "";
                 EmailDescription = "";
                 Emails.Add(email);
-                RaisePropertyChanged(nameof(FilteredEmails));
-                this.SetFocus(() => EmailDescription);
+                NotifyOfPropertyChange(nameof(FilteredEmails));
+                _ = this.SetFocus(nameof(EmailDescription));
             }
             catch (Exception ex)
             {
@@ -798,19 +931,67 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public async Task Save()
         {
+            string queryForPage;
             try
             {
                 IsBusy = true;
-                //Refresh();
+                Refresh();
                 AccountingEntityGraphQLModel result = await ExecuteSave();
+                queryForPage = @"
+                query ($filter: AccountingEntityFilterInput) {
+                  PageResponse:accountingEntityPage(filter: $filter) {
+		                count
+                        rows {
+                            id
+                            identificationNumber
+                            verificationDigit
+                            captureType
+                            businessName
+                            firstName
+                            middleName
+                            firstLastName
+                            middleLastName
+                            phone1
+                            phone2
+                            cellPhone1
+                            cellPhone2
+                            address
+                            regime
+                            fullName
+                            tradeName
+                            searchName
+                            telephonicInformation
+                            commercialCode
+                            identificationType {
+                               id
+                            }
+                            country {
+                               id 
+                            }
+                            department {
+                               id
+                            }
+                            city {
+                               id 
+                            }
+                            emails {
+                              id
+                              name
+                              email
+                            }
+                        }
+                    }
+                 }";
+                var pageResult = await AccountingEntityService.GetPage(queryForPage, new object { });
                 if (IsNewRecord)
                 {
-                    Messenger.Default.Send(new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result), AccountingEntities = pageResult.PageResponse.Rows});
                 }
                 else
                 {
-                    Messenger.Default.Send(new AccountingentityUpdateMessage() { UpdatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result) });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result) , AccountingEntities = pageResult.PageResponse.Rows});
                 }
+                Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -833,7 +1014,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                string action = "";
                 string query = "";
 
                 List<object> emailList = new List<object>();
@@ -1042,6 +1222,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public void GoBack(object p)
         {
             _ = Task.Run(() => Context.ActivateMasterView());
+            CleanUpControls();
         }
 
         public bool CanGoBack(object p)
@@ -1077,44 +1258,53 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         private void ValidateProperty(string propertyName, string value)
         {
-            ClearErrors(propertyName);
-            if (propertyName.Contains("Phone"))
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
             {
-                // Remover espacios a la cadena
-                value = value.Replace(" ", "").Replace(Convert.ToChar(9).ToString(), "");
-                // Remover , = 44 y ; = 59
-                value = value.Replace(Convert.ToChar(44).ToString(), "").Replace(Convert.ToChar(59).ToString(), "");
-                // Remover - = 45 y _ = 95
-                value = value.Replace(Convert.ToChar(45).ToString(), "").Replace(Convert.ToChar(95).ToString(), "");
+                ClearErrors(propertyName);
+                if (propertyName.Contains("Phone"))
+                {
+                    // Remover espacios a la cadena
+                    value = value.Replace(" ", "").Replace(Convert.ToChar(9).ToString(), "");
+                    // Remover , = 44 y ; = 59
+                    value = value.Replace(Convert.ToChar(44).ToString(), "").Replace(Convert.ToChar(59).ToString(), "");
+                    // Remover - = 45 y _ = 95
+                    value = value.Replace(Convert.ToChar(45).ToString(), "").Replace(Convert.ToChar(95).ToString(), "");
+                }
+                switch (propertyName)
+                {
+                    case nameof(IdentificationNumber):
+                        if (string.IsNullOrEmpty(value) || value.Trim().Length < SelectedIdentificationType.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
+                        break;
+                    case nameof(FirstName):
+                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer nombre no puede estar vacío");
+                        break;
+                    case nameof(FirstLastName):
+                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
+                        break;
+                    case nameof(BusinessName):
+                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
+                        break;
+                    case nameof(Phone1):
+                        if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
+                        break;
+                    case nameof(Phone2):
+                        if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
+                        break;
+                    case nameof(CellPhone1):
+                        if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
+                        break;
+                    case nameof(CellPhone2):
+                        if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
+                        break;
+                    default:
+                        break;
+                }
+
             }
-            switch (propertyName)
+            catch (Exception ex)
             {
-                case nameof(IdentificationNumber):
-                    if (string.IsNullOrEmpty(value) || value.Trim().Length < SelectedIdentificationType.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
-                    break;
-                case nameof(FirstName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer nombre no puede estar vacío");
-                    break;
-                case nameof(FirstLastName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
-                    break;
-                case nameof(BusinessName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
-                    break;
-                case nameof(Phone1):
-                    if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                    break;
-                case nameof(Phone2):
-                    if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                    break;
-                case nameof(CellPhone1):
-                    if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                    break;
-                case nameof(CellPhone2):
-                    if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                    break;
-                default:
-                    break;
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
 

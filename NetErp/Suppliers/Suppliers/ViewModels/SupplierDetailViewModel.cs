@@ -12,6 +12,7 @@ using Models.DTO.Global;
 using Models.Global;
 using Models.Suppliers;
 using NetErp.Helpers;
+using Services.Billing.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -649,6 +650,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public void GoBack(object p)
         {
             _ = Task.Run(() => Context.ActivateMasterView());
+            CleanUpControls();
         }
 
         public bool CanGoBack(object p)
@@ -657,6 +659,45 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         public void CleanUpControls()
+        {
+            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+            SelectedRegime = 'R';
+            IdentificationNumber = string.Empty;
+            VerificationDigit = string.Empty;
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.Undefined;
+            BusinessName = string.Empty;
+            FirstName = string.Empty;
+            MiddleName = string.Empty;
+            FirstLastName = string.Empty;
+            MiddleLastName = string.Empty;
+            Phone1 = string.Empty;
+            Phone2 = string.Empty;
+            CellPhone1 = string.Empty;
+            CellPhone2 = string.Empty;
+            Address = string.Empty;
+            Emails = new ObservableCollection<EmailDTO>();
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+            foreach (RetentionTypeDTO retention in RetentionTypes)
+            {
+                retentionList.Add(new RetentionTypeDTO()
+                {
+                    Id = retention.Id,
+                    Name = retention.Name,
+                    Margin = retention.Margin,
+                    InitialBase = retention.InitialBase,
+                    AccountingAccountSale = retention.AccountingAccountSale,
+                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
+                    IsSelected = false
+                });
+            }
+            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
+        }
+
+        public void CleanUpControlsForNew()
         {
             List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
@@ -697,19 +738,90 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public async Task Save()
         {
+            string queryForPage;
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
                 SupplierGraphQLModel result = await ExecuteSave();
+                queryForPage = @"
+                query ($filter: SupplierFilterInput) {
+                  pageResponse : supplierPage(filter: $filter) {
+                    count
+                    rows {
+                      id
+                      isTaxFree
+                      icaRetentionMargin
+                      icaRetentionMarginBasis
+                      retainsAnyBasis
+                      icaAccountingAccount {
+                        id
+                        code
+                        name
+                      }
+                      retentions {
+                        id
+                        name
+                        initialBase
+                        margin
+                        marginBase
+                        retentionGroup
+                      }
+                      entity {
+                        id
+                        identificationType {
+                          id
+                          code
+                        }
+                        country {
+                          id
+                          code
+                        }
+                        department {
+                          id
+                          code
+                        }
+                        city {
+                          id
+                          code
+                        }
+                        identificationNumber
+                        verificationDigit
+                        captureType
+                        searchName
+                        firstName
+                        middleName
+                        firstLastName
+                        middleLastName
+                        businessName
+                        phone1
+                        phone2
+                        cellPhone1
+                        cellPhone2
+                        address
+                        telephonicInformation
+                        emails {
+                          id
+                          name
+                          email
+                          password
+                          sendElectronicInvoice
+                        }
+                      }
+                    }
+                  }
+                }";
+
+                var pageResult = await SupplierService.GetPage(queryForPage, new object { });
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) , Suppliers = pageResult.PageResponse.Rows});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierUpdateMessage() { UpdatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierUpdateMessage() { UpdatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) , Suppliers = pageResult.PageResponse.Rows});
                 }
+                Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -722,10 +834,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
-            //finally
-            //{
-            //    IsBusy = false;
-            //}
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task<SupplierGraphQLModel> ExecuteSave()
@@ -735,7 +847,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
             try
             {
-                List<object> retentions = new List<object>();
+                List<int> retentions = new List<int>();
                 List<object> emailList = new List<object>();
                 List<string> phones = new List<string>();
 
@@ -756,7 +868,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     foreach (RetentionTypeDTO retention in RetentionTypes)
                     {
                         if (retention.IsSelected)
-                            retentions.Add(new { RetentionTypeId = retention.Id });
+                            retentions.Add(retention.Id);
                     }
                 }
 
@@ -812,7 +924,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 if(retentions.Count == 0) variables.Data.Retentions = new List<object>();
                 if (retentions.Count > 0) 
                 {
-                    variables.Data.Retentions = variables.Data.Retentions = new List<object>();
+                    variables.Data.Retentions = variables.Data.Retentions = new List<int>();
                     variables.Data.Retentions = retentions; 
                 }
 

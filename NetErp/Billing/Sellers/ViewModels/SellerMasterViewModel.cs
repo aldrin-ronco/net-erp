@@ -10,12 +10,15 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
+using Extensions.Sellers;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using DevExpress.Mvvm;
+using NetErp.Billing.Customers.ViewModels;
+using NetErp.Helpers;
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
@@ -86,8 +89,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        private SellerDTO _selectedSeller;
-        public SellerDTO SelectedSeller
+        private SellerDTO? _selectedSeller;
+        public SellerDTO? SelectedSeller
         {
             get => _selectedSeller;
             set
@@ -96,6 +99,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _selectedSeller = value;
                     NotifyOfPropertyChange(nameof(SelectedSeller));
+                    NotifyOfPropertyChange(nameof(CanDeleteSeller));
                 }
             }
         }
@@ -127,21 +131,58 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
+        public bool CanCreateSeller() => !IsBusy;
+
+        private ICommand _createSellerCommand;
+        public ICommand CreateSellerCommand
+        {
+            get
+            {
+                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSeller, CanCreateSeller);
+                return _createSellerCommand;
+            }
+
+        }
+
+        private ICommand _deleteSellerCommand;
+        public ICommand DeleteSellerCommand
+        {
+            get
+            {
+                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSeller, CanDeleteSeller);
+                return _deleteSellerCommand;
+            }
+        }
 
         public bool CanDeleteSeller
         {
             get
             {
-                if (Sellers == null) return false;
-                var selectedItems = from seller
-                                    in Sellers
-                                    where seller.IsChecked
-                                    select new { seller.Id };
-                return selectedItems.ToList().Count == 1;
+                if (SelectedSeller is null) return false;
+                return true;
             }
         }
 
         public async Task CreateSeller()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                await Task.Run(() => ExecuteCreateSeller());
+                SelectedSeller = null;
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        public async Task ExecuteCreateSeller()
         {
             await Context.ActivateDetailViewForNew();
         }
@@ -150,32 +191,60 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                if (Xceed.Wpf.Toolkit.MessageBox.Show("¿ Confirma que desea eliminar el registro seleccionado ?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
-
-                int id = Sellers.First(c => c.IsChecked).Id;
-
                 IsBusy = true;
+                int id = SelectedSeller.Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteSeller(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.SellerService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = DXMessageBox.Show(caption: "Confirme...", messageBoxText: $"¿Confirma que desea eliminar el registro {SelectedSeller.Entity.SearchName}?", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                    return;
+                }
+                this.IsBusy = true;
 
                 Refresh();
 
                 SellerGraphQLModel deletedSeller = await ExecuteDeleteSeller(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new SellerDeleteMessage { DeletedSeller = Context.AutoMapper.Map<SellerDTO>(deletedSeller) });
-
-                TotalCount--;
+                await Context.EventAggregator.PublishOnUIThreadAsync(new SellerDeleteMessage() { DeletedSeller = Context.AutoMapper.Map<SellerDTO>(deletedSeller) });
 
                 NotifyOfPropertyChange(nameof(CanDeleteSeller));
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {
@@ -191,11 +260,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 mutation ($id: Int!) {
                   deleteResponse: deleteSeller(id: $id) {
                     id
+                    isActive
                   }
                 }
                 ";
                 object variables = new { Id = id };
                 SellerGraphQLModel deletedSeller = await SellerService.Delete(query, variables);
+                SelectedSeller = null;
                 return deletedSeller;
             }
             catch (Exception)
@@ -220,13 +291,16 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await ExecuteEditSeller();
-                IsBusy = false;
+                await Task.Run(() => ExecuteEditSeller());
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -252,6 +326,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             _ = Task.Run(() => Initialize());
         }
 
+        //TODO definir la query compleja para realizar filtros con multiples condiciones.
         public async Task Initialize()
         {
             try
@@ -262,8 +337,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 stopwatch.Start();
 
                 string query = @"
-                query ($sellerWhereInput: SellersWhereInput, $costCentersWhereInput: CostCentersWhereInput, $identificationTypesWhereInput: IdentificationTypesWhereInput) {
-                  sellersPage(where: $sellerWhereInput) {
+                query ($filter: SellerFilterInput){
+                  sellerPage(filter: $filter) {
                     count
                     rows {
                       id
@@ -305,7 +380,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                       }
                     }
                   }
-                  identificationTypes(where: $identificationTypesWhereInput) {
+                  identificationTypes {
                     id
                     code
                     name
@@ -327,14 +402,21 @@ namespace NetErp.Billing.Sellers.ViewModels
                       }
                     }
                   }
-                  costCenters(where: $costCentersWhereInput) {
+                  costCenters{
                     id
                     name
                   }
                 }";
 
-                object variables = new { Config.ConnectionId, Pagination = new { Page = 1, PageSize = 50 }, SellerWhereInput = new { }, CostCentersWhereInput = new { }, IdentificationTypesWhereInput = new { Code = "13" } };
-                var result = await SellerService.GetDataContext<>(query, variables); //pasar el tipo del batch a consultar
+                
+                dynamic variables = new ExpandoObject();
+                variables.filter = new ExpandoObject();
+                variables.filter.Pagination = new ExpandoObject();
+                variables.filter.Pagination.Page = PageIndex;
+                variables.filter.Pagination.PageSize = PageSize;              
+                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
+                variables.filter.QueryFilter = "";
+                var result = await SellerService.GetDataContext<SellersDataContext>(query, variables);
                 stopwatch.Stop();
                 Context.CostCenters = new ObservableCollection<CostCenterDTO>(Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters));
                 Context.IdentificationTypes = new ObservableCollection<Models.Books.IdentificationTypeGraphQLModel>(result.IdentificationTypes);
@@ -343,9 +425,9 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     CostCenters = new ObservableCollection<CostCenterGraphQLModel>(result.CostCenters);
                     CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS CENTROS DE COSTOS" });
-                    Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.SellersPage.Rows));
+                    Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.SellerPage.Rows));
                 });
-                TotalCount = result.SellersPage.Count;
+                TotalCount = result.SellerPage.Count;
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
             }
@@ -376,8 +458,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 stopwatch.Start();
 
                 string query = @"
-                query ($sellerWhereInput: SellersWhereInput) {
-                  pageResponse: sellersPage(where: $sellerWhereInput) {
+                query ($filter: SellerFilterInput) {
+                  pageResponse: sellerPage(filter: $filter) {
                     count
                     rows {
                       id
@@ -413,23 +495,29 @@ namespace NetErp.Billing.Sellers.ViewModels
                           sendElectronicInvoice
                         }
                       }
-                      costCenters {
-                        id
-                        name
+                    costCenters {
+                    id
+                    name
                       }
                     }
                   }
                 }";
 
+                string costCenterFilter = string.Empty;
+                string isActiveFilter = string.Empty;
+                string filterSearch = string.Empty;
+                if (SelectedCostCenterId != 0) costCenterFilter = $"seller.id in (select distinct seller_id from billing_sellers_by_cost_center where cost_center_id = any(array[{SelectedCostCenterId}]))";
+                if (ShowActiveSellersOnly) isActiveFilter = $"seller.is_active = {ShowActiveSellersOnly}";
+                if (!string.IsNullOrEmpty(FilterSearch)) filterSearch = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
                 dynamic variables = new ExpandoObject();
-                variables.Pagination = new ExpandoObject();
-                variables.Pagination.Page = PageIndex;
-                variables.Pagination.PageSize = PageSize;
-                variables.SellerWhereInput = new ExpandoObject();
-                variables.SellerWhereInput.SearchName = FilterSearch;
-                variables.SellerWhereInput.CostCenters = SelectedCostCenterId == 0 ? null : new int[] { SelectedCostCenterId };
+                variables.filter = new ExpandoObject();
+                variables.filter.Pagination = new ExpandoObject();
+                variables.filter.Pagination.Page = PageIndex;
+                variables.filter.Pagination.PageSize = PageSize;
+                variables.filter.QueryFilter = @$"";
+                variables.filter.CostCenters = SelectedCostCenterId == 0 ? null : new int[] { SelectedCostCenterId };
 
-                IGenericDataAccess<SellerGraphQLModel>.PageResponseType result = await Context.BillingSeller.GetPage(query, variables);
+                var result = await SellerService.GetPage(query, variables);
                 stopwatch.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -456,30 +544,26 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
+        protected override void OnViewReady(object view)
+        {
+            if (Context.EnableOnViewReady is false) return;
+            base.OnViewReady(view);
+            _ = Task.Run(() => LoadSellers());
+            _ = this.SetFocus(nameof(FilterSearch));
+        }
+
         public Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
         {
-            try
-            {
-                Sellers.Add(Context.AutoMapper.Map<SellerDTO>(message.CreatedSeller));
-                return Task.CompletedTask;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            //PageIndex = 1;
+            //return LoadSellers();
+            return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
         }
 
         public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
         {
-            try
-            {
-                Sellers.Replace(Context.AutoMapper.Map<SellerDTO>(message.UpdatedSeller));
-                return Task.CompletedTask;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            //PageIndex = 1;
+            //return LoadSellers();
+            return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
         }
 
         public Task HandleAsync(SellerDeleteMessage message, CancellationToken cancellationToken)
@@ -488,7 +572,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 SellerDTO sellerToDelete = Sellers.FirstOrDefault(seller => seller.Id == message.DeletedSeller.Id);
                 if (sellerToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Sellers.Remove(sellerToDelete));
-                return Task.CompletedTask;
+                return LoadSellers();
             }
             catch (Exception)
             {

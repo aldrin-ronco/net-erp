@@ -26,10 +26,11 @@ using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 using Models.Billing;
 using Models.Suppliers;
+using GraphQL.Client.Http;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
-    public class AccountingEntityMasterViewModel : ViewModelBase, IHandle<CustomerCreateMessage>, IHandle<SupplierCreateMessage>
+    public class AccountingEntityMasterViewModel : Screen, IHandle<AccountingEntityCreateMessage>, IHandle<AccountingEntityDeleteMessage>, IHandle<AccountingEntityUpdateMessage>
     {
 
         public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
@@ -40,7 +41,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _context; }
             set
             {
-                SetValue(ref _context, value);
+                if(_context != value)
+                {
+                    _context = value;
+                    NotifyOfPropertyChange(nameof(Context));
+                }
             }
         }
 
@@ -53,7 +58,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _isBusy; }
             set
             {
-                SetValue(ref _isBusy, value);          
+                if(_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }       
             }
         }
 
@@ -67,7 +76,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _pageIndex; }
             set
             {
-                SetValue(ref _pageIndex, value);
+                if(_pageIndex != value)
+                {
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
+                }
             }
         }
 
@@ -80,7 +93,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _pageSize; }
             set
             {
-                SetValue(ref _pageSize, value);
+                if(_pageSize != value)
+                {
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
+                }
             }
             
         }
@@ -95,7 +112,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _totalCount; }
             set
             {
-                SetValue(ref _totalCount, value);
+                if(_totalCount != value)
+                {
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
+                }
             }
         }
 
@@ -144,7 +165,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _responseTime; }
             set
             {
-                SetValue(ref _responseTime, value);
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
             }
         }
 
@@ -152,24 +177,28 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _filterSearch = "";
         public string FilterSearch
         {
-            get { return _filterSearch; }
+            get 
+            {
+                if (_filterSearch is null) _filterSearch = "";
+                return _filterSearch; 
+            }
             set
             {
-                SetValue(ref _filterSearch, value, changedCallback: OnFilterSearchChanged);                   
+                if (_filterSearch != value)
+                {
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+                    if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length >= 3)
+                    {
+                        IsBusy = true;
+                        PageIndex = 1;
+                        _ = Task.Run(() => LoadAccountingEntities());
+                        IsBusy = false;
+                    };
+                }                  
             }
         }
 
-        public async void OnFilterSearchChanged()
-        {
-            // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-            if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length >= 3)
-            {
-                IsBusy = true;
-                PageIndex = 1;
-                await LoadAccountingEntities();
-                IsBusy = false;
-            };
-        }
         public bool CanCreateAccountingEntity() => !IsBusy;
 
         #endregion
@@ -182,13 +211,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return _selectedAccountingEntity; }
             set
             {
-                SetValue(ref _selectedAccountingEntity, value, changedCallback: OnSelecteAccountingEntityChanged);
+                if (_selectedAccountingEntity != value)
+                {
+                    _selectedAccountingEntity = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingEntity));
+                    NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
+                }
             }
-        }
-
-        public void OnSelecteAccountingEntityChanged()
-        {
-            RaisePropertyChanged(nameof(CanDeleteAccountingEntity));
         }
 
         private ObservableCollection<AccountingEntityDTO> _accountingEntities = [];
@@ -197,45 +226,31 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             get { return this._accountingEntities; }
             set
             {
-                SetValue(ref _accountingEntities, value, changedCallback: OnAccountingEntitiesChanged); 
+                if (this._accountingEntities != value)
+                {
+                    this._accountingEntities = value;
+                    NotifyOfPropertyChange(nameof(AccountingEntities));
+                    NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
+                }
             }
-        }
-
-        public void OnAccountingEntitiesChanged()
-        {
-            RaisePropertyChanged(nameof(CanDeleteAccountingEntity));
         }
 
         #endregion
 
 
-        [Command]
-        public async void Initialize()
-        {
-            if (AccountingEntities.Count > 0) return;
-            try
-            {
-                IsBusy = true;
-                await LoadAccountingEntities();
-            }
-            catch (Exception)
-            {
 
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+        protected override void OnViewReady(object view)
+        {
+            if (Context.EnableOnViewReady is false) return;
+            base.OnViewReady(view);
+            _ = Task.Run(() => LoadAccountingEntities());
+            _ = this.SetFocus(nameof(FilterSearch));
         }
         public AccountingEntityMasterViewModel(AccountingEntityViewModel context)
         {
             try
             {
                 Context = context;
-                Messenger.Default.Register<AccountingEntityCreateMessage>(this, OnAccountingEntityCreateMessage);
-                Messenger.Default.Register<AccountingentityUpdateMessage>(this, OnAccountingEntityUpdateMessage);
-                Messenger.Default.Register<AccountingEntityDeleteMessage>(this, OnAccountingEntityDeleteMessage);
                 Context.EventAggregator.SubscribeOnUIThread(this);
             }
             catch (Exception)
@@ -264,6 +279,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
             try
             {
+                IsBusy = true;
+                Refresh();
                 string query = @"
                 query ($filter: AccountingEntityFilterInput) {
                   PageResponse:accountingEntityPage(filter: $filter) {
@@ -328,10 +345,27 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 // Detener cronometro
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAccountingEntities" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -340,7 +374,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
+                Refresh();
                 await Task.Run(() => ExecuteEditAccountingEntity());
+                SelectedAccountingEntity = null;
             }
             catch (Exception ex)
             {
@@ -363,11 +399,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
+                Refresh();
                 await Task.Run(() => ExecuteCreateAccountingEntity());
+                SelectedAccountingEntity = null;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {
@@ -385,7 +424,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-
                 int id = SelectedAccountingEntity.Id;
 
                 string query = @"
@@ -403,7 +441,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = DXMessageBox.Show(caption: "Atención!", messageBoxText: "¿Confirma que desea eliminar la cuenta contable?", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
+                    MessageBoxResult result = DXMessageBox.Show(caption: "Atención!", messageBoxText: $"¿Confirma que desea eliminar el registro {SelectedAccountingEntity.SearchName}?", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -414,21 +452,39 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     return;
                 }
 
-                IsBusy = true;
+
+                Refresh();
 
                 var deletedAccountingEntity = await ExecuteDeleteAccountingEntity(id);
 
-                Messenger.Default.Send(new AccountingEntityDeleteMessage() { DeletedAccountingEntity = deletedAccountingEntity});
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityDeleteMessage() { DeletedAccountingEntity = deletedAccountingEntity});
 
                 // Desactivar opcion de eliminar registros
-                RaisePropertyChanged(nameof(CanDeleteAccountingEntity));
+                NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
 
-                IsBusy = false;
+                
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountingEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
 
         }
@@ -453,49 +509,29 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 throw;
             }
         }
-        public async void OnAccountingEntityDeleteMessage(AccountingEntityDeleteMessage message)
+
+        public Task HandleAsync(AccountingEntityCreateMessage message, CancellationToken cancellationToken)
         {
-            await OnAccountingEntityDeleteMessageAsync(message);
+            return Task.FromResult(AccountingEntities = new ObservableCollection<AccountingEntityDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingEntityDTO>>(message.AccountingEntities)));
         }
 
-        public async Task OnAccountingEntityDeleteMessageAsync(AccountingEntityDeleteMessage message)
-        {
-            AccountingEntityDTO entityToDelete = this.AccountingEntities.Where(x => x.Id == message.DeletedAccountingEntity.Id).FirstOrDefault();
-            if (entityToDelete != null) AccountingEntities.RemoveById(message.DeletedAccountingEntity.Id);
-            await LoadAccountingEntities();
-        }
 
-        public async void OnAccountingEntityCreateMessage(AccountingEntityCreateMessage message)
+        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
         {
-            await OnAccountingEntityCreateMessageAsync(message);
+            return Task.FromResult(AccountingEntities = new ObservableCollection<AccountingEntityDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingEntityDTO>>(message.AccountingEntities)));
         }
-
-        public async Task OnAccountingEntityCreateMessageAsync(AccountingEntityCreateMessage message)
+        public Task HandleAsync(AccountingEntityDeleteMessage message, CancellationToken cancellationToken)
         {
-            PageIndex = 1;
-            await LoadAccountingEntities();
-        }
-
-        public async void OnAccountingEntityUpdateMessage(AccountingentityUpdateMessage message)
-        {
-            await OnAccountingEntityUpdateMessageAsync(message);
-        }
-        async Task OnAccountingEntityUpdateMessageAsync(AccountingentityUpdateMessage message)
-        {
-            PageIndex = 1;
-            await LoadAccountingEntities();
-        }
-
-        public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
-        {
-            PageIndex = 1;
-            await LoadAccountingEntities();
-        }
-
-        public async Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
-        {
-            PageIndex = 1;
-            await LoadAccountingEntities();
+            try
+            {
+                AccountingEntityDTO accountingAccountToDelete = AccountingEntities.First(c => c.Id == message.DeletedAccountingEntity.Id);
+                if (accountingAccountToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => AccountingEntities.Remove(accountingAccountToDelete));
+                return LoadAccountingEntities();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public bool CanDeleteAccountingEntity

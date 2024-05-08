@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Interfaces;
+using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
@@ -241,7 +242,9 @@ namespace NetErp.Billing.Customers.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
+                if(!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ","%")}%'";
+                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.SearchName = FilterSearch.Trim();
+                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.IdentificationNumber = FilterSearch.Trim();
                 var result = await CustomerService.GetPage(query, variables);
 
                 TotalCount = result.PageResponse.Count;
@@ -305,7 +308,6 @@ namespace NetErp.Billing.Customers.ViewModels
                     (char)13 + (char)13 + validation.Message, button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
                     return;
                 }
-                this.IsBusy = true;
 
                 Refresh();
 
@@ -378,6 +380,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
         protected override void OnViewReady(object view)
         {
+            if (Context.EnableOnViewReady is false) return;
             base.OnViewReady(view);
             _ = Task.Run(() => LoadCustomers());
             _ = this.SetFocus(nameof(FilterSearch));
@@ -409,14 +412,12 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
         {
-            PageIndex = 1;
-            return LoadCustomers();   
+            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
         }
 
         public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
         {
-            PageIndex = 1;
-            return LoadCustomers();
+            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
         }
 
         #endregion

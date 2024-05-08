@@ -61,15 +61,17 @@ namespace Models.Books
     public class AccountingEntityCreateMessage
     {
         public AccountingEntityGraphQLModel CreatedAccountingEntity { get; set;}
+        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities { get; set; }
     }
     public class AccountingEntityDeleteMessage
     {
         public AccountingEntityGraphQLModel DeletedAccountingEntity { get; set; }
     }
 
-    public class AccountingentityUpdateMessage
+    public class AccountingEntityUpdateMessage
     {
         public AccountingEntityGraphQLModel UpdatedAccountingEntity { get; set; }
+        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities { get; set; }
     }
 
     public class CanDeleteAccountingEntity

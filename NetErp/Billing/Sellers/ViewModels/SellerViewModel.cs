@@ -2,12 +2,12 @@
 using Caliburn.Micro;
 using Common.Extensions;
 using Common.Interfaces;
-using Extensions.Common;
-using Interfaces.Billing.BillingSellers;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
+using NetErp.Billing.Customers.ViewModels;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,21 +47,62 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public SellerMasterViewModel SellerMasterViewModel { get; private set; }
+        private ObservableCollection<CountryGraphQLModel> _countries;
+        public ObservableCollection<CountryGraphQLModel> Countries
+        {
+            get => _countries;
+            set
+            {
+                if (_countries != value)
+                {
+                    _countries = value;
+                    NotifyOfPropertyChange(nameof(Countries));
+                }
+            }
+        }
+
+        private SellerMasterViewModel _sellerMasterViewModel;
+        public SellerMasterViewModel SellerMasterViewModel 
+        { 
+            get 
+            {
+                if (_sellerMasterViewModel is null) _sellerMasterViewModel = new SellerMasterViewModel(this);
+                return _sellerMasterViewModel;
+            } 
+        }
+        
+        private bool _enableOnViewReady = true;
+
+        public bool EnableOnViewReady
+        {
+            get { return _enableOnViewReady; }
+            set
+            {
+                _enableOnViewReady = value;
+            }
+        }
 
         public SellerViewModel(IMapper mapper,
                                IEventAggregator eventAggregator)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
-            _ = Task.Run(() => ActivateMasterView());
+            _ = Task.Run(ActivateMasterView);
         }
 
         public async Task ActivateMasterView()
         {
-            if (SellerMasterViewModel is null) SellerMasterViewModel = new SellerMasterViewModel(this);
-            await ActivateItemAsync(SellerMasterViewModel, new System.Threading.CancellationToken());
+            try
+            {
+                await ActivateItemAsync(SellerMasterViewModel, new System.Threading.CancellationToken());
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
+
 
         public async Task ActivateDetailViewForNew()
         {
@@ -75,7 +116,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
             SellerDetailViewModel instance = new SellerDetailViewModel(this);
             instance.Id = seller.Id;
-            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == seller.Entity.IdentificationType.Id);
+            instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "13");
             instance.IdentificationNumber = seller.Entity.IdentificationNumber;
             instance.FirstName = seller.Entity.FirstName;
             instance.MiddleName = seller.Entity.MiddleName;
@@ -86,7 +127,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             instance.CellPhone1 = seller.Entity.CellPhone1;
             instance.CellPhone2 = seller.Entity.CellPhone2;
             instance.Emails = seller.Entity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.Entity.Emails.Select(x => x.Clone()).ToList());
-            instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
+            instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
             instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.Entity.Department.Id);
             instance.SelectedCityId = seller.Entity.City.Id;
             instance.Address = seller.Entity.Address;

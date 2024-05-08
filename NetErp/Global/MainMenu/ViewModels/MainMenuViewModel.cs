@@ -13,6 +13,7 @@ using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
 using NetErp.Billing.Customers.ViewModels;
+using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Suppliers.Suppliers.ViewModels;
@@ -117,6 +118,26 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 SupplierViewModel instance = IoC.Get<SupplierViewModel>();
                 instance.DisplayName = "Administración de proveedores";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = DXMessageBox.Show(ex.Message, "Atencion !", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        public async Task OpenSeller()
+        {
+            try
+            {
+                SellerViewModel instance = IoC.Get<SellerViewModel>();
+                instance.DisplayName = "Administración de vendedores";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
