@@ -49,53 +49,77 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
+        private bool _enableOnViewReady = true;
+
+        public bool EnableOnViewReady
+        {
+            get { return _enableOnViewReady; }
+            set 
+            { 
+                _enableOnViewReady = value;
+            }
+        }
+
+
         public async Task ActivateDetailViewForEdit(CustomerGraphQLModel customer)
         {
             CustomerDetailViewModel instance = new(this);
             List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
 
-            instance.Id = customer.Id;
-            instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType);
-            instance.FirstName = customer.Entity.FirstName;
-            instance.MiddleName = customer.Entity.MiddleName;
-            instance.FirstLastName = customer.Entity.FirstLastName;
-            instance.MiddleLastName = customer.Entity.MiddleLastName;
-            instance.Phone1 = customer.Entity.Phone1;
-            instance.Phone2 = customer.Entity.Phone2;
-            instance.CellPhone1 = customer.Entity.CellPhone1;
-            instance.CellPhone2 = customer.Entity.CellPhone2;
-            instance.BusinessName = customer.Entity.BusinessName;
-            instance.Address = customer.Entity.Address;
-            instance.Emails = customer.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(customer.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
-            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.Entity.IdentificationType.Id);
-            instance.IdentificationNumber = customer.Entity.IdentificationNumber;
-            instance.VerificationDigit = customer.Entity.VerificationDigit;
-            instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == customer.Entity.Country.Id);
-            instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == customer.Entity.Department.Id);
-            instance.SelectedCityId = customer.Entity.City.Id;
-            foreach (RetentionTypeDTO retention in instance.RetentionTypes)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                bool exist = customer.Retentions is null ? false : customer.Retentions.Any(x => x.Id == retention.Id);
-                retentionList.Add(new RetentionTypeDTO()
+                instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType); 
+                instance.Id = customer.Id;
+                instance.FirstName = customer.Entity.FirstName;
+                instance.MiddleName = customer.Entity.MiddleName;
+                instance.FirstLastName = customer.Entity.FirstLastName;
+                instance.MiddleLastName = customer.Entity.MiddleLastName;
+                instance.Phone1 = customer.Entity.Phone1;
+                instance.Phone2 = customer.Entity.Phone2;
+                instance.CellPhone1 = customer.Entity.CellPhone1;
+                instance.CellPhone2 = customer.Entity.CellPhone2;
+                instance.BusinessName = customer.Entity.BusinessName;
+                instance.Address = customer.Entity.Address;
+                instance.Emails = customer.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(customer.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
+                instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.Entity.IdentificationType.Id);
+                instance.IdentificationNumber = customer.Entity.IdentificationNumber;
+                instance.VerificationDigit = customer.Entity.VerificationDigit;
+                instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == customer.Entity.Country.Id);
+                instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == customer.Entity.Department.Id);
+                instance.SelectedCityId = customer.Entity.City.Id;
+                foreach (RetentionTypeDTO retention in instance.RetentionTypes)
                 {
-                    Id = retention.Id,
-                    Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
-                    IsSelected = exist
-                });
-            }
-            instance.RetentionTypes = new System.Collections.ObjectModel.ObservableCollection<RetentionTypeDTO>(retentionList);
+                    bool exist = customer.Retentions is null ? false : customer.Retentions.Any(x => x.Id == retention.Id);
+                    retentionList.Add(new RetentionTypeDTO()
+                    {
+                        Id = retention.Id,
+                        Name = retention.Name,
+                        Margin = retention.Margin,
+                        InitialBase = retention.InitialBase,
+                        AccountingAccountSale = retention.AccountingAccountSale,
+                        AccountingAccountPurchase = retention.AccountingAccountPurchase,
+                        IsSelected = exist
+                    });
+                }
+                instance.RetentionTypes = new System.Collections.ObjectModel.ObservableCollection<RetentionTypeDTO>(retentionList);
+
+            });
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
         public async Task ActivateDetailViewForNew()
         {
-            CustomerDetailViewModel instance = new(this);
-            instance.CleanUpControls();
-            await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            try
+            {
+                CustomerDetailViewModel instance = new(this);
+                instance.CleanUpControlsForNew();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

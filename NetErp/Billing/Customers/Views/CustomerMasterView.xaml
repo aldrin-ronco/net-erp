@@ -53,12 +53,12 @@
             <dxr:RibbonPage Caption="General">
 
                 <dxr:RibbonPageGroup Caption="Acciones">
-                    <dxb:BarButtonItem Glyph="{dx:DXImage Image=New_16x16.png}" 
+                    <dxb:BarButtonItem     Glyph="{dx:DXImage Image=New_16x16.png}" 
                                            LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
                                            Content="Nuevo"
                                            RibbonStyle="Large"
                                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
-                                           Hint="Crear un nuevo porveedor">
+                                           Hint="Crear un nuevo proveedor">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=CreateCustomerCommand}" EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>

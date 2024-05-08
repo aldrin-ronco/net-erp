@@ -11,14 +11,14 @@ namespace Models.Global
     {
         public int Id { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public ObservableCollection<GlobalCostCenterDTO> CostCenters { get; set; } = new ObservableCollection<GlobalCostCenterDTO>();
+        public ObservableCollection<CostCenterDTO> CostCenters { get; set; } = new ObservableCollection<CostCenterDTO>();
         public override string ToString()
         {
             return Name;
         }
     }
 
-    public class GlobalCompanyLocationDTO : CompanyLocationGraphQLModel
+    public class CompanyLocationDTO : CompanyLocationGraphQLModel
     {
         public bool IsExpanded { get; set; } = false;
     }

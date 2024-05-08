@@ -40,9 +40,6 @@
         </Style>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
-    <dxmvvm:Interaction.Behaviors>
-        <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding InitializeCommand}"/>
-    </dxmvvm:Interaction.Behaviors>
     <Grid Width="auto" Height="auto">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -180,116 +177,6 @@
                     </dxg:GridColumn.CellTemplate>
                 </dxg:GridColumn>
             </dxg:GridControl>
-            
-            <!--<DataGrid 
-                Margin="0 8 0 0"
-                AutoGenerateColumns="False" 
-                VerticalGridLinesBrush="LightGray"
-                HorizontalGridLinesBrush="LightGray"
-                BorderThickness="0"
-                CanUserAddRows="False"
-                SelectionMode="Single"
-                SelectionUnit="FullRow"     
-                MinRowHeight="30"
-                AlternatingRowBackground="Beige"
-                Background="Transparent"
-                CanUserDeleteRows="False"
-                ItemsSource="{Binding Path=AccountingEntities, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                SelectedItem="{Binding Path=SelectedAccountingEntity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                <DataGrid.Columns>
-
-                    Check para eliminar fuentes contables -->
-            <!--
-                    <DataGridTemplateColumn Width="30">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox HorizontalAlignment="Center" 
-                                    VerticalAlignment="Center"
-                                    cal:Message.Attach="[Event Checked] = [Action OnChecked];[Event Unchecked] = [Action OnUnchecked]"
-                                    IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn> -->
-
-                    <!--N.I.T-->
-            <!--
-                    <DataGridTextColumn 
-                Header="NIT" 
-                Width="auto"
-                CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}"
-                Binding="{Binding IdentificationNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <DataGridTextColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
-
-                    --><!--Nombre de busqueda--><!--
-                    <DataGridTextColumn 
-                Header="Nombre del tercero" 
-                Width="*"
-                CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}"
-                Binding="{Binding SearchName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <DataGridTextColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
-
-                    --><!--Direccion--><!--
-                    <DataGridTextColumn 
-                Header="Dirección" 
-                Width="auto"
-                CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}"
-                Binding="{Binding Address, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <DataGridTextColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
-
-                    --><!--Informacion telefonica--><!--
-                    <DataGridTextColumn 
-                Header="Información telefónica" 
-                Width="auto"
-                CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}"
-                Binding="{Binding TelephonicInformation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <DataGridTextColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
-
-                    --><!--Establece si la fuente contable es de sistema o de usuario--><!--
-                    <DataGridCheckBoxColumn 
-                Header="Digito de Verificación" 
-                Width="auto"
-                CellStyle="{StaticResource HorizontalAligment_Center_VerticalAligment_Center}"
-                Binding="{Binding HasVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                <DataGridCheckBoxColumn.HeaderStyle>
-                    <Style TargetType="{x:Type DataGridColumnHeader}">
-                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                    </Style>
-                </DataGridCheckBoxColumn.HeaderStyle>
-            </DataGridCheckBoxColumn>
-
-                    <DataGridTemplateColumn Width="30">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="..." 
-                                FontSize="15"
-                                Width="20" Height="20" 
-                                cal:Message.Attach="[Event Click] = [Action EditAccountingEntity]"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-
-                </DataGrid.Columns>
-            </DataGrid>-->
         </busyIndicator:BusyMask>
         <!--Paginacion-->
 

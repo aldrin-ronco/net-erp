@@ -594,19 +594,85 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public async Task Save()
         {
+            string queryForPage;
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
                 CustomerGraphQLModel result = await ExecuteSave();
+                queryForPage = @"
+                query ($filter: CustomerFilterInput) {
+                  PageResponse: customerPage(filter: $filter) {
+                    count
+                    rows {
+                      id
+                      creditTerm
+                      isTaxFree
+                      isActive
+                      blockingReason
+                      retainsAnyBasis
+                      sellerId      
+                      entity {
+                        id
+                        identificationNumber
+                        verificationDigit
+                        captureType
+                        searchName
+                        firstName
+                        middleName
+                        firstLastName
+                        middleLastName
+                        businessName
+                        phone1
+                        phone2
+                        cellPhone1
+                        cellPhone2
+                        telephonicInformation
+                        address
+                        identificationType {
+                            id
+                            name
+                        }
+                        country {
+                          id
+                          name
+                        }
+                        department {
+                          id
+                          name
+                        }
+                        city {
+                          id
+                          name
+                        }
+                        emails {
+                          id
+                          name
+                          email
+                          isCorporate
+                          sendElectronicInvoice
+                        }
+                      }
+                      retentions {
+                        id
+                        name
+                        margin
+                      }
+                    }
+                  }
+
+                }";
+
+                var pageResult = await CustomerService.GetPage(queryForPage, new object { });
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result) });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result), Customers = pageResult.PageResponse.Rows });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result) });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result) , Customers = pageResult.PageResponse.Rows });
                 }
+                Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -620,19 +686,21 @@ namespace NetErp.Billing.Customers.ViewModels
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
-            //finally
-            //{
-            //    IsBusy = false;
-            //}
+            finally
+            {
+                IsBusy = false;
+            }
         }
+
 
         public async Task<CustomerGraphQLModel> ExecuteSave()
         {
-            string query;
+            string queryForCreateOrUpdate;
+
 
             try
             {
-                List<object> retentions = new List<object>();
+                List<int> retentions = new List<int>();
                 List<object> emailList = new List<object>();
                 List<string> phones = new List<string>();
 
@@ -654,7 +722,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     foreach (RetentionTypeDTO retention in RetentionTypes)
                     {
                         if (retention.IsSelected)
-                            retentions.Add(new { RetentionTypeId = retention.Id });
+                            retentions.Add(retention.Id);
                     }
                 }
 
@@ -711,12 +779,12 @@ namespace NetErp.Billing.Customers.ViewModels
                 if (retentions.Count == 0) variables.Data.Retentions = new List<object>();
                 if (retentions.Count > 0) 
                 {
-                    variables.Data.Retentions = new List<object>();
+                    variables.Data.Retentions = new List<int>();
                     variables.Data.Retentions = retentions; 
                 }
 
                 // Query
-                query = IsNewRecord
+                queryForCreateOrUpdate = IsNewRecord
                     ? @"
                     mutation ($data: CreateCustomerDataInput!) {
                       CreateResponse: createCustomer(data: $data) {
@@ -848,7 +916,8 @@ namespace NetErp.Billing.Customers.ViewModels
                       }
                     }";
 
-                dynamic result = IsNewRecord ? await CustomerService.Create(query, variables) : await CustomerService.Update(query, variables);
+                
+                dynamic result = IsNewRecord ? await CustomerService.Create(queryForCreateOrUpdate, variables) : await CustomerService.Update(queryForCreateOrUpdate, variables);
                 return (CustomerGraphQLModel)result;
             }
             catch (Exception)
@@ -856,15 +925,6 @@ namespace NetErp.Billing.Customers.ViewModels
                 throw;
             }
         }
-
-        //protected override void OnViewReady(object view)
-        //{
-        //    base.OnViewReady(view);
-        //    ValidateProperties();
-        //    _ = IsNewRecord
-        //        ? this.SetFocus(nameof(IdentificationNumber))
-        //        : CaptureInfoAsPN ? this.SetFocus(nameof(FirstName)) : this.SetFocus(nameof(BusinessName));
-        //}
 
         protected override void OnViewAttached(object view, object context)
         {
@@ -985,9 +1045,49 @@ namespace NetErp.Billing.Customers.ViewModels
         public void GoBack(object p)
         {
             _ = Task.Run(() => Context.ActivateMasterView());
+            CleanUpControls();
         }
 
         public void CleanUpControls()
+        {
+            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+            SelectedRegime = 'R';
+            IdentificationNumber = string.Empty;
+            VerificationDigit = string.Empty;
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.Undefined;
+            BusinessName = string.Empty;
+            FirstName = string.Empty;
+            MiddleName = string.Empty;
+            FirstLastName = string.Empty;
+            MiddleLastName = string.Empty;
+            Phone1 = string.Empty;
+            Phone2 = string.Empty;
+            CellPhone1 = string.Empty;
+            CellPhone2 = string.Empty;
+            Address = string.Empty;
+            Emails = new ObservableCollection<EmailDTO>();
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+            foreach (RetentionTypeDTO retention in RetentionTypes)
+            {
+                retentionList.Add(new RetentionTypeDTO()
+                {
+                    Id = retention.Id,
+                    Name = retention.Name,
+                    Margin = retention.Margin,
+                    InitialBase = retention.InitialBase,
+                    AccountingAccountSale = retention.AccountingAccountSale,
+                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
+                    IsSelected = false
+                });
+            }
+            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
+        }
+
+        public void CleanUpControlsForNew()
         {
             List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion

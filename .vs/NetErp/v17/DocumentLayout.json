@@ -1,20 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellerviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\customers\\viewmodels\\customermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\viewmodels\\customermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -22,50 +9,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": -1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "SellerViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerViewModel.cs",
-              "ViewState": "AQIAADsAAAAAAAAAAAAswFwAAAA9AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-27T17:45:15.332Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "SellerMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "ViewState": "AQIAALUAAAAAAAAAAAAswM4AAAAvAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-27T16:51:55.597Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "CustomerMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Customers\\ViewModels\\CustomerMasterViewModel.cs",
-              "ViewState": "AQIAAAoBAAAAAAAAAAAQwCIBAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-04-27T16:51:53.467Z",
-              "EditorCaption": ""
             }
           ]
         }

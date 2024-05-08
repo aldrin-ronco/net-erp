@@ -94,7 +94,7 @@
                              ItemsSource="{Binding Path=Suppliers, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                              SelectedItem="{Binding Path=SelectedSupplier, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl.View>
-                        <dxg:TableView ShowSearchPanelMode="Never" AllowCascadeUpdate="True" ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                        <dxg:TableView EnableSelectedRowAppearance="True" AllowCascadeUpdate="False" ShowGroupPanel="False" AlternateRowBackground="Beige"/>
                     </dxg:GridControl.View>
                     <dxg:GridColumn Header="NIT" Binding="{Binding Entity.IdentificationNumberWithVerificationDigit, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
                     <dxg:GridColumn Header="Nombre del tercero" Binding="{Binding Path=Entity.SearchName, Mode=OneWay}" AllowBestFit="true" Width="*"/>

@@ -19,6 +19,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using DevExpress.Xpf.Core;
+using Services.Billing.DAL.PostgreSQL;
+using Common.Interfaces;
+using Microsoft.VisualStudio.Threading;
+using System.Windows.Threading;
+using DevExpress.Mvvm;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
@@ -37,10 +42,31 @@ namespace NetErp.Billing.Sellers.ViewModels
                 return _deleteMailCommand;
             }
         }
+        private ICommand _goBackCommand;
+        public ICommand GoBackCommand
+        {
+            get
+            {
+                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
+                return _goBackCommand;
+            }
+        }
+
+        private ICommand _saveCommand;
+        public ICommand SaveCommand
+        {
+            get
+            {
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                return _saveCommand;
+            }
+        }
 
         #endregion
 
         #region Properties
+
+        public readonly IGenericDataAccess<SellerGraphQLModel> SellerService = IoC.Get<IGenericDataAccess<SellerGraphQLModel>>();
 
         Dictionary<string, List<string>> _errors;
 
@@ -377,6 +403,19 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
+        private int _selectedIndexPage = 0;
+        public int SelectedIndexPage
+        {
+            get => _selectedIndexPage;
+            set
+            {
+                if (_selectedIndexPage != value)
+                {
+                    _selectedIndexPage = value;
+                    NotifyOfPropertyChange(nameof(SelectedIndexPage));
+                }
+            }
+        }
 
         private BooksDictionaries.CaptureTypeEnum _selectedCaptureType;
         public BooksDictionaries.CaptureTypeEnum SelectedCaptureType
@@ -467,6 +506,11 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Methods
 
+        public void GoBack(object p)
+        {
+            _ = Task.Run(() => Context.ActivateMasterView());
+        }
+
         public void EndRowEditing()
         {
             try
@@ -488,7 +532,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 List<CostCenterDTO> costCenters = new List<CostCenterDTO>();
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-                SelectedIdentificationType = Context.IdentificationTypes.First(); // Traigo solo el primero debido a que solo traigo el tipo de documento 13 que es la cedula
                 IdentificationNumber = string.Empty;
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 FirstName = string.Empty;
@@ -545,31 +588,105 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public async Task Save()
         {
+            string queryForPage;
             try
             {
                 IsBusy = true;
                 Refresh();
                 SellerGraphQLModel result = await ExecuteSave();
+                queryForPage = @"
+                query ($filter: SellerFilterInput){
+                  PageResponse: sellerPage(filter: $filter) {
+                    count
+                    rows {
+                      id
+                      isActive
+                      entity {
+                        id
+                        verificationDigit
+                        identificationNumber
+                        firstName
+                        middleName
+                        firstLastName
+                        middleLastName
+                        searchName
+                        phone1
+                        phone2
+                        cellPhone1
+                        cellPhone2
+                        address
+                        telephonicInformation
+                        country {
+                          id
+                        }
+                        department {
+                          id
+                        }
+                        city {
+                          id
+                        }
+                        emails {
+                          id
+                          name
+                          email
+                          sendElectronicInvoice
+                        }
+                      }
+                      costCenters {
+                        id
+                        name
+                      }
+                    }
+                  }
+                  identificationTypes {
+                    id
+                    code
+                    name
+                    hasVerificationDigit
+                    minimumDocumentLength
+                  }
+                  countries{
+                    id
+                    code
+                    name
+                    departments {
+                      id
+                      code
+                      name
+                      cities {
+                        id
+                        code
+                        name
+                      }
+                    }
+                  }
+                  costCenters{
+                    id
+                    name
+                  }
+                }";
+                var pageResult = await SellerService.GetPage(queryForPage, new object { });
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = result });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = result });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows });
                 }
+                Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{exGraphQL.Message}.\r\n{graphQLError.Errors[0].Extensions.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
             }
             finally
             {
@@ -583,7 +700,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             string query;
             try
             {
-                List<ExpandoObject> costCenterSelection = new List<ExpandoObject>();
+                List<int> costCenterSelection = new List<int>();
                 List<object> emailList = new List<object>();
                 List<string> phones = new List<string>();
 
@@ -596,12 +713,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        if (!email.Saved && !email.Deleted)
-                            action = "I";
-                        else if (email.Saved && email.Edited && !email.Deleted)
-                            action = "U";
-                        else if (email.Saved && email.Deleted) action = "D";
-                        if (!string.IsNullOrEmpty(action)) emailList.Add(new { email.Id, email.Name, email.Email, email.SendElectronicInvoice, Action = action });
+                        emailList.Add(new { email.Name, email.Email, email.SendElectronicInvoice });
                     }
                 }
 
@@ -611,17 +723,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     {
                         if (costCenter.IsSelected)
                         {
-                            dynamic costCenterItem = new ExpandoObject();
-                            costCenterItem.Id = costCenter.Id;
-                            costCenterSelection.Add(costCenterItem);
+                            costCenterSelection.Add(costCenter.Id);
                         }
-                    }
-                    else
-                    {
-                        dynamic costCenterItem = new ExpandoObject();
-                        costCenterItem.Id = costCenter.Id;
-                        costCenterItem.IsSelected = costCenter.IsSelected;
-                        costCenterSelection.Add(costCenterItem);
                     }
                 }
 
@@ -631,7 +734,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 // Structure
                 variables.Data = new ExpandoObject();
                 variables.Data.Entity = new ExpandoObject();
-                variables.Data.Seller = new ExpandoObject();
+
                 // Entity
                 variables.Data.Entity.IdentificationNumber = IdentificationNumber;
                 variables.Data.Entity.VerificationDigit = "";
@@ -657,13 +760,25 @@ namespace NetErp.Billing.Sellers.ViewModels
                 variables.Data.Entity.DepartmentId = SelectedDepartment.Id;
                 variables.Data.Entity.CityId = SelectedCityId;
                 // Seller
-                variables.Data.Seller.IsActive = true;
-                variables.Data.Seller.CostCenters = costCenterSelection;
+                variables.Data.IsActive = true;
+                variables.Data.CostCenters = costCenterSelection;
                 // Emails
-                if (emailList.Count > 0) variables.Data.Emails = emailList;
+                if (emailList.Count == 0) variables.Data.Entity.Emails = new List<object>();
+                if (emailList.Count > 0)
+                {
+                    variables.Data.Entity.Emails = new List<object>();
+                    variables.Data.Entity.Emails = emailList;
+                }
+
+                if(costCenterSelection.Count == 0) variables.Data.CostCenters = new List<int>();
+                if(costCenterSelection.Count > 0)
+                {
+                    variables.Data.CostCenters = new List<int>();
+                    variables.Data.CostCenters = costCenterSelection;
+                }
 
                 query = IsNewRecord ?
-                    @"mutation($data:CreateSellerInput!) {
+                    @"mutation($data:CreateSellerDataInput!) {
                       createResponse: createSeller(data:$data) {
                         id
                         isActive
@@ -704,7 +819,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                       }
                     }" :
-                    @"mutation ($data: UpdateSellerInput!, $id: Int!) {
+                    @"mutation ($data: UpdateSellerDataInput!, $id: Int!) {
                         updateResponse: updateSeller(data: $data, id: $id) {
                         id
                         isActive
@@ -746,7 +861,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                     }";
 
-                dynamic result = IsNewRecord ? await Context.BillingSeller.Create(query, variables) : await Context.BillingSeller.Update(query, variables);
+                dynamic result = IsNewRecord ? await SellerService.Create(query, variables) : await SellerService.Update(query, variables);
                 return (SellerGraphQLModel)result;
             }
             catch (Exception)
@@ -776,10 +891,13 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                if (Xceed.Wpf.Toolkit.MessageBox.Show($"¿ Confirma que desea eliminar el email : {SelectedEmail.Email} ?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
-                foreach (EmailDTO item in Emails)
-                    if (item.UUID == SelectedEmail.UUID) item.Deleted = true;
-                NotifyOfPropertyChange(nameof(FilteredEmails));
+                if (DXMessageBox.Show($"¿ Confirma que desea eliminar el email : {SelectedEmail.Email} ?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                if (SelectedEmail != null)
+                {
+                    EmailDTO? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
+                    if (emailToDelete is null) return;
+                    Emails.Remove(emailToDelete);
+                }
             }
             catch (Exception ex)
             {
@@ -791,20 +909,28 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
+            joinable.Run(async () => await Initialize());
         }
 
-        public async Task GoBack()
+        public async Task Initialize()
         {
-            await Context.ActivateMasterView();
+            Countries = Context.Countries;
+            SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == "13"); // 13 es CC
         }
 
-        protected override void OnViewReady(object view)
+        protected override void OnViewAttached(object view, object context)
         {
-            base.OnViewReady(view);
+            base.OnViewAttached(view, context);
             ValidateProperties();
-            _ = IsNewRecord ? this.SetFocus(nameof(IdentificationNumber)) : this.SetFocus(nameof(FirstName));
+            _ = Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                SelectedIndexPage = 0; // Selecciona el primer TAB page
+                _ = IsNewRecord
+                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
+                      : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render);
+            });
         }
-
         #endregion
 
         #region Validaciones
@@ -847,6 +973,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         private void ValidateProperty(string propertyName, string value)
         {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
             try
             {
                 ClearErrors(propertyName);
@@ -900,6 +1027,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                 ValidateProperty(nameof(FirstLastName), FirstLastName);
                 ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
             }
+        }
+        public bool CanGoBack(object p)
+        {
+            return !IsBusy;
         }
 
         #endregion

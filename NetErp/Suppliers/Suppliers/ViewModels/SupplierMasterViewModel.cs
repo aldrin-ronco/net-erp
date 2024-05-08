@@ -18,6 +18,7 @@ using Common.Extensions;
 using NetErp.Helpers;
 using DevExpress.Xpf.Core;
 using System.Dynamic;
+using Models.Billing;
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
@@ -411,13 +412,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.Run(() => Application.Current.Dispatcher.Invoke(() => Suppliers.Add(message.CreatedSupplier)));
+            return Task.FromResult(Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(message.Suppliers)));
         }
 
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
-            PageIndex = 1;
-            return LoadSuppliers();
+            //PageIndex = 1;
+            //return LoadSuppliers();
+            return Task.FromResult(Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(message.Suppliers)));
         }
 
         public Task HandleAsync(SupplierDeleteMessage message, CancellationToken cancellationToken)
@@ -429,6 +431,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         protected override void OnViewReady(object view)
         {
+            if (Context.EnableOnViewReady is false) return;
             base.OnViewReady(view);
             _ = Task.Run(() => LoadSuppliers());
             _ = this.SetFocus(nameof(FilterSearch));

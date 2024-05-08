@@ -41,11 +41,14 @@ namespace Models.Billing
     public class CustomerCreateMessage
     {
         public CustomerGraphQLModel CreatedCustomer { get; set; }
+
+        public ObservableCollection<CustomerGraphQLModel> Customers { get; set; }
     }
 
     public class CustomerUpdateMessage
     {
         public CustomerDTO UpdatedCustomer { get; set; }
+        public ObservableCollection<CustomerGraphQLModel> Customers { get; set; }
     }
 
     public class CustomerDeleteMessage
