@@ -169,3 +169,14 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Selle
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerDetailView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerMasterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DotNetKit.Wpf.AutoCompleteComboBox.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.baml

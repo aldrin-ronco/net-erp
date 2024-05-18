@@ -204,6 +204,14 @@
           }
         }
       },
+      "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+        "runtime": {
+          "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll": {
+            "assemblyVersion": "1.6.0.0",
+            "fileVersion": "1.6.0.0"
+          }
+        }
+      },
       "Extended.Wpf.Toolkit/4.6.0": {
         "runtime": {
           "lib/net5.0/Xceed.Wpf.AvalonDock.NET5.dll": {
@@ -963,6 +971,13 @@
       "sha512": "sha512-y6KY9LldFv1MfIP7HWWl1TaH9bwfF6/tBbm/sWxIRao38BKTSvnEWz3oj6vlRpj9teni2X0vgzY2QK9VGcEYBQ==",
       "path": "devexpress.wpf.themes.office2019colorful/23.2.3",
       "hashPath": "devexpress.wpf.themes.office2019colorful.23.2.3.nupkg.sha512"
+    },
+    "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-n9NCG0uQWE710nKaskwzgz9cvoxD50M2iQtH6ktIehlR9u3IHrXJl0DWBurB9j3dDUoKk76riJ+KHcUEocvACw==",
+      "path": "dotnetkit.wpf.autocompletecombobox/1.6.0",
+      "hashPath": "dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512"
     },
     "Extended.Wpf.Toolkit/4.6.0": {
       "type": "package",

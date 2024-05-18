@@ -16,6 +16,7 @@
           "DevExpress.Wpf.Controls": "23.2.3",
           "DevExpress.Wpf.Core": "23.2.3",
           "Dictionaries": "1.0.0",
+          "DotNetKit.Wpf.AutoCompleteComboBox": "1.6.0",
           "Extended.Wpf.Toolkit": "4.6.0",
           "Extensions": "1.0.0",
           "Microsoft.VisualStudio.Threading": "17.9.28",
@@ -226,6 +227,14 @@
           "lib/net6.0-windows/DevExpress.Xpf.Themes.Office2019Colorful.v23.2.dll": {
             "assemblyVersion": "23.2.3.0",
             "fileVersion": "23.2.3.0"
+          }
+        }
+      },
+      "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+        "runtime": {
+          "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll": {
+            "assemblyVersion": "1.6.0.0",
+            "fileVersion": "1.6.0.0"
           }
         }
       },
@@ -772,6 +781,7 @@
       },
       "Models/1.0.0": {
         "dependencies": {
+          "Common": "1.0.0",
           "Dictionaries": "1.0.0"
         },
         "runtime": {
@@ -917,6 +927,13 @@
       "sha512": "sha512-y6KY9LldFv1MfIP7HWWl1TaH9bwfF6/tBbm/sWxIRao38BKTSvnEWz3oj6vlRpj9teni2X0vgzY2QK9VGcEYBQ==",
       "path": "devexpress.wpf.themes.office2019colorful/23.2.3",
       "hashPath": "devexpress.wpf.themes.office2019colorful.23.2.3.nupkg.sha512"
+    },
+    "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-n9NCG0uQWE710nKaskwzgz9cvoxD50M2iQtH6ktIehlR9u3IHrXJl0DWBurB9j3dDUoKk76riJ+KHcUEocvACw==",
+      "path": "dotnetkit.wpf.autocompletecombobox/1.6.0",
+      "hashPath": "dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512"
     },
     "Extended.Wpf.Toolkit/4.6.0": {
       "type": "package",

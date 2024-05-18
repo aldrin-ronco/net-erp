@@ -736,15 +736,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
         }
 
-        public async Task Save()
+        public async Task<IGenericDataAccess<SupplierGraphQLModel>.PageResponseType> LoadPage()
         {
             string queryForPage;
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                SupplierGraphQLModel result = await ExecuteSave();
-                queryForPage = @"
+            queryForPage = @"
                 query ($filter: SupplierFilterInput) {
                   pageResponse : supplierPage(filter: $filter) {
                     count
@@ -812,7 +807,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                   }
                 }";
 
-                var pageResult = await SupplierService.GetPage(queryForPage, new object { });
+            return await SupplierService.GetPage(queryForPage, new object { });
+        }
+        public async Task Save()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                SupplierGraphQLModel result = await ExecuteSave();
+                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) , Suppliers = pageResult.PageResponse.Rows});

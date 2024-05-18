@@ -12,12 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\Models\Models.csproj" />
+    <Folder Include="Global\DAL\SQLServer\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Global\DAL\SQLServer\" />
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
   </ItemGroup>
 
 </Project>

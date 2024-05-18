@@ -1,0 +1,12 @@
+C:\Users\sebas\source\repos\NetErp\Dictionaries\bin\Debug\net8.0-windows\Dictionaries.deps.json
+C:\Users\sebas\source\repos\NetErp\Dictionaries\bin\Debug\net8.0-windows\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Dictionaries\bin\Debug\net8.0-windows\Dictionaries.pdb
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.AssemblyInfoInputs.cache
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.AssemblyInfo.cs
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.csproj.CoreCompileInputs.cache
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.sourcelink.json
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\refint\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.pdb
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\ref\Dictionaries.dll

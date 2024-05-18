@@ -279,6 +279,22 @@
           "lib/net6.0-windows/DevExpress.Xpf.Themes.Office2019Colorful.v23.2.dll": {}
         }
       },
+      "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.WindowsDesktop.App.WPF"
+        ]
+      },
       "Extended.Wpf.Toolkit/4.6.0": {
         "type": "package",
         "compile": {
@@ -1228,6 +1244,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "Common": "1.0.0",
           "Dictionaries": "1.0.0"
         },
         "compile": {
@@ -1567,6 +1584,22 @@
         "devexpress.wpf.themes.office2019colorful.nuspec",
         "lib/net452/DevExpress.Xpf.Themes.Office2019Colorful.v23.2.dll",
         "lib/net6.0-windows/DevExpress.Xpf.Themes.Office2019Colorful.v23.2.dll"
+      ]
+    },
+    "DotNetKit.Wpf.AutoCompleteComboBox/1.6.0": {
+      "sha512": "n9NCG0uQWE710nKaskwzgz9cvoxD50M2iQtH6ktIehlR9u3IHrXJl0DWBurB9j3dDUoKk76riJ+KHcUEocvACw==",
+      "type": "package",
+      "path": "dotnetkit.wpf.autocompletecombobox/1.6.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512",
+        "dotnetkit.wpf.autocompletecombobox.nuspec",
+        "lib/net462/DotNetKit.Wpf.AutoCompleteComboBox.dll",
+        "lib/net462/DotNetKit.Wpf.AutoCompleteComboBox.xml",
+        "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll",
+        "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.xml"
       ]
     },
     "Extended.Wpf.Toolkit/4.6.0": {
@@ -3471,6 +3504,7 @@
       "DevExpress.Wpf.Controls >= 23.2.3",
       "DevExpress.Wpf.Core >= 23.2.3",
       "Dictionaries >= 1.0.0",
+      "DotNetKit.Wpf.AutoCompleteComboBox >= 1.6.0",
       "Extended.Wpf.Toolkit >= 4.6.0",
       "Extensions >= 1.0.0",
       "Microsoft.VisualStudio.Threading >= 17.9.28",
@@ -3569,6 +3603,10 @@
           "DevExpress.Wpf.Core": {
             "target": "Package",
             "version": "[23.2.3, )"
+          },
+          "DotNetKit.Wpf.AutoCompleteComboBox": {
+            "target": "Package",
+            "version": "[1.6.0, )"
           },
           "Extended.Wpf.Toolkit": {
             "target": "Package",

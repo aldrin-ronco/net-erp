@@ -16,10 +16,9 @@
              xmlns:uc="clr-namespace:NetErp.UserControls"             
              xmlns:local="clr-namespace:NetErp.Billing.Sellers.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" d:Background="White">
+             d:DesignHeight="450" d:DesignWidth="800" Background="White">
         <Grid Width="auto" Height="auto" Margin="4">
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
                 <!--ToolBarTray-->
                 <RowDefinition Height="auto"/>
                 <!--CostCenter Selection-->
@@ -28,11 +27,10 @@
                 <RowDefinition Height="auto"/>
                 <!--Filtros-->
                 <RowDefinition Height="auto"/>
-                <!--Buscar-->
-                <RowDefinition Height="*"/>
                 <!--DataGridView-->
+                <RowDefinition Height="*"/>
+                <!--Pagination-->
                 <RowDefinition Height="40"/>
-                <!--StatusBar-->
             </Grid.RowDefinitions>
 
             <!--Toolbar-->
@@ -91,7 +89,7 @@
             <!--Filtros-->
             <!--Text de Busqueda-->
             <StackPanel Grid.Row="3" Orientation="Vertical">
-                <TextBlock Text="¿ Que desea buscar ?" VerticalAlignment="Center" Margin="0 4 0 5" FontSize="13"/>
+                <TextBlock Text="¿Qué desea buscar?" VerticalAlignment="Center" Margin="0 4 0 5" FontSize="13"/>
                 <xctk:WatermarkTextBox
             KeepWatermarkOnGotFocus="True"                                       
             ToolTip="Escribe aqui para buscar"  
@@ -112,7 +110,7 @@
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
-                            Grid.Row="5">
+                            Grid.Row="4">
             <dxg:GridControl 
                 Margin="0 8 0 0"
                 EnableSmartColumnsGeneration="True"
@@ -171,8 +169,9 @@
             </dxg:GridControl>
         </busyIndicator:BusyMask>
         <!--Paginacion-->
-            <uc:GridPaging Grid.Row="6" Grid.Column="0" 
-                       HorizontalAlignment="Stretch" 
+            <uc:GridPaging Grid.Row="5" Grid.Column="0" 
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment = "Center"
                        ChangedIndexCommand="{Binding PaginationCommand}" 
                        PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 

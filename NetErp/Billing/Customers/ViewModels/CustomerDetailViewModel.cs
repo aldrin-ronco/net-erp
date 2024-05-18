@@ -592,15 +592,10 @@ namespace NetErp.Billing.Customers.ViewModels
 
         #region Methods
 
-        public async Task Save()
+        public async Task<IGenericDataAccess<CustomerGraphQLModel>.PageResponseType> LoadPage()
         {
             string queryForPage;
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                CustomerGraphQLModel result = await ExecuteSave();
-                queryForPage = @"
+            queryForPage = @"
                 query ($filter: CustomerFilterInput) {
                   PageResponse: customerPage(filter: $filter) {
                     count
@@ -663,7 +658,16 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 }";
 
-                var pageResult = await CustomerService.GetPage(queryForPage, new object { });
+            return await CustomerService.GetPage(queryForPage, new object { });
+        }
+        public async Task Save()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                CustomerGraphQLModel result = await ExecuteSave();
+                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result), Customers = pageResult.PageResponse.Rows });

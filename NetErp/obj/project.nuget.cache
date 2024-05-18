@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "ZZIFfs4nlxztOfKuI8EGZRme6bIvZE5BNiHzFv8/ltKK5MJNq99w7nN0Q2LR9XOcXH1H8DueIqT6/1ULsg3oQQ==",
+  "dgSpecHash": "9hEbQnGae2We1eKGNIo0DyDxka6kRrtcrlt0Rc7TM2KaxnP2C4RAjgcodSwT6930G/ERCn11mpRnAQ2Cxkqb6Q==",
   "success": true,
   "projectFilePath": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\NetErp.csproj",
   "expectedPackageFiles": [
@@ -19,6 +19,7 @@
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.core\\23.2.3\\devexpress.wpf.core.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.grid.core\\23.2.3\\devexpress.wpf.grid.core.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.themes.office2019colorful\\23.2.3\\devexpress.wpf.themes.office2019colorful.23.2.3.nupkg.sha512",
+    "C:\\Users\\sebas\\.nuget\\packages\\dotnetkit.wpf.autocompletecombobox\\1.6.0\\dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\extended.wpf.toolkit\\4.6.0\\extended.wpf.toolkit.4.6.0.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\graphql.client\\6.0.2\\graphql.client.6.0.2.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\graphql.client.abstractions\\6.0.2\\graphql.client.abstractions.6.0.2.nupkg.sha512",

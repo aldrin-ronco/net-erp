@@ -32,12 +32,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Menu Grid.Row="0">
-            <MenuItem Header="Opciones">
+            <MenuItem Header="Contabilidad">
                 <MenuItem Header="Plan único de cuentas" x:Name="OpenAccountingAccounts"/>
                 <MenuItem Header="Adminitración de terceros" x:Name="OpenAccountingEntities"></MenuItem>
                 <MenuItem Header="Administración de clientes" x:Name="OpenCustomer"></MenuItem>
                 <MenuItem Header="Administración de proveedores" x:Name="OpenSupplier"></MenuItem>
                 <MenuItem Header="Administración de vendedores" x:Name="OpenSeller"></MenuItem>
+                <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"
