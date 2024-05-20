@@ -586,15 +586,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task Save()
+        public async Task<IGenericDataAccess<SellerGraphQLModel>.PageResponseType> LoadPage()
         {
             string queryForPage;
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                SellerGraphQLModel result = await ExecuteSave();
-                queryForPage = @"
+            queryForPage = @"
                 query ($filter: SellerFilterInput){
                   PageResponse: sellerPage(filter: $filter) {
                     count
@@ -665,7 +660,17 @@ namespace NetErp.Billing.Sellers.ViewModels
                     name
                   }
                 }";
-                var pageResult = await SellerService.GetPage(queryForPage, new object { });
+            return await SellerService.GetPage(queryForPage, new object { });
+        }
+
+        public async Task Save()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                SellerGraphQLModel result = await ExecuteSave();
+                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows});

@@ -19,6 +19,9 @@
     <Folder Include="Books\AccountingAccounts\Views\" />
     <Folder Include="Books\AccountingAccounts\ViewModels\" />
     <Folder Include="Books\AccountingEntities\Views\" />
+    <Folder Include="Books\AccountingSources\Views\" />
+    <Folder Include="Books\Reports\AuxiliaryBook\Views\" />
+    <Folder Include="Books\Reports\AuxiliaryBook\ViewModels\" />
     <Folder Include="Inventory\" />
     <Folder Include="Suppliers\Suppliers\" />
     <Folder Include="Suppliers\Suppliers\Views\" />
@@ -39,13 +42,14 @@
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
+    <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="1.6.0" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.9.28" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
     <PackageReference Include="Ninject" Version="3.3.6" />
   </ItemGroup>
 
-	<ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
     <ProjectReference Include="..\DTOLibrary\DTOLibrary.csproj" />

@@ -417,8 +417,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
-            //PageIndex = 1;
-            //return LoadSuppliers();
             return Task.FromResult(Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(message.Suppliers)));
         }
 

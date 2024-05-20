@@ -1,4 +1,4 @@
-﻿
+﻿C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 FC:\Users\sebas\source\repos\NetErp\NetErp\App.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Billing\Customers\Views\CustomerDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Billing\Customers\Views\CustomerMasterView.xaml;;
@@ -12,6 +12,11 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\Views\Accoun
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceDetailView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Dictionaries\Views.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\Views\MainMenuView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Shell\Views\ShellView.xaml;;

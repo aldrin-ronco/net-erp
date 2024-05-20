@@ -603,6 +603,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "Common": "1.0.0",
           "Dictionaries": "1.0.0"
         },
         "compile": {

@@ -175,7 +175,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: $"{this.GetType().Name}.{(currentMethod is null ? "EditSeller" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {
@@ -548,21 +548,16 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             if (Context.EnableOnViewReady is false) return;
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadSellers());
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
         public Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
         {
-            //PageIndex = 1;
-            //return LoadSellers();
             return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
         }
 
         public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
         {
-            //PageIndex = 1;
-            //return LoadSellers();
             return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
         }
 

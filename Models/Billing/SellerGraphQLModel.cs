@@ -1,4 +1,5 @@
-﻿using Models.Books;
+﻿using Common.Interfaces;
+using Models.Books;
 using Models.Global;
 using System;
 using System.Collections.Generic;
@@ -46,13 +47,6 @@ namespace Models.Billing
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
         public ObservableCollection<CountryGraphQLModel> Countries { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public SellerPage SellerPage { get; set; }
-    }
-
-    public class SellerPage
-    {
-        public int Count { get; set; }
-
-        public ObservableCollection<SellerGraphQLModel> Rows { get; set; }
+        public IGenericDataAccess<SellerGraphQLModel>.PageType SellerPage { get; set; }
     }
 }

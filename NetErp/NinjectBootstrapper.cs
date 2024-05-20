@@ -63,6 +63,9 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<CustomerGraphQLModel>>().To<CustomerService>().InSingletonScope();  
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingSourceGraphQLModel>>().To<AccountingSourceService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AuxiliaryBookGraphQLModel>>().To<AuxiliaryBookService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -134,6 +137,7 @@ namespace NetErp
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();
                 _ = cfg.CreateMap<SellerGraphQLModel, SellerDTO>();
+                _ = cfg.CreateMap<AccountingSourceGraphQLModel, AccountingSourceDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

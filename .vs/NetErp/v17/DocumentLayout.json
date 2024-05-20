@@ -1,7 +1,28 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\auxiliarybook\\views\\auxiliarybookreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\auxiliarybook\\views\\auxiliarybookreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingsources\\viewmodels\\accountingsourcemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingsources\\viewmodels\\accountingsourcemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|c:\\users\\sebas\\source\\repos\\neterp\\models\\books\\accountingpresentationgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|solutionrelative:models\\books\\accountingpresentationgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,11 +30,75 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuxiliaryBookReportView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-05-18T17:00:18.884Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AccountingSourceMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingSources\\ViewModels\\AccountingSourceMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingSources\\ViewModels\\AccountingSourceMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingSources\\ViewModels\\AccountingSourceMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\AccountingSources\\ViewModels\\AccountingSourceMasterViewModel.cs",
+              "ViewState": "AQIAACQBAAAAAAAAAAAQwEkBAAApAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-18T16:54:07.925Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AccountingPresentationGraphQLModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\Models\\Books\\AccountingPresentationGraphQLModel.cs",
+              "RelativeDocumentMoniker": "Models\\Books\\AccountingPresentationGraphQLModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\Models\\Books\\AccountingPresentationGraphQLModel.cs",
+              "RelativeToolTip": "Models\\Books\\AccountingPresentationGraphQLModel.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAApAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-18T14:48:41.087Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AuxiliaryBookViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookViewModel.cs",
+              "ViewState": "AQIAAFEAAAAAAAAAAAAowGsAAAASAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-18T14:47:41.232Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuxiliaryBookReportViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
+              "ViewState": "AQIAAD0BAAAAAAAAAAAAAFMBAAAfAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-18T14:35:51.03Z",
+              "EditorCaption": ""
             }
           ]
         }

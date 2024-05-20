@@ -929,15 +929,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public bool CanAddEmail => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(EmailDescription) && Email.IsValidEmail();
 
-        public async Task Save()
+
+        public async Task<IGenericDataAccess<AccountingEntityGraphQLModel>.PageResponseType> LoadPage()
         {
             string queryForPage;
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                AccountingEntityGraphQLModel result = await ExecuteSave();
-                queryForPage = @"
+            queryForPage = @"
                 query ($filter: AccountingEntityFilterInput) {
                   PageResponse:accountingEntityPage(filter: $filter) {
 		                count
@@ -982,7 +978,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                         }
                     }
                  }";
-                var pageResult = await AccountingEntityService.GetPage(queryForPage, new object { });
+            return await AccountingEntityService.GetPage(queryForPage, new object { });
+        }
+        public async Task Save()
+        { 
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                AccountingEntityGraphQLModel result = await ExecuteSave();
+                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result), AccountingEntities = pageResult.PageResponse.Rows});
