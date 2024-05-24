@@ -4,6 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dotNetKitControls="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
              xmlns:local="clr-namespace:NetErp.Books.Reports.AuxiliaryBook.Views"
              xmlns:vm="clr-namespace:NetErp.Books.Reports.AuxiliaryBook.ViewModels"
@@ -36,7 +41,13 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <xctk:BusyIndicator IsBusy="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            >
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -44,31 +55,28 @@
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <!--Toolbar-->
-            <ToolBarTray IsLocked="True" Grid.Row="0" Background="White" Margin="0 5 0 0">
-                <ToolBar Band="1" BandIndex="0" Background="Transparent" Width="auto" Loaded="ToolBar_Loaded">
-                    <Button ToolBar.OverflowMode="Never" x:Name="Print" Margin="5 0 0 0">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Print_16x16.png" Stretch="None" Margin="0 0 5 0">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value=".5"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                <TextBlock Text="Imprimir" FontSize="15" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button.Content>
-                        <Button.ToolTip>
-                            <ToolTip Content="imprimir comprobante"/>
-                        </Button.ToolTip>
-                    </Button>
-                </ToolBar>
-            </ToolBarTray>
+            <dxr:RibbonControl Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                   AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                   RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+                <dxr:RibbonPage Caption="General">
+
+                    <dxr:RibbonPageGroup Caption="Acciones">
+                        <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Print/Print_16x16.png'}" 
+                                   LargeGlyph="{dx:DXImage 'Images/Print/Print_32x32.png'}" 
+                                   Content="Imprimir"
+                                   RibbonStyle="Large"
+                                   IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
+                                   Hint="Imprimir reporte">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=PrintCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
             <!--Contenido-->
             <Grid Margin="4" Grid.Row="1">
                 <Grid.ColumnDefinitions>
@@ -506,9 +514,9 @@
                                     </Setter>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsNegativeBalance}" Value="true">
-                                        <Setter Property="Foreground" Value="Red"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
                                 </Style>
                             </DataGridTemplateColumn.CellStyle>
                         </DataGridTemplateColumn>
@@ -522,6 +530,6 @@
                                        TotalCount="{Binding Path=TotalCount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                        ResponseTime="{Binding Path=ResponseTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
-    </xctk:BusyIndicator>
+    </busyIndicator:BusyMask>
 
 </UserControl>
