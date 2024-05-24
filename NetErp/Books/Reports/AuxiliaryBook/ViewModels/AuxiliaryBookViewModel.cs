@@ -1,10 +1,12 @@
 ﻿using Caliburn.Micro;
 using Common.Interfaces;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.ObjectModel;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -89,17 +91,10 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             }
         }
 
-        public static async Task<AuxiliaryBookViewModel> Create()
-        {
-            var _instance = new AuxiliaryBookViewModel();
-            await _instance.Initialize();
-            return _instance;
-        }
-
         private async Task Initialize()
         {
             string query = @"
-            query ($accountingAccountsWhere: AccountingAccountsWhereInput, $accountingSourcesWhere:AccountingSourcesWhereInput ) {
+            query ($accountingAccountFilter: AccountingAccountFilterInput, $accountingSourceFilter:AccountingSourceFilterInput ) {
               accountingPresentations{
                 id
                 name
@@ -108,29 +103,34 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 id
                 name
               },
-              accountingSources(where: $accountingSourcesWhere) {
+              accountingSources(filter: $accountingSourceFilter) {
                 id
                 reverseId
                 name
               },
-              accountingAccounts(where: $accountingAccountsWhere) {
+              accountingAccounts(filter: $accountingAccountFilter) {
                 id
                 code
                 name
               }
             }";
 
-            object variables = new
-            {
-                AccountingAccountsWhere = new
-                {
-                    includeOnlyAuxiliaryAccounts = true
-                },
-                AccountingSourcesWhere = new
-                {
-                    Annulment = false
-                }
-            };
+            //object variables = new
+            //{
+            //    AccountingAccountsWhere = new
+            //    {
+            //        includeOnlyAuxiliaryAccounts = true
+            //    },
+            //    AccountingSourcesWhere = new
+            //    {
+            //        Annulment = false
+            //    }
+            //};
+            dynamic variables = new ExpandoObject();
+            variables.AccountingSourceFilter = new ExpandoObject();
+            variables.AccountingSourceFilter.Annulment = false;
+            variables.AccountingAccountFilter = new ExpandoObject();
+            variables.AccountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
             var dataContext = await AuxiliaryBookService.GetDataContext<AuxiliaryBookDataContext>(query, variables);
             if (dataContext != null)
             {
@@ -155,12 +155,14 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         public AuxiliaryBookReportViewModel AuxiliaryBookResportViewModel { get; set; }
 
-        private AuxiliaryBookViewModel()
+        public AuxiliaryBookViewModel()
         {
             try
             {
                 AuxiliaryBookResportViewModel = new AuxiliaryBookReportViewModel(this);
-                Task.Run(() => ActivateReportView());
+                var joinable = new JoinableTaskFactory(new JoinableTaskContext());
+                joinable.Run(async () => await Initialize());
+                _ = Task.Run(() => ActivateReportView());
             }
             catch (Exception)
             {

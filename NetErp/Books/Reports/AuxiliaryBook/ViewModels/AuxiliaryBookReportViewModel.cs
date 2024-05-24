@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -46,6 +48,16 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             {
                 if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecutePaginationChangeIndex, ExecutePaginationChangeIndex);
                 return _paginationCommand;
+            }
+        }
+
+        private ICommand _printCommand;
+        public ICommand PrintCommand
+        {
+            get
+            {
+                if (_printCommand == null) this._printCommand = new RelayCommand(CanPrint, Print);
+                return _printCommand;
             }
         }
 
@@ -301,7 +313,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await Task.Run(() => ExecuteSearch());
+                var result = await ExecuteSearch();
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -316,11 +328,11 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -333,8 +345,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             try
             {
                 string query = @"
-                query ($data:AuxiliaryBookInput!, $pagination:Pagination) {
-                  auxiliaryBookPage(data:$data, pagination:$pagination) {
+                query ($filter:AuxiliaryBookFilterInput!) {
+                  PageResponse: auxiliaryBookPage(filter:$filter) {
                     count
                     rows {
                       shortName
@@ -360,20 +372,18 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
                 int[] accountingSourcesIds = SelectedAccountingSources.Count == this.Context.AccountingSources.Count ? new int[0] : (from s in SelectedAccountingSources select s.Id).ToArray();
 
-                object variables = new
-                {
-                    Data = new
-                    {
-                        AccountingPresentationId = this.SelectedAccountingPresentationId,
-                        StartDate = this.InitialDate,
-                        EndDate = this.FinalDate,
-                        CostCentersIds = costCentersIds,
-                        AccountingSourcesIds = accountingSourcesIds,
-                        AccountingCodeStart = accountingCodeStart,
-                        AccountingCodeEnd = accountingCodeEnd
-                    },
-                    Pagination = new { Page = this.PageIndex, this.PageSize }
-                };
+                dynamic variables = new ExpandoObject();
+                variables.filter = new ExpandoObject();
+                variables.filter.Pagination = new ExpandoObject();
+                variables.filter.Pagination.Page = PageIndex;
+                variables.filter.Pagination.PageSize = PageSize;
+                variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
+                variables.filter.StartDate = this.InitialDate;
+                variables.filter.EndDate = this.FinalDate;
+                variables.filter.CostCentersIds = costCentersIds;
+                variables.filter.AccountingSourcesIds = accountingSourcesIds;
+                variables.filter.AccountingCodeStart = accountingCodeStart;
+                variables.filter.AccountingCodeEnd = accountingCodeEnd;
                 var auxiliaryBookPage = await this.Context.AuxiliaryBookService.GetPage(query, variables);
                 return auxiliaryBookPage;
             }
@@ -384,9 +394,14 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
         }
 
         // Print
-        public void Print()
+        public async void Print(object parameter)
         {
-            App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show("Esta función aun no está implementada", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+            App.Current.Dispatcher.Invoke(() => DXMessageBox.Show("Esta función aun no está implementada", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+        }
+
+        private bool CanPrint(object parameter)
+        {
+            return true;
         }
 
 
@@ -489,7 +504,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
         /// <summary>
         /// PageSize
         /// </summary>
-        private int _pageSize = 50; // Default PageSize 50
+        private int _pageSize = 1000; // Default PageSize 1000
         public int PageSize
         {
             get { return _pageSize; }
