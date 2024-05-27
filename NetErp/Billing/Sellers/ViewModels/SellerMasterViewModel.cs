@@ -19,13 +19,18 @@ using System.Windows.Input;
 using DevExpress.Mvvm;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Helpers;
+using Models.Books;
+using Models.Suppliers;
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
     public class SellerMasterViewModel : Screen,
         IHandle<SellerCreateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SellerDeleteMessage>
+        IHandle<SellerDeleteMessage>,
+        IHandle<AccountingEntityUpdateMessage>,
+        IHandle<CustomerUpdateMessage>,
+        IHandle<SupplierUpdateMessage>
     {
         public readonly IGenericDataAccess<SellerGraphQLModel> SellerService = IoC.Get<IGenericDataAccess<SellerGraphQLModel>>();
         public SellerViewModel Context { get; set; }
@@ -573,6 +578,21 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 throw;
             }
+        }
+
+        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSellers();
+        }
+
+        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSellers();
+        }
+
+        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSellers();
         }
 
         #region Paginacion

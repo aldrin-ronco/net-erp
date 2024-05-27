@@ -30,7 +30,16 @@ using GraphQL.Client.Http;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
-    public class AccountingEntityMasterViewModel : Screen, IHandle<AccountingEntityCreateMessage>, IHandle<AccountingEntityDeleteMessage>, IHandle<AccountingEntityUpdateMessage>
+    public class AccountingEntityMasterViewModel : Screen, 
+        IHandle<AccountingEntityCreateMessage>, 
+        IHandle<AccountingEntityDeleteMessage>, 
+        IHandle<AccountingEntityUpdateMessage>,
+        IHandle<CustomerCreateMessage>,
+        IHandle<CustomerUpdateMessage>,
+        IHandle<SellerCreateMessage>,
+        IHandle<SellerUpdateMessage>,
+        IHandle<SupplierCreateMessage>,
+        IHandle<SupplierUpdateMessage>
     {
 
         public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
@@ -179,7 +188,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             get 
             {
-                if (_filterSearch is null) _filterSearch = "";
+                if (_filterSearch is null) return string.Empty;
                 return _filterSearch; 
             }
             set
@@ -532,6 +541,36 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 throw;
             }
+        }
+
+        public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
+        }
+
+        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
+        }
+
+        public Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
+        }
+
+        public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
+        }
+
+        public Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
+        }
+
+        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadAccountingEntities();
         }
 
         public bool CanDeleteAccountingEntity

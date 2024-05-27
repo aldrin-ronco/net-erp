@@ -323,6 +323,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
                     if (IsNewRecord)
                     {
                         _ = this.SetFocus(nameof(IdentificationNumber));
@@ -366,7 +367,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _emailDescription;
         public string EmailDescription
         {
-            get { return _emailDescription; }
+            get 
+            {
+                if (_emailDescription is null) return string.Empty;
+                return _emailDescription; 
+            }
             set
             {
                 if (_emailDescription != value)
@@ -382,7 +387,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _email;
         public string Email
         {
-            get { return _email; }
+            get 
+            {
+                if (_email is null) return string.Empty;
+                return _email; 
+            }
             set
             {
                 if (_email != value)
@@ -400,7 +409,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _identificationNumber = string.Empty;
         public string IdentificationNumber
         {
-            get => _identificationNumber;
+            get 
+            {
+                if (_identificationNumber is null) return string.Empty;
+                return _identificationNumber;
+            }
             set
             {
                 if (_identificationNumber != value)
@@ -443,7 +456,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _businessName = string.Empty;
         public string BusinessName
         {
-            get => _businessName;
+            get 
+            {
+                if(_businessName is null) return string.Empty;
+                return _businessName;
+            }
             set
             {
                 if (_businessName != value)
@@ -462,7 +479,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _firstName = string.Empty;
         public string FirstName
         {
-            get => _firstName; 
+            get 
+            {
+                if (_firstName is null) return string.Empty;
+                return _firstName;
+            } 
             set
             {
                 if (_firstName != value)
@@ -483,7 +504,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _middleName = string.Empty;
         public string MiddleName
         {
-            get => _middleName;
+            get
+            {
+                if (_middleName is null) return string.Empty;
+                return _middleName;
+            }
             set
             {
                 if (_middleName != value)
@@ -501,7 +526,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _firstLastName = string.Empty;
         public string FirstLastName
         {
-            get => _firstLastName;
+            get 
+            {
+                if (_firstLastName is null) return string.Empty;
+                return _firstLastName;
+            }
             set
             {
                 if (_firstLastName != value)
@@ -520,7 +549,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _middleLastName = string.Empty;
         public string MiddleLastName
         {
-            get => _middleLastName;
+            get 
+            {
+                if (_middleLastName is null) return string.Empty;
+                return _middleLastName;
+            }
             set
             {
                 if (_middleLastName != value)
@@ -539,7 +572,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public string Phone1
         {
-            get => _phone1;
+            get 
+            {
+                if (_phone1 is null) return string.Empty;
+                return _phone1;
+            }
             set
             {
                 if (_phone1 != value)
@@ -558,7 +595,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _phone2 = string.Empty;
         public string Phone2
         {
-            get => _phone2; 
+            get
+            {
+                if (_phone2 is null) return string.Empty;
+                return _phone2;
+            }
             set
             {
                 if (_phone2 != value)
@@ -577,7 +618,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _cellPhone1 = string.Empty;
         public string CellPhone1
         {
-            get => _cellPhone1;
+            get
+            {
+                if (_cellPhone1 is null) return string.Empty;
+                return _cellPhone1;
+            }
             set
             {
                 if (_cellPhone1 != value)
@@ -596,7 +641,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _cellPhone2 = string.Empty;
         public string CellPhone2
         {
-            get => _cellPhone2;
+            get
+            {
+                if (_cellPhone2 is null) return string.Empty;
+                return _cellPhone2;
+            }
             set
             {
                 if (_cellPhone2 != value)
@@ -615,7 +664,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _address = string.Empty;
         public string Address
         {
-            get => _address;
+            get
+            {
+                if (_address is null) return string.Empty;
+                return _address;
+            }
             set
             {
                 if (_address != value)

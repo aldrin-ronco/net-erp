@@ -67,6 +67,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public async Task ActivateDetailViewForEdit(AccountingEntityGraphQLModel selectedItem)
         {
             AccountingEntityDetailViewModel instance = new(this);
+            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == selectedItem.IdentificationType.Id);
             instance.Id = selectedItem.Id;
             instance.VerificationDigit = selectedItem.VerificationDigit;
             instance.SelectedRegime = selectedItem.Regime;
@@ -86,7 +87,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == selectedItem.Department.Id);
             instance.SelectedCityId = selectedItem.City.Id;
             instance.Emails = new ObservableCollection<EmailDTO>(selectedItem.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
-            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == selectedItem.IdentificationType.Id);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 

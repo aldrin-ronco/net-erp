@@ -1317,10 +1317,13 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                await Task.Run(() =>
-             PopulateInfo(this.Code))
-            .ContinueWith(antecedent => SetReadOnlyState(this.Code))
-            .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SetLevelFocus(this.Code)));
+                //    await Task.Run(() =>
+                // PopulateInfo(this.Code))
+                //.ContinueWith(antecedent => SetReadOnlyState(this.Code))
+                //.ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SetLevelFocus(this.Code)));
+                PopulateInfo(this.Code);
+                SetReadOnlyState(this.Code);
+                SetLevelFocus(this.Code);
 
             }
             catch (Exception ex)

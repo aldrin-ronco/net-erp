@@ -58,7 +58,7 @@
                                            Content="Nuevo"
                                            RibbonStyle="Large"
                                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
-                                           Hint="Crear un nuevo proveedor">
+                                           Hint="Crear un nuevo cliente">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=CreateCustomerCommand}" EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>
@@ -68,7 +68,7 @@
                                            Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
                                            LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
                                            Description="Eliminar"
-                                           Hint="Elimina el proveedor seleccionado"    
+                                           Hint="Eliminar el cliente seleccionado"    
                                            IsEnabled="{Binding Path=CanDeleteCustomer, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                            RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
