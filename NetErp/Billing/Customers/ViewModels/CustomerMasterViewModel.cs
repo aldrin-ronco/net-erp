@@ -6,6 +6,8 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Billing;
+using Models.Books;
+using Models.Suppliers;
 using NetErp.Helpers;
 using System;
 using System.Collections.Generic;
@@ -21,7 +23,13 @@ using System.Windows.Media.Converters;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
-    public class CustomerMasterViewModel : Screen, IHandle<CustomerDeleteMessage>, IHandle<CustomerCreateMessage>, IHandle<CustomerUpdateMessage>
+    public class CustomerMasterViewModel : Screen, 
+        IHandle<CustomerDeleteMessage>, 
+        IHandle<CustomerCreateMessage>, 
+        IHandle<CustomerUpdateMessage>,
+        IHandle<AccountingEntityUpdateMessage>,
+        IHandle<SellerUpdateMessage>,
+        IHandle<SupplierUpdateMessage>
     {
 
         public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
@@ -418,6 +426,21 @@ namespace NetErp.Billing.Customers.ViewModels
         public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
         {
             return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
+        }
+
+        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadCustomers();
+        }
+
+        public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadCustomers();
+        }
+
+        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadCustomers();
         }
 
         #endregion

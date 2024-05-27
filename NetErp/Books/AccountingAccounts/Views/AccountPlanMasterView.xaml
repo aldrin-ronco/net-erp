@@ -9,6 +9,9 @@
              xmlns:viewmodels="clr-namespace:NetErp.Books.AccountingAccounts.ViewModels"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:model="clr-namespace:NetErp.Books.AccountingAccounts.DTO"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
@@ -44,31 +47,26 @@
                 <RowDefinition Height="20"/>
                 <!--Pie de Control-->
             </Grid.RowDefinitions>
-            <ToolBarTray Grid.Row="0" FlowDirection="LeftToRight" ToolBarTray.IsLocked="True" Grid.ColumnSpan="3" Background="Transparent" Margin="0 10 10 10">
-                <ToolBar Band="1" BandIndex="0" Background="Transparent" Loaded="ToolBar_Loaded">
-                    <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding CreateCommand}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/New_32x32.png" Stretch="None" Margin="2">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.5"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                <TextBlock Text="Nuevo" Margin="2" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button.Content>
-                        <Button.ToolTip>
-                            <ToolTip Content="Crear nueva cuenta contable"/>
-                        </Button.ToolTip>
-                    </Button>
-                </ToolBar>
-            </ToolBarTray>
+            <dxr:RibbonControl Grid.Row="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+                <dxr:RibbonPage Caption="General">
+
+                    <dxr:RibbonPageGroup Caption="Acciones">
+                        <dxb:BarButtonItem Glyph="{dx:DXImage Image=New_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
+                                           Content="Nuevo"
+                                           RibbonStyle="Large"
+                                           IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
+                                           Hint="Crear una nueva cuenta contable">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=CreateCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
             <TreeView 
                   ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                   h:TreeViewExtension.SelectItemOnRightClick="True"
@@ -201,7 +199,7 @@
                     </HierarchicalDataTemplate>
                 </TreeView.Resources>
             </TreeView>
-            <DockPanel HorizontalAlignment="Stretch" Grid.Row="2" Grid.Column="0">
+            <!--<DockPanel HorizontalAlignment="Stretch" Grid.Row="2" Grid.Column="0">
                 <StatusBar DockPanel.Dock="Bottom">
                     <StatusBarItem>
                         <StackPanel Orientation="Horizontal">
@@ -213,7 +211,7 @@
                         </StackPanel>
                     </StatusBarItem>
                 </StatusBar>
-            </DockPanel>
+            </DockPanel>-->
         </Grid>
         <!--Fin GridMain-->
     </busyIndicator:BusyMask>

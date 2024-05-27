@@ -3,16 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\auxiliarybook\\viewmodels\\auxiliarybookreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingaccounts\\views\\accountplanmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingaccounts\\views\\accountplanmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\auxiliarybook\\views\\auxiliarybookreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\auxiliarybook\\views\\auxiliarybookreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingsources\\views\\accountingsourcemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingsources\\views\\accountingsourcemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingentities\\views\\accountingentitymasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\views\\accountingentitymasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,39 +26,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AuxiliaryBookReportViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\AuxiliaryBook\\ViewModels\\AuxiliaryBookReportViewModel.cs",
-              "ViewState": "AQIAAOEBAAAAAAAAAAAAAPoBAAA+AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-24T14:51:40.933Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "AccountingSourceMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingSources\\Views\\AccountingSourceMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingSources\\Views\\AccountingSourceMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingSources\\Views\\AccountingSourceMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\AccountingSources\\Views\\AccountingSourceMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-05-24T14:43:18.837Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "AuxiliaryBookReportView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\AuxiliaryBook\\Views\\AuxiliaryBookReportView.xaml",
+              "Title": "AccountingEntityMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\Views\\AccountingEntityMasterView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-05-24T14:42:28.402Z",
+              "WhenOpened": "2024-05-27T13:27:16.634Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AccountPlanMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingAccounts\\Views\\AccountPlanMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingAccounts\\Views\\AccountPlanMasterView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingAccounts\\Views\\AccountPlanMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Books\\AccountingAccounts\\Views\\AccountPlanMasterView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-05-27T13:27:07.743Z",
               "EditorCaption": ""
             }
           ]

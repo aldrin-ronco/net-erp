@@ -19,13 +19,17 @@ using NetErp.Helpers;
 using DevExpress.Xpf.Core;
 using System.Dynamic;
 using Models.Billing;
+using Models.Books;
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
     public class SupplierMasterViewModel : Screen,
         IHandle<SupplierCreateMessage>,
         IHandle<SupplierUpdateMessage>,
-        IHandle<SupplierDeleteMessage>
+        IHandle<SupplierDeleteMessage>,
+        IHandle<AccountingEntityUpdateMessage>,
+        IHandle<CustomerUpdateMessage>,
+        IHandle<SellerUpdateMessage>
     {
 
         #region Properties
@@ -433,6 +437,21 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             base.OnViewReady(view);
             _ = Task.Run(() => LoadSuppliers());
             _ = this.SetFocus(nameof(FilterSearch));
+        }
+
+        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSuppliers();
+        }
+
+        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSuppliers();
+        }
+
+        public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadSuppliers();
         }
 
         #endregion

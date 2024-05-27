@@ -69,6 +69,7 @@ namespace NetErp.Billing.Customers.ViewModels
             Application.Current.Dispatcher.Invoke(() =>
             {
                 instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType); 
+                instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.Entity.IdentificationType.Id);
                 instance.Id = customer.Id;
                 instance.FirstName = customer.Entity.FirstName;
                 instance.MiddleName = customer.Entity.MiddleName;
@@ -81,7 +82,6 @@ namespace NetErp.Billing.Customers.ViewModels
                 instance.BusinessName = customer.Entity.BusinessName;
                 instance.Address = customer.Entity.Address;
                 instance.Emails = customer.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(customer.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
-                instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.Entity.IdentificationType.Id);
                 instance.IdentificationNumber = customer.Entity.IdentificationNumber;
                 instance.VerificationDigit = customer.Entity.VerificationDigit;
                 instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == customer.Entity.Country.Id);

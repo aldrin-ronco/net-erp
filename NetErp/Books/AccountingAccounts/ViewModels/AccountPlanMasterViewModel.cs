@@ -15,6 +15,7 @@ using System.Dynamic;
 using System.Threading;
 using Caliburn.Micro;
 using NetErp.Books.AccountingAccounts.DTO;
+using Common.Helpers;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
@@ -567,19 +568,24 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 if (validation.CanDelete)
                 {
-                    MessageBoxResult result = DXMessageBox.Show(caption: "Atención!", messageBoxText: "¿Confirma que desea eliminar la cuenta contable?", button: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: "¿Confirma que desea eliminar la cuenta contable?", messageBoxButtons: MessageBoxButton.YesNo, icon: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
-                    Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show(caption: "Atención!", messageBoxText: "Esta cuenta contable no puede ser eliminada" +
-                        (char)13 + (char)13 + validation.Message, button: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "Esta cuenta contable no puede ser eliminada" +
+                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error));
                     return;
                 }
 
                 this.IsBusy = true;
                 var deletedAccountingAccount = await Task.Run(() => this.ExecuteDelete((int)id));
                 Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = deletedAccountingAccount });    
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -625,10 +631,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message) 
         {
+            IsBusy = true;
             if (this.accounts.Count == 0) { return; }
             Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
                 .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                 .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
+            IsBusy = false;
         }
 
         async void OnAccountingAccountDeleteMessage(AccountingAccountDeleteMessage message)
