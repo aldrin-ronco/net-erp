@@ -114,18 +114,6 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 name
               }
             }";
-
-            //object variables = new
-            //{
-            //    AccountingAccountsWhere = new
-            //    {
-            //        includeOnlyAuxiliaryAccounts = true
-            //    },
-            //    AccountingSourcesWhere = new
-            //    {
-            //        Annulment = false
-            //    }
-            //};
             dynamic variables = new ExpandoObject();
             variables.AccountingSourceFilter = new ExpandoObject();
             variables.AccountingSourceFilter.Annulment = false;

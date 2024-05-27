@@ -41,6 +41,7 @@
                 <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
+                <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

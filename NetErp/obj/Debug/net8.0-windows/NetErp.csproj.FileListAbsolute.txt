@@ -180,3 +180,7 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DotNetKit.Wpf.AutoCompleteComboBox.dll
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceView.baml
