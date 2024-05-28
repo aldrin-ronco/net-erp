@@ -375,11 +375,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -468,11 +468,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -509,7 +509,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
 
         }
@@ -534,7 +534,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -550,7 +550,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
 
@@ -565,7 +565,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -600,13 +600,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 if (validation.CanDelete)
                 {
                     this.IsBusy = false;
-                    MessageBoxResult result = DXMessageBox.Show($"¿Confirma que desea eliminar el registro {SelectedAccountingSource.Name}?", "Confirme ...", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show("Confirme ...", $"¿Confirma que desea eliminar el registro {SelectedAccountingSource.Name}?", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     this.IsBusy = false;
-                    App.Current.Dispatcher.Invoke(() => DXMessageBox.Show("El regisgtro seleccionado no puede ser eliminado" + (char)13 + (char)13 + validation.Message, "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "El regisgtro seleccionado no puede ser eliminado" + (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information));
                     return;
                 }
 
@@ -624,11 +624,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
             {
                 GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {

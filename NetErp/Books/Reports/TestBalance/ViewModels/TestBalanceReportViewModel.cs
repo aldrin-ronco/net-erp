@@ -234,7 +234,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
         // Print
         public void Print()
         {
-            App.Current.Dispatcher.Invoke(() => Xceed.Wpf.Toolkit.MessageBox.Show("Esta función aun no está implementada", "Atención !", MessageBoxButton.OK, MessageBoxImage.Information));
+            App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         public async Task Search()
@@ -268,11 +268,11 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => DXMessageBox.Show($"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(text: $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", title: "Atención !", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención !", text: $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error));
             }
             finally
             {

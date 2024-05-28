@@ -63,7 +63,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/reports/auxiliarybook/views/auxiliarybookview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/reports/auxiliarybook/views/auxiliarybookview.xa" +
+                    "ml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
