@@ -1,0 +1,876 @@
+﻿<UserControl x:Class="NetErp.Books.Reports.AnnualIncomeStatement.Views.AnnualIncomeStatementReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Books.Reports.AnnualIncomeStatement.Views" 
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:uc="clr-namespace:NetErp.UserControls"             
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" d:Background="White">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
+        <DataTemplate x:Key="RecordTemplate">
+            <TextBlock Text="{Binding Path=RecordDetail, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                        TextWrapping="WrapWithOverflow"
+                                        VerticalAlignment="Center"
+                                        Padding="3"/>
+        </DataTemplate>
+        <DataTemplate x:Key="AccountingEntityTemplate">
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="{Binding Path=FullName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                           TextWrapping="WrapWithOverflow"
+                           VerticalAlignment="Center"
+                           Padding="0"
+                           Margin="3 3 3 0"
+                           FontStyle="Italic"
+                           FontWeight="DemiBold"
+                           FontSize="14"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="NIT. "
+                               TextWrapping="WrapWithOverflow"
+                               VerticalAlignment="Center"
+                               Padding="0"
+                               Margin="3 2 3 3"
+                               FontStyle="Italic"
+                               FontWeight="DemiBold"
+                               FontSize="14"/>
+                    <TextBlock Text="{Binding Path=IdentificationNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               TextWrapping="WrapWithOverflow"
+                               VerticalAlignment="Center"
+                               Padding="0"
+                               Margin="3 2 3 3"
+                               FontStyle="Italic"
+                               FontSize="14"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="TotalAccountingEntityTemplate">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="TOTAL "/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="AcountingAccountTemplate">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Path=AccountingAccountCode, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                           VerticalAlignment="Center"
+                           FontWeight="DemiBold"
+                           FontSize="15"
+                           Padding="3"/>
+                <TextBlock Text=" - "
+                           VerticalAlignment="Center"
+                           Padding="3"/>
+                <TextBlock Text="{Binding Path=AccountingAccountName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           FontSize="14"
+                           Padding="3"/>
+            </StackPanel>
+        </DataTemplate>        
+    </UserControl.Resources>
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            >
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <!--Toolbar-->
+            <dxr:RibbonControl Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                   AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                   RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+                <dxr:RibbonPage Caption="General">
+
+                    <dxr:RibbonPageGroup Caption="Acciones">
+                        <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Print/Print_16x16.png'}" 
+                                   LargeGlyph="{dx:DXImage 'Images/Print/Print_32x32.png'}" 
+                                   Content="Imprimir"
+                                   RibbonStyle="Large"
+                                   IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
+                                   Hint="Imprimir reporte">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=PrintCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
+            <!--Contenido-->
+            <Grid Margin="4" Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Presentacion" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                <ComboBox Grid.Column="1" Grid.Row="0" Margin="4"
+                          ItemsSource="{Binding Path=Context.AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          SelectedValuePath="Id"
+                          SelectedValue="{Binding Path=SelectedAccountingPresentationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          DisplayMemberPath="Name"
+                          TabIndex="1"/>
+
+                <TextBlock Text="Período" Grid.Column="0" Grid.Row="1" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                <Grid Grid.Column="1" Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <xctk:IntegerUpDown Grid.Column="0" 
+                                        Margin="4" 
+                                        Value="{Binding Path=SelectedYear, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"    
+                                        Minimum="1990"
+                                        TabIndex="2"/>
+                    <ComboBox   Grid.Column="1"
+                                ItemsSource="{Binding Path=Months, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                DisplayMemberPath="Value"
+                                SelectedValuePath="Key"
+                                SelectedValue="{Binding Path=SelectedMonth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Margin="4"
+                                TabIndex="3"/>
+                </Grid>
+
+                <TextBlock Text="Centro de Costo" Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                <xctk:CheckComboBox Grid.Column="1" Grid.Row="2" Padding="3" Margin="4"
+                                    IsSelectAllActive="True"
+                                    Command="{Binding Path=InteractionCommand}"
+                                    TabIndex="4"
+                                    SelectedItemsOverride="{Binding Path=SelectedCostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=Context.CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    DisplayMemberPath="Name"
+                                    ValueMemberPath="Id"                                    
+                                    SelectedValue="{Binding Path=SelectedCostCenterId, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Button Grid.Row="3" 
+                        Grid.Column="2" 
+                        Width="100" 
+                        TabIndex="11"
+                        HorizontalAlignment="Right" 
+                        Margin="0 0 4 4" 
+                        x:Name="Search">
+
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png" Stretch="None" VerticalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.5"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Buscar" VerticalAlignment="Center" FontSize="15" Margin="5 0 0 0"/>
+                    </StackPanel>
+                </Button>
+
+                <TextBlock Text="Nivel" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center"/>
+                <xctk:IntegerUpDown Minimum="1" 
+                                    Maximum="5" 
+                                    Grid.Row="3" 
+                                    Grid.Column="1" 
+                                    Margin="4" 
+                                    MaxWidth="100"
+                                    Value="{Binding Path=Level, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    HorizontalAlignment="Left"/>
+
+                <DataGrid Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3" 
+                          Margin="0 4 0 0"
+                          Width="auto"
+                          AutoGenerateColumns="False" 
+                          VerticalScrollBarVisibility="Visible"
+                          GridLinesVisibility="Horizontal"
+                          VerticalGridLinesBrush="LightGray"
+                          HorizontalGridLinesBrush="LightGray"
+                          BorderThickness="0"
+                          CanUserAddRows="false"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"     
+                          MinRowHeight="30"
+                          Background="Transparent"
+                          ItemsSource="{Binding Path=Results, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          CanUserDeleteRows="False">
+                    <DataGrid.RowStyle>
+                        <!--
+                           NIVELES DE COLORES, DE CLARO A OSCURO
+                           1- #EEF1EE
+                           2- #E4E7E5
+                           3- #DBDEDC
+                           4- #D1D4D3
+                           5- #C8CBCA
+                        -->
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="1">
+                                    <Setter Property="Background" Value="#D1D4D3"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="2">
+                                    <Setter Property="Background" Value="#DBDEDC"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="3">
+                                    <Setter Property="Background" Value="#E4E7E5"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="4">
+                                    <Setter Property="Background" Value="#EEF1EE"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <!--Code-->
+                        <DataGridTemplateColumn Header="Cuenta"
+                                            Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           VerticalAlignment="Center"
+                                           Padding="10 0 10 0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                    <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Nombre de la cuenta-->
+                        <DataGridTemplateColumn Header="Nombre de la cuenta"
+                                    Width="*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                               VerticalAlignment="Center"
+                                               TextWrapping="WrapWithOverflow"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Enero-->
+                        <DataGridTemplateColumn Header="Enero"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M1StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                               TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM1}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Febrero-->
+                        <DataGridTemplateColumn Header="Febrero"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M2StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                               TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM2}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Marzo-->
+                        <DataGridTemplateColumn Header="Marzo"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M3StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM3}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Abril-->
+                        <DataGridTemplateColumn Header="Abril"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M4StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM4}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Mayo-->
+                        <DataGridTemplateColumn Header="Mayo"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M5StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM5}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Junio-->
+                        <DataGridTemplateColumn Header="Junio"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M6StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM6}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Julio-->
+                        <DataGridTemplateColumn Header="Julio"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M7StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM7}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Agosto-->
+                        <DataGridTemplateColumn Header="Agosto"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M8StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM8}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Septiembre-->
+                        <DataGridTemplateColumn Header="Septiembre"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M9StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM9}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Octubre-->
+                        <DataGridTemplateColumn Header="Octubre"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M10StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM10}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Noviembre-->
+                        <DataGridTemplateColumn Header="Noviembre"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M11StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM11}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Diciembre-->
+                        <DataGridTemplateColumn Header="Diciembre"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=M12StringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeM12}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>
+                        <!--Total-->
+                        <DataGridTemplateColumn Header="Total"
+                                                MinWidth="70"
+                                                Width="auto">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=TotalStringValue, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="6 0 6 0" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNegativeTotal}" Value="true">
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RecordType}" Value="T">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter Property="FontWeight" Value="DemiBold"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
+                        </DataGridTemplateColumn>                        
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+            <uc:GridPaging Grid.Row="2" Margin="4"
+                                       ChangedIndexCommand="{Binding Path=PaginationCommand}"
+                                       PageIndex="{Binding Path=PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       PageSize="{Binding Path=PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       TotalCount="{Binding Path=TotalCount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                       ResponseTime="{Binding Path=ResponseTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+    </busyIndicator:BusyMask>
+</UserControl>

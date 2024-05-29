@@ -3,20 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\suppliers\\suppliers\\viewmodels\\supplierdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\suppliers\\suppliers\\viewmodels\\supplierdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\testbalance\\views\\testbalancereportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\testbalance\\views\\testbalancereportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,62 +14,22 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "SellerDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
-              "ViewState": "AQIAAKYDAAAAAAAAAAAewLsDAAAgAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-28T15:22:55.674Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "SellerMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerMasterViewModel.cs",
-              "ViewState": "AQIAALEBAAAAAAAAAAAjwL8BAABQAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-28T15:22:34.995Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "SupplierDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Suppliers\\Suppliers\\ViewModels\\SupplierDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Suppliers\\Suppliers\\ViewModels\\SupplierDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Suppliers\\Suppliers\\ViewModels\\SupplierDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Suppliers\\Suppliers\\ViewModels\\SupplierDetailViewModel.cs",
-              "ViewState": "AQIAAFoEAAAAAAAAAAAewGcEAAA6AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-28T15:22:18.143Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CustomerDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "ViewState": "AQIAABEFAAAAAAAAAAAAwBoFAABkAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-05-28T15:18:48.856Z",
+              "DocumentIndex": 0,
+              "Title": "TestBalanceReportView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-05-29T15:27:51.841Z",
               "EditorCaption": ""
             }
           ]
