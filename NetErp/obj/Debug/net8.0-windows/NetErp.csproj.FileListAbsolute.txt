@@ -192,3 +192,7 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityView.g.cs
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityReportView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountReportView.baml
