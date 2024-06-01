@@ -67,6 +67,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuxiliaryBookGraphQLModel>>().To<AuxiliaryBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TestBalanceGraphQLModel>>().To<TestBalanceService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<DailyBookByEntityGraphQLModel>>().To<DailyBookByEntityService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();

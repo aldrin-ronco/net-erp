@@ -184,3 +184,11 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceView.g.cs
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceReportView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityView.baml

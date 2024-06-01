@@ -105,8 +105,8 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/reports/annualincomestatement/views/annualincome" +
-                    "statementreportview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/reports/annualincomestatement/views/annualincomestatement" +
+                    "reportview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementReportView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
