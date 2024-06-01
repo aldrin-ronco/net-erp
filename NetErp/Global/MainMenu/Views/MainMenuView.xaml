@@ -42,7 +42,8 @@
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
-                <MenuItem Header="Libro Diario" x:Name="OpenDailyBook"/>
+                <MenuItem Header="Libro Diario Por Tercero" x:Name="OpenDailyBookByEntity"/>
+                <MenuItem Header="Movimiento por tercero y cuenta" x:Name="OpenEntityVsAccount"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"
