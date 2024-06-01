@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\testbalance\\views\\testbalancereportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\testbalance\\views\\testbalancereportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\dailybookbyentity\\viewmodels\\dailybookbyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\dailybookbyentity\\viewmodels\\dailybookbyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -23,13 +23,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "TestBalanceReportView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\TestBalance\\Views\\TestBalanceReportView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-05-29T15:27:51.841Z",
+              "Title": "DailyBookByEntityReportViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\DailyBookByEntity\\ViewModels\\DailyBookByEntityReportViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\DailyBookByEntity\\ViewModels\\DailyBookByEntityReportViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\DailyBookByEntity\\ViewModels\\DailyBookByEntityReportViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\DailyBookByEntity\\ViewModels\\DailyBookByEntityReportViewModel.cs",
+              "ViewState": "AQIAADgBAAAAAAAAAAAYwFEBAAAaAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-06-01T15:31:20.417Z",
               "EditorCaption": ""
             }
           ]
