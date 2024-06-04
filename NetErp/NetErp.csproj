@@ -24,6 +24,8 @@
     <Folder Include="Books\Reports\AuxiliaryBook\ViewModels\" />
     <Folder Include="Books\Reports\EntityVsAccount\ViewModels\" />
     <Folder Include="Books\Reports\EntityVsAccount\Views\" />
+    <Folder Include="Books\Reports\TestBalanceByEntity\ViewModels\" />
+    <Folder Include="Books\Reports\TestBalanceByEntity\Views\" />
     <Folder Include="Books\Reports\TestBalance\Views\" />
     <Folder Include="Books\Reports\TestBalance\ViewModels\" />
     <Folder Include="Inventory\" />

@@ -3,12 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\entityvsaccount\\views\\entityvsaccountreportview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\entityvsaccount\\views\\entityvsaccountreportview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\entityvsaccount\\views\\entityvsaccountreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\entityvsaccount\\views\\entityvsaccountreportview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\testbalancebyentity\\viewmodels\\testbalancebyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\testbalancebyentity\\viewmodels\\testbalancebyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -27,26 +23,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "EntityVsAccountReportView.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml.cs",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml.cs",
-              "ViewState": "AQIAABAAAAAAAAAAAAAmwB0AAAAJAAAA",
+              "Title": "TestBalanceByEntityReportViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
+              "ViewState": "AQIAAMkBAAAAAAAAAIAxwOcBAACGAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-01T17:56:19.111Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "EntityVsAccountReportView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\EntityVsAccount\\Views\\EntityVsAccountReportView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-06-01T17:43:25.134Z",
+              "WhenOpened": "2024-06-04T15:06:25.154Z",
               "EditorCaption": ""
             }
           ]
