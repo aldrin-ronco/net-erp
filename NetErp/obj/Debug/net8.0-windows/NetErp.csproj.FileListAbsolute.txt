@@ -196,3 +196,7 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountView.g.cs
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityReportView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityReportView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityView.baml

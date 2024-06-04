@@ -44,6 +44,8 @@
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
                 <MenuItem Header="Libro Diario Por Tercero" x:Name="OpenDailyBookByEntity"/>
                 <MenuItem Header="Movimiento por tercero y cuenta" x:Name="OpenEntityVsAccount"/>
+                <MenuItem Header="Balance de prueba por tercero" x:Name="OpenTestBalanceByEntity"/>
+                <MenuItem Header="Estado de resultados anual" x:Name="OpenAnnualIncomeStatement"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

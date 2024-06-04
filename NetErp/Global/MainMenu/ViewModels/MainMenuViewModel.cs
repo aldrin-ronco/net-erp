@@ -17,10 +17,12 @@ using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingSources.ViewModels;
+using NetErp.Books.Reports.AnnualIncomeStatement.ViewModels;
 using NetErp.Books.Reports.AuxiliaryBook.ViewModels;
 using NetErp.Books.Reports.DailyBook.ViewModels;
 using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
+using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
 using NetErp.Suppliers.Suppliers.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
@@ -238,6 +240,26 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
+        public async Task OpenAnnualIncomeStatement()
+        {
+            try
+            {
+                AnnualIncomeStatementViewModel instance = IoC.Get<AnnualIncomeStatementViewModel>();
+                instance.DisplayName = "Estado de resultados anual";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
 
         public async Task OpenEntityVsAccount()
         {
@@ -257,6 +279,26 @@ namespace NetErp.Global.MainMenu.ViewModels
             catch (Exception ex)
             {
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        public async Task OpenTestBalanceByEntity()
+        {
+            try
+            {
+                TestBalanceByEntityViewModel instance = IoC.Get<TestBalanceByEntityViewModel>();
+                instance.DisplayName = "Balance de prueba por tercero";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }
