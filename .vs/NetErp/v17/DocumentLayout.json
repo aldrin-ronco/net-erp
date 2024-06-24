@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\reports\\testbalancebyentity\\viewmodels\\testbalancebyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\reports\\testbalancebyentity\\viewmodels\\testbalancebyentityreportviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingentries\\viewmodels\\accountingentriesdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentries\\viewmodels\\accountingentriesdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -23,14 +23,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "TestBalanceByEntityReportViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\Reports\\TestBalanceByEntity\\ViewModels\\TestBalanceByEntityReportViewModel.cs",
-              "ViewState": "AQIAAMkBAAAAAAAAAIAxwOcBAACGAAAA",
+              "Title": "AccountingEntriesDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntries\\ViewModels\\AccountingEntriesDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntries\\ViewModels\\AccountingEntriesDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntries\\ViewModels\\AccountingEntriesDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Books\\AccountingEntries\\ViewModels\\AccountingEntriesDetailViewModel.cs",
+              "ViewState": "AQIAAEICAAAAAAAAAAAAAFkCAAAqAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-04T15:06:25.154Z",
+              "WhenOpened": "2024-06-22T17:58:09.133Z",
               "EditorCaption": ""
             }
           ]

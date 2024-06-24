@@ -1,0 +1,327 @@
+﻿<UserControl x:Class="NetErp.Books.AccountingEntries.Views.AccountingEntriesDocumentPreviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:local="clr-namespace:NetErp.Books.AccountingEntries.Views"
+             xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common"
+             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/> <!--ToolbarTray-->
+            <RowDefinition Height="auto"/> <!--Informacion del documento-->
+            <RowDefinition Height="auto"/> <!--Barra de busqueda-->
+            <RowDefinition Height="*"/> <!--Content-->
+            <RowDefinition Height="auto"/> <!--Pagination-->
+        </Grid.RowDefinitions>
+        <!--Toolbar-->
+        <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+               RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+            <dxr:RibbonPage Caption="General">
+
+                <dxr:RibbonPageGroup Caption="Acciones">
+                    <dxb:BarButtonItem x:Name="btnBack" 
+                           Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
+                           LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
+                           Content="Regresar"
+                           RibbonStyle="Large"
+                           Hint="Regresa a la lista de comprobantes"
+                           Command="{Binding Path=GoBackCommand}"/>
+                    <dxb:BarItemSeparator/>
+
+                    <dxb:BarButtonItem Content="Editar" 
+                               Glyph="{dxc:DXImage Image=Edit_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=Edit_32x32.png}"                                             
+                               Description="Editar comprobantes"
+                               Hint="Editar comprobantes"    
+                               IsEnabled="{Binding Path=CanEditAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=EditAccountingEntryCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    <dxb:BarItemSeparator/>
+
+                    <dxb:BarButtonItem Content="Anular" 
+                               Glyph="{dxc:DXImage Image=DeleteList_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=DeleteList_32x32.png}"                                             
+                               Description="Anular comprobante"
+                               Hint="Anular comprobante"    
+                               IsEnabled="{Binding Path=CanCancelAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=CancelAccountingEntryCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+
+                    <dxb:BarButtonItem Content="Eliminar" 
+                               Glyph="{dxc:DXImage Image=Trash_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=Trash_32x32.png}"                                             
+                               Description="Eliminar comprobante"
+                               Hint="Eliminar comprobante"    
+                               IsEnabled="{Binding Path=CanDeleteAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=DeleteAccountingEntry}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+
+                    <dxb:BarItemSeparator/>
+                    
+                    <dxb:BarButtonItem Content="Copiar" 
+                               Glyph="{dxc:DXImage Image=Copy_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=Copy_32x32.png}"                                             
+                               Description="Copiar comprobante"
+                               Hint="Copiar comprobante"    
+                               IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=CopyCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    <dxb:BarItemSeparator/>
+                    <dxb:BarButtonItem Content="Imprimir" 
+                               Glyph="{dxc:DXImage Image=Print_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=Print_32x32.png}"                                             
+                               Description="Imprimir comprobante"
+                               Hint="Imprimir comprobante"    
+                               IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=PrintCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                </dxr:RibbonPageGroup>
+            </dxr:RibbonPage>
+        </dxr:RibbonControl>
+        <Border Grid.Row="1" Width="auto" Height="auto" Background="WhiteSmoke" BorderThickness="1" BorderBrush="LightGray">
+                <Grid ShowGridLines="False" Margin="5" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Columna 0-->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Libro" VerticalAlignment="Center" Padding="3" FontWeight="DemiBold" FontSize="15"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Path=SelectedAccountingEntryMaster.AccountingBook.Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" FontSize="15" Padding="3"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Centro de Costo" VerticalAlignment="Center" Padding="3" FontWeight="DemiBold" FontSize="15"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding Path=SelectedAccountingEntryMaster.CostCenter.Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Fuente Contable" VerticalAlignment="Center" Padding="3" FontWeight="DemiBold" FontSize="15"/>
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding Path=SelectedAccountingEntryMaster.AccountingSource.Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <!--Columna 1-->
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Número de Documento" VerticalAlignment="Center" Padding="3" FontWeight="DemiBold" FontSize="15"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=SelectedAccountingEntryMaster.DocumentNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Fecha y Hora" VerticalAlignment="Center" Padding="3" FontWeight="DemiBold" FontSize="15"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Path=SelectedAccountingEntryMaster.CreatedAt, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:dd/MM/yyyy hh:mm tt}}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Descripción" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Path=SelectedAccountingEntryMaster.Description, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <!--Columna 2-->
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Creado Por" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.CreatedBy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Información del Documento" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.Info, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
+
+                <!--Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"-->
+                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Anulado Por" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"/>
+                <!--Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"-->
+                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.CancelledBy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"/>
+
+                    <!--Columna 3-->
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Débito" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding Path=SelectedAccountingEntryMaster.Totals.Debit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" VerticalAlignment="Center" Padding="3" FontSize="19"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="Crédito" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="3" Grid.Column="3" Text="{Binding Path=SelectedAccountingEntryMaster.Totals.Credit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" VerticalAlignment="Center" Padding="3" FontSize="19"/>
+
+                    <TextBlock Grid.Row="4" Grid.Column="3" Text="Diferencia" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>
+                    <TextBlock Grid.Row="5" Grid.Column="3" Text="$0.00" VerticalAlignment="Center" Padding="3" FontSize="19"/>
+                </Grid>
+            </Border>
+
+        <busyIndicator:BusyMask Grid.Row="3" IsBusy="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                BusyContent="{Binding Path=BusyContent, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                x:Name="BusyIndicator"
+                                IndicatorType="BouncingDot"
+                                BusyContentMargin="0,20,0,0"
+                                IsBusyAtStartup="False">
+            <DataGrid Margin="0 8 0 0"
+                AutoGenerateColumns="False" 
+                VerticalGridLinesBrush="LightGray"
+                HorizontalGridLinesBrush="LightGray"
+                BorderThickness="0"
+                CanUserAddRows="false"
+                SelectionMode="Single"
+                SelectionUnit="FullRow"     
+                MinRowHeight="30"
+                AlternatingRowBackground="Beige"
+                Background="Transparent"
+                ItemsSource="{Binding Path=AccountingEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                CanUserDeleteRows="False">
+
+                <!--SelectedItem="{Binding Path=SelectedAccountingEntryDraftDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"-->
+                
+                <DataGrid.Columns>
+                    <!--Cuenta contable-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                    <DataGridTemplateColumn Header="Cuenta contable"
+                                Width="1*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=AccountingAccount.FullName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                    TextWrapping="Wrap"
+                                    VerticalAlignment="Center"
+                                    Padding="3"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Tercero-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}">-->
+                    <DataGridTemplateColumn Header="Tercero"
+                                Width=".7*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=AccountingEntity.SearchName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                    TextWrapping="Wrap"
+                                    VerticalAlignment="Center"
+                                    Padding="3"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Centro de costo-->
+                    <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                    <DataGridTemplateColumn Header="Centro de costo"
+                                Width=".7*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=CostCenter.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    VerticalAlignment="Center"
+                                    Padding="3"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Detalle-->
+                    <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                    <DataGridTemplateColumn Header="Detalle"
+                                Width=".7*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    TextWrapping="WrapWithOverflow"
+                                    VerticalAlignment="Center"
+                                    Padding="3"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Debito-->
+                    <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}"-->
+                    <DataGridTemplateColumn Header="Débito"
+                                    Width=".4*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Debit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                    TextAlignment="Right" Padding="3" FontSize="14" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Credito-->
+                    <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}">-->
+                    <DataGridTemplateColumn Header="Crédito"
+                                    Width=".4*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Credit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                    TextAlignment="Right" Padding="3" FontSize="14" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <!--Base-->
+                    <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}">-->
+                    <DataGridTemplateColumn Header="Base"
+                                    Width=".4*">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="{x:Type DataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=Base, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                    TextAlignment="Right" Padding="3" FontSize="14" VerticalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </busyIndicator:BusyMask>
+        <!--<uc:GridPaging Grid.Row="4" Margin="4"
+                                       ChangedIndexCommand="{Binding Path=PaginationCommand}"
+                                       PageIndex="{Binding Path=PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       PageSize="{Binding Path=PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       TotalCount="{Binding Path=TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       ResponseTime="{Binding Path=ResponseTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>-->
+        <!--Barra de busqueda-->
+    </Grid>
+</UserControl>

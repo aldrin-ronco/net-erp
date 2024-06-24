@@ -1,0 +1,684 @@
+﻿<UserControl x:Class="NetErp.Books.AccountingEntries.Views.AccountingEntriesDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Books.AccountingEntries.Views"
+             xmlns:currency="clr-namespace:CurrencyTextBoxControl;assembly=CurrencyTextbox"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dotNetKitControls="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" Background="White">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+        <ControlTemplate x:Key="AcctountingEntitiesDetailTemplate"> 
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="{Binding Path=SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Foreground="Gray" FontSize="12">
+                        Nit. <TextBlock Text="{Binding Path=IdentificationNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Foreground="Gray" FontSize="12"/>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </ControlTemplate>
+        <SolidColorBrush Color="Pink" Opacity="0.4" x:Key="ValidationBrush"/>
+        <Style TargetType="TextBox">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <ToolTip DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget}">
+                                <ItemsControl ItemsSource="{Binding Path=(Validation.Errors)}" DisplayMemberPath="ErrorContent" />
+                            </ToolTip>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background" Value="{StaticResource ValidationBrush}"/>
+                    <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="currency:CurrencyTextBox">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <ToolTip DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget}">
+                                <ItemsControl ItemsSource="{Binding Path=(Validation.Errors)}" DisplayMemberPath="ErrorContent" />
+                            </ToolTip>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background" Value="{StaticResource ValidationBrush}"/>
+                    <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="33"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <!--Toolbar-->
+        <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+            <dxr:RibbonPage Caption="General">
+
+                <dxr:RibbonPageGroup Caption="Acciones">
+                    <dxb:BarButtonItem Glyph="{dx:DXImage Image=Backward_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=Backward_32x32.png}" 
+                                           Content="Regresar"
+                                           RibbonStyle="Large"
+                                           IsEnabled="{Binding Path=CanGoBack, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
+                                           Hint="Regresar">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=GoBackCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    
+                    <dxb:BarItemSeparator/>
+                    
+                    <dxb:BarButtonItem Content="Guardar" 
+                                           Glyph="{dx:DXImage Image=Save_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=Save_32x32.png}"                                             
+                                           Description="Publicar comprobante en contabilidad"
+                                           Hint="Publicar comprobante en contabilidad"    
+                                           IsEnabled="{Binding Path=CanPublishAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=PublishAccountingEntryCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    
+                    <dxb:BarItemLinkSeparator/>
+
+                    <dxb:BarButtonItem Content="Eliminar" 
+                                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
+                                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                                           Description="Eliminar comprobantes"
+                                           Hint="Eliminar comprobantes"    
+                                           IsEnabled="{Binding Path=CanDeleteAccountingEntries, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=DeleteAccountingEntriesCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    <dxb:BarItemLinkSeparator/>
+                </dxr:RibbonPageGroup>
+            </dxr:RibbonPage>
+        </dxr:RibbonControl>
+        <!--Barra de consecutivo-->
+        <Grid Grid.Row="1" Background="Gray" Margin="4">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal">
+                <TextBlock Text="Consecutivo No." 
+                    HorizontalAlignment="Center" VerticalAlignment="Center" 
+                    Foreground="White" FontSize="14" Margin="0 0 6 0">
+                </TextBlock>
+                <TextBox Text="{Binding SelectedAccountingEntryDraftMaster.DocumentNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" IsReadOnly="True"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" 
+                    Foreground="White" FontSize="18">
+                </TextBox>
+            </StackPanel>
+        </Grid>
+        <!--Grid-->
+            <Grid Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <!--Columna 1-->
+                <!--Libro Contable-->
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                Text="Libro contable"
+                VerticalAlignment="Bottom"
+                Margin="4 0 0 0"/>
+                <ComboBox Grid.Row="1" Grid.Column="0"
+                    Margin="4" Padding="3"
+                    TabIndex="0"
+                    x:Name="SelectedAccountingBookId"
+                    DisplayMemberPath="Name"
+                    SelectedValuePath="Id"
+                    IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding Path=Context.AccountingBooks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ComboBox.ItemsPanel>
+                </ComboBox>
+                <!--Centro de Costo-->
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                Text="Centro de costo"
+                VerticalAlignment="Bottom"
+                Margin="4 0 0 0"/>
+                <ComboBox Grid.Row="3" Grid.Column="0"
+                    Margin="4" Padding="3"
+                    DisplayMemberPath="Name"
+                    SelectedValuePath="Id"
+                    TabIndex="1"
+                    IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ComboBox.ItemsPanel>
+                </ComboBox>
+                <!--Fuente Contable-->
+                <TextBlock Grid.Row="4" Grid.Column="0"
+                Text="Fuente contable"
+                VerticalAlignment="Bottom"
+                Margin="4 0 0 0"/>
+                <ComboBox Grid.Row="5" Grid.Column="0"
+                    Margin="4" Padding="3"
+                    TabIndex="2"
+                    IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    DisplayMemberPath="Name"
+                    SelectedValuePath="Id"
+                    SelectedValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                        
+                    ItemsSource="{Binding Path=Context.AccountingSources, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <ComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ComboBox.ItemsPanel>
+                </ComboBox>
+                <!--Fecha de Documento & Descripcion-->
+                <Grid Grid.Row="6" Grid.Column="0" Margin="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <!--Fecha-->
+                    <TextBlock Text="Fecha" Grid.Column="0" Grid.Row="0"/>
+                    <DatePicker Grid.Column="0" Grid.Row="1" Margin="0 4 6 0"
+                                TabIndex="3"
+                                SelectedDate="{Binding Path=DocumentDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
+                                Padding="3"/>
+                    <!--Descripcion-->
+                    <TextBlock Text="Descripción" Grid.Column="1" Grid.Row="0"/>
+                    <TextBox Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                             Grid.Column="1" Grid.Row="1" Margin="0 4 0 0"
+                             TextWrapping="WrapWithOverflow"
+                             TabIndex="4"
+                             FontSize="14"
+                             Padding="3"/>
+                </Grid>
+                <!--Columna 2-->
+                <!--Totalizacion debitos y creditos-->
+                <Grid Grid.Row="0" Grid.Column="1" Background="Transparent" 
+                Grid.RowSpan="4" Margin="4 0 4 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <!--Debito-->
+                    <TextBlock Text="- TOTAL DÉBITO -" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15"/>
+                    <TextBox Grid.Row="1" Grid.Column="0" Margin="0 4 4 4" Padding="4" 
+                        Text="{Binding Path=TotalDebit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                        TextAlignment="Right" IsEnabled="False" FontSize="25" BorderThickness="1" BorderBrush="LightGray"
+                        FontFamily="Cambria" FontWeight="DemiBold" Background="Beige"/>
+                    <!--Credito-->
+                    <TextBlock Text="- TOTAL CRÉDITO -" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Margin="4" Padding="4" TextAlignment="Right" 
+                        Text="{Binding Path=TotalCredit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                        IsEnabled="False" FontSize="25"  BorderThickness="1" BorderBrush="LightGray" 
+                        FontFamily="Cambria" FontWeight="DemiBold" Background="AliceBlue"/>
+                    <!--Diferencia-->
+                    <TextBlock Text="- TOTAL DIFERENCIA -" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontSize="15"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" Margin="4 4 0 4" Padding="4"                          
+                        Text="{Binding Path=TotalDiference, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                        TextAlignment="Right" IsEnabled="False" FontSize="25" BorderThickness="1" BorderBrush="LightGray"
+                        FontFamily="Cambria" FontWeight="DemiBold" Background="Beige"/>
+                </Grid>
+
+                <!--Insercion de Registros-->
+                <Grid Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="auto" MinWidth="100"/>
+                        <ColumnDefinition Width="auto" MinWidth="100"/>
+                        <ColumnDefinition Width="auto" MinWidth="100"/>
+                        <ColumnDefinition Width="40"/>
+                    </Grid.ColumnDefinitions>
+                    <!--Cuenta Contable-->
+                    <TextBlock Text="Cuenta contable" 
+                    Grid.Row="0" Grid.Column="0" 
+                    Margin="4 0 0 0"/>
+                <dotNetKitControls:AutoCompleteComboBox Grid.Row="1" Grid.Column="0"
+                                                    Margin="4"
+                                                    x:Name="AutoCompleteComboBox"
+                                                    SelectedValuePath="Id"
+                                                    TabIndex="5"
+                                                    DisplayMemberPath="FullName"
+                                                    Focusable="True"
+                                                    SelectedValue="{Binding Path=SelectedAccountingAccountOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    ItemsSource="{Binding Path=Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dotNetKitControls:AutoCompleteComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </dotNetKitControls:AutoCompleteComboBox.ItemsPanel>
+                </dotNetKitControls:AutoCompleteComboBox>
+                <!--Tercero-->
+                    <TextBlock Text="Tercero" Grid.Row="0" Grid.Column="1" Margin="4 0 0 0"/>
+                    <Grid Grid.Row="1" Grid.Column="1" Margin="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="9*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Row="0" Grid.Column="0"
+                            Margin="0 0 4 0"
+                            x:Name="SelectedAccountingEntityOnEntryId"
+                            Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"
+                            SelectedValuePath="Id"
+                            SelectedValue="{Binding Path=SelectedAccountingEntityOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ItemTemplateSelector="{DynamicResource itemTemplateSelector}"
+                            ItemsSource="{Binding Path=AccountingEntitiesSearchResults, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <ComboBox.Resources>
+                                <DataTemplate x:Key="selectedTemplate">
+                                    <TextBlock Text="{Binding Path=SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DataTemplate>
+                                <DataTemplate x:Key="dropDownTemplate">
+                                    <StackPanel Orientation="Vertical">
+                                        <TextBlock Text="{Binding Path=SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Foreground="Gray" FontSize="12">
+                                                    Nit. <TextBlock Text="{Binding Path=IdentificationNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Foreground="Gray" FontSize="12"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+                                <h:ComboBoxItemTemplateSelector
+                        x:Key="itemTemplateSelector" 
+                        SelectedTemplate="{StaticResource selectedTemplate}"
+                        DropDownTemplate="{StaticResource dropDownTemplate}"/>
+                            </ComboBox.Resources>
+                            <ComboBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </ComboBox.ItemsPanel>
+                        </ComboBox>
+                        <xctk:WatermarkTextBox Watermark="Digite por lo menos 3 caracteres y presiona Buscar"
+                                        Grid.Row="0" Grid.Column="0"
+                                        Margin="0 0 4 0"
+                                        TabIndex="7"
+                                        CharacterCasing="Upper"
+                                        x:Name="FilterSearchAccountingEntity"
+                                        Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Text="{Binding Path=FilterSearchAccountingEntity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Row="0" Grid.Column="1"
+                            Padding="0 4 0 4"
+                            TabIndex="8"
+                            x:Name="SearchForAccountingEntityMatch">
+                            <Button.Content>
+                                <Image Width="16" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.5" />
+                                                </Trigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="true"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png"/>
+                                                </MultiDataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="false"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/History/Undo_16x16.png"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </Button.Content>
+                        </Button>
+                    </Grid>
+                    <!--Centro de Costo-->
+                    <TextBlock Text="Centro de costo" Grid.Row="0" Grid.Column="2" Margin="4 0 0 0"/>
+                    <ComboBox Grid.Row="1" Grid.Column="2"
+                    Margin="4"
+                    TabIndex="9"
+                    DisplayMemberPath="Name"
+                    SelectedValuePath="Id"
+                    SelectedValue="{Binding Path=SelectedCostCenterOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <!--Detalle-->
+                    <TextBlock Text="Detalle"
+                    Grid.Row="0" Grid.Column="3" 
+                    Margin="4 0 0 0"/>
+                    <TextBox Grid.Row="1" Grid.Column="3"
+                    TabIndex="10"
+                    CharacterCasing="Upper"
+                    Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Margin="4"/>
+                    <!--Debito-->
+                    <TextBlock Text="Débito" Grid.Row="0" Grid.Column="4" HorizontalAlignment="Right" Margin="0 0 4 0"/>
+                    <currency:CurrencyTextBox Grid.Row="1" Grid.Column="4"
+                                              MinimumValue="0"
+                                              IsEnabled="{Binding Path=IsEnableDebit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Number="{Binding Path=Debit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              TabIndex="11"
+                                              VerticalContentAlignment="Center"
+                                              Margin="4"/>
+                    <!--Credito-->
+                    <TextBlock Text="Crédito" Grid.Row="0" Grid.Column="5" HorizontalAlignment="Right" Margin="0 0 4 0"/>
+                    <currency:CurrencyTextBox Grid.Row="1" Grid.Column="5"
+                                              MinimumValue="0"
+                                              TabIndex="12"
+                                              IsEnabled="{Binding Path=IsEnableCredit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                              VerticalContentAlignment="Center"
+                                              Number="{Binding Path=Credit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="4"/>
+                    <!--Base-->
+                    <TextBlock Text="Base" Grid.Row="0" Grid.Column="6" HorizontalAlignment="Right" Margin="0 0 4 0"/>
+                    <currency:CurrencyTextBox Grid.Row="1" Grid.Column="6"
+                                              MinimumValue="0"
+                                              TabIndex="13"
+                                              VerticalContentAlignment="Center"
+                                              Number="{Binding Path=Base, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="4"/>
+                    <!--Add Button-->
+                    <Button Grid.Row="1" Grid.Column="7" 
+                Margin="0 4 0 4"
+                Click="SetFocusOnAutoCompleteComboBox"
+                TabIndex="14"
+                x:Name="AddRecord">
+                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Width="16">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.5" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Button>
+                </Grid>
+                <!--DataGrid-->
+            <busyIndicator:BusyMask IsBusy="{Binding Path=IsBusy, Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" 
+                                    Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="3"
+                                    x:Name="BusyIndicator"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Please wait..."
+                                    BusyContentMargin="0,20,0,0"
+                                    IsBusyAtStartup="False">
+                <DataGrid Grid.Row="9" Grid.Column="0"
+                    Grid.ColumnSpan="3"
+                    Margin="0 8 0 0"
+                    AutoGenerateColumns="False" 
+                    VerticalGridLinesBrush="LightGray"
+                    HorizontalGridLinesBrush="LightGray"
+                    BorderThickness="0"
+                    CanUserAddRows="false"
+                    SelectionMode="Single"
+                    SelectionUnit="FullRow"     
+                    MinRowHeight="30"
+                    AlternatingRowBackground="Beige"
+                    Background="Transparent"
+                    cal:Message.Attach="[Event RowEditEnding] = [Action EndRowEditing]"
+                    ItemsSource="{Binding Path=AccountingEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedItem="{Binding Path=SelectedAccountingEntryDraftDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    CanUserDeleteRows="False">
+                    <DataGrid.Columns>
+                        <!--Check para eliminar comprobante-->
+                        <DataGridTemplateColumn Width="30">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                cal:Message.Attach="[Event Checked] = [Action OnChecked];[Event Unchecked] = [Action OnUnchecked]"
+                                                IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+
+                                    </CheckBox>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Cuenta contable-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                        <DataGridTemplateColumn Header="Cuenta contable"
+                                    Width="1*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=AccountingAccount.FullName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                        TextWrapping="Wrap"
+                                        VerticalAlignment="Center"
+                                        Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <dotNetKitControls:AutoCompleteComboBox ItemsSource="{Binding Path=Data.Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                                                    DisplayMemberPath="FullName"
+                                                                    SelectedValuePath="Id"
+                                                                    SelectedValue="{Binding Path=AccountingAccount.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    SelectedItem="{Binding Path=AccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    Padding="3">
+                                        <ComboBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ComboBox.ItemsPanel>
+                                    </dotNetKitControls:AutoCompleteComboBox>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Tercero-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Left_VerticalAligment_Center}">-->
+                        <DataGridTemplateColumn Header="Tercero"
+                                    Width=".7*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=AccountingEntity.SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                        Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Centro de costo-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                        <DataGridTemplateColumn Header="Centro de costo"
+                                    Width=".7*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=CostCenter.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalAlignment="Center"
+                                        Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Path=Data.Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"                                          
+                                        DisplayMemberPath="Name"
+                                        SelectedValuePath="Id"
+                                        SelectedItem="{Binding Path=CostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                                          
+                                        SelectedValue="{Binding Path=CostCenter.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalContentAlignment="Center">
+                                        <ComboBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ComboBox.ItemsPanel>
+                                    </ComboBox>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Detalle-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Strech_VerticalAligment_Strech}">-->
+                        <DataGridTemplateColumn Header="Detalle"
+                                    Width=".7*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        TextWrapping="WrapWithOverflow"
+                                        VerticalAlignment="Center"
+                                        Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        TextWrapping="WrapWithOverflow"
+                                        VerticalContentAlignment="Center"
+                                        Padding="3"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Debito-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}"-->
+                        <DataGridTemplateColumn Header="Débito"
+                                        Width=".4*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Debit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="3" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <currency:CurrencyTextBox Number="{Binding Path=Debit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        VerticalAlignment="Center" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Credito-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}">-->
+                        <DataGridTemplateColumn Header="Crédito"
+                                        Width=".4*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Credit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="3" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <currency:CurrencyTextBox Number="{Binding Path=Credit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalAlignment="Center" BorderThickness="0" Background="Transparent" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <!--Base-->
+                        <!--CellStyle="{StaticResource HorizontalAligment_Right_VerticalAligment_Center}">-->
+                        <DataGridTemplateColumn Header="Base"
+                                        Width=".4*">
+                            <DataGridTemplateColumn.HeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTemplateColumn.HeaderStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Base, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        TextAlignment="Right" Padding="3" FontSize="14"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <currency:CurrencyTextBox Number="{Binding Path=Base, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalAlignment="Center" BorderThickness="0" Background="Transparent" FontSize="14" Foreground="White"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </busyIndicator:BusyMask>
+            <!--Paginacion-->
+                <!--<uc:GridPaging Grid.Row="10" Margin="4" Grid.ColumnSpan="2"
+                        PageIndex="{Binding Path=EntriesPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        PageSize="{Binding Path=EntriesPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TotalCount="{Binding Path=EntriesTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ResponseTime="{Binding Path=EntriesResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>-->
+            </Grid>
+    </Grid>
+
+</UserControl>

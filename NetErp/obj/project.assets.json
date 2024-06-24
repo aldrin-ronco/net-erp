@@ -30,6 +30,18 @@
           "Microsoft.WindowsDesktop.App.WPF"
         ]
       },
+      "CalcBinding/2.5.2": {
+        "type": "package",
+        "dependencies": {
+          "DynamicExpresso.Core": "2.3.1"
+        },
+        "compile": {
+          "lib/netcoreapp3.0/CalcBinding.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/CalcBinding.dll": {}
+        }
+      },
       "Caliburn.Micro/4.0.212": {
         "type": "package",
         "dependencies": {
@@ -68,6 +80,18 @@
             "related": ".pdb;.xml"
           }
         }
+      },
+      "CurrencyTextbox/2.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/netcoreapp3.0/CurrencyTextbox.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/CurrencyTextbox.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.WindowsDesktop.App.WPF"
+        ]
       },
       "DevExpress.Data/23.2.3": {
         "type": "package",
@@ -294,6 +318,15 @@
         "frameworkReferences": [
           "Microsoft.WindowsDesktop.App.WPF"
         ]
+      },
+      "DynamicExpresso.Core/2.3.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/DynamicExpresso.Core.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/DynamicExpresso.Core.dll": {}
+        }
       },
       "Extended.Wpf.Toolkit/4.6.0": {
         "type": "package",
@@ -1302,6 +1335,21 @@
         "lib/net6.0-windows7.0/BusyIndicator.dll"
       ]
     },
+    "CalcBinding/2.5.2": {
+      "sha512": "hbMnS12GUmWTFVROhKJMAQNv5Cqx+AjVGOGGjUOidEaRQ5oGr87PCZih5kfEA/8qlRMzpBsMPQ0fiOahPWwmXQ==",
+      "type": "package",
+      "path": "calcbinding/2.5.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "calcbinding.2.5.2.nupkg.sha512",
+        "calcbinding.nuspec",
+        "lib/net40/CalcBinding.dll",
+        "lib/net45/CalcBinding.dll",
+        "lib/netcoreapp3.0/CalcBinding.dll"
+      ]
+    },
     "Caliburn.Micro/4.0.212": {
       "sha512": "cES6hx45uriyhSiyXo4usjrYmGnFpPosuVnq9X5N/MeyuZZLBB1S429cNL7c1xc2eunMsqCQPJDFjD2NDm7G6A==",
       "type": "package",
@@ -1369,6 +1417,21 @@
         "lib/netstandard2.0/Caliburn.Micro.Core.dll",
         "lib/netstandard2.0/Caliburn.Micro.Core.pdb",
         "lib/netstandard2.0/Caliburn.Micro.Core.xml"
+      ]
+    },
+    "CurrencyTextbox/2.0.2": {
+      "sha512": "2ErMGPTZcDYFLIYcefwI9M4UWFbhQPArj/R/LO+b/V3AT+cvnxvvBlIilxnXidid7L2Ej7Aw54lLWr9+r2RjGg==",
+      "type": "package",
+      "path": "currencytextbox/2.0.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "currencytextbox.2.0.2.nupkg.sha512",
+        "currencytextbox.nuspec",
+        "lib/net45/CurrencyTextbox.dll",
+        "lib/net47/CurrencyTextbox.dll",
+        "lib/netcoreapp3.0/CurrencyTextbox.dll",
+        "license.txt"
       ]
     },
     "DevExpress.Data/23.2.3": {
@@ -1600,6 +1663,20 @@
         "lib/net462/DotNetKit.Wpf.AutoCompleteComboBox.xml",
         "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll",
         "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.xml"
+      ]
+    },
+    "DynamicExpresso.Core/2.3.1": {
+      "sha512": "gAoOdAA7KypwC2aEWbm72ZcNj9ERn0GBrFyFrLm9tRZGd+z1rgnKlh+BtWJi9X32ldzOwItY/Ty5ao6CqbG5ig==",
+      "type": "package",
+      "path": "dynamicexpresso.core/2.3.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "dynamicexpresso.core.2.3.1.nupkg.sha512",
+        "dynamicexpresso.core.nuspec",
+        "lib/net45/DynamicExpresso.Core.dll",
+        "lib/net461/DynamicExpresso.Core.dll",
+        "lib/netstandard2.0/DynamicExpresso.Core.dll"
       ]
     },
     "Extended.Wpf.Toolkit/4.6.0": {
@@ -3498,8 +3575,10 @@
     "net8.0-windows7.0": [
       "AutoMapper >= 13.0.1",
       "BusyIndicators >= 2.1.2",
+      "CalcBinding >= 2.5.2",
       "Caliburn.Micro >= 4.0.212",
       "Common >= 1.0.0",
+      "CurrencyTextBox >= 2.0.2",
       "DTOLibrary >= 1.0.0",
       "DevExpress.Wpf.Controls >= 23.2.3",
       "DevExpress.Wpf.Core >= 23.2.3",
@@ -3592,9 +3671,17 @@
             "target": "Package",
             "version": "[2.1.2, )"
           },
+          "CalcBinding": {
+            "target": "Package",
+            "version": "[2.5.2, )"
+          },
           "Caliburn.Micro": {
             "target": "Package",
             "version": "[4.0.212, )"
+          },
+          "CurrencyTextBox": {
+            "target": "Package",
+            "version": "[2.0.2, )"
           },
           "DevExpress.Wpf.Controls": {
             "target": "Package",

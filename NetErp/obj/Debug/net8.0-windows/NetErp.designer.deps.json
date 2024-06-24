@@ -25,6 +25,17 @@
           }
         }
       },
+      "CalcBinding/2.5.2": {
+        "dependencies": {
+          "DynamicExpresso.Core": "2.3.1"
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/CalcBinding.dll": {
+            "assemblyVersion": "2.5.2.0",
+            "fileVersion": "2.5.2.0"
+          }
+        }
+      },
       "Caliburn.Micro/4.0.212": {
         "dependencies": {
           "Caliburn.Micro.Core": "4.0.212",
@@ -49,6 +60,14 @@
           "lib/netstandard2.0/Caliburn.Micro.Core.dll": {
             "assemblyVersion": "4.0.0.0",
             "fileVersion": "4.0.212.20088"
+          }
+        }
+      },
+      "CurrencyTextbox/2.0.2": {
+        "runtime": {
+          "lib/netcoreapp3.0/CurrencyTextbox.dll": {
+            "assemblyVersion": "2.0.2.0",
+            "fileVersion": "2.0.2.0"
           }
         }
       },
@@ -209,6 +228,14 @@
           "lib/net6.0-windows7.0/DotNetKit.Wpf.AutoCompleteComboBox.dll": {
             "assemblyVersion": "1.6.0.0",
             "fileVersion": "1.6.0.0"
+          }
+        }
+      },
+      "DynamicExpresso.Core/2.3.1": {
+        "runtime": {
+          "lib/netstandard2.0/DynamicExpresso.Core.dll": {
+            "assemblyVersion": "2.3.1.0",
+            "fileVersion": "2.3.1.0"
           }
         }
       },
@@ -881,6 +908,13 @@
       "path": "busyindicators/2.1.2",
       "hashPath": "busyindicators.2.1.2.nupkg.sha512"
     },
+    "CalcBinding/2.5.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hbMnS12GUmWTFVROhKJMAQNv5Cqx+AjVGOGGjUOidEaRQ5oGr87PCZih5kfEA/8qlRMzpBsMPQ0fiOahPWwmXQ==",
+      "path": "calcbinding/2.5.2",
+      "hashPath": "calcbinding.2.5.2.nupkg.sha512"
+    },
     "Caliburn.Micro/4.0.212": {
       "type": "package",
       "serviceable": true,
@@ -894,6 +928,13 @@
       "sha512": "sha512-A/17oTTu/oYFSrahT9S6BxDnel/AIhOMSqEOG6MsG/MfchwuOrf144+2IIttu0k2UuSPFjIDKlPoSL5DTniwiw==",
       "path": "caliburn.micro.core/4.0.212",
       "hashPath": "caliburn.micro.core.4.0.212.nupkg.sha512"
+    },
+    "CurrencyTextbox/2.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2ErMGPTZcDYFLIYcefwI9M4UWFbhQPArj/R/LO+b/V3AT+cvnxvvBlIilxnXidid7L2Ej7Aw54lLWr9+r2RjGg==",
+      "path": "currencytextbox/2.0.2",
+      "hashPath": "currencytextbox.2.0.2.nupkg.sha512"
     },
     "DevExpress.Data/23.2.3": {
       "type": "package",
@@ -978,6 +1019,13 @@
       "sha512": "sha512-n9NCG0uQWE710nKaskwzgz9cvoxD50M2iQtH6ktIehlR9u3IHrXJl0DWBurB9j3dDUoKk76riJ+KHcUEocvACw==",
       "path": "dotnetkit.wpf.autocompletecombobox/1.6.0",
       "hashPath": "dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512"
+    },
+    "DynamicExpresso.Core/2.3.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-gAoOdAA7KypwC2aEWbm72ZcNj9ERn0GBrFyFrLm9tRZGd+z1rgnKlh+BtWJi9X32ldzOwItY/Ty5ao6CqbG5ig==",
+      "path": "dynamicexpresso.core/2.3.1",
+      "hashPath": "dynamicexpresso.core.2.3.1.nupkg.sha512"
     },
     "Extended.Wpf.Toolkit/4.6.0": {
       "type": "package",

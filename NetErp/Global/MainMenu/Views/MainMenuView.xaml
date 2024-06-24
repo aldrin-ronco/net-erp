@@ -39,6 +39,7 @@
                 <MenuItem Header="Administración de proveedores" x:Name="OpenSupplier"></MenuItem>
                 <MenuItem Header="Administración de vendedores" x:Name="OpenSeller"></MenuItem>
                 <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
+                <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
