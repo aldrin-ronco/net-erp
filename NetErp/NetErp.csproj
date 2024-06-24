@@ -19,6 +19,8 @@
     <Folder Include="Books\AccountingAccounts\Views\" />
     <Folder Include="Books\AccountingAccounts\ViewModels\" />
     <Folder Include="Books\AccountingEntities\Views\" />
+    <Folder Include="Books\AccountingEntries\Views\" />
+    <Folder Include="Books\AccountingEntries\ViewModels\" />
     <Folder Include="Books\AccountingSources\Views\" />
     <Folder Include="Books\Reports\AuxiliaryBook\Views\" />
     <Folder Include="Books\Reports\AuxiliaryBook\ViewModels\" />
@@ -44,7 +46,9 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="BusyIndicators" Version="2.1.2" />
+    <PackageReference Include="CalcBinding" Version="2.5.2" />
     <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
+    <PackageReference Include="CurrencyTextBox" Version="2.0.2" />
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />

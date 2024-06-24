@@ -13,8 +13,8 @@
              xmlns:config="clr-namespace:Common.Config;assembly=Common"
              xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             xmlns:cal="http://caliburnmicro.com"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:cal="http://caliburnmicro.com"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignWidth="900" Background="White" FontSize="13">

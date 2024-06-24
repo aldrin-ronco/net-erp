@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Common.Interfaces
 {
@@ -121,13 +122,13 @@ namespace Common.Interfaces
             }
         }
 
-        public async Task<TModel> GetDataContext<TModel>(string query, object variables)
+        public async Task<XModel> GetDataContext<XModel>(string query, object variables)
         {
             try
             {
                 GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
                 client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
-                GraphQLResponse<TModel> result = await client.SendQueryAsync<TModel>(new GraphQLRequest()
+                GraphQLResponse<XModel> result = await client.SendQueryAsync<XModel>(new GraphQLRequest()
                 {
                     Query = query,
                     Variables = variables
@@ -137,6 +138,30 @@ namespace Common.Interfaces
                     throw new Exception(result.Errors[0].Message);
                 }
                 return result.Data;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<TModel> FindById (string query, object variables)
+        {
+            try
+            {
+                GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
+                client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+                GraphQLResponse<SingleItemResponseType> result = await client.SendQueryAsync<SingleItemResponseType>(new GraphQLRequest()
+                {
+                    Query = query,
+                    Variables = variables
+                });
+                if (result.Errors != null)
+                {
+                    throw new Exception(result.Errors[0].Message);
+                }
+                return result.Data.SingleItemResponse;
             }
             catch (Exception)
             {
@@ -244,6 +269,7 @@ namespace Common.Interfaces
             public TModel CreateResponse { get; set; }
             public TModel UpdateResponse { get; set; }
             public TModel DeleteResponse { get; set; }
+            public TModel SingleItemResponse { get; set; }
         }
 
         public class ListItemResponseType

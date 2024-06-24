@@ -9,6 +9,7 @@ using Models.Billing;
 using Models.Books;
 using Models.Global;
 using Models.Suppliers;
+using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
@@ -71,6 +72,10 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<EntityVsAccountGraphQLModel>>().To<EntityVsAccountService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TestBalanceByEntityGraphQLModel>>().To<TestBalanceByEntityService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AnnualIncomeStatementGraphQLModel>>().To<AnnualIncomeStatementService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingEntryMasterGraphQLModel>>().To<AccountingEntryMasterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingEntryDetailGraphQLModel>>().To<AccountingEntryDetailService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>().To<AccountingEntryDraftMasterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>().To<AccountingEntryDraftDetailService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -143,6 +148,11 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();
                 _ = cfg.CreateMap<SellerGraphQLModel, SellerDTO>();
                 _ = cfg.CreateMap<AccountingSourceGraphQLModel, AccountingSourceDTO>();
+                _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountDTO>();
+                _ = cfg.CreateMap<AccountingEntryMasterGraphQLModel, AccountingEntryMasterDTO>();
+                _ = cfg.CreateMap<AccountingEntryDraftMasterGraphQLModel, AccountingEntryDraftMasterDTO>();
+                _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
+                
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

@@ -200,3 +200,14 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityView.g.cs
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityReportView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\CalcBinding.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\CurrencyTextbox.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DynamicExpresso.Core.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesView.baml

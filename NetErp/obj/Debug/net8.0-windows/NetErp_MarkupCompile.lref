@@ -12,6 +12,10 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingAccounts\Views\Accoun
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntities\Views\AccountingEntityView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntries\Views\AccountingEntriesDetailView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntries\Views\AccountingEntriesMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntries\Views\AccountingEntriesView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceView.xaml;;
