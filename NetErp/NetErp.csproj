@@ -30,7 +30,6 @@
     <Folder Include="Books\Reports\TestBalanceByEntity\Views\" />
     <Folder Include="Books\Reports\TestBalance\Views\" />
     <Folder Include="Books\Reports\TestBalance\ViewModels\" />
-    <Folder Include="Inventory\" />
     <Folder Include="Suppliers\Suppliers\" />
     <Folder Include="Suppliers\Suppliers\Views\" />
     <Folder Include="Suppliers\Suppliers\ViewModels\" />

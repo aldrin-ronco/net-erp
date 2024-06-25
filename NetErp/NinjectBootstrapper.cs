@@ -8,6 +8,7 @@ using DTOLibrary.Books;
 using Models.Billing;
 using Models.Books;
 using Models.Global;
+using Models.Inventory;
 using Models.Suppliers;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
@@ -18,6 +19,7 @@ using Ninject;
 using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
+using Services.Inventory.DAL.PostgreSQL;
 using Services.Suppliers.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
@@ -76,6 +78,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDetailGraphQLModel>>().To<AccountingEntryDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>().To<AccountingEntryDraftMasterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>().To<AccountingEntryDraftDetailService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGrahpQLModel>>().To<MeasurementUnitService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -152,6 +155,7 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingEntryMasterGraphQLModel, AccountingEntryMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftMasterGraphQLModel, AccountingEntryDraftMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
+                _ = cfg.CreateMap<MeasurementUnitGrahpQLModel, MeasurementUnitDTO>();
                 
             });
 

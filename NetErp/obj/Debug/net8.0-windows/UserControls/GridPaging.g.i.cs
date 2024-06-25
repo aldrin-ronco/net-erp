@@ -134,7 +134,7 @@ namespace NetErp.UserControls {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/usercontrols/gridpaging.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/usercontrols/gridpaging.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\UserControls\GridPaging.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
