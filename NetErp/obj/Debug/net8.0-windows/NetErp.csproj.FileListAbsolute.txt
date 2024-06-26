@@ -211,3 +211,9 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Account
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesMasterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitView.baml

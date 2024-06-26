@@ -34,6 +34,9 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\TestBalance\Views\TestB
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Dictionaries\Views.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\Views\MainMenuView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Shell\Views\ShellView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\MeasurementUnits\Views\MeasurementUnitMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\MeasurementUnits\Views\MeasurementUnitView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\MainWindow.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Suppliers\Suppliers\Views\SupplierDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Suppliers\Suppliers\Views\SupplierMasterView.xaml;;

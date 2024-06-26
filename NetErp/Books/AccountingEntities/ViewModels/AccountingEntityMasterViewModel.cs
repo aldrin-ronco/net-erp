@@ -255,6 +255,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _ = Task.Run(() => LoadAccountingEntities());
             _ = this.SetFocus(nameof(FilterSearch));
         }
+
         public AccountingEntityMasterViewModel(AccountingEntityViewModel context)
         {
             try

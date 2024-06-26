@@ -74,10 +74,4 @@ namespace Models.Books
         public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities { get; set; }
     }
 
-    public class CanDeleteAccountingEntity
-    {
-        public bool CanDelete { get; set; } = false;
-        public string Message { get; set; } = string.Empty;
-    }
-
 }
