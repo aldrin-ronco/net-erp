@@ -15,6 +15,7 @@ using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
+using NetErp.Inventory.ItemSizes.DTO;
 using Ninject;
 using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
@@ -31,7 +32,7 @@ using System.Windows.Controls;
 
 namespace NetErp
 {
-        class NinjectBootstrapper : BootstrapperBase
+    class NinjectBootstrapper : BootstrapperBase
         {
             private readonly IKernel kernel = new StandardKernel();
 
@@ -79,6 +80,8 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>().To<AccountingEntryDraftMasterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>().To<AccountingEntryDraftDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGrahpQLModel>>().To<MeasurementUnitService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemSizeDetailGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemSizeMasterGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -156,6 +159,8 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingEntryDraftMasterGraphQLModel, AccountingEntryDraftMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
                 _ = cfg.CreateMap<MeasurementUnitGrahpQLModel, MeasurementUnitDTO>();
+                _ = cfg.CreateMap<ItemSizeMasterGraphQLModel, ItemSizeMasterDTO>();
+                _ = cfg.CreateMap<ItemSizeDetailGraphQLModel, ItemSizeDetailDTO>();
                 
             });
 

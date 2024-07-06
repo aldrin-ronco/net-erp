@@ -50,6 +50,7 @@
             </MenuItem>
             <MenuItem Header="Inventario">
                 <MenuItem Header="Unidades de medida" x:Name="OpenMeasurementUnits"/>
+                <MenuItem Header="Grupos de tallaje" x:Name="OpenItemSizes"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

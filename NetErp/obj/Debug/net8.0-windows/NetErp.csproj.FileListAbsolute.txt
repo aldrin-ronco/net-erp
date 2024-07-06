@@ -217,3 +217,9 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\Mea
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitMasterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeView.baml

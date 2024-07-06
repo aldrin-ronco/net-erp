@@ -138,8 +138,8 @@ namespace NetErp.Books.Reports.DailyBook.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/reports/dailybookbyentity/views/dailybookbyentityreportvi" +
-                    "ew.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/reports/dailybookbyentity/views/dailybookbyentit" +
+                    "yreportview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityReportView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
