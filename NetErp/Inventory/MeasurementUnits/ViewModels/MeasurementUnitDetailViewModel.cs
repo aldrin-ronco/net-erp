@@ -230,7 +230,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 if (IsNewRecord)
                 {
                     query = @"
-                    mutation($data: CreateMeasurementUnitDataInputModelInput!){
+                    mutation($data: CreateMeasurementUnitInput!){
                       CreateResponse: createMeasurementUnit(data: $data){
                         id
                         abbreviation
@@ -244,7 +244,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 else
                 {
                     query = @"
-                    mutation($data: UpdateMeasurementUnitDataInputModelInput!, $id: ID){
+                    mutation($data: UpdateMeasurementUnitInput!, $id: ID){
                       updateMeasurementUnit(data: $data, id: $id){
                         id
                         abbreviation

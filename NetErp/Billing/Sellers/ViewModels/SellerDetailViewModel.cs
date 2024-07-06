@@ -832,7 +832,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
 
                 query = IsNewRecord ?
-                    @"mutation($data:CreateSellerDataInput!) {
+                    @"mutation($data:CreateSellerInput!) {
                       createResponse: createSeller(data:$data) {
                         id
                         isActive
@@ -873,7 +873,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                       }
                     }" :
-                    @"mutation ($data: UpdateSellerDataInput!, $id: Int!) {
+                    @"mutation ($data: UpdateSellerInput!, $id: Int!) {
                         updateResponse: updateSeller(data: $data, id: $id) {
                         id
                         isActive

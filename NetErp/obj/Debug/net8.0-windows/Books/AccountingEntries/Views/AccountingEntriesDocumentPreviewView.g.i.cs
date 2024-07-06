@@ -121,8 +121,8 @@ namespace NetErp.Books.AccountingEntries.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/accountingentries/views/accountingentriesdocumen" +
-                    "tpreviewview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/accountingentries/views/accountingentriesdocumentpreviewv" +
+                    "iew.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

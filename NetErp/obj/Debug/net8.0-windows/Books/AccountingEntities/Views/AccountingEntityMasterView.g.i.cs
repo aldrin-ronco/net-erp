@@ -123,8 +123,7 @@ namespace NetErp.Books.AccountingEntities.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/accountingentities/views/accountingentitymasterv" +
-                    "iew.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/accountingentities/views/accountingentitymasterview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\AccountingEntities\Views\AccountingEntityMasterView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

@@ -63,8 +63,7 @@ namespace NetErp.Books.AccountingEntities.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/accountingentities/views/accountingentityview.xa" +
-                    "ml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/accountingentities/views/accountingentityview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\AccountingEntities\Views\AccountingEntityView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

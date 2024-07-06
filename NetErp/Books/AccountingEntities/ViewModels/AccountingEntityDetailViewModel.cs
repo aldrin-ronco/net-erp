@@ -1125,7 +1125,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (IsNewRecord)
                 {
                     query = @"
-					mutation ($data: CreateAccountingEntityDataInput!) {
+					mutation ($data: CreateAccountingEntityInput!) {
 					  CreateResponse: createAccountingEntity(data: $data) 
 					  {
 					    id
@@ -1175,7 +1175,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 else
                 {
                     query = @"
-					mutation ($data: UpdateAccountingEntityDataInput!, $id: Int!) {
+					mutation ($data: UpdateAccountingEntityInput!, $id: Int!) {
 					  UpdateResponse: updateAccountingEntity(data: $data, id: $id) {
 						id
 						identificationNumber

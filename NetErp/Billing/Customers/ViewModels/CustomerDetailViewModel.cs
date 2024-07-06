@@ -843,7 +843,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 // Query
                 queryForCreateOrUpdate = IsNewRecord
                     ? @"
-                    mutation ($data: CreateCustomerDataInput!) {
+                    mutation ($data: CreateCustomerInput!) {
                       CreateResponse: createCustomer(data: $data) {
                         id
                         creditTerm
@@ -908,7 +908,7 @@ namespace NetErp.Billing.Customers.ViewModels
                       }
                     }"
                     : @"
-                    mutation ($data: UpdateCustomerDataInput!, $id: Int!) {
+                    mutation ($data: UpdateCustomerInput!, $id: Int!) {
                       UpdateResponse: updateCustomer(data: $data, id: $id) {
                         id
                         creditTerm

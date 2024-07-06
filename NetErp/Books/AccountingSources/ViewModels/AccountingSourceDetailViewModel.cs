@@ -438,7 +438,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 if (this.Id == 0)
                 {
                     string query = @"
-				mutation ($data: CreateAccountingSourceDataInput!) {
+				mutation ($data: CreateAccountingSourceInput!) {
 				  CreateResponse: createAccountingSource(data: $data) {
 					id
 					code
@@ -482,7 +482,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 else
                 {
                     string query = @"
-				mutation ($data: UpdateAccountingSourceDataInput!, $id: Int!) {
+				mutation ($data: UpdateAccountingSourceInput!, $id: Int!) {
 				  UpdateResponse: updateAccountingSource(data: $data, id: $id) {
 					id
 					code

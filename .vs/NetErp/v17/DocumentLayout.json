@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\itemsizes\\viewmodels\\itemsizemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\itemsizes\\viewmodels\\itemsizemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\measurementunits\\viewmodels\\measurementunitdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\measurementunits\\viewmodels\\measurementunitdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -23,14 +23,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ItemSizeMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
-              "ViewState": "AQIAAAwAAAAAAAAAAAAAAF0CAAAAAAAA",
+              "Title": "MeasurementUnitDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
+              "ViewState": "AQIAAPcAAAAAAAAAAAAAAPYAAAA+AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-07-05T16:22:38.877Z",
+              "WhenOpened": "2024-07-06T17:55:31.498Z",
               "EditorCaption": ""
             }
           ]

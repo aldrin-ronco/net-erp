@@ -986,7 +986,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
 
                 query = IsNewRecord ?
-                        @"mutation ($data: CreateSupplierDataInput!) {
+                        @"mutation ($data: CreateSupplierInput!) {
                           createResponse: createSupplier(data: $data) {
                             id
                             isTaxFree
@@ -1048,7 +1048,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                               }
                             }
                           }
-                        }" : @"mutation($data:UpdateSupplierDataInput!, $id:Int!) {
+                        }" : @"mutation($data:UpdateSupplierInput!, $id:Int!) {
                           updateResponse: updateSupplier(data:$data, id:$id) {
                             id
                             isTaxFree
@@ -1197,21 +1197,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
-
-        //protected override void OnViewReady(object view)
-        //{
-        //    base.OnViewReady(view);
-        //    //ValidateProperties();
-        //    _ = Application.Current.Dispatcher.BeginInvoke(() =>
-        //      {
-        //          SelectedIndexPage = 0; // Selecciona el primer TAB page
-        //          _ = IsNewRecord
-        //                ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
-        //                : CaptureInfoAsPN
-        //                    ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
-        //                    : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
-        //      });
-        //}
 
         protected override void OnViewAttached(object view, object context)
         {

@@ -106,7 +106,7 @@ namespace NetErp.Suppliers.Suppliers.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/suppliers/suppliers/views/suppliermasterview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/suppliers/suppliers/views/suppliermasterview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Suppliers\Suppliers\Views\SupplierMasterView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
