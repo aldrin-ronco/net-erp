@@ -3,20 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\measurementunits\\viewmodels\\measurementunitmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\measurementunits\\viewmodels\\measurementunitmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\measurementunits\\views\\measurementunitmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\measurementunits\\views\\measurementunitmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\measurementunits\\viewmodels\\measurementunitdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\measurementunits\\viewmodels\\measurementunitdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\itemsizes\\viewmodels\\itemsizemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\itemsizes\\viewmodels\\itemsizemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,53 +22,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AccountingEntityMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ViewState": "AQIAAD4BAAAAAAAAAAAAAAAAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-25T15:21:44.925Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "MeasurementUnitMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitMasterViewModel.cs",
-              "ViewState": "AQIAADQAAAAAAAAAAAAlwFEAAAAoAAAA",
+              "Title": "ItemSizeMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Inventory\\ItemSizes\\ViewModels\\ItemSizeMasterViewModel.cs",
+              "ViewState": "AQIAAAwAAAAAAAAAAAAAAF0CAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-25T15:16:55.27Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MeasurementUnitMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\Views\\MeasurementUnitMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\MeasurementUnits\\Views\\MeasurementUnitMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\Views\\MeasurementUnitMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Inventory\\MeasurementUnits\\Views\\MeasurementUnitMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-06-25T16:11:43.421Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "MeasurementUnitDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\MeasurementUnits\\ViewModels\\MeasurementUnitDetailViewModel.cs",
-              "ViewState": "AQIAANoAAAAAAAAAAAAlwPUAAAAUAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-06-25T13:48:39.544Z",
+              "WhenOpened": "2024-07-05T16:22:38.877Z",
               "EditorCaption": ""
             }
           ]

@@ -13,6 +13,12 @@
     <Compile Update="Global\Shell\Views\ShellView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Inventory\ItemSizes\Views\ItemSizeMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Inventory\ItemSizes\Views\ItemSizeView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -31,6 +37,12 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\Shell\Views\ShellView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Inventory\ItemSizes\Views\ItemSizeMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Inventory\ItemSizes\Views\ItemSizeView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.xaml">
