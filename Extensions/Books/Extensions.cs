@@ -74,6 +74,17 @@ namespace Extensions.Books
             });
         }
 
+        public static void Replace(this ObservableCollection<IdentificationTypeDTO> identificationTypes, IdentificationTypeDTO updatedIdentificationType)
+        {
+            IdentificationTypeDTO identificationTypeToReplace = identificationTypes.Where(x => x.Id == updatedIdentificationType.Id).FirstOrDefault();
+            int index = identificationTypes.IndexOf(identificationTypeToReplace);
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                identificationTypes.Remove(identificationTypeToReplace);
+                identificationTypes.Insert(index, updatedIdentificationType);
+            });
+        }
+
         public static void RemoveById(this ObservableCollection<AccountingEntityDTO> accountingEntities, int id)
         {
             AccountingEntityDTO accountingEntityToDelete = accountingEntities.Where(x => x.Id == id).FirstOrDefault();
@@ -81,6 +92,15 @@ namespace Extensions.Books
             {
                 accountingEntities.Remove(accountingEntityToDelete);
             };
+        }
+
+        public static void RemoveById(this ObservableCollection<IdentificationTypeDTO> identificationTypes, int id)
+        {
+            IdentificationTypeDTO identificationTypeToDelete = identificationTypes.Where(x => x.Id == id).FirstOrDefault();
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                identificationTypes.Remove(identificationTypeToDelete);
+            });
         }
     }
 }

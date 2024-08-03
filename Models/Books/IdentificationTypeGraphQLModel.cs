@@ -28,9 +28,34 @@ namespace Models.Books
         }
     }
 
-    public class CanDeleteIdentificationType
+    public class IdentificationTypeDTO : IdentificationTypeGraphQLModel
     {
-        public bool CanDelete { get; set; } = false;
-        public string Message { get; set; } = string.Empty;
+        private bool _isChecked;
+
+        public bool IsChecked
+        {
+            get { return _isChecked; }
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                }
+            }
+        }
+    }
+    public class IdentificationTypeCreateMessage
+    {
+        public IdentificationTypeGraphQLModel CreatedIdentificationType { get; set; }
+    }
+
+    public class IdentificationTypeUpdateMessage
+    {
+        public IdentificationTypeGraphQLModel UpdatedIdentificationType { get; set; }
+    }
+
+    public class IdentificationTypeDeleteMessage
+    {
+        public IdentificationTypeGraphQLModel DeletedIdentificationType { get; set; }
     }
 }

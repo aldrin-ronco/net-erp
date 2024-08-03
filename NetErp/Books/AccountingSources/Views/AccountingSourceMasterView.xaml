@@ -184,65 +184,13 @@
             </dxg:GridControl>
         </busyIndicator:BusyMask>
         <!--Pagination-->
-            <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+        <uc:GridPaging Grid.Row="4" Grid.Column="0" 
                        HorizontalAlignment="Stretch" 
                        ChangedIndexCommand="{Binding PaginationCommand}" 
                        PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                        ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <!--StatusBar-->
-            <!--<StatusBar Grid.Row="4" Visibility="Collapsed">
-                <StatusBar.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <DockPanel HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </ItemsPanelTemplate>
-                </StatusBar.ItemsPanel>
-                --><!--Id Seleccionado--><!--
-                <StatusBarItem>
-                    <StatusBarItem.Style>
-                        <Style TargetType="StatusBarItem">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedAccountingSource}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Hidden"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StatusBarItem.Style>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock FontSize="16" Text="Id Seleccionado:" Margin="0 0 3 0"/>
-                        <TextBlock FontSize="16" Text="{Binding SelectedAccountingSource.Id, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </StatusBarItem>
-                --><!--Separador--><!--
-                <Separator Background="LightGray">
-                    <Separator.Style>
-                        <Style TargetType="Separator">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedAccountingSource}" Value="{x:Null}">
-                                    <Setter Property="Visibility" Value="Hidden"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Separator.Style>
-                </Separator>
-                --><!--Cantidad de registros en la lista--><!--
-                <StatusBarItem>
-                    <StatusBarItem.Style>
-                        <Style TargetType="StatusBarItem">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding AccountingSources.Count}" Value="0">
-                                    <Setter Property="Visibility" Value="Hidden"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StatusBarItem.Style>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock FontSize="15" Text="Cantidad de registros:" Margin="0 0 3 0"/>
-                        <TextBlock FontSize="15" Text="{Binding AccountingSources.Count, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </StatusBarItem>
-            </StatusBar>-->
 
     </Grid>
 </UserControl>

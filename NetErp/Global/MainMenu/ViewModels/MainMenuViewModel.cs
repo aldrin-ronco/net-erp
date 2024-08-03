@@ -18,6 +18,7 @@ using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.ViewModels;
 using NetErp.Books.AccountingSources.ViewModels;
+using NetErp.Books.IdentificationTypes.ViewModels;
 using NetErp.Books.Reports.AnnualIncomeStatement.ViewModels;
 using NetErp.Books.Reports.AuxiliaryBook.ViewModels;
 using NetErp.Books.Reports.DailyBook.ViewModels;
@@ -63,7 +64,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 AccountPlanViewModel instance = new()
                 {
-                    DisplayName = "Plan Unico de Cuentas"
+                    DisplayName = "Plan único de cuentas"
                 };
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
@@ -167,7 +168,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             try
             {
                 AccountingSourceViewModel instance = IoC.Get<AccountingSourceViewModel>();
-                instance.DisplayName = "Fuentes Contables";
+                instance.DisplayName = "Fuentes contables";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
@@ -188,7 +189,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             try
             {
                 AuxiliaryBookViewModel instance = IoC.Get<AuxiliaryBookViewModel>();
-                instance.DisplayName = "Libro Auxiliar";
+                instance.DisplayName = "Libro auxiliar";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
@@ -228,7 +229,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             try
             {
                 DailyBookByEntityViewModel instance = IoC.Get<DailyBookByEntityViewModel>();
-                instance.DisplayName = "Libro Diario Por Tercero";
+                instance.DisplayName = "Libro diario por tercero";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
@@ -351,6 +352,26 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 ItemSizeViewModel instance = IoC.Get<ItemSizeViewModel>();
                 instance.DisplayName = "Grupos de tallaje";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        public async void OpenIdentificationType()
+        {
+            try
+            {
+                IdentificationTypeViewModel instance = IoC.Get<IdentificationTypeViewModel>();
+                instance.DisplayName = "Tipos de documentos de identidad";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;

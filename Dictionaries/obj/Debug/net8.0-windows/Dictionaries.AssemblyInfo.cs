@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Dictionaries")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+285033c0dccdf4223bde0866fe8e4c21af3adc1a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+512e43caaea83c29c6bf3f395f4206cd0e37ae5d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Dictionaries")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Dictionaries")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
