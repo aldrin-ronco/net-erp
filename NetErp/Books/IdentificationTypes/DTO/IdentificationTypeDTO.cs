@@ -7,20 +7,20 @@ using System.Threading.Tasks;
 
 namespace NetErp.Books.IdentificationTypes.DTO
 {
-    public class IdentificationTypeDTO : IdentificationTypeGraphQLModel
-    {
-        private bool _isChecked;
+    //public class IdentificationTypeDTO : IdentificationTypeGraphQLModel
+    //{
+    //    private bool _isChecked;
 
-        public bool IsChecked
-        {
-            get { return _isChecked; }
-            set
-            {
-                if (_isChecked != value)
-                {
-                    _isChecked = value;
-                }
-            }
-        }
-    }
+    //    public bool IsChecked
+    //    {
+    //        get { return _isChecked; }
+    //        set
+    //        {
+    //            if (_isChecked != value)
+    //            {
+    //                _isChecked = value;
+    //            }
+    //        }
+    //    }
+    //}
 }

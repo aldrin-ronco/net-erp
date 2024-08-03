@@ -22,6 +22,8 @@
     <Folder Include="Books\AccountingEntries\Views\" />
     <Folder Include="Books\AccountingEntries\ViewModels\" />
     <Folder Include="Books\AccountingSources\Views\" />
+    <Folder Include="Books\IdentificationTypes\Views\" />
+    <Folder Include="Books\IdentificationTypes\ViewModels\" />
     <Folder Include="Books\Reports\AuxiliaryBook\Views\" />
     <Folder Include="Books\Reports\AuxiliaryBook\ViewModels\" />
     <Folder Include="Books\Reports\EntityVsAccount\ViewModels\" />

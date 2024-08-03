@@ -19,6 +19,9 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingEntries\Views\Account
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\AccountingSources\Views\AccountingSourceView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\IdentificationTypes\Views\IdentificationTypeDetailView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\IdentificationTypes\Views\IdentificationTypeMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Books\IdentificationTypes\Views\IdentificationTypeView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementReportView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.xaml;;
@@ -34,7 +37,6 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\TestBalance\Views\TestB
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Dictionaries\Views.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\Views\MainMenuView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Shell\Views\ShellView.xaml;;
-FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\ItemSizes\Views\ItemSizeDetailView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\ItemSizes\Views\ItemSizeMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\ItemSizes\Views\ItemSizeView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.xaml;;

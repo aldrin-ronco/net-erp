@@ -1,0 +1,162 @@
+﻿<UserControl x:Class="NetErp.Books.IdentificationTypes.Views.IdentificationTypeDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Books.IdentificationTypes.Views"
+             xmlns:adorners="http://gu.se/Adorners"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
+             xmlns:viewmodels="clr-namespace:NetErp.Books.IdentificationTypes.ViewModels" 
+             d:DataContext="{d:DesignInstance Type=viewmodels:IdentificationTypeDetailViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" Background="White">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!--Toolbar-->
+        <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+               RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+            <dxr:RibbonPage Caption="General">
+
+                <dxr:RibbonPageGroup Caption="Acciones">
+                    <dxb:BarButtonItem x:Name="btnBack" 
+                           Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
+                           LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
+                           Content="Regresar"
+                           RibbonStyle="Large"
+                           Hint="Regresa a la lista de Documentos"
+                           Command="{Binding Path=GoBackCommand}"/>
+                    <dxb:BarItemSeparator/>
+
+                    <dxb:BarButtonItem Content="Guardar" 
+                               Glyph="{dxc:DXImage Image=Save_16x16.png}" 
+                               LargeGlyph="{dxc:DXImage Image=Save_32x32.png}"                                             
+                               Description="Creates a new document."
+                               Hint="Guarda los cambios realizados"    
+                               IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                               RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    <dxb:BarItemLinkSeparator/>
+                </dxr:RibbonPageGroup>
+            </dxr:RibbonPage>
+        </dxr:RibbonControl>
+        
+
+        <!--Detalle de fuente contable-->
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            Grid.Row="1"
+                            Grid.Column="1">
+            <Grid x:Name="GridSource" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                <!--Titulo o Encabezado-->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="DETALLES DE TIPO DE DOCUMENTO" Grid.ColumnSpan="3" HorizontalAlignment="Center" Padding="10" FontSize="22"/>
+
+                <!--Codigo-->
+                <StackPanel Grid.Column="0" Grid.Row="1" Orientation="Horizontal" Margin="5">
+                    <TextBlock  Text="Código DIAN" VerticalAlignment="Center" Padding="3" FontSize="13"/>
+                    <TextBlock Text=" - Númerico ( 2 Dígitos )" Foreground="Gray" VerticalAlignment="Center" FontSize="13"/>
+                </StackPanel>
+                <TextBox
+                      Text="{Binding Path=Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      Grid.Column="1" Grid.Row="1" 
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Left"
+                      Margin="5" Padding="3"
+                      MaxLength="2"
+                      Width="50"
+                      TextAlignment="Center"
+                      PreviewTextInput="txtCode_PreviewTextInput">
+                </TextBox>
+
+                <!--Nombre del tipo de documento-->
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="Nombre" VerticalAlignment="Center" Margin="5" Padding="3" FontSize="13"/>
+                <TextBox
+                     Text="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Grid.Column="1" 
+                     Grid.Row="2" 
+                     Width="auto" 
+                     VerticalAlignment="Center" 
+                     Margin="5"
+                     Padding="3"
+                     CharacterCasing="Upper"/>
+
+                <!--Longitud mínima del documento-->
+                <TextBlock Grid.Column="0" Grid.Row="3" 
+                       Text="Longitud mínima del documento"
+                       FontSize="13"
+                       VerticalAlignment="Center" 
+                       Margin="5" Padding="3"/>
+                <xctk:IntegerUpDown
+                     Grid.Column="1" Grid.Row="3" 
+                     Width="50"
+                     Value="{Binding Path=MinimumDocumentLength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     VerticalAlignment="Center" 
+                     HorizontalAlignment="Left"
+                     Margin="5" Padding="3"
+                     Maximum="15"
+                     Minimum="5"/>
+                <!--Value="{Binding IdentificationType.MinimumDocumentLength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"-->
+                <!--"-->
+                <!--Requiere dígito de verificación-->
+                <TextBlock Grid.Column="0" Grid.Row="4" 
+                       Text="Requiere dígito de verificación"
+                       FontSize="13"
+                       VerticalAlignment="Center" 
+                       Margin="5" Padding="3"/>
+                <CheckBox
+                      IsChecked="{Binding Path=HasVerificationDigit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      Grid.Column="1" Grid.Row="4" 
+                      VerticalAlignment="Center" 
+                      Margin="5 0 0 0"/>
+
+            </Grid>
+        </busyIndicator:BusyMask>
+
+    </Grid>
+    
+</UserControl>
