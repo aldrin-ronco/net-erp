@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <Folder Include="Billing\Customers\Views\" />
+    <Folder Include="Billing\DocumentSequence\Views\" />
+    <Folder Include="Billing\DocumentSequence\ViewModels\" />
     <Folder Include="Billing\Sellers\Views\" />
     <Folder Include="Billing\Sellers\ViewModels\" />
     <Folder Include="Books\AccountingAccounts\Views\" />

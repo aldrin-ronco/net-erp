@@ -3,8 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\books\\identificationtypes\\views\\identificationtypemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\identificationtypes\\views\\identificationtypemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|C:\\Users\\sebas\\source\\repos\\NetErp\\neterp\\billing\\documentsequence\\viewmodels\\documentsequencemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\documentsequence\\viewmodels\\documentsequencemasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\documentsequence\\viewmodels\\documentsequencedetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\documentsequence\\viewmodels\\documentsequencedetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\documentsequence\\views\\documentsequencemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\documentsequence\\views\\documentsequencemasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -22,14 +30,40 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "IdentificationTypeMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\IdentificationTypes\\Views\\IdentificationTypeMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Books\\IdentificationTypes\\Views\\IdentificationTypeMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Books\\IdentificationTypes\\Views\\IdentificationTypeMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Books\\IdentificationTypes\\Views\\IdentificationTypeMasterView.xaml",
+              "DocumentIndex": 2,
+              "Title": "DocumentSequenceMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\Views\\DocumentSequenceMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\DocumentSequence\\Views\\DocumentSequenceMasterView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\Views\\DocumentSequenceMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Billing\\DocumentSequence\\Views\\DocumentSequenceMasterView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-08-03T15:15:29.084Z",
+              "WhenOpened": "2024-08-15T14:07:43.406Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DocumentSequenceMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceMasterViewModel.cs",
+              "ViewState": "AQIAAO4BAAAAAAAAAAAAAN0BAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-13T14:04:12.313Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DocumentSequenceDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\DocumentSequence\\ViewModels\\DocumentSequenceDetailViewModel.cs",
+              "ViewState": "AQIAAEABAAAAAAAAAAAAAFQBAAARAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-08-13T13:49:28.753Z",
               "EditorCaption": ""
             }
           ]

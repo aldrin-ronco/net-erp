@@ -82,6 +82,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGrahpQLModel>>().To<MeasurementUnitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemSizeDetailGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemSizeMasterGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<DocumentSequenceMasterGraphQLModel>>().To<DocumentSequenceMasterService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();

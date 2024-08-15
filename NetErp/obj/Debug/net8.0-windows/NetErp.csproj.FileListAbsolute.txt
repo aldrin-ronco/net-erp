@@ -227,3 +227,9 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\Identif
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeDetailView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeMasterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Billing\DocumentSequence\Views\DocumentSequenceView.baml
