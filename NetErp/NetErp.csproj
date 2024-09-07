@@ -50,13 +50,14 @@
     <PackageReference Include="CalcBinding" Version="2.5.2" />
     <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
     <PackageReference Include="CurrencyTextBox" Version="2.0.2" />
+    <PackageReference Include="DeepCloner" Version="0.10.4" />
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
     <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="1.6.0" />
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.9.28" />
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.77" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
     <PackageReference Include="Ninject" Version="3.3.6" />
   </ItemGroup>
 

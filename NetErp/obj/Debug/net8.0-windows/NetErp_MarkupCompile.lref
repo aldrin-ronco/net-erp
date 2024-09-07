@@ -37,6 +37,11 @@ FC:\Users\sebas\source\repos\NetErp\NetErp\Books\Reports\TestBalance\Views\TestB
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Dictionaries\Views.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\MainMenu\Views\MainMenuView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Global\Shell\Views\ShellView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\CatalogItems\TabControlPages\Views\BasicView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\CatalogItems\TabControlPages\Views\EanCodeView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\CatalogItems\TabControlPages\Views\OtherDataView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\CatalogItems\Views\CatalogMasterView.xaml;;
+FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\CatalogItems\Views\CatalogView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\ItemSizes\Views\ItemSizeMasterView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\ItemSizes\Views\ItemSizeView.xaml;;
 FC:\Users\sebas\source\repos\NetErp\NetErp\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.xaml;;

@@ -15,8 +15,8 @@
 
 	<ItemGroup>
 	  <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
-	  <PackageReference Include="GraphQL.Client" Version="6.0.2" />
-	  <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.0.2" />
+	  <PackageReference Include="GraphQL.Client" Version="6.1.0" />
+	  <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0" />
 	</ItemGroup>
 
 </Project>

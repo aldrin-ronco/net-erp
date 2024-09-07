@@ -29,7 +29,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         IHandle<MeasurementUnitUpdateMessage>,
         IHandle<MeasurementUnitDeleteMessage>
     {
-        public readonly IGenericDataAccess<MeasurementUnitGrahpQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGrahpQLModel>>();
+        public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
 
         private MeasurementUnitViewModel _context;
         public MeasurementUnitViewModel Context
@@ -101,8 +101,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        private MeasurementUnitGrahpQLModel? _selectedMeasurementUnit;
-        public MeasurementUnitGrahpQLModel? SelectedMeasurementUnit
+        private MeasurementUnitGraphQLModel? _selectedMeasurementUnit;
+        public MeasurementUnitGraphQLModel? SelectedMeasurementUnit
         {
             get { return _selectedMeasurementUnit; }
             set
@@ -357,7 +357,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task<MeasurementUnitGrahpQLModel> ExecuteDeleteMeasurementUnit(int id)
+        public async Task<MeasurementUnitGraphQLModel> ExecuteDeleteMeasurementUnit(int id)
         {
             try
             {

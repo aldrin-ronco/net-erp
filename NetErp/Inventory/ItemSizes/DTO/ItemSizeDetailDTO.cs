@@ -44,15 +44,15 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        private int _itemsizeMasterId;
+        private int _itemSizeMasterId;
         public int ItemSizeMasterId
         {
-            get { return _itemsizeMasterId; }
+            get { return _itemSizeMasterId; }
             set
             {
-                if (_itemsizeMasterId != value)
+                if (_itemSizeMasterId != value)
                 {
-                    _itemsizeMasterId = value;
+                    _itemSizeMasterId = value;
                     NotifyOfPropertyChange(nameof(ItemSizeMasterId));
                 }
             }
@@ -68,6 +68,20 @@ namespace NetErp.Inventory.ItemSizes.DTO
                 {
                     _presentationOrder = value;
                     NotifyOfPropertyChange(nameof(PresentationOrder));
+                }
+            }
+        }
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    NotifyOfPropertyChange(nameof(IsSelected));
                 }
             }
         }
@@ -110,7 +124,7 @@ namespace NetErp.Inventory.ItemSizes.DTO
         {
             _id = id;
             _name = name;
-            _itemsizeMasterId = sizeMasterId;
+            _itemSizeMasterId = sizeMasterId;
         }
         public override string ToString()
         {
