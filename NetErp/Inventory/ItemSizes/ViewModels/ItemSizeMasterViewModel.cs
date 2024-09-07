@@ -666,6 +666,20 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 }
             }
         }
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
         #endregion
 
         #region "Commands"

@@ -49,7 +49,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 throw;
             }
         }
-        public async Task ActivateDetailViewForEdit(MeasurementUnitGrahpQLModel selectedItem)
+        public async Task ActivateDetailViewForEdit(MeasurementUnitGraphQLModel selectedItem)
         {
             MeasurementUnitDetailViewModel instance = new(this);
             instance.Id = selectedItem.Id;

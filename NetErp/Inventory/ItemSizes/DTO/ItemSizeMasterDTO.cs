@@ -72,6 +72,20 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get { return _isSelected; }
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    NotifyOfPropertyChange(nameof(IsSelected));
+                }
+            }
+        }
+
         private int _id;
         public int Id
         {

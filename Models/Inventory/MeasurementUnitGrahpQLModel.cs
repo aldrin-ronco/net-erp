@@ -8,32 +8,33 @@ using System.Threading.Tasks;
 
 namespace Models.Inventory
 {
-    public class MeasurementUnitGrahpQLModel
+    public class MeasurementUnitGraphQLModel
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Abbreviation { get; set; } = string.Empty;
     }
 
-    public class MeasurementUnitDTO: MeasurementUnitGrahpQLModel
+    public class MeasurementUnitDTO : MeasurementUnitGraphQLModel
     {
 
     }
 
     public class MeasurementUnitCreateMessage
     {
-        public MeasurementUnitGrahpQLModel CreatedMeasurementUnit { get; set; }
+        public MeasurementUnitGraphQLModel CreatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
 
-        public ObservableCollection<MeasurementUnitGrahpQLModel> MeasurementUnits { get; set; }
+        public ObservableCollection<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; } = new ObservableCollection<MeasurementUnitGraphQLModel>();
     }
     public class MeasurementUnitDeleteMessage
     {
-        public MeasurementUnitGrahpQLModel DeletedMeasurementUnit { get; set; }
+        public MeasurementUnitGraphQLModel DeletedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
     }
 
     public class MeasurementUnitUpdateMessage
     {
-        public MeasurementUnitGrahpQLModel UpdatedMeasurementUnit { get; set; }
-        public ObservableCollection<MeasurementUnitGrahpQLModel> MeasurementUnits { get; set; }
+        public MeasurementUnitGraphQLModel UpdatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
+        public ObservableCollection<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; } = new ObservableCollection<MeasurementUnitGraphQLModel>();
     }
 }
+

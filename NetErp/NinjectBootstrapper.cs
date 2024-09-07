@@ -15,6 +15,7 @@ using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
+using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.ItemSizes.DTO;
 using Ninject;
 using Services.Billing.DAL.PostgreSQL;
@@ -79,9 +80,15 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDetailGraphQLModel>>().To<AccountingEntryDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>().To<AccountingEntryDraftMasterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>().To<AccountingEntryDraftDetailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGrahpQLModel>>().To<MeasurementUnitService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGraphQLModel>>().To<MeasurementUnitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemSizeDetailGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemSizeMasterGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CatalogGraphQLModel>>().To<CatalogService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemTypeGraphQLModel>>().To<ItemTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemSubCategoryGraphQLModel>>().To<ItemSubCategoryService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<EanCodeGraphQLModel>>().To<EanCodeService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -158,10 +165,19 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingEntryMasterGraphQLModel, AccountingEntryMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftMasterGraphQLModel, AccountingEntryDraftMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
-                _ = cfg.CreateMap<MeasurementUnitGrahpQLModel, MeasurementUnitDTO>();
+                _ = cfg.CreateMap<MeasurementUnitGraphQLModel, MeasurementUnitDTO>();
                 _ = cfg.CreateMap<ItemSizeMasterGraphQLModel, ItemSizeMasterDTO>();
                 _ = cfg.CreateMap<ItemSizeDetailGraphQLModel, ItemSizeDetailDTO>();
-                
+                _ = cfg.CreateMap<CatalogGraphQLModel, CatalogDTO>();
+                _ = cfg.CreateMap<ItemTypeGraphQLModel, ItemTypeDTO>();
+                _ = cfg.CreateMap<ItemCategoryGraphQLModel, ItemCategoryDTO>();
+                _ = cfg.CreateMap<ItemSubCategoryGraphQLModel, ItemSubCategoryDTO>();
+                _ = cfg.CreateMap<ItemGraphQLModel, ItemDTO>();
+                _ = cfg.CreateMap<BrandGraphQLModel, BrandDTO>();
+                _ = cfg.CreateMap<AccountingGroupGraphQLModel, AccountingGroupDTO>();
+                _ = cfg.CreateMap<EanCodeGraphQLModel, EanCodeDTO>();
+
+
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

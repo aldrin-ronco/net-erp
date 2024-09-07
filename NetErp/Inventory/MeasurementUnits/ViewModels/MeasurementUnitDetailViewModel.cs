@@ -29,7 +29,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
     public class MeasurementUnitDetailViewModel : Screen
     {
-        public readonly IGenericDataAccess<MeasurementUnitGrahpQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGrahpQLModel>>();
+        public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
 
         private MeasurementUnitViewModel _context;
         public MeasurementUnitViewModel Context
@@ -170,7 +170,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             Name = "";
             Abbreviation = "";
         }
-        public async Task<IEnumerable<MeasurementUnitGrahpQLModel>> LoadMeasurementUnits()
+        public async Task<IEnumerable<MeasurementUnitGraphQLModel>> LoadMeasurementUnits()
         {
             string queryForPage;
             queryForPage = @"
@@ -189,7 +189,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                MeasurementUnitGrahpQLModel result = await ExecuteSave();
+                MeasurementUnitGraphQLModel result = await ExecuteSave();
                 var listResult = await LoadMeasurementUnits();
                 if (IsNewRecord)
                 {
@@ -216,7 +216,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task<MeasurementUnitGrahpQLModel> ExecuteSave()
+        public async Task<MeasurementUnitGraphQLModel> ExecuteSave()
         {
             try
             {
