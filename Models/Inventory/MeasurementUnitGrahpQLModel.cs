@@ -15,9 +15,12 @@ namespace Models.Inventory
         public string Abbreviation { get; set; } = string.Empty;
     }
 
-    public class MeasurementUnitDTO : MeasurementUnitGraphQLModel
+    public class MeasurementUnitDTO : MeasurementUnitGraphQLModel, ICloneable
     {
-
+        public object Clone()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class MeasurementUnitCreateMessage

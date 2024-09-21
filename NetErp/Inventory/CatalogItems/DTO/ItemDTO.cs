@@ -9,10 +9,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemDTO : Screen, ICloneable
+    public class ItemDTO : Screen, ICloneable, ICatalogItem
     {
         private int _id;
 
@@ -216,10 +217,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
                 if (_isSelected != value)
                 {
                     _isSelected = value;
-                    NotifyOfPropertyChange(nameof(IsSelected));
-                    if (_isSelected)
-                        Context.SelectedItem = this;
-                    
+                    NotifyOfPropertyChange(nameof(IsSelected));                  
                 }
             }
         }
@@ -297,6 +295,22 @@ namespace NetErp.Inventory.CatalogItems.DTO
                 }
             }
         }
+
+        private ItemSubCategoryDTO _subCategory;
+
+        public ItemSubCategoryDTO SubCategory
+        {
+            get { return _subCategory; }
+            set 
+            {
+                if (_subCategory != value)
+                {
+                    _subCategory = value;
+                    NotifyOfPropertyChange(nameof(SubCategory));
+                }
+            }
+        }
+
 
         public ItemDTO()
         {

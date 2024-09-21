@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemSubCategoryDTO: Screen
+    public class ItemSubCategoryDTO: Screen, ICatalogItem
     {
         private int _id;
 
@@ -112,11 +112,28 @@ namespace NetErp.Inventory.CatalogItems.DTO
                     {
                         if (_isExpanded && _items.Count > 0)
                         {
-                            if (_items[0].IsDummyChild) { }
-                                _context.LoadItems(this);
+                            if (_items[0].IsDummyChild) 
+                            {
+                                _items.Clear();
+                                _ = _context.LoadItems(this);
+                            }
                         }
                     }
                 }
+            }
+        }
+        private ItemCategoryDTO _itemCategory;
+
+        public ItemCategoryDTO ItemCategory
+        {
+            get { return _itemCategory; }
+            set 
+            {
+                if (_itemCategory != value) 
+                {
+                    _itemCategory = value;
+                    NotifyOfPropertyChange(nameof(ItemCategory));
+                } 
             }
         }
 

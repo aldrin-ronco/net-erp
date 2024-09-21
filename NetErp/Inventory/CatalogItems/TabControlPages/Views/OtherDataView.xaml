@@ -15,14 +15,14 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions> 
         <CheckBox Content="Registrar información extendida" Grid.Row="0"
-                      IsChecked="{Binding SelectedItem.HasExtendedInformation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                      IsChecked="{Binding HasExtendedInformation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <CheckBox Content="Permitir fracción" Grid.Row="1"
-                  IsChecked="{Binding SelectedItem.AllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                  IsChecked="{Binding AllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <CheckBox Content="Servicio basado en AIU" Grid.Row="2"
-                  IsChecked="{Binding SelectedItem.AiuBasedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                  IsChecked="{Binding AiuBasedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <CheckBox Content="Aplica para venta" Grid.Row="3"
-                  IsChecked="{Binding SelectedItem.Billable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                  IsChecked="{Binding Billable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <CheckBox Content="Cantidad controlada por báscula en la venta" Grid.Row="4"
-                  IsChecked="{Binding SelectedItem.AmountBasedOnWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                  IsChecked="{Binding AmountBasedOnWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     </Grid>
 </UserControl>
