@@ -3,20 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\basicview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\basicview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\dto\\itemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\dto\\itemdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\basicview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\basicview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\viewmodels\\sellerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\viewmodels\\sellerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,52 +30,40 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "BasicView.xaml",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\BasicView.xaml",
               "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\BasicView.xaml",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\BasicView.xaml",
               "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\BasicView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-09-07T15:36:50.866Z",
+              "WhenOpened": "2024-09-21T15:24:47.202Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "CatalogMasterViewModel.cs",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ViewState": "AgIAAFEBAAAAAAAAAAAAAG4BAAApAAAAAAAAAA==",
+              "ViewState": "AgIAAFsEAAAAAAAAAAAAAH4EAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-06T14:18:22.663Z",
+              "WhenOpened": "2024-09-19T16:02:28.583Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ItemDTO.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\DTO\\ItemDTO.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\DTO\\ItemDTO.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\DTO\\ItemDTO.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\DTO\\ItemDTO.cs",
-              "ViewState": "AgIAAMcAAAAAAAAAAAAAwNsAAAAkAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "SellerDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\Sellers\\ViewModels\\SellerDetailViewModel.cs",
+              "ViewState": "AgIAACQDAAAAAAAAAAAtwDcDAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-07T15:03:43.461Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "CatalogMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-09-06T16:45:39.289Z",
+              "WhenOpened": "2024-09-19T21:06:51.005Z",
               "EditorCaption": ""
             }
           ]

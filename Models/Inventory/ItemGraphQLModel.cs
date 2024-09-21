@@ -26,4 +26,19 @@ namespace Models.Inventory
         public ItemSubCategoryGraphQLModel SubCategory { get; set; } = new();
         public IEnumerable<EanCodeGraphQLModel> EanCodes { get; set; }
     }
+
+    public class ItemCreateMessage
+    {
+        public ItemGraphQLModel CreatedItem { get; set; }
+    }
+
+    public class ItemUpdateMessage 
+    {
+        public ItemGraphQLModel UpdatedItem { get; set; }
+    }
+
+    public class ItemDeleteMessage
+    {
+        public ItemGraphQLModel DeletedItem { get; set; }
+    }
 }

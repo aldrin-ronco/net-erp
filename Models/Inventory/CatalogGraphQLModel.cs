@@ -13,4 +13,18 @@ namespace Models.Inventory
         public IEnumerable<ItemTypeGraphQLModel> ItemsTypes { get; set; }
     }
 
+    public class CatalogCreateMessage
+    {
+        public CatalogGraphQLModel CreatedCatalog { get; set; }
+    }
+
+    public class CatalogUpdateMessage
+    {
+        public CatalogGraphQLModel UpdatedCatalog { get; set; }
+    }
+    public class CatalogDeleteMessage 
+    {
+        public CatalogGraphQLModel DeletedCatalog { get; set; }
+    }
+
 }

@@ -13,4 +13,17 @@ namespace Models.Inventory
         public ItemTypeGraphQLModel ItemType { get; set; } = new();
         public IEnumerable<ItemSubCategoryGraphQLModel> ItemsSubCategories { get; set; }
     }
+
+    public class ItemCategoryCreateMessage
+    {
+        public ItemCategoryGraphQLModel CreatedItemCategory { get; set; }
+    }
+    public class ItemCategoryUpdateMessage
+    {
+        public ItemCategoryGraphQLModel UpdatedItemCategory { get; set; }
+    }
+    public class ItemCategoryDeleteMessage 
+    {
+        public ItemCategoryGraphQLModel DeletedItemCategory { get; set; }
+    }
 }

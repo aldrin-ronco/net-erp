@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="NetErp.Inventory.CatalogItems.TabControlPages.Views.EanCodeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
@@ -8,6 +9,9 @@
              xmlns:local="clr-namespace:NetErp.Inventory.CatalogItems.TabControlPages.Views"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="0.06*"/>
@@ -20,19 +24,28 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="0.05*"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0"/>
-                <Button Margin="5 0 0 0 " Grid.Column="1">
-                    <Button.Content>
-                        <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None"/>
-                    </Button.Content>
+                <TextBox Grid.Column="0" Text="{Binding EanCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Margin="5 0 0 0 " Grid.Column="1" Width="auto" Command="{Binding Path=Data.AddEanCodeCommand, Source={StaticResource DataContextProxy}}">
+                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value=".5"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
                 </Button>
             </Grid>
         </StackPanel>
         <dxg:GridControl 
                  Margin="0 8 0 0"                
                  EnableSmartColumnsGeneration="True"
-                 ItemsSource="{Binding Path=SelectedItem.EanCodes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                 AutoGenerateColumns="None" Grid.Row="1">
+                 ItemsSource="{Binding EanCodes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 AutoGenerateColumns="None" Grid.Row="1"
+                 SelectedItem="{Binding SelectedEanCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
                     <dxg:TableView  AllowCascadeUpdate="False" 
                                     EnableSelectedRowAppearance="True"
@@ -51,7 +64,7 @@
                          BorderThickness="0"
                          Padding="3"
                          Margin="3"
-                         Width="auto" Height="auto">
+                         Width="auto" Height="auto" Command="{Binding Path=Data.DeleteEanCodeCommand, Source={StaticResource DataContextProxy}}">
                             <Button.Content>
                                 <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Stretch="None" />
                             </Button.Content>

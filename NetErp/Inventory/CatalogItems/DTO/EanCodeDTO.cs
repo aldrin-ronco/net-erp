@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class EanCodeDTO: Screen
+    public class EanCodeDTO: Screen, ICloneable
     {
 		private string _id = string.Empty;
 
@@ -39,6 +39,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
 			}
 		}
 
-
-	}
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
+    }
 }

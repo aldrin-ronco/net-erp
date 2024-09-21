@@ -1,4 +1,6 @@
 ﻿using Caliburn.Micro;
+using Models.Books;
+using Models.Inventory;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
@@ -12,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemTypeDTO: Screen
+    public class ItemTypeDTO: Screen, ICatalogItem, ICloneable
     {
         private CatalogMasterViewModel _context;
         public CatalogMasterViewModel Context
@@ -127,13 +129,16 @@ namespace NetErp.Inventory.CatalogItems.DTO
                     {
                         if (_isExpanded && _itemsCategories.Count > 0)
                         {
-                            if (_itemsCategories[0].IsDummyChild)
-                            _context.LoadItemsCategories(this);
+                            if (_itemsCategories[0].IsDummyChild) 
+                            {
+                                _ = _context.LoadItemsCategories(this);
+                            }
                         }
                     }
                 }
             }
         }
+
 
         private ObservableCollection<ItemCategoryDTO> _itemsCategories = [];
 
@@ -146,6 +151,51 @@ namespace NetErp.Inventory.CatalogItems.DTO
                 {
                     _itemsCategories = value;
                     NotifyOfPropertyChange(nameof(ItemsCategories));
+                }
+            }
+        }
+
+        private CatalogDTO _catalog;
+
+        public CatalogDTO Catalog
+        {
+            get { return _catalog; }
+            set 
+            {
+                if (_catalog != value)
+                {
+                    _catalog = value;
+                    NotifyOfPropertyChange(nameof(Catalog));
+                }
+            }
+        }
+
+        private MeasurementUnitDTO _measurementUnitByDefault;
+
+        public MeasurementUnitDTO MeasurementUnitByDefault
+        {
+            get { return _measurementUnitByDefault; }
+            set 
+            {
+                if (_measurementUnitByDefault != value)
+                {
+                    _measurementUnitByDefault = value;
+                    NotifyOfPropertyChange(nameof(MeasurementUnitByDefault));
+                }
+            }
+        }
+
+        private AccountingGroupDTO _accountingGroupByDefault;
+
+        public AccountingGroupDTO AccountingGroupByDefault
+        {
+            get { return _accountingGroupByDefault; }
+            set 
+            {
+                if (_accountingGroupByDefault != value)
+                {
+                    _accountingGroupByDefault = value;
+                    NotifyOfPropertyChange(nameof(AccountingGroupByDefault));
                 }
             }
         }
@@ -168,6 +218,11 @@ namespace NetErp.Inventory.CatalogItems.DTO
         public override string ToString()
         {
             return $"{_name}";
+        }
+
+        public object Clone()
+        {
+            return this.MemberwiseClone();
         }
     }
 }

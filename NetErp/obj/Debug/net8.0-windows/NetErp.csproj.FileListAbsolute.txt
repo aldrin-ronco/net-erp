@@ -238,3 +238,11 @@ C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\ru\Xceed.Wpf.
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\sv\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\zh-Hans\Xceed.Wpf.AvalonDock.resources.dll
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DeepCloner.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\ItemTypeDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\ItemTypeDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CategoryDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CategoryDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\SubCategoryDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\SubCategoryDetailView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CatalogDetailView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CatalogDetailView.baml
