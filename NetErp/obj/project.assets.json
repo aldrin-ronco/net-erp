@@ -18,6 +18,35 @@
           }
         }
       },
+      "AWSSDK.Core/3.7.400.27": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "AWSSDK.S3/3.7.403.6": {
+        "type": "package",
+        "dependencies": {
+          "AWSSDK.Core": "[3.7.400.27, 4.0.0)"
+        },
+        "compile": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
       "BusyIndicators/2.1.2": {
         "type": "package",
         "compile": {
@@ -307,6 +336,25 @@
           },
           "lib/net6.0-windows/DevExpress.Xpf.Grid.v23.2.dll": {
             "related": ".Core.xml;.Extensions.xml;.xml"
+          }
+        }
+      },
+      "DevExpress.Wpf.LayoutControl/23.2.3": {
+        "type": "package",
+        "dependencies": {
+          "DevExpress.Data": "[23.2.3]",
+          "DevExpress.Data.Desktop": "[23.2.3]",
+          "DevExpress.Mvvm": "[23.2.3]",
+          "DevExpress.Wpf.Core": "[23.2.3]"
+        },
+        "compile": {
+          "lib/net6.0-windows/DevExpress.Xpf.LayoutControl.v23.2.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0-windows/DevExpress.Xpf.LayoutControl.v23.2.dll": {
+            "related": ".xml"
           }
         }
       },
@@ -2325,6 +2373,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "AWSSDK.S3": "3.7.403.6",
           "DevExpress.Wpf.Core": "23.2.3",
           "GraphQL.Client": "6.1.0",
           "GraphQL.Client.Serializer.Newtonsoft": "6.1.0"
@@ -2342,6 +2391,9 @@
       "Dictionaries/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.27"
+        },
         "compile": {
           "bin/placeholder/Dictionaries.dll": {}
         },
@@ -2422,6 +2474,67 @@
         "icon.png",
         "lib/net6.0/AutoMapper.dll",
         "lib/net6.0/AutoMapper.xml"
+      ]
+    },
+    "AWSSDK.Core/3.7.400.27": {
+      "sha512": "ldRJD1okmm+qfWJZURn9FnviHOxMPXq7o/z8quhSNKhK+7g1MIMCwI8/pUQAHpJxRwLMxXJRlvbn+Fsknv4MPg==",
+      "type": "package",
+      "path": "awssdk.core/3.7.400.27",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "awssdk.core.3.7.400.27.nupkg.sha512",
+        "awssdk.core.nuspec",
+        "images/AWSLogo.png",
+        "lib/net35/AWSSDK.Core.dll",
+        "lib/net35/AWSSDK.Core.pdb",
+        "lib/net35/AWSSDK.Core.xml",
+        "lib/net45/AWSSDK.Core.dll",
+        "lib/net45/AWSSDK.Core.pdb",
+        "lib/net45/AWSSDK.Core.xml",
+        "lib/net8.0/AWSSDK.Core.dll",
+        "lib/net8.0/AWSSDK.Core.pdb",
+        "lib/net8.0/AWSSDK.Core.xml",
+        "lib/netcoreapp3.1/AWSSDK.Core.dll",
+        "lib/netcoreapp3.1/AWSSDK.Core.pdb",
+        "lib/netcoreapp3.1/AWSSDK.Core.xml",
+        "lib/netstandard2.0/AWSSDK.Core.dll",
+        "lib/netstandard2.0/AWSSDK.Core.pdb",
+        "lib/netstandard2.0/AWSSDK.Core.xml",
+        "tools/account-management.ps1"
+      ]
+    },
+    "AWSSDK.S3/3.7.403.6": {
+      "sha512": "L+0KhnioopQ9IDTRi1AJGfkiXiZqe7t0uCbqLwIqYIxPfCI/wvN1cDPdNQyPRpaSkPRfiKgUpvQRmnkC8ZvF6g==",
+      "type": "package",
+      "path": "awssdk.s3/3.7.403.6",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/cs/AWSSDK.S3.CodeAnalysis.dll",
+        "analyzers/dotnet/cs/SharedAnalysisCode.dll",
+        "awssdk.s3.3.7.403.6.nupkg.sha512",
+        "awssdk.s3.nuspec",
+        "images/AWSLogo.png",
+        "lib/net35/AWSSDK.S3.dll",
+        "lib/net35/AWSSDK.S3.pdb",
+        "lib/net35/AWSSDK.S3.xml",
+        "lib/net45/AWSSDK.S3.dll",
+        "lib/net45/AWSSDK.S3.pdb",
+        "lib/net45/AWSSDK.S3.xml",
+        "lib/net8.0/AWSSDK.S3.dll",
+        "lib/net8.0/AWSSDK.S3.pdb",
+        "lib/net8.0/AWSSDK.S3.xml",
+        "lib/netcoreapp3.1/AWSSDK.S3.dll",
+        "lib/netcoreapp3.1/AWSSDK.S3.pdb",
+        "lib/netcoreapp3.1/AWSSDK.S3.xml",
+        "lib/netstandard2.0/AWSSDK.S3.dll",
+        "lib/netstandard2.0/AWSSDK.S3.pdb",
+        "lib/netstandard2.0/AWSSDK.S3.xml",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
       ]
     },
     "BusyIndicators/2.1.2": {
@@ -2752,6 +2865,28 @@
         "lib/net6.0-windows/DevExpress.Xpf.Grid.v23.2.Extensions.xml",
         "lib/net6.0-windows/DevExpress.Xpf.Grid.v23.2.dll",
         "lib/net6.0-windows/DevExpress.Xpf.Grid.v23.2.xml",
+        "tools/VisualStudioToolsManifest.xml"
+      ]
+    },
+    "DevExpress.Wpf.LayoutControl/23.2.3": {
+      "sha512": "ZE42Y6b1nUi0s72YVNQs46hLhapVnBwFDe6q3h67dpE9EhHGfxtoc8cwpemjpOR2h2a9SwH+Ws2WEYUoSqez5Q==",
+      "type": "package",
+      "path": "devexpress.wpf.layoutcontrol/23.2.3",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "devexpress.wpf.layoutcontrol.23.2.3.nupkg.sha512",
+        "devexpress.wpf.layoutcontrol.nuspec",
+        "lib/net452/Design/DevExpress.Xpf.LayoutControl.v23.2.Design.dll",
+        "lib/net452/Design/DevExpress.Xpf.LayoutControl.v23.2.DesignTools.dll",
+        "lib/net452/Design/DevExpress.Xpf.LayoutControl.v23.2.DesignTools.v16.10.dll",
+        "lib/net452/DevExpress.Xpf.LayoutControl.v23.2.dll",
+        "lib/net452/DevExpress.Xpf.LayoutControl.v23.2.xml",
+        "lib/net6.0-windows/Design/DevExpress.Xpf.LayoutControl.v23.2.DesignTools.dll",
+        "lib/net6.0-windows/Design/DevExpress.Xpf.LayoutControl.v23.2.DesignTools.v16.10.dll",
+        "lib/net6.0-windows/DevExpress.Xpf.LayoutControl.v23.2.dll",
+        "lib/net6.0-windows/DevExpress.Xpf.LayoutControl.v23.2.xml",
         "tools/VisualStudioToolsManifest.xml"
       ]
     },
@@ -7228,7 +7363,8 @@
       "Models >= 1.0.0",
       "Ninject >= 3.3.6",
       "Services >= 1.0.0",
-      "devexpress.wpf.grid.core >= 23.2.3"
+      "devexpress.wpf.grid.core >= 23.2.3",
+      "devexpress.wpf.layoutcontrol >= 23.2.3"
     ]
   },
   "packageFolders": {
@@ -7354,6 +7490,10 @@
             "version": "[3.3.6, )"
           },
           "devexpress.wpf.grid.core": {
+            "target": "Package",
+            "version": "[23.2.3, )"
+          },
+          "devexpress.wpf.layoutcontrol": {
             "target": "Package",
             "version": "[23.2.3, )"
           }

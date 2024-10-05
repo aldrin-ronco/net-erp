@@ -30,6 +30,21 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        private bool _enableOnActivateAsync = true;
+
+        public bool EnableOnActivateAsync
+        {
+            get { return _enableOnActivateAsync; }
+            set
+            {
+                if(_enableOnActivateAsync != value)
+                {
+                    _enableOnActivateAsync = value;
+                    NotifyOfPropertyChange(nameof(EnableOnActivateAsync));
+                }
+            }
+        }
+
         public CatalogViewModel(IMapper mapper, IEventAggregator eventAggregator)
         {
             AutoMapper = mapper;
@@ -55,6 +70,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 ItemTypeDetailViewModel instance = new(this, measurementUnits, accountingGroups);
                 instance.CatalogId = selectedCatalogId;
+                instance.StockControlEnable = true;
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
@@ -77,6 +93,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 instance.CatalogId = itemType.Catalog.Id;
                 instance.MeasurementUnitIdByDefault = itemType.MeasurementUnitByDefault.Id;
                 instance.AccountingGroupIdByDefault = itemType.AccountingGroupByDefault.Id;
+                instance.StockControlEnable = false;
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (Exception)

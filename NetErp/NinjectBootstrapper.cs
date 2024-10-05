@@ -15,7 +15,9 @@ using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
+using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.DTO;
+using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
 using Ninject;
 using Services.Billing.DAL.PostgreSQL;
@@ -89,6 +91,8 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ItemSubCategoryGraphQLModel>>().To<ItemSubCategoryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EanCodeGraphQLModel>>().To<EanCodeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AwsS3ConfigGraphQLModel>>().To<AwsS3ConfigService>().InSingletonScope();
+            _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -176,6 +180,8 @@ namespace NetErp
                 _ = cfg.CreateMap<BrandGraphQLModel, BrandDTO>();
                 _ = cfg.CreateMap<AccountingGroupGraphQLModel, AccountingGroupDTO>();
                 _ = cfg.CreateMap<EanCodeGraphQLModel, EanCodeDTO>();
+                _ = cfg.CreateMap<ItemDetailGraphQLModel, ItemDetailDTO>();
+                _ = cfg.CreateMap<ItemImageGraphQLModel, ItemImageDTO>();
 
 
             });

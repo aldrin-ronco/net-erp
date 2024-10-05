@@ -5,7 +5,9 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:local="clr-namespace:NetErp.Inventory.CatalogItems.TabControlPages.Views"
              mc:Ignorable="d" 
@@ -34,6 +36,7 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="0.08*"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
@@ -47,51 +50,84 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <StackPanel HorizontalAlignment="Center" Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Grid.ColumnSpan="2">
-            <Image Height="150" Width="150" Source="{dx:DXImage 'SvgImages/Actions/New.svg'}"/>
-            <Image Height="150" Width="150" Source="{dx:DXImage 'SvgImages/Actions/New.svg'}"/>
-            <Image Height="150" Width="150" Source="{dx:DXImage 'SvgImages/Actions/New.svg'}"/>
-            <Image Height="150" Width="150" Source="{dx:DXImage 'SvgImages/Actions/New.svg'}"/>
-            
-        </StackPanel>
 
+        <dxlc:TileLayoutControl Background="{x:Null}" Grid.Column="0" Grid.Row="0" ItemsSource="{Binding ItemImages, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                HorizontalAlignment="Center" Orientation="Horizontal" Padding="0" BreakFlowToFit="False" VerticalAlignment="Center" Grid.ColumnSpan="2"
+                                >
+            <dxlc:TileLayoutControl.ItemTemplate>
+                <DataTemplate>
+                    <dxlc:Tile Size="Small" Content="{Binding}" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <dxlc:Tile.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Eliminar imagen" Command="{Binding Data.DeleteImageCommand, Source={StaticResource DataContextProxy}}" CommandParameter="{Binding}">
+                                    <MenuItem.Icon>
+                                        <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </dxlc:Tile.ContextMenu>
+                        <dxlc:Tile.ContentTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Image Source="{Binding SourceImage, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </dxlc:Tile.ContentTemplate>
+                    </dxlc:Tile>
+                </DataTemplate>
+            </dxlc:TileLayoutControl.ItemTemplate>
+        </dxlc:TileLayoutControl>
 
-        <TextBlock Text="Código" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center" Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Margin="0 0 0 5" Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+        <Button Command="{Binding Path=Data.AddImageCommand, Source={StaticResource DataContextProxy}}" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Margin="0 5 0 10">
+            <Button.Content>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Agregar imagen" VerticalAlignment="Center"/>
+                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_32x32.png" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button.Content>
+        </Button>
 
-        <TextBlock Text="Nombre" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
-        <dxe:TextEdit x:Name="Name" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="2" Grid.Column="1" Margin="0 0 0 5"/>
+        <TextBlock Text="Código" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center" Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="True" Margin="0 0 0 5" Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}" CharacterCasing="Upper"/>
 
-        <TextBlock Text="Referencia" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 5"/>
+        <TextBlock Text="Nombre" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+        <dxe:TextEdit x:Name="Name" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="3" Grid.Column="1" Margin="0 0 0 5" CharacterCasing="Upper">
+            <dxmvvm:Interaction.Behaviors>
+                <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="NameIsFocused"/>
+            </dxmvvm:Interaction.Behaviors>
+        </dxe:TextEdit>
 
-        <TextBlock Text="Unidad de medida" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+        <TextBlock Text="Referencia" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 5" CharacterCasing="Upper"/>
+
+        <TextBlock Text="Unidad de medida" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
         <ComboBox   HorizontalAlignment="Stretch" 
                     ItemsSource="{Binding MeasurementUnits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     DisplayMemberPath="Name"
                     SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Grid.Row="4" Grid.Column="1" Margin="0 0 0 5"/>
-
-
-        <TextBlock Text="Marca" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
-        <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding Brands, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    DisplayMemberPath="Name"
-                    SelectedItem="{Binding SelectedBrand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Grid.Row="5" Grid.Column="1" Margin="0 0 0 5"/>
 
 
+        <TextBlock Text="Marca" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+        <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding Brands, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    DisplayMemberPath="Name"
+                    SelectedItem="{Binding SelectedBrand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Grid.Row="6" Grid.Column="1" Margin="0 0 0 5"/>
 
-        <TextBlock Text="Grupo de tallaje" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+
+
+        <TextBlock Text="Grupo de tallaje" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
         <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding Sizes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         DisplayMemberPath="Name"
                         SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        Grid.Row="6" Grid.Column="1" Margin="0 0 0 5"/>
+                        Grid.Row="7" Grid.Column="1" Margin="0 0 0 5"/>
 
-        <TextBlock Text="Grupo contable" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
+        <TextBlock Text="Grupo contable" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="0 0 5 0" VerticalAlignment="Center"/>
         <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding AccountingGroups, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="Name"
                           SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        Grid.Row="7" Grid.Column="1"/>
+                        Grid.Row="8" Grid.Column="1"/>
+
 
     </Grid>
 </UserControl>

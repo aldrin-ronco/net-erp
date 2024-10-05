@@ -75,7 +75,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private bool _isActive;
+        private bool _isActive = true;
 
         public bool IsActive
         {
@@ -311,6 +311,35 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
+        private ObservableCollection<ItemDetailDTO> _relatedProducts;
+
+        public ObservableCollection<ItemDetailDTO> RelatedProducts
+        {
+            get { return _relatedProducts; }
+            set 
+            {
+                if (_relatedProducts != value)
+                {
+                    _relatedProducts = value;
+                    NotifyOfPropertyChange(nameof(RelatedProducts));
+                }
+            }
+        }
+
+        private ObservableCollection<ItemImageDTO> _images;
+
+        public ObservableCollection<ItemImageDTO> Images
+        {
+            get { return _images; }
+            set
+            {
+                if (_images != value)
+                {
+                    _images = value;
+                    NotifyOfPropertyChange(nameof(Images));
+                }
+            }
+        }
 
         public ItemDTO()
         {
@@ -332,5 +361,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
         {
             return this.MemberwiseClone();
         }
+    }
+    public class ReturnedItemFromModalViewMessage
+    {
+        public ItemDTO ReturnedItem { get; set; }
     }
 }

@@ -9,11 +9,14 @@ using GraphQL.Client.Http;
 using Models.Billing;
 using Models.Books;
 using Models.Inventory;
+using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.IoContainer;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -22,7 +25,7 @@ using System.Windows.Input;
 
 namespace NetErp.Inventory.CatalogItems.ViewModels
 {
-    public class ItemTypeDetailViewModel : Screen
+    public class ItemTypeDetailViewModel : Screen, INotifyDataErrorInfo
     {
         public readonly IGenericDataAccess<ItemTypeGraphQLModel> ItemTypeService = IoC.Get<IGenericDataAccess<ItemTypeGraphQLModel>>();
 
@@ -118,6 +121,21 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        private bool _stockControlEnable;
+
+        public bool StockControlEnable
+        {
+            get { return _stockControlEnable; }
+            set 
+            {
+                if (_stockControlEnable != value)
+                {
+                    _stockControlEnable = value;
+                    NotifyOfPropertyChange(nameof(StockControlEnable));
+                }
+            }
+        }
+
 
         private int _id;
 
@@ -144,6 +162,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 if (_name != value)
                 {
                     _name = value;
+                    ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -160,6 +179,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 if (_prefixChar != value)
                 {
                     _prefixChar = value;
+                    ValidateProperty(nameof(PrefixChar), value);
                     NotifyOfPropertyChange(nameof(PrefixChar));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -268,6 +288,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new ItemTypeUpdateMessage() { UpdatedItemType = result});
                 }
+                Context.EnableOnActivateAsync = false;
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -357,6 +378,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public void GoBack(object p)
         {
+            Context.EnableOnActivateAsync = false;
             _ = Task.Run(() => Context.ActivateMasterView());
         }
 
@@ -376,7 +398,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            ValidateProperties();
             Initialize();
+            this.SetFocus(nameof(Name));
         }
         public void Initialize()
         {
@@ -402,6 +426,78 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             Context = context;
             MeasurementUnits = measurementUnits;
             AccountingGroups = accountingGroups;
+            _errors = new Dictionary<string, List<string>>();
         }
+
+        #region "Errors"
+
+
+        Dictionary<string, List<string>> _errors;
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre del tipo de item no puede estar vacío");
+                        break;
+                    case nameof(PrefixChar):
+                        if(string.IsNullOrEmpty(PrefixChar)) AddError(propertyName, "El nombre corto del tipo de item no puede estar vacío");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(PrefixChar), PrefixChar);
+        }
+        #endregion
     }
 }
