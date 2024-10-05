@@ -16,6 +16,22 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+        <SolidColorBrush Color="Pink" Opacity="0.4" x:Key="ValidationBrush"/>
+        <Style TargetType="TextBox">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <ToolTip DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget}">
+                                <ItemsControl ItemsSource="{Binding Path=(Validation.Errors)}" DisplayMemberPath="ErrorContent" />
+                            </ToolTip>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background" Value="{StaticResource ValidationBrush}"/>
+                    <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -62,7 +78,7 @@
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <TextBlock Text="Nombre" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4"/>
-            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" Margin="4"/>
+            <dxe:TextEdit x:Name="Name" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" Margin="4" CharacterCasing="Upper"/>
 
         </Grid>
     </Grid>

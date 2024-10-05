@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "qbsRgFRPEbI=",
+  "dgSpecHash": "S3O/a+fya94=",
   "success": true,
   "projectFilePath": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\NetErp.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\sebas\\.nuget\\packages\\automapper\\13.0.1\\automapper.13.0.1.nupkg.sha512",
+    "C:\\Users\\sebas\\.nuget\\packages\\awssdk.core\\3.7.400.27\\awssdk.core.3.7.400.27.nupkg.sha512",
+    "C:\\Users\\sebas\\.nuget\\packages\\awssdk.s3\\3.7.403.6\\awssdk.s3.3.7.403.6.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\busyindicators\\2.1.2\\busyindicators.2.1.2.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\calcbinding\\2.5.2\\calcbinding.2.5.2.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\caliburn.micro\\4.0.212\\caliburn.micro.4.0.212.nupkg.sha512",
@@ -21,6 +23,7 @@
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.controls\\23.2.3\\devexpress.wpf.controls.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.core\\23.2.3\\devexpress.wpf.core.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.grid.core\\23.2.3\\devexpress.wpf.grid.core.23.2.3.nupkg.sha512",
+    "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.layoutcontrol\\23.2.3\\devexpress.wpf.layoutcontrol.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.wpf.themes.office2019colorful\\23.2.3\\devexpress.wpf.themes.office2019colorful.23.2.3.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\dotnetkit.wpf.autocompletecombobox\\1.6.0\\dotnetkit.wpf.autocompletecombobox.1.6.0.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\dynamicexpresso.core\\2.3.1\\dynamicexpresso.core.2.3.1.nupkg.sha512",

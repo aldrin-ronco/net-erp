@@ -5,9 +5,11 @@
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:model="clr-namespace:NetErp.Inventory.CatalogItems.DTO"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:cal="http://caliburnmicro.com"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:local="clr-namespace:NetErp.Inventory.CatalogItems.Views"
@@ -244,6 +246,18 @@
                                 <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator/>
+                        <MenuItem Command="{Binding Path=Data.DiscontinueItemCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Descontinuar item: "/>
+                                    <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/Reset_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </ContextMenu>
                 </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" Source="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}" VerticalAlignment="Center"/>
@@ -252,148 +266,165 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <Grid Width="auto" Height="auto">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False">
+        <Grid Width="auto" Height="auto">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
 
-        <dxr:RibbonControl Grid.Row="0" Margin="0 0 0 10" IsSimplified="False" 
+            <dxr:RibbonControl Grid.Row="0" Margin="0 0 0 10" IsSimplified="False" 
                            AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
                            RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
-            <dxr:RibbonPage Caption="Opciones">
-                <dxr:RibbonPageGroup Caption="Catálogo de items">
-                    <dxb:BarButtonItem Content="Crear catálogo" RibbonStyle="Large" 
+                <dxr:RibbonPage Caption="Opciones">
+                    <dxr:RibbonPageGroup Caption="Catálogo de items">
+                        <dxb:BarButtonItem Content="Crear catálogo" RibbonStyle="Large" 
                                        Glyph="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"
                                        LargeGlyph="{dx:DXImage 'Images/Actions/AddItem_32x32.png'}">
-                        
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CreateCatalogCommand}" EventName="ItemClick"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>
-                    <dxb:BarItemSeparator/>
-                    <dxb:BarButtonItem Content="Modificar catálogo" RibbonStyle="Large"
+
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding CreateCatalogCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Modificar catálogo" RibbonStyle="Large"
                                        Glyph="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"
                                        LargeGlyph="{dx:DXImage 'Images/Edit/Edit_32x32.png'}"
                                        IsEnabled="{Binding CatalogIsSelected, UpdateSourceTrigger=PropertyChanged}">
-                        
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding UpdateCatalogCommand}" EventName="ItemClick"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>
-                    <dxb:BarItemSeparator/>
-                    <dxb:BarButtonItem Content="Eliminar catálogo" RibbonStyle="Large"
+
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding UpdateCatalogCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Eliminar catálogo" RibbonStyle="Large"
                                        Glyph="{dx:DXImage 'Images/Actions/Trash_16x16.png'}"
                                        LargeGlyph="{dx:DXImage 'Images/Actions/Trash_32x32.png'}"
                                        IsEnabled="{Binding DeleteCatalogButtonEnable, UpdateSourceTrigger=PropertyChanged}">
 
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding DeleteCatalogCommand}" EventName="ItemClick"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>
-                </dxr:RibbonPageGroup>
-                
-                <dxr:RibbonPageGroup Caption="Tipo de item">
-                    <dxb:BarButtonItem Content="Crear tipo de item" RibbonStyle="Large" 
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding DeleteCatalogCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                    </dxr:RibbonPageGroup>
+
+                    <dxr:RibbonPageGroup Caption="Tipo de item">
+                        <dxb:BarButtonItem Content="Crear tipo de item" RibbonStyle="Large" 
                                        Glyph="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"
                                        LargeGlyph="{dx:DXImage 'Images/Actions/AddItem_32x32.png'}"
                                        IsEnabled="{Binding CatalogIsSelected, UpdateSourceTrigger=PropertyChanged}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CreateItemTypeCommand}" EventName="ItemClick"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>
-                </dxr:RibbonPageGroup>
-            </dxr:RibbonPage>
-        </dxr:RibbonControl>
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding CreateItemTypeCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
 
-        <ComboBox Grid.Row="1" Width="auto" HorizontalAlignment="Left" 
-                  ItemsSource="{Binding Catalogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  DisplayMemberPath="Name"
-                  SelectedItem="{Binding SelectedCatalog, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.4*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.4*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="0.04*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-            <dxg:TreeViewControl Grid.Column="0" Margin="0 5 0 0" 
-                                 ItemsSource="{Binding SelectedCatalog.ItemsTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 h:TreeViewExtension.SelectItemOnRightClick="True"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 HighlightSelectedNodeIndent="False"
-                                 BorderThickness="0"
-                                 ShowExpandButtons="True"
-                                 ShowBorder="False"
-                                 IsEnabled="{Binding TreeViewEnable, UpdateSourceTrigger=PropertyChanged}"
-                                 ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 TreeDerivationMode="HierarchicalDataTemplate">
-            </dxg:TreeViewControl>
-            <!--TabControl-->
-            <Grid Grid.Column="1">
+                    <ComboBox Grid.Row="0" Width="auto" HorizontalAlignment="Stretch" 
+                          ItemsSource="{Binding Catalogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          DisplayMemberPath="Name"
+                          SelectedItem="{Binding SelectedCatalog, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="0.15*"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <dx:DXTabControl Grid.Row="1"
+                    <dxg:TreeViewControl Margin="0 10 0 0" Grid.Row="1"
+                                     ItemsSource="{Binding SelectedCatalog.ItemsTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     h:TreeViewExtension.SelectItemOnRightClick="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     HighlightSelectedNodeIndent="False"
+                                     BorderThickness="0"
+                                     ShowExpandButtons="True"
+                                     ShowBorder="False"
+                                     IsEnabled="{Binding TreeViewEnable, UpdateSourceTrigger=PropertyChanged}"
+                                     ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     TreeDerivationMode="HierarchicalDataTemplate">
+                    </dxg:TreeViewControl>
+                </Grid>
+                <!--TabControl-->
+                <Grid Grid.Column="1">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="0.15*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <dx:DXTabControl Grid.Row="1"
                              Background="Transparent"
                              TabContentCacheMode="CacheTabsOnSelecting"
                              HorizontalContentAlignment="Stretch"
                              Margin="20 0 0 0"
                              SelectedIndex="{Binding SelectedIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"    
                              Visibility="{Binding ItemDTOIsSelected, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
-                    <dx:DXTabControl.View>
-                        <dx:TabControlScrollView ShowHeaderMenu="True" ShowHiddenTabItemsInHeaderMenu="False" HeaderLocation="Top" HeaderOrientation="Horizontal" AllowAnimation="True" 
+                        <dx:DXTabControl.View>
+                            <dx:TabControlScrollView ShowHeaderMenu="True" ShowHiddenTabItemsInHeaderMenu="False" HeaderLocation="Top" HeaderOrientation="Horizontal" AllowAnimation="True" 
                                          ScrollButtonShowMode="Never"/>
-                    </dx:DXTabControl.View>
-                    <dx:DXTabItem Header="Básicos">
-                        <tabItem:BasicView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </dx:DXTabItem>
-                    <dx:DXTabItem Header="Códigos de barras" >
-                        <tabItem:EanCodeView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </dx:DXTabItem>
-                    <dx:DXTabItem Header="Existencias"/>
-                    <dx:DXTabItem Header="Proveedores"/>
-                    <dx:DXTabItem Header="Otros datos" >
-                        <tabItem:OtherDataView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </dx:DXTabItem>
-                </dx:DXTabControl>
-                <dxr:RibbonControl Visibility="{Binding ItemDTOIsSelected, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
+                        </dx:DXTabControl.View>
+                        <dx:DXTabItem Header="Básicos">
+                            <tabItem:BasicView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </dx:DXTabItem>
+                        <dx:DXTabItem Header="Códigos de barras">
+                            <tabItem:EanCodeView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </dx:DXTabItem>
+                        <dx:DXTabItem Header="Productos relacionados" Visibility="{Binding HasRelatedProducts, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                            <tabItem:RelatedProducts DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" cal:Bind.Model="{Binding}"/>
+                        </dx:DXTabItem>
+                        <dx:DXTabItem Header="Existencias"/>
+                        <dx:DXTabItem Header="Proveedores"/>
+                        <dx:DXTabItem Header="Otros datos" >
+                            <tabItem:OtherDataView DataContext="{Binding}" IsEnabled="{Binding IsEditing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </dx:DXTabItem>
+                    </dx:DXTabControl>
+                    <dxr:RibbonControl Visibility="{Binding ItemDTOIsSelected, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
                         Grid.Row="0" Margin="20 0 0 10" IsSimplified="False" 
                            AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
                            RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center"
                            MinimizationButtonVisibility="Collapsed">
-                    <dxr:RibbonPage Caption="Opciones">
-                        <dxr:RibbonPageGroup Caption="Acciones">
-                            <dxb:BarButtonItem Content="Editar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Edit/Edit_16x16.png}" 
+                        <dxr:RibbonPage Caption="Opciones">
+                            <dxr:RibbonPageGroup Caption="Acciones">
+                                <dxb:BarButtonItem Content="Editar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Edit/Edit_16x16.png}" 
                                                 IsEnabled="{Binding CanEditItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding EditItemCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                            <dxb:BarItemSeparator/>
-                            <dxb:BarButtonItem Content="Deshacer" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/History/Undo_16x16.png}"
+                                    <dxmvvm:Interaction.Behaviors>
+                                        <dxmvvm:EventToCommand Command="{Binding EditItemCommand}" EventName="ItemClick"/>
+                                    </dxmvvm:Interaction.Behaviors>
+                                </dxb:BarButtonItem>
+                                <dxb:BarItemSeparator/>
+                                <dxb:BarButtonItem Content="Deshacer" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/History/Undo_16x16.png}"
                                                IsEnabled="{Binding CanUndo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding UndoCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                            <dxb:BarItemSeparator/>
-                            <dxb:BarButtonItem Content="Guardar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Save/Save_16x16.png}"
+                                    <dxmvvm:Interaction.Behaviors>
+                                        <dxmvvm:EventToCommand Command="{Binding UndoCommand}" EventName="ItemClick"/>
+                                    </dxmvvm:Interaction.Behaviors>
+                                </dxb:BarButtonItem>
+                                <dxb:BarItemSeparator/>
+                                <dxb:BarButtonItem Content="Guardar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Save/Save_16x16.png}"
                                                IsEnabled="{Binding CanSaveItem, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding SaveItemCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                        </dxr:RibbonPageGroup>
-                    </dxr:RibbonPage>
-                </dxr:RibbonControl>
+                                    <dxmvvm:Interaction.Behaviors>
+                                        <dxmvvm:EventToCommand Command="{Binding SaveItemCommand}" EventName="ItemClick"/>
+                                    </dxmvvm:Interaction.Behaviors>
+                                </dxb:BarButtonItem>
+                            </dxr:RibbonPageGroup>
+                        </dxr:RibbonPage>
+                    </dxr:RibbonControl>
+                </Grid>
             </Grid>
         </Grid>
-    </Grid>
+    </busyIndicator:BusyMask>
 </UserControl>

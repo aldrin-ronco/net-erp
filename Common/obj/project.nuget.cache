@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "E61Opfo2eqU=",
+  "dgSpecHash": "wPktJC83Awk=",
   "success": true,
   "projectFilePath": "C:\\Users\\sebas\\source\\repos\\NetErp\\Common\\Common.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\sebas\\.nuget\\packages\\awssdk.core\\3.7.400.27\\awssdk.core.3.7.400.27.nupkg.sha512",
+    "C:\\Users\\sebas\\.nuget\\packages\\awssdk.s3\\3.7.403.6\\awssdk.s3.3.7.403.6.nupkg.sha512",
     "C:\\Users\\sebas\\.nuget\\packages\\devexpress.data\\23.2.3\\devexpress.data.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.data.desktop\\23.2.3\\devexpress.data.desktop.23.2.3.nupkg.sha512",
     "C:\\Program Files\\DevExpress 23.2\\Components\\Offline Packages\\devexpress.drawing\\23.2.3\\devexpress.drawing.23.2.3.nupkg.sha512",

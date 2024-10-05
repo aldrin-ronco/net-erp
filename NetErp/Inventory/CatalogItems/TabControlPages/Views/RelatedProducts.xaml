@@ -1,0 +1,141 @@
+﻿<UserControl x:Class="NetErp.Inventory.CatalogItems.TabControlPages.Views.RelatedProducts"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:local="clr-namespace:NetErp.Inventory.CatalogItems.TabControlPages.Views"
+             xmlns:views="clr-namespace:NetErp.Inventory.CatalogItems.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800" >
+    <UserControl.Resources>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0.14*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.3*"/>
+                <ColumnDefinition Width="1.5*"/>
+                <ColumnDefinition Width="0.5*"/>
+                <ColumnDefinition Width="0.5*"/>
+                <ColumnDefinition Width="0.3*"/>
+                <ColumnDefinition Width="0.3*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Margin="5 20 5 5" Grid.Column="0" Width="auto" Command="{Binding Path=Data.OpenSearchItemModalWindowCommand, Source={StaticResource DataContextProxy}}" Height="auto">
+                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Spreadsheet/FunctionsLookupAndReference_16x16.png" Stretch="None">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value=".5"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+            </Button>
+            
+            <StackPanel Orientation="Vertical" Grid.Column="1" Margin="5">
+                <TextBlock Text="Nombre del producto o servicio"/>
+                <TextBox IsEnabled="False" Margin="0 5 0 0" Text="{Binding RelatedProductName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" x:Name="RelatedProductName"
+                         TextChanged="RelatedProductName_TextChanged" CharacterCasing="Upper"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Grid.Column="2" Margin="5">
+                <TextBlock Text="Referencia"/>
+                <TextBox IsEnabled="False" Margin="0 5 0 0" Text="{Binding RelatedProductReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Grid.Column="3" Margin="5">
+                <TextBlock Text="Código"/>
+                <TextBox IsEnabled="False" Margin="0 5 0 0" Text="{Binding RelatedProductCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper"/>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Grid.Column="4" Margin="5">
+                <TextBlock Text="Cantidad" />
+                <dxe:SpinEdit Margin="0 5 0 0" MinValue="0" IsEnabled="{Binding RelatedProductQuantityIsEnable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                              x:Name="RelatedProductQuantity" IsFloatValue="{Binding RelatedProductAllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            </StackPanel>
+
+            <Button Margin="5 20 5 5" Grid.Column="5" Width="auto" Command="{Binding Path=Data.AddRelatedProductCommand, Source={StaticResource DataContextProxy}}">
+                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value=".5"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+            </Button>
+            
+        </Grid>
+
+        <dxg:GridControl 
+         Margin="0 8 0 0"                
+         EnableSmartColumnsGeneration="True"
+         ItemsSource="{Binding RelatedProducts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+         AutoGenerateColumns="None" Grid.Row="1"
+         SelectedItem="{Binding SelectedRelatedProduct, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <dxg:GridControl.View>
+                <dxg:TableView  AllowCascadeUpdate="False" 
+                            EnableSelectedRowAppearance="True"
+                            AllowEditing="False"
+                            ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+            </dxg:GridControl.View>
+
+            <dxg:GridColumn
+                Header="Nombre del producto"
+                Width="*"
+                Binding="{Binding Item.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <dxg:GridColumn 
+            Header="Referencia" 
+            Width="*"
+            Binding="{Binding Item.Reference, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+
+            <dxg:GridColumn
+                Header="Código"
+                Width="*"
+                Binding="{Binding Item.Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <dxg:GridColumn
+                Header="Cantidad"
+                Width="*"
+                Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <dxg:GridColumn
+                Header="Unidad de medida"
+                Width="*"
+                Binding="{Binding Item.MeasurementUnit.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <dxg:GridColumn Width="auto">
+                <dxg:GridColumn.CellTemplate>
+                    <DataTemplate>
+                        <Button
+                             BorderThickness="0"
+                             Padding="3"
+                             Margin="3"
+                             Width="auto" Height="auto" Command="{Binding Path=Data.DeleteRelatedProductCommand, Source={StaticResource DataContextProxy}}">
+                            <Button.Content>
+                                <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Stretch="None" />
+                            </Button.Content>
+                        </Button>
+                    </DataTemplate>
+                </dxg:GridColumn.CellTemplate>
+            </dxg:GridColumn>
+        </dxg:GridControl>
+    </Grid>
+</UserControl>

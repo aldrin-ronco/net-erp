@@ -114,7 +114,6 @@ namespace NetErp.Inventory.CatalogItems.DTO
                         {
                             if (_items[0].IsDummyChild) 
                             {
-                                _items.Clear();
                                 _ = _context.LoadItems(this);
                             }
                         }

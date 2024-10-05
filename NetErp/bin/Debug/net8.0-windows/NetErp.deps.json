@@ -28,6 +28,7 @@
           "Ninject": "3.3.6",
           "Services": "1.0.0",
           "DevExpress.Wpf.Grid.Core": "23.2.3",
+          "DevExpress.Wpf.LayoutControl": "23.2.3",
           "DevExpress.Images.v23.2": "23.2.3.0",
           "DevExpress.Xpf.Ribbon.v23.2": "23.2.3.0"
         },
@@ -43,6 +44,25 @@
           "lib/net6.0/AutoMapper.dll": {
             "assemblyVersion": "13.0.0.0",
             "fileVersion": "13.0.1.0"
+          }
+        }
+      },
+      "AWSSDK.Core/3.7.400.27": {
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.400.27"
+          }
+        }
+      },
+      "AWSSDK.S3/3.7.403.6": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.27"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.403.6"
           }
         }
       },
@@ -250,6 +270,20 @@
             "fileVersion": "23.2.3.0"
           },
           "lib/net6.0-windows/DevExpress.Xpf.Grid.v23.2.dll": {
+            "assemblyVersion": "23.2.3.0",
+            "fileVersion": "23.2.3.0"
+          }
+        }
+      },
+      "DevExpress.Wpf.LayoutControl/23.2.3": {
+        "dependencies": {
+          "DevExpress.Data": "23.2.3",
+          "DevExpress.Data.Desktop": "23.2.3",
+          "DevExpress.Mvvm": "23.2.3",
+          "DevExpress.Wpf.Core": "23.2.3"
+        },
+        "runtime": {
+          "lib/net6.0-windows/DevExpress.Xpf.LayoutControl.v23.2.dll": {
             "assemblyVersion": "23.2.3.0",
             "fileVersion": "23.2.3.0"
           }
@@ -1368,6 +1402,7 @@
       },
       "Common/1.0.0": {
         "dependencies": {
+          "AWSSDK.S3": "3.7.403.6",
           "DevExpress.Wpf.Core": "23.2.3",
           "GraphQL.Client": "6.1.0",
           "GraphQL.Client.Serializer.Newtonsoft": "6.1.0"
@@ -1380,6 +1415,9 @@
         }
       },
       "Dictionaries/1.0.0": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.27"
+        },
         "runtime": {
           "Dictionaries.dll": {
             "assemblyVersion": "1.0.0",
@@ -1466,6 +1504,20 @@
       "sha512": "sha512-/Fx1SbJ16qS7dU4i604Sle+U9VLX+WSNVJggk6MupKVkYvvBm4XqYaeFuf67diHefHKHs50uQIS2YEDFhPCakQ==",
       "path": "automapper/13.0.1",
       "hashPath": "automapper.13.0.1.nupkg.sha512"
+    },
+    "AWSSDK.Core/3.7.400.27": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ldRJD1okmm+qfWJZURn9FnviHOxMPXq7o/z8quhSNKhK+7g1MIMCwI8/pUQAHpJxRwLMxXJRlvbn+Fsknv4MPg==",
+      "path": "awssdk.core/3.7.400.27",
+      "hashPath": "awssdk.core.3.7.400.27.nupkg.sha512"
+    },
+    "AWSSDK.S3/3.7.403.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-L+0KhnioopQ9IDTRi1AJGfkiXiZqe7t0uCbqLwIqYIxPfCI/wvN1cDPdNQyPRpaSkPRfiKgUpvQRmnkC8ZvF6g==",
+      "path": "awssdk.s3/3.7.403.6",
+      "hashPath": "awssdk.s3.3.7.403.6.nupkg.sha512"
     },
     "BusyIndicators/2.1.2": {
       "type": "package",
@@ -1578,6 +1630,13 @@
       "sha512": "sha512-y/8y9fUbbjrXMAg6YuSu0AKNDRQ4g4I8LdsjKkyC/jAqt9bYKtjxQ13SPm2POfU9ygCIoj59umPBeCF6IipAew==",
       "path": "devexpress.wpf.grid.core/23.2.3",
       "hashPath": "devexpress.wpf.grid.core.23.2.3.nupkg.sha512"
+    },
+    "DevExpress.Wpf.LayoutControl/23.2.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZE42Y6b1nUi0s72YVNQs46hLhapVnBwFDe6q3h67dpE9EhHGfxtoc8cwpemjpOR2h2a9SwH+Ws2WEYUoSqez5Q==",
+      "path": "devexpress.wpf.layoutcontrol/23.2.3",
+      "hashPath": "devexpress.wpf.layoutcontrol.23.2.3.nupkg.sha512"
     },
     "DevExpress.Wpf.Themes.Office2019Colorful/23.2.3": {
       "type": "package",

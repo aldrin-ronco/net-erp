@@ -16,6 +16,22 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+        <SolidColorBrush Color="Pink" Opacity="0.4" x:Key="ValidationBrush"/>
+        <Style TargetType="TextBox">
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="ToolTip">
+                        <Setter.Value>
+                            <ToolTip DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget}">
+                                <ItemsControl ItemsSource="{Binding Path=(Validation.Errors)}" DisplayMemberPath="ErrorContent" />
+                            </ToolTip>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background" Value="{StaticResource ValidationBrush}"/>
+                    <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -66,10 +82,10 @@
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <TextBlock Text="Nombre" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4"/>
-            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" Margin="4"/>
+            <dxe:TextEdit x:Name="Name" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="0" Grid.Column="1" Margin="4" CharacterCasing="Upper"/>
 
             <TextBlock Text="Nombre corto" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4"/>
-            <TextBox Text="{Binding PrefixChar, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="1" Grid.Column="1" Margin="4" MaxLength="1"/>
+            <dxe:TextEdit Text="{Binding PrefixChar, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Grid.Row="1" Grid.Column="1" Margin="4" MaxLength="1" Mask="[A-Za-z]" MaskType="RegEx" CharacterCasing="Upper"/>
 
             <TextBlock Text="Unidad de medida por defecto" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="4"/>
             <ComboBox ItemsSource="{Binding MeasurementUnits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -81,8 +97,8 @@
                       DisplayMemberPath="Name" SelectedItem="{Binding SelectedAccountingGroupByDefault, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       Grid.Row="3" Grid.Column="1" Margin="4"/>
 
-            <CheckBox Content="Control de inventario" IsChecked="{Binding StockControl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                      Grid.Row="4" Grid.Column="1"/>
+            <CheckBox Content="Control de inventario" IsChecked="{Binding StockControl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="4"
+                      Grid.Row="4" Grid.Column="1" IsEnabled="{Binding StockControlEnable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
         </Grid>
 </UserControl>

@@ -17,14 +17,16 @@ namespace Models.Inventory
         public bool AllowFraction { get; set; }
         public bool HasExtendedInformation { get; set; }
         public MeasurementUnitGraphQLModel MeasurementUnit { get; set; } = new();
-        public bool AiuBasedService { get; set; } 
+        public bool AiuBasedService { get; set; }
         public bool Billable { get; set; }
         public bool AmountBasedOnWeight { get; set; }
         public BrandGraphQLModel Brand { get; set; } = new();
         public ItemSizeMasterGraphQLModel Size { get; set; } = new();
         public AccountingGroupGraphQLModel AccountingGroup { get; set; } = new();
         public ItemSubCategoryGraphQLModel SubCategory { get; set; } = new();
-        public IEnumerable<EanCodeGraphQLModel> EanCodes { get; set; }
+        public IEnumerable<ItemDetailGraphQLModel> RelatedProducts { get; set; } = [];
+        public IEnumerable<EanCodeGraphQLModel> EanCodes { get; set; } = [];
+        public IEnumerable<ItemImageGraphQLModel> Images { get; set; } = [];
     }
 
     public class ItemCreateMessage
@@ -32,7 +34,7 @@ namespace Models.Inventory
         public ItemGraphQLModel CreatedItem { get; set; }
     }
 
-    public class ItemUpdateMessage 
+    public class ItemUpdateMessage
     {
         public ItemGraphQLModel UpdatedItem { get; set; }
     }
@@ -41,4 +43,6 @@ namespace Models.Inventory
     {
         public ItemGraphQLModel DeletedItem { get; set; }
     }
+
+
 }

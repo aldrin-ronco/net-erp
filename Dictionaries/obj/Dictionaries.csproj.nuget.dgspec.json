@@ -50,6 +50,12 @@
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "AWSSDK.Core": {
+              "target": "Package",
+              "version": "[3.7.400.27, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

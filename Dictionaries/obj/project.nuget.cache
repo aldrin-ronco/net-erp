@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "xywgvNOsOWo=",
+  "dgSpecHash": "zqABRFdwxlA=",
   "success": true,
   "projectFilePath": "C:\\Users\\sebas\\source\\repos\\NetErp\\Dictionaries\\Dictionaries.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\sebas\\.nuget\\packages\\awssdk.core\\3.7.400.27\\awssdk.core.3.7.400.27.nupkg.sha512"
+  ],
   "logs": []
 }

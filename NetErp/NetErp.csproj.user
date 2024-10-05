@@ -22,6 +22,9 @@
     <Compile Update="Inventory\CatalogItems\TabControlPages\Views\OtherDataView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Inventory\CatalogItems\TabControlPages\Views\RelatedProducts.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Inventory\CatalogItems\Views\CatalogDetailView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -35,6 +38,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Inventory\CatalogItems\Views\ItemTypeDetailView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Inventory\CatalogItems\Views\SearchItemModalView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Inventory\CatalogItems\Views\SubCategoryDetailView.xaml.cs">
@@ -75,6 +81,9 @@
     <Page Update="Inventory\CatalogItems\TabControlPages\Views\OtherDataView.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Update="Inventory\CatalogItems\TabControlPages\Views\RelatedProducts.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Inventory\CatalogItems\Views\CatalogDetailView.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -88,6 +97,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Inventory\CatalogItems\Views\ItemTypeDetailView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Inventory\CatalogItems\Views\SearchItemModalView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Inventory\ItemSizes\Views\ItemSizeMasterView.xaml">

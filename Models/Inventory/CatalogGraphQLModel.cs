@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Books;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,4 +28,11 @@ namespace Models.Inventory
         public CatalogGraphQLModel DeletedCatalog { get; set; }
     }
 
+    public class CatalogMasterDataContext
+    {
+        public List<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; }
+        public List<BrandGraphQLModel> Brands { get; set; }
+        public List<AccountingGroupGraphQLModel> AccountingGroups { get; set; }
+        public List<ItemSizeMasterGraphQLModel> Sizes { get; set; }
+    }
 }

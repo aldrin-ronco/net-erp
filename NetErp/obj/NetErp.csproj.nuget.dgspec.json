@@ -51,6 +51,10 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "AWSSDK.S3": {
+              "target": "Package",
+              "version": "[3.7.403.6, )"
+            },
             "DevExpress.Wpf.Core": {
               "target": "Package",
               "version": "[23.2.3, )"
@@ -133,6 +137,12 @@
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "AWSSDK.Core": {
+              "target": "Package",
+              "version": "[3.7.400.27, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -488,6 +498,10 @@
               "version": "[3.3.6, )"
             },
             "devexpress.wpf.grid.core": {
+              "target": "Package",
+              "version": "[23.2.3, )"
+            },
+            "devexpress.wpf.layoutcontrol": {
               "target": "Package",
               "version": "[23.2.3, )"
             }

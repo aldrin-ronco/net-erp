@@ -10,3 +10,4 @@ C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Diction
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\refint\Dictionaries.dll
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.pdb
 C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\ref\Dictionaries.dll
+C:\Users\sebas\source\repos\NetErp\Dictionaries\obj\Debug\net8.0-windows\Dictionaries.csproj.AssemblyReference.cache

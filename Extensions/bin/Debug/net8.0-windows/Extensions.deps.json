@@ -15,6 +15,25 @@
           "Extensions.dll": {}
         }
       },
+      "AWSSDK.Core/3.7.400.27": {
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.400.27"
+          }
+        }
+      },
+      "AWSSDK.S3/3.7.403.6": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.27"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.403.6"
+          }
+        }
+      },
       "DevExpress.Data/23.2.3": {
         "dependencies": {
           "System.Drawing.Common": "4.7.2"
@@ -329,6 +348,7 @@
       },
       "Common/1.0.0": {
         "dependencies": {
+          "AWSSDK.S3": "3.7.403.6",
           "DevExpress.Wpf.Core": "23.2.3",
           "GraphQL.Client": "6.1.0",
           "GraphQL.Client.Serializer.Newtonsoft": "6.1.0"
@@ -341,6 +361,9 @@
         }
       },
       "Dictionaries/1.0.0": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.400.27"
+        },
         "runtime": {
           "Dictionaries.dll": {
             "assemblyVersion": "1.0.0",
@@ -378,6 +401,20 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "AWSSDK.Core/3.7.400.27": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ldRJD1okmm+qfWJZURn9FnviHOxMPXq7o/z8quhSNKhK+7g1MIMCwI8/pUQAHpJxRwLMxXJRlvbn+Fsknv4MPg==",
+      "path": "awssdk.core/3.7.400.27",
+      "hashPath": "awssdk.core.3.7.400.27.nupkg.sha512"
+    },
+    "AWSSDK.S3/3.7.403.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-L+0KhnioopQ9IDTRi1AJGfkiXiZqe7t0uCbqLwIqYIxPfCI/wvN1cDPdNQyPRpaSkPRfiKgUpvQRmnkC8ZvF6g==",
+      "path": "awssdk.s3/3.7.403.6",
+      "hashPath": "awssdk.s3.3.7.403.6.nupkg.sha512"
     },
     "DevExpress.Data/23.2.3": {
       "type": "package",
