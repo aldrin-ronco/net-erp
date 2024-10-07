@@ -30,6 +30,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public string Query { get; set; } = string.Empty;
 
+        public MessageToken? MessageToken { get; set; }
+        public dynamic Variables { get; set; }
+
         private string _fieldHeader1;
         public string FieldHeader1
         {
@@ -216,14 +219,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             try
             {
                 IsBusy = true;
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.name = FilterSearch == "" ? "" : FilterSearch.Trim();
+                Variables.filter.name = FilterSearch == "" ? "" : FilterSearch.Trim();
+                Variables.filter.Pagination = new ExpandoObject();
+                Variables.filter.Pagination.Page = PageIndex;
+                Variables.filter.Pagination.PageSize = PageSize;
 
-                var result = await DynamicService.GetPage(Query, variables);
+                var result = await DynamicService.GetPage(Query, Variables);
 
                 TotalCount = result.PageResponse.Count;
                 ItemsSource = new ObservableCollection<TModel>(Context.AutoMapper.Map<ObservableCollection<TModel>>(result.PageResponse.Rows));
@@ -264,14 +265,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         [Command]
         public void RowDoubleClick(RowClickArgs args)
         {
-            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken.Type1);
+            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken);
             DialogWindow.Close();
         }
 
         [Command]
         public void EnterKey()
         {
-            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken.Type1);
+            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken);
             DialogWindow.Close();
         }
 
@@ -282,7 +283,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
-        public SearchItemModalViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldHeader3, string fieldData1, string fieldData2, string fieldData3, CatalogViewModel context)
+        public SearchItemModalViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldHeader3, string fieldData1, string fieldData2, string fieldData3, dynamic variables, MessageToken? messageToken,CatalogViewModel context)
         {
             Query = query;
             FieldHeader1 = fieldHeader1;
@@ -291,12 +292,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             FieldData1 = fieldData1;
             FieldData2 = fieldData2;
             FieldData3 = fieldData3;
+            Variables = variables;
             Context = context;
             SelectedItem = default;
+            MessageToken = messageToken;
             ItemsSource = new ObservableCollection<TModel>();
             _ = Task.Run(() => LoadItemsAsync());
         }
     }
 
-    public enum MessageToken { Type1, Type2}
+    public enum MessageToken { RelatedProduct, SearchProduct }
 }

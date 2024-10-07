@@ -282,7 +282,8 @@
 
             <dxr:RibbonControl Grid.Row="0" Margin="0 0 0 10" IsSimplified="False" 
                            AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
-                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center"
+                            IsEnabled="{Binding MainRibbonPageIsEnable, UpdateSourceTrigger=PropertyChanged}">
                 <dxr:RibbonPage Caption="Opciones">
                     <dxr:RibbonPageGroup Caption="Catálogo de items">
                         <dxb:BarButtonItem Content="Crear catálogo" RibbonStyle="Large" 
@@ -311,6 +312,16 @@
 
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:EventToCommand Command="{Binding DeleteCatalogCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Buscar un item" RibbonStyle="Large"
+                                       Glyph="{dx:DXImage 'Images/Find/Find_16x16.png'}"
+                                       LargeGlyph="{dx:DXImage 'Images/Find/Find_32x32.png'}"
+                                       IsEnabled="{Binding CatalogIsSelected, UpdateSourceTrigger=PropertyChanged}">
+
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding OpenSearchProducts}" EventName="ItemClick"/>
                             </dxmvvm:Interaction.Behaviors>
                         </dxb:BarButtonItem>
                     </dxr:RibbonPageGroup>
@@ -342,6 +353,7 @@
 
                     <ComboBox Grid.Row="0" Width="auto" HorizontalAlignment="Stretch" 
                           ItemsSource="{Binding Catalogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          IsEnabled="{Binding SelectedCatalogIsEnable, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="Name"
                           SelectedItem="{Binding SelectedCatalog, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 

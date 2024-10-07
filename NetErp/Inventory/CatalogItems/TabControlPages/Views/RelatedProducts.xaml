@@ -31,8 +31,8 @@
                 <ColumnDefinition Width="0.3*"/>
                 <ColumnDefinition Width="0.3*"/>
             </Grid.ColumnDefinitions>
-            
-            <Button Margin="5 20 5 5" Grid.Column="0" Width="auto" Command="{Binding Path=Data.OpenSearchItemModalWindowCommand, Source={StaticResource DataContextProxy}}" Height="auto">
+
+            <Button Margin="5 20 5 5" Grid.Column="0" Width="auto" Command="{Binding Path=Data.OpenSearchRelatedProducts, Source={StaticResource DataContextProxy}}" Height="auto">
                 <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Spreadsheet/FunctionsLookupAndReference_16x16.png" Stretch="None">
                     <Image.Style>
                         <Style TargetType="Image">
