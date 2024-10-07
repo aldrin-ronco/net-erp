@@ -3,16 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\relatedproducts.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\tabcontrolpages\\views\\relatedproducts.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\helpers\\dialogservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\helpers\\dialogservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\views\\catalogmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\viewmodels\\searchitemmodalviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\viewmodels\\searchitemmodalviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,40 +34,53 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "RelatedProducts.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\RelatedProducts.xaml.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\RelatedProducts.xaml.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\RelatedProducts.xaml.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\TabControlPages\\Views\\RelatedProducts.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-05T14:24:59.618Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "CatalogMasterView.xaml",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
               "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
               "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\Views\\CatalogMasterView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-05T14:21:45.859Z",
+              "WhenOpened": "2024-10-07T16:05:36.685Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
+              "Title": "SearchItemModalViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\SearchItemModalViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\ViewModels\\SearchItemModalViewModel.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\SearchItemModalViewModel.cs",
+              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\ViewModels\\SearchItemModalViewModel.cs",
+              "ViewState": "AgIAAPQAAAAAAAAAAIAwwA0BAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-05T16:51:57.219Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "CatalogMasterViewModel.cs",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ViewState": "AgIAAJkJAAAAAAAAAAAkwLEKAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAAGMAAAAAAAAAAAAswIsAAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-05T14:13:44.347Z",
+              "WhenOpened": "2024-10-05T15:41:11.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DialogService.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Helpers\\DialogService.cs",
+              "RelativeDocumentMoniker": "NetErp\\Helpers\\DialogService.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Helpers\\DialogService.cs",
+              "RelativeToolTip": "NetErp\\Helpers\\DialogService.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAIAwwCUAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-05T15:36:42.204Z",
               "EditorCaption": ""
             }
           ]

@@ -45,6 +45,7 @@ using Dictionaries;
 using System.Reflection;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using DevExpress.DocumentServices.ServiceModel.DataContracts;
 
 namespace NetErp.Inventory.CatalogItems.ViewModels
 {
@@ -135,6 +136,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     NotifyOfPropertyChange(nameof(IsEditing));
                     NotifyOfPropertyChange(nameof(CanSaveItem));
                     NotifyOfPropertyChange(nameof(TreeViewEnable));
+                    NotifyOfPropertyChange(nameof(SelectedCatalogIsEnable));
+                    NotifyOfPropertyChange(nameof(MainRibbonPageIsEnable));
                 }
             }
         }
@@ -225,7 +228,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public CatalogMasterViewModel(CatalogViewModel context)
         {
-            Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.Type1, false, OnReturnedItemFromModalViewMessage);
+            Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.RelatedProduct, false, OnFindRelatedProductMessage);
+            Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.SearchProduct, false, OnFindProductMessage);
             Context = context;
             _errors = new Dictionary<string, List<string>>();
             Context.EventAggregator.SubscribeOnUIThread(this);
@@ -1203,6 +1207,22 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        public bool SelectedCatalogIsEnable
+        {
+            get
+            {
+                return !IsEditing;
+            }
+        }
+
+        public bool MainRibbonPageIsEnable
+        {
+            get
+            {
+                return !IsEditing;
+            }
+        }
+
         #endregion
 
         #region "Methods"
@@ -1314,24 +1334,24 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
         public bool CanDeleteImage(object p) => true;
 
-        public void OpenSearchItemModalWindow(object p)
+        public void SearchRelatedProducts(object p)
         {
             string query = @"query($filter: ItemFilterInput){
-                          PageResponse: itemPage(filter: $filter){
-                            count
-                            rows{
-                              id
-                              name
-                              code
-                              reference
-                              allowFraction
-                              measurementUnit{
-                                id
-                                name
-                                }
+                        PageResponse: itemPage(filter: $filter){
+                        count
+                        rows{
+                            id
+                            name
+                            code
+                            reference
+                            allowFraction
+                            measurementUnit{
+                            id
+                            name
                             }
-                          }
-                        }";
+                        }
+                        }
+                    }";
 
             string fieldHeader1 = "Código";
             string fieldHeader2 = "Nombre";
@@ -1339,13 +1359,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             string fieldData1 = "Code";
             string fieldData2 = "Name";
             string fieldData3 = "Reference";
-            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, Context);
+            dynamic variables = new ExpandoObject();
+            variables.filter = new ExpandoObject();
+            variables.filter.catalogId = SelectedCatalog.Id;
+            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context);
 
             _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
 
         }
 
-        public bool CanOpenSearchItemModalWindow(object p) => true;
+        public bool CanOpenSearchRelatedProducts(object p) => true;
 
         public void DeleteRelatedProduct(object p)
         {
@@ -1887,14 +1910,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
 
 
-        private ICommand _openSearchItemModalWindowCommand;
+        private ICommand _openSearchRelatedProducts;
 
-        public ICommand OpenSearchItemModalWindowCommand
+        public ICommand OpenSearchRelatedProducts
         {
             get
             {
-                if (_openSearchItemModalWindowCommand is null) _openSearchItemModalWindowCommand = new RelayCommand(CanOpenSearchItemModalWindow, OpenSearchItemModalWindow);
-                return _openSearchItemModalWindowCommand;
+                if (_openSearchRelatedProducts is null) _openSearchRelatedProducts = new RelayCommand(CanOpenSearchRelatedProducts, SearchRelatedProducts);
+                return _openSearchRelatedProducts;
             }
         }
 
@@ -1980,7 +2003,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region "Messages"
 
-        void OnReturnedItemFromModalViewMessage(ReturnedItemFromModalViewMessage message)
+        void OnFindRelatedProductMessage(ReturnedItemFromModalViewMessage message)
         {
             ReturnedItemFromModal = Context.AutoMapper.Map<ItemDTO>(message.ReturnedItem);
             RelatedProductName = ReturnedItemFromModal.Name;
@@ -3340,6 +3363,51 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        public void SearchProducts(object p)
+        {
+            string query = @"query($filter: ItemFilterInput){
+                            PageResponse: itemPage(filter: $filter){
+                            count
+                            rows{
+                                id
+                                name
+                                code
+                                reference
+                                allowFraction
+                                measurementUnit{
+                                id
+                                name
+                                }
+                                subCategory{
+                                    id
+                                    itemCategory{
+                                        id
+                                        itemType{
+                                            id
+                                        }
+                                    }
+                                }
+                            }
+                            }
+                        }";
+
+            string fieldHeader1 = "Código";
+            string fieldHeader2 = "Nombre";
+            string fieldHeader3 = "Referencia";
+            string fieldData1 = "Code";
+            string fieldData2 = "Name";
+            string fieldData3 = "Reference";
+            dynamic variables = new ExpandoObject();
+            variables.filter = new ExpandoObject();
+            variables.filter.catalogId = SelectedCatalog.Id;
+            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context);
+
+            _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
+
+
+        }
+        public bool CanOpenSearchProducts(object p) => true; 
+
         #endregion
 
         #region "Commands"
@@ -3508,10 +3576,72 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 return _deleteItemCategoryCommand;
             }
         }
+
+        private ICommand _openSearchProducts;
+
+        public ICommand OpenSearchProducts
+        {
+            get
+            {
+                if (_openSearchProducts is null) _openSearchProducts = new RelayCommand(CanOpenSearchProducts, SearchProducts);
+                return _openSearchProducts;
+            }
+        }
+        #endregion
+
+        #region "Commands"
+
+        public async void OnFindProductMessage(ReturnedItemFromModalViewMessage message)
+        {
+            IsBusy = true;
+            await OnFindProductMessageAsync(message);
+            IsBusy = false;
+        }
+
+        public async Task OnFindProductMessageAsync(ReturnedItemFromModalViewMessage message)
+        {
+            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedItem);
+            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemsTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
+            if (itemTypeDTO is null) return;
+            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories[0].IsDummyChild)
+            {
+                await LoadItemsCategories(itemTypeDTO);
+                itemTypeDTO.IsExpanded = true;
+            }
+            if (!itemTypeDTO.IsExpanded) itemTypeDTO.IsExpanded = true;
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
+            if (itemCategoryDTO is null) return;
+            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories[0].IsDummyChild)
+            {
+                await LoadItemsSubCategories(itemCategoryDTO);
+                itemCategoryDTO.IsExpanded = true;
+            }
+            if (!itemCategoryDTO.IsExpanded) itemCategoryDTO.IsExpanded = true;
+            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
+            if (itemSubCategoryDTO is null) return;
+            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items[0].IsDummyChild)
+            {
+                await LoadItems(itemSubCategoryDTO);
+                itemSubCategoryDTO.IsExpanded = true;
+                ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
+                if (item is null) return;
+                SelectedItem = item;
+                return;
+            }
+            if (!itemSubCategoryDTO.IsExpanded)
+            {
+                itemSubCategoryDTO.IsExpanded = true;
+                ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
+                SelectedItem = item;
+                return;
+            }
+            ItemDTO? selectedItem = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
+            SelectedItem = selectedItem;
+            return;
+        }
         #endregion
 
         #endregion
-
 
     }
 
