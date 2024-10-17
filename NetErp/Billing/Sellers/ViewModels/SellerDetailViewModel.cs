@@ -24,6 +24,7 @@ using Common.Interfaces;
 using Microsoft.VisualStudio.Threading;
 using System.Windows.Threading;
 using DevExpress.Mvvm;
+using NetErp.Global.CostCenters.DTO;
 
 
 namespace NetErp.Billing.Sellers.ViewModels

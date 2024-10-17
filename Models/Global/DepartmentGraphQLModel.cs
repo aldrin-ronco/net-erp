@@ -12,10 +12,16 @@ namespace Models.Global
         public string Code { get; set; } = "";
         public string Name { get; set; } = "";
         public int CountryId { get; set; } = 0;
+        public CountryGraphQLModel Country { get; set; } = new();
         public List<CityGraphQLModel> Cities { get; set; }
         public override string ToString()
         {
             return $"{this.Code} - {this.Name}";
         }
+    }
+
+    public class DepartmentDTO: DepartmentGraphQLModel
+    {
+
     }
 }

@@ -25,6 +25,7 @@ using NetErp.Books.Reports.DailyBook.ViewModels;
 using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
+using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.ViewModels;
 using NetErp.Inventory.MeasurementUnits.ViewModels;
@@ -393,6 +394,27 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 CatalogViewModel instance = IoC.Get<CatalogViewModel>();
                 instance.DisplayName = "Catalogo de productos";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async void OpenCostCenters()
+        {
+            try
+            {
+                CostCenterViewModel instance = IoC.Get<CostCenterViewModel>();
+                instance.DisplayName = "Administración de centros de costos";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;

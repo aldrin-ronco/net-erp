@@ -15,14 +15,13 @@ namespace Models.Global
         public string Name { get; set; } = string.Empty;
         public string TradeName { get; set; } = string.Empty;
         public string ShortName { get; set; } = string.Empty;
-        public char State { get; set; }
+        public string State { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string Phone1 { get; set; } = string.Empty;
         public string Phone2 { get; set; } = string.Empty;
         public string CellPhone1 { get; set; } = string.Empty;
         public string CellPhone2 { get; set; } = string.Empty;
         public string DateControlType { get; set; } = string.Empty;
-        public int RelatedAccountingEntityId { get; set; } = 0;
         public bool IsTaxable { get; set; } = false;
         public bool PriceListIncludeTax { get; set; } = false;
         public bool InvoicePriceIncludeTax { get; set; } = false;
@@ -41,18 +40,13 @@ namespace Models.Global
         public CityGraphQLModel City { get; set; }
         public CompanyLocationGraphQLModel Location { get; set; }
         public AccountingEntityGraphQLModel RelatedAccountingEntity { get; set; }
-        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
+
+        //public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
 
         public override string ToString()
         {
             return Name;
         }
-    }
-
-    public class CostCenterDTO : CostCenterGraphQLModel
-    {
-        public bool IsExpanded { get; set; } = false;
-        public bool IsSelected { get; set; } = false;
     }
 
     public class CostCenterCreateMessage
@@ -67,6 +61,6 @@ namespace Models.Global
 
     public class CostCenterDeleteMessage
     {
-        public CostCenterGraphQLModel DeletedCodtCenter { get; set; }
+        public CostCenterGraphQLModel DeletedCostCenter { get; set; }
     }
 }

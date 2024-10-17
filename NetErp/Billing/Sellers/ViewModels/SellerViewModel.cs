@@ -7,6 +7,7 @@ using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
 using NetErp.Billing.Customers.ViewModels;
+using NetErp.Global.CostCenters.DTO;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;

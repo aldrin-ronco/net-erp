@@ -17,4 +17,9 @@ namespace Models.Global
             return $"{Name}";
         }
     }
+
+    public class CountryDTO : CountryGraphQLModel 
+    {
+        
+    }
 }

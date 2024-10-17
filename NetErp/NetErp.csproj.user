@@ -7,6 +7,12 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Global\CostCenters\Views\CostCenterMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\CostCenters\Views\CostCenterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Global\MainMenu\Views\MainMenuView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -61,8 +67,17 @@
     <Compile Update="Inventory\MeasurementUnits\Views\MeasurementUnitView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="SoloParaProbarLosTabs.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Global\CostCenters\Views\CostCenterMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\CostCenters\Views\CostCenterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Global\Dictionaries\Views.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -118,6 +133,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SoloParaProbarLosTabs.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

@@ -13,6 +13,7 @@ using Models.Suppliers;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
+using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
@@ -92,6 +93,10 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EanCodeGraphQLModel>>().To<EanCodeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AwsS3ConfigGraphQLModel>>().To<AwsS3ConfigService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CompanyGraphQLModel>>().To<CompanyService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CompanyLocationGraphQLModel>>().To<CompanyLocationService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CostCenterGraphQLModel>>().To<CostCenterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<StorageGraphQLModel>>().To<StorageService>().InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books
@@ -182,6 +187,13 @@ namespace NetErp
                 _ = cfg.CreateMap<EanCodeGraphQLModel, EanCodeDTO>();
                 _ = cfg.CreateMap<ItemDetailGraphQLModel, ItemDetailDTO>();
                 _ = cfg.CreateMap<ItemImageGraphQLModel, ItemImageDTO>();
+                _ = cfg.CreateMap<CompanyGraphQLModel, CompanyDTO>();
+                _ = cfg.CreateMap<CompanyLocationGraphQLModel, CompanyLocationDTO>();
+                _ = cfg.CreateMap<StorageGraphQLModel, StorageDTO>();
+                _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
+                _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
+                _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
+
 
 
             });
