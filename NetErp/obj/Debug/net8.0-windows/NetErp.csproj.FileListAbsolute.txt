@@ -253,3 +253,9 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Inventory\Cat
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\DevExpress.Xpf.LayoutControl.v23.2.dll
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\AWSSDK.Core.dll
 C:\Users\sebas\source\repos\NetErp\NetErp\bin\Debug\net8.0-windows\AWSSDK.S3.dll
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterMasterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterMasterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterView.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\SoloParaProbarLosTabs.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\SoloParaProbarLosTabs.baml

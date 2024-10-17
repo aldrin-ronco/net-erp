@@ -1387,7 +1387,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                CostCenterGraphQLModel deletedCostCenter = this.Context.CostCenters.Where(x => x.Id == message.DeletedCodtCenter.Id).FirstOrDefault();
+                CostCenterGraphQLModel deletedCostCenter = this.Context.CostCenters.Where(x => x.Id == message.DeletedCostCenter.Id).FirstOrDefault();
                 if (deletedCostCenter != null) this.Context.CostCenters.Remove(deletedCostCenter);
             }
             catch (Exception ex)
