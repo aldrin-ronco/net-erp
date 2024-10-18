@@ -7,10 +7,6 @@
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\viewmodels\\costcentermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
@@ -31,14 +27,13 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "CatalogMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ViewState": "AgIAADwEAAAAAAAAAAAAwIoEAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-17T16:16:50.409Z",
+              "Title": "CostCenterMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-18T21:07:16.44Z",
               "EditorCaption": ""
             },
             {
@@ -49,21 +44,9 @@
               "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "ViewState": "AgIAAL4CAAAAAAAAAAAgwOICAAA8AAAAAAAAAA==",
+              "ViewState": "AgIAANYIAAAAAAAAAAAhwOoIAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-10-17T15:55:22.084Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "CostCenterMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-11T15:45:35.64Z",
               "EditorCaption": ""
             }
           ]

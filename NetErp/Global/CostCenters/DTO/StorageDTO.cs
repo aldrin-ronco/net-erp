@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Models.Global;
 using NetErp.Global.CostCenters.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -42,6 +43,52 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
+        private string _state;
+
+        public string State
+        {
+            get { return _state; }
+            set 
+            {
+                if (_state != value)
+                {
+                    _state = value;
+                    NotifyOfPropertyChange(nameof(State));
+                }
+            }
+        }
+
+
+        private string _address;
+
+        public string Address
+        {
+            get { return _address; }
+            set 
+            {
+                if (_address != value)
+                {
+                    _address = value;
+                    NotifyOfPropertyChange(nameof(Address));
+                }
+            }
+        }
+
+        private CityDTO _city;
+
+        public CityDTO City
+        {
+            get { return _city; }
+            set
+            {
+                if (_city != value)
+                {
+                    _city = value;
+                    NotifyOfPropertyChange(nameof(City));
+                }
+            }
+        }
+
 
         private bool _isDummyChild = false;
 
@@ -73,14 +120,25 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-
+        private CompanyLocationDTO _location;
+        public CompanyLocationDTO Location
+        {
+            get { return _location; }
+            set
+            {
+                if (_location != value)
+                {
+                    _location = value;
+                    NotifyOfPropertyChange(nameof(Location));
+                }
+            }
+        }
         public StorageDTO() { }
 
-        public StorageDTO(int id, string name, CostCenterMasterViewModel context)
+        public StorageDTO(int id, string name)
         {
             _id = id;
             _name = name;
-            Context = context;
         }
 
         public object Clone()

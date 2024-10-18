@@ -3,20 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\sebas\\source\\repos\\NetErp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\viewmodels\\costcentermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\viewmodels\\costcentermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\inventory\\catalogitems\\viewmodels\\catalogmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,53 +26,26 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "CustomerDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
-              "ViewState": "AgIAAAoDAAAAAAAAAAAwwPsCAABGAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-17T21:13:18.256Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "CatalogMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Inventory\\CatalogItems\\ViewModels\\CatalogMasterViewModel.cs",
-              "ViewState": "AgIAADwEAAAAAAAAAAAAwIoEAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-17T16:16:50.409Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "CostCenterMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "ViewState": "AgIAAL4CAAAAAAAAAAAgwOICAAA8AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-17T15:55:22.084Z",
+              "Title": "SoloParaProbarLosTabs.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeDocumentMoniker": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeToolTip": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-10-18T22:14:10.135Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "CostCenterMasterView.xaml",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
               "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
               "RelativeToolTip": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-11T15:45:35.64Z",
+              "WhenOpened": "2024-10-18T21:07:16.44Z",
               "EditorCaption": ""
             }
           ]
