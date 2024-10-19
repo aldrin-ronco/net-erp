@@ -30,7 +30,10 @@ namespace NetErp.Global.CostCenters.ViewModels
     public class CostCenterMasterViewModel : Screen, INotifyDataErrorInfo, 
         IHandle<CostCenterCreateMessage>,
         IHandle<CostCenterUpdateMessage>,
-        IHandle<CostCenterDeleteMessage>
+        IHandle<CostCenterDeleteMessage>,
+        IHandle<StorageCreateMessage>,
+        IHandle<StorageUpdateMessage>,
+        IHandle<StorageDeleteMessage>
     {
         public CostCenterViewModel Context { get; set; }
 
@@ -54,6 +57,38 @@ namespace NetErp.Global.CostCenters.ViewModels
         #endregion
 
         #region "Location"
+
+        private int _companyLocationId;
+
+        public int CompanyLocationId
+        {
+            get { return _companyLocationId; }
+            set 
+            {
+                if (_companyLocationId != value)
+                {
+                    _companyLocationId = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocationId));
+                }
+            }
+        }
+
+        private string _companyLocationName;
+
+        public string CompanyLocationName
+        {
+            get { return _companyLocationName; }
+            set 
+            {
+                if (_companyLocationName != value)
+                {
+                    _companyLocationName = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocationName));
+                }
+            }
+        }
+
+
         #endregion
 
         #region "CostCenter"
@@ -513,6 +548,154 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         #endregion
 
+        #region "Storage"
+
+        private int _storageId;
+
+        public int StorageId
+        {
+            get { return _storageId; }
+            set 
+            {
+                if (_storageId != value)
+                {
+                    _storageId = value;
+                    NotifyOfPropertyChange(nameof(StorageId));
+                }
+            }
+        }
+
+        private string _storageName;
+
+        public string StorageName
+        {
+            get { return _storageName; }
+            set 
+            {
+                if (_storageName != value)
+                {
+                    _storageName = value;
+                    NotifyOfPropertyChange(nameof(StorageName));
+                    ValidateProperty(nameof(StorageName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _storageAddress;
+
+        public string StorageAddress
+        {
+            get { return _storageAddress; }
+            set 
+            {
+                if (_storageAddress != value)
+                {
+                    _storageAddress = value;
+                    NotifyOfPropertyChange(nameof(StorageAddress));
+                    ValidateProperty(nameof(StorageAddress), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _storageState;
+
+        public string StorageState
+        {
+            get { return _storageState; }
+            set 
+            {
+                if (_storageState != value)
+                {
+                    _storageState = value;
+                    NotifyOfPropertyChange(nameof(StorageState));
+                }
+            }
+        }
+
+
+        private CityGraphQLModel _storageSelectedCity;
+
+        public CityGraphQLModel StorageSelectedCity
+        {
+            get { return _storageSelectedCity; }
+            set 
+            {
+                if (_storageSelectedCity != value)
+                {
+                    _storageSelectedCity = value;
+                    NotifyOfPropertyChange(nameof(StorageSelectedCity));
+                }
+            }
+        }
+
+        private DepartmentGraphQLModel _storageSelectedDepartment;
+
+        public DepartmentGraphQLModel StorageSelectedDepartment
+        {
+            get { return _storageSelectedDepartment; }
+            set 
+            {
+                if (_storageSelectedDepartment != value)
+                {
+                    _storageSelectedDepartment = value;
+                    NotifyOfPropertyChange(nameof(StorageSelectedDepartment));
+                }
+            }
+        }
+
+
+        private CountryGraphQLModel _storageSelectedCountry;
+
+        public CountryGraphQLModel StorageSelectedCountry
+        {
+            get { return _storageSelectedCountry; }
+            set 
+            {
+                if (_storageSelectedCountry != value)
+                {
+                    _storageSelectedCountry = value;
+                    NotifyOfPropertyChange(nameof(StorageSelectedCountry));
+                } 
+            }
+        }
+
+        private int _companyLocationIdBeforeNewStorage;
+
+        public int CompanyLocationIdBeforeNewStorage
+        {
+            get { return _companyLocationIdBeforeNewStorage; }
+            set 
+            {
+                if(_companyLocationIdBeforeNewStorage != value)
+                {
+                    _companyLocationIdBeforeNewStorage = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocationIdBeforeNewStorage));
+                }
+            }
+        }
+
+        private int _storageCompanyLocationId;
+
+        public int StorageCompanyLocationId
+        {
+            get { return _storageCompanyLocationId; }
+            set 
+            {
+                if (_storageCompanyLocationId != value)
+                {
+                    _storageCompanyLocationId = value;
+                    NotifyOfPropertyChange(nameof(StorageCompanyLocationId));
+                }
+            }
+        }
+
+
+        #endregion
+
+
+
         #endregion
 
 
@@ -554,26 +737,82 @@ namespace NetErp.Global.CostCenters.ViewModels
             {
                 if (!IsNewRecord)
                 {
+                    IsEditing = false;
+                    CanEdit = true;
+                    CanUndo = false;
                     if (_selectedItem is CostCenterDTO costCenterDTO)
                     {
-                        IsEditing = false;
-                        CanEdit = true;
-                        CanUndo = false;
                         await SetCostCenterForEdit(costCenterDTO);
+                        ClearAllErrors();
+                        ValidateCostCenterProperties();
+                        return;
+                    }
+                    if(_selectedItem is StorageDTO storageDTO)
+                    {
+                        await SetStorageForEdit(storageDTO);
+                        ClearAllErrors();
+                        ValidateStorageProperties();
+                        return;
+                    }
+                    if(_selectedItem is CompanyLocationDTO companyLocationDTO)
+                    {
+                        await SetCompanyLocationForEdit(companyLocationDTO);
+                        ClearAllErrors();
+                        //ValidateCompanyLocationProperties();
                         return;
                     }
                 }
                 else
                 {
+                    IsEditing = true;
+                    CanUndo = true;
+                    CanEdit = false;
+
                     if(_selectedItem is CostCenterDTO costCenter)
                     {
-                        IsEditing = true;
-                        CanUndo = true;
-                        CanEdit = false;
                         await SetCostCenterForNew();
+                        _errors.Clear();
+                        ValidateCostCenterProperties();
+                        return;
+                    }
+                    if (_selectedItem is StorageDTO storage)
+                    {
+                        await SetStorageForNew();
+                        _errors.Clear();
+                        ValidateStorageProperties();
+                        return;
                     }
                 }
             }
+        }
+
+        public async Task SetCompanyLocationForEdit(CompanyLocationDTO companyLocationDTO)
+        {
+            CompanyLocationId = companyLocationDTO.Id;
+            CompanyLocationName = companyLocationDTO.Name;
+        }
+
+        public async Task SetStorageForNew()
+        {
+            StorageId = 0;
+            StorageName = string.Empty;
+            StorageAddress = string.Empty;
+            StorageState = "A";
+            StorageSelectedCountry = Countries.FirstOrDefault(country => country.Code == "169") ?? throw new Exception(""); //Codigo de Colombia
+            StorageSelectedDepartment = StorageSelectedCountry.Departments.FirstOrDefault(department => department.Country.Id == StorageSelectedCountry.Id) ?? throw new Exception("");
+            StorageSelectedCity = StorageSelectedDepartment.Cities.FirstOrDefault(city => city.Department.Id == StorageSelectedDepartment.Id) ?? throw new Exception("");
+        }
+
+        public async Task SetStorageForEdit(StorageDTO storageDTO)
+        {
+            StorageId = storageDTO.Id;
+            StorageName = storageDTO.Name;
+            StorageAddress = storageDTO.Address;
+            StorageState = storageDTO.State;
+            StorageSelectedCountry = Countries.FirstOrDefault(country => country.Id == storageDTO.City.Department.Country.Id) ?? throw new Exception("");
+            StorageSelectedDepartment = StorageSelectedCountry.Departments.FirstOrDefault(department => department.Id == storageDTO.City.Department.Id) ?? throw new Exception("");
+            StorageSelectedCity = StorageSelectedDepartment.Cities.FirstOrDefault(city => city.Id == storageDTO.City.Id) ?? throw new Exception("");
+            StorageCompanyLocationId = storageDTO.Location.Id;
         }
 
         public async Task SetCostCenterForNew()
@@ -656,7 +895,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     return true;
                 }
                 if (_selectedItem is CostCenterDummyDTO costCenterDummyDTO) CompanyLocationIdBeforeNewCostCenter = costCenterDummyDTO.Location.Id;
-                //if (_selectedItem is StorageDummyDTO storageDummyDTO) CompanyLocationIdBeforeNewCostCenter = storageDummyDTO.Location.Id;
+                if (_selectedItem is StorageDummyDTO storageDummyDTO) CompanyLocationIdBeforeNewStorage = storageDummyDTO.Location.Id;
                 SelectedItem = null;
                 return false; 
             }
@@ -741,6 +980,125 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
+        private ICommand _deleteStorageCommand;
+        public ICommand DeleteStorageCommand
+        {
+            get
+            {
+                if (_deleteStorageCommand is null) _deleteStorageCommand = new AsyncCommand(DeleteStorage, CanDeleteStorage);
+                return _deleteStorageCommand;
+            }
+        }
+
+        public async Task DeleteStorage()
+        {
+            try
+            {
+                //IsBusy = true;
+                int id = ((StorageDTO)SelectedItem).Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteStorage(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.StorageService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    //IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((StorageDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    //IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                //IsBusy = true;
+                Refresh();
+
+                StorageGraphQLModel deletedStorage = await ExecuteDeleteStorage(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new StorageDeleteMessage() { DeletedStorage = deletedStorage });
+
+                NotifyOfPropertyChange(nameof(CanDeleteStorage));
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteStorage" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                //IsBusy = false;
+            }
+        }
+
+        public async Task<StorageGraphQLModel> ExecuteDeleteStorage(int id)
+        {
+            try
+            {
+                string query = @"
+                    mutation ($id: Int!) {
+                      DeleteResponse: deleteStorage(id: $id) {
+                        id
+                        name
+                        address
+                        state
+                        city {
+                          id
+                          code
+                          name
+                          department {
+                            id
+                            country {
+                              id
+                            }
+                          }
+                        }
+                        location {
+                          id
+                          company {
+                            id
+                          }
+                        }
+                      }
+                    }";
+                object variables = new { Id = id };
+                StorageGraphQLModel deletedStorage = await StorageService.Delete(query, variables);
+                this.SelectedItem = null;
+                return deletedStorage;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public bool CanDeleteStorage => true;
+
         private ICommand _deleteCostCenterCommand;
         public ICommand DeleteCostCenterCommand
         {
@@ -808,7 +1166,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteItemSubCategory" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteCostCenter" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
@@ -889,6 +1247,24 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             return true;
         }
+
+        private ICommand _createStorageCommand;
+        public ICommand CreateStorageCommand
+        {
+            get
+            {
+                if (_createStorageCommand is null) _createStorageCommand = new AsyncCommand(CreateStorage, CanCreateStorage);
+                return _createStorageCommand;
+            }
+        }
+        public async Task CreateStorage()
+        {
+            IsNewRecord = true;
+            SelectedItem = new StorageDTO();
+        }
+
+        public bool CanCreateStorage => true;
+
         private ICommand _createCostCenterCommand;
         public ICommand CreateCostCenterCommand
         {
@@ -939,6 +1315,18 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                     }
                 }
+                if (SelectedItem is StorageDTO storageDTO)
+                {
+                    StorageGraphQLModel result = await ExecuteSaveStorage();
+                    if (IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new StorageCreateMessage() { CreatedStorage = result });
+                    }
+                    else
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new StorageUpdateMessage() { UpdatedStorage = result });
+                    }
+                }
                 IsEditing = false;
                 CanUndo = false;
                 CanEdit = true;
@@ -970,6 +1358,88 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         public bool CanSave => IsEditing == true && _errors.Count <= 0;
 
+        public async Task<StorageGraphQLModel> ExecuteSaveStorage()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                if (!IsNewRecord) variables.Id = StorageId;
+                variables.Data.name = StorageName.Trim().RemoveExtraSpaces();
+                variables.Data.address = StorageAddress.Trim().RemoveExtraSpaces();
+                variables.Data.state = StorageState;
+                variables.Data.cityId = StorageSelectedCity.Id;
+                variables.Data.companyLocationId = IsNewRecord ? CompanyLocationIdBeforeNewStorage : StorageCompanyLocationId;
+                if (IsNewRecord)
+                {
+                    query = @"
+                        mutation ($data: CreateStorageInput!) {
+                          CreateResponse: createStorage(data: $data) {
+                            id
+                            name
+                            address
+                            state
+                            city {
+                              id
+                              code
+                              name
+                              department{
+                                id
+                                country{
+                                  id
+                                }
+                              }
+                            }
+                            location{
+                              id
+                              company{
+                                id
+                              }
+                            }
+                          }
+                        }
+                        ";
+                }
+                else
+                {
+                    query = @"
+                        mutation ($data: UpdateStorageInput!, $id: Int!) {
+                          UpdateResponse: updateStorage(data: $data, id: $id) {
+                            id
+                            name
+                            address
+                            state
+                            city {
+                              id
+                              code
+                              name
+                              department{
+                                id
+                                country{
+                                  id
+                                }
+                              }
+                            }
+                            location{
+                              id
+                              company{
+                                id
+                              }
+                            }
+                          }
+                        }";
+                }
+                var result = IsNewRecord ? await StorageService.Create(query, variables) : await StorageService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
         public async Task<CostCenterGraphQLModel> ExecuteSaveCostCenter()
         {
             try
@@ -982,7 +1452,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 variables.Data.tradeName = CostCenterTradeName.Trim().RemoveExtraSpaces();
                 variables.Data.shortName = CostCenterShortName.Trim().RemoveExtraSpaces();
                 variables.Data.state = CostCenterState;
-                variables.Data.address = CostCenterAddress;
+                variables.Data.address = CostCenterAddress.Trim().RemoveExtraSpaces();
                 variables.Data.phone1 = CostCenterPhone1;
                 variables.Data.phone2 = CostCenterPhone2;
                 variables.Data.cellPhone1 = CostCenterCellPhone1;
@@ -1215,12 +1685,32 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 List<int> ids = [location.Id];
                 string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: storagesByCompaniesLocationsIds(ids: $ids){
+                    query ($ids: [Int!]!) {
+                      ListResponse: storagesByCompaniesLocationsIds(ids: $ids) {
                         id
                         name
+                        address
+                        state
+                        city {
+                          id
+                          name
+                          department{
+                            id
+                            code
+                            name
+                            country{
+                              id
+                              code
+                              name
+                            }
+                          }
+                        }
+                        location{
+                          id
+                        }
                       }
-                    }";
+                    }
+                    ";
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
@@ -1413,29 +1903,32 @@ namespace NetErp.Global.CostCenters.ViewModels
             try
             {
                 string query = @"
-                query {
-                    ListResponse: countries {
-                    id
-                    code
-                    name
-                    departments {
+                    query {
+                      ListResponse: countries {
                         id
                         code
                         name
-                        country{
-                        id
-                        }
-                        cities{
-                        id
-                        code
-                        name
-                        department{
+                        departments {
+                          id
+                          code
+                          name
+                          country {
                             id
+                          }
+                          cities {
+                            id
+                            code
+                            name
+                            department {
+                              id
+                              country {
+                                id
+                              }
+                            }
+                          }
                         }
-                        }
-                    }
-                    }
-                }";
+                      }
+                    }";
 
                 var source = await CountryService.GetList(query, new {  });
                 Countries = new ObservableCollection<CountryGraphQLModel>(source);
@@ -1524,7 +2017,6 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             await base.OnActivateAsync(cancellationToken);
             await Initialize();
-            ValidateProperties();
         }
 
         public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
@@ -1689,6 +2181,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                     case nameof(CostCenterAddress):
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La dirección no puede ser vacía");
                         break;
+                    case nameof(StorageName):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                    case nameof(StorageAddress):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La dirección no puede estar vacía");
+                        break;
                     default:
                         break;
                 }
@@ -1700,12 +2198,90 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private void ValidateProperties()
+        private void ValidateStorageProperties()
+        {
+            ValidateProperty(nameof(StorageName), StorageName);
+            ValidateProperty(nameof(StorageAddress), StorageAddress);
+        }
+
+        private void ClearAllErrors()
+        {
+            _errors.Clear();
+        }
+
+        private void ValidateCostCenterProperties()
         {
             ValidateProperty(nameof(CostCenterName), CostCenterName);
             ValidateProperty(nameof(CostCenterShortName), CostCenterShortName);
             ValidateProperty(nameof(CostCenterTradeName), CostCenterTradeName);
             ValidateProperty(nameof(CostCenterAddress), CostCenterAddress);
+        }
+
+        public async Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
+        {
+            IsNewRecord = false;
+            StorageDTO storageDTO = Context.AutoMapper.Map<StorageDTO>(message.CreatedStorage);
+            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.Location.Company.Id) ?? throw new Exception("");
+            if (companyDTO == null) return;
+            CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.Location.Id) ?? throw new Exception("");
+            if (companyLocationDTO == null) return;
+            StorageDummyDTO storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO ?? throw new Exception("");
+            if (storageDummyDTO == null) return;
+            if (!storageDummyDTO.IsExpanded && storageDummyDTO.Storages[0].IsDummyChild)
+            {
+                await LoadStorages(companyLocationDTO, storageDummyDTO);
+                storageDummyDTO.IsExpanded = true;
+                StorageDTO? storage = storageDummyDTO.Storages.FirstOrDefault(x => x.Id == storageDTO.Id);
+                if (storage is null) return;
+                SelectedItem = storage;
+                return;
+            }
+            if (!storageDummyDTO.IsExpanded)
+            {
+                storageDummyDTO.IsExpanded = true;
+                storageDummyDTO.Storages.Add(storageDTO);
+                SelectedItem = storageDTO;
+                return;
+            }
+            storageDummyDTO.Storages.Add(storageDTO);
+            SelectedItem = storageDTO;
+            return;
+        }
+
+        public Task HandleAsync(StorageUpdateMessage message, CancellationToken cancellationToken)
+        {
+            StorageDTO storageDTO = Context.AutoMapper.Map<StorageDTO>(message.UpdatedStorage);
+            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.Location.Company.Id);
+            if (companyDTO is null) return Task.CompletedTask;
+            CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.Location.Id);
+            if (companyLocationDTO is null) return Task.CompletedTask;
+            StorageDummyDTO? storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO;
+            if (storageDummyDTO is null) return Task.CompletedTask;
+            StorageDTO? storageToUpdate = storageDummyDTO.Storages.FirstOrDefault(costCenter => costCenter.Id == storageDTO.Id);
+            if (storageToUpdate is null) return Task.CompletedTask;
+            storageToUpdate.Id = storageDTO.Id;
+            storageToUpdate.Name = storageDTO.Name;
+            storageToUpdate.Address = storageDTO.Address;
+            storageToUpdate.State = storageDTO.State;
+            storageToUpdate.City = storageDTO.City;
+            storageToUpdate.Location = storageDTO.Location;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(StorageDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == message.DeletedStorage.Location.Company.Id) ?? throw new Exception("");
+                if (companyDTO is null) return;
+                CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == message.DeletedStorage.Location.Id) ?? throw new Exception("");
+                if (companyLocationDTO is null) return;
+                StorageDummyDTO storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO ?? throw new Exception("");
+                if (storageDummyDTO is null) return;
+                storageDummyDTO.Storages.Remove(storageDummyDTO.Storages.Where(storage => storage.Id == message.DeletedStorage.Id).First());
+                SelectedItem = null;
+            });
+            return Task.CompletedTask;
         }
     }
 }
