@@ -116,11 +116,10 @@ namespace NetErp.Global.CostCenters.DTO
         {
 
         }
-        public CompanyLocationDTO(int id, CompanyDTO company, string name, CostCenterMasterViewModel context)
+        public CompanyLocationDTO(int id, string name, CostCenterMasterViewModel context)
         {
             this._id = id;
             this._name = name;
-            this._company = company;
             this.Context = context;
         }
     }

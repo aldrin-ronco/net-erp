@@ -19,4 +19,19 @@ namespace Models.Global
             return Name;
         }
     }
+
+    public class CompanyLocationCreateMessage
+    {
+        public CompanyLocationGraphQLModel CreatedCompanyLocation { get; set; }
+    }
+
+    public class CompanyLocationUpdateMessage
+    {
+        public CompanyLocationGraphQLModel UpdatedCompanyLocation { get; set; }
+    }
+
+    public class CompanyLocationDeleteMessage
+    {
+        public CompanyLocationGraphQLModel DeletedCompanyLocation { get; set; }
+    }
 }
