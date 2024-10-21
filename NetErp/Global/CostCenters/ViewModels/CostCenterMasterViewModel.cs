@@ -33,7 +33,10 @@ namespace NetErp.Global.CostCenters.ViewModels
         IHandle<CostCenterDeleteMessage>,
         IHandle<StorageCreateMessage>,
         IHandle<StorageUpdateMessage>,
-        IHandle<StorageDeleteMessage>
+        IHandle<StorageDeleteMessage>,
+        IHandle<CompanyLocationCreateMessage>,
+        IHandle<CompanyLocationUpdateMessage>,
+        IHandle<CompanyLocationDeleteMessage>
     {
         public CostCenterViewModel Context { get; set; }
 
@@ -84,6 +87,38 @@ namespace NetErp.Global.CostCenters.ViewModels
                 {
                     _companyLocationName = value;
                     NotifyOfPropertyChange(nameof(CompanyLocationName));
+                    ValidateProperty(nameof(CompanyLocationName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int _companyIdBeforeNewCompanyLocation;
+
+        public int CompanyIdBeforeNewCompanyLocation
+        {
+            get { return _companyIdBeforeNewCompanyLocation; }
+            set 
+            {
+                if(_companyIdBeforeNewCompanyLocation != value)
+                {
+                    _companyIdBeforeNewCompanyLocation = value;
+                    NotifyOfPropertyChange(nameof(CompanyIdBeforeNewCompanyLocation));
+                }
+            }
+        }
+
+        private int _companyLocationCompanyId;
+
+        public int CompanyLocationCompanyId
+        {
+            get { return _companyLocationCompanyId; }
+            set 
+            {
+                if (_companyLocationCompanyId != value)
+                {
+                    _companyLocationCompanyId = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocationCompanyId));
                 }
             }
         }
@@ -758,7 +793,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     {
                         await SetCompanyLocationForEdit(companyLocationDTO);
                         ClearAllErrors();
-                        //ValidateCompanyLocationProperties();
+                        ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
                         return;
                     }
                 }
@@ -768,28 +803,43 @@ namespace NetErp.Global.CostCenters.ViewModels
                     CanUndo = true;
                     CanEdit = false;
 
-                    if(_selectedItem is CostCenterDTO costCenter)
+                    if(_selectedItem is CostCenterDTO costCenterDTO)
                     {
                         await SetCostCenterForNew();
-                        _errors.Clear();
+                        ClearAllErrors();
                         ValidateCostCenterProperties();
                         return;
                     }
-                    if (_selectedItem is StorageDTO storage)
+                    if (_selectedItem is StorageDTO storageDTO)
                     {
                         await SetStorageForNew();
-                        _errors.Clear();
+                        ClearAllErrors();
                         ValidateStorageProperties();
+                        return;
+                    }
+                    if(_selectedItem is CompanyLocationDTO companyLocationDTO)
+                    {
+                        await SetCompanyLocationForNew();
+                        ClearAllErrors();
+                        ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
                         return;
                     }
                 }
             }
         }
 
+
+        public async Task SetCompanyLocationForNew()
+        {
+            CompanyLocationId = 0;
+            CompanyLocationName = string.Empty;
+        }
+
         public async Task SetCompanyLocationForEdit(CompanyLocationDTO companyLocationDTO)
         {
             CompanyLocationId = companyLocationDTO.Id;
             CompanyLocationName = companyLocationDTO.Name;
+            CompanyLocationCompanyId = companyLocationDTO.Company.Id;
         }
 
         public async Task SetStorageForNew()
@@ -892,6 +942,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             {
                 if(_selectedItem != null && _selectedItem is not CostCenterDummyDTO && _selectedItem is not StorageDummyDTO)
                 {
+                    if (_selectedItem is CompanyDTO companyDTO) CompanyIdBeforeNewCompanyLocation = companyDTO.Id;
                     return true;
                 }
                 if (_selectedItem is CostCenterDummyDTO costCenterDummyDTO) CompanyLocationIdBeforeNewCostCenter = costCenterDummyDTO.Location.Id;
@@ -979,6 +1030,111 @@ namespace NetErp.Global.CostCenters.ViewModels
                 }
             }
         }
+
+        private ICommand _deleteCompanyLocationCommand;
+        public ICommand DeleteCompanyLocationCommand
+        {
+            get
+            {
+                if (_deleteCompanyLocationCommand is null) _deleteCompanyLocationCommand = new AsyncCommand(DeleteCompanyLocation, CanDeleteCompanyLocation);
+                return _deleteCompanyLocationCommand;
+            }
+        }
+
+        public async Task DeleteCompanyLocation()
+        {
+            try
+            {
+                //IsBusy = true;
+                int id = ((CompanyLocationDTO)SelectedItem).Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteCompanyLocation(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.CompanyLocationService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    //IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((CompanyLocationDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    //IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                //IsBusy = true;
+                Refresh();
+
+                CompanyLocationGraphQLModel deletedCompanyLocation = await ExecuteDeleteCompanyLocation(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new CompanyLocationDeleteMessage() { DeletedCompanyLocation = deletedCompanyLocation });
+
+                NotifyOfPropertyChange(nameof(CanDeleteCompanyLocation));
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteCompanyLocation" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                //IsBusy = false;
+            }
+
+        }
+
+        public async Task<CompanyLocationGraphQLModel> ExecuteDeleteCompanyLocation(int id)
+        {
+            try
+            {
+                string query = @"
+                    mutation($id: Int!){
+                      DeleteResponse: deleteCompanyLocation(id: $id){
+                        id
+                        name
+                        company{
+                          id
+                        }
+                      }
+                    }";
+                object variables = new { Id = id };
+                CompanyLocationGraphQLModel deletedCompanyLocation = await CompanyLocationService.Delete(query, variables);
+                this.SelectedItem = null;
+                return deletedCompanyLocation;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public bool CanDeleteCompanyLocation => true;
 
         private ICommand _deleteStorageCommand;
         public ICommand DeleteStorageCommand
@@ -1248,6 +1404,24 @@ namespace NetErp.Global.CostCenters.ViewModels
             return true;
         }
 
+        private ICommand _createCompanyLocationCommand;
+        public ICommand CreateCompanyLocationCommand
+        {
+            get
+            {
+                if (_createCompanyLocationCommand is null) _createCompanyLocationCommand = new AsyncCommand(CreateCompanyLocation, CanCreateCompanyLocation);
+                return _createCompanyLocationCommand;
+            }
+        }
+
+        public async Task CreateCompanyLocation()
+        {
+            IsNewRecord = true;
+            SelectedItem = new CompanyLocationDTO();
+        }
+
+        public bool CanCreateCompanyLocation => true;
+
         private ICommand _createStorageCommand;
         public ICommand CreateStorageCommand
         {
@@ -1327,6 +1501,18 @@ namespace NetErp.Global.CostCenters.ViewModels
                         await Context.EventAggregator.PublishOnUIThreadAsync(new StorageUpdateMessage() { UpdatedStorage = result });
                     }
                 }
+                if (SelectedItem is CompanyLocationDTO companyLocationDTO)
+                {
+                    CompanyLocationGraphQLModel result = await ExecuteSaveCompanyLocation();
+                    if (IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyLocationCreateMessage() { CreatedCompanyLocation = result });
+                    }
+                    else
+                    {
+                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyLocationUpdateMessage() { UpdatedCompanyLocation = result });
+                    }
+                }
                 IsEditing = false;
                 CanUndo = false;
                 CanEdit = true;
@@ -1357,6 +1543,52 @@ namespace NetErp.Global.CostCenters.ViewModels
         }
 
         public bool CanSave => IsEditing == true && _errors.Count <= 0;
+
+        public async Task<CompanyLocationGraphQLModel> ExecuteSaveCompanyLocation()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                if (!IsNewRecord) variables.Id = CompanyLocationId;
+                variables.Data.name = CompanyLocationName.Trim().RemoveExtraSpaces();
+                variables.Data.companyId = IsNewRecord ? CompanyIdBeforeNewCompanyLocation : CompanyLocationCompanyId;
+                if (IsNewRecord)
+                {
+                    query = @"
+                        mutation ($data: CreateCompanyLocationInput!) {
+                          CreateResponse: createCompanyLocation(data: $data) {
+                            id
+                            name
+                            company {
+                              id
+                            }
+                          }
+                        }
+                        ";
+                }
+                else
+                {
+                    query = @"
+                        mutation ($data: UpdateCompanyLocationInput!, $id: Int!) {
+                          UpdateResponse: updateCompanyLocation(data: $data, id: $id) {
+                            id
+                            name
+                            company {
+                              id
+                            }
+                          }
+                        }";
+                }
+                var result = IsNewRecord ? await CompanyLocationService.Create(query, variables) : await CompanyLocationService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
 
         public async Task<StorageGraphQLModel> ExecuteSaveStorage()
         {
@@ -1656,7 +1888,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             CanEdit = true;
             IsNewRecord = false;
             SelectedIndex = 0;
-            //await LoadCompaniesLocations();
+            if(SelectedItem is CostCenterDTO costCenterDTO) await SetCostCenterForEdit(costCenterDTO);
+            if (SelectedItem is StorageDTO storageDTO) await SetStorageForEdit(storageDTO);
+            if (SelectedItem is CompanyLocationDTO companyLocationDTO) await SetCompanyLocationForEdit(companyLocationDTO);
         }
 
         private bool _canUndo = false;
@@ -2187,6 +2421,9 @@ namespace NetErp.Global.CostCenters.ViewModels
                     case nameof(StorageAddress):
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La dirección no puede estar vacía");
                         break;
+                    case nameof(CompanyLocationName):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
                     default:
                         break;
                 }
@@ -2279,6 +2516,62 @@ namespace NetErp.Global.CostCenters.ViewModels
                 StorageDummyDTO storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO ?? throw new Exception("");
                 if (storageDummyDTO is null) return;
                 storageDummyDTO.Storages.Remove(storageDummyDTO.Storages.Where(storage => storage.Id == message.DeletedStorage.Id).First());
+                SelectedItem = null;
+            });
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CompanyLocationCreateMessage message, CancellationToken cancellationToken)
+        {
+            IsNewRecord = false;
+            CompanyLocationDTO companyLocationDTO = Context.AutoMapper.Map<CompanyLocationDTO>(message.CreatedCompanyLocation);
+            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == companyLocationDTO.Company.Id) ?? throw new Exception("");
+            if (companyDTO is null) return;
+            if (!companyDTO.IsExpanded && companyDTO.Locations[0].IsDummyChild)
+            {
+                await LoadCompaniesLocations(companyDTO);
+                companyDTO.IsExpanded = true;
+                CompanyLocationDTO? companyLocation = companyDTO.Locations.FirstOrDefault(x => x.Id == companyLocationDTO.Id);
+                if (companyLocation is null) return;
+                SelectedItem = companyLocation;
+                return;
+            }
+            if (!companyDTO.IsExpanded)
+            {
+                companyDTO.IsExpanded = true;
+                companyLocationDTO.DummyItems.Add(new CostCenterDummyDTO(this, companyLocationDTO));
+                companyLocationDTO.DummyItems.Add(new StorageDummyDTO(this, companyLocationDTO));
+                companyDTO.Locations.Add(companyLocationDTO);
+                SelectedItem = companyLocationDTO;
+                return;
+            }
+            companyLocationDTO.DummyItems.Add(new CostCenterDummyDTO(this, companyLocationDTO));
+            companyLocationDTO.DummyItems.Add(new StorageDummyDTO(this, companyLocationDTO));
+            companyDTO.Locations.Add(companyLocationDTO);
+            SelectedItem = companyLocationDTO;
+            return;
+        }
+
+        public Task HandleAsync(CompanyLocationUpdateMessage message, CancellationToken cancellationToken)
+        {
+            CompanyLocationDTO companyLocationDTO = Context.AutoMapper.Map<CompanyLocationDTO>(message.UpdatedCompanyLocation);
+            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == companyLocationDTO.Company.Id);
+            if (companyDTO is null) return Task.CompletedTask;
+            CompanyLocationDTO? companyLocationToUpdate = companyDTO.Locations.FirstOrDefault(location => location.Id == companyLocationDTO.Id);
+            if (companyLocationToUpdate is null) return Task.CompletedTask;
+            companyLocationToUpdate.Id = companyLocationDTO.Id;
+            companyLocationToUpdate.Name = companyLocationDTO.Name;
+            companyLocationToUpdate.Company = companyLocationDTO.Company;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(CompanyLocationDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == message.DeletedCompanyLocation.Company.Id) ?? throw new Exception("");
+                if (companyDTO is null) return;
+                companyDTO.Locations.Remove(companyDTO.Locations.Where(location => location.Id == message.DeletedCompanyLocation.Id).First());
                 SelectedItem = null;
             });
             return Task.CompletedTask;

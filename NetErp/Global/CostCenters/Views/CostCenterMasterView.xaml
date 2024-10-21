@@ -24,6 +24,15 @@
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
         <HierarchicalDataTemplate DataType="{x:Type model:CompanyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Crear agrupación de centros de costos" Command="{Binding Data.CreateCompanyLocationCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
@@ -59,6 +68,21 @@
 
         <HierarchicalDataTemplate DataType="{x:Type model:CompanyLocationDTO}" ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding Data.DeleteCompanyLocationCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Eliminar agrupación de centros de costos: "/>
+                                    <TextBlock Text="{Binding Row.Name}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
@@ -320,10 +344,10 @@
                                        Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Margin="10"/>
                             <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="2"/>
                             <dxe:TextEdit Text="{Binding Data.CompanyLocationName, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Grid.Column="1" Grid.Row="3"/>
+                                          Grid.Column="1" Grid.Row="3" CharacterCasing="Upper"/>
                         </Grid>
                     </DataTemplate>
-                    
+
                     <!--TabControl CostCenter-->
                     <DataTemplate DataType="{x:Type model:CostCenterDTO}">
                         <dx:DXTabControl Background="Transparent"
@@ -408,20 +432,20 @@
                                     <!--CostCenterCountry-->
                                     <TextBlock Text="País" Grid.Column="0" Grid.Row="7" Margin="0 5 0 5"/>
                                     <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="8"
-             Margin="0 0 5 0" Padding="3"
-             AllowSpin="True"
-             AutoPopulateColumns="False"  
-             IsCaseSensitiveSearch="False"
-             IncrementalFiltering="True"
-             IncrementalSearch="True"
-             ValidateOnTextInput="False"
-             FilterCondition="Contains"
-             ImmediatePopup="True"
-             ClearSelectionOnBackspace="True"
-             ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-             DisplayMember="Name"
-             ValueMember="Id"
-             SelectedItem="{Binding Data.CostCenterSelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    Margin="0 0 5 0" Padding="3"
+                                                    AllowSpin="True"
+                                                    AutoPopulateColumns="False"  
+                                                    IsCaseSensitiveSearch="False"
+                                                    IncrementalFiltering="True"
+                                                    IncrementalSearch="True"
+                                                    ValidateOnTextInput="False"
+                                                    FilterCondition="Contains"
+                                                    ImmediatePopup="True"
+                                                    ClearSelectionOnBackspace="True"
+                                                    ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    DisplayMember="Name"
+                                                    ValueMember="Id"
+                                                    SelectedItem="{Binding Data.CostCenterSelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -520,12 +544,13 @@
 
                                     <!--CostCenterDateControlType-->
                                     <TextBlock Text="Control de fecha para las transacciones" Grid.Column="0" Grid.Row="15" Margin="0 5 0 5" Grid.ColumnSpan="2"/>
-                                    <ComboBox Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="16" 
-                       Margin="0 0 5 0"
-                       ItemsSource="{Binding Data.CostCenterDateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
-                       DisplayMemberPath="Value"
-                       SelectedValuePath="Key"
-                       SelectedValue="{Binding Data.SelectedCostCenterDateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <dxe:ComboBoxEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="16" 
+                                            Margin="0 0 5 0"
+                                            IsTextEditable="False"
+                                            ItemsSource="{Binding Data.CostCenterDateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                            DisplayMember="Value"
+                                            ValueMember="Key"
+                                            EditValue="{Binding Data.SelectedCostCenterDateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                     <Grid Grid.Column="0" Grid.Row="17" Grid.ColumnSpan="4" Margin="0 0 5 0">
                                         <Grid.ColumnDefinitions>
