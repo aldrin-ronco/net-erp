@@ -1,4 +1,7 @@
-﻿using Models.Inventory;
+﻿using Models.Books;
+using Models.Inventory;
+using NetErp.Global.Modals.ViewModels;
+using NetErp.Global.Modals.Views;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.CatalogItems.Views;
@@ -19,22 +22,45 @@ namespace NetErp.Helpers
 
         public void ShowDialog(dynamic viewModel, string tittle)
         {
-            var view = new SearchItemModalView
+            if (viewModel is SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>)
             {
-                DataContext = viewModel
-            };
+                var view = new SearchItemModalView
+                {
+                    DataContext = viewModel
+                };
 
-            var window = new Window
+                var window = new Window
+                {
+                    Content = view,
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    ResizeMode = ResizeMode.NoResize,
+                    Title = tittle
+                };
+                viewModel.DialogWindow = window;
+                window.ShowDialog();
+            }
+
+            if(viewModel is SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>)
             {
-                Content = view,
-                Owner = Application.Current.MainWindow,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                ResizeMode = ResizeMode.NoResize,
-                Title = tittle
-            };
-            viewModel.DialogWindow = window;
-            window.ShowDialog();
+                var view = new SearchWithTwoColumnsGridView
+                {
+                    DataContext = viewModel
+                };
+
+                var window = new Window
+                {
+                    Content = view,
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    ResizeMode = ResizeMode.NoResize,
+                    Title = tittle
+                };
+                viewModel.DialogWindow = window;
+                window.ShowDialog();
+            }
         }
     }
 }

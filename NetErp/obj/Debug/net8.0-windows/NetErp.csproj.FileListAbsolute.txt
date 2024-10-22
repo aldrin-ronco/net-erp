@@ -259,3 +259,5 @@ C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCe
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterView.baml
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\SoloParaProbarLosTabs.g.cs
 C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\SoloParaProbarLosTabs.baml
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\Modals\Views\SearchWithTwoColumnsGridView.g.cs
+C:\Users\sebas\source\repos\NetErp\NetErp\obj\Debug\net8.0-windows\Global\Modals\Views\SearchWithTwoColumnsGridView.baml

@@ -21,26 +21,50 @@
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
     </UserControl.Resources>
-    <Grid>
-        <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="5*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-            </Grid.RowDefinitions>
-            <TextBlock Text="Agrupación de la compañía" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Center" FontSize="40"/>
+    <dx:DXTabControl Background="Transparent"
+                                         TabContentCacheMode="CacheTabsOnSelecting"
+                                         HorizontalContentAlignment="Stretch"
+                                         Margin="20 0 0 0"
+                                         SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+        <dx:DXTabItem Header="Basicos" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Razón social" Grid.Column="0" Grid.Row="0" Margin="0 5 0 5"/>
+                <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="8.0*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <dxe:TextEdit Text="{Binding Data.CompanyRelatedAccountingEntity.SearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}" 
+                                  Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
+                    <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchCompanyRelatedAccountingEntity, Source={StaticResource DataContextProxy}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
+                            <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value=".5"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
 
-            <TextBlock Text="Lorem Ipsum es simplemente el texto de relleno de las imprentas y archivos de texto. Lorem Ipsum ha sido el texto de relleno estándar de las industrias desde el año 1500, cuando un impresor (N. del T. persona que se dedica a la imprenta) desconocido usó una galería de textos y los mezcló de tal manera que logró hacer un libro de textos especimen. No sólo sobrevivió 500 años, sino que tambien ingresó como texto de relleno en documentos electrónicos, quedando esencialmente igual al original. Fue popularizado en los 60s con la creación de las hojas."
-                        Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Margin="10"/>
-            <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="2" Margin="0 5 0 5"/>
-            <dxe:TextEdit Text="{Binding Data.CompanyLocationName, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Grid.Column="1" Grid.Row="3"/>
-        </Grid>
-    </Grid>
+        </dx:DXTabItem>
+    </dx:DXTabControl>
 </UserControl>

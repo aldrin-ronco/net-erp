@@ -26,7 +26,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
     {
         public readonly IGenericDataAccess<XModel> DynamicService = IoC.Get<IGenericDataAccess<XModel>>();
 
-       public Window DialogWindow { get; set; } = new();
+        public Window DialogWindow { get; set; } = new();
 
         public string Query { get; set; } = string.Empty;
 
