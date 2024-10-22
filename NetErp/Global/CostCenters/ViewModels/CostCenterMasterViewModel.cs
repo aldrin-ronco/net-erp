@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Bars;
@@ -7,11 +8,14 @@ using DevExpress.Xpf.Core;
 using DevExpress.Xpo.DB.Helpers;
 using Dictionaries;
 using GraphQL.Client.Http;
+using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.DTO;
+using NetErp.Inventory.CatalogItems.ViewModels;
 using Services.Inventory.DAL.PostgreSQL;
 using System;
 using System.Collections;
@@ -36,7 +40,8 @@ namespace NetErp.Global.CostCenters.ViewModels
         IHandle<StorageDeleteMessage>,
         IHandle<CompanyLocationCreateMessage>,
         IHandle<CompanyLocationUpdateMessage>,
-        IHandle<CompanyLocationDeleteMessage>
+        IHandle<CompanyLocationDeleteMessage>,
+        IHandle<CompanyUpdateMessage>
     {
         public CostCenterViewModel Context { get; set; }
 
@@ -50,12 +55,97 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         public readonly IGenericDataAccess<CountryGraphQLModel> CountryService = IoC.Get<IGenericDataAccess<CountryGraphQLModel>>();
 
+        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
+
+        public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
+
         Dictionary<string, List<string>> _errors;
+
         #region "TabControls"
 
         #region "Company"
 
+        private int _companyId;
 
+        public int CompanyId
+        {
+            get { return _companyId; }
+            set 
+            {
+                if (_companyId != value)
+                {
+                    _companyId = value;
+                    NotifyOfPropertyChange(nameof(CompanyId));
+                }
+            }
+        }
+
+
+        private string _companyAccountingEntityCompanySearchName;
+
+        public string CompanyAccountingEntityCompanySearchName
+        {
+            get { return _companyAccountingEntityCompanySearchName; }
+            set 
+            {
+                if (_companyAccountingEntityCompanySearchName != value)
+                {
+                    _companyAccountingEntityCompanySearchName = value;
+                    NotifyOfPropertyChange(nameof(CompanyAccountingEntityCompanySearchName));
+                }
+            }
+        }
+
+        private int _companyAccountingEntityCompanyId;
+
+        public int CompanyAccountingEntityCompanyId
+        {
+            get { return _companyAccountingEntityCompanyId; }
+            set 
+            {
+                if (_companyAccountingEntityCompanyId != value)
+                {
+                    _companyAccountingEntityCompanyId = value;
+                    NotifyOfPropertyChange(nameof(CompanyAccountingEntityCompanyId));
+                }
+            }
+        }
+
+
+        private ICommand _searchCompanyAccountingEntityCompanyCommand;
+        public ICommand SearchCompanyAccountingEntityCompanyCommand
+        {
+            get
+            {
+                if (_searchCompanyAccountingEntityCompanyCommand is null) _searchCompanyAccountingEntityCompanyCommand = new RelayCommand(CanSearchCompanyAccountingEntityCompany, SearchCompanyAccountingEntityCompany);
+                return _searchCompanyAccountingEntityCompanyCommand;
+            }
+        }
+
+        public async void SearchCompanyAccountingEntityCompany(object p)
+        {
+            string query = @"query($filter: AccountingEntityFilterInput!){
+                PageResponse: accountingEntityPage(filter: $filter){
+                count
+                rows{
+                    id
+                    searchName
+                    identificationNumber
+                    verificationDigit
+                }
+                }
+            }";
+
+            string fieldHeader1 = "NIT";
+            string fieldHeader2 = "Nombre o razón social";
+            string fieldData1 = "IdentificationNumberWithVerificationDigit";
+            string fieldData2 = "SearchName";
+            SearchWithTwoColumnsGridViewModel = new(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity);
+
+            _dialogService.ShowDialog(SearchWithTwoColumnsGridViewModel, "Búsqueda de terceros");
+        }
+
+        public bool CanSearchCompanyAccountingEntityCompany(object p) => true;
 
         #endregion
 
@@ -796,6 +886,13 @@ namespace NetErp.Global.CostCenters.ViewModels
                         ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
                         return;
                     }
+                    if(_selectedItem is CompanyDTO companyDTO)
+                    {
+                        await SetCompanyForEdit(companyDTO);
+                        ClearAllErrors();
+                        ValidateProperty(nameof(CompanyAccountingEntityCompanySearchName), CompanyAccountingEntityCompanySearchName);
+                        return;
+                    }
                 }
                 else
                 {
@@ -827,8 +924,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                 }
             }
         }
-
-
+        public async Task SetCompanyForEdit(CompanyDTO companyDTO)
+        {
+            CompanyId = companyDTO.Id;
+            CompanyAccountingEntityCompanyId = companyDTO.AccountingEntityCompany.Id;
+            CompanyAccountingEntityCompanySearchName = companyDTO.AccountingEntityCompany.SearchName;
+        }
         public async Task SetCompanyLocationForNew()
         {
             CompanyLocationId = 0;
@@ -1031,6 +1132,22 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
+        private bool _isBusy;
+
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set 
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
+
+
         private ICommand _deleteCompanyLocationCommand;
         public ICommand DeleteCompanyLocationCommand
         {
@@ -1045,7 +1162,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 int id = ((CompanyLocationDTO)SelectedItem).Id;
 
                 string query = @"query($id:Int!){
@@ -1061,19 +1178,19 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 if (validation.CanDelete)
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((CompanyLocationDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
                     (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                     return;
                 }
 
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
 
                 CompanyLocationGraphQLModel deletedCompanyLocation = await ExecuteDeleteCompanyLocation(id);
@@ -1103,7 +1220,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
             finally
             {
-                //IsBusy = false;
+                IsBusy = false;
             }
 
         }
@@ -1150,7 +1267,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 int id = ((StorageDTO)SelectedItem).Id;
 
                 string query = @"query($id:Int!){
@@ -1166,19 +1283,19 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 if (validation.CanDelete)
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((StorageDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
                     (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                     return;
                 }
 
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
 
                 StorageGraphQLModel deletedStorage = await ExecuteDeleteStorage(id);
@@ -1207,7 +1324,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
             finally
             {
-                //IsBusy = false;
+                IsBusy = false;
             }
         }
 
@@ -1269,7 +1386,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 int id = ((CostCenterDTO)SelectedItem).Id;
 
                 string query = @"query($id:Int!){
@@ -1285,19 +1402,19 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 if (validation.CanDelete)
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((CostCenterDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
-                    //IsBusy = false;
+                    IsBusy = false;
                     Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
                     (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                     return;
                 }
 
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
 
                 CostCenterGraphQLModel deletedCostCenter = await ExecuteDeleteCostCenter(id);
@@ -1326,7 +1443,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
             finally
             {
-                //IsBusy = false;
+                IsBusy = false;
             }
         }
 
@@ -1418,6 +1535,11 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = true;
             SelectedItem = new CompanyLocationDTO();
+
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                this.SetFocus(nameof(CompanyLocationName));
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         public bool CanCreateCompanyLocation => true;
@@ -1435,6 +1557,11 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = true;
             SelectedItem = new StorageDTO();
+
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                this.SetFocus(nameof(StorageName));
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         public bool CanCreateStorage => true;
@@ -1453,6 +1580,11 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = true;
             SelectedItem = new CostCenterDTO();
+
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                this.SetFocus(nameof(CostCenterName));
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         public bool CanCreateCostCenter()
@@ -1474,7 +1606,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 Refresh();
                 if(SelectedItem is CostCenterDTO costCenterDTO)
                 {
@@ -1513,6 +1645,14 @@ namespace NetErp.Global.CostCenters.ViewModels
                         await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyLocationUpdateMessage() { UpdatedCompanyLocation = result });
                     }
                 }
+                if(SelectedItem is CompanyDTO companyDTO)
+                {
+                    CompanyGraphQLModel result = await ExecuteSaveCompany();
+                    if (!IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyUpdateMessage() { UpdatedCompany = result });
+                    }
+                }
                 IsEditing = false;
                 CanUndo = false;
                 CanEdit = true;
@@ -1538,11 +1678,40 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
             finally
             {
-                //IsBusy = false;
+                IsBusy = false;
             }
         }
 
         public bool CanSave => IsEditing == true && _errors.Count <= 0;
+
+        public async Task<CompanyGraphQLModel> ExecuteSaveCompany()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                variables.Id = CompanyId;
+                variables.Data.accountingEntityCompanyId = CompanyAccountingEntityCompanyId;
+                query = @"
+                    mutation ($data: UpdateCompanyInput!, $id: Int!) {
+                      UpdateResponse: updateCompany(data: $data, id: $id) {
+                        id
+                        accountingEntityCompany {
+                          id
+                          searchName
+                        }
+                      }
+                    }";
+                var result = await CompanyService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         public async Task<CompanyLocationGraphQLModel> ExecuteSaveCompanyLocation()
         {
@@ -1846,9 +2015,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             IsEditing = true;
             CanUndo = true;
             CanEdit = false;
-            //IsNewRecord = false;
 
-            //this.SetFocus(() => Name);
+            if (SelectedItem is CostCenterDTO) this.SetFocus(nameof(CostCenterName));
+            if (SelectedItem is StorageDTO) this.SetFocus(nameof(StorageName));
+            if (SelectedItem is CompanyLocationDTO) this.SetFocus(nameof(CompanyLocationName));
         }
 
         private bool _canEdit = true;
@@ -1891,6 +2061,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if(SelectedItem is CostCenterDTO costCenterDTO) await SetCostCenterForEdit(costCenterDTO);
             if (SelectedItem is StorageDTO storageDTO) await SetStorageForEdit(storageDTO);
             if (SelectedItem is CompanyLocationDTO companyLocationDTO) await SetCompanyLocationForEdit(companyLocationDTO);
+            if (SelectedItem is CompanyDTO companyDTO) await SetCompanyForEdit(companyDTO);
         }
 
         private bool _canUndo = false;
@@ -2242,9 +2413,17 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         public CostCenterMasterViewModel(CostCenterViewModel context) 
         {
+            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, false, OnFindCompanyAccountingEntityMessage);
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
+        }
+
+        public void OnFindCompanyAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
+        {
+            if (message.ReturnedData is null) return;
+            CompanyAccountingEntityCompanyId = message.ReturnedData.Id;
+            CompanyAccountingEntityCompanySearchName = message.ReturnedData.SearchName;
         }
 
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)
@@ -2574,6 +2753,16 @@ namespace NetErp.Global.CostCenters.ViewModels
                 companyDTO.Locations.Remove(companyDTO.Locations.Where(location => location.Id == message.DeletedCompanyLocation.Id).First());
                 SelectedItem = null;
             });
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(CompanyUpdateMessage message, CancellationToken cancellationToken)
+        {
+            CompanyDTO companyDTO = Context.AutoMapper.Map<CompanyDTO>(message.UpdatedCompany);
+            CompanyDTO? companyToUpdate = Companies.FirstOrDefault(company => company.Id == companyDTO.Id);
+            if (companyToUpdate is null) return Task.CompletedTask;
+            companyToUpdate.Id = companyDTO.Id;
+            companyToUpdate.AccountingEntityCompany = companyDTO.AccountingEntityCompany;
             return Task.CompletedTask;
         }
     }

@@ -13,4 +13,19 @@ namespace Models.Global
         public AccountingEntityGraphQLModel AccountingEntityCompany { get; set; }
         public IEnumerable<CompanyLocationGraphQLModel> Locations { get; set; }
     }
+
+    public class CompanyCreateMessage
+    {
+        public CompanyGraphQLModel CreatedCompany { get; set; }
+    }
+
+    public class CompanyUpdateMessage 
+    {
+        public CompanyGraphQLModel UpdatedCompany { get; set; }
+    }
+
+    public class CompanyDeleteMessage 
+    {
+        public CompanyGraphQLModel DeletedCompany { get; set; }
+    }
 }

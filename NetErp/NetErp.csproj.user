@@ -16,6 +16,9 @@
     <Compile Update="Global\MainMenu\Views\MainMenuView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Global\Modals\Views\SearchWithTwoColumnsGridView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Global\Shell\Views\ShellView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -82,6 +85,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\MainMenu\Views\MainMenuView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Modals\Views\SearchWithTwoColumnsGridView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\Shell\Views\ShellView.xaml">
