@@ -115,6 +115,20 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
+        private bool _isExpanded = false;
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    NotifyOfPropertyChange(nameof(IsExpanded));
+                }
+            }
+        }
+
         public ItemSizeDetailDTO()
         {
 

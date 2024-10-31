@@ -36,7 +36,6 @@
     <Folder Include="Suppliers\Suppliers\Views\" />
     <Folder Include="Suppliers\Suppliers\ViewModels\" />
     <Folder Include="UserControls\" />
-    <Folder Include="Treasury\" />
   </ItemGroup>
 
 	<ItemGroup>

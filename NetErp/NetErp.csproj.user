@@ -73,6 +73,12 @@
     <Compile Update="SoloParaProbarLosTabs.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Treasury\Masters\Views\TreasuryRootMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Treasury\Masters\Views\TreasuryRootView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Global\CostCenters\Views\CostCenterMasterView.xaml">
@@ -142,6 +148,12 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="SoloParaProbarLosTabs.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Treasury\Masters\Views\TreasuryRootMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Treasury\Masters\Views\TreasuryRootView.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

@@ -10,6 +10,7 @@ using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
+using Models.Treasury;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
@@ -20,12 +21,14 @@ using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
+using NetErp.Treasury.Masters.DTO;
 using Ninject;
 using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using Services.Inventory.DAL.PostgreSQL;
 using Services.Suppliers.DAL.PostgreSQL;
+using Services.Treasury.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,6 +100,10 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<CompanyLocationGraphQLModel>>().To<CompanyLocationService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CostCenterGraphQLModel>>().To<CostCenterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<StorageGraphQLModel>>().To<StorageService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<CashDrawerGraphQLModel>>().To<CashDrawerService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<BankGraphQLModel>>().To<BankService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<BankAccountGraphQLModel>>().To<BankAccountService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<FranchiseGraphQLModel>>().To<FranchiseService>().InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books
@@ -193,7 +200,16 @@ namespace NetErp
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
-
+                _ = cfg.CreateMap<CompanyLocationGraphQLModel, TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO>();
+                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryMajorCashDrawerCostCenterMasterTreeDTO>();
+                _ = cfg.CreateMap<CashDrawerGraphQLModel, MajorCashDrawerMasterTreeDTO>();
+                _ = cfg.CreateMap<CompanyLocationGraphQLModel, TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO>();
+                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryMinorCashDrawerCostCenterMasterTreeDTO>();
+                _ = cfg.CreateMap<CashDrawerGraphQLModel, MinorCashDrawerMasterTreeDTO>();
+                _ = cfg.CreateMap<CashDrawerGraphQLModel, TreasuryAuxiliaryCashDrawerMasterTreeDTO>();
+                _ = cfg.CreateMap<BankGraphQLModel, TreasuryBankMasterTreeDTO>();
+                _ = cfg.CreateMap<BankAccountGraphQLModel, TreasuryBankAccountMasterTreeDTO>();
+                _ = cfg.CreateMap<FranchiseGraphQLModel, TreasuryFranchiseMasterTreeDTO>();
 
 
             });
