@@ -15,7 +15,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         public IEventAggregator EventAggregator { get; set; }
 
         private CostCenterMasterViewModel _costCenterMasterViewModel;
-        public CostCenterMasterViewModel CostCenterMasteViewModel
+        public CostCenterMasterViewModel CostCenterMasterViewModel
         {
             get
             {
@@ -36,7 +36,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             try
             {
-                await ActivateItemAsync(CostCenterMasteViewModel, new System.Threading.CancellationToken());
+                await ActivateItemAsync(CostCenterMasterViewModel, new System.Threading.CancellationToken());
             }
             catch (Exception)
             {

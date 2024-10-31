@@ -15,6 +15,7 @@ namespace Models.Treasury
         public bool CashReviewRequired { get; set; }
         public bool AutoAdjustBalance { get; set; }
         public bool AutoTransfer { get; set; }
+        public bool IsPettyCash { get; set; }
         public CashDrawerGraphQLModel CashDrawerAutoTransfer { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
         public AccountingAccountGraphQLModel AccountingAccountCash { get; set; }
@@ -23,22 +24,6 @@ namespace Models.Treasury
         public override string ToString()
         {
             return Name;
-        }
-    }
-
-    public class TreasuryCashDrawerDTO : CashDrawerGraphQLModel
-    {
-        private bool _isChecked;
-        public bool IsChecked
-        {
-            get => _isChecked;
-            set
-            {
-                if (_isChecked != value)
-                {
-                    _isChecked = value;
-                }
-            }
         }
     }
 
