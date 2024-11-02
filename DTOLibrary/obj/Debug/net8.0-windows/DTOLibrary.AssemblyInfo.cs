@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DTOLibrary")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8886a3d378f694fde84722e5c36b0d579182ca80")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f2cc8caa00d4dd3e257250816e0919912d6d324c")]
 [assembly: System.Reflection.AssemblyProductAttribute("DTOLibrary")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DTOLibrary")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

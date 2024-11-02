@@ -22,57 +22,30 @@
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
     </UserControl.Resources>
     <dx:DXTabControl Background="Transparent"
-                                         TabContentCacheMode="CacheTabsOnSelecting"
-                                         HorizontalContentAlignment="Stretch"
-                                         Margin="20 0 0 0"
-                                         SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                 TabContentCacheMode="CacheTabsOnSelecting"
+                 HorizontalContentAlignment="Stretch"
+                 Margin="20 0 0 0"
+                 SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
 
         <dx:DXTabItem Header="Datos de la caja">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="71*"/>
-                    <ColumnDefinition Width="306*"/>
-                </Grid.ColumnDefinitions>
+            <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Text="Almacén" Margin="0 0 0 5" Grid.Row="0" Grid.ColumnSpan="2"/>
-                <dxe:TextEdit Text="{Binding Data.MajorCashDrawerCostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
-                              Grid.Row="1" Margin="0 5 0 10" Grid.ColumnSpan="2"/>
+                <TextBlock Text="Almacén" Margin="0 0 0 5" Grid.Row="0"/>
+                <dxe:TextEdit Text="{Binding Data.MinorCashDrawerCostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
+                        Grid.Row="1" Margin="0 5 0 10"/>
 
-                <TextBlock Text="Nombre de la caja" Grid.Row="2" Margin="0 10 0 5" Grid.ColumnSpan="2"/>
-                <dxe:TextEdit Text="{Binding Data.MajorCashDrawerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Grid.Row="3" Margin="0 5 0 0" Grid.ColumnSpan="2"/>
+                <TextBlock Text="Nombre de la caja" Grid.Row="2" Margin="0 10 0 5"/>
+                <dxe:TextEdit Text="{Binding Data.MinorCashDrawerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                          Grid.Row="3" Margin="0 5 0 0" CharacterCasing="Upper" x:Name="MajorCashDrawerName"/>
             </Grid>
         </dx:DXTabItem>
-        <dx:DXTabItem Header="Usuarios">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Text="Transferencia de fondos automática" Margin="0 0 0 5" Grid.Row="0" FontWeight="Bold"/>
-                <TextBlock Grid.Row="1" TextWrapping="Wrap" Margin="0 5 0 0">
-                    Esta opción le permite transferir los fondos automáticamente al momento de cerrar la caja, 
-                    de esta manera los usuarios no tienen acceso a los montos almacenados en estas.
-                </TextBlock>
-
-                <dxe:CheckEdit Grid.Row="2" Content="Habilitar tranferencia automática en cuadre de caja" 
-                               IsChecked="{Binding Data.MajorCashDrawerAutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 5 0 0"/>
-
-                <dxe:ComboBoxEdit   Grid.Row="3" Margin="0 5 0 0" IsTextEditable="False"
-                                    ItemsSource="{Binding Data.MajorCashDrawerAutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
-                                    DisplayMember="Name"
-                                    ValueMember="Id"
-                                    EditValue="{Binding Data.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            </Grid>
-        </dx:DXTabItem>
-        <dx:DXTabItem Header="Contabilidad">
-            <Grid>
+        <dx:DXTabItem Header="Contabilidad" Visibility="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
+            <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
@@ -83,20 +56,20 @@
                 </Grid.RowDefinitions>
                 <TextBlock Text="Cuenta de efectivo" Margin="0 0 0 5" FontWeight="Bold" Grid.Row="0"/>
                 <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
-                      Margin="0 5 0 10" Padding="3"
-                      AllowSpin="True"
-                      AutoPopulateColumns="False"  
-                      IsCaseSensitiveSearch="False"
-                      IncrementalFiltering="True"
-                      IncrementalSearch="True"
-                      ValidateOnTextInput="False"
-                      FilterCondition="Contains"
-                      ImmediatePopup="True"
-                      ClearSelectionOnBackspace="True"
-                      ItemsSource="{Binding Data.MajorCashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                      DisplayMember="FullName"
-                      ValueMember="Id"
-                      SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+               Margin="0 5 0 10" Padding="3"
+               AllowSpin="True"
+               AutoPopulateColumns="False"  
+               IsCaseSensitiveSearch="False"
+               IncrementalFiltering="True"
+               IncrementalSearch="True"
+               ValidateOnTextInput="False"
+               FilterCondition="Contains"
+               ImmediatePopup="True"
+               ClearSelectionOnBackspace="True"
+               ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+               DisplayMember="FullName"
+               ValueMember="Id"
+               SelectedItem="{Binding Data.MinorCashDrawerSelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                     <dxg:LookUpEdit.PopupContentTemplate>
                         <ControlTemplate>
                             <dxg:GridControl Name="PART_GridControl">
@@ -115,99 +88,43 @@
                         </ItemsPanelTemplate>
                     </dxg:LookUpEdit.ItemsPanel>
                 </dxg:LookUpEdit>
-                <TextBlock Text="Cuenta de cheques" Margin="0 10 0 5" FontWeight="Bold" Grid.Row="2"/>
-                <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="3" 
-                      Margin="0 5 0 10" Padding="3"
-                      AllowSpin="True"
-                      AutoPopulateColumns="False"  
-                      IsCaseSensitiveSearch="False"
-                      IncrementalFiltering="True"
-                      IncrementalSearch="True"
-                      ValidateOnTextInput="False"
-                      FilterCondition="Contains"
-                      ImmediatePopup="True"
-                      ClearSelectionOnBackspace="True"
-                      ItemsSource="{Binding Data.MajorCashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                      DisplayMember="FullName"
-                      ValueMember="Id"
-                      SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                    <dxg:LookUpEdit.PopupContentTemplate>
-                        <ControlTemplate>
-                            <dxg:GridControl Name="PART_GridControl">
-                                <dxg:GridControl.View>
-                                    <dxg:TableView AutoWidth="True"/>
-                                </dxg:GridControl.View>
-                                <dxg:GridControl.Columns>
-                                    <dxg:GridColumn Header="Nombre y código de la cuenta" FieldName="FullName"/>
-                                </dxg:GridControl.Columns>
-                            </dxg:GridControl>
-                        </ControlTemplate>
-                    </dxg:LookUpEdit.PopupContentTemplate>
-                    <dxg:LookUpEdit.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel/>
-                        </ItemsPanelTemplate>
-                    </dxg:LookUpEdit.ItemsPanel>
-                </dxg:LookUpEdit>
-                <TextBlock Text="Cuenta de tarjetas" Margin="0 10 0 5" FontWeight="Bold" Grid.Row="4"/>
-                <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="5" 
-                      Margin="0 5 0 0" Padding="3"
-                      AllowSpin="True"
-                      AutoPopulateColumns="False"  
-                      IsCaseSensitiveSearch="False"
-                      IncrementalFiltering="True"
-                      IncrementalSearch="True"
-                      ValidateOnTextInput="False"
-                      FilterCondition="Contains"
-                      ImmediatePopup="True"
-                      ClearSelectionOnBackspace="True"
-                      ItemsSource="{Binding Data.MajorCashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                      DisplayMember="FullName"
-                      ValueMember="Id"
-                      SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                    <dxg:LookUpEdit.PopupContentTemplate>
-                        <ControlTemplate>
-                            <dxg:GridControl Name="PART_GridControl">
-                                <dxg:GridControl.View>
-                                    <dxg:TableView AutoWidth="True"/>
-                                </dxg:GridControl.View>
-                                <dxg:GridControl.Columns>
-                                    <dxg:GridColumn Header="Nombre y código de la cuenta" FieldName="FullName"/>
-                                </dxg:GridControl.Columns>
-                            </dxg:GridControl>
-                        </ControlTemplate>
-                    </dxg:LookUpEdit.PopupContentTemplate>
-                    <dxg:LookUpEdit.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel/>
-                        </ItemsPanelTemplate>
-                    </dxg:LookUpEdit.ItemsPanel>
-                </dxg:LookUpEdit>
+
             </Grid>
         </dx:DXTabItem>
         <dx:DXTabItem Header="Otros datos">
-            <Grid>
+            <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="21*"/>
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
 
                 <dxe:CheckEdit Grid.Row="0" Content="¿Esta caja requiere cuadre diario?" 
-                               IsChecked="{Binding Data.MajorCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 5"/>
+       IsChecked="{Binding Data.MinorCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
+                           Style="{StaticResource BlueCheckedTextStyle}" Grid.ColumnSpan="2"/>
 
-                <TextBlock Text="Ajustar automáticamente saldo al cerrar" Grid.Row="1" Margin="0 5 0 5" FontWeight="Bold"/>
 
-                <dxe:CheckEdit Grid.Row="3" IsChecked="{Binding Data.MajorCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
-                               Margin="0 0 0 5">
+                <TextBlock Text="Ajustar automáticamente saldo al cerrar" Grid.Row="1" Margin="0 10 0 5" FontWeight="Bold" Grid.ColumnSpan="2"/>
+
+                <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.MinorCashDrawerAutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+       Margin="0 0 0 10" Style="{StaticResource BlueCheckedTextStyle}" Grid.ColumnSpan="2">
                     <dxe:CheckEdit.Content>
                         <TextBlock>
-                            Seleccione esta opción si desea que el sistema ajuste el saldo de la caja automáticamente para que concuerde con el resultado del arqueo,
-                            <LineBreak/>
-                            este ajuste será realizado por medio de un recibo de caja o un egreso automático.
+                        Seleccione esta opción si desea que el sistema ajuste el saldo de la caja automáticamente para que concuerde con el resultado del arqueo,
+                        <LineBreak/>
+                        este ajuste será realizado por medio de un recibo de caja o un egreso automático.
                         </TextBlock>
                     </dxe:CheckEdit.Content>
                 </dxe:CheckEdit>
+
             </Grid>
         </dx:DXTabItem>
     </dx:DXTabControl>

@@ -91,7 +91,7 @@ namespace NetErp.Inventory.ItemSizes.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;component/inventory/itemsizes/views/itemsizemasterview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/inventory/itemsizes/views/itemsizemasterview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Inventory\ItemSizes\Views\ItemSizeMasterView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
