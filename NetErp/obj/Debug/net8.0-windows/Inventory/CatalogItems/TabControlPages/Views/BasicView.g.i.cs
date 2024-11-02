@@ -93,7 +93,8 @@ namespace NetErp.Inventory.CatalogItems.TabControlPages.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;component/inventory/catalogitems/tabcontrolpages/views/basicview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/inventory/catalogitems/tabcontrolpages/views/basicview" +
+                    ".xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Inventory\CatalogItems\TabControlPages\Views\BasicView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

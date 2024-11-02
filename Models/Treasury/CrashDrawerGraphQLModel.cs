@@ -21,6 +21,7 @@ namespace Models.Treasury
         public AccountingAccountGraphQLModel AccountingAccountCash { get; set; }
         public AccountingAccountGraphQLModel AccountingAccountCheck { get; set; }
         public AccountingAccountGraphQLModel AccountingAccountCard { get; set; }
+        public CashDrawerGraphQLModel Parent { get; set; }
         public override string ToString()
         {
             return Name;
