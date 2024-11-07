@@ -91,7 +91,7 @@ namespace NetErp.Global.Modals.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/global/modals/views/searchwithtwocolumnsgridview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/global/modals/views/searchwithtwocolumnsgridview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Global\Modals\Views\SearchWithTwoColumnsGridView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

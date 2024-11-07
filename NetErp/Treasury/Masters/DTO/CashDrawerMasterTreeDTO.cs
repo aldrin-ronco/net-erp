@@ -189,5 +189,21 @@ namespace NetErp.Treasury.Masters.DTO
                 }
             }
         }
+
+        private string _computerName;
+
+        public string ComputerName
+        {
+            get { return _computerName; }
+            set 
+            {
+                if (_computerName != value)
+                {
+                    _computerName = value;
+                    NotifyOfPropertyChange(nameof(ComputerName));
+                }
+            }
+        }
+
     }
 }

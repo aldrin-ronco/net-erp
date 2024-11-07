@@ -231,7 +231,7 @@ namespace NetErp.Global.MainMenu.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/global/mainmenu/views/mainmenuview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/global/mainmenu/views/mainmenuview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Global\MainMenu\Views\MainMenuView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

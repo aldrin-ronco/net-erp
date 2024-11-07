@@ -63,7 +63,7 @@ namespace NetErp.Treasury.Masters.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/treasury/masters/views/treasuryrootview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/treasury/masters/views/treasuryrootview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Treasury\Masters\Views\TreasuryRootView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

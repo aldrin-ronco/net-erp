@@ -63,8 +63,7 @@ namespace NetErp.Books.IdentificationTypes.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/identificationtypes/views/identificationtypeview" +
-                    ".xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/identificationtypes/views/identificationtypeview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\IdentificationTypes\Views\IdentificationTypeView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

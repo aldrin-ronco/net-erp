@@ -63,8 +63,7 @@ namespace NetErp.Books.AccountingSources.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/accountingsources/views/accountingsourceview.xam" +
-                    "l", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/accountingsources/views/accountingsourceview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\AccountingSources\Views\AccountingSourceView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

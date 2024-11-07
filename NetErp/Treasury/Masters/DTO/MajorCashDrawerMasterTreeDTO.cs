@@ -44,7 +44,7 @@ namespace NetErp.Treasury.Masters.DTO
                         {
                             if (_auxiliaryCashDrawers[0].IsDummyChild)
                             {
-                                _ = Context.LoadAuxiliaryCashDrawers(CostCenter, this);
+                                _ = Context.LoadAuxiliaryCashDrawers(this);
                             }
                         }
                     }

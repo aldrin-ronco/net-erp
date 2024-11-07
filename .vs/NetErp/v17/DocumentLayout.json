@@ -7,16 +7,20 @@
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\viewmodels\\treasuryrootmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|c:\\users\\sebas\\source\\repos\\neterp\\common\\helpers\\sessioninfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|solutionrelative:common\\helpers\\sessioninfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\viewmodels\\costcentermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\viewmodels\\costcentermasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,30 +30,43 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "CostCenterMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\CostCenters\\ViewModels\\CostCenterMasterViewModel.cs",
-              "ViewState": "AgIAAFoDAAAAAAAAAIA4wFUDAAAiAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "SessionInfo.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\Common\\Helpers\\SessionInfo.cs",
+              "RelativeDocumentMoniker": "Common\\Helpers\\SessionInfo.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\Common\\Helpers\\SessionInfo.cs",
+              "RelativeToolTip": "Common\\Helpers\\SessionInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-30T22:30:30.445Z"
+              "WhenOpened": "2024-11-05T20:05:23.626Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
+              "Title": "SoloParaProbarLosTabs.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeDocumentMoniker": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeToolTip": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-11-02T16:45:01.314Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "TreasuryRootMasterView.xaml",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
               "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
               "RelativeToolTip": "NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-26T19:17:25.619Z"
+              "WhenOpened": "2024-10-26T19:17:25.619Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -70,7 +87,7 @@
               "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
-              "ViewState": "AgIAADQAAAAAAAAAAAAQwE4AAAAPAAAAAAAAAA==",
+              "ViewState": "AgIAAAsKAAAAAAAAAAAtwCQKAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-10-26T16:23:02.468Z",
               "EditorCaption": ""
