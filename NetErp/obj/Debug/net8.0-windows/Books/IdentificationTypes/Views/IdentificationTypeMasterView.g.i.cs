@@ -122,8 +122,8 @@ namespace NetErp.Books.IdentificationTypes.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/books/identificationtypes/views/identificationtypemast" +
-                    "erview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;component/books/identificationtypes/views/identificationtypemasterview.xa" +
+                    "ml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Books\IdentificationTypes\Views\IdentificationTypeMasterView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

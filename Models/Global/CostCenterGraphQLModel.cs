@@ -41,7 +41,7 @@ namespace Models.Global
         public CompanyLocationGraphQLModel Location { get; set; }
         public AccountingEntityGraphQLModel RelatedAccountingEntity { get; set; }
 
-        //public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
+        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
 
         public override string ToString()
         {
