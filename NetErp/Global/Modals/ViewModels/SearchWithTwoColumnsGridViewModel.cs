@@ -16,6 +16,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace NetErp.Global.Modals.ViewModels
 {
@@ -182,6 +183,26 @@ namespace NetErp.Global.Modals.ViewModels
             GridFocus = controlName == nameof(GridFocus);
         }
 
+        private ICommand _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                return _paginationCommand;
+            }
+        }
+
+        private async Task ExecuteChangeIndex()
+        {
+            await LoadItemsSourceAsync();
+        }
+
+        private bool CanExecuteChangeIndex()
+        {
+            return true;
+        }
+
         public async Task LoadItemsSourceAsync()
         {
             try
@@ -192,6 +213,7 @@ namespace NetErp.Global.Modals.ViewModels
                     Variables = new ExpandoObject();
                     Variables.filter = new ExpandoObject();
                 }
+                //TODO
                 Variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
                 Variables.filter.Pagination = new ExpandoObject();
                 Variables.filter.Pagination.Page = PageIndex;
@@ -273,7 +295,7 @@ namespace NetErp.Global.Modals.ViewModels
         }
     }
 
-    public enum SearchWithTwoColumnsGridMessageToken { CompanyAccountingEntity }
+    public enum SearchWithTwoColumnsGridMessageToken { CompanyAccountingEntity, BankAccountingEntity }
 
     public class ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>
     {

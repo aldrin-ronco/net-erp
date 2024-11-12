@@ -1,4 +1,5 @@
-﻿using Models.Treasury;
+﻿using Models.Books;
+using Models.Treasury;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -50,6 +51,16 @@ namespace NetErp.Treasury.Masters.DTO
                     }
                 }
             }
+        }
+
+        //Propiedad dummy no usada, creada para evitar comportamiento poco probable, pero posible en el arbol
+
+        private AccountingEntityGraphQLModel _accountingEntity = new();
+
+        public AccountingEntityGraphQLModel AccountingEntity
+        {
+            get { return _accountingEntity; }
+            set { _accountingEntity = value; }
         }
     }
 }

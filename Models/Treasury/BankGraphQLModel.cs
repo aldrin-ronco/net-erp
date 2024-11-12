@@ -18,4 +18,19 @@ namespace Models.Treasury
             return AccountingEntity.SearchName;
         }
     }
+
+    public class BankCreateMessage
+    {
+        public BankGraphQLModel CreatedBank { get; set; } = new();
+    }
+
+    public class BankUpdateMessage
+    {
+        public BankGraphQLModel UpdatedBank { get; set; } = new();
+    }
+
+    public class BankDeleteMessage
+    {
+        public BankGraphQLModel DeletedBank { get; set; } = new();
+    }
 }

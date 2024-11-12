@@ -21,6 +21,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+        <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
         <HierarchicalDataTemplate DataType="{x:Type model:MajorCashDrawerDummyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <Image Width="18" Height="18" VerticalAlignment="Center">
@@ -91,7 +92,17 @@
         </HierarchicalDataTemplate>
         <HierarchicalDataTemplate DataType="{x:Type model:BankDummyDTO}" ItemsSource="{Binding Banks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
-                <Image Width="18" Height="18" VerticalAlignment="Center">
+                <StackPanel.ContextMenu>
+                        <ContextMenu>
+                        <MenuItem Command="{Binding Data.CreateBankCommand, Source={StaticResource DataContextProxy}}"
+                                  Header="Crear nuevo banco">
+                            <MenuItem.Icon>
+                                    <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </StackPanel.ContextMenu>
+                    <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
                             <Style.Triggers>
@@ -227,6 +238,21 @@
         </HierarchicalDataTemplate>
         <HierarchicalDataTemplate DataType="{x:Type model:TreasuryBankMasterTreeDTO}" ItemsSource="{Binding BankAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding Data.DeleteBankCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Eliminar banco: "/>
+                                    <TextBlock Text="{Binding Row.AccountingEntity.SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
@@ -1045,6 +1071,41 @@
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
+                        </Grid>
+                    </DataTemplate>
+                    
+                    <!--TabControl Bank-->
+                    <DataTemplate DataType="{x:Type model:TreasuryBankMasterTreeDTO}">
+                        <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Seleccione el tercero correspondiente a este banco" FontWeight="Bold" Grid.Row="0" Margin="5 5 0 5"/>
+                            <Grid Grid.Row="1" Margin="5 5 0 5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="6*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <dxe:TextEdit Text="{Binding Data.BankAccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                          Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
+                                <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchBankAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
+                                        <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None">
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter Property="Opacity" Value=".5"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>
