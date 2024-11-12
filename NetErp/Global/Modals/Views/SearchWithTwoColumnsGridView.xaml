@@ -7,14 +7,16 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:uc="clr-namespace:NetErp.UserControls"  
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Global.Modals.Views"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Height="450" Width="700">
+    <Grid Height="450" Width="1200">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
         <TextBox Grid.Row="0" Text="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=300}" 
@@ -54,5 +56,12 @@
                  FieldName="{Binding FieldData2}"/>
             </dxg:GridControl>
         </busyIndicator:BusyMask>
+        <uc:GridPaging Grid.Row="2" Margin="0 5 0 5"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment = "Center"
+                       ChangedIndexCommand="{Binding PaginationCommand}" 
+                       PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                       PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                       TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     </Grid>
 </UserControl>

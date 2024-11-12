@@ -12,6 +12,7 @@ using Models.Global;
 using Models.Inventory;
 using Models.Treasury;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Treasury.Masters.DTO;
 using Services.Billing.DAL.PostgreSQL;
@@ -38,7 +39,10 @@ namespace NetErp.Treasury.Masters.ViewModels
     public class TreasuryRootMasterViewModel : Screen, INotifyDataErrorInfo,
         IHandle<TreasuryCashDrawerCreateMessage>,
         IHandle<TreasuryCashDrawerDeleteMessage>,
-        IHandle<TreasuryCashDrawerUpdateMessage>
+        IHandle<TreasuryCashDrawerUpdateMessage>,
+        IHandle<BankCreateMessage>,
+        IHandle<BankUpdateMessage>,
+        IHandle<BankDeleteMessage>
     {
         public TreasuryRootViewModel Context { get; set; }
 
@@ -55,6 +59,10 @@ namespace NetErp.Treasury.Masters.ViewModels
         public readonly IGenericDataAccess<BankAccountGraphQLModel> BankAccountService = IoC.Get<IGenericDataAccess<BankAccountGraphQLModel>>();
 
         public readonly IGenericDataAccess<FranchiseGraphQLModel> FranchiseService = IoC.Get<IGenericDataAccess<FranchiseGraphQLModel>>();
+
+        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
+
+        public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
@@ -123,18 +131,25 @@ namespace NetErp.Treasury.Masters.ViewModels
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
                         return;
                     }
-                    if(_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
+                    if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                     {
                         await SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
                         return;
                     }
-                    if(_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
+                    if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
                     {
                         await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
+                        return;
+                    }
+                    if(_selectedItem is TreasuryBankMasterTreeDTO bank)
+                    {
+                        await SetBankForEdit(bank);
+                        ClearAllErrors();
+                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
                         return;
                     }
                 }
@@ -157,7 +172,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
                         return;
                     }
-                    if(_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
+                    if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                     {
                         await SetAuxiliaryCashDrawerForNew();
                         ClearAllErrors();
@@ -246,6 +261,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawer) await SetMajorCashDrawerForEdit(majorCashDrawer);
             if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) await SetMinorCashDrawerForEdit(minorCashDrawer);
             if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
+            if (SelectedItem is TreasuryBankMasterTreeDTO bank) await SetBankForEdit(bank);
         }
 
         private bool _canUndo = false;
@@ -337,6 +353,25 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public bool CanCreateAuxiliaryCashDrawer => true;
 
+        private ICommand _createBankCommand;
+        public ICommand CreateBankCommand
+        {
+            get
+            {
+                if (_createBankCommand is null) _createBankCommand = new AsyncCommand(CreateBank, CanCreateBank);
+                return _createBankCommand;
+            }
+        }
+
+        public async Task CreateBank()
+        {
+            IsNewRecord = true;
+            SelectedIndex = 0;
+            SelectedItem = new TreasuryBankMasterTreeDTO();
+        }
+
+        public bool CanCreateBank => true;
+
 
         public async Task SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
         {
@@ -423,6 +458,22 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerComputerName = "";
         }
 
+        public async Task SetBankForEdit(TreasuryBankMasterTreeDTO bank)
+        {
+            BankId = bank.Id;
+            BankAccountingEntityId = bank.AccountingEntity.Id;
+            BankAccountingEntityName = bank.AccountingEntity.SearchName;
+            BankPaymentMethodPrefix = bank.PaymentMethodPrefix;
+        }
+
+        public async Task SetBankForNew()
+        {
+            BankId = 0;
+            BankAccountingEntityId = 0;
+            BankAccountingEntityName = "";
+            BankPaymentMethodPrefix = "";
+        }
+
         private ICommand _searchComputerNameCommand;
         public ICommand SearchComputerNameCommand
         {
@@ -481,7 +532,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return true;
                 }
                 if (_selectedItem is TreasuryMajorCashDrawerCostCenterMasterTreeDTO treasuryMajorCashDrawerCostCenterMasterTreeDTO) MajorCostCenterBeforeNewCashDrawer = treasuryMajorCashDrawerCostCenterMasterTreeDTO;
-                if(_selectedItem is TreasuryMinorCashDrawerCostCenterMasterTreeDTO minorCashDrawerCostCenterMasterTreeDTO) MinorCostCenterBeforeNewCashDrawer = minorCashDrawerCostCenterMasterTreeDTO;
+                if (_selectedItem is TreasuryMinorCashDrawerCostCenterMasterTreeDTO minorCashDrawerCostCenterMasterTreeDTO) MinorCostCenterBeforeNewCashDrawer = minorCashDrawerCostCenterMasterTreeDTO;
                 SelectedItem = null;
                 return false;
             }
@@ -532,7 +583,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                     }
                 }
-                if(SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
+                if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveMinorCashDrawer();
                     await LoadMajorCashDrawerComboBoxes();
@@ -558,6 +609,18 @@ namespace NetErp.Treasury.Masters.ViewModels
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
 
+                    }
+                }
+                if (SelectedItem is TreasuryBankMasterTreeDTO bank)
+                {
+                    BankGraphQLModel result = await ExecuteSaveBank();
+                    if (IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankCreateMessage() { CreatedBank = result });
+                    }
+                    else
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankUpdateMessage() { UpdatedBank = result });
                     }
                 }
                 IsEditing = false;
@@ -588,9 +651,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public bool CanSave 
+        public bool CanSave
         {
-            get 
+            get
             {
                 if (_selectedItem is MajorCashDrawerMasterTreeDTO)
                 {
@@ -601,18 +664,23 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     return false;
                 }
-                if(_selectedItem is MinorCashDrawerMasterTreeDTO)
+                if (_selectedItem is MinorCashDrawerMasterTreeDTO)
                 {
                     if (IsEditing == true && _errors.Count <= 0) return true;
                     return false;
                 }
-                if(_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
+                if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                 {
                     if (IsEditing == true && _errors.Count <= 0)
                     {
                         if (AuxiliaryCashDrawerAutoTransfer == true && (SelectedCashDrawerAutoTransfer is null || SelectedCashDrawerAutoTransfer.Id == 0)) return false;
                         return true;
                     }
+                    return false;
+                }
+                if(_selectedItem is TreasuryBankMasterTreeDTO)
+                {
+                    if (IsEditing == true && _errors.Count <= 0) return true;
                     return false;
                 }
                 return false;
@@ -631,7 +699,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.Data.CashReviewRequired = MajorCashDrawerCashReviewRequired;
                 variables.Data.AutoAdjustBalance = MajorCashDrawerAutoAdjustBalance;
                 variables.Data.AutoTransfer = MajorCashDrawerAutoTransfer;
-                if(IsNewRecord) variables.Data.IsPettyCash = false;
+                if (IsNewRecord) variables.Data.IsPettyCash = false;
                 variables.Data.CashDrawerIdAutoTransfer = MajorCashDrawerAutoTransfer ? SelectedCashDrawerAutoTransfer.Id : 0;
                 variables.Data.CostCenterId = IsNewRecord ? MajorCostCenterBeforeNewCashDrawer.Id : MajorCashDrawerCostCenterId;
                 if (!IsNewRecord) variables.Data.AccountingAccountIdCash = MajorCashDrawerSelectedAccountingAccountCash.Id;
@@ -903,6 +971,54 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }";
                 }
                 var result = IsNewRecord ? await CashDrawerService.Create(query, variables) : await CashDrawerService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<BankGraphQLModel> ExecuteSaveBank()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                if (!IsNewRecord) variables.Id = BankId;
+                variables.Data.AccountingEntityId = BankAccountingEntityId;
+                variables.Data.PaymentMethodPrefix = "Z";
+                if (IsNewRecord)
+                {
+                    query = @"
+                        mutation($data: CreateBankInput!){
+                            CreateResponse: createBank(data: $data){
+                                id
+                                accountingEntity{
+                                    id
+                                    searchName
+                                }
+                                paymentMethodPrefix
+                            }
+                        }";
+                }
+                else
+                {
+                    query = @"
+                        mutation($id: Int!, $data: UpdateBankInput!){
+                            UpdateResponse: updateBank(id: $id, data: $data){
+                                id
+                                accountingEntity{
+                                    id
+                                    searchName
+                                }
+                                paymentMethodPrefix
+                            }
+                        }";
+                }
+                var result = IsNewRecord ? await BankService.Create(query, variables) : await BankService.Update(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1302,6 +1418,112 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public bool CanDeleteAuxiliaryCashDrawer => true;
 
+        private ICommand _deleteBankCommand;
+        public ICommand DeleteBankCommand
+        {
+            get
+            {
+                if (_deleteBankCommand is null) _deleteBankCommand = new AsyncCommand(DeleteBank, CanDeleteBank);
+                return _deleteBankCommand;
+            }
+        }
+
+        public async Task DeleteBank()
+        {
+            try
+            {
+                IsBusy = true;
+                int id = ((TreasuryBankMasterTreeDTO)SelectedItem).Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteBank(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.BankService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankMasterTreeDTO)SelectedItem).AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                IsBusy = true;
+                Refresh();
+
+                BankGraphQLModel deletedBank = await ExecuteDeleteBank(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deletedBank });
+
+                NotifyOfPropertyChange(nameof(CanDeleteBank));
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteBank" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+
+        public async Task<BankGraphQLModel> ExecuteDeleteBank(int id)
+        {
+            try
+            {
+                string query = @"
+                    mutation ($id: Int!) {
+                      DeleteResponse: deleteBank(id: $id){
+                        id
+                        paymentMethodPrefix
+                        accountingEntity{
+                          id
+                          searchName
+                        }
+                      }
+                    }";
+                object variables = new { Id = id };
+                BankGraphQLModel deletedBank = await BankService.Delete(query, variables);
+                this.SelectedItem = null;
+                return deletedBank;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public bool CanDeleteBank => true;
+
         #region "MajorCashDrawer"
 
         #region "Properties"
@@ -1313,7 +1535,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public string MajorCashDrawerName
         {
             get { return _majorCashDrawerName; }
-            set 
+            set
             {
                 if (_majorCashDrawerName != value)
                 {
@@ -1345,7 +1567,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public string MajorCashDrawerCostCenterName
         {
             get { return _majorCashDrawerCostCenterName; }
-            set 
+            set
             {
                 if (_majorCashDrawerCostCenterName != value)
                 {
@@ -1360,7 +1582,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public AccountingAccountGraphQLModel MajorCashDrawerSelectedAccountingAccountCash
         {
             get { return _majorCashDrawerSelectedAccountingAccountCash; }
-            set 
+            set
             {
                 if (_majorCashDrawerSelectedAccountingAccountCash != value)
                 {
@@ -1405,7 +1627,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool MajorCashDrawerCashReviewRequired
         {
             get { return _majorCashDrawerCashReviewRequired; }
-            set 
+            set
             {
                 if (_majorCashDrawerCashReviewRequired != value)
                 {
@@ -1420,7 +1642,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool MajorCashDrawerAutoAdjustBalance
         {
             get { return _majorCashDrawerAutoAdjustBalance; }
-            set 
+            set
             {
                 if (_majorCashDrawerAutoAdjustBalance != value)
                 {
@@ -1435,7 +1657,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool MajorCashDrawerAutoTransfer
         {
             get { return _majorCashDrawerAutoTransfer; }
-            set 
+            set
             {
                 if (_majorCashDrawerAutoTransfer != value)
                 {
@@ -1451,7 +1673,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public ObservableCollection<CashDrawerGraphQLModel> MajorCashDrawerAutoTransferCashDrawers
         {
             get { return _majorCashDrawerAutoTransferCashDrawers; }
-            set 
+            set
             {
                 if (_majorCashDrawerAutoTransferCashDrawers != value)
                 {
@@ -1466,7 +1688,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public CashDrawerGraphQLModel SelectedCashDrawerAutoTransfer
         {
             get { return _selectedCashDrawerAutoTransfer; }
-            set 
+            set
             {
                 if (_selectedCashDrawerAutoTransfer != value)
                 {
@@ -1494,7 +1716,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public string MinorCashDrawerCostCenterName
         {
             get { return _minorCashDrawerCostCenterName; }
-            set 
+            set
             {
                 if (_minorCashDrawerCostCenterName != value)
                 {
@@ -1509,7 +1731,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public string MinorCashDrawerName
         {
             get { return _minorCashDrawerName; }
-            set 
+            set
             {
                 if (_minorCashDrawerName != value)
                 {
@@ -1517,7 +1739,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     NotifyOfPropertyChange(nameof(MinorCashDrawerName));
                     ValidateProperty(nameof(MinorCashDrawerName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
-                } 
+                }
             }
         }
 
@@ -1526,7 +1748,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public int MinorCashDrawerCostCenterId
         {
             get { return _minorCashDrawerCostCenterId; }
-            set 
+            set
             {
                 if (_minorCashDrawerCostCenterId != value)
                 {
@@ -1558,13 +1780,13 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool MinorCashDrawerCashReviewRequired
         {
             get { return _minorCashDrawerCashReviewRequired; }
-            set 
+            set
             {
                 if (_minorCashDrawerCashReviewRequired != value)
                 {
                     _minorCashDrawerCashReviewRequired = value;
                     NotifyOfPropertyChange(nameof(MinorCashDrawerCashReviewRequired));
-                } 
+                }
             }
         }
 
@@ -1617,7 +1839,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool AuxiliaryCashDrawerCashReviewRequired
         {
             get { return _auxiliaryCashDrawerCashReviewRequired; }
-            set 
+            set
             {
                 if (_auxiliaryCashDrawerCashReviewRequired != value)
                 {
@@ -1647,7 +1869,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public bool AuxiliaryCashDrawerAutoTransfer
         {
             get { return _auxiliaryCashDrawerAutoTransfer; }
-            set 
+            set
             {
                 if (_auxiliaryCashDrawerAutoTransfer != value)
                 {
@@ -1740,7 +1962,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         public string AuxiliaryCashDrawerComputerName
         {
             get { return _auxiliaryCashDrawerComputerName; }
-            set 
+            set
             {
                 if (_auxiliaryCashDrawerComputerName != value)
                 {
@@ -1757,6 +1979,100 @@ namespace NetErp.Treasury.Masters.ViewModels
         #endregion
 
         #endregion
+
+        #region "Bank"
+
+        #region "Properties"
+
+        public int BankId { get; set; }
+
+        private int _bankAccountingEntityId;
+
+        public int BankAccountingEntityId
+        {
+            get { return _bankAccountingEntityId; }
+            set
+            {
+                if (_bankAccountingEntityId != value)
+                {
+                    _bankAccountingEntityId = value;
+                    NotifyOfPropertyChange(nameof(BankAccountingEntityId));
+                }
+            }
+        }
+
+        private string _bankAccountingEntityName;
+
+        public string BankAccountingEntityName
+        {
+            get { return _bankAccountingEntityName; }
+            set
+            {
+                if (_bankAccountingEntityName != value)
+                {
+                    _bankAccountingEntityName = value;
+                    NotifyOfPropertyChange(nameof(BankAccountingEntityName));
+                    ValidateProperty(nameof(BankAccountingEntityName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _bankPaymentMethodPrefix;
+
+        public string BankPaymentMethodPrefix
+        {
+            get { return _bankPaymentMethodPrefix; }
+            set 
+            {
+                if (_bankPaymentMethodPrefix != value)
+                {
+                    _bankPaymentMethodPrefix = value;
+                    NotifyOfPropertyChange(nameof(BankPaymentMethodPrefix));
+                }
+            }
+        }
+
+
+
+        #endregion
+
+        #endregion
+
+        private ICommand _searchBankAccountingEntityCommand;
+        public ICommand SearchBankAccountingEntityCommand
+        {
+            get
+            {
+                if (_searchBankAccountingEntityCommand is null) _searchBankAccountingEntityCommand = new RelayCommand(CanSearchBankAccountingEntity, SearchBankAccountingEntity);
+                return _searchBankAccountingEntityCommand;
+            }
+        }
+
+        public async void SearchBankAccountingEntity(object p)
+        {
+            string query = @"query($filter: AccountingEntityFilterInput!){
+                PageResponse: accountingEntityPage(filter: $filter){
+                count
+                rows{
+                    id
+                    searchName
+                    identificationNumber
+                    verificationDigit
+                }
+                }
+            }";
+
+            string fieldHeader1 = "NIT";
+            string fieldHeader2 = "Nombre o razón social";
+            string fieldData1 = "IdentificationNumberWithVerificationDigit";
+            string fieldData2 = "SearchName";
+            SearchWithTwoColumnsGridViewModel = new(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity);
+
+            _dialogService.ShowDialog(SearchWithTwoColumnsGridViewModel, "Búsqueda de terceros");
+        }
+
+        public bool CanSearchBankAccountingEntity(object p) => true;
 
 
         public async Task LoadMajorCashDrawerCompanyLocations()
@@ -1881,6 +2197,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     query{
                         ListResponse: banks{
                             id
+                            paymentMethodPrefix
                             accountingEntity{
                                 id
                                 searchName
@@ -2452,6 +2769,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
         public TreasuryRootMasterViewModel(TreasuryRootViewModel context)
         {
+            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, false, OnFindBankAccountingEntityMessage);
             DummyItems = [
             new MajorCashDrawerDummyDTO() { 
                 Id = 1, Name = "CAJA GENERAL", Locations = [new TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO() { IsDummyChild = true, Name = "Fucking Dummy"}], Context = this 
@@ -2480,6 +2798,13 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             await base.OnActivateAsync(cancellationToken);
             await Initialize();
+        }
+
+        public void OnFindBankAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
+        {
+            if (message.ReturnedData is null) return;
+            BankAccountingEntityId = message.ReturnedData.Id;
+            BankAccountingEntityName = message.ReturnedData.SearchName;
         }
 
         public async Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
@@ -2750,6 +3075,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                     case nameof(AuxiliaryCashDrawerComputerName):
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del equipo no puede estar vacío");
                         break;
+                    case nameof(BankAccountingEntityName):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del banco no puede estar vacío");
+                        break;
                     default:
                         break;
                 }
@@ -2770,6 +3098,59 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             ValidateProperty(nameof(AuxiliaryCashDrawerName), AuxiliaryCashDrawerName);
             ValidateProperty(nameof(AuxiliaryCashDrawerComputerName), AuxiliaryCashDrawerComputerName);
+        }
+
+        public async Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
+        {
+            IsNewRecord = false;
+
+            TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(message.CreatedBank);
+            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+            if (bankDummyDTO is null) return;
+            if (!bankDummyDTO.IsExpanded && bankDummyDTO.Banks[0].IsDummyChild)
+            {
+                await LoadBanks();
+                bankDummyDTO.IsExpanded = true;
+                TreasuryBankMasterTreeDTO? bank = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == bankDTO.Id);
+                if (bank is null) return;
+                SelectedItem = bank;
+                return;
+            }
+            if (!bankDummyDTO.IsExpanded)
+            {
+                bankDummyDTO.IsExpanded = true;
+                bankDummyDTO.Banks.Add(bankDTO);
+                SelectedItem = bankDTO;
+                return;
+            }
+            bankDummyDTO.Banks.Add(bankDTO);
+            SelectedItem = bankDTO;
+            return;
+            
+        }
+
+        public Task HandleAsync(BankUpdateMessage message, CancellationToken cancellationToken)
+        {
+            TreasuryBankMasterTreeDTO bankDTO = Context.AutoMapper.Map<TreasuryBankMasterTreeDTO>(message.UpdatedBank);
+            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+            if (bankDummyDTO is null) return Task.CompletedTask;
+            TreasuryBankMasterTreeDTO bankToUpdate = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.UpdatedBank.Id) ?? throw new Exception("");
+            if (bankToUpdate is null) return Task.CompletedTask;
+            bankToUpdate.Id = bankDTO.Id;
+            bankToUpdate.AccountingEntity = bankDTO.AccountingEntity;
+            bankToUpdate.PaymentMethodPrefix = bankDTO.PaymentMethodPrefix;
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(BankDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+                if (bankDummyDTO is null) return;
+                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.Id).First());
+            });
+            return Task.CompletedTask;
         }
     }
 

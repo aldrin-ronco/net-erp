@@ -7,20 +7,12 @@
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\viewmodels\\treasuryrootmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|c:\\users\\sebas\\source\\repos\\neterp\\common\\helpers\\sessioninfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|solutionrelative:common\\helpers\\sessioninfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\costcenters\\views\\costcentermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\billing\\sellers\\views\\sellermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\sellers\\views\\sellermasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,35 +22,23 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "SessionInfo.cs",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\Common\\Helpers\\SessionInfo.cs",
-              "RelativeDocumentMoniker": "Common\\Helpers\\SessionInfo.cs",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\Common\\Helpers\\SessionInfo.cs",
-              "RelativeToolTip": "Common\\Helpers\\SessionInfo.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAdAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-11-05T20:05:23.626Z",
+              "DocumentIndex": 2,
+              "Title": "SellerMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\Views\\SellerMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\Sellers\\Views\\SellerMasterView.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Billing\\Sellers\\Views\\SellerMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Billing\\Sellers\\Views\\SellerMasterView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2024-11-12T14:29:33.787Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "SoloParaProbarLosTabs.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
-              "RelativeDocumentMoniker": "NetErp\\SoloParaProbarLosTabs.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
-              "RelativeToolTip": "NetErp\\SoloParaProbarLosTabs.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-11-02T16:45:01.314Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "TreasuryRootMasterView.xaml",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
               "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml",
@@ -70,24 +50,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "CostCenterMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\CostCenters\\Views\\CostCenterMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2024-10-28T13:12:45.13Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "TreasuryRootMasterViewModel.cs",
               "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
-              "ViewState": "AgIAAAsKAAAAAAAAAAAtwCsKAAAUAAAAAAAAAA==",
+              "ViewState": "AgIAAJUFAAAAAAAAAAD4v6sFAADRAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-10-26T16:23:02.468Z",
               "EditorCaption": ""

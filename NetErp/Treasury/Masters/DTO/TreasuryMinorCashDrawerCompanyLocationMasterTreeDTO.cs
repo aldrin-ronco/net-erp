@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Books;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -64,6 +65,16 @@ namespace NetErp.Treasury.Masters.DTO
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
+        }
+
+        //Propiedad dummy no usada, creada para evitar comportamiento poco probable, pero posible en el arbol
+
+        private AccountingEntityGraphQLModel _accountingEntity = new();
+
+        public AccountingEntityGraphQLModel AccountingEntity
+        {
+            get { return _accountingEntity; }
+            set { _accountingEntity = value; }
         }
 
     }
