@@ -61,7 +61,8 @@ namespace Common.Interfaces
                 {
                     if (result.Errors[0].Extensions != null)
                     {
-                        throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                        if (result.Errors[0].Extensions.ContainsKey("message")) throw new Exception(result.Errors[0].Extensions["message"].ToString());
+                        throw new Exception(result.Errors[0].Message.ToString());
                     }
                     else
                     {

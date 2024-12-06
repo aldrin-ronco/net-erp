@@ -20,43 +20,38 @@
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
+        <h:CharToBooleanConverter x:Key="CharToBooleanConverter"/>
     </UserControl.Resources>
-    <Grid Background="White">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
-        <TextBlock Text="Seleccione el tercero correspondiente a este banco" FontWeight="Bold" Grid.Row="0" Margin="5 5 0 5"/>
-        <Grid Grid.Row="1" Margin="5 5 0 5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <dxe:TextEdit Text="{Binding Data.BankAccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                          Grid.Column="0" Margin="0 5 5 5"/>
-            <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchBankAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
-                    <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None">
-                        <Image.Style>
-                            <Style TargetType="Image">
-                                <Style.Triggers>
-                                    <Trigger Property="IsEnabled" Value="False">
-                                        <Setter Property="Opacity" Value=".5"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Image.Style>
-                    </Image>
-                </StackPanel>
-            </Button>
-        </Grid>
-        <TextBlock Text="Método de pago predeterminado" Grid.Row="2" Margin="5 5 0 5" FontWeight="Bold"/>
-        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="5 5 0 0">
-            <RadioButton Content="Débito" GroupName="PaymentMethodPrefix" IsChecked="{Binding Data.BankPaymentMethodPrefix, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=C, UpdateSourceTrigger=PropertyChanged}"/>
-            <RadioButton Content="Crédito" GroupName="PaymentMethodPrefix" IsChecked="{Binding Data.BankPaymentMethodPrefix, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 0 0"/>
-        </StackPanel>
-    </Grid>
+    <dx:DXTabControl Background="Transparent"
+                    TabContentCacheMode="CacheTabsOnSelecting"
+                    HorizontalContentAlignment="Stretch"
+                    Margin="20 0 0 0"
+                    SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+        <dx:DXTabItem Header="Forma de pago">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Código" Margin="0 5 0 5" Grid.Row="0"/>
+                <Grid Grid.Row="1" Margin="0 5 0 10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="4*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <dxe:TextEdit Grid.Column="0" IsReadOnly="True" 
+                                  Text="{Binding Data.BankAccountPaymentMethodAbbreviation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+
+                </Grid>
+                <TextBlock Text="Nombre de la forma de pago" Margin="0 10 0 5" Grid.Row="2"/>
+                
+                <dxe:TextEdit Margin="0 5 0 0" Grid.Row="3" Text="{Binding Data.BankAccountPaymentMethodName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                
+            </Grid>
+        </dx:DXTabItem>
+    </dx:DXTabControl>
 </UserControl>

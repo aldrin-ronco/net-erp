@@ -1,8 +1,11 @@
 ﻿using Caliburn.Micro;
+using Models.Billing;
+using Models.Books;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +18,11 @@ namespace NetErp.Treasury.Masters.DTO
         public int Id { get; set; }
         public TreasuryRootMasterViewModel Context { get; set; }
 
+        //Propiedad creada para no tener errores de binding en la vista
         public string Name { get; set; } = string.Empty;
+
+        //Propiedad creada para no tener errores de binding en la vista
+        public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
 
         private string _type = string.Empty;
 
@@ -107,9 +114,9 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private AccountingAccountDTO _accountingAccount = new();
+        private AccountingAccountGraphQLModel _accountingAccount = new();
 
-        public AccountingAccountDTO AccountingAccount
+        public AccountingAccountGraphQLModel AccountingAccount
         {
             get { return _accountingAccount; }
             set
@@ -167,6 +174,38 @@ namespace NetErp.Treasury.Masters.DTO
                 }
             }
         }
+
+        private string _provider;
+
+        public string Provider
+        {
+            get { return _provider; }
+            set 
+            {
+                if (_provider != value)
+                {
+                    _provider = value;
+                    NotifyOfPropertyChange(nameof(Provider));
+                }
+            }
+        }
+
+        private PaymentMethodGraphQLModel _paymentMethod;
+
+        public PaymentMethodGraphQLModel PaymentMethod
+        {
+            get { return _paymentMethod; }
+            set
+            {
+                if (_paymentMethod != value)
+                {
+                    _paymentMethod = value;
+                    NotifyOfPropertyChange(nameof(PaymentMethod));
+                }
+            }
+        }
+
+        public ObservableCollection<TreasuryBankAccountCostCenterDTO> AllowedCostCenters { get; set; } = [];
 
         public TreasuryBankAccountMasterTreeDTO()
         {

@@ -54,8 +54,18 @@ namespace NetErp.Treasury.Masters.DTO
         }
 
         //Propiedad dummy no usada, creada para evitar comportamiento poco probable, pero posible en el arbol
+        public AccountingEntityGraphQLModel _accountingEntity = new();
 
-        private AccountingEntityGraphQLModel _accountingEntity = new();
+        //Propiedad dummy no usada, creada para evitar comportamiento poco probable, pero posible en el arbol
+
+        private string _description = string.Empty;
+
+        public string Description
+        {
+            get { return _description = string.Empty; }
+            set { _description = value; }
+        }
+
 
         public AccountingEntityGraphQLModel AccountingEntity
         {
