@@ -18,10 +18,11 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:local="clr-namespace:NetErp.Treasury.Masters.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Background="Transparent">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
+        <h:CharToBooleanConverter x:Key="CharToBooleanConverter"/>
         <HierarchicalDataTemplate DataType="{x:Type model:MajorCashDrawerDummyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <Image Width="18" Height="18" VerticalAlignment="Center">
@@ -251,6 +252,12 @@
                                 <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator/>
+                        <MenuItem Command="{Binding Data.CreateBankAccountCommand, Source={StaticResource DataContextProxy}}" Header="Crear nueva cuenta bancaria">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </ContextMenu>
                 </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" VerticalAlignment="Center">
@@ -384,7 +391,7 @@
             </StackPanel>
         </HierarchicalDataTemplate>
         <HierarchicalDataTemplate DataType="{x:Type model:MajorCashDrawerMasterTreeDTO}" ItemsSource="{Binding AuxiliaryCashDrawers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
                         <MenuItem Command="{Binding Data.CreateAuxiliaryCashDrawerCommand, Source={StaticResource DataContextProxy}}">
@@ -417,7 +424,7 @@
             </StackPanel>
         </HierarchicalDataTemplate>
         <DataTemplate DataType="{x:Type model:TreasuryAuxiliaryCashDrawerMasterTreeDTO}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
                         <MenuItem Command="{Binding Data.DeleteAuxiliaryCashDrawerCommand, Source={StaticResource DataContextProxy}}">
@@ -438,7 +445,7 @@
             </StackPanel>
         </DataTemplate>
         <DataTemplate DataType="{x:Type model:MinorCashDrawerMasterTreeDTO}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
                         <MenuItem Command="{Binding Data.DeleteMinorCashDrawerCommand, Source={StaticResource DataContextProxy}}">
@@ -459,7 +466,22 @@
             </StackPanel>
         </DataTemplate>
         <DataTemplate DataType="{x:Type model:TreasuryBankAccountMasterTreeDTO}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Row.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding Data.DeleteBankAccountCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Eliminar cuenta bancaria: "/>
+                                    <TextBlock Text="{Binding Row.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" Source="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}" VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding Row.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="2 0 0 0" VerticalAlignment="Center"/>
             </StackPanel>
@@ -471,26 +493,44 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <Grid>
+    <Grid Background="Transparent">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0.4*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <dxg:TreeViewControl Margin="0 10 0 0" Grid.Column="0"
-                                         ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         h:TreeViewExtension.SelectItemOnRightClick="True"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                         HighlightSelectedNodeIndent="False"
-                                         BorderThickness="0"
-                                         ShowExpandButtons="True"
-                                         ShowBorder="False"
-                                         ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         TreeDerivationMode="HierarchicalDataTemplate"
-                                         IsEnabled="{Binding TreeViewIsEnable, UpdateSourceTrigger=PropertyChanged}">
-        </dxg:TreeViewControl>
+        <Grid Margin="0 10 0 0" Grid.Column="0" Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <dxg:TreeViewControl Background="Transparent" 
+                        ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        h:TreeViewExtension.SelectItemOnRightClick="True"
+                        HighlightSelectedNodeIndent="False"
+                        AutoScrollCurrentNode="True"
+                        BorderThickness="0"
+                        ShowExpandButtons="True"
+                        ShowBorder="False"
+                        AllowDragDrop="False"
+                        ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TreeDerivationMode="HierarchicalDataTemplate"
+                        AllowEditing="False"
+                        IsEnabled="{Binding TreeViewIsEnable, UpdateSourceTrigger=PropertyChanged}">
+
+                <dxg:TreeViewControl.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="TextWrapping" Value="Wrap"/>
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                    </Style>
+                    <Style TargetType="dxg:TreeViewControlView">
+                        <EventSetter Event="Loaded" Handler="TreeViewControlView_Loaded"/>
+                    </Style>
+                </dxg:TreeViewControl.Resources>
+            </dxg:TreeViewControl>
+        </Grid>
+            
+
         <Grid Grid.Column="1">
 
             <Grid.RowDefinitions>
@@ -1076,7 +1116,7 @@
                     
                     <!--TabControl Bank-->
                     <DataTemplate DataType="{x:Type model:TreasuryBankMasterTreeDTO}">
-                        <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                        <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Background="White">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
@@ -1106,6 +1146,202 @@
                                     </StackPanel>
                                 </Button>
                             </Grid>
+                        </Grid>
+                    </DataTemplate>
+                    
+                    <!--TabControl BankAccount-->
+                    <DataTemplate DataType="{x:Type model:TreasuryBankAccountMasterTreeDTO}">
+                        <Grid>
+                            <dx:DXTabControl Background="Transparent"
+                    TabContentCacheMode="CacheTabsOnSelecting"
+                    HorizontalContentAlignment="Stretch"
+                    Margin="20 0 0 0"
+                    SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+
+                                <dx:DXTabItem Header="Cuenta Bancaria">
+                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+                                        <dxe:TextEdit Grid.Row="0" Text="{Binding Data.BankAccountBankName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                              Margin="0 0 0 10" IsReadOnly="True"/>
+
+                                        <dxe:CheckEdit Grid.Row="1" Content="Cuenta Activa" IsChecked="{Binding Data.BankAccountIsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                                       Margin="0 10 0 10" Style="{StaticResource BlueCheckedTextStyle}"/>
+
+                                        <TextBlock Text="Tipo" Grid.Row="2" Margin="0 10 0 5" FontWeight="Bold"/>
+
+                                        <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0 5 0 10" IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                            <RadioButton Content="Ahorros" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            <RadioButton Content="Corriente" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=C, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            <RadioButton Content="Basada en número celular" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=M, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Vertical" Grid.Row="4" Margin="0 10 0 10" IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                                    Visibility="{Binding Data.BankAccountBankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                            <RadioButton Content="Nequi" GroupName="Provider" IsChecked="{Binding Data.BankAccountProvider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=N, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Daviplata" GroupName="Provider" IsChecked="{Binding Data.BankAccountProvider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
+                                            
+                                        <Grid Grid.Row="5" Margin="0 10 0 10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="auto"/>
+                                                <RowDefinition Height="auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock FontWeight="Bold" Grid.Row="0" Grid.Column="0" Margin="0 0 10 5">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
+                                                                <Setter Property="Text" Value="Número de la cuenta bancaria"/>
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
+                                                                <Setter Property="Text" Value="Número de teléfono celular"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <dxe:TextEdit Grid.Row="1" Grid.Column="0" Margin="0 5 10 0" Text="{Binding Data.BankAccountNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                                          x:Name="BankAccountNumber" MaskType="Simple">
+                                                <dxe:TextEdit.Style>
+                                                    <Style TargetType="dxe:TextEdit">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
+                                                                <Setter Property="Mask" Value="000-000000-00" />
+                                                            </DataTrigger>
+                                                            
+                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
+                                                                <Setter Property="Mask" Value="000 000 00 00"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </dxe:TextEdit.Style>
+                                            </dxe:TextEdit>
+
+                                            <TextBlock Text="Referencia cta bancaria" FontWeight="Bold" Grid.Row="0" Grid.Column="1" Margin="10 0 0 5"/>
+                                            <dxe:TextEdit Grid.Row="1" Grid.Column="1" Margin="10 5 0 0" CharacterCasing="Upper"
+                                  Text="{Binding Data.BankAccountReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+
+                                        </Grid>
+                                        <StackPanel Grid.Row="6" Margin="0 10 0 5" Orientation="Horizontal">
+                                            <TextBlock Text="Cuenta Contable" FontWeight="Bold" Margin="0 0 10 0" VerticalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" Margin="10 0 0 0" Visibility="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                                <RadioButton Content="Crear automáticamente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountAccountingAccountAutoCreate, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                <RadioButton Content="Seleccionar existente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountAccountingAccountSelectExisting, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <dxe:TextEdit Grid.Row="7" Margin="0 5 0 10" Text="{Binding Data.BankAccountDescription, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                                      IsReadOnly="True" Visibility="{Binding Data.BankAccountAccountingAccountAutoCreate, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}"/>
+
+                                        <dxg:LookUpEdit Grid.Row="7" 
+                                          Margin="0 5 0 10" Padding="3"
+                                          AllowSpin="True"
+                                          AutoPopulateColumns="False"
+                                          x:Name="LookUpEdit"
+                                          IsCaseSensitiveSearch="False"
+                                          IncrementalFiltering="True"
+                                          IncrementalSearch="True"
+                                          ValidateOnTextInput="False"
+                                          FilterCondition="Contains"
+                                          ImmediatePopup="True"
+                                          CharacterCasing="Upper"
+                                          ClearSelectionOnBackspace="True"
+                                          IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                          ItemsSource="{Binding Path=Data.BankAccountAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                          DisplayMember="FullName"
+                                          GotFocus="LookUpEdit_GotFocus"
+                                          PreviewMouseUp="LookUpEdit_PreviewMouseUp"
+                                          ValueMember="Id"
+                                          SelectedItem="{Binding Path=Data.BankAccountSelectedAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                          Visibility="{Binding Data.BankAccountAccountingAccountSelectExisting, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}">
+                                            <dxg:LookUpEdit.PopupContentTemplate>
+                                                <ControlTemplate>
+                                                    <dxg:GridControl Name="PART_GridControl">
+                                                        <dxg:GridControl.View>
+                                                            <dxg:TableView AutoWidth="True"/>
+                                                        </dxg:GridControl.View>
+                                                        <dxg:GridControl.Columns>
+                                                            <dxg:GridColumn Header="Código y nombre" FieldName="FullName"/>
+                                                        </dxg:GridControl.Columns>
+                                                    </dxg:GridControl>
+                                                </ControlTemplate>
+                                            </dxg:LookUpEdit.PopupContentTemplate>
+                                            <dxg:LookUpEdit.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel/>
+                                                </ItemsPanelTemplate>
+                                            </dxg:LookUpEdit.ItemsPanel>
+                                        </dxg:LookUpEdit>
+                                        
+                                        <TextBlock Text="Código" Margin="0 10 0 5" Grid.Row="8" FontWeight="Bold" Visibility="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+                                        <Grid Grid.Row="9" Margin="0 5 0 10" Visibility="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="4*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <dxe:TextEdit Grid.Column="0" IsReadOnly="True" 
+                                            Text="{Binding Data.BankAccountPaymentMethodAbbreviation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                        </Grid>
+                                        
+                                        <TextBlock Text="Nombre de la forma de pago" Margin="0 10 0 5" Grid.Row="10" FontWeight="Bold"/>
+
+                                        <dxe:TextEdit Margin="0 5 0 0" Grid.Row="11" IsReadOnly="True"
+                                                      Text="{Binding Data.BankAccountPaymentMethodName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                    </Grid>
+                                </dx:DXTabItem>
+                                <dx:DXTabItem Header="Centros de Costo">
+                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                        <dxg:GridControl 
+                                            Margin="0 8 0 0"
+                                            EnableSmartColumnsGeneration="True"
+                                            AutoGenerateColumns="None"
+                                            ItemsSource="{Binding Data.BankAccountCostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                            SelectedItem="{Binding Data.BankAccountSelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                            <dxg:GridControl.View>
+                                                <dxg:TableView AllowCascadeUpdate="False" 
+                                                   EnableSelectedRowAppearance="True"
+                                                   ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                                            </dxg:GridControl.View>
+
+                                            <dxg:GridColumn 
+                                                Header="Nombre del centro de costo" 
+                                                Width="*"
+                                                Binding="{Binding Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                            <dxg:GridColumn 
+                                                Width="30">
+                                                <dxg:GridColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <dxe:CheckEdit HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                       IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    </DataTemplate>
+                                                </dxg:GridColumn.CellTemplate>
+                                            </dxg:GridColumn>
+                                            
+                                        </dxg:GridControl>
+                                    </Grid>
+                                </dx:DXTabItem>
+                            </dx:DXTabControl>
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>

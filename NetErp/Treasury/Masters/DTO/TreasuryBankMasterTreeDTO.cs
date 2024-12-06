@@ -15,6 +15,7 @@ namespace NetErp.Treasury.Masters.DTO
         public bool AllowContentControlVisibility { get => true; }
         public int Id { get; set; }
 
+        //Propiedad creada para no tener errores de binding en la vista
         public string Name { get; set; } = string.Empty;
         public TreasuryRootMasterViewModel Context { get; set; }
 

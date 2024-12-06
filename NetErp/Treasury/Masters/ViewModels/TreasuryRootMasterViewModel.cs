@@ -33,6 +33,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Xceed.Wpf.Toolkit.Primitives;
+using static Dictionaries.BooksDictionaries;
 
 namespace NetErp.Treasury.Masters.ViewModels
 {
@@ -42,7 +44,10 @@ namespace NetErp.Treasury.Masters.ViewModels
         IHandle<TreasuryCashDrawerUpdateMessage>,
         IHandle<BankCreateMessage>,
         IHandle<BankUpdateMessage>,
-        IHandle<BankDeleteMessage>
+        IHandle<BankDeleteMessage>,
+        IHandle<BankAccountCreateMessage>,
+        IHandle<BankAccountDeleteMessage>,
+        IHandle<BankAccountUpdateMessage>
     {
         public TreasuryRootViewModel Context { get; set; }
 
@@ -129,6 +134,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
@@ -136,6 +142,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
@@ -143,6 +150,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if(_selectedItem is TreasuryBankMasterTreeDTO bank)
@@ -150,6 +158,16 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetBankForEdit(bank);
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
+                        NotifyOfPropertyChange(nameof(CanSave));
+                        return;
+                    }
+                    if(_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
+                    {
+                        BankAccountNumber = "";
+                        await SetBankAccountForEdit(bankAccount);
+                        ClearAllErrors();
+                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                 }
@@ -163,6 +181,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetMajorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO)
@@ -170,6 +189,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         await SetMinorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
+                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
@@ -178,6 +198,23 @@ namespace NetErp.Treasury.Masters.ViewModels
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
                         NotifyOfPropertyChange(nameof(CanSave));
+                        return;
+                    }
+                    if (_selectedItem is TreasuryBankMasterTreeDTO)
+                    {
+                        await SetBankForNew();
+                        ClearAllErrors();
+                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
+                        NotifyOfPropertyChange(nameof(CanSave));
+                        return;
+                    }
+                    if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
+                    {
+                        await SetBankAccountForNew();
+                        ClearAllErrors();
+                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
+                        NotifyOfPropertyChange(nameof(CanSave));
+                        return;
                     }
                 }
             }
@@ -262,6 +299,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) await SetMinorCashDrawerForEdit(minorCashDrawer);
             if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
             if (SelectedItem is TreasuryBankMasterTreeDTO bank) await SetBankForEdit(bank);
+            if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount) await SetBankAccountForEdit(bankAccount);
         }
 
         private bool _canUndo = false;
@@ -372,6 +410,31 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public bool CanCreateBank => true;
 
+        private ICommand _createBankAccountCommand;
+        public ICommand CreateBankAccountCommand
+        {
+            get
+            {
+                if (_createBankAccountCommand is null) _createBankAccountCommand = new AsyncCommand(CreateBankAccount, CanCreateBankAccount);
+                return _createBankAccountCommand;
+            }
+        }
+
+        public async Task CreateBankAccount()
+        {
+            IsNewRecord = true;
+            SelectedIndex = 0;
+            SelectedItem = new TreasuryBankAccountMasterTreeDTO();
+
+            await Application.Current.Dispatcher.BeginInvoke(() =>
+            {
+                this.SetFocus(nameof(BankAccountNumber));
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        public bool CanCreateBankAccount => true;
+
+
 
         public async Task SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
         {
@@ -474,6 +537,49 @@ namespace NetErp.Treasury.Masters.ViewModels
             BankPaymentMethodPrefix = "";
         }
 
+        public async Task SetBankAccountForEdit(TreasuryBankAccountMasterTreeDTO bankAccount)
+        {
+            foreach(var costCenter in BankAccountCostCenters)
+            {
+                costCenter.IsChecked = false;
+            }
+            BankAccountId = bankAccount.Id;
+            BankAccountType = bankAccount.Type;
+            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), bankAccount.Bank.AccountingEntity.CaptureType);
+            BankAccountProvider = bankAccount.Provider;
+            BankAccountNumber = bankAccount.Number;
+            BankAccountIsActive = bankAccount.IsActive;
+            BankAccountReference = bankAccount.Reference;
+            BankAccountDisplayOrder = bankAccount.DisplayOrder;
+            BankAccountBankId = bankAccount.Bank.Id;
+            BankAccountBankName = bankAccount.Bank.AccountingEntity.SearchName;
+            BankAccountAccountingAccountAutoCreate = false;
+            BankAccountAccountingAccountSelectExisting = true;
+            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == bankAccount.AccountingAccount.Id) ?? throw new Exception("");
+            BankAccountPaymentMethodAbbreviation = bankAccount.PaymentMethod.Abbreviation;
+            foreach(var costCenter in BankAccountCostCenters)
+            {
+                costCenter.IsChecked = bankAccount.AllowedCostCenters.Any(x => x.Id == costCenter.Id);
+            }
+        }
+
+        public async Task SetBankAccountForNew()
+        {
+            BankAccountId = 0;
+            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), BankBeforeNewBankAccount.AccountingEntity.CaptureType);
+            BankAccountType = BankAccountBankCaptureInfoAsRS ? "A" : "M";
+            BankAccountProvider = BankAccountBankCaptureInfoAsPN ? "N" : "";
+            BankAccountNumber = "";
+            BankAccountIsActive = true;
+            BankAccountReference = "";
+            BankAccountDisplayOrder = 0;
+            BankAccountBankId = BankBeforeNewBankAccount.Id;
+            BankAccountBankName = BankBeforeNewBankAccount.AccountingEntity.SearchName;
+            BankAccountAccountingAccountAutoCreate = true;
+            BankAccountAccountingAccountSelectExisting = false;
+            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+        }
+
         private ICommand _searchComputerNameCommand;
         public ICommand SearchComputerNameCommand
         {
@@ -529,6 +635,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (_selectedItem != null && _selectedItem.AllowContentControlVisibility)
                 {
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO majorcashDrawer) MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer = majorcashDrawer.Id;
+                    if (_selectedItem is TreasuryBankMasterTreeDTO bank) BankBeforeNewBankAccount = bank;
                     return true;
                 }
                 if (_selectedItem is TreasuryMajorCashDrawerCostCenterMasterTreeDTO treasuryMajorCashDrawerCostCenterMasterTreeDTO) MajorCostCenterBeforeNewCashDrawer = treasuryMajorCashDrawerCostCenterMasterTreeDTO;
@@ -572,7 +679,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveMajorCashDrawer();
-                    await LoadMajorCashDrawerComboBoxes();
+                    await LoadComboBoxes();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -586,7 +693,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveMinorCashDrawer();
-                    await LoadMajorCashDrawerComboBoxes();
+                    await LoadComboBoxes();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -600,7 +707,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveAuxiliaryCashDrawer();
-                    await LoadMajorCashDrawerComboBoxes();
+                    await LoadComboBoxes();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -621,6 +728,19 @@ namespace NetErp.Treasury.Masters.ViewModels
                     else
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new BankUpdateMessage() { UpdatedBank = result });
+                    }
+                }
+                if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
+                {
+                    BankAccountGraphQLModel result = await ExecuteSaveBankAccount();
+                    await LoadComboBoxes();
+                    if (IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountCreateMessage() { CreatedBankAccount = result });
+                    }
+                    else
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountUpdateMessage() { UpdatedBankAccount = result });
                     }
                 }
                 IsEditing = false;
@@ -681,6 +801,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if(_selectedItem is TreasuryBankMasterTreeDTO)
                 {
                     if (IsEditing == true && _errors.Count <= 0) return true;
+                    return false;
+                }
+                if(_selectedItem is TreasuryBankAccountMasterTreeDTO)
+                {
+                    if(IsEditing == true && _errors.Count <= 0)
+                    {
+                        if (BankAccountAccountingAccountSelectExisting == true && (BankAccountSelectedAccountingAccount is null || BankAccountSelectedAccountingAccount.Id == 0)) return false;
+                        return true;
+                    }
                     return false;
                 }
                 return false;
@@ -1019,6 +1148,113 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }";
                 }
                 var result = IsNewRecord ? await BankService.Create(query, variables) : await BankService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<BankAccountGraphQLModel> ExecuteSaveBankAccount()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                if (!IsNewRecord) variables.Id = BankAccountId;
+                variables.Data.Type = BankAccountType;
+                variables.Data.Number = BankAccountNumber;
+                variables.Data.IsActive = BankAccountIsActive;
+                variables.Data.Description = BankAccountDescription;
+                variables.Data.Reference = BankAccountReference;
+                variables.Data.DisplayOrder = BankAccountDisplayOrder;
+                variables.Data.AccountingAccountId = BankAccountAccountingAccountSelectExisting ? BankAccountSelectedAccountingAccount.Id : 0;
+                variables.Data.Provider = BankAccountBankCaptureInfoAsPN ? BankAccountProvider : "";
+                variables.Data.BankId = BankAccountBankId;
+                variables.Data.PaymentMethodName = BankAccountPaymentMethodName;
+                variables.Data.AllowedCostCenters = BankAccountCostCenters.Where(x => x.IsChecked).Select(x => x.Id).ToList();
+                if (IsNewRecord)
+                {
+                    query = @"
+                    mutation($data: CreateBankAccountInput!){
+                        CreateResponse: createBankAccount(data: $data){
+                            id
+                            type
+                            number
+                            isActive
+                            description
+                            reference
+                            displayOrder
+                            provider
+                            allowedCostCenters{
+                                id
+                                name
+                                bankAccountId
+                            }
+                            paymentMethod{
+                                id
+                                abbreviation
+                                name
+                            }
+                            accountingAccount{
+                                id
+                                code
+                                name
+                            }
+                            bank{
+                                id
+                                accountingEntity{
+                                    id
+                                    searchName
+                                    captureType
+                                }
+                            }
+                        }
+                    }";
+                }
+                else
+                {
+                    query = @"
+                        mutation($id: Int!, $data: UpdateBankAccountInput!){
+                            UpdateResponse: updateBankAccount(data: $data, id: $id){
+                                id
+                                type
+                                number
+                                isActive
+                                description
+                                reference
+                                displayOrder
+                                provider
+                                allowedCostCenters{
+                                    id
+                                    name
+                                    bankAccountId
+                                }
+                                paymentMethod{
+                                    id
+                                    abbreviation
+                                    name
+                                }
+                                accountingAccount{
+                                    id
+                                    code
+                                    name
+                                }
+                                bank{
+                                    id
+                                    accountingEntity{
+                                        id
+                                        searchName
+                                        captureType
+                                    }
+                                }
+                            }
+                        }";
+                }
+                var result = IsNewRecord ? await BankAccountService.Create(query, variables) : await BankAccountService.Update(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1523,6 +1759,121 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public bool CanDeleteBank => true;
+
+        private ICommand _deleteBankAccountCommand;
+        public ICommand DeleteBankAccountCommand
+        {
+            get
+            {
+                if (_deleteBankAccountCommand is null) _deleteBankAccountCommand = new AsyncCommand(DeleteBankAccount, CanDeleteBankAccount);
+                return _deleteBankAccountCommand;
+            }
+        }
+
+        public async Task DeleteBankAccount()
+        {
+            try
+            {
+                IsBusy = true;
+                int id = ((TreasuryBankAccountMasterTreeDTO)SelectedItem).Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteBankAccount(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.BankService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankAccountMasterTreeDTO)SelectedItem).Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                IsBusy = true;
+                Refresh();
+
+                BankAccountGraphQLModel deletedBankAccount = await ExecuteDeleteBankAccount(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deletedBankAccount });
+
+                NotifyOfPropertyChange(nameof(CanDeleteBankAccount));
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteBankAccount" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+
+        public async Task<BankAccountGraphQLModel> ExecuteDeleteBankAccount(int id)
+        {
+            try
+            {
+                string query = @"
+                    mutation($id: Int!){
+                        DeleteResponse: deleteBankAccount(id: $id){
+                        id
+                        type
+                        number
+                        description
+                        isActive
+                        reference
+                        displayOrder
+                        accountingAccount{
+                            id
+                            code
+                            name
+                        }
+                        bank{
+                            id
+                        }
+                        }
+                    }";
+                object variables = new { Id = id };
+                BankAccountGraphQLModel deletedBankAccount = await BankAccountService.Delete(query, variables);
+                this.SelectedItem = null;
+                return deletedBankAccount;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public bool CanDeleteBankAccount => true;
 
         #region "MajorCashDrawer"
 
@@ -2039,6 +2390,355 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
+        #region "BankAccount"
+
+        #region "Properties"
+
+        public int BankAccountId { get; set; }
+
+        private string _bankAccountNumber;
+
+        public string BankAccountNumber
+        {
+            get { return _bankAccountNumber; }
+            set
+            {
+                if (_bankAccountNumber != value)
+                {
+                    _bankAccountNumber = value;
+                    NotifyOfPropertyChange(nameof(BankAccountNumber));
+                    NotifyOfPropertyChange(nameof(BankAccountDescription));
+                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
+                    ValidateProperty(nameof(BankAccountNumber), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _bankAccountType;
+
+        public string BankAccountType
+        {
+            get { return _bankAccountType; }
+            set 
+            {
+                if (_bankAccountType != value)
+                {
+                    _bankAccountType = value;
+                    NotifyOfPropertyChange(nameof(BankAccountType));
+                    NotifyOfPropertyChange(nameof(BankAccountDescription));
+                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
+                }
+            }
+        }
+
+        private string _bankAccountProvider;
+
+        public string BankAccountProvider
+        {
+            get { return _bankAccountProvider; }
+            set 
+            {
+                if (_bankAccountProvider != value)
+                {
+                    _bankAccountProvider = value;
+                    NotifyOfPropertyChange(nameof(BankAccountProvider));
+                    NotifyOfPropertyChange(nameof(BankAccountDescription));
+                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
+                }
+            }
+        }
+
+
+        private bool _bankAccountIsActive;
+
+        public bool BankAccountIsActive
+        {
+            get { return _bankAccountIsActive; }
+            set 
+            {
+                if (_bankAccountIsActive != value)
+                {
+                    _bankAccountIsActive = value;
+                    NotifyOfPropertyChange(nameof(BankAccountIsActive));
+                }
+            }
+        }
+
+        private string _bankAccountReference;
+
+        public string BankAccountReference
+        {
+            get { return _bankAccountReference; }
+            set 
+            {
+                if (_bankAccountReference != value)
+                {
+                    _bankAccountReference = value;
+                    NotifyOfPropertyChange(nameof(BankAccountReference));
+                    NotifyOfPropertyChange(nameof(BankAccountDescription));
+                }
+            }
+        }
+
+        private int _bankAccountDisplayOrder;
+
+        public int BankAccountDisplayOrder
+        {
+            get { return _bankAccountDisplayOrder; }
+            set 
+            {
+                if (_bankAccountDisplayOrder != value)
+                {
+                    _bankAccountDisplayOrder = value;
+                    NotifyOfPropertyChange(nameof(BankAccountDisplayOrder));
+                }
+            }
+        }
+
+        private int _bankAccountAccountingAccountId;
+
+        public int BankAccountAccountingAccountId
+        {
+            get { return _bankAccountAccountingAccountId; }
+            set 
+            {
+                if (_bankAccountAccountingAccountId != value)
+                {
+                    _bankAccountAccountingAccountId = value;
+                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountId));
+                }
+            }
+        }
+
+        private int _bankAccountBankId;
+
+        public int BankAccountBankId
+        {
+            get { return _bankAccountBankId; }
+            set 
+            {
+                if (_bankAccountBankId != value)
+                {
+                    _bankAccountBankId = value;
+                    NotifyOfPropertyChange(nameof(BankAccountBankId));
+                }
+            }
+        }
+
+        private string _bankAccountBankName;
+
+        public string BankAccountBankName
+        {
+            get { return _bankAccountBankName; }
+            set 
+            {
+                if (_bankAccountBankName != value)
+                {
+                    _bankAccountBankName = value;
+                    NotifyOfPropertyChange(nameof(BankAccountBankName));
+                }
+            }
+        }
+
+        private string _bankAccountAccountinAccountNameForNew;
+
+        public string BankAccountDescription
+        {
+            get 
+            {
+                if (BankAccountBankCaptureInfoAsRS)
+                {
+                    return $"{BankAccountBankName} [{(BankAccountType == "A" ? "CTA. DE AHORROS" : "CTA. CORRIENTE")} No. {BankAccountNumber}] {(string.IsNullOrEmpty(BankAccountReference) ? "" : $"- RF. {BankAccountReference}")}".Trim();
+                }
+                return $"{(BankAccountProvider == "N" ? "NEQUI" : "DAVIPLATA")} - {BankAccountNumber} {(string.IsNullOrEmpty(BankAccountReference) ? "" : $"- RF. {BankAccountReference}")}";
+            }
+        }
+
+        public bool BankAccountBankCaptureInfoAsPN => BankAccountBankCaptureType.Equals(CaptureTypeEnum.PN);
+        public bool BankAccountBankCaptureInfoAsRS => BankAccountBankCaptureType.Equals(CaptureTypeEnum.RS);
+
+        private CaptureTypeEnum _bankAccountBankCaptureType;
+
+        public CaptureTypeEnum BankAccountBankCaptureType
+        {
+            get { return _bankAccountBankCaptureType; }
+            set 
+            {
+                if (_bankAccountBankCaptureType != value)
+                {
+                    _bankAccountBankCaptureType = value;
+                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureType));
+                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsPN));
+                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsRS));
+                }
+            }
+        }
+
+
+        private string _bankAccountCurrentBalance = "0";
+
+        public string BankAccountCurrentBalance
+        {
+            get { return _bankAccountCurrentBalance; }
+            set 
+            {
+                if (_bankAccountCurrentBalance != value)
+                {
+                    _bankAccountCurrentBalance = value;
+                    NotifyOfPropertyChange(nameof(BankAccountCurrentBalance));
+                }
+            }
+        }
+
+        private bool _bankAccountAccountingAccountAutoCreate = true;
+
+        public bool BankAccountAccountingAccountAutoCreate
+        {
+            get { return _bankAccountAccountingAccountAutoCreate; }
+            set 
+            {
+                if (_bankAccountAccountingAccountAutoCreate != value)
+                {
+                    _bankAccountAccountingAccountAutoCreate = value;
+                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountAutoCreate));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private bool _bankAccountAccountingAccountSelectExisting = false;
+
+        public bool BankAccountAccountingAccountSelectExisting
+        {
+            get { return _bankAccountAccountingAccountSelectExisting; }
+            set 
+            {
+                if (_bankAccountAccountingAccountSelectExisting != value)
+                {
+                    _bankAccountAccountingAccountSelectExisting = value;
+                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountSelectExisting));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    if(BankAccountAccountingAccountSelectExisting is false)
+                    {
+                        BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+                    }
+                }
+            }
+        }
+
+        public TreasuryBankMasterTreeDTO BankBeforeNewBankAccount { get; set; } = new();
+
+        private bool _bankAccountBankIsRS;
+
+        public bool BankAccountBankIsRS
+        {
+            get { return _bankAccountBankIsRS; }
+            set 
+            {
+                if (_bankAccountBankIsRS != value)
+                {
+                    _bankAccountBankIsRS = value;
+                    NotifyOfPropertyChange(nameof(BankAccountBankIsRS));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _bankAccountAccountingAccounts;
+
+        public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts
+        {
+            get { return _bankAccountAccountingAccounts; }
+            set 
+            {
+                if (_bankAccountAccountingAccounts != value)
+                {
+                    _bankAccountAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccounts));
+                }
+            }
+        }
+
+        private AccountingAccountGraphQLModel _bankAccountSelectedAccountingAccount;
+
+        public AccountingAccountGraphQLModel BankAccountSelectedAccountingAccount
+        {
+            get { return _bankAccountSelectedAccountingAccount; }
+            set 
+            {
+                if (_bankAccountSelectedAccountingAccount != value)
+                {
+                    _bankAccountSelectedAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(BankAccountSelectedAccountingAccount));
+                    NotifyOfPropertyChange(nameof(CanSave));
+
+                }
+            }
+        }
+
+        private string _bankAccountPaymentMethodName;
+
+        public string BankAccountPaymentMethodName
+        {
+            get
+            {
+                if (BankAccountBankCaptureInfoAsRS)
+                {
+                    return $"TRANSF/CONSIG EN {BankAccountBankName.Trim()} EN {(BankAccountType == "A" ? "CTA. DE AHORROS" : "CUENTA CORRIENTE")} TERMINADA EN {(BankAccountNumber.Length > 5 ? $"* {BankAccountNumber[^5..]}" : "")}";
+                }
+                return $"TRANSF/CONSGI EN {(BankAccountProvider == "N" ? "NEQUI" : "DAVIPLATA")} {BankAccountNumber}";
+            }
+        }
+
+        private string _bankAccountPaymentMethodAbbrevation;
+
+        public string BankAccountPaymentMethodAbbreviation
+        {
+            get { return _bankAccountPaymentMethodAbbrevation; }
+            set 
+            {
+                if (_bankAccountPaymentMethodAbbrevation != value)
+                {
+                    _bankAccountPaymentMethodAbbrevation = value;
+                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodAbbreviation));
+                }
+            }
+        }
+
+        private ObservableCollection<TreasuryBankAccountCostCenterDTO> _bankAccountCostCenters;
+
+        public ObservableCollection<TreasuryBankAccountCostCenterDTO> BankAccountCostCenters
+        {
+            get { return _bankAccountCostCenters; }
+            set 
+            {
+                if (_bankAccountCostCenters != value)
+                {
+                    _bankAccountCostCenters = value;
+                    NotifyOfPropertyChange(nameof(BankAccountCostCenters));
+                }
+            }
+        }
+
+        private TreasuryBankAccountCostCenterDTO _bankAccountSelectedCostCenter;
+
+        public TreasuryBankAccountCostCenterDTO BankAccountSelectedCostCenter
+        {
+            get { return _bankAccountSelectedCostCenter; }
+            set
+            {
+                if (_bankAccountSelectedCostCenter != value)
+                {
+                    _bankAccountSelectedCostCenter = value;
+                    NotifyOfPropertyChange(nameof(BankAccountSelectedCostCenter));
+                }
+            }
+        }
+
+        #endregion
+
+        #endregion
+
         private ICommand _searchBankAccountingEntityCommand;
         public ICommand SearchBankAccountingEntityCommand
         {
@@ -2201,6 +2901,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                             accountingEntity{
                                 id
                                 searchName
+                                captureType
                             }
                         }
                     }";
@@ -2260,15 +2961,28 @@ namespace NetErp.Treasury.Masters.ViewModels
                     description
                     reference
                     displayOrder
+                    paymentMethod{
+                        id
+                        abbreviation
+                        name
+                    }
                     accountingAccount{
                       id
                       name
+                      code
                     }
                     bank{
                       id
                       accountingEntity{
                         searchName
+                        captureType
                       }
+                    }
+                    provider
+                    allowedCostCenters{
+                        id
+                        name
+                        bankAccountId
                     }
                   }
                 }";
@@ -2722,7 +3436,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public async Task LoadMajorCashDrawerComboBoxes()
+        public async Task LoadComboBoxes()
         {
             try
             {
@@ -2737,6 +3451,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                     id
                     name
                   }
+                   costCenters{
+                    id
+                    name
+                  }
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.accountingAccountFilter = new ExpandoObject();
@@ -2745,6 +3463,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.accountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
                 var result = await CashDrawerService.GetDataContext<CashDrawerComboBoxesDataContext>(query, variables);
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
+                BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
+                BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(result.CostCenters);
+                BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
                 CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(result.CashDrawers);
                 CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
             }
@@ -2791,7 +3512,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task Initialize()
         {
-            await LoadMajorCashDrawerComboBoxes();
+            await LoadComboBoxes();
         }
 
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)
@@ -3078,6 +3799,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                     case nameof(BankAccountingEntityName):
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del banco no puede estar vacío");
                         break;
+                    case nameof(BankAccountNumber):
+                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsRS) AddError(propertyName, "El número de cuenta no puede estar vacío");
+                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPN) AddError(propertyName, "El número celular no puede estar vacío");
+                        break;
                     default:
                         break;
                 }
@@ -3152,11 +3877,80 @@ namespace NetErp.Treasury.Masters.ViewModels
             });
             return Task.CompletedTask;
         }
+
+        public async Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
+        {
+            IsNewRecord = false;
+
+            TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(message.CreatedBankAccount);
+            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+            if (bankDummyDTO is null) return;
+            TreasuryBankMasterTreeDTO bankDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.CreatedBankAccount.Bank.Id) ?? throw new Exception("");
+            if (bankDTO is null) return;
+            if (!bankDTO.IsExpanded && bankDTO.BankAccounts[0].IsDummyChild)
+            {
+                await LoadBankAccounts(bankDTO);
+                bankDTO.IsExpanded = true;
+                TreasuryBankAccountMasterTreeDTO? bankAccount = bankDTO.BankAccounts.FirstOrDefault(x => x.Id == bankAccountDTO.Id);
+                if (bankAccount is null) return;
+                SelectedItem = bankAccount;
+                return;
+            }
+            if (!bankDTO.IsExpanded)
+            {
+                bankDTO.IsExpanded = true;
+                bankDTO.BankAccounts.Add(bankAccountDTO);
+                SelectedItem = bankAccountDTO;
+                return;
+            }
+            bankDTO.BankAccounts.Add(bankAccountDTO);
+            SelectedItem = bankAccountDTO;
+            return;
+        }
+
+        public Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+                if (bankDummyDTO is null) return;
+                TreasuryBankMasterTreeDTO bankAccountDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.DeletedBankAccount.Bank.Id) ?? throw new Exception("");
+                if (bankAccountDTO is null) return;
+                bankAccountDTO.BankAccounts.Remove(bankAccountDTO.BankAccounts.Where(x => x.Id == message.DeletedBankAccount.Id).First());
+            });
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
+        {
+            TreasuryBankAccountMasterTreeDTO bankAccountDTO = Context.AutoMapper.Map<TreasuryBankAccountMasterTreeDTO>(message.UpdatedBankAccount);
+            BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+            if (bankDummyDTO is null) return;
+            TreasuryBankMasterTreeDTO bankDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.UpdatedBankAccount.Bank.Id) ?? throw new Exception("");
+            if (bankDTO is null) return;
+            TreasuryBankAccountMasterTreeDTO bankAccountToUpdate = bankDTO.BankAccounts.FirstOrDefault(x => x.Id == message.UpdatedBankAccount.Id) ?? throw new Exception("");
+            if (bankAccountToUpdate is null) return;
+            bankAccountToUpdate.Id = bankAccountDTO.Id;
+            bankAccountToUpdate.Type = bankAccountDTO.Type;
+            bankAccountToUpdate.Number = bankAccountDTO.Number;
+            bankAccountToUpdate.IsActive = bankAccountDTO.IsActive;
+            bankAccountToUpdate.Description = bankAccountDTO.Description;
+            bankAccountToUpdate.Reference = bankAccountDTO.Reference;
+            bankAccountToUpdate.DisplayOrder = bankAccountDTO.DisplayOrder;
+            bankAccountToUpdate.AccountingAccount = bankAccountDTO.AccountingAccount;
+            bankAccountToUpdate.Bank = bankAccountDTO.Bank;
+            bankAccountToUpdate.Provider = bankAccountDTO.Provider;
+            bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
+            bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
+            await SetBankAccountForEdit(bankAccountToUpdate);
+            return;
+        }
     }
 
     public class CashDrawerComboBoxesDataContext
     {
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
         public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
     }
 }

@@ -210,7 +210,7 @@ namespace NetErp
                 _ = cfg.CreateMap<BankGraphQLModel, TreasuryBankMasterTreeDTO>();
                 _ = cfg.CreateMap<BankAccountGraphQLModel, TreasuryBankAccountMasterTreeDTO>();
                 _ = cfg.CreateMap<FranchiseGraphQLModel, TreasuryFranchiseMasterTreeDTO>();
-
+                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryBankAccountCostCenterDTO>();
 
             });
 
