@@ -22,8 +22,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
@@ -47,7 +49,10 @@ namespace NetErp.Treasury.Masters.ViewModels
         IHandle<BankDeleteMessage>,
         IHandle<BankAccountCreateMessage>,
         IHandle<BankAccountDeleteMessage>,
-        IHandle<BankAccountUpdateMessage>
+        IHandle<BankAccountUpdateMessage>,
+        IHandle<FranchiseCreateMessage>,
+        IHandle<FranchiseDeleteMessage>,
+        IHandle<FranchiseUpdateMessage>
     {
         public TreasuryRootViewModel Context { get; set; }
 
@@ -114,12 +119,12 @@ namespace NetErp.Treasury.Masters.ViewModels
                     _selectedItem = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                     NotifyOfPropertyChange(nameof(ContentControlVisibility));
-                    _ = HandleSelectedItemChangedAsync();
+                    HandleSelectedItemChanged();
                 }
             }
         }
 
-        public async Task HandleSelectedItemChangedAsync()
+        public void HandleSelectedItemChanged()
         {
             if (_selectedItem != null)
             {
@@ -131,7 +136,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     SelectedIndex = 0;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                     {
-                        await SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
+                        SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -139,7 +144,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                     {
-                        await SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
+                        SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -147,7 +152,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
                     {
-                        await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
+                        SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -155,7 +160,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if(_selectedItem is TreasuryBankMasterTreeDTO bank)
                     {
-                        await SetBankForEdit(bank);
+                        SetBankForEdit(bank);
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -164,9 +169,17 @@ namespace NetErp.Treasury.Masters.ViewModels
                     if(_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
                     {
                         BankAccountNumber = "";
-                        await SetBankAccountForEdit(bankAccount);
+                        SetBankAccountForEdit(bankAccount);
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
+                        NotifyOfPropertyChange(nameof(CanSave));
+                        return;
+                    }
+                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO franchsie)
+                    {
+                        SetFranchiseForEdit(franchsie);
+                        ClearAllErrors();
+                        ValidateProperty(nameof(FranchiseName), FranchiseName);
                         NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
@@ -178,7 +191,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     CanEdit = false;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO)
                     {
-                        await SetMajorCashDrawerForNew();
+                        SetMajorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -186,7 +199,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO)
                     {
-                        await SetMinorCashDrawerForNew();
+                        SetMinorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -194,7 +207,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                     {
-                        await SetAuxiliaryCashDrawerForNew();
+                        SetAuxiliaryCashDrawerForNew();
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -202,7 +215,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryBankMasterTreeDTO)
                     {
-                        await SetBankForNew();
+                        SetBankForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -210,9 +223,17 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
                     {
-                        await SetBankAccountForNew();
+                        SetBankAccountForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
+                        NotifyOfPropertyChange(nameof(CanSave));
+                        return;
+                    }
+                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
+                    {
+                        SetFranchiseForNew();
+                        ClearAllErrors();
+                        ValidateProperty(nameof(FranchiseName), FranchiseName);
                         NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
@@ -243,12 +264,12 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             get
             {
-                if (_editCommand is null) _editCommand = new AsyncCommand(Edit, CanEdit);
+                if (_editCommand is null) _editCommand = new DelegateCommand(Edit);
                 return _editCommand;
             }
         }
 
-        public async Task Edit()
+        public void Edit()
         {
             IsEditing = true;
             CanUndo = true;
@@ -273,18 +294,19 @@ namespace NetErp.Treasury.Masters.ViewModels
                 }
             }
         }
+
         private ICommand _undoCommand;
 
         public ICommand UndoCommand
         {
             get
             {
-                if (_undoCommand is null) _undoCommand = new AsyncCommand(Undo, CanUndo);
+                if (_undoCommand is null) _undoCommand = new DelegateCommand(Undo);
                 return _undoCommand;
             }
         }
 
-        public async Task Undo()
+        public void Undo()
         {
             if (IsNewRecord)
             {
@@ -295,11 +317,12 @@ namespace NetErp.Treasury.Masters.ViewModels
             CanEdit = true;
             IsNewRecord = false;
             SelectedIndex = 0;
-            if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawer) await SetMajorCashDrawerForEdit(majorCashDrawer);
-            if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) await SetMinorCashDrawerForEdit(minorCashDrawer);
-            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
-            if (SelectedItem is TreasuryBankMasterTreeDTO bank) await SetBankForEdit(bank);
-            if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount) await SetBankAccountForEdit(bankAccount);
+            if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawer) SetMajorCashDrawerForEdit(majorCashDrawer);
+            if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) SetMinorCashDrawerForEdit(minorCashDrawer);
+            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
+            if (SelectedItem is TreasuryBankMasterTreeDTO bank) SetBankForEdit(bank);
+            if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount) SetBankAccountForEdit(bankAccount);
+            if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise) SetFranchiseForEdit(franchise);
         }
 
         private bool _canUndo = false;
@@ -434,9 +457,29 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public bool CanCreateBankAccount => true;
 
+        private ICommand _createFranchiseCommand;
+        public ICommand CreateFranchiseCommand
+        {
+            get
+            {
+                if (_createFranchiseCommand is null) _createFranchiseCommand = new DelegateCommand(CreateFranchise);
+                return _createFranchiseCommand;
+            }
+        }
+
+        public void CreateFranchise()
+        {
+            IsNewRecord = true;
+            SelectedIndex = 0;
+            SelectedItem = new TreasuryFranchiseMasterTreeDTO();
+            _ = Application.Current.Dispatcher.BeginInvoke(()  =>
+                {
+                this.SetFocus(nameof(FranchiseName));
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
+        }
 
 
-        public async Task SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
+        public void SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
         {
             MajorCashDrawerId = majorCashDrawerMasterTreeDTO.Id;
             MajorCashDrawerName = majorCashDrawerMasterTreeDTO.Name;
@@ -453,7 +496,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task SetMajorCashDrawerForNew()
+        public void SetMajorCashDrawerForNew()
         {
             MajorCashDrawerId = 0;
             MajorCashDrawerName = $"CAJA GENERAL EN {MajorCostCenterBeforeNewCashDrawer.Name}";
@@ -469,7 +512,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task SetMinorCashDrawerForEdit(MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
+        public void SetMinorCashDrawerForEdit(MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
         {
             MinorCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
             MinorCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
@@ -481,7 +524,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task SetMinorCashDrawerForNew()
+        public void SetMinorCashDrawerForNew()
         {
             MinorCashDrawerId = 0;
             MinorCashDrawerName = $"CAJA MENOR EN {MinorCostCenterBeforeNewCashDrawer.Name}";
@@ -491,7 +534,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             MinorCashDrawerAutoAdjustBalance = false;
         }
 
-        public async Task SetAuxiliaryCashDrawerForEdit(TreasuryAuxiliaryCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
+        public void SetAuxiliaryCashDrawerForEdit(TreasuryAuxiliaryCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
         {
             AuxiliaryCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
             AuxiliaryCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
@@ -506,7 +549,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerComputerName = minorCashDrawerMasterTreeDTO.ComputerName;
         }
 
-        public async Task SetAuxiliaryCashDrawerForNew()
+        public void SetAuxiliaryCashDrawerForNew()
         {
             AuxiliaryCashDrawerId = 0;
             AuxiliaryCashDrawerName = $"CAJA AUXILIAR";
@@ -521,7 +564,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerComputerName = "";
         }
 
-        public async Task SetBankForEdit(TreasuryBankMasterTreeDTO bank)
+        public void SetBankForEdit(TreasuryBankMasterTreeDTO bank)
         {
             BankId = bank.Id;
             BankAccountingEntityId = bank.AccountingEntity.Id;
@@ -529,7 +572,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             BankPaymentMethodPrefix = bank.PaymentMethodPrefix;
         }
 
-        public async Task SetBankForNew()
+        public void SetBankForNew()
         {
             BankId = 0;
             BankAccountingEntityId = 0;
@@ -537,7 +580,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             BankPaymentMethodPrefix = "";
         }
 
-        public async Task SetBankAccountForEdit(TreasuryBankAccountMasterTreeDTO bankAccount)
+        public void SetBankAccountForEdit(TreasuryBankAccountMasterTreeDTO bankAccount)
         {
             foreach(var costCenter in BankAccountCostCenters)
             {
@@ -563,7 +606,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public async Task SetBankAccountForNew()
+        public void SetBankAccountForNew()
         {
             BankAccountId = 0;
             BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), BankBeforeNewBankAccount.AccountingEntity.CaptureType);
@@ -578,6 +621,58 @@ namespace NetErp.Treasury.Masters.ViewModels
             BankAccountAccountingAccountAutoCreate = true;
             BankAccountAccountingAccountSelectExisting = false;
             BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+        }
+
+        public void SetFranchiseForEdit(TreasuryFranchiseMasterTreeDTO franchise)
+        {
+            FranchiseId = franchise.Id;
+            FranchiseName = franchise.Name;
+            FranchiseType = franchise.Type;
+            FranchiseCommissionMargin = franchise.CommissionMargin;
+            FranchiseReteivaMargin = franchise.ReteivaMargin;
+            FranchiseReteicaMargin = franchise.ReteicaMargin;
+            FranchiseRetefteMargin = franchise.RetefteMargin;
+            FranchiseFormulaCommission = franchise.FormulaCommission;
+            FranchiseFormulaReteica = franchise.FormulaReteica;
+            FranchiseFormulaReteiva = franchise.FormulaReteiva;
+            FranchiseFormulaRetefte = franchise.FormulaRetefte;
+            FranchiseIvaMargin = franchise.IvaMargin;
+            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == franchise.AccountingAccountCommission.Id) ?? throw new Exception("");
+            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == franchise.BankAccount.Id) ?? throw new Exception("");
+            FranchiseSettingsByCostCenter = new List<FranchiseByCostCenterGraphQLModel>(franchise.FranchiseSettingsByCostCenter);
+            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+            FranchiseCardValue = 0;
+            FranchiseSimulatedCommission = 0;
+            FranchiseSimulatedReteiva = 0;
+            FranchiseSimulatedReteica = 0;
+            FranchiseSimulatedRetefte = 0;
+            FranchiseSimulatedIvaValue = 0;
+        }
+
+        public void SetFranchiseForNew()
+        {
+            FranchiseId = 0;
+            FranchiseName = "";
+            FranchiseType = "TC";
+            FranchiseCommissionMargin = 0;
+            FranchiseReteivaMargin = 0;
+            FranchiseReteicaMargin = 0;
+            FranchiseRetefteMargin = 0;
+            FranchiseFormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
+            FranchiseFormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
+            FranchiseFormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
+            FranchiseFormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
+            FranchiseIvaMargin = 0;
+            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception(""); ;
+            FranchiseSettingsByCostCenter = [];
+            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
+            FranchiseCardValue = 0;
+            FranchiseSimulatedCommission = 0;
+            FranchiseSimulatedReteiva = 0;
+            FranchiseSimulatedReteica = 0;
+            FranchiseSimulatedRetefte = 0;
+            FranchiseSimulatedIvaValue = 0;
         }
 
         private ICommand _searchComputerNameCommand;
@@ -665,7 +760,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save);
                 return _saveCommand;
             }
         }
@@ -679,7 +774,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveMajorCashDrawer();
-                    await LoadComboBoxes();
+                    await LoadComboBoxesAsync();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -693,7 +788,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveMinorCashDrawer();
-                    await LoadComboBoxes();
+                    await LoadComboBoxesAsync();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -707,7 +802,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerMasterTreeDTO)
                 {
                     CashDrawerGraphQLModel result = await ExecuteSaveAuxiliaryCashDrawer();
-                    await LoadComboBoxes();
+                    await LoadComboBoxesAsync();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
@@ -733,7 +828,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
                 {
                     BankAccountGraphQLModel result = await ExecuteSaveBankAccount();
-                    await LoadComboBoxes();
+                    await LoadComboBoxesAsync();
                     if (IsNewRecord)
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountCreateMessage() { CreatedBankAccount = result });
@@ -741,6 +836,18 @@ namespace NetErp.Treasury.Masters.ViewModels
                     else
                     {
                         await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountUpdateMessage() { UpdatedBankAccount = result });
+                    }
+                }
+                if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise)
+                {
+                    FranchiseGraphQLModel result = await ExecuteSaveFranchise();
+                    if (IsNewRecord)
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseCreateMessage() { CreatedFranchise = result });
+                    }
+                    else
+                    {
+                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseUpdateMessage() { UpdatedFranchise = result });
                     }
                 }
                 IsEditing = false;
@@ -808,6 +915,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                     if(IsEditing == true && _errors.Count <= 0)
                     {
                         if (BankAccountAccountingAccountSelectExisting == true && (BankAccountSelectedAccountingAccount is null || BankAccountSelectedAccountingAccount.Id == 0)) return false;
+                        return true;
+                    }
+                    return false;
+                }
+                if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
+                {
+                    if (IsEditing == true && _errors.Count <= 0)
+                    {
+                        if ((FranchiseSelectedAccountingAccountCommission is null || FranchiseSelectedAccountingAccountCommission.Id == 0) || (FranchiseSelectedBankAccount is null || FranchiseSelectedBankAccount.Id == 0)) return false;
                         return true;
                     }
                     return false;
@@ -1255,6 +1371,129 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }";
                 }
                 var result = IsNewRecord ? await BankAccountService.Create(query, variables) : await BankAccountService.Update(query, variables);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task<FranchiseGraphQLModel> ExecuteSaveFranchise()
+        {
+            try
+            {
+                string query;
+                dynamic variables = new ExpandoObject();
+                variables.Data = new ExpandoObject();
+                if (!IsNewRecord) variables.Id = FranchiseId;
+                variables.Data.Name = FranchiseName.Trim().RemoveExtraSpaces();
+                variables.Data.Type = FranchiseType;
+                variables.Data.CommissionMargin = FranchiseCommissionMargin;
+                variables.Data.ReteivaMargin = FranchiseReteivaMargin;
+                variables.Data.ReteicaMargin = FranchiseReteicaMargin;
+                variables.Data.RetefteMargin = FranchiseRetefteMargin;
+                variables.Data.FormulaCommission = FranchiseFormulaCommission;
+                variables.Data.FormulaReteica = FranchiseFormulaReteica;
+                variables.Data.FormulaReteiva = FranchiseFormulaReteiva;
+                variables.Data.FormulaRetefte = FranchiseFormulaRetefte;
+                variables.Data.IvaMargin = FranchiseIvaMargin;
+                variables.Data.AccountingAccountIdCommission = FranchiseSelectedAccountingAccountCommission.Id;
+                variables.Data.BankAccountId = FranchiseSelectedBankAccount.Id;
+                variables.Data.CompanyId = 1; //TODO: Cambiar por el valor correcto
+                variables.Data.CostCenterId = FranchiseSelectedCostCenter.Id;
+                if (IsNewRecord)
+                {
+                    query = @"
+                    mutation ($data: CreateFranchiseInput!) {
+                      CreateResponse: createFranchise(data: $data) {
+                        id
+                        name
+                        type
+                        commissionMargin
+                        reteivaMargin
+                        reteicaMargin
+                        retefteMargin
+                        ivaMargin
+                        accountingAccountCommission {
+                          id
+                          code
+                          name
+                        }
+                        bankAccount {
+                          id
+                          description
+                        }
+                        formulaCommission
+                        formulaReteiva
+                        formulaReteica
+                        formulaRetefte
+                        franchiseSettingsByCostCenter{
+                          id
+                          costCenterId
+                          commissionMargin
+                          reteivaMargin
+                          reteicaMargin
+                          retefteMargin
+                          ivaMargin
+                          bankAccountId
+                          accountingAccountIdCommmission
+                          formulaCommission
+                          formulaReteiva
+                          formulaReteica
+                          formulaRetefte
+                          franchiseId
+                        }
+                      }
+                    }";
+                }
+                else
+                {
+                    query = @"
+                        mutation($id: Int!, $data: UpdateFranchiseInput!){
+                          UpdateResponse: updateFranchise(id: $id, data: $data){
+                            id
+                            name
+                            type
+                            commissionMargin
+                            reteivaMargin
+                            reteicaMargin
+                            retefteMargin
+                            ivaMargin
+                            accountingAccountCommission{
+                              id
+                              code
+                              name
+                            }
+                            bankAccount{
+                              id
+                              description
+                            }
+                            formulaCommission
+                            formulaReteiva
+                            formulaReteica
+                            formulaRetefte
+                            franchiseSettingsByCostCenter{
+                              id
+                              costCenterId
+                              commissionMargin
+                              reteivaMargin
+                              reteicaMargin
+                              retefteMargin
+                              ivaMargin
+                              bankAccountId
+                              accountingAccountIdCommmission
+                              formulaCommission
+                              formulaReteiva
+                              formulaReteica
+                              formulaRetefte
+                              franchiseId
+                            }
+                          }
+                        }";
+                }
+                var result = IsNewRecord ? await FranchiseService.Create(query, variables) : await FranchiseService.Update(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1874,6 +2113,127 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public bool CanDeleteBankAccount => true;
+
+        private ICommand _deleteFranchiseCommand;
+        public ICommand DeleteFranchiseCommand
+        {
+            get
+            {
+                if (_deleteFranchiseCommand is null) _deleteFranchiseCommand = new AsyncCommand(DeleteFranchise);
+                return _deleteFranchiseCommand;
+            }
+        }
+
+        public async Task DeleteFranchise()
+        {
+            try
+            {
+                IsBusy = true;
+                int id = ((TreasuryFranchiseMasterTreeDTO)SelectedItem).Id;
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteFranchise(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+                object variables = new { Id = id };
+
+                var validation = await this.FranchiseService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryFranchiseMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                IsBusy = true;
+                Refresh();
+
+                FranchiseGraphQLModel deletedFranchise = await ExecuteDeleteFranchise(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deletedFranchise });
+
+                NotifyOfPropertyChange(nameof(CanDeleteFranchise));
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteFranchise" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+
+        public async Task<FranchiseGraphQLModel> ExecuteDeleteFranchise(int id)
+        {
+            try
+            {
+                string query = @"
+                mutation($id: Int!){
+                    DeleteResponse: deleteFranchise(id: $id){
+                    id
+                    name
+                    type
+                    commissionMargin
+                    reteivaMargin
+                    reteicaMargin
+                    retefteMargin
+                    ivaMargin
+                    accountingAccountCommission{
+                        id
+                        code
+                        name
+                    }
+                    bankAccount{
+                        id
+                        description
+                    }
+                    formulaCommission
+                    formulaReteiva
+                    formulaReteica
+                    formulaRetefte
+                    }
+                }";
+                object variables = new { Id = id };
+                FranchiseGraphQLModel deletedFranchise = await FranchiseService.Delete(query, variables);
+                this.SelectedItem = null;
+                return deletedFranchise;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public bool CanDeleteFranchise => true;
 
         #region "MajorCashDrawer"
 
@@ -2739,6 +3099,569 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
+        #region "Franchise"
+
+        #region "Properties"
+
+        public int FranchiseId { get; set; }
+
+        private string _franchiseName;
+
+        public string FranchiseName
+        {
+            get { return _franchiseName; }
+            set 
+            {
+                if (_franchiseName != value)
+                {
+                    _franchiseName = value;
+                    NotifyOfPropertyChange(nameof(FranchiseName));
+                    ValidateProperty(nameof(FranchiseName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _franchiseType;
+
+        public string FranchiseType
+        {
+            get { return _franchiseType; }
+            set 
+            {
+                if (_franchiseType != value)
+                {
+                    _franchiseType = value;
+                    NotifyOfPropertyChange(nameof(FranchiseType));
+                }
+            }
+        }
+
+        private decimal _franchiseCommissionMargin;
+
+        public decimal FranchiseCommissionMargin
+        {
+            get { return _franchiseCommissionMargin; }
+            set 
+            {
+                if (_franchiseCommissionMargin != value)
+                {
+                    _franchiseCommissionMargin = value;
+                    NotifyOfPropertyChange(nameof(FranchiseCommissionMargin));
+                }
+            }
+        }
+
+        private decimal _franchiseReteivaMargin;
+
+        public decimal FranchiseReteivaMargin
+        {
+            get { return _franchiseReteivaMargin; }
+            set 
+            {
+                if (_franchiseReteivaMargin != value)
+                {
+                    _franchiseReteivaMargin = value;
+                    NotifyOfPropertyChange(nameof(FranchiseReteivaMargin));
+                }
+            }
+        }
+
+        private decimal _franchiseReteicaMargin;
+
+        public decimal FranchiseReteicaMargin
+        {
+            get { return _franchiseReteicaMargin; }
+            set 
+            {
+                if (_franchiseReteicaMargin != value)
+                {
+                    _franchiseReteicaMargin = value;
+                    NotifyOfPropertyChange(nameof(FranchiseReteicaMargin));
+                }
+            }
+        }
+
+        private decimal _franchiseRetefteMargin;
+
+        public decimal FranchiseRetefteMargin
+        {
+            get { return _franchiseRetefteMargin; }
+            set 
+            {
+                if (_franchiseRetefteMargin != value)
+                {
+                    _franchiseRetefteMargin = value;
+                    NotifyOfPropertyChange(nameof(FranchiseRetefteMargin));
+                }
+            }
+        }
+
+        private decimal _franchiseIvaMargin;
+
+        public decimal FranchiseIvaMargin
+        {
+            get { return _franchiseIvaMargin; }
+            set 
+            {
+                if (_franchiseIvaMargin != value)
+                {
+                    _franchiseIvaMargin = value;
+                    NotifyOfPropertyChange(nameof(FranchiseIvaMargin));
+                }
+            }
+        }
+
+        private string _franchiseFormulaCommission;
+
+        public string FranchiseFormulaCommission
+        {
+            get { return _franchiseFormulaCommission; }
+            set 
+            {
+                if (_franchiseFormulaCommission != value)
+                {
+                    _franchiseFormulaCommission = value;
+                    NotifyOfPropertyChange(nameof(FranchiseFormulaCommission));
+                    CanFranchiseSimulator(new object { });
+                    ValidateProperty(nameof(FranchiseFormulaCommission), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _franchiseFormulaReteiva;
+
+        public string FranchiseFormulaReteiva
+        {
+            get { return _franchiseFormulaReteiva; }
+            set 
+            {
+                if (_franchiseFormulaReteiva != value)
+                {
+                    _franchiseFormulaReteiva = value;
+                    NotifyOfPropertyChange(nameof(FranchiseFormulaReteiva));
+                    CanFranchiseSimulator(new object { });
+                    ValidateProperty(nameof(FranchiseFormulaReteiva), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _franchiseFormulaReteica;
+
+        public string FranchiseFormulaReteica
+        {
+            get { return _franchiseFormulaReteica; }
+            set 
+            {
+                if (_franchiseFormulaReteica != value)
+                {
+                    _franchiseFormulaReteica = value;
+                    NotifyOfPropertyChange(nameof(FranchiseFormulaReteica));
+                    CanFranchiseSimulator(new object { });
+                    ValidateProperty(nameof(FranchiseFormulaReteica), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                } 
+            }
+        }
+
+        private string _franchiseFormulaRetefte;
+
+        public string FranchiseFormulaRetefte
+        {
+            get { return _franchiseFormulaRetefte; }
+            set 
+            {
+                if (_franchiseFormulaRetefte != value)
+                {
+                    _franchiseFormulaRetefte = value;
+                    NotifyOfPropertyChange(nameof(FranchiseFormulaRetefte));
+                    CanFranchiseSimulator(new object { });
+                    ValidateProperty(nameof(FranchiseFormulaRetefte), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _franchiseAccountingAccountsCommission;
+
+        public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission
+        {
+            get { return _franchiseAccountingAccountsCommission; }
+            set 
+            {
+                if (_franchiseAccountingAccountsCommission != value)
+                {
+                    _franchiseAccountingAccountsCommission = value;
+                    NotifyOfPropertyChange(nameof(FranchiseAccountingAccountsCommission));
+                }
+            }
+        }
+
+        private ObservableCollection<BankAccountGraphQLModel> _franchiseBankAccounts;
+
+        public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts
+        {
+            get { return _franchiseBankAccounts; }
+            set 
+            {
+                if (_franchiseBankAccounts != value)
+                {
+                    _franchiseBankAccounts = value;
+                    NotifyOfPropertyChange(nameof(FranchiseBankAccounts));
+                }
+            }
+        }
+
+        private BankAccountGraphQLModel _franchiseSelectedBankAccount;
+
+        public BankAccountGraphQLModel FranchiseSelectedBankAccount
+        {
+            get { return _franchiseSelectedBankAccount; }
+            set 
+            {
+                if (_franchiseSelectedBankAccount != value)
+                {
+                    _franchiseSelectedBankAccount = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSelectedBankAccount));
+                    NotifyOfPropertyChange(nameof(FranchiseSelectedBankAccount));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+
+        private ObservableCollection<TreasuryFranchiseCostCenterDTO> _franchiseCostCenters;
+
+        public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters
+        {
+            get { return _franchiseCostCenters; }
+            set 
+            {
+                if (_franchiseCostCenters != value)
+                {
+                    _franchiseCostCenters = value;
+                    NotifyOfPropertyChange(nameof(FranchiseCostCenters));
+                } 
+            }
+        }
+
+        private TreasuryFranchiseCostCenterDTO _franchiceSelectedCostCenter;
+
+        public TreasuryFranchiseCostCenterDTO FranchiseSelectedCostCenter
+        {
+            get { return _franchiceSelectedCostCenter; }
+            set 
+            {
+                if (_franchiceSelectedCostCenter != value)
+                {
+                    _franchiceSelectedCostCenter = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSelectedCostCenter));
+                    EditFranchiseByCostCenter(FranchiseSelectedCostCenter.Id);
+                }
+            }
+        }
+
+
+        private AccountingAccountGraphQLModel _franchiseSelectedAccountingAccountCommission;
+
+        public AccountingAccountGraphQLModel FranchiseSelectedAccountingAccountCommission
+        {
+            get { return _franchiseSelectedAccountingAccountCommission; }
+            set 
+            {
+                if (_franchiseSelectedAccountingAccountCommission != value)
+                {
+                    _franchiseSelectedAccountingAccountCommission = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSelectedAccountingAccountCommission));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public List<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; }
+
+        private decimal _franchiseCardValue;
+
+        public decimal FranchiseCardValue
+        {
+            get { return _franchiseCardValue; }
+            set 
+            {
+                if (_franchiseCardValue != value)
+                {
+                    _franchiseCardValue = value;
+                    NotifyOfPropertyChange(nameof(FranchiseCardValue));
+                    CanFranchiseSimulator(new object { });
+                }
+            }
+        }
+        public string FranchiseDecimalsCount { get; set; } = "n4"; //n concatenado con el número que se quiere mostrar como decimales
+
+        public string FranchiseReplacedFormulaCommission { get; set; } = string.Empty;
+        public string FranchiseReplacedFormulaReteiva { get; set; } = string.Empty;
+        public string FranchiseReplacedFormulaReteica { get; set; } = string.Empty;
+        public string FranchiseReplacedFormulaRetefte { get; set; } = string.Empty;
+
+        private decimal _franchiseSimulatedCommission;
+
+        public decimal FranchiseSimulatedCommission
+        {
+            get { return _franchiseSimulatedCommission; }
+            set 
+            {
+                if (_franchiseSimulatedCommission != value)
+                {
+                    _franchiseSimulatedCommission = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSimulatedCommission));
+                }
+            }
+        }
+
+        private decimal _franchiseSimulatedReteiva;
+
+        public decimal FranchiseSimulatedReteiva
+        {
+            get { return _franchiseSimulatedReteiva; }
+            set 
+            {
+                if (_franchiseSimulatedReteiva != value)
+                {
+                    _franchiseSimulatedReteiva = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSimulatedReteiva));
+                }
+            }
+        }
+
+        private decimal _franchiseSimulatedReteica;
+
+        public decimal FranchiseSimulatedReteica
+        {
+            get { return _franchiseSimulatedReteica; }
+            set 
+            {
+                if (_franchiseSimulatedReteica != value)
+                {
+                    _franchiseSimulatedReteica = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSimulatedReteica));
+                }
+            }
+        }
+
+        private decimal _franchiseSimulatedRetefte;
+
+        public decimal FranchiseSimulatedRetefte
+        {
+            get { return _franchiseSimulatedRetefte; }
+            set 
+            {
+                if (_franchiseSimulatedRetefte != value)
+                {
+                    _franchiseSimulatedRetefte = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSimulatedRetefte));
+                }
+            }
+        }
+
+        private decimal _franchiseSimulatedIvaValue;
+
+        public decimal FranchiseSimulatedIvaValue
+        {
+            get { return _franchiseSimulatedIvaValue; }
+            set 
+            {
+                if (_franchiseSimulatedIvaValue != value)
+                {
+                    _franchiseSimulatedIvaValue = value;
+                    NotifyOfPropertyChange(nameof(FranchiseSimulatedIvaValue));
+                }
+            }
+        }
+
+
+        #endregion
+
+        #endregion
+
+        private ICommand _franchiseResetFormulaReteivaCommand;
+        public ICommand FranchiseResetFormulaReteivaCommand
+        {
+            get
+            {
+                if (_franchiseResetFormulaReteivaCommand is null) _franchiseResetFormulaReteivaCommand = new RelayCommand(CanSearchBankAccountingEntity, FranchiseResetFormulaReteiva);
+                return _franchiseResetFormulaReteivaCommand;
+            }
+        }
+
+        public void FranchiseResetFormulaReteiva(object p)
+        {
+            FranchiseFormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
+        }
+
+        private ICommand _franchiseResetFormulaCommissionCommand;
+        public ICommand FranchiseResetFormulaCommissionCommand
+        {
+            get
+            {
+                if (_franchiseResetFormulaCommissionCommand is null) _franchiseResetFormulaCommissionCommand = new RelayCommand(CanFranchiseResetFormulaCommission, FranchiseResetFormulaCommission);
+                return _franchiseResetFormulaCommissionCommand;
+            }
+        }
+
+        public void FranchiseResetFormulaCommission(object p)
+        {
+            FranchiseFormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
+        }
+
+        public bool CanFranchiseResetFormulaCommission(object p) => true;
+
+
+        private ICommand _franchiseResetFormulaReteicaCommand;
+        public ICommand FranchiseResetFormulaReteicaCommand
+        {
+            get
+            {
+                if (_franchiseResetFormulaReteicaCommand is null) _franchiseResetFormulaReteicaCommand = new RelayCommand(CanFranchiseResetFormulaReteica, FranchiseResetFormulaReteica);
+                return _franchiseResetFormulaReteicaCommand;
+            }
+        }
+
+        public void FranchiseResetFormulaReteica(object p)
+        {
+            FranchiseFormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
+        }
+
+        public bool CanFranchiseResetFormulaReteica(object p) => true;
+
+        private ICommand _franchiseResetFormulaRetefteCommand;
+        public ICommand FranchiseResetFormulaRetefteCommand
+        {
+            get
+            {
+                if (_franchiseResetFormulaRetefteCommand is null) _franchiseResetFormulaRetefteCommand = new RelayCommand(CanFranchiseResetFormulaRetefte, FranchiseResetFormulaRetefte);
+                return _franchiseResetFormulaRetefteCommand;
+            }
+        }
+
+        public void FranchiseResetFormulaRetefte(object p)
+        {
+            FranchiseFormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
+        }
+
+        public bool CanFranchiseResetFormulaRetefte(object p) => true;
+
+        private ICommand _franchiseSimulatorCommand;
+        public ICommand FranchiseSimulatorCommand
+        {
+            get
+            {
+                if (_franchiseSimulatorCommand is null) _franchiseSimulatorCommand = new RelayCommand(CanFranchiseSimulator, FranchiseSimulator);
+                return _franchiseSimulatorCommand;
+            }
+        }
+
+        public void FranchiseSimulator(object p)
+        {
+            try
+            {
+                //Igualación para no modificar las formulas en la vista
+                FranchiseReplacedFormulaCommission = FranchiseFormulaCommission;
+                FranchiseReplacedFormulaReteiva = FranchiseFormulaReteiva;
+                FranchiseReplacedFormulaReteica = FranchiseFormulaReteica;
+                FranchiseReplacedFormulaRetefte = FranchiseFormulaRetefte;
+
+                //Obtener el valor del IVA
+                FranchiseSimulatedIvaValue = FranchiseCardValue - (FranchiseCardValue / (1 + (FranchiseIvaMargin / 100)));
+
+                //Settear el diccionario
+                Dictionary<string, decimal> formulaVariables = new()
+                {
+                    { "VALOR_TARJETA", FranchiseCardValue },
+                    { "MARGEN_COMISION", FranchiseCommissionMargin },
+                    { "MARGEN_RETE_IVA", FranchiseReteivaMargin },
+                    { "MARGEN_RETE_ICA", FranchiseReteicaMargin },
+                    { "MARGEN_RETE_FUENTE", FranchiseRetefteMargin },
+                    { "VALOR_IVA", FranchiseSimulatedIvaValue }
+                };
+
+                //Reemplazar las variables en las formulas
+                foreach (var item in formulaVariables)
+                {
+                    FranchiseReplacedFormulaCommission = FranchiseReplacedFormulaCommission.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    FranchiseReplacedFormulaReteiva = FranchiseReplacedFormulaReteiva.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    FranchiseReplacedFormulaReteica = FranchiseReplacedFormulaReteica.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    FranchiseReplacedFormulaRetefte = FranchiseReplacedFormulaRetefte.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                }
+
+                //Calcular las formulas
+                FranchiseSimulatedCommission = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaCommission, null), CultureInfo.InvariantCulture);
+                FranchiseSimulatedReteiva = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaReteiva, null), CultureInfo.InvariantCulture);
+                FranchiseSimulatedReteica = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaReteica, null), CultureInfo.InvariantCulture);
+                FranchiseSimulatedRetefte = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaRetefte, null), CultureInfo.InvariantCulture);
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"Error al simular la franquicia. \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+        }
+
+        public bool CanFranchiseSimulator(object p)
+        {
+            if (FranchiseCardValue != 0 && (!string.IsNullOrEmpty(FranchiseFormulaCommission) && !string.IsNullOrEmpty(FranchiseFormulaReteiva) && !string.IsNullOrEmpty(FranchiseFormulaReteica) && !string.IsNullOrEmpty(FranchiseFormulaRetefte))) return true; 
+            return false;
+        }
+
+        public void EditFranchiseByCostCenter(int costCenterId)
+        {
+            if (IsNewRecord) return;
+
+            if (costCenterId == 0)
+            {
+                if (SelectedItem is TreasuryFranchiseMasterTreeDTO selectedFranchise)
+                {
+                    FranchiseCommissionMargin = selectedFranchise.CommissionMargin;
+                    FranchiseReteicaMargin = selectedFranchise.ReteivaMargin;
+                    FranchiseReteicaMargin = selectedFranchise.ReteicaMargin;
+                    FranchiseRetefteMargin = selectedFranchise.RetefteMargin;
+                    FranchiseIvaMargin = selectedFranchise.IvaMargin;
+                    FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchise.BankAccount.Id) ?? new BankAccountGraphQLModel();
+                    FranchiseFormulaCommission = selectedFranchise.FormulaCommission;
+                    FranchiseFormulaReteiva = selectedFranchise.FormulaReteiva;
+                    FranchiseFormulaReteica = selectedFranchise.FormulaReteica;
+                    FranchiseFormulaRetefte = selectedFranchise.FormulaRetefte;
+                    FranchiseCardValue = 0;
+                    FranchiseSimulatedCommission = 0;
+                    FranchiseSimulatedReteiva = 0;
+                    FranchiseSimulatedReteica = 0;
+                    FranchiseSimulatedRetefte = 0;
+                    FranchiseSimulatedIvaValue = 0;
+                }
+                return;
+            }
+            var selectedFranchiseSetting = FranchiseSettingsByCostCenter.FirstOrDefault(x => x.CostCenterId == costCenterId);
+            if(selectedFranchiseSetting != null)
+            {
+                FranchiseCommissionMargin = selectedFranchiseSetting.CommissionMargin;
+                FranchiseReteicaMargin = selectedFranchiseSetting.ReteivaMargin;
+                FranchiseReteicaMargin = selectedFranchiseSetting.ReteicaMargin;
+                FranchiseRetefteMargin = selectedFranchiseSetting.RetefteMargin;
+                FranchiseIvaMargin = selectedFranchiseSetting.IvaMargin;
+                FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchiseSetting.BankAccountId) ?? new BankAccountGraphQLModel();
+                FranchiseFormulaCommission = selectedFranchiseSetting.FormulaCommission;
+                FranchiseFormulaReteiva = selectedFranchiseSetting.FormulaReteiva;
+                FranchiseFormulaReteica = selectedFranchiseSetting.FormulaReteica;
+                FranchiseFormulaRetefte = selectedFranchiseSetting.FormulaRetefte;
+                FranchiseCardValue = 0;
+                FranchiseSimulatedCommission = 0;
+                FranchiseSimulatedReteiva = 0;
+                FranchiseSimulatedReteica = 0;
+                FranchiseSimulatedRetefte = 0;
+                FranchiseSimulatedIvaValue = 0;
+            }
+        }
+
+
         private ICommand _searchBankAccountingEntityCommand;
         public ICommand SearchBankAccountingEntityCommand
         {
@@ -3395,6 +4318,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     formulaReteiva
                     formulaReteica
                     formulaRetefte
+                    franchiseSettingsByCostCenter{
+                        id
+                        costCenterId
+                        commissionMargin
+                        reteivaMargin
+                        reteicaMargin
+                        retefteMargin
+                        ivaMargin
+                        bankAccountId
+                        formulaCommission
+                        formulaReteiva
+                        formulaReteica
+                        formulaRetefte
+                        franchiseId
+                    }
                   }
                 }";
                 dynamic variables = new ExpandoObject();
@@ -3436,12 +4374,12 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public async Task LoadComboBoxes()
+        public async Task LoadComboBoxesAsync()
         {
             try
             {
                 string query = @"
-                query($accountingAccountFilter: AccountingAccountFilterInput!, $cashDrawerFilter: CashDrawerFilterInput!){
+                query($accountingAccountFilter: AccountingAccountFilterInput!, $cashDrawerFilter: CashDrawerFilterInput!, $bankAccountFilter: BankAccountFilterInput!){
                   accountingAccounts(filter: $accountingAccountFilter){
                     id
                     code
@@ -3455,16 +4393,28 @@ namespace NetErp.Treasury.Masters.ViewModels
                     id
                     name
                   }
+                    bankAccounts(filter: $bankAccountFilter){
+                    id
+                    description
+                  }
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.accountingAccountFilter = new ExpandoObject();
                 variables.cashDrawerFilter = new ExpandoObject();
+                variables.bankAccountFilter = new ExpandoObject();
                 variables.cashDrawerFilter.isPettyCash = false;
                 variables.accountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
+                variables.bankAccountFilter.AllowedTypes = "AC";
                 var result = await CashDrawerService.GetDataContext<CashDrawerComboBoxesDataContext>(query, variables);
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(result.CostCenters);
+                FranchiseAccountingAccountsCommission = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts);
+                FranchiseBankAccounts = Context.AutoMapper.Map<ObservableCollection<BankAccountGraphQLModel>>(result.BankAccounts);
+                FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(result.CostCenters);
+                FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
+                FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
+                FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
                 BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
                 CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(result.CashDrawers);
                 CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
@@ -3506,13 +4456,13 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
             ];
             Context = context;
-            _errors = new Dictionary<string, List<string>>();
+            _errors = [];
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
         public async Task Initialize()
         {
-            await LoadComboBoxes();
+            await LoadComboBoxesAsync();
         }
 
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)
@@ -3694,7 +4644,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
                 cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
                 cashDrawerToUpdate.CashDrawerAutoTransfer = cashDrawerDTO.CashDrawerAutoTransfer;
-                await SetMajorCashDrawerForEdit(cashDrawerToUpdate);
+                await Task.Run(() => SetMajorCashDrawerForEdit(cashDrawerToUpdate), cancellationToken);
                 return;
             }
             if(message.UpdatedCashDrawer.IsPettyCash is false && message.UpdatedCashDrawer.Parent != null)
@@ -3720,7 +4670,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
                 auxiliaryCashDrawerToUpdate.CashDrawerAutoTransfer = auxiliaryCashDrawer.CashDrawerAutoTransfer;
                 auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
-                await SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawerToUpdate);
+                await Task.Run(() => SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
                 return;
             }
             MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO = Context.AutoMapper.Map<MinorCashDrawerMasterTreeDTO>(message.UpdatedCashDrawer);
@@ -3737,7 +4687,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             minorCashDrawerToUpdate.AccountingAccountCash = minorCashDrawerMasterTreeDTO.AccountingAccountCash;
             minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
             minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            await SetMinorCashDrawerForEdit(minorCashDrawerToUpdate);
+            await Task.Run(() => SetMinorCashDrawerForEdit(minorCashDrawerToUpdate), cancellationToken);
             return;
         }
 
@@ -3802,6 +4752,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     case nameof(BankAccountNumber):
                         if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsRS) AddError(propertyName, "El número de cuenta no puede estar vacío");
                         if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPN) AddError(propertyName, "El número celular no puede estar vacío");
+                        break;
+                    case nameof(FranchiseName):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre de la franquicia no puede estar vacío");
+                        break;
+                    case nameof(FranchiseFormulaCommission):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de comisión no puede estar vacía");
+                        break;
+                    case nameof(FranchiseFormulaReteiva):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de reteiva no puede estar vacía");
+                        break;
+                    case nameof(FranchiseFormulaReteica):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de reteica no puede estar vacía");
+                        break;
+                    case nameof(FranchiseFormulaRetefte):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de retefte no puede estar vacía");
                         break;
                     default:
                         break;
@@ -3942,7 +4907,70 @@ namespace NetErp.Treasury.Masters.ViewModels
             bankAccountToUpdate.Provider = bankAccountDTO.Provider;
             bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
             bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
-            await SetBankAccountForEdit(bankAccountToUpdate);
+            await Task.Run(() => SetBankAccountForEdit(bankAccountToUpdate));
+            return;
+        }
+
+        public async Task HandleAsync(FranchiseCreateMessage message, CancellationToken cancellationToken)
+        {
+            IsNewRecord = false;
+            TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(message.CreatedFranchise);
+            FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
+            if (franchiseDummyDTO is null) return;
+            if (!franchiseDummyDTO.IsExpanded && franchiseDummyDTO.Franchises[0].IsDummyChild)
+            {
+                await LoadFranchises(franchiseDummyDTO);
+                franchiseDummyDTO.IsExpanded = true;
+                TreasuryFranchiseMasterTreeDTO? franchise = franchiseDummyDTO.Franchises.FirstOrDefault(x => x.Id == franchiseDTO.Id);
+                if (franchise is null) return;
+                SelectedItem = franchise;
+                return;
+            }
+            if (!franchiseDummyDTO.IsExpanded)
+            {
+                franchiseDummyDTO.IsExpanded = true;
+                franchiseDummyDTO.Franchises.Add(franchiseDTO);
+                SelectedItem = franchiseDTO;
+                return;
+            }
+            franchiseDummyDTO.Franchises.Add(franchiseDTO);
+            SelectedItem = franchiseDTO;
+            return;
+        }
+
+        public Task HandleAsync(FranchiseDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
+                if (franchiseDummyDTO is null) return;
+                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.Id).First());
+            });
+            return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(FranchiseUpdateMessage message, CancellationToken cancellationToken)
+        {
+            TreasuryFranchiseMasterTreeDTO franchiseDTO = Context.AutoMapper.Map<TreasuryFranchiseMasterTreeDTO>(message.UpdatedFranchise);
+            FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
+            if (franchiseDummyDTO is null) return;
+            TreasuryFranchiseMasterTreeDTO franchiseToUpdate = franchiseDummyDTO.Franchises.FirstOrDefault(x => x.Id == message.UpdatedFranchise.Id) ?? throw new Exception("");
+            if (franchiseToUpdate is null) return;
+            franchiseToUpdate.Id = franchiseDTO.Id;
+            franchiseToUpdate.Name = franchiseDTO.Name;
+            franchiseToUpdate.FormulaCommission = franchiseDTO.FormulaCommission;
+            franchiseToUpdate.FormulaReteiva = franchiseDTO.FormulaReteiva;
+            franchiseToUpdate.FormulaReteica = franchiseDTO.FormulaReteica;
+            franchiseToUpdate.FormulaRetefte = franchiseDTO.FormulaRetefte;
+            franchiseToUpdate.CommissionMargin = franchiseDTO.CommissionMargin;
+            franchiseToUpdate.ReteivaMargin = franchiseDTO.ReteivaMargin;
+            franchiseToUpdate.ReteicaMargin = franchiseDTO.ReteicaMargin;
+            franchiseToUpdate.RetefteMargin = franchiseDTO.RetefteMargin;
+            franchiseToUpdate.IvaMargin = franchiseDTO.IvaMargin;
+            franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
+            franchiseToUpdate.AccountingAccountCommission = franchiseDTO.AccountingAccountCommission;
+            franchiseToUpdate.FranchiseSettingsByCostCenter = franchiseDTO.FranchiseSettingsByCostCenter;
+            await Task.Run(() => SetFranchiseForEdit(franchiseToUpdate));
             return;
         }
     }
@@ -3952,5 +4980,6 @@ namespace NetErp.Treasury.Masters.ViewModels
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
         public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+        public ObservableCollection<BankAccountGraphQLModel> BankAccounts { get; set; }
     }
 }

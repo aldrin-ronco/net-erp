@@ -53,5 +53,6 @@ namespace NetErp.Treasury.Masters.Views
             var control = sender as TreeViewControlView;
             control.VisibleColumns[0].Width = new GridColumnWidth(1, GridColumnUnitType.Star);
         }
+
     }
 }

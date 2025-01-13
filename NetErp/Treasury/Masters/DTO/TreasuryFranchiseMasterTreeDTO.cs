@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Models.Treasury;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
@@ -43,8 +44,8 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private float _commissionMargin;
-        public float CommissionMargin
+        private decimal _commissionMargin;
+        public decimal CommissionMargin
         {
             get { return _commissionMargin; }
             set
@@ -57,8 +58,8 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private float _reteivaMargin;
-        public float ReteivaMargin
+        private decimal _reteivaMargin;
+        public decimal ReteivaMargin
         {
             get { return _reteivaMargin; }
             set
@@ -71,8 +72,8 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private float _reteicaMargin;
-        public float ReteicaMargin
+        private decimal _reteicaMargin;
+        public decimal ReteicaMargin
         {
             get { return _reteicaMargin; }
             set
@@ -85,8 +86,8 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private float _retefteMargin;
-        public float RetefteMargin
+        private decimal _retefteMargin;
+        public decimal RetefteMargin
         {
             get { return _retefteMargin; }
             set
@@ -99,8 +100,8 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private float _ivaMargin;
-        public float IvaMargin
+        private decimal _ivaMargin;
+        public decimal IvaMargin
         {
             get { return _ivaMargin; }
             set
@@ -243,5 +244,7 @@ namespace NetErp.Treasury.Masters.DTO
                 }
             }
         }
+
+        public List<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; }
     }
 }

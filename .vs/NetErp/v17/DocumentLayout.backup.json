@@ -9,6 +9,14 @@
     {
       "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\treasury\\masters\\views\\treasuryrootmasterview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\sebas\\source\\repos\\neterp\\neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\soloparaprobarlostabs.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,8 +26,33 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 2,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TreasuryRootMasterView.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml.cs",
+              "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml.cs",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml.cs",
+              "RelativeToolTip": "NetErp\\Treasury\\Masters\\Views\\TreasuryRootMasterView.xaml.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAzwDcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-08T21:11:10.046Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SoloParaProbarLosTabs.xaml",
+              "DocumentMoniker": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeDocumentMoniker": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\SoloParaProbarLosTabs.xaml",
+              "RelativeToolTip": "NetErp\\SoloParaProbarLosTabs.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-01-03T14:16:28.159Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -28,7 +61,7 @@
               "RelativeDocumentMoniker": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "ToolTip": "C:\\Users\\sebas\\source\\repos\\NetErp\\NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
               "RelativeToolTip": "NetErp\\Treasury\\Masters\\ViewModels\\TreasuryRootMasterViewModel.cs",
-              "ViewState": "AgIAAIUAAAAAAAAAAAAQwKUAAAAvAAAAAAAAAA==",
+              "ViewState": "AgIAAFATAAAAAAAAAAAnwGATAABRAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-11-28T20:49:35.114Z",
               "EditorCaption": ""
