@@ -94,49 +94,59 @@
         <HierarchicalDataTemplate DataType="{x:Type model:BankDummyDTO}" ItemsSource="{Binding Banks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
-                        <ContextMenu>
-                        <MenuItem Command="{Binding Data.CreateBankCommand, Source={StaticResource DataContextProxy}}"
-                                  Header="Crear nuevo banco">
-                            <MenuItem.Icon>
-                                    <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
-                                </MenuItem.Icon>
-                            </MenuItem>
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                    <Image Width="18" Height="18" VerticalAlignment="Center">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Style.Triggers>
+                    <ContextMenu>
+                    <MenuItem Command="{Binding Data.CreateBankCommand, Source={StaticResource DataContextProxy}}"
+                                Header="Crear nuevo banco">
+                        <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
+                <Image Width="18" Height="18" VerticalAlignment="Center">
+                <Image.Style>
+                    <Style TargetType="Image">
+                        <Style.Triggers>
 
-                                <!--Close Folder-->
+                            <!--Close Folder-->
 
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
-                                    </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
+                                </MultiDataTrigger.Conditions>
 
-                                    <!--PlaceHolderImage-->
+                                <!--PlaceHolderImage-->
 
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
-                                </MultiDataTrigger>
+                                <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
+                            </MultiDataTrigger>
 
-                                <!--Open Folder-->
+                            <!--Open Folder-->
 
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
                 </Image>
                 <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
             </StackPanel>
         </HierarchicalDataTemplate>
         <HierarchicalDataTemplate DataType="{x:Type model:FranchiseDummyDTO}" ItemsSource="{Binding Franchises, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding Data.CreateFranchiseCommand, Source={StaticResource DataContextProxy}}"
+                                Header="Crear nueva franquicia">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
@@ -488,6 +498,21 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type model:TreasuryFranchiseMasterTreeDTO}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="{Binding Data.DeleteFranchiseCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Eliminar franquicia: "/>
+                                    <TextBlock Text="{Binding Row.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
                 <Image Width="18" Height="18" Source="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}" VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="2 0 0 0" VerticalAlignment="Center"/>
             </StackPanel>
@@ -539,9 +564,9 @@
             </Grid.RowDefinitions>
             <dxr:RibbonControl Visibility="{Binding ContentControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
             Grid.Row="0" Margin="20 10 0 10" IsSimplified="False" 
-               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+               AllowSimplifiedRibbon="False" ShowApplicationButton="False" ToolbarShowMode="Hide" 
                RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center"
-               MinimizationButtonVisibility="Collapsed">
+               MinimizationButtonVisibility="Collapsed" AllowCustomization="False" AllowMinimizeRibbon="False">
                 <dxr:RibbonPage Caption="Opciones">
                     <dxr:RibbonPageGroup Caption="Acciones">
                         <dxb:BarButtonItem  Content="Editar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Edit/Edit_16x16.png}"
@@ -1342,6 +1367,193 @@
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
+                        </Grid>
+                    </DataTemplate>
+                    
+                    <!--franquicias-->
+                    <DataTemplate DataType="{x:Type model:TreasuryFranchiseMasterTreeDTO}">
+                        <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                            <Grid.ColumnDefinitions>
+
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                            </Grid.RowDefinitions>
+                            <!--aplicación general-->
+                            <TextBlock Text="Aplicación" Grid.Column="0" Grid.Row="0" Margin="0 5 0 5" FontWeight="Bold"/>
+                            <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="1" Margin="0 5 0 10" 
+                                              ItemsSource="{Binding Data.FranchiseCostCenters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseSelectedCostCenter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              DisplayMember="Name" IsTextEditable="False"
+                                              IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanNegationConverter}}"/>
+
+                            <TextBlock Text="Cuenta Bancaria" Grid.Column="0" Grid.Row="2" Margin="0 10 0 5" FontWeight="Bold"/>
+                            <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="3" Margin="0 5 0 10"
+                                              ItemsSource="{Binding Data.FranchiseBankAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseSelectedBankAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              DisplayMember="Description" IsTextEditable="False"/>
+
+                            <TextBlock Text="Nombre de la franquicia" Grid.Column="0" Grid.Row="4" Margin="0 10 0 5" FontWeight="Bold"/>
+                            <dxe:TextEdit Grid.Column="0" Grid.Row="5" Margin="0 5 0 10" x:Name="FranchiseName" CharacterCasing="Upper"
+                                          Text="{Binding Data.FranchiseName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+
+                            <TextBlock Text="Tipo de tarjeta" Grid.Column="0" Grid.Row="6" Margin="0 10 0 5" FontWeight="Bold"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="7" Margin="0 5 0 10"
+                                        IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                <RadioButton Content="Débito" GroupName="Type" Margin="0 0 5 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseType, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TD, UpdateSourceTrigger=PropertyChanged}"/>
+                                <RadioButton Content="Crédito" GroupName="Type" Margin="5 0 0 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseType, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TC, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                            <TextBlock Text="Cuenta de comisiones" Grid.Column="0" Grid.Row="8" Margin="0 10 0 5" FontWeight="Bold"/>
+                            <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="9" Margin="0 5 0 10"
+                                              ItemsSource="{Binding Data.FranchiseAccountingAccountsCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseSelectedAccountingAccountCommission, Mode=TwoWay,UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                              DisplayMember="FullName" IsTextEditable="False"/>
+
+                            <TextBlock Text="SIMULADOR" Grid.Column="0" Grid.Row="10" FontWeight="Bold" HorizontalAlignment="Center" FontSize="16"/>
+                            <Grid Grid.Column="0" Grid.Row="11" Margin="0 10 0 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.3*"/>
+                                    <ColumnDefinition Width="0.6*"/>
+                                    <ColumnDefinition Width="0.4*"/>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="0.4*"/>
+                                    <ColumnDefinition Width="0.5*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                </Grid.RowDefinitions>
+
+
+                                
+                                <!--valor tarjetas-->
+                                <TextBlock Text="Valor Tarjetas" Grid.Column="0" Grid.Row="1" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[VALOR_TARJETA]" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0 5 0 5" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseCardValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="1" Margin="0 5 5 5" HorizontalContentAlignment="Right"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                              Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+
+                                <!--margen iva-->
+                                <TextBlock Text="Margen I.V.A" Grid.Column="0" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[MARGEN_IVA]" Grid.Column="1" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseIvaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="2" Margin="0 5 5 5" HorizontalContentAlignment="Right"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
+                                              Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+                                <!--valor iva-->
+                                <TextBlock Text="Valor I.V.A" Grid.Column="3" Grid.Row="2" Margin="0 0 5 5" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <TextBlock Text="[VALOR_IVA]" Grid.Column="4" Grid.Row="2" VerticalAlignment="Center" Margin="5 0 0 5" FontWeight="Bold" HorizontalAlignment="Left"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedIvaValue, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="5" Grid.Row="2" Margin="5 5 5 5" IsReadOnly="True"
+                                              HorizontalContentAlignment="Right" MaskType="Numeric" MaskCulture="en-US"
+                                              Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
+
+                                <!--margen comision-->
+                                <TextBlock Text="Comisión" Grid.Column="0" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[MARGEN_COMISION]" Grid.Column="1" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseCommissionMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="3" Margin="0 5 5 5"  HorizontalContentAlignment="Right" MaskCulture="en-US"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="3" Grid.Row="3" Margin="5 5 5 5" CharacterCasing="Upper"/>
+                                <Button Grid.Column="4" Grid.Row="3" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaCommissionCommand, Source={StaticResource DataContextProxy}}">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="-1 0 5 0"/>
+                                            <TextBlock Text="Resturar"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedCommission, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="5" Grid.Row="3" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
+                                              HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
+
+                                <!--rete iva-->
+                                <TextBlock Text="ReteIVA" Grid.Column="0" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[MARGEN_RETE_IVA]" Grid.Column="1" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseReteivaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="4" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="3" Grid.Row="4" Margin="5 5 5 5" CharacterCasing="Upper"/>
+                                <Button Grid.Column="4" Grid.Row="4" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaReteivaCommand, Source={StaticResource DataContextProxy}}">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="-1 0 5 0"/>
+                                            <TextBlock Text="Resturar"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedReteiva, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="5" Grid.Row="4" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
+                                              HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
+
+                                <!--rete ica-->
+                                <TextBlock Text="ReteICA" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[MARGEN_RETE_ICA]" Grid.Column="1" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseReteicaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="5" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="3" Grid.Row="5" Margin="5 5 5 5" CharacterCasing="Upper"/>
+                                <Button Grid.Column="4" Grid.Row="5" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaReteicaCommand, Source={StaticResource DataContextProxy}}">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="-1 0 5 0"/>
+                                            <TextBlock Text="Resturar"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedReteica, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="5" Grid.Row="5" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
+                                              HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
+
+                                <!--rete fuente-->
+                                <TextBlock Text="ReteFuente" Grid.Column="0" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center"/>
+                                <TextBlock Text="[MARGEN_RETE_FUENTE]" Grid.Column="1" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseRetefteMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="2" Grid.Row="6" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
+                                              MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="3" Grid.Row="6" Margin="5 5 5 5" CharacterCasing="Upper"/>
+                                <Button Grid.Column="4" Grid.Row="6" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaRetefteCommand, Source={StaticResource DataContextProxy}}">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="{dx:DXImage 'Images/Actions/Refresh_16x16.png'}" Margin="-1 0 5 0"/>
+                                            <TextBlock Text="Resturar"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedRetefte, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                              Grid.Column="5" Grid.Row="6" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
+                                              HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
+
+                                <Button Grid.Column="5" Grid.Row="7" Margin="5 5 5 5" Command="{Binding Data.FranchiseSimulatorCommand, Source={StaticResource DataContextProxy}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="{dx:DXImage 'Images/Chart/ChangeChartSeriesType_16x16.png'}" Margin="-1 0 5 0"/>
+                                        <TextBlock Text="Simular"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </Grid>
                     </DataTemplate>
                 </ContentControl.Resources>

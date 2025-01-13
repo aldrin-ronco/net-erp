@@ -211,6 +211,7 @@ namespace NetErp
                 _ = cfg.CreateMap<BankAccountGraphQLModel, TreasuryBankAccountMasterTreeDTO>();
                 _ = cfg.CreateMap<FranchiseGraphQLModel, TreasuryFranchiseMasterTreeDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryBankAccountCostCenterDTO>();
+                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
 
             });
 
