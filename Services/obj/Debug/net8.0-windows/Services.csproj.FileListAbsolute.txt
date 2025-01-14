@@ -18,3 +18,6 @@ C:\Users\sebas\source\repos\NetErp\Services\obj\Debug\net8.0-windows\Services.dl
 C:\Users\sebas\source\repos\NetErp\Services\obj\Debug\net8.0-windows\refint\Services.dll
 C:\Users\sebas\source\repos\NetErp\Services\obj\Debug\net8.0-windows\Services.pdb
 C:\Users\sebas\source\repos\NetErp\Services\obj\Debug\net8.0-windows\ref\Services.dll
+C:\Users\User\source\repos\net-erp\Services\obj\Debug\net8.0-windows\Services.dll
+C:\Users\User\source\repos\net-erp\Services\obj\Debug\net8.0-windows\refint\Services.dll
+C:\Users\User\source\repos\net-erp\Services\obj\Debug\net8.0-windows\Services.pdb
