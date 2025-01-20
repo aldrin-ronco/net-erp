@@ -17,4 +17,19 @@ namespace Models.Global
             return Name;
         }
     }
+
+    public class SmtpCreateMessage
+    {
+        public SmtpGraphQLModel CreatedSmtp { get; set; } = new SmtpGraphQLModel();
+    }
+
+    public class SmtpUpdateMessage
+    {
+        public SmtpGraphQLModel UpdatedSmtp { get; set; } = new SmtpGraphQLModel();
+    }
+
+    public class SmtpDeleteMessage
+    {
+        public SmtpGraphQLModel DeletedSmtp { get; set; } = new SmtpGraphQLModel();
+    }
 }

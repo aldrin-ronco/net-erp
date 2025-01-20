@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NetErp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41a2663a0c92d2e34489be3e5724e6b55774a1cb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+51bd4bd12e374b04280c0a468356a1379795bb76")]
 [assembly: System.Reflection.AssemblyProductAttribute("NetErp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NetErp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

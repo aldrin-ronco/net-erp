@@ -59,6 +59,7 @@
             </MenuItem>
             <MenuItem Header="Global">
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
+                <MenuItem Header="Administración de smtp" x:Name="OpenSmtp"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

@@ -22,6 +22,15 @@
     <Compile Update="Global\Shell\Views\ShellView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Global\Smtp\Views\SmtpDetailView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\Smtp\Views\SmtpMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\Smtp\Views\SmtpView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Inventory\CatalogItems\TabControlPages\Views\BasicView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -97,6 +106,15 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\Shell\Views\ShellView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Smtp\Views\SmtpDetailView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Smtp\Views\SmtpMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Smtp\Views\SmtpView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Inventory\CatalogItems\TabControlPages\Views\BasicView.xaml">

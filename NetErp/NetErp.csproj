@@ -54,6 +54,7 @@
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.layoutcontrol" Version="23.2.3" />
+    <PackageReference Include="devexpress.wpf.ribbon" Version="24.2.3" />
     <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="1.6.0" />
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
@@ -71,11 +72,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="DevExpress.Images.v23.2">
-      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 23.2\Components\Bin\Framework\DevExpress.Images.v23.2.dll</HintPath>
+    <Reference Include="DevExpress.Images.v24.2">
+      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Images.v24.2.dll</HintPath>
     </Reference>
-    <Reference Include="DevExpress.Xpf.Ribbon.v23.2">
-      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 23.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v23.2.dll</HintPath>
+    <Reference Include="DevExpress.Xpf.Ribbon.v24.2">
+      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v24.2.dll</HintPath>
     </Reference>
   </ItemGroup>
 
