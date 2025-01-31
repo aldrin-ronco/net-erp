@@ -1,26 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj": {}
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\NetErp\\NetErp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj",
         "projectName": "Common",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -28,7 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -46,8 +44,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -84,32 +81,27 @@
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
-            },
-            "Microsoft.WindowsDesktop.App": {
-              "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj",
         "projectName": "Dictionaries",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -117,7 +109,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -135,8 +127,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -163,27 +154,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj",
         "projectName": "DTOLibrary",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -191,15 +180,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj"
               }
             }
           }
@@ -213,8 +202,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -235,27 +223,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\Extensions.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\Extensions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\Extensions.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\Extensions.csproj",
         "projectName": "Extensions",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\Extensions.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\Extensions.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -263,18 +249,18 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj"
               }
             }
           }
@@ -288,8 +274,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -310,27 +295,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj",
         "projectName": "Models",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -338,18 +321,18 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj"
               }
             }
           }
@@ -363,8 +346,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -385,27 +367,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\NetErp\\NetErp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\NetErp\\NetErp.csproj",
         "projectName": "NetErp",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\NetErp\\NetErp.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\NetErp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -413,30 +393,30 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Dictionaries\\Dictionaries.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Dictionaries\\Dictionaries.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\DTOLibrary\\DTOLibrary.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\Extensions.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Extensions\\Extensions.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\Extensions.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Extensions\\Extensions.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\Services.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\Services.csproj"
               }
             }
           }
@@ -450,8 +430,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -537,31 +516,29 @@
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             },
-            "Microsoft.WindowsDesktop.App": {
+            "Microsoft.WindowsDesktop.App.WPF": {
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj": {
+    "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\Services.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\Services.csproj",
         "projectName": "Services",
-        "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\obj\\",
+        "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\Services.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Services\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files\\DevExpress 23.1\\Components\\Offline Packages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 23.1.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -569,18 +546,18 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\DevExpress 24.2\\Components\\System\\Components\\Packages": {},
+          "C:\\Program Files\\DevExpress 23.1\\Components\\System\\Components\\Packages": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Common\\Common.csproj"
               },
-              "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
-                "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj"
+              "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
+                "projectPath": "C:\\Users\\user\\Source\\Repos\\net-erp\\Models\\Models.csproj"
               }
             }
           }
@@ -594,8 +571,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.100"
+        }
       },
       "frameworks": {
         "net8.0-windows7.0": {
@@ -626,7 +602,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

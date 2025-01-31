@@ -9,8 +9,15 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using DevExpress.Xpf.DXBinding;
+using BusyIndicator;
+using Caliburn.Micro;
+using NetErp.Global.MainMenu.ViewModels;
+using NetErp.Global.MainMenu.Views;
+using NetErp.Global.Modals.Views;
 using NetErp.Global.Shell.Views;
+using NetErp.Helpers;
+using NetErp.IoContainer;
+using NetErp.UserControls;
 using System;
 using System.Diagnostics;
 using System.Windows;
@@ -20,7 +27,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Controls.Ribbon;
 using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Forms.Integration;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Markup;
@@ -57,13 +63,13 @@ namespace NetErp.Global.Shell.Views {
         /// InitializeComponent
         /// </summary>
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "9.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.6.0")]
         public void InitializeComponent() {
             if (_contentLoaded) {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/NetErp;component/global/shell/views/shellview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/NetErp;V1.0.0.0;component/global/shell/views/shellview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Global\Shell\Views\ShellView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
@@ -73,7 +79,7 @@ namespace NetErp.Global.Shell.Views {
         }
         
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "9.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.6.0")]
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Design", "CA1033:InterfaceMethodsShouldBeCallableByChildTypes")]
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
