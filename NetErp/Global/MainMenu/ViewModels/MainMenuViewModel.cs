@@ -12,6 +12,7 @@ using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
+using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
@@ -459,6 +460,27 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 SmtpViewModel instance = IoC.Get<SmtpViewModel>();
                 instance.DisplayName = "Administración de smtp";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async void OpenCreditLimit()
+        {
+            try
+            {
+                CreditLimitViewModel instance = IoC.Get<CreditLimitViewModel>();
+                instance.DisplayName = "Administración de cupos de crédito";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;

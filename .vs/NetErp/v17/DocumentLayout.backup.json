@@ -3,32 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\net-erp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\billing\\creditlimit\\viewmodels\\creditlimitmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\creditlimit\\viewmodels\\creditlimitmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\billing\\creditlimit\\views\\creditlimitmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\creditlimit\\views\\creditlimitmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\billing\\customers\\viewmodels\\customerdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\neterp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\neterp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|c:\\users\\user\\source\\repos\\net-erp\\models\\billing\\creditlimitgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|solutionrelative:models\\billing\\creditlimitgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\views\\smtpmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\views\\smtpmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\views\\smtpdetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\views\\smtpdetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|c:\\users\\user\\source\\repos\\net-erp\\common\\interfaces\\igenericdataaccess.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{62221E3E-D218-4B42-B352-2846F2F5F78C}|Common\\Common.csproj|solutionrelative:common\\interfaces\\igenericdataaccess.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,93 +30,71 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AccountingEntityMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ViewState": "AgIAAEwBAAAAAAAAAAAUwGQBAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-17T21:15:03.003Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "NetErp",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
-              "RelativeDocumentMoniker": "NetErp\\NetErp.csproj",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
-              "RelativeToolTip": "NetErp\\NetErp.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-01-17T21:14:37.803Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "SmtpDetailView.xaml",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-01-16T20:19:01.91Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "SmtpMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-01-15T16:19:14.845Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "SmtpDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "ViewState": "AgIAAEYAAAAAAAAAAAApwFQAAAAUAAAAAAAAAA==",
+              "Title": "CustomerDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\Customers\\ViewModels\\CustomerDetailViewModel.cs",
+              "ViewState": "AgIAAOoCAAAAAAAAAAASwPACAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-16T20:09:26.685Z",
+              "WhenOpened": "2025-01-30T16:08:45.404Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "SmtpMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "ViewState": "AgIAACgBAAAAAAAAAAA2wEQBAAA3AAAAAAAAAA==",
+              "Title": "CreditLimitMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\CreditLimit\\ViewModels\\CreditLimitMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\CreditLimit\\ViewModels\\CreditLimitMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\CreditLimit\\ViewModels\\CreditLimitMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Billing\\CreditLimit\\ViewModels\\CreditLimitMasterViewModel.cs",
+              "ViewState": "AgIAAIsBAAAAAAAAAAAjwJkBAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-15T15:55:40.598Z",
+              "WhenOpened": "2025-01-27T14:28:57.853Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "SmtpViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAwAAAAvAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "CreditLimitGraphQLModel.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Billing\\CreditLimitGraphQLModel.cs",
+              "RelativeDocumentMoniker": "Models\\Billing\\CreditLimitGraphQLModel.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Billing\\CreditLimitGraphQLModel.cs",
+              "RelativeToolTip": "Models\\Billing\\CreditLimitGraphQLModel.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAQwBYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-15T15:46:40.285Z"
+              "WhenOpened": "2025-01-30T16:03:12.181Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IGenericDataAccess.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Interfaces\\IGenericDataAccess.cs",
+              "RelativeDocumentMoniker": "Common\\Interfaces\\IGenericDataAccess.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Interfaces\\IGenericDataAccess.cs",
+              "RelativeToolTip": "Common\\Interfaces\\IGenericDataAccess.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAAAD8AAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-30T15:53:02.557Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CreditLimitMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\CreditLimit\\Views\\CreditLimitMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Billing\\CreditLimit\\Views\\CreditLimitMasterView.xaml",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Billing\\CreditLimit\\Views\\CreditLimitMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Billing\\CreditLimit\\Views\\CreditLimitMasterView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-01-27T14:55:43.966Z",
+              "EditorCaption": ""
             }
           ]
         }

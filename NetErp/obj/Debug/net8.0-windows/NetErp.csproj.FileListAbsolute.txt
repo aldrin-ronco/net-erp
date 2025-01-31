@@ -556,3 +556,7 @@ C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\V
 C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpMasterView.baml
 C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpDetailView.g.cs
 C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpDetailView.baml
+C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitMasterView.g.cs
+C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitView.g.cs
+C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitMasterView.baml
+C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitView.baml
