@@ -7,6 +7,12 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="Billing\CreditLimit\Views\CreditLimitMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Billing\CreditLimit\Views\CreditLimitView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Global\CostCenters\Views\CostCenterMasterView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -90,6 +96,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="Billing\CreditLimit\Views\CreditLimitMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Billing\CreditLimit\Views\CreditLimitView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Global\CostCenters\Views\CostCenterMasterView.xaml">
       <SubType>Designer</SubType>
     </Page>

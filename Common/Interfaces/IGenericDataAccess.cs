@@ -46,6 +46,29 @@ namespace Common.Interfaces
             }
         }
 
+        public async Task<IEnumerable<TModel>> SenMutation(string query, object variables)
+        {
+            try
+            {
+                GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
+                client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+                GraphQLResponse<ListItemResponseType> result = await client.SendMutationAsync<ListItemResponseType>(new GraphQLRequest()
+                {
+                    Query = query,
+                    Variables = variables
+                });
+                if (result.Errors != null)
+                {
+                    throw new Exception(result.Errors[0].Message);
+                }
+                return result.Data.ListResponse;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public async Task<TModel> Update(string query, object variables)
         {
             try
