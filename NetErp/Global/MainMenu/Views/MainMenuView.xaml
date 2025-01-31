@@ -60,9 +60,10 @@
             <MenuItem Header="Tesorería">
                 <MenuItem Header="Administración de cajas, bancos y franquicias" x:Name="OpenTreasuryRootMaster"/>
             </MenuItem>
-            <MenuItem Header="Global">
+            <MenuItem Header="Global" Click="MenuItem_Click">
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
                 <MenuItem Header="Administración de smtp" x:Name="OpenSmtp"/>
+                <MenuItem Header="Administración de email" x:Name="OpenEmail"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

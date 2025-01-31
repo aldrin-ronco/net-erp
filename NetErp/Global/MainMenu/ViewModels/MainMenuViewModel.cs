@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Caliburn.Micro;
@@ -8,6 +9,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Xpf.Controls.Internal;
 using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
@@ -27,6 +29,8 @@ using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
 using NetErp.Global.CostCenters.ViewModels;
+using NetErp.Global.Email.ViewModels;
+using NetErp.Global.Email.Views;
 using NetErp.Global.Smtp.ViewModels;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.ViewModels;
@@ -485,10 +489,21 @@ namespace NetErp.Global.MainMenu.ViewModels
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (Exception ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async void OpenEmail()
+        {
+            try
+            {
+                EmailViewModel instance = IoC.Get<EmailViewModel>();
+                instance.DisplayName = "Administración de email";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
             }
             catch (Exception ex)
             {

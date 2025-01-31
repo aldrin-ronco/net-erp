@@ -94,7 +94,8 @@
                     <dxg:TableView AllowEditing="False" 
                                    AllowCascadeUpdate="False" 
                                    EnableSelectedRowAppearance="True"
-                                   ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                                   ShowGroupPanel="False" AlternateRowBackground="Beige"
+                                   AllowColumnMoving="False"/>
                 </dxg:GridControl.View>
                     
                 <dxg:GridColumn Header="Host" HorizontalHeaderContentAlignment="Center" Width="auto"
@@ -123,6 +124,8 @@
                     </dxg:GridColumn.CellTemplate>
                 </dxg:GridColumn>
             </dxg:GridControl>
+            
+            
         </busyIndicator:BusyMask>
 
         <uc:GridPaging Grid.Row="4" Grid.Column="0" 

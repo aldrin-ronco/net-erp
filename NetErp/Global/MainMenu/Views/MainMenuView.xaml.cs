@@ -11,5 +11,10 @@ namespace NetErp.Global.MainMenu.Views
         {
             InitializeComponent();
         }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
