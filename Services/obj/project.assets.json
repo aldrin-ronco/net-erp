@@ -1544,25 +1544,25 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {},
+    "C:\\Users\\Usuario\\.nuget\\packages\\": {},
     "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj",
+      "projectUniqueName": "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Services\\Services.csproj",
       "projectName": "Services",
-      "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\Services.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\source\\repos\\net-erp\\Services\\obj\\",
+      "projectPath": "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Services\\Services.csproj",
+      "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Services\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\DevExpress 24.2\\Components\\Offline Packages",
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 24.2.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -1579,11 +1579,11 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj": {
-              "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Common\\Common.csproj"
+            "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Common\\Common.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Common\\Common.csproj"
             },
-            "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj": {
-              "projectPath": "C:\\Users\\User\\source\\repos\\net-erp\\Models\\Models.csproj"
+            "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Models\\Models.csproj": {
+              "projectPath": "C:\\Users\\Usuario\\Source\\Repos\\net-erp\\Models\\Models.csproj"
             }
           }
         }

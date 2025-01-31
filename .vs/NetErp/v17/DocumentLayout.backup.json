@@ -1,34 +1,38 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\net-erp\\",
+  "WorkspaceRootPath": "C:\\Users\\Usuario\\source\\repos\\net-erp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\views\\emaildetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\views\\emaildetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\books\\accountingentities\\viewmodels\\accountingentitymasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\views\\emailmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\views\\emailmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\viewmodels\\emailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\viewmodels\\emailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\neterp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\neterp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\viewmodels\\emaildetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\viewmodels\\emaildetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\views\\smtpmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\views\\smtpmasterview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\viewmodels\\emailmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\viewmodels\\emailmasterviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\views\\smtpdetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\views\\smtpdetailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\neterp\\global\\email\\views\\emailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\email\\views\\emailview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|c:\\users\\user\\source\\repos\\net-erp\\neterp\\global\\smtp\\viewmodels\\smtpviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{11AB86FF-215E-414A-BABB-044718D7D221}|NetErp\\NetErp.csproj|solutionrelative:neterp\\global\\smtp\\viewmodels\\smtpviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\models\\global\\emailgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{40739804-DE0B-49FE-8AD5-542F9C044A74}|Models\\Models.csproj|solutionrelative:models\\global\\emailgraphqlmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1552B138-0AB0-4A23-B412-A282665AC06D}|Services\\Services.csproj|c:\\users\\usuario\\source\\repos\\net-erp\\services\\global\\dal\\postgresql\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1552B138-0AB0-4A23-B412-A282665AC06D}|Services\\Services.csproj|solutionrelative:services\\global\\dal\\postgresql\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,93 +42,116 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AccountingEntityMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Books\\AccountingEntities\\ViewModels\\AccountingEntityMasterViewModel.cs",
-              "ViewState": "AgIAAEwBAAAAAAAAAAAUwGQBAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-17T21:15:03.003Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "NetErp",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
-              "RelativeDocumentMoniker": "NetErp\\NetErp.csproj",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\NetErp.csproj",
-              "RelativeToolTip": "NetErp\\NetErp.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-01-17T21:14:37.803Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "SmtpDetailView.xaml",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\Views\\SmtpDetailView.xaml",
+              "Title": "EmailView.xaml",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\Views\\EmailView.xaml",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailView.xaml",
+              "RelativeToolTip": "NetErp\\Global\\Email\\Views\\EmailView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-01-16T20:19:01.91Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "SmtpMasterView.xaml",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\Views\\SmtpMasterView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-01-15T16:19:14.845Z"
+              "WhenOpened": "2025-01-30T18:52:38.71Z",
+              "IsPinned": true,
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "SmtpDetailViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpDetailViewModel.cs",
-              "ViewState": "AgIAAEYAAAAAAAAAAAApwFQAAAAUAAAAAAAAAA==",
+              "Title": "EmailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\ViewModels\\EmailViewModel.cs",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Global\\Email\\ViewModels\\EmailViewModel.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAqwEAAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-16T20:09:26.685Z",
+              "WhenOpened": "2025-01-29T13:29:13.155Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "EmailMasterView.xaml",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailMasterView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\Views\\EmailMasterView.xaml",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailMasterView.xaml",
+              "RelativeToolTip": "NetErp\\Global\\Email\\Views\\EmailMasterView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-01-29T13:54:14Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "EmailMasterViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailMasterViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\ViewModels\\EmailMasterViewModel.cs",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailMasterViewModel.cs",
+              "RelativeToolTip": "NetErp\\Global\\Email\\ViewModels\\EmailMasterViewModel.cs",
+              "ViewState": "AgIAALcAAAAAAAAAAIAwwL0AAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-29T13:54:11.528Z",
+              "IsPinned": true,
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "SmtpMasterViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpMasterViewModel.cs",
-              "ViewState": "AgIAACgBAAAAAAAAAAA2wEQBAAA3AAAAAAAAAA==",
+              "Title": "EmailDetailView.xaml",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailDetailView.xaml",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\Views\\EmailDetailView.xaml",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\Views\\EmailDetailView.xaml",
+              "RelativeToolTip": "NetErp\\Global\\Email\\Views\\EmailDetailView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-01-29T13:22:45.696Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EmailDetailViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailDetailViewModel.cs",
+              "RelativeDocumentMoniker": "NetErp\\Global\\Email\\ViewModels\\EmailDetailViewModel.cs",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\NetErp\\Global\\Email\\ViewModels\\EmailDetailViewModel.cs",
+              "RelativeToolTip": "NetErp\\Global\\Email\\ViewModels\\EmailDetailViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-15T15:55:40.598Z",
+              "WhenOpened": "2025-01-29T13:22:17.098Z",
+              "IsPinned": true,
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 6,
-              "Title": "SmtpViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "RelativeDocumentMoniker": "NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\net-erp\\NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "RelativeToolTip": "NetErp\\Global\\Smtp\\ViewModels\\SmtpViewModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAwAAAAvAAAAAAAAAA==",
+              "Title": "EmailGraphQLModel.cs",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\Models\\Global\\EmailGraphQLModel.cs",
+              "RelativeDocumentMoniker": "Models\\Global\\EmailGraphQLModel.cs",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\Models\\Global\\EmailGraphQLModel.cs",
+              "RelativeToolTip": "Models\\Global\\EmailGraphQLModel.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAqwBQAAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-01-15T15:46:40.285Z"
+              "WhenOpened": "2025-01-30T16:51:15.019Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EmailService.cs",
+              "DocumentMoniker": "C:\\Users\\Usuario\\source\\repos\\net-erp\\Services\\Global\\DAL\\PostgreSQL\\EmailService.cs",
+              "RelativeDocumentMoniker": "Services\\Global\\DAL\\PostgreSQL\\EmailService.cs",
+              "ToolTip": "C:\\Users\\Usuario\\source\\repos\\net-erp\\Services\\Global\\DAL\\PostgreSQL\\EmailService.cs",
+              "RelativeToolTip": "Services\\Global\\DAL\\PostgreSQL\\EmailService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-30T18:54:12.703Z",
+              "IsPinned": true,
+              "EditorCaption": ""
             }
           ]
         }

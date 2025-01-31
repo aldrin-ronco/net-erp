@@ -24,3 +24,16 @@ C:\Users\User\source\repos\net-erp\Common\obj\Debug\net8.0-windows\Common.dll
 C:\Users\User\source\repos\net-erp\Common\obj\Debug\net8.0-windows\refint\Common.dll
 C:\Users\User\source\repos\net-erp\Common\obj\Debug\net8.0-windows\Common.pdb
 C:\Users\User\source\repos\net-erp\Common\obj\Debug\net8.0-windows\ref\Common.dll
+C:\Users\Usuario\Source\Repos\net-erp\Common\bin\Debug\net8.0-windows\Common.deps.json
+C:\Users\Usuario\Source\Repos\net-erp\Common\bin\Debug\net8.0-windows\Common.dll
+C:\Users\Usuario\Source\Repos\net-erp\Common\bin\Debug\net8.0-windows\Common.pdb
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.csproj.AssemblyReference.cache
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.AssemblyInfoInputs.cache
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.AssemblyInfo.cs
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.csproj.CoreCompileInputs.cache
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.sourcelink.json
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.dll
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\refint\Common.dll
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\Common.pdb
+C:\Users\Usuario\Source\Repos\net-erp\Common\obj\Debug\net8.0-windows\ref\Common.dll

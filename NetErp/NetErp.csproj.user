@@ -13,6 +13,15 @@
     <Compile Update="Global\CostCenters\Views\CostCenterView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Global\Email\Views\EmailDetailView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\Email\Views\EmailMasterView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Global\Email\Views\EmailView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Global\MainMenu\Views\MainMenuView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -97,6 +106,15 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\Dictionaries\Views.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Email\Views\EmailDetailView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Email\Views\EmailMasterView.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Global\Email\Views\EmailView.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Global\MainMenu\Views\MainMenuView.xaml">
