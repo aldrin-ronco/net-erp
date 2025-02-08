@@ -82,11 +82,11 @@
             <dxr:RibbonPage Caption="General">
 
                 <dxr:RibbonPageGroup Caption="Acciones">
-                    <dxb:BarButtonItem Glyph="{dx:DXImage Image=Backward_16x16.png}" 
-                                           LargeGlyph="{dx:DXImage Image=Backward_32x32.png}" 
+                     <!--IsEnabled="{Binding Path=CanGoBack, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"-->
+                    <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
                                            Content="Regresar"
                                            RibbonStyle="Large"
-                                           IsEnabled="{Binding Path=CanGoBack, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
                                            Hint="Regresar">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=GoBackCommand}" EventName="ItemClick"/>
@@ -96,8 +96,8 @@
                     <dxb:BarItemSeparator/>
                     
                     <dxb:BarButtonItem Content="Guardar" 
-                                           Glyph="{dx:DXImage Image=Save_16x16.png}" 
-                                           LargeGlyph="{dx:DXImage Image=Save_32x32.png}"                                             
+                                           Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
                                            Description="Publicar comprobante en contabilidad"
                                            Hint="Publicar comprobante en contabilidad"    
                                            IsEnabled="{Binding Path=CanPublishAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -110,8 +110,8 @@
                     <dxb:BarItemLinkSeparator/>
 
                     <dxb:BarButtonItem Content="Eliminar" 
-                                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
-                                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                                           Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                            Description="Eliminar comprobantes"
                                            Hint="Eliminar comprobantes"    
                                            IsEnabled="{Binding Path=CanDeleteAccountingEntries, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -376,13 +376,13 @@
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="true"/>
                                                     </MultiDataTrigger.Conditions>
-                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png"/>
+                                                <Setter Property="Source" Value="{dx:DXImage 'Images/Print/Preview_16x16.png'}"/>
                                                 </MultiDataTrigger>
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="false"/>
                                                     </MultiDataTrigger.Conditions>
-                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/History/Undo_16x16.png"/>
+                                                <Setter Property="Source" Value="{dx:DXImage 'Images/History/Undo_16x16.png'}"/>
                                                 </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -441,7 +441,7 @@
                 Click="SetFocusOnAutoCompleteComboBox"
                 TabIndex="14"
                 x:Name="AddRecord">
-                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Width="16">
+                    <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>

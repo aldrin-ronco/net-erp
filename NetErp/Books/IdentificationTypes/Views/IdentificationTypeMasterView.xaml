@@ -60,8 +60,8 @@
             <dxr:RibbonPage Caption="General">
 
                 <dxr:RibbonPageGroup Caption="Acciones">
-                    <dxb:BarButtonItem     Glyph="{dx:DXImage Image=New_16x16.png}" 
-                           LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
+                    <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                           LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
                            Content="Nuevo"
                            RibbonStyle="Large"
                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
@@ -72,8 +72,8 @@
                     </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
                     <dxb:BarButtonItem Content="Eliminar" 
-                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
-                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                           Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                           LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                            Description="Eliminar"
                            Hint="Eliminar tipo de documento seleccionado"    
                            IsEnabled="{Binding Path=CanDeleteIdentificationType, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"

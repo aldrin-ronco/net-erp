@@ -9,6 +9,8 @@
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dotNetKitControls="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
              xmlns:local="clr-namespace:NetErp.Books.Reports.AuxiliaryBook.Views"
              xmlns:vm="clr-namespace:NetErp.Books.Reports.AuxiliaryBook.ViewModels"
@@ -110,7 +112,7 @@
                         <ColumnDefinition Width="auto"/>
                         <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
-                    <DatePicker Grid.Column="1" Margin="4" x:Name="InitialDate" SelectedDate="{Binding Path=InitialDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <DatePicker Grid.Column="1" Margin="4" SelectedDate="{Binding Path=InitialDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <TextBlock Text="Hasta" Grid.Column="2" VerticalAlignment="Center"/>
                     <DatePicker Grid.Column="3" Margin="4" SelectedDate="{Binding Path=FinalDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
@@ -150,7 +152,7 @@
 
                 <Button Grid.Row="5" Grid.Column="2" Width="100" HorizontalAlignment="Right" Margin="0 0 4 4" x:Name="Search">
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png" Stretch="None" VerticalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Print/Preview_16x16.png'}" Stretch="None" VerticalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>

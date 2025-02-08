@@ -44,8 +44,8 @@
                     <dxb:BarItemSeparator/>
 
                     <dxb:BarButtonItem Content="Editar" 
-                               Glyph="{dxc:DXImage Image=Edit_16x16.png}" 
-                               LargeGlyph="{dxc:DXImage Image=Edit_32x32.png}"                                             
+                               Glyph="{dx:DXImage 'Images/Edit/Edit_16x16.png'}" 
+                               LargeGlyph="{dx:DXImage 'Images/Edit/Edit_32x32.png'}"                                             
                                Description="Editar comprobantes"
                                Hint="Editar comprobantes"    
                                IsEnabled="{Binding Path=CanEditAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -57,8 +57,8 @@
                     <dxb:BarItemSeparator/>
 
                     <dxb:BarButtonItem Content="Anular" 
-                               Glyph="{dxc:DXImage Image=DeleteList_16x16.png}" 
-                               LargeGlyph="{dxc:DXImage Image=DeleteList_32x32.png}"                                             
+                               Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                               LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                Description="Anular comprobante"
                                Hint="Anular comprobante"    
                                IsEnabled="{Binding Path=CanCancelAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -69,8 +69,8 @@
                     </dxb:BarButtonItem>
 
                     <dxb:BarButtonItem Content="Eliminar" 
-                               Glyph="{dxc:DXImage Image=Trash_16x16.png}" 
-                               LargeGlyph="{dxc:DXImage Image=Trash_32x32.png}"                                             
+                               Glyph="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" 
+                               LargeGlyph="{dx:DXImage 'Images/Actions/Trash_32x32.png'}"                                             
                                Description="Eliminar comprobante"
                                Hint="Eliminar comprobante"    
                                IsEnabled="{Binding Path=CanDeleteAccountingEntry, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -83,8 +83,8 @@
                     <dxb:BarItemSeparator/>
                     
                     <dxb:BarButtonItem Content="Copiar" 
-                               Glyph="{dxc:DXImage Image=Copy_16x16.png}" 
-                               LargeGlyph="{dxc:DXImage Image=Copy_32x32.png}"                                             
+                               Glyph="{dx:DXImage 'Images/Edit/Copy_16x16.png'}" 
+                               LargeGlyph="{dx:DXImage 'Images/Edit/Copy_32x32.png'}"                                             
                                Description="Copiar comprobante"
                                Hint="Copiar comprobante"    
                                IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -95,8 +95,8 @@
                     </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
                     <dxb:BarButtonItem Content="Imprimir" 
-                               Glyph="{dxc:DXImage Image=Print_16x16.png}" 
-                               LargeGlyph="{dxc:DXImage Image=Print_32x32.png}"                                             
+                               Glyph="{dx:DXImage 'Images/Print/Print_16x16.png'}" 
+                               LargeGlyph="{dx:DXImage 'Images/Print/Print_32x32.png'}"                                             
                                Description="Imprimir comprobante"
                                Hint="Imprimir comprobante"    
                                IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
