@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
@@ -54,6 +55,16 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             {
                 if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecutePaginationChangeIndex, ExecutePaginationChangeIndex);
                 return _paginationCommand;
+            }
+        }
+
+        private ICommand _printCommand;
+        public ICommand PrintCommand
+        {
+            get
+            {
+                if (_printCommand == null) this._printCommand = new DelegateCommand(Print);
+                return _printCommand;
             }
         }
 
@@ -309,8 +320,8 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
                 variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
-                variables.filter.StartDate = InitialDate;
-                variables.filter.EndDate = FinalDate;
+                variables.filter.StartDate = InitialDate.ToUniversalTime();
+                variables.filter.EndDate = FinalDate.ToUniversalTime();
                 variables.filter.CostCentersIds = costCentersIds;
                 variables.filter.Level = Level;
                 var testBalancePage = await this.Context.TestBalanceService.GetPage(query, variables);

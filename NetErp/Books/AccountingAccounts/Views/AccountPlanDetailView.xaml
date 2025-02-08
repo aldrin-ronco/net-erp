@@ -44,7 +44,7 @@
                 <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding Data.ReturnToAccountingAccountPlanMasterCommand, Source={StaticResource DataContextProxy}}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Navigation/Backward_32x32.png" Stretch="None" Margin="2">
+                                <Image Source="pack://application:,,,/DevExpress.Images.v24.2;component/Images/Navigation/Backward_32x32.png" Stretch="None" Margin="2">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
@@ -66,7 +66,7 @@
                 <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding Data.SaveCommand, Source={StaticResource DataContextProxy}}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Save/Save_32x32.png" Stretch="None" Margin="2">
+                                <Image Source="pack://application:,,,/DevExpress.Images.v24.2;component/Images/Save/Save_32x32.png" Stretch="None" Margin="2">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>

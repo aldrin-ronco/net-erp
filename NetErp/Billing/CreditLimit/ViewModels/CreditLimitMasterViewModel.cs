@@ -1,7 +1,9 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
+using DevExpress.Xpf.Core;
 using Models.Billing;
 using System;
 using System.Collections.Generic;
@@ -10,12 +12,14 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace NetErp.Billing.CreditLimit.ViewModels
 {
-    public class CreditLimitMasterViewModel: Screen
+    public class CreditLimitMasterViewModel: Screen,
+        IHandle<CreditLimitManagerMessage>
     {
         public IGenericDataAccess<CreditLimitGraphQLModel> CreditLimitService = IoC.Get<IGenericDataAccess<CreditLimitGraphQLModel>>();
         public class CreditLimitDTO: PropertyChangedBase
@@ -72,6 +76,11 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 get { return _limit; }
                 set 
                 {
+                    if(value < Used)
+                    {
+                        ThemedMessageBox.Show("Error", "El valor autorizado no puede ser menor al valor utilizado", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
                     if (_limit != value)
                     {
                         _limit = value;
@@ -111,18 +120,11 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 }
             }
 
-            private decimal _available;
-
             public decimal Available
             {
-                get { return _available; }
-                set 
+                get 
                 {
-                    if (_available != value)
-                    {
-                        _available = value;
-                        NotifyOfPropertyChange(nameof(Available));
-                    }
+                    return Limit - Used; 
                 }
             }
 
@@ -198,11 +200,25 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
         }
 
+        private bool _isBusy;
 
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
         public CreditLimitViewModel Context { get; set; }
         public CreditLimitMasterViewModel(CreditLimitViewModel context)
         {
             Context = context;
+            Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
         protected override void OnViewReady(object view)
@@ -308,6 +324,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             try
             {
+                IsBusy = true;
                 string query = @"
                 query($filter: CreditLimitFilterInput!){
                   PageResponse: creditLimitPage(filter: $filter){
@@ -334,8 +351,35 @@ namespace NetErp.Billing.CreditLimit.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.searchName = FilterSearch;
-                variables.filter.onlyCustomersWithCreditLimit = OnlyCustomersWithCreditLimit;
+                variables.filter.and = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+                variables.filter.and[0].or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                //filtro searchName 
+                variables.filter.and[0].or[0].searchName = new ExpandoObject();
+                variables.filter.and[0].or[0].searchName.@operator = "like";
+                variables.filter.and[0].or[0].searchName.value = FilterSearch.Trim().RemoveExtraSpaces();
+
+                //filtro identificatioNumber
+                variables.filter.and[0].or[1].identificationNumber = new ExpandoObject();
+                variables.filter.and[0].or[1].identificationNumber.@operator = "like";
+                variables.filter.and[0].or[1].identificationNumber.value = FilterSearch.Trim().RemoveExtraSpaces();
+
+                //filtro limite
+                if(OnlyCustomersWithCreditLimit)
+                {
+                    variables.filter.and[1].limit = new ExpandoObject();
+                    variables.filter.and[1].limit.@operator = ">";
+                    variables.filter.and[1].limit.value = 0;
+                }
+
                 variables.filter.pagination = new ExpandoObject();
                 variables.filter.pagination.page = PageIndex;
                 variables.filter.pagination.pageSize = PageSize;
@@ -369,6 +413,10 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             {
                 throw;
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private ICommand _saveCommand;
@@ -386,7 +434,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             try
             {
-                //IsBusy = true;
+                IsBusy = true;
                 var managedCreditLimits = await ExecuteSaveAsync();
                 if (!managedCreditLimits.Any()) return;
                 await Context.EventAggregator.PublishOnUIThreadAsync(new CreditLimitManagerMessage { ManagedCreditLimits = managedCreditLimits });
@@ -398,7 +446,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
             finally
             {
-                //IsBusy = false;
+                IsBusy = false;
             }
         }
 
@@ -407,18 +455,48 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             try
             {
                 string query;
+
                 List<object> creditLimits = ShadowCreditLimits.Where(creditLimit => creditLimit.Limit != creditLimit.OriginalLimit).Select(credit => new
                 {
                     customerId = credit.Customer.Id,
                     limit = credit.Limit
                 }).ToList<object>();
-                return [];
+
+                if (creditLimits.Count == 0) return [];
+
+                query = @"mutation($data: CreditLimitMaganerInput!){
+                          ListResponse: managerCreditLimit(data: $data){
+                            id
+                            limit
+                            used
+                            available
+                            originalLimit
+                          }
+                        }";
+
+                dynamic variables = new ExpandoObject();
+                variables.data = new ExpandoObject();
+                variables.data.creditLimits = creditLimits;
+
+                var result = await CreditLimitService.SendMutationList(query, variables);
+                return result;
             }
             catch (Exception)
             {
 
                 throw;
             }
+        }
+
+        public Task HandleAsync(CreditLimitManagerMessage message, CancellationToken cancellationToken)
+        {
+            foreach(var creditLimit in CreditLimits)
+            {
+                creditLimit.OriginalLimit = creditLimit.Limit;
+            }
+            ShadowCreditLimits.Clear();
+            NotifyOfPropertyChange(nameof(CanSave));
+            return Task.CompletedTask;
         }
     }
 }

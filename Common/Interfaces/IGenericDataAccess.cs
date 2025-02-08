@@ -46,7 +46,7 @@ namespace Common.Interfaces
             }
         }
 
-        public async Task<IEnumerable<TModel>> SenMutation(string query, object variables)
+        public async Task<IEnumerable<TModel>> SendMutationList(string query, object variables)
         {
             try
             {

@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
@@ -57,6 +58,16 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             {
                 if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecuteChangeIndex, ExecuteChangeIndex);
                 return _paginationCommand;
+            }
+        }
+
+        private ICommand _printCommand;
+        public ICommand PrintCommand
+        {
+            get
+            {
+                if (_printCommand == null) this._printCommand = new DelegateCommand(Print);
+                return _printCommand;
             }
         }
 

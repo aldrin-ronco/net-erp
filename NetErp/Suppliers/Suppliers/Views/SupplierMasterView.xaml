@@ -41,8 +41,8 @@
                 <dxr:RibbonPage Caption="General">
 
                     <dxr:RibbonPageGroup Caption="Acciones">
-                        <dxb:BarButtonItem Glyph="{dx:DXImage Image=New_16x16.png}" 
-                                           LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
+                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
                                            Content="Nuevo"
                                            RibbonStyle="Large"
                                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
@@ -53,8 +53,8 @@
                         </dxb:BarButtonItem>
                         <dxb:BarItemSeparator/>
                         <dxb:BarButtonItem Content="Eliminar" 
-                                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
-                                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                                           Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                            Description="Eliminar"
                                            Hint="Eliminar el proveedor seleccionado"    
                                            IsEnabled="{Binding Path=CanDeleteSupplier, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -106,7 +106,7 @@
                                 <Button Padding="2" Margin="2"
                                     cal:Message.Attach="[Event Click] = [Action EditSupplier]">
                                     <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v23.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                     </Button.Content>
                                 </Button>
                             </DataTemplate>

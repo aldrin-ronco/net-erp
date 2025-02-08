@@ -3,6 +3,7 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Editors.Native;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
@@ -15,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -198,7 +200,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
         }
 
         // Initial Date
-        private DateTime _initialDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        private DateTime _initialDate = DateTime.Now;
         public DateTime InitialDate
         {
             get { return _initialDate; }
@@ -214,7 +216,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
         }
 
         // Final Date
-        private DateTime _finalDate = DateTime.Now.Date;
+        private DateTime _finalDate = DateTime.Now;
         public DateTime FinalDate
         {
             get { return _finalDate; }
@@ -369,8 +371,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
                 string accountingCodeStart = this.Context.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountStartId).FirstOrDefault().Code;
                 string accountingCodeEnd = this.Context.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountEndId).FirstOrDefault().Code;
-                int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
-                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.Context.AccountingSources.Count ? new int[0] : (from s in SelectedAccountingSources select s.Id).ToArray();
+                int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? [] : (from c in SelectedCostCenters select c.Id).ToArray();
+                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.Context.AccountingSources.Count ? [] : (from s in SelectedAccountingSources select s.Id).ToArray();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -378,8 +380,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
                 variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
-                variables.filter.StartDate = this.InitialDate;
-                variables.filter.EndDate = this.FinalDate;
+                variables.filter.StartDate = this.InitialDate.ToUniversalTime();
+                variables.filter.EndDate = this.FinalDate.ToUniversalTime();
                 variables.filter.CostCentersIds = costCentersIds;
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.AccountingCodeStart = accountingCodeStart;

@@ -45,7 +45,7 @@
                     </xctk:WatermarkTextBox.Watermark>
             </xctk:WatermarkTextBox>
 
-            <CheckBox Margin="15 0 0 0" Content="Mostrar solo clientes con crédito" HorizontalAlignment="Right" IsChecked="{Binding OnlyCustomersWithCreditLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
+            <CheckBox Margin="15 0 0 0" Content="Mostrar solo clientes con cupo" HorizontalAlignment="Right" IsChecked="{Binding OnlyCustomersWithCreditLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
 
             <Button Grid.Column="2" HorizontalAlignment="Right" Margin="10 0 0 0"
                     IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
@@ -56,47 +56,54 @@
                 </StackPanel>
             </Button>
         </Grid>
-
-            <dxg:GridControl Grid.Row="2" Margin="0 10 0 0"
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            Grid.Row="2">
+            <dxg:GridControl Margin="0 10 0 0"
                          ItemsSource="{Binding Path=CreditLimits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <dxg:GridControl.View>
-                <dxg:TableView AllowCascadeUpdate="False" AllowColumnMoving="False" AllowSorting="False"
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowCascadeUpdate="False" AllowColumnMoving="False" AllowSorting="False"
                                    EnableSelectedRowAppearance="True" AllowDragDrop="False"
                                    ShowGroupPanel="False" AlternateRowBackground="Beige"/>
-            </dxg:GridControl.View>
+                </dxg:GridControl.View>
 
-            <dxg:GridColumn Header="Nombre o razón social" Width="*" Binding="{Binding Customer.Entity.SearchName, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Nombre o razón social" Width="*" Binding="{Binding Customer.Entity.SearchName, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <dxg:GridColumn Header="N.I.T" Width="*" Binding="{Binding Customer.Entity.IdentificationNumberWithVerificationDigit, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="N.I.T" Width="*" Binding="{Binding Customer.Entity.IdentificationNumberWithVerificationDigit, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <dxg:GridColumn Header="Información teléfonica" Width="*" Binding="{Binding Customer.Entity.TelephonicInformation, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Información teléfonica" Width="*" Binding="{Binding Customer.Entity.TelephonicInformation, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <dxg:GridColumn Header="Autorizado" Width="120" Binding="{Binding Limit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
-                <dxg:GridColumn.EditSettings>
-                    <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                <dxg:GridColumn Header="Autorizado" Width="120" Binding="{Binding Limit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
                                           Mask="{Binding Mask, UpdateSourceTrigger=PropertyChanged}"/>
-                </dxg:GridColumn.EditSettings>
-            </dxg:GridColumn>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
 
-            <dxg:GridColumn Header="Usado" Width="120" Binding="{Binding Used, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
-                <dxg:GridColumn.EditSettings>
-                    <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                <dxg:GridColumn Header="Usado" Width="120" Binding="{Binding Used, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
                                           Mask="{Binding Mask, UpdateSourceTrigger=PropertyChanged}"/>
-                </dxg:GridColumn.EditSettings>
-            </dxg:GridColumn>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
 
-            <dxg:GridColumn Header="Disponible" Width="120" Binding="{Binding Available, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
-                <dxg:GridColumn.EditSettings>
-                    <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                <dxg:GridColumn Header="Disponible" Width="120" Binding="{Binding Available, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
                                           Mask="{Binding Mask, UpdateSourceTrigger=PropertyChanged}"/>
-                </dxg:GridColumn.EditSettings>
-            </dxg:GridColumn>
-        </dxg:GridControl>
-
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+        </busyIndicator:BusyMask>
+        
         <uc:GridPaging Grid.Row="4" Grid.Column="0" 
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Center"
-                       Margin="0 0 0 0"
+                       Margin="0 10 0 0"
                        ChangedIndexCommand="{Binding PaginationCommand}" 
                        PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 

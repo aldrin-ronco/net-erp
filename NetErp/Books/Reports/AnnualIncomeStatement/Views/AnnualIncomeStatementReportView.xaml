@@ -175,7 +175,7 @@
                         x:Name="Search">
 
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png" Stretch="None" VerticalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Print/Preview_16x16.png'}" Stretch="None" VerticalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>

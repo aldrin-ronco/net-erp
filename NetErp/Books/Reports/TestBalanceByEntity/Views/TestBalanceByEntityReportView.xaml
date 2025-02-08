@@ -193,13 +193,13 @@
                                                 <MultiDataTrigger.Conditions>
                                                     <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="true"/>
                                                 </MultiDataTrigger.Conditions>
-                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png"/>
+                                                <Setter Property="Source" Value="{dx:DXImage 'Images/Print/Preview_16x16.png'}"/>
                                             </MultiDataTrigger>
                                             <MultiDataTrigger>
                                                 <MultiDataTrigger.Conditions>
                                                     <Condition Binding="{Binding IsFilterSearchAccountinEntityOnEditMode}" Value="false"/>
                                                 </MultiDataTrigger.Conditions>
-                                                <Setter Property="Source" Value="pack://application:,,,/DevExpress.Images.v23.2;component/Images/History/Undo_16x16.png"/>
+                                                <Setter Property="Source" Value="{dx:DXImage 'Images/History/Undo_16x16.png'}"/>
                                             </MultiDataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -239,7 +239,7 @@
                         x:Name="Search">
 
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Print/Preview_16x16.png" Stretch="None" VerticalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Print/Preview_16x16.png'}" Stretch="None" VerticalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>
