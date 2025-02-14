@@ -73,20 +73,10 @@
                   DisplayMemberPath="Name"
                   SelectedValuePath="Id"
                   SelectedValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <CheckBox Grid.Row="2" Margin="0 4 0 4" IsChecked="{Binding Path=ShowActiveSellersOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                <TextBlock Text="Mostrar únicamente vendedores activos" VerticalAlignment="Center" FontSize="13">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=ShowActiveSellersOnly}" Value="true">
-                                    <Setter Property="Foreground" Value="blue"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </CheckBox>
-            <!--Filtros-->
+        <dxe:CheckEdit Content="Mostrar únicamente vendedores activos" Grid.Row="2" Margin="0 4 0 4" IsChecked="{Binding Path=ShowActiveSellersOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                       Style="{StaticResource BlueCheckedTextStyle}"/>
+
+        <!--Filtros-->
             <!--Text de Busqueda-->
             <StackPanel Grid.Row="3" Orientation="Vertical">
                 <TextBlock Text="¿Qué desea buscar?" VerticalAlignment="Center" Margin="0 4 0 5" FontSize="13"/>
@@ -120,7 +110,18 @@
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" 
                                    EnableSelectedRowAppearance="True"
-                                   ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                                   ShowGroupPanel="False" AlternateRowBackground="Beige">
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
+                                        <Setter Property="Background" Value="LightPink"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
                 </dxg:GridControl.View>
 
                 <!--N.I.T-->
