@@ -10,7 +10,7 @@ namespace Models.Global
     public class EmailGraphQLModel
     {
         public string Id { set; get; }
-        public string Name { set; get; } = string.Empty;
+        public string Description { set; get; } = string.Empty;
         public string Email { set; get; } = string.Empty;
         public string Password { set; get; } = string.Empty;
         public bool IsCorporate { set; get; } = true;
@@ -22,7 +22,7 @@ namespace Models.Global
         public AwsSesGraphQLModel AwsSes { get; set; }
         public override string ToString()
         {
-            return Name;
+            return Description;
         }
 
         public class EmailDeleteMessage

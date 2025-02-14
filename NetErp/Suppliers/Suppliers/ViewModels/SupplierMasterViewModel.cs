@@ -340,7 +340,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         telephonicInformation
                         emails {
                           id
-                          name
+                          description
                           email
                           password
                           sendElectronicInvoice
