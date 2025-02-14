@@ -547,7 +547,7 @@
                                     </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                            <TextBlock Text="{Binding Path=Description, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
                                         TextWrapping="Wrap"
                                         VerticalAlignment="Center"
                                         Padding="3"/>
@@ -555,7 +555,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3"/>
+                                            <TextBox Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>

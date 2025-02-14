@@ -229,7 +229,7 @@ namespace NetErp.Billing.Customers.ViewModels
                         }
                         emails {
                           id
-                          name
+                          description
                           email
                           isCorporate
                           sendElectronicInvoice

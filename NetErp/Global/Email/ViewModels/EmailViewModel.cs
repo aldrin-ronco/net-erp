@@ -58,7 +58,7 @@ namespace NetErp.Global.Email.ViewModels
                 instance.EmailSmtp = email.Smtp.Name;
                 instance.EmailEmail = email.Email;
                 instance.EmailPassword = email.Password;
-                instance.EmailDescription = email.Name;
+                instance.EmailDescription = email.Description;
 
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 
