@@ -76,6 +76,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _showActiveSellersOnly = value;
                     NotifyOfPropertyChange(nameof(ShowActiveSellersOnly));
+                    _ = Task.Run(() => LoadSellers());
                 }
             }
         }
@@ -417,11 +418,35 @@ namespace NetErp.Billing.Sellers.ViewModels
                 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+                variables.filter.and = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                variables.filter.and[0].isActive = new ExpandoObject();
+                variables.filter.and[0].isActive.@operator = "=";
+                variables.filter.and[0].isActive.value = true;
+
+                variables.filter.and[1].or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+                variables.filter.and[1].or[0].searchName = new ExpandoObject();
+                variables.filter.and[1].or[0].searchName.@operator = "like";
+                variables.filter.and[1].or[0].searchName.value = "";
+
+                variables.filter.and[1].or[1].identificationNumber = new ExpandoObject();
+                variables.filter.and[1].or[1].identificationNumber.@operator = "like";
+                variables.filter.and[1].or[1].identificationNumber.value = "";
+
+                //Paginación
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;              
-                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
-                variables.filter.QueryFilter = "";
+
                 var result = await SellerService.GetDataContext<SellersDataContext>(query, variables);
                 stopwatch.Stop();
                 Context.CostCenters = new ObservableCollection<CostCenterDTO>(Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters));
@@ -509,19 +534,49 @@ namespace NetErp.Billing.Sellers.ViewModels
                   }
                 }";
 
-                string costCenterFilter = string.Empty;
-                string isActiveFilter = string.Empty;
-                string filterSearch = string.Empty;
-                if (SelectedCostCenterId != 0) costCenterFilter = $"seller.id in (select distinct seller_id from billing_sellers_by_cost_center where cost_center_id = any(array[{SelectedCostCenterId}]))";
-                if (ShowActiveSellersOnly) isActiveFilter = $"seller.is_active = {ShowActiveSellersOnly}";
-                if (!string.IsNullOrEmpty(FilterSearch)) filterSearch = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
+
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+                variables.filter.and = new ExpandoObject[]
+                {
+                    new(),
+                    new(),
+                    new()
+                };
+
+                if (ShowActiveSellersOnly)
+                {
+                    variables.filter.and[0].isActive = new ExpandoObject();
+                    variables.filter.and[0].isActive.@operator = "=";
+                    variables.filter.and[0].isActive.value = true;
+                }
+
+                if(SelectedCostCenterId != 0)
+                {
+                    variables.filter.and[1].costCenterIds = new ExpandoObject();
+                    variables.filter.and[1].costCenterIds.@operator = "=";
+                    variables.filter.and[1].costCenterIds.value = new int[] {SelectedCostCenterId};
+                }
+
+                variables.filter.and[2].or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                variables.filter.and[2].or[0].searchName = new ExpandoObject();
+                variables.filter.and[2].or[0].searchName.@operator = "like";
+                variables.filter.and[2].or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                variables.filter.and[2].or[1].identificationNumber = new ExpandoObject();
+                variables.filter.and[2].or[1].identificationNumber.@operator = "like";
+                variables.filter.and[2].or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //Paginación
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.QueryFilter = @$"";
-                variables.filter.CostCenters = SelectedCostCenterId == 0 ? null : new int[] { SelectedCostCenterId };
 
                 var result = await SellerService.GetPage(query, variables);
                 stopwatch.Stop();
