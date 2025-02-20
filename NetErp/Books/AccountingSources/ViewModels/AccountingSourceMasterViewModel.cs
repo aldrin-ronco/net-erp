@@ -152,7 +152,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    Task.Run(() => UpdateAccountingSourceDataGridView());
+                    if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length >= 3) _ = Task.Run(LoadAccountingSources);
                 }
             }
         }
@@ -168,8 +168,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _selectedModuleId = value;
                     NotifyOfPropertyChange(nameof(SelectedModuleId));
-                    Task.Run(() => UpdateAccountingSourceDataGridView())
-                        .ContinueWith(antecedent => NotifyOfPropertyChange(nameof(CanDeleteSource)));
+                    _ = Task.Run(LoadAccountingSources);
                 }
             }
         }
@@ -341,16 +340,35 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 }
                 }";
 
+                //AccountingSource Filter
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.Annulment = false;
+
+                variables.filter.annulment = new ExpandoObject();
+                variables.filter.annulment.@operator = "=";
+                variables.filter.annulment.value = false;
+
+                variables.filter.name = new ExpandoObject();
+                variables.filter.name.@operator = "like";
+                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                if(SelectedModuleId != 0)
+                {
+                    variables.filter.moduleId = new ExpandoObject();
+                    variables.filter.moduleId.@operator = "=";
+                    variables.filter.moduleId.value = SelectedModuleId;
+                }
+
+                // Filtro de cuentas contables
                 variables.accountFilter = new ExpandoObject();
-                variables.accountFilter.includeOnlyAuxiliaryAccounts = true;
-                //if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
-                variables.filter.QueryFilter = "";
+                variables.accountFilter.code = new ExpandoObject();
+                variables.accountFilter.code.@operator = new List<string>() { "length", ">=" };
+                variables.accountFilter.code.value = 8;
+
+                //Pagination
+                variables.filter.pagination = new ExpandoObject();
+                variables.filter.pagination.page = PageIndex;
+                variables.filter.pagination.pageSize = PageSize;
 
                 // Iniciar cronometro
                 Stopwatch stopwatch = new Stopwatch();
@@ -370,7 +388,6 @@ namespace NetErp.Books.AccountingSources.ViewModels
                     this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 });
                 this.TotalCount = result.AccountingSourcePage.Count;
-                this.UpdateAccountingSourceDataGridView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -447,12 +464,26 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.Annulment = false;
-                //if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%'";
-                variables.filter.QueryFilter = "";
+
+                variables.filter.annulment = new ExpandoObject();
+                variables.filter.annulment.@operator = "=";
+                variables.filter.annulment.value = false;
+
+                variables.filter.name = new ExpandoObject();
+                variables.filter.name.@operator = "like";
+                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                if (SelectedModuleId != 0)
+                {
+                    variables.filter.moduleId = new ExpandoObject();
+                    variables.filter.moduleId.@operator = "=";
+                    variables.filter.moduleId.value = SelectedModuleId;
+                }
+                
+                //Pagination
+                variables.filter.pagination = new ExpandoObject();
+                variables.filter.pagination.page = PageIndex;
+                variables.filter.pagination.pageSize = PageSize;
 
                 var source = await AccountingSourceService.GetPage(query, variables);
 
@@ -461,7 +492,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
                 this.TotalCount = source.PageResponse.Count;
                 this.AccountingSources = this.Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(source.PageResponse.Rows);
-                //this.UpdateAccountingSourceDataGridView();
+
 
                 this.IsBusy = false;
             }
@@ -478,40 +509,6 @@ namespace NetErp.Books.AccountingSources.ViewModels
             {
                 IsBusy = false;
             }
-        }
-
-        public void UpdateAccountingSourceDataGridView()
-        {
-            // Aplicamos filtro de texto
-            try
-            {
-                if (string.IsNullOrEmpty(this.FilterSearch))
-                {
-                    this.AccountingSourceFiltered = new ObservableCollection<AccountingSourceDTO>(this.AccountingSources);
-                }
-                else
-                {
-                    this.AccountingSourceFiltered = new ObservableCollection<AccountingSourceDTO>(
-                                                    from source
-                                                    in this.AccountingSources
-                                                    where source.Name.IsSqlLikeMatch(this.FilterSearch)
-                                                    select source);
-                }
-
-                // Aplicamos filtro de modulo
-                if (this.SelectedModuleId > 0)
-                {
-                    var data = from source in this.AccountingSourceFiltered
-                               where source.ProcessType.Module.Id == this.SelectedModuleId
-                               select source;
-                    this.AccountingSourceFiltered = new ObservableCollection<AccountingSourceDTO>(data);
-                }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-
         }
 
         public void OnChecked()
@@ -694,12 +691,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingSources = new ObservableCollection<AccountingSourceDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)));
+            return Task.FromResult(AccountingSources = [.. Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)]);
         }
 
         public Task HandleAsync(AccountingSourceUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingSources = new ObservableCollection<AccountingSourceDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)));
+            return Task.FromResult(AccountingSources = [.. Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)]);
         }
 
         public async Task HandleAsync(AccountingSourceDeleteMessage message, CancellationToken cancellationToken)

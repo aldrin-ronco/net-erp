@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Books.AccountingSources.Views"
              xmlns:cal="http://caliburnmicro.com"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
@@ -88,13 +89,15 @@
         <!--Text de Busqueda-->
         <StackPanel Grid.Row="2" Orientation="Vertical">
             <TextBlock Text="¿Qué desea buscar?" VerticalAlignment="Center" Margin="0 0 0 5" FontSize="15"/>
-            <xctk:WatermarkTextBox Watermark="Escribe aquí para buscar"                     
-                     ToolTip="Escribe aqui para buscar"   
-                     MinHeight="25" 
-                     VerticalContentAlignment="Center"
-                     CharacterCasing="Upper"
-                     h:FocusBehavior.IsFocused="True"
-                     Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}"/>
+            <dxe:TextEdit x:Name="FilterSearch"
+                              EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
+                              ShowNullTextForEmptyValue="True"
+                              ShowNullTextIfFocused="True"
+                              EditValuePostMode="Delayed"
+                              CharacterCasing="Upper"
+                              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                              EditValuePostDelay="1000"/>
         </StackPanel>
 
         <!--DataGridView Fuentes Contables-->
