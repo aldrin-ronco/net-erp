@@ -333,14 +333,35 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+
+                if (costCentersIds.Length > 0) 
+                {
+                    variables.filter.CostCentersIds = new ExpandoObject();
+                    variables.filter.CostCentersIds.@operator = "=";
+                    variables.filter.CostCentersIds.value = costCentersIds;
+                }
+
+                variables.filter.Year = new ExpandoObject();
+                variables.filter.Year.@operator = "=";
+                variables.filter.Year.value = this.SelectedYear;
+
+                variables.filter.Month = new ExpandoObject();
+                variables.filter.Month.@operator = "<=";
+                variables.filter.Month.value = this.SelectedMonth;
+
+                variables.filter.Level = new ExpandoObject();
+                variables.filter.Level.@operator = "=";
+                variables.filter.Level.value = this.Level;
+                variables.filter.Level.exclude = true;
+
+
+                //variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId; Filtro de usado de momento
+
+                //Pagination
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
-                variables.filter.CostCentersIds = costCentersIds;
-                variables.filter.Year = this.SelectedYear;
-                variables.filter.Month = this.SelectedMonth;
-                variables.filter.Level = Level;
                 var annualIncomeStatementPage = await this.Context.AnnualIncomeStatementService.GetPage(query, variables);
                 return annualIncomeStatementPage;
             }
