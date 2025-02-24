@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -314,7 +315,11 @@ namespace NetErp.Global.Smtp.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.name = FilterSearch;
+                variables.filter.name = new ExpandoObject();
+                variables.filter.name.@operator = "like";
+                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //Pagination
                 variables.filter.pagination = new ExpandoObject();
                 variables.filter.pagination.page = PageIndex;
                 variables.filter.pagination.pageSize = PageSize;
