@@ -219,7 +219,20 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             try
             {
                 IsBusy = true;
-                Variables.filter.name = FilterSearch == "" ? "" : FilterSearch.Trim();
+                Variables.filter.and[1].or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                Variables.filter.and[1].or[0].name = new ExpandoObject();
+                Variables.filter.and[1].or[0].name.@operator = "like";
+                Variables.filter.and[1].or[0].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                Variables.filter.and[1].or[1].reference = new ExpandoObject();
+                Variables.filter.and[1].or[1].reference.@operator = "like";
+                Variables.filter.and[1].or[1].reference.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
                 Variables.filter.Pagination = new ExpandoObject();
                 Variables.filter.Pagination.Page = PageIndex;
                 Variables.filter.Pagination.PageSize = PageSize;
