@@ -95,8 +95,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 Refresh();
                 string query = @"
-                query($filter:ItemSizeMasterFilterInput){
-                    ListResponse: itemsSizesMaster(filter: $filter){
+                query{
+                    ListResponse: itemsSizesMaster{
                     id
                     name
                     sizes{
@@ -107,10 +107,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                     }
                     }
                 }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.Name = "";
-                IEnumerable<ItemSizeMasterGraphQLModel> source = await ItemSizeMasterService.GetList(query, variables);
+                IEnumerable<ItemSizeMasterGraphQLModel> source = await ItemSizeMasterService.GetList(query, new {});
                 ItemSizesMaster = Context.AutoMapper.Map<ObservableCollection<ItemSizeMasterDTO>>(source);
 
             }
@@ -130,7 +127,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAccountingEntities" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadItemSizesMaster" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
         public async Task DeleteItemSizeMaster()
