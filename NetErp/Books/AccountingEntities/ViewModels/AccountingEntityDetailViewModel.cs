@@ -966,7 +966,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Name = EmailDescription, Email = Email };
+                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email };
                 Email = "";
                 EmailDescription = "";
                 Emails.Add(email);
@@ -1085,7 +1085,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (Emails != null)
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Name, email.Email, email.SendElectronicInvoice});
+                        emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice});
                     }
 
                 dynamic variables = new ExpandoObject();

@@ -12,10 +12,12 @@ namespace Models.Global
         public string Name { get; set; } = string.Empty;
         public string Host { get; set; } = string.Empty;
         public int Port { get; set; } = 0;
+
         public override string ToString()
         {
             return Name;
         }
+
     }
 
     public class SmtpCreateMessage

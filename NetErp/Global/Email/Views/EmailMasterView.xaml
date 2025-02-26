@@ -6,18 +6,17 @@
              xmlns:local="clr-namespace:NetErp.Global.Email.Views"             
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"           
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             xmlns:uc="clr-namespace:NetErp.UserControls"             
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             
-             xmlns:cal="http://caliburnmicro.com"
-             
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" xmlns:dxg="clr-namespace:DevExpress.Xpf.Grid;assembly=DevExpress.Xpf.Grid.v24.2"
+             xmlns:uc="clr-namespace:NetErp.UserControls"                         
+             xmlns:cal="http://caliburnmicro.com"             
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             x:Name="OpenEmail">
+             d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -36,22 +35,22 @@
 
             <dxr:RibbonPage Caption="General">
                 <dxr:RibbonPageGroup Caption="Acciones">
-                    <!--<dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                   <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
                    LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
                    Content="Nuevo"
                    RibbonStyle="Large"
                    IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
-                   Hint="Crear un nuevo smtp">
+                   Hint="Crear un nuevo correo corporativo">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=CreateEmailCommand}" EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>-->
+                    </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
                     <dxb:BarButtonItem Content="Eliminar" 
                                     Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
                                     LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                     Description="Eliminar"
-                                    Hint="Eliminar el email seleccionado"                    
+                                    Hint="Eliminar el correo seleccionado"                    
                                     IsEnabled="{Binding Path=CanDeleteEmail, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     RibbonStyle="Large">
                         <dxmvvm:Interaction.Behaviors>
@@ -62,59 +61,71 @@
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="¿Qué Email desea buscar?" Margin="0 10 0 5"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="¿Qué correo desea buscar?" Margin="0 10 0 5"/>
         <xctk:WatermarkTextBox
             Grid.Row = "2"
             MinHeight="25"
             ToolTip="Escribe aquí para buscar"
             KeepWatermarkOnGotFocus="True"
             VerticalContentAlignment="Center"
-
+            h:FocusBehavior.IsFocused="True"
             Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
             <xctk:WatermarkTextBox.Watermark>
                 <TextBlock Text="Escriba por lo menos 3 letras para iniciar la busqueda..." Margin="4 0 0 0" FontSize="13"/>
             </xctk:WatermarkTextBox.Watermark>
         </xctk:WatermarkTextBox>
 
-        <dxg:GridControl Margin="0 10 0 0" 
+
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                    IsBusy="{Binding IsBusy}"
+                    IndicatorType="BouncingDot"
+                    BusyContent="Please wait..."
+                    BusyContentMargin="0,20,0,0"
+                    IsBusyAtStartup="False"
+                    Grid.Row="3">
+            <dxg:GridControl Margin="0 10 0 0" 
                          Grid.Row="3"
                          ItemsSource = "{Binding Path=Emails, UpdateSourceTrigger=PropertyChanged, Mode = TwoWay}"
                          SelectedItem="{Binding Path=SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-            <dxg:GridControl.View>
-                <dxg:TableView AllowEditing="False" 
-                   AllowCascadeUpdate="False" 
-                   EnableSelectedRowAppearance="True"
-                   ShowGroupPanel="False" AlternateRowBackground="Beige"
-                   AllowColumnMoving="False"/>
-            </dxg:GridControl.View>
-            <dxg:GridColumn Header="Name" HorizontalHeaderContentAlignment="Center" Width="auto"
-                            Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowEditing="False" 
+                                    AllowCascadeUpdate="False" 
+                                    EnableSelectedRowAppearance="True"
+                                    ShowGroupPanel="False" AlternateRowBackground="Beige"
+                                    AllowColumnMoving="False"/>
+                </dxg:GridControl.View>
+                    <dxg:GridColumn Header="Descripción" HorizontalHeaderContentAlignment="Center" Width="*"
+                                    VisibleIndex="0"
+                                    Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    AllowSorting="False"/>
 
-            <dxg:GridColumn Header="Email" HorizontalHeaderContentAlignment="Center" Width="auto"
-                            Binding="{Binding Email, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <dxg:GridColumn Header="Email" HorizontalHeaderContentAlignment="Center" Width="*"
+                                    VisibleIndex="1"
+                                    Binding="{Binding Email, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    AllowSorting="False"/>
 
-            <dxg:GridColumn Width="auto">
-                <dxg:GridColumn.CellTemplate>
-                    <DataTemplate>
-                        <Button
-                            BorderThickness="0"
-                            Padding="3"
-                            Margin="3"
-                            Width="auto" Height="auto" 
-                            cal:Message.Attach="[Event Click] = [Action EditEmail]">
-                            <Button.Content>
-                                <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
-                            </Button.Content>
-                        </Button>
-                    </DataTemplate>
-                </dxg:GridColumn.CellTemplate>
-            </dxg:GridColumn>
-        </dxg:GridControl>
-        
-        <uc:GridPaging Grid.Row="4" 
-                       Grid.Column="0"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Center">
-        </uc:GridPaging>
+                    <dxg:GridColumn Header="Smtp" HorizontalHeaderContentAlignment="Center" Width="*"
+                                    VisibleIndex="2"
+                                    Binding="{Binding Smtp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    AllowSorting="False"/>
+
+                <dxg:GridColumn HorizontalHeaderContentAlignment="Center" Width="30" AllowSorting="False">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+                                    BorderThickness="0"
+                                    Padding="3"
+                                    Margin="3"
+                                    Width="auto" Height="auto" 
+                                    cal:Message.Attach="[Event Click] = [Action EditEmail]">
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>  
+                </dxg:GridColumn>
+            </dxg:GridControl>
+        </busyIndicator:BusyMask>
     </Grid>
 </UserControl>

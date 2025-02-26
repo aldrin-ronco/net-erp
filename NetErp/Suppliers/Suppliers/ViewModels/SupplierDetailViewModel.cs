@@ -666,7 +666,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Name = EmailDescription, Email = Email, Saved = false, Deleted = false, Edited = true };
+                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email, Saved = false, Deleted = false, Edited = true };
                 Email = string.Empty;
                 EmailDescription = string.Empty;
                 Emails.Add(email);
@@ -917,7 +917,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Name, email.Email, email.SendElectronicInvoice });
+                        emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice });
                     }
                 }
                 if (RetentionTypes != null)

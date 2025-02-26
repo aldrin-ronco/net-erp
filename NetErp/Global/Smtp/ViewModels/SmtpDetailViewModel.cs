@@ -191,10 +191,10 @@ namespace NetErp.Global.Smtp.ViewModels
             if (!IsNewRecord) variables.id = SmtpId;
             variables.data.name = SmtpName;
             variables.data.host = SmtpHost;
-            variables.data.port = SmtpPort;
+            variables.data.port = SmtpPort;            
 
             string query = IsNewRecord ? @"
-            mutation($data: CreateSmtpInput!){
+            mutation($data: CreateOrEditEmailInput!){
                 CreateResponse: createSmtp(data: $data){
                 id
                 name
