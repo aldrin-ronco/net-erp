@@ -584,18 +584,58 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+
+                if (SearchOnAccountingBook) 
+                {
+                    variables.filter.AccountingBookId = new ExpandoObject();
+                    variables.filter.AccountingBookId.@operator = "=";
+                    variables.filter.AccountingBookId.value = SelectedAccountingBookId;
+                }
+                if(SearchOnCostCenter)
+                {
+                    variables.filter.CostCenterId = new ExpandoObject();
+                    variables.filter.CostCenterId.@operator = "=";
+                    variables.filter.CostCenterId.value = SelectedCostCenterId;
+                }
+                if (SearchOnAccountingSource)
+                {
+                    variables.filter.AccountingSourceId = new ExpandoObject();
+                    variables.filter.AccountingSourceId.@operator = "=";
+                    variables.filter.AccountingSourceId.value = SelectedAccountingSourceId;
+                }
+
+                if(SearchOnAccountingEntity)
+                {
+                    variables.filter.AccountingEntityId = new ExpandoObject();
+                    variables.filter.AccountingEntityId.@operator = "=";
+                    variables.filter.AccountingEntityId.value = SelectedAccountingEntityId;
+                }
+                if (SearchOnDocumentNumber)
+                {
+                    variables.filter.DocumentNumber = new ExpandoObject();
+                    variables.filter.DocumentNumber.@operator = "like";
+                    variables.filter.DocumentNumber.value = DocumentNumber.Trim().RemoveExtraSpaces();
+                }
+
+                if (SearchOnDate && !IsDateRange) 
+                {
+                    variables.filter.DocumentDate = new ExpandoObject();
+                    variables.filter.DocumentDate.@operator = SelectedDateFilterOption.ToString();
+                    variables.filter.DocumentDate.value = StartDateFilter!.Value.Date.ToUniversalTime();
+                }
+
+                if(SearchOnDate && IsDateRange)
+                {
+                    variables.filter.DocumentDate = new ExpandoObject();
+                    variables.filter.DocumentDate.@operator = "between";
+                    variables.filter.DocumentDate.value = new List<DateTime>{ StartDateFilter!.Value.Date.ToUniversalTime(), EndDateFilter!.Value.Date.ToUniversalTime() };
+                }
+
+                // Paginacion
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.Description = "";
-                variables.filter.AccountingBookId = (int)(SearchOnAccountingBook ? this.SelectedAccountingBookId : 0);
-                variables.filter.CostCenterId = (int)(SearchOnCostCenter ? this.SelectedCostCenterId : 0);
-                variables.filter.AccountingSourceId = (int)(SearchOnAccountingSource ? this.SelectedAccountingSourceId : 0);
-                variables.filter.AccountingEntityId = (int)(SearchOnAccountingEntity ? this.SelectedAccountingEntityId : 0);
-                variables.filter.DocumentNumber = (string)(SearchOnDocumentNumber ? this.DocumentNumber : "");
-                variables.filter.DocumentDateStart = (DateTime?)(SearchOnDate ? (DateTime?)this.StartDateFilter.Value.Date : null);
-                variables.filter.DocumentDateEnd = (DateTime?)(SearchOnDate ? (IsDateRange ? (DateTime?)this.EndDateFilter.Value.Date : this.StartDateFilter.Value) : null);
-                variables.filter.DateFilterOption = (char)this.SelectedDateFilterOption;
                 var result = await this.Context.AccountingEntryMasterService.GetPage(query, variables);
                 return result;
             }

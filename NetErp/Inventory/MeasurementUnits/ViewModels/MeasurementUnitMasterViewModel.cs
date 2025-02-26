@@ -203,7 +203,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.Name = FilterSearch == "" ? "" : FilterSearch;
+                variables.filter.name = new ExpandoObject();
+                variables.filter.name.@operator = "like";
+                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();

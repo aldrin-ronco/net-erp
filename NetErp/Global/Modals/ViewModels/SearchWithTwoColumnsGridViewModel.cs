@@ -214,7 +214,21 @@ namespace NetErp.Global.Modals.ViewModels
                     Variables.filter = new ExpandoObject();
                 }
                 //TODO
-                Variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
+                Variables.filter.or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                Variables.filter.or[0].searchName = new ExpandoObject();
+                Variables.filter.or[0].searchName.@operator = "like";
+                Variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                Variables.filter.or[1].identificationNumber = new ExpandoObject();
+                Variables.filter.or[1].identificationNumber.@operator = "like";
+                Variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //Pagination
                 Variables.filter.Pagination = new ExpandoObject();
                 Variables.filter.Pagination.Page = PageIndex;
                 Variables.filter.Pagination.PageSize = PageSize;

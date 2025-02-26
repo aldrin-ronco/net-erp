@@ -1042,7 +1042,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                               emails {
                                 id
                                 name
-                                email
+                                description
                                 password
                                 sendElectronicInvoice
                               }
@@ -1104,7 +1104,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                               emails {
                                 id
                                 name
-                                email
+                                description
                                 password
                                 sendElectronicInvoice
                               }

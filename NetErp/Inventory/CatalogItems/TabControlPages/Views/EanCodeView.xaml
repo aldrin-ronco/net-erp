@@ -26,7 +26,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Text="{Binding EanCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CharacterCasing="Upper"/>
                 <Button Margin="5 0 0 0 " Grid.Column="1" Width="auto" Command="{Binding Path=Data.AddEanCodeCommand, Source={StaticResource DataContextProxy}}">
-                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">
+                    <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None">
                         <Image.Style>
                             <Style TargetType="Image">
                                 <Style.Triggers>

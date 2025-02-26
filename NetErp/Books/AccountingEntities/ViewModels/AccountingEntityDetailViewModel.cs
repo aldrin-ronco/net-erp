@@ -1025,7 +1025,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                             }
                             emails {
                               id
-                              name
+                              description
                               email
                             }
                         }
@@ -1162,7 +1162,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 						}
 						emails {
 						  id
-						  name
+						  description
 						  email
 						  sendElectronicInvoice
 						}
@@ -1211,7 +1211,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 						}
 						emails {
 						  id
-						  name
+						  description
 						  email
 						  sendElectronicInvoice 	
 						}

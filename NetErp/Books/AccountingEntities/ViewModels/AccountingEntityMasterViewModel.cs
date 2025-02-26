@@ -330,7 +330,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                             }
                             emails {
                               id
-                              name
+                              description
                               email
                             }
                         }
@@ -339,10 +339,27 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+                variables.filter.or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                //SearhName
+                variables.filter.or[0].searchName = new ExpandoObject();
+                variables.filter.or[0].searchName.@operator = "like";
+                variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //IdentificationNumber
+                variables.filter.or[1].identificationNumber = new ExpandoObject();
+                variables.filter.or[1].identificationNumber.@operator = "like";
+                variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //Paginación
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.identification_number like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
+
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();

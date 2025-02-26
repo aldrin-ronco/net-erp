@@ -74,8 +74,7 @@ namespace NetErp.Global.Email.ViewModels
                 instance.EmailDescription = email.Description;
                 instance.EmailEmail = email.Email;
                 instance.EmailId = email.Id;
-                instance.SelectedSmtp = instance.EmailSmtp.FirstOrDefault(smtp => smtp.Id == email.Smtp.Id) ?? throw new Exception(); //TODO;
-
+                instance.SelectedSmtp = instance.EmailSmtp.FirstOrDefault(smtp => smtp.Id == email.Smtp.Id) ?? throw new Exception(); //TODO
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 
             }

@@ -14,6 +14,7 @@
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:local="clr-namespace:NetErp.Books.IdentificationTypes.Views" 
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:viewmodels="clr-namespace:NetErp.Books.IdentificationTypes.ViewModels" 
              d:DataContext="{d:DesignInstance Type=viewmodels:IdentificationTypeMasterViewModel}"
              mc:Ignorable="d" 
@@ -60,8 +61,8 @@
             <dxr:RibbonPage Caption="General">
 
                 <dxr:RibbonPageGroup Caption="Acciones">
-                    <dxb:BarButtonItem     Glyph="{dx:DXImage Image=New_16x16.png}" 
-                           LargeGlyph="{dx:DXImage Image=New_32x32.png}" 
+                    <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                           LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
                            Content="Nuevo"
                            RibbonStyle="Large"
                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
@@ -72,8 +73,8 @@
                     </dxb:BarButtonItem>
                     <dxb:BarItemSeparator/>
                     <dxb:BarButtonItem Content="Eliminar" 
-                           Glyph="{dx:DXImage Image=DeleteList_16x16.png}" 
-                           LargeGlyph="{dx:DXImage Image=DeleteList_32x32.png}"                                             
+                           Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                           LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                            Description="Eliminar"
                            Hint="Eliminar tipo de documento seleccionado"    
                            IsEnabled="{Binding Path=CanDeleteIdentificationType, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -119,82 +120,82 @@
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
                             Grid.Row="3">
-            <DataGrid
+            <dxg:GridControl
                 Margin="0 8 0 0"
-                AutoGenerateColumns="False" 
-                VerticalGridLinesBrush="LightGray"
-                HorizontalGridLinesBrush="LightGray"
+                EnableSmartColumnsGeneration="True"
+                AutoGenerateColumns="None"
                 BorderThickness="0"
-                CanUserAddRows="False"
-                SelectionMode="Single"
-                SelectionUnit="FullRow"     
-                MinRowHeight="30"
-                AlternatingRowBackground="Beige"
                 Background="Transparent"
-                CanUserDeleteRows="False"
                 ItemsSource="{Binding Path=IdentificationTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 SelectedItem="{Binding Path=SelectedIdentificationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                <DataGrid.Columns>
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowCascadeUpdate="False" 
+                                   EnableSelectedRowAppearance="True"
+                                   ShowGroupPanel="False" AlternateRowBackground="Beige"
+                                   AllowSorting="False" AllowColumnMoving="False"
+                                   AllowDragDrop="False"/>
+                </dxg:GridControl.View>
 
-                    <!--Codigo-->
-                    <DataGridTextColumn 
-                    Header="Código" 
-                    Width="auto"
-                    Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                    ElementStyle="{StaticResource DataGridTextColumnElementStyleCode}">
-                        <DataGridTextColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
+                <dxg:GridColumn Header="Código" 
+                                Width="auto"
+                                Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!--Nombre-->
-                    <DataGridTextColumn 
-                        Header="Nombre" 
-                        Width="*"
-                        Binding="{Binding Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ElementStyle="{StaticResource DataGridTextColumnElementStyleGeneral}"/>
+                <dxg:GridColumn Header="Nombre" 
+                                Width="*"
+                                Binding="{Binding Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
 
-                    <!--Longitud Minima del Documento-->
-                    <DataGridTextColumn 
-                    Header="Longitud Mínima" 
+                <!--Longitud Minima del Documento-->
+                <dxg:GridColumn 
+                                Width="auto"
+                                Binding="{Binding MinimumDocumentLength, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Longitud miníma"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.HeaderTemplate>
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings HorizontalContentAlignment="Left"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+
+
+                <!--Establece si el tipo de documento tiene digito de verificación-->
+                <dxg:GridColumn 
                     Width="auto"
-                    Binding="{Binding MinimumDocumentLength, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                    ElementStyle="{StaticResource DataGridTextColumnElementStyleGeneral}">
-                            <DataGridTextColumn.HeaderStyle>
-                                <Style TargetType="{x:Type DataGridColumnHeader}">
-                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                                </Style>
-                            </DataGridTextColumn.HeaderStyle>
-                    </DataGridTextColumn>
+                    Binding="{Binding HasVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Digito de verificación"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.HeaderTemplate>
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Row.HasVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                        HorizontalAlignment="Center" IsEnabled="False" Width="auto"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
 
-                    <!--Establece si el tipo de documento tiene digito de verificación-->
-                    <DataGridCheckBoxColumn 
-                        Header="Digito de Verificación" 
-                        Width="auto"
-                        Binding="{Binding HasVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ElementStyle="{StaticResource DataGridCheckColumnElementStyle}">
-                        <DataGridCheckBoxColumn.HeaderStyle>
-                            <Style TargetType="{x:Type DataGridColumnHeader}">
-                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                            </Style>
-                        </DataGridCheckBoxColumn.HeaderStyle>
-                    </DataGridCheckBoxColumn>
+                <dxg:GridColumn Width="30">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                        <Button
+                            BorderThickness="0"
+                            Padding="3"
+                            Margin="3"
+                            Width="auto" Height="auto" 
+                            cal:Message.Attach="[Event Click] = [Action EditIdentificationType]">
+                            <Button.Content>
+                                <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                            </Button.Content>
+                        </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
 
-                    <DataGridTemplateColumn Width="30">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button Content="..." 
-                                FontSize="15"
-                                Width="20" Height="20" 
-                                cal:Message.Attach="[Event Click] = [Action EditIdentificationType]"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+            </dxg:GridControl>
         </busyIndicator:BusyMask>
     </Grid>
 </UserControl>

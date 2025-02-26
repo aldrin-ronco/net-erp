@@ -17,6 +17,7 @@ using DevExpress.Mvvm;
 using System.Windows.Input;
 using System.Threading;
 using Microsoft.Xaml.Behaviors.Core;
+using System.Dynamic;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
@@ -163,7 +164,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             this.Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            Task.Run(() => this.LoadIdentificationTypes());
+            _ = Task.Run(() => this.LoadIdentificationTypes());
         }
 
         #region Metodos 
@@ -190,17 +191,25 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 			        }
 			    }";
 
-                object variables = new
+                dynamic variables = new ExpandoObject();
+                variables.filter = new ExpandoObject();
+
+                variables.filter.or = new ExpandoObject[]
                 {
-                    Filter = new
-                    {
-                        Code = FilterSearch,
-                        Name = FilterSearch
-                    }
+                    new(),
+                    new()
                 };
 
+                variables.filter.or[0].code = new ExpandoObject();
+                variables.filter.or[0].code.@operator = "like";
+                variables.filter.or[0].code.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                variables.filter.or[1].name = new ExpandoObject();
+                variables.filter.or[1].name.@operator = "like";
+                variables.filter.or[1].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
                 var result = await IdentificationTypeService.GetList(query, variables);
-                ObservableCollection<IdentificationTypeGraphQLModel> source = new ObservableCollection<IdentificationTypeGraphQLModel>(result);
+                ObservableCollection<IdentificationTypeGraphQLModel> source = new(result);
                 this.IdentificationTypes = this.Context.AutoMapper.Map<ObservableCollection<IdentificationTypeDTO>>(source);
             }
             catch (GraphQLHttpRequestException exGraphQL)

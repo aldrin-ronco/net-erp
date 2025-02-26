@@ -1361,7 +1361,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             string fieldData3 = "Reference";
             dynamic variables = new ExpandoObject();
             variables.filter = new ExpandoObject();
-            variables.filter.catalogId = SelectedCatalog.Id;
+            variables.filter.and = new ExpandoObject[]
+            {
+                new(),
+                new()
+            };
+            variables.filter.and[0].catalogId = new ExpandoObject();
+            variables.filter.and[0].catalogId.@operator = "=";
+            variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
             SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context);
 
             _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
@@ -3399,7 +3406,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             string fieldData3 = "Reference";
             dynamic variables = new ExpandoObject();
             variables.filter = new ExpandoObject();
-            variables.filter.catalogId = SelectedCatalog.Id;
+            variables.filter.and = new ExpandoObject[]
+            {
+                new(),
+                new()
+            };
+            variables.filter.and[0].catalogId = new ExpandoObject();
+            variables.filter.and[0].catalogId.@operator = "=";
+            variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
             SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context);
 
             _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");

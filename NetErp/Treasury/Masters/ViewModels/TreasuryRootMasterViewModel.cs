@@ -3911,7 +3911,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.BankId = bank.Id;
+                variables.filter.BankId = new ExpandoObject();
+                variables.filter.BankId.@operator = "=";
+                variables.filter.BankId.value = bank.Id;
 
                 var source = await BankAccountService.GetList(query, variables);
                 var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(source);
@@ -4104,9 +4106,17 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.costCenterId = costCenterDTO.Id;
-                variables.filter.parentId = 0;
-                variables.filter.isPettyCash = false;
+                variables.filter.costCenterId = new ExpandoObject();
+                variables.filter.costCenterId.@operator = "=";
+                variables.filter.costCenterId.value = costCenterDTO.Id;
+
+                variables.filter.parentId = new ExpandoObject();
+                variables.filter.parentId.@operator = "=";
+                variables.filter.parentId.value = 0;
+
+                variables.filter.isPettyCash = new ExpandoObject();
+                variables.filter.isPettyCash.@operator = "=";
+                variables.filter.isPettyCash.value = false;
 
                 var source = await CashDrawerService.GetList(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<MajorCashDrawerMasterTreeDTO>>(source);
@@ -4185,8 +4195,13 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.parentId = majorCashDrawer.Id;
-                variables.filter.isPettyCash = false;
+                variables.filter.parentId = new ExpandoObject();
+                variables.filter.parentId.@operator = "=";
+                variables.filter.parentId.value = majorCashDrawer.Id;
+
+                variables.filter.isPettyCash = new ExpandoObject();
+                variables.filter.isPettyCash.@operator = "=";
+                variables.filter.isPettyCash.value = false;
 
                 var source = await CashDrawerService.GetList(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<TreasuryAuxiliaryCashDrawerMasterTreeDTO>>(source);
@@ -4251,9 +4266,17 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.costCenterId = costCenterDTO.Id;
-                variables.filter.isPettyCash = true;
-                variables.filter.parentId = 0;
+                variables.filter.costCenterId = new ExpandoObject();
+                variables.filter.costCenterId.@operator = "=";
+                variables.filter.costCenterId.value = costCenterDTO.Id;
+
+                variables.filter.isPettyCash = new ExpandoObject();
+                variables.filter.isPettyCash.@operator = "=";
+                variables.filter.isPettyCash.value = true;
+
+                variables.filter.parentId = new ExpandoObject();
+                variables.filter.parentId.@operator = "=";
+                variables.filter.parentId.value = 0;
 
                 var source = await CashDrawerService.GetList(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<MinorCashDrawerMasterTreeDTO>>(source);
@@ -4338,7 +4361,9 @@ namespace NetErp.Treasury.Masters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 //TODO : Cambiar por el id de la compañía
-                variables.filter.CompanyId = 1;
+                variables.filter.CompanyId = new ExpandoObject();
+                variables.filter.CompanyId.@operator = "=";
+                variables.filter.CompanyId.value = 1;
                 var source = await FranchiseService.GetList(query, variables);
                 var franchises = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseMasterTreeDTO>>(source);
                 if (franchises.Count > 0)
@@ -4400,11 +4425,20 @@ namespace NetErp.Treasury.Masters.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.accountingAccountFilter = new ExpandoObject();
+                variables.accountingAccountFilter.code = new ExpandoObject();
+                variables.accountingAccountFilter.code.@operator = new List<string>() { "length", ">=" };
+                variables.accountingAccountFilter.code.value = 8;
+
                 variables.cashDrawerFilter = new ExpandoObject();
+                variables.cashDrawerFilter.isPettyCash = new ExpandoObject();
+                variables.cashDrawerFilter.isPettyCash.@operator = "=";
+                variables.cashDrawerFilter.isPettyCash.value = false;
+
                 variables.bankAccountFilter = new ExpandoObject();
-                variables.cashDrawerFilter.isPettyCash = false;
-                variables.accountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
-                variables.bankAccountFilter.AllowedTypes = "AC";
+                variables.bankAccountFilter.allowedTypes = new ExpandoObject();
+                variables.bankAccountFilter.allowedTypes.value = "AC";
+                variables.bankAccountFilter.allowedTypes.exclude = true;
+
                 var result = await CashDrawerService.GetDataContext<CashDrawerComboBoxesDataContext>(query, variables);
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);

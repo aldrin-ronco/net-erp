@@ -672,7 +672,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                         emails {
                           id
-                          name
+                          description
                           email
                           sendElectronicInvoice
                         }
@@ -863,7 +863,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                           }
                           emails {
                             id
-                            name
+                            description
                             email
                             sendElectronicInvoice
                           }
@@ -904,7 +904,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                             }
                             emails {
                               id
-                              name
+                              description
                               email
                               sendElectronicInvoice
                             }

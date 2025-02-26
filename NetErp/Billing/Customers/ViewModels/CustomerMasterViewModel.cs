@@ -50,7 +50,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private ObservableCollection<CustomerDTO> _customers;
+        private ObservableCollection<CustomerDTO> _customers = [];
         public ObservableCollection<CustomerDTO> Customers
         {
             get { return _customers; }
@@ -229,7 +229,7 @@ namespace NetErp.Billing.Customers.ViewModels
                         }
                         emails {
                           id
-                          name
+                          description
                           email
                           isCorporate
                           sendElectronicInvoice
@@ -247,12 +247,27 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+                variables.filter.or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                //filtro searchName
+                variables.filter.or[0].searchName = new ExpandoObject();
+                variables.filter.or[0].searchName.@operator = "like";
+                variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                //filtro identificationNumber
+                variables.filter.or[1].identificationNumber = new ExpandoObject();
+                variables.filter.or[1].identificationNumber.@operator = "like";
+                variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                // Pagination
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                if(!string.IsNullOrEmpty(FilterSearch)) variables.filter.QueryFilter = $"entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' OR entity.identification_number like '%{FilterSearch.Trim().Replace(" ","%")}%'";
-                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.SearchName = FilterSearch.Trim();
-                if (!string.IsNullOrEmpty(FilterSearch)) variables.filter.IdentificationNumber = FilterSearch.Trim();
                 var result = await CustomerService.GetPage(query, variables);
 
                 TotalCount = result.PageResponse.Count;

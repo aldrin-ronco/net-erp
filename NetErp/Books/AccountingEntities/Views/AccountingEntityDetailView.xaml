@@ -78,8 +78,8 @@
                         <dxb:BarItemSeparator/>
 
                         <dxb:BarButtonItem Content="Guardar" 
-                                           Glyph="{dxc:DXImage Image=Save_16x16.png}" 
-                                           LargeGlyph="{dxc:DXImage Image=Save_32x32.png}"                                             
+                                           Glyph="{dx:DXImage 'Images/Save/Save_32x32.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
                                            Description="Creates a new document."
                                            Hint="Guarda los cambios realizados"    
                                            IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -507,7 +507,7 @@
                             <TextBox x:Name="EmailDescription" Text="{Binding Path=EmailDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0" Grid.Row="1" Width="auto" Margin="4" Padding="4" FontSize="14"/>
                             <TextBox Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Grid.Row="1" Width="auto" Margin="4" Padding="4" FontSize="14"/>
                             <Button Grid.Column="2" Grid.Row="1" Margin="4" Padding="4" Width="auto" x:Name="AddEmail">
-                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_16x16.png" Stretch="None">
+                                <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None">
                                     <Image.Style>
                                         <Style TargetType="Image">
                                             <Style.Triggers>
@@ -557,7 +557,7 @@
                                     </DataGridTemplateColumn.CellStyle>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                                            <TextBlock Text="{Binding Path=Description, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
                                         TextWrapping="Wrap"
                                         VerticalAlignment="Center"
                                         Padding="3"/>
@@ -565,7 +565,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3"/>
+                                            <TextBox Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
@@ -615,7 +615,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Margin="4" Padding="4" Command="{Binding Data.DeleteMailCommand, Source={StaticResource DataContextProxy}}">
-                                                <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Trash_16x16.png" Stretch="None" Margin="3 0 3 0"/>
+                                                <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Stretch="None" Margin="3 0 3 0"/>
                                             </Button>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
