@@ -2,14 +2,17 @@
 using Caliburn.Micro;
 using DevExpress.ClipboardSource.SpreadsheetML;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
+using DevExpress.Xpf.Grid;
 using Models.Global;
 using NetErp.Global.Smtp.ViewModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Global.Email.ViewModels
 {
@@ -17,7 +20,6 @@ namespace NetErp.Global.Email.ViewModels
     {
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
-
         private EmailMasterViewModel _emailMasterViewModel;
         private EmailMasterViewModel EmailMasterViewModel
         {
@@ -28,7 +30,6 @@ namespace NetErp.Global.Email.ViewModels
                 return _emailMasterViewModel;
             }
         }
-
         public EmailViewModel(IMapper mapper,
                                  IEventAggregator eventAggregator)
         {
@@ -49,17 +50,31 @@ namespace NetErp.Global.Email.ViewModels
                 throw;
             }
         }
-
-        public async Task ActivateDetailView(EmailGraphQLModel email)
+        public async Task ActivateDetailViewForNew()
         {
             try
             {
                 EmailDetailViewModel instance = new(this);
-                instance.EmailSmtp = email.Smtp.Name;
-                instance.EmailEmail = email.Email;
+                instance.CleanUpControls();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public async Task ActivateDetailViewForEdit(EmailGraphQLModel email)
+        {
+
+            try
+            {
+                EmailDetailViewModel instance = new(this);
                 instance.EmailPassword = email.Password;
                 instance.EmailDescription = email.Description;
-
+                instance.EmailEmail = email.Email;
+                instance.EmailId = email.Id;
+                instance.SelectedSmtp = instance.EmailSmtp.FirstOrDefault(smtp => smtp.Id == email.Smtp.Id) ?? throw new Exception(); //TODO
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 
             }

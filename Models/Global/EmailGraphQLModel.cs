@@ -17,8 +17,6 @@ namespace Models.Global
         public bool SendElectronicInvoice { set; get; } = false;
         public AccountingEntityGraphQLModel AccountingEntity { get; set; }
         public SmtpGraphQLModel Smtp { get; set; }
-
-        public SmtpGraphQLModel NameSmtp { get; set; }
         public AwsSesGraphQLModel AwsSes { get; set; }
         public override string ToString()
         {
@@ -27,17 +25,19 @@ namespace Models.Global
 
         public class EmailDeleteMessage
         {
-            public EmailGraphQLModel DeleteEmail { set; get; } = new EmailGraphQLModel();
+            public EmailGraphQLModel DeleteEmail;
+
+            public EmailGraphQLModel DeletedEmail { set; get; } = new EmailGraphQLModel();
         }
 
         public class EmailCreateMessage
         {
-            public EmailGraphQLModel CreateEmail { set; get; } = new EmailGraphQLModel();
+            public EmailGraphQLModel CreatedEmail { set; get; } = new EmailGraphQLModel();
         }
 
         public class EmailUpdateMessage
         {
-            public EmailGraphQLModel UpdateEmail { set; get; } = new EmailGraphQLModel();
+            public EmailGraphQLModel UpdatedEmail { set; get; } = new EmailGraphQLModel();
         }         
 
     }

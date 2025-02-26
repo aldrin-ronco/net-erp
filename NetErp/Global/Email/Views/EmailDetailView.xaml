@@ -5,15 +5,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Global.Email.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"             
-             
-            xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
-            xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-            xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
-            xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-            xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
-            xmlns:cal="http://caliburnmicro.com"
-            xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
+             d:DesignHeight="450" d:DesignWidth="800"  
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
                   
     <Grid>
         <Grid.RowDefinitions>
@@ -35,42 +35,90 @@
                        Hint="Regresa a la lista de email"
                        Command="{Binding Path=GoBackCommand}"/>
                     <dxb:BarItemSeparator/>
+
+                    <dxb:BarButtonItem Content="Guardar" 
+                                       Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
+                                       LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
+                                       Description="Actualizar email"
+                                       Hint="Guardar cambios"    
+                                       IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                       RibbonStyle="Large">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
-        <Grid Grid.Row="1" Margin="0 10 0 0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-            </Grid.RowDefinitions>
+        
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                    IsBusy="{Binding IsBusy}"
+                    IndicatorType="BouncingDot"
+                    BusyContent="Please wait..."
+                    BusyContentMargin="0,20,0,0"
+                    IsBusyAtStartup="False"
+                    Grid.Row="1">
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <!--Smtp Server-->
-            <TextBlock Text="SMTP Server" Grid.Column="0" Grid.Row="0" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-            <dxe:ComboBoxEdit Grid.Column="1" Grid.Row="1" Margin="5 0 5 30" Width="300" Text="{Binding Path=EmailSmtp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                <Grid Grid.Row="1" Grid.Column="1" Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-            <!--Email-->
-            <TextBlock Text="Email" Grid.Column="0" Grid.Row="2" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-            <dxe:TextEdit Grid.Column="1" Grid.Row="3" Margin="5 0 5 30" Width="300" Text="{Binding Path=EmailEmail, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                    </Grid.ColumnDefinitions>
 
-            <!--Contraseña-->
-            <TextBlock Text="Contraseña" Grid.Column="0" Grid.Row="4" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-            <dxe:TextEdit Grid.Column="1" Grid.Row="5" Margin="5 0 5 30" Width="300" Text="{Binding Path=EmailPassword, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <!-- SMTP Server -->
+                    <TextBlock Text="SMTP Server" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <dxe:ComboBoxEdit Grid.Row="1" Width="300"
+                                      ItemsSource="{Binding EmailSmtp}"
+                                      SelectedItem="{Binding SelectedSmtp}"
+                                      IsTextEditable="False"
+                                      Margin="0 0 0 30"/>  
 
-            <!--Descripción-->
-            <TextBlock Text="Descripción" Grid.Column="0" Grid.Row="6" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-            <dxe:TextEdit Grid.Column="1" Grid.Row="7" Margin="5 0 5 30" Width="300" Text="{Binding Path=EmailDescription, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                    <!-- Descripción -->
+                    <TextBlock Text="Descripción" Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <dxe:TextEdit Grid.Row="3" Width="300"
+                                  Text="{Binding EmailDescription, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  Margin="0 0 0 30"/> 
 
-        </Grid>
+                    <!-- Correo Electrónico -->
+                    <TextBlock Text="Correo electrónico" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <dxe:TextEdit Grid.Row="5" Width="300"
+                                  Text="{Binding EmailEmail, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Margin="0 0 0 30"/>
+
+                    <!-- Contraseña -->
+                    <TextBlock Text="Contraseña" Grid.Row="6" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <dxe:PasswordBoxEdit Grid.Row="7" Width="300"
+                                         Password="{Binding EmailPassword, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                         ShowPasswordButtonVisibility="Auto"
+                                         Margin="0 0 0 30"/>
+                </Grid>
+            </Grid>
+
+        </busyIndicator:BusyMask>
     </Grid>
 </UserControl>
