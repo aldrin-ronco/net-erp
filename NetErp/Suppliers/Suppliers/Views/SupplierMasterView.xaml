@@ -18,7 +18,7 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
              d:DataContext="{d:DesignInstance Type=viewmodels:SupplierMasterViewModel}"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" d:Background="White">
+             d:DesignHeight="450" d:DesignWidth="800">
     <Grid> 
         <Grid Width="auto" Height="auto">
             <Grid.RowDefinitions>
@@ -34,7 +34,7 @@
                 <!--StatusBar-->
             </Grid.RowDefinitions>
             <!--Toolbar-->
-            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" Margin="0 0 0 5"
                            AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
                            RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
@@ -68,7 +68,8 @@
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
             <!--Text de Busqueda-->
-            <StackPanel Grid.Row="2" Orientation="Vertical">
+            <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0 5 0 0">
+                <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 5"/>
                 <dxe:TextEdit x:Name="FilterSearch"
                               EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               NullText="Escribe por lo menos 3 letras para iniciar la busqueda"

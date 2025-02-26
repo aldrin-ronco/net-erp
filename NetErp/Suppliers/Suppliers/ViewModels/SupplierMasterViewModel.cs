@@ -352,11 +352,24 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
+
+                variables.filter.or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                variables.filter.or[0].searchName = new ExpandoObject();
+                variables.filter.or[0].searchName.@operator = "like";
+                variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                variables.filter.or[1].identificationNumber = new ExpandoObject();
+                variables.filter.or[1].identificationNumber.@operator = "like";
+                variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                variables.filter.QueryFilter = FilterSearch == "" ? "" : $"WHERE entity.search_name like '%{FilterSearch.Trim().Replace(" ", "%")}%' ";
-
                 // Iniciar cronometro
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
