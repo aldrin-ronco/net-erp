@@ -39,7 +39,6 @@
                    RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
             <dxr:RibbonPage Caption="General">
-
                 <dxr:RibbonPageGroup Caption="Acciones">
                     <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
                                    LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
