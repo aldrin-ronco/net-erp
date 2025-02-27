@@ -8,7 +8,7 @@
              d:DesignHeight="36" d:DesignWidth="722">
 
     <Border BorderThickness="0" BorderBrush="LightGray">
-    <Grid>
+    <Grid Background="Transparent" Margin="0, 5, 0, 0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*"/>
@@ -59,7 +59,7 @@
                 <TextBlock Text="Tamaño de Página ( Registros por página )" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
                 <ComboBox Width="60" FontSize="14" ToolTip="Rows x Page" Name="cbPageSize"
                           IsEditable="False" SelectionChanged="ComboBoxSelectionChanged"
-                          VerticalAlignment="Center" Margin="0,0,5,0" Height="23" HorizontalContentAlignment="Center">
+                          VerticalAlignment="Center" Margin="0,0,0,0" Height="23" HorizontalContentAlignment="Center">
                     <ComboBoxItem Content="50" IsSelected="False" />
                     <ComboBoxItem Content="100" IsSelected="True" />
                     <ComboBoxItem Content="500" />

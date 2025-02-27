@@ -13,12 +13,15 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:local="clr-namespace:NetErp.Global.Smtp.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Background="AliceBlue">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
+            
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+</Grid.ColumnDefinitions>
 
         <dxr:RibbonControl  IsSimplified="False" Grid.Row="0" Margin="0 0 0 10"
                             AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
@@ -71,20 +74,24 @@
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!--Name-->
-                <TextBlock Text="Nombre" Grid.Column="0" Grid.Row="0" FontWeight="Bold" Margin="5 0 5 10" HorizontalAlignment="Center"/>
-                <dxe:TextEdit Grid.Column="1" Grid.Row="1" Margin="5 0 5 10" Width="300" Text="{Binding Path=SmtpName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
-                              CharacterCasing="Upper" x:Name="SmtpName"/>
+                <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="0" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="left" VerticalAlignment="Bottom"/>
+                <dxe:TextEdit Grid.Column="1" Grid.Row="1" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                              CharacterCasing="Upper" x:Name="SmtpName" HorizontalAlignment="Left"/>
 
                 <!--Host-->
-                <TextBlock Text="Host" Grid.Column="0" Grid.Row="2" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-                <dxe:TextEdit Grid.Column="1" Grid.Row="3" Margin="5 10 5 10" Width="300" Text="{Binding Path=SmtpHost, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                <TextBlock Text="Host" Grid.Column="1" Grid.Row="2" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="Left"/>
+                <dxe:TextEdit Grid.Column="1" Grid.Row="3" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpHost, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                              HorizontalAlignment="Left"/>
 
                 <!--Port-->
-                <TextBlock Text="Puerto" Grid.Column="0" Grid.Row="4" FontWeight="Bold" Margin="5 10 5 10" HorizontalAlignment="Center"/>
-                <dxe:TextEdit Grid.Column="1" Grid.Row="5" Margin="5 10 5 10" Width="300" Text="{Binding Path=SmtpPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                <TextBlock Text="Puerto" Grid.Column="1" Grid.Row="4" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="Left"/>
+                <dxe:TextEdit Grid.Column="1" Grid.Row="5" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                              HorizontalAlignment="Left"/>
             </Grid>
         </busyIndicator:BusyMask>
     </Grid>

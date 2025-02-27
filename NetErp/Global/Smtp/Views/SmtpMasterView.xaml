@@ -72,7 +72,7 @@
             VerticalContentAlignment="Center"
             CharacterCasing="Upper"
             h:FocusBehavior.IsFocused="True"
-            Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
+            Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}" TextChanged="WatermarkTextBox_TextChanged">
             <xctk:WatermarkTextBox.Watermark>
                 <TextBlock Text="Escribe por lo menos 3 letras para iniciar la busqueda" Margin="4,0,0,0" FontSize="13" />
             </xctk:WatermarkTextBox.Watermark>

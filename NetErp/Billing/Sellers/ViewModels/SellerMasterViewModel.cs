@@ -596,7 +596,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             return LoadSellers();
         }
 
-        #region Paginacion
+       
 
         private string _responseTime;
         public string ResponseTime
@@ -664,6 +664,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        #endregion
+        
     }
 }

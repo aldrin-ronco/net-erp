@@ -51,6 +51,7 @@
                 <MenuItem Header="Administración de vendedores" x:Name="OpenSeller"></MenuItem>
                 <MenuItem Header="Administración de clientes" x:Name="OpenCustomer"></MenuItem>
                 <MenuItem Header="Administración de cupos de crédito" x:Name="OpenCreditLimit"/>
+                <MenuItem Header="Administracion de zonas de ventas" x:Name="OpenZone"/>
             </MenuItem>
             <MenuItem Header="Inventario">
                 <MenuItem Header="Unidades de medida" x:Name="OpenMeasurementUnits"/>

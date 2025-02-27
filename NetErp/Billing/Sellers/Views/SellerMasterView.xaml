@@ -39,7 +39,6 @@
                    RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
             <dxr:RibbonPage Caption="General">
-
                 <dxr:RibbonPageGroup Caption="Acciones">
                     <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
                                    LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
@@ -97,7 +96,7 @@
             VerticalContentAlignment="Center"
             CharacterCasing="Upper"
             h:FocusBehavior.IsFocused="True"
-            Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
+            Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}" TextChanged="WatermarkTextBox_TextChanged">
                     <xctk:WatermarkTextBox.Watermark>
                         <TextBlock Text="Escribe por lo menos 3 letras para iniciar la busqueda" Margin="4,0,0,0" FontSize="13" />
                     </xctk:WatermarkTextBox.Watermark>

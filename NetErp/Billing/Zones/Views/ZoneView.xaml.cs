@@ -13,21 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace NetErp.Global.Smtp.Views
+namespace NetErp.Billing.Zones.Views
 {
     /// <summary>
-    /// Lógica de interacción para SmtpMasterView.xaml
+    /// Lógica de interacción para ZoneView.xaml
     /// </summary>
-    public partial class SmtpMasterView : UserControl
+    public partial class ZoneView : UserControl
     {
-        public SmtpMasterView()
+        public ZoneView()
         {
             InitializeComponent();
-        }
-
-        private void WatermarkTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
         }
     }
 }

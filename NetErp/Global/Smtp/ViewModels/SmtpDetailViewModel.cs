@@ -203,7 +203,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 }
             }" :
             @"
-            mutation($id: Int!, $data: UpdateSmtpInput!){
+            mutation($id: Int!, $data: UpdateSmtpInput! ){
                 UpdateResponse: updateSmtp(id: $id, data: $data){
                 id
                 name
