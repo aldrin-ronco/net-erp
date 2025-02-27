@@ -24,10 +24,5 @@ namespace NetErp.Global.Smtp.Views
         {
             InitializeComponent();
         }
-
-        private void WatermarkTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
     }
 }

@@ -21,10 +21,5 @@ namespace NetErp.Billing.Sellers.Views
                 overflowGrid.Visibility = Visibility.Collapsed;
             }
         }
-
-        private void WatermarkTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
     }
 }
