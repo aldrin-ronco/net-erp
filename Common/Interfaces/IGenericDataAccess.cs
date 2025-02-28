@@ -28,15 +28,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    //throw new Exception(result.Errors[0].Message);
-                    if (result.Errors[0].Extensions != null)
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
                     {
-                        throw new Exception(result.Errors[0].Extensions.Values.ToString());
+                        throw new Exception(value.ToString());
                     }
-                    else
-                    {
-                        throw new Exception(result.Errors[0].Message);
-                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.CreateResponse;
             }
@@ -59,7 +57,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.ListResponse;
             }
@@ -82,15 +86,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    if (result.Errors[0].Extensions != null)
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
                     {
-                        if (result.Errors[0].Extensions.ContainsKey("message")) throw new Exception(result.Errors[0].Extensions["message"].ToString());
-                        throw new Exception(result.Errors[0].Message.ToString());
+                        throw new Exception(value.ToString());
                     }
-                    else
-                    {
-                        throw new Exception(result.Errors[0].Message);
-                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.UpdateResponse;
             }
@@ -112,7 +114,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.DeleteResponse;
             }
@@ -136,7 +144,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.ListResponse;
             }
@@ -159,7 +173,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data;
             }
@@ -183,7 +203,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.SingleItemResponse;
             }
@@ -209,7 +235,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.ListResponse;
             }
@@ -232,7 +264,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data;
             }
@@ -255,7 +293,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.CanDeleteModel;
             }

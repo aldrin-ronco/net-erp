@@ -206,7 +206,7 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 IsBusy = true;
-                int id = SelectedItem.Id;
+                int id = SelectedItem!.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteSmtp(id: $id){
@@ -333,10 +333,13 @@ namespace NetErp.Global.Smtp.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
