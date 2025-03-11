@@ -109,6 +109,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CreditLimitGraphQLModel>>().To<CreditLimitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();   
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books

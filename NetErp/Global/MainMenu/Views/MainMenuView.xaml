@@ -39,6 +39,7 @@
                 <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
                 <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
                 <MenuItem Header="Tipos de Documentos" x:Name="OpenIdentificationType"/>
+                <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
@@ -46,6 +47,7 @@
                 <MenuItem Header="Movimiento por tercero y cuenta" x:Name="OpenEntityVsAccount"/>
                 <MenuItem Header="Balance de prueba por tercero" x:Name="OpenTestBalanceByEntity"/>
                 <MenuItem Header="Estado de resultados anual" x:Name="OpenAnnualIncomeStatement"/>
+                
             </MenuItem>
             <MenuItem Header="Ventas">
                 <MenuItem Header="Administración de vendedores" x:Name="OpenSeller"></MenuItem>

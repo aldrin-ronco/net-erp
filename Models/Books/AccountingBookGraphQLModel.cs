@@ -15,4 +15,21 @@ namespace Models.Books
             return Name;
         }
     }
+
+    public class AccountingBookCreateMessage
+    {
+        public AccountingBookGraphQLModel CreatedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+    }
+
+    public class AccountingBookUpdateMessage
+    {
+        public AccountingBookGraphQLModel UpdatedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+    }
+
+    public class AccountingBookDeleteMessage
+    {
+        public AccountingBookGraphQLModel DeletedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+    }
+
+
 }
