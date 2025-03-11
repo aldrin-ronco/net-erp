@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
+using DevExpress.Xpf.Core;
 using NetErp.Billing.Customers.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -14,9 +16,9 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
 
-        private CreditLimitMasterViewModel _creditLimitMasterViewModel;
+        private CreditLimitMasterViewModel? _creditLimitMasterViewModel;
 
-        public CreditLimitMasterViewModel CreditLimitMasterViewModel
+        public CreditLimitMasterViewModel? CreditLimitMasterViewModel
         {
             get 
             {
@@ -29,20 +31,34 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             AutoMapper = autoMapper;
             EventAggregator = eventAggregator;
-            _ = Task.Run(ActivateMasterView);
+            _ = Task.Run(async () => 
+            {
+                try
+                {
+                    await ActivateMasterViewAsync();
+                }
+                catch (AsyncException ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             try
             {
-                await ActivateItemAsync(CreditLimitMasterViewModel, new System.Threading.CancellationToken());
+                await ActivateItemAsync(CreditLimitMasterViewModel ?? new CreditLimitMasterViewModel(this), new System.Threading.CancellationToken());
             }
-            catch (Exception)
+            catch(Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
+
         }
     }
 }

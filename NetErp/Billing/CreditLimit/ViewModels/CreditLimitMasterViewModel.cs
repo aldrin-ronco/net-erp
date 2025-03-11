@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
@@ -288,7 +289,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             get
             {
-                if (_paginationCommand == null) this._paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                if (_paginationCommand == null) this._paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
                 return _paginationCommand;
             }
         }
@@ -308,7 +309,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
         }
 
-        private async Task ExecuteChangeIndex()
+        private async Task ExecuteChangeIndexAsync()
         {
             await LoadCreditLimitsAsync();
         }
@@ -409,9 +410,13 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -439,10 +444,21 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 if (!managedCreditLimits.Any()) return;
                 await Context.EventAggregator.PublishOnUIThreadAsync(new CreditLimitManagerMessage { ManagedCreditLimits = managedCreditLimits });
             }
-            catch (Exception)
+            catch (AsyncException ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -481,10 +497,10 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 var result = await CreditLimitService.SendMutationList(query, variables);
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 

@@ -105,6 +105,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
+                throw new Exception("test");
                 string parentCode = parent.Code.Trim();
                 if (parent.Childrens[0].IsDummyChild)
                 {
@@ -152,8 +153,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadChildren" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -273,12 +274,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     SelectedItem = lv_5.First();
                 }
             }
+            catch (AsyncException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();                
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "SearchAccount" : currentMethod.Name)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                throw new AsyncException(innerException: ex);
             }
-
         }
         public ObservableCollection<AccountingAccountDTO> PopulateAccountingAccountDTO(List<AccountingAccountGraphQLModel> accounts)
         {
@@ -615,10 +618,27 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         void OnAccountingAccountCreateListMessage(AccountingAccountCreateListMessage message)
         {
-            if(this.accounts.Count == 0) { return; }
-            Task.Run(() => accounts.AddRange(message.CreatedAccountingAccountList))
-              .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
-              .ContinueWith(antecedent => SearchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
+            try
+            {
+                if(this.accounts.Count == 0) { return; }
+                _ = Task.Run(() => accounts.AddRange(message.CreatedAccountingAccountList))
+                  .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
+                  .ContinueWith(antecedent => SearchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
 
         /// <summary>

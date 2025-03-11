@@ -1,4 +1,7 @@
-﻿using DevExpress.Mvvm;
+﻿using Caliburn.Micro;
+using Common.Helpers;
+using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -43,13 +46,23 @@ namespace NetErp.Books.AccountingAccounts.DTO
 
         void OnIsExpandedChanged()
         {
-            if (_childrens != null)
+            try
             {
-                if (_isExpanded && _childrens.Count > 0)
+                if (_childrens != null)
                 {
-                    if (_childrens[0].IsDummyChild)
-                        _context.LoadChildren(this, _context.accounts);
+                    if (_isExpanded && _childrens.Count > 0)
+                    {
+                        if (_childrens[0].IsDummyChild)
+                            _context.LoadChildren(this, _context.accounts);
+                    }
                 }
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 

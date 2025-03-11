@@ -558,7 +558,17 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
+            try
+            {
+                _ = Task.Run(() => Context.ActivateMasterViewAsync());
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
 
         public void EndRowEditing()
@@ -571,8 +581,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -610,8 +622,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -638,79 +649,86 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public async Task<IGenericDataAccess<SellerGraphQLModel>.PageResponseType> LoadPage()
         {
-            string queryForPage;
-            queryForPage = @"
-                query ($filter: SellerFilterInput){
-                  PageResponse: sellerPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      isActive
-                      entity {
-                        id
-                        verificationDigit
-                        identificationNumber
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        searchName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        address
-                        telephonicInformation
-                        country {
+            try
+            {
+                string queryForPage;
+                queryForPage = @"
+                    query ($filter: SellerFilterInput){
+                      PageResponse: sellerPage(filter: $filter) {
+                        count
+                        rows {
                           id
-                        }
-                        department {
-                          id
-                        }
-                        city {
-                          id
-                        }
-                        emails {
-                          id
-                          description
-                          email
-                          sendElectronicInvoice
+                          isActive
+                          entity {
+                            id
+                            verificationDigit
+                            identificationNumber
+                            firstName
+                            middleName
+                            firstLastName
+                            middleLastName
+                            searchName
+                            phone1
+                            phone2
+                            cellPhone1
+                            cellPhone2
+                            address
+                            telephonicInformation
+                            country {
+                              id
+                            }
+                            department {
+                              id
+                            }
+                            city {
+                              id
+                            }
+                            emails {
+                              id
+                              description
+                              email
+                              sendElectronicInvoice
+                            }
+                          }
+                          costCenters {
+                            id
+                            name
+                          }
                         }
                       }
-                      costCenters {
-                        id
-                        name
-                      }
-                    }
-                  }
-                  identificationTypes {
-                    id
-                    code
-                    name
-                    hasVerificationDigit
-                    minimumDocumentLength
-                  }
-                  countries{
-                    id
-                    code
-                    name
-                    departments {
-                      id
-                      code
-                      name
-                      cities {
+                      identificationTypes {
                         id
                         code
                         name
+                        hasVerificationDigit
+                        minimumDocumentLength
                       }
-                    }
-                  }
-                  costCenters{
-                    id
-                    name
-                  }
-                }";
-            return await SellerService.GetPage(queryForPage, new object { });
+                      countries{
+                        id
+                        code
+                        name
+                        departments {
+                          id
+                          code
+                          name
+                          cities {
+                            id
+                            code
+                            name
+                          }
+                        }
+                      }
+                      costCenters{
+                        id
+                        name
+                      }
+                    }";
+                return await SellerService.GetPage(queryForPage, new object { });
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
         public async Task Save()
@@ -730,18 +748,23 @@ namespace NetErp.Billing.Sellers.ViewModels
                     await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows });
                 }
                 Context.EnableOnViewReady = false;
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{exGraphQL.Message}.\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -919,9 +942,9 @@ namespace NetErp.Billing.Sellers.ViewModels
                 dynamic result = IsNewRecord ? await SellerService.Create(query, variables) : await SellerService.Update(query, variables);
                 return (SellerGraphQLModel)result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -938,7 +961,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -956,7 +982,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -964,8 +993,6 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
         }
 
         public async Task Initialize()
@@ -1070,7 +1097,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
