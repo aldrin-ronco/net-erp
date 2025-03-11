@@ -845,8 +845,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (this.Context.AccountingBooks == null)
                 {
                     dynamic variables = new ExpandoObject();
-                    variables.AccountingSourceFilter = new ExpandoObject();
-                    variables.AccountingSourceFilter.Annulment = false;
+                    variables.accountingSourceFilter = new ExpandoObject();
+                    variables.accountingSourceFilter.annulment = new ExpandoObject();
+                    variables.accountingSourceFilter.annulment.@operator = "=";
+                    variables.accountingSourceFilter.annulment.value = false;
+
                     this.IsBusy = true;
                     this.Refresh();
 

@@ -460,7 +460,7 @@
                     </ListView>                    
                 </dx:DXTabItem>
                 <!--Emails-->
-                <dx:DXTabItem Header="Emails" Height="20" VerticalAlignment="Bottom">
+                <dx:DXTabItem Header="Emails">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
