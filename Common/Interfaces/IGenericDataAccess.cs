@@ -136,7 +136,13 @@ namespace Common.Interfaces
                 });
                 if (result.Errors != null)
                 {
-                    throw new Exception(result.Errors[0].Message);
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
                 }
                 return result.Data.ListResponse;
             }
