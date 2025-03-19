@@ -40,6 +40,7 @@
                 <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
                 <MenuItem Header="Tipos de Documentos" x:Name="OpenIdentificationType"/>
                 <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
+                <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
