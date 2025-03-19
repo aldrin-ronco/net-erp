@@ -272,6 +272,7 @@ namespace Common.Interfaces
                     }
                     throw new Exception(error.Message);
                 }
+
                 return result.Data;
             }
             catch (Exception)
