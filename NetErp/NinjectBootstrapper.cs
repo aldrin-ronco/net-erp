@@ -11,6 +11,7 @@ using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
 using Models.Treasury;
+using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
@@ -109,7 +110,8 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CreditLimitGraphQLModel>>().To<CreditLimitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();   
+            _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books
@@ -219,6 +221,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryBankAccountCostCenterDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
+                _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());
