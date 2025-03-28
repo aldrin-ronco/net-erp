@@ -1,0 +1,122 @@
+﻿<UserControl x:Class="NetErp.Books.WithholdingCertificateConfig.Views.WithholdingCertificateConfigDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Books.WithholdingCertificateConfig.Views"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+              xmlns:config="clr-namespace:Common.Config;assembly=Common"
+              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
+
+             >
+  
+        <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
+               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
+               RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+
+            <dxr:RibbonPage Caption="General">
+
+                <dxr:RibbonPageGroup Caption="Acciones">
+                    <dxb:BarButtonItem x:Name="btnBack" 
+                           Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
+                           LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
+                           Content="Regresar"
+                           RibbonStyle="Large"
+                           Hint="Regresa a la lista de terceros"
+                           Command="{Binding Path=GoBackCommand}"/>
+                    <dxb:BarItemSeparator/>
+                    <dxb:BarButtonItem 
+                        x:Name="btnSave" 
+                        Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
+               LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}" 
+               Content="Guardar"
+               RibbonStyle="Large"
+               IsEnabled="{Binding Path=IsBusy, 
+                                   Mode=OneWay, 
+                                   UpdateSourceTrigger=PropertyChanged, 
+                                   Converter={dxmvvm:BooleanToVisibilityConverter 
+                                   Inverse=True}}"
+               Hint="Guardar">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" 
+                   EventName="ItemClick"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxb:BarButtonItem>
+                    <dxb:BarItemSeparator/>
+
+                  
+                    <dxb:BarItemLinkSeparator/>
+                </dxr:RibbonPageGroup>
+            </dxr:RibbonPage>
+        </dxr:RibbonControl>
+            
+        <StackPanel Grid.Row="1" Margin="0 10 0 10" Orientation="Vertical">
+            <TextBlock Text="Direccion y Ciudad" Margin="0 0 0 5"/>
+            <dxe:ComboBoxEdit  ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
+                   DisplayMember="FullName" EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" IsEnabled="{Binding WithholdingCertificateConfigComboBoxIsEnabled, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Margin="0 10 0 10" Orientation="Vertical">
+            <TextBlock Text="Nombre del certificado de retencion" 
+                       Margin="0 4 0 2"
+                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxe:TextEdit Text="{Binding Path=Entity.Name, Mode=TwoWay}"
+     Grid.ColumnSpan="4"
+     Margin="0" Padding="3"                                 
+     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Margin="0 10 0 10" Orientation="Vertical">
+            <TextBlock Text="Descripcion del certificado de retencion" 
+                  Margin="0 4 0 2"
+                  FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxe:TextEdit Text="{Binding Path=Entity.Description, Mode=TwoWay}"
+Grid.ColumnSpan="4"
+Margin="0" Padding="3"                                 
+FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+        <dxg:GridControl Grid.Row="4" Margin="0 10 0 0"
+             ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+            <dxg:GridControl.View>
+                <dxg:TableView  AllowEditing="False" 
+                        AllowCascadeUpdate="False" 
+                        EnableSelectedRowAppearance="True"
+                        ShowGroupPanel="False" AlternateRowBackground="Beige"
+                        AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                        AllowSorting="False" AllowColumnFiltering="False"/>
+            </dxg:GridControl.View>
+            <dxg:GridColumn Header=""
+Width="45"
+HorizontalHeaderContentAlignment="Center">
+                <dxg:GridColumn.CellTemplate>
+                    <DataTemplate>
+                        <CheckBox Margin="4" 
+                  HorizontalAlignment="Center"
+                  IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </DataTemplate>
+                </dxg:GridColumn.CellTemplate>
+            </dxg:GridColumn>
+           
+
+            <dxg:GridColumn Header="Cuenta Contable" Width="*" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+            
+        </dxg:GridControl>
+    </Grid>
+ 
+</UserControl>

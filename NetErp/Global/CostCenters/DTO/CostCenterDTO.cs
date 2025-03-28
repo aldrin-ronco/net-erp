@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace NetErp.Global.CostCenters.DTO
 {
@@ -53,7 +54,13 @@ namespace NetErp.Global.CostCenters.DTO
                 }
             }
         }
-
+        public string FullName
+        {
+            get
+            {
+                return Name + " " + Address + " " + City + " " + City.Department;
+            }
+        }
         private string _shortName;
         public string ShortName
         {
