@@ -1,11 +1,14 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Models.Global;
 using Models.Treasury;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace NetErp.Treasury.Concept.ViewModels
 {
@@ -29,8 +32,8 @@ namespace NetErp.Treasury.Concept.ViewModels
             AutoMapper = mapper;
             _ = Task.Run(ActivateMasterView);
         }
-
-        private async Task ActivateMasterView()
+        
+        public async Task ActivateMasterView()
         {
             try
             {
@@ -42,5 +45,24 @@ namespace NetErp.Treasury.Concept.ViewModels
             }
 
         }
+
+        public async Task ActivateDetailView(ConceptGraphQLModel concept)
+        {
+            try
+            {
+                ConceptDetailViewModel instance = new(this);
+                instance.NameConcept = concept.Name;
+                instance.SelectedType = concept.Type;
+                instance.SelectedAccoutingAccount = instance.AccoutingAccount.FirstOrDefault(account => account.Id == concept.AccountingAccountId) ?? throw new Exception(); //TODO
+
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            }
+            catch(Exception)
+            {
+                throw;
+            }
+        }
+
+
     }
 }
