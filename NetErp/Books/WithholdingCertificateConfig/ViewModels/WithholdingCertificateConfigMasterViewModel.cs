@@ -15,6 +15,7 @@ using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -83,6 +84,98 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
+        
+        #region Paginacion
+        /// <summary>
+        /// PageIndex
+        /// </summary>
+        private int _pageIndex = 1; // DevExpress first page is index zero
+        public int PageIndex
+        {
+            get { return _pageIndex; }
+            set
+            {
+                if (_pageIndex != value)
+                {
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
+                }
+            }
+        }
+
+        /// <summary>
+        /// PageSize
+        /// </summary>
+        private int _pageSize = 50; // Default PageSize 50
+        public int PageSize
+        {
+            get { return _pageSize; }
+            set
+            {
+                if (_pageSize != value)
+                {
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
+                }
+            }
+
+        }
+        // Tiempo de respuesta
+        private string _responseTime;
+        public string ResponseTime
+        {
+            get { return _responseTime; }
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        }
+
+        /// <summary>
+        /// TotalCount
+        /// </summary>
+        private int _totalCount = 0;
+        public int TotalCount
+        {
+            get { return _totalCount; }
+            set
+            {
+                if (_totalCount != value)
+                {
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
+                }
+            }
+        }
+
+        /// <summary>
+        /// PaginationCommand para controlar evento
+        /// </summary>
+        private ICommand _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecuteChangeIndex, ExecuteChangeIndex);
+                return _paginationCommand;
+            }
+        }
+        private async void ExecuteChangeIndex(object parameter)
+        {
+            await LoadWithholdingCertificateConfig();
+        }
+
+        private bool CanExecuteChangeIndex(object parameter)
+        {
+            return true;
+        }
+       
+       
+        #endregion
 
         private ICommand _newCommand;
 
@@ -94,6 +187,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 return _newCommand;
             }
         }
+
         public async Task NewAsync()
         {
             try
@@ -140,8 +234,17 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
        
         public async Task InitializeAsync()
         {
+           await LoadWithholdingCertificateConfig();
+        }
+        public async Task LoadWithholdingCertificateConfig()
+        {
             try
             {
+                this.Refresh();
+
+                // Iniciar cronometro
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 IsBusy = true;
                 string query = @"
                query( $filter: WithholdingCertificateConfigFilterInput!){
@@ -174,14 +277,15 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = 1;
-                variables.filter.Pagination.PageSize = 10;
+                variables.filter.Pagination.Page = PageIndex;
+                variables.filter.Pagination.PageSize = PageSize;
 
                 var result = await WithholdingCertificateConfigService.GetPage(query, variables);
-                var TotalCount = result.PageResponse.Count;
+                stopwatch.Stop();
+                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
                 Certificates = Context.AutoMapper.Map<ObservableCollection<WithholdingCertificateConfigGraphQLModel>>(result.PageResponse.Rows);
-                TotalCount = TotalCount;
-               
+                TotalCount = result.PageResponse.Count;
+
             }
             catch (Exception ex)
             {
@@ -197,6 +301,5 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
-        
     }
 }

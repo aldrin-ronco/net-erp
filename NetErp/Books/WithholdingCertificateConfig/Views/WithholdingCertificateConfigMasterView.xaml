@@ -14,7 +14,7 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:cal="http://caliburnmicro.com"
-
+             xmlns:uc="clr-namespace:NetErp.UserControls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <busyIndicator:BusyMask x:Name="BusyIndicator"
@@ -29,6 +29,7 @@
                 <RowDefinition Height="auto"/>
                
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <dxr:RibbonControl Grid.Column="0" 
             IsSimplified="False" 
@@ -103,6 +104,13 @@
                     </dxg:GridColumn.CellTemplate>
                 </dxg:GridColumn>
             </dxg:GridControl>
+            <uc:GridPaging Grid.Row="3" Grid.Column="0" 
+               HorizontalAlignment="Stretch" 
+               ChangedIndexCommand="{Binding PaginationCommand}" 
+               PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
     </busyIndicator:BusyMask>
 </UserControl>
