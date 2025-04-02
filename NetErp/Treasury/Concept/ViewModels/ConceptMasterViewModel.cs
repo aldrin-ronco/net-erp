@@ -21,7 +21,8 @@ using static Models.Treasury.ConceptGraphQLModel;
 namespace NetErp.Treasury.Concept.ViewModels
 {
     public class ConceptMasterViewModel: Screen,
-        IHandle<TreasuryConceptDeleteMessage>
+        IHandle<TreasuryConceptDeleteMessage>,
+        IHandle<TreasuryConceptUpdateMessage>
     {
         public IGenericDataAccess<ConceptGraphQLModel> ConceptService { get; set; } = IoC.Get<IGenericDataAccess<ConceptGraphQLModel>>();
         public ConceptViewModel Context { get; set; }
@@ -262,6 +263,11 @@ namespace NetErp.Treasury.Concept.ViewModels
             Concepts.Remove(conceptToDelete);
             SelectedItem = null;
             return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(TreasuryConceptUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadConceptsAsync();
         }
 
         private string _selectedType = string.Empty;

@@ -24,7 +24,7 @@ namespace Models.Treasury
         {
             return Name;
         }
-        public class ConceptCreateMessage
+        public class TreasuryConceptCreateMessage
         {
             public ConceptGraphQLModel CreatedTreasuryConcept { get; set; } = new ConceptGraphQLModel();
         }

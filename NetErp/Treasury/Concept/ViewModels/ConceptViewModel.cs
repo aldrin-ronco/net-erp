@@ -51,6 +51,7 @@ namespace NetErp.Treasury.Concept.ViewModels
             try
             {
                 ConceptDetailViewModel instance = new(this);
+                instance.ConceptId = concept.Id;
                 instance.NameConcept = concept.Name;
                 instance.SelectedType = concept.Type;
                 instance.SelectedAccoutingAccount = instance.AccoutingAccount.FirstOrDefault(account => account.Id == concept.AccountingAccountId) ?? throw new Exception(); //TODO
