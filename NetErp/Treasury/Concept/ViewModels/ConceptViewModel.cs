@@ -46,7 +46,7 @@ namespace NetErp.Treasury.Concept.ViewModels
 
         }
 
-        public async Task ActivateDetailView(ConceptGraphQLModel concept)
+        public async Task ActivateDetailViewForEdit(ConceptGraphQLModel concept)
         {
             try
             {
@@ -59,6 +59,20 @@ namespace NetErp.Treasury.Concept.ViewModels
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch(Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task ActivateDetailViewForNew()
+        {
+            try
+            {
+                ConceptDetailViewModel instance = new(this);
+                instance.CleanUpControls();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            }
+            catch (Exception)
             {
                 throw;
             }

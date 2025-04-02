@@ -43,6 +43,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         public IGenericDataAccess<ConceptGraphQLModel> ConceptService = IoC.Get<IGenericDataAccess<ConceptGraphQLModel>>();
         public IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
 
+        private bool IsNewRecord => ConceptId == 0;
         public async Task GoBack()
         {
             await Context.ActivateMasterView();
@@ -74,6 +75,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                     {
                         _nameConcept = value;
                         NotifyOfPropertyChange(nameof(NameConcept));
+                        NotifyOfPropertyChange(nameof(CanSave));
                     }
                 }
             }
@@ -148,12 +150,14 @@ namespace NetErp.Treasury.Concept.ViewModels
                     NotifyOfPropertyChange(nameof(SelectedType));
                     NotifyOfPropertyChange(nameof(IsPercentageSectionVisible));
                     NotifyOfPropertyChange(nameof(IsPercentageOptionsVisible));
+                    NotifyOfPropertyChange(nameof(CanSave));
 
                     // Asegurar que al seleccionar "Ingreso", la casilla se oculta
                     if (_selectedType == "I")
                     {
                         IsApplyPercentage = false;
                         NotifyOfPropertyChange(nameof(IsApplyPercentage));
+                        NotifyOfPropertyChange(nameof(CanSave));
                     }
                 }
             }
@@ -179,9 +183,10 @@ namespace NetErp.Treasury.Concept.ViewModels
                     _isApplyPercentage = value;
                     NotifyOfPropertyChange(nameof(IsApplyPercentage));
                     NotifyOfPropertyChange(nameof(IsPercentageOptionsVisible));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     if (_isApplyPercentage)
                     {
-                        PercentageValue = 0.000m; // Reinicia el valor cuando se activa
+                        PercentageValue = 0.000m; 
                     }
                 }
             }
@@ -222,16 +227,21 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
-        public bool IsNewRecord { get; set; }
+    
         public  bool CanSave
         {
             get
             {
-                if (string.IsNullOrEmpty(NameConcept) || string.IsNullOrEmpty(SelectedType)) return false;
+                
+                if (string.IsNullOrEmpty(NameConcept) ||
+                    string.IsNullOrEmpty(SelectedType) ||
+                    SelectedAccoutingAccount == null ||
+                    SelectedAccoutingAccount.Id == 0)
                 {
-                    return true;
+                    return false;
                 }
+
+                return true;
             }
         }
 
@@ -255,7 +265,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 {
                     _conceptId = value;
                     NotifyOfPropertyChange(nameof(ConceptId));
-                    //NotifyOfPropertyChange(nameof(IsNewRecord));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
@@ -308,6 +318,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                     _isBase1000 = !value; // Modifica la variable interna en lugar de llamar al setter
                     NotifyOfPropertyChange(nameof(IsBase100));
                     NotifyOfPropertyChange(nameof(IsBase1000));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -320,9 +331,10 @@ namespace NetErp.Treasury.Concept.ViewModels
                 if (_isBase1000 != value)
                 {
                     _isBase1000 = value;
-                    _isBase100 = !value; // Modifica la variable interna en lugar de llamar al setter
+                    _isBase100 = !value; 
                     NotifyOfPropertyChange(nameof(IsBase1000));
                     NotifyOfPropertyChange(nameof(IsBase100));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -362,6 +374,20 @@ namespace NetErp.Treasury.Concept.ViewModels
             var result = IsNewRecord ? await ConceptService.Create(query, variables) : await ConceptService.Update(query, variables);
             return result;
         }
+
+        public void CleanUpControls()
+        {
+            ConceptId = 0;
+            NameConcept = string.Empty;
+            IsApplyPercentage = false; 
+            PercentageValue = 0;
+            IsBase100 = false; 
+            SelectedType = string.Empty;
+            SelectedAccoutingAccount = AccoutingAccount.First(x => x.Id == 0);
+
+
+        }
+
     }
 }
 

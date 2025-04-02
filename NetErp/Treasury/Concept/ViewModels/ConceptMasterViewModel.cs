@@ -22,7 +22,8 @@ namespace NetErp.Treasury.Concept.ViewModels
 {
     public class ConceptMasterViewModel: Screen,
         IHandle<TreasuryConceptDeleteMessage>,
-        IHandle<TreasuryConceptUpdateMessage>
+        IHandle<TreasuryConceptUpdateMessage>,
+        IHandle<TreasuryConceptCreateMessage>
     {
         public IGenericDataAccess<ConceptGraphQLModel> ConceptService { get; set; } = IoC.Get<IGenericDataAccess<ConceptGraphQLModel>>();
         public ConceptViewModel Context { get; set; }
@@ -253,7 +254,7 @@ namespace NetErp.Treasury.Concept.ViewModels
 
         public async Task EditConcept()
         {
-            await Context.ActivateDetailView(SelectedItem ?? new ());
+            await Context.ActivateDetailViewForEdit(SelectedItem ?? new ());
         }
 
 
@@ -348,5 +349,26 @@ namespace NetErp.Treasury.Concept.ViewModels
                 
         public ICommand SelectTypeCommand { get; }
 
+        private ICommand _createConceptCommand;
+
+        public ICommand CreateConceptCommand
+        {
+            get
+            {
+                if (_createConceptCommand is null) _createConceptCommand = new AsyncCommand(CreateConceptAsync);
+                return _createConceptCommand;
+            }
+            set { _createConceptCommand = value; }
+        }
+
+        public async Task CreateConceptAsync()
+        {
+            await Context.ActivateDetailViewForNew();
+        }
+
+        public Task HandleAsync(TreasuryConceptCreateMessage message, CancellationToken cancellationToken)
+        {
+            return LoadConceptsAsync();
+        }
     }
 }
