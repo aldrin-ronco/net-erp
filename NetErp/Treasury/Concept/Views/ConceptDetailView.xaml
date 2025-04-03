@@ -5,8 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Treasury.Concept.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             
+             d:DesignHeight="450" d:DesignWidth="800"             
              
             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
@@ -19,7 +18,6 @@
             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
             xmlns:uc="clr-namespace:NetErp.UserControls">
-
 
     <Grid>
         <Grid.RowDefinitions>
@@ -59,7 +57,15 @@
             </dxr:RibbonPage>
         </dxr:RibbonControl>
 
-        <Grid Grid.Row=" 1">
+
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                        IsBusy="{Binding IsBusy}"
+                        IndicatorType="BouncingDot"
+                        BusyContent="Please wait..."
+                        BusyContentMargin="0,20,0,0"
+                        IsBusyAtStartup="False"
+                        Grid.Row="1">
+            <Grid Grid.Row=" 1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"></RowDefinition>
                 <RowDefinition Height="auto"></RowDefinition>
@@ -78,30 +84,30 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <RadioButton Content="Descuentos" 
-                     IsChecked="{Binding Path=IsTypeD, Mode=OneWay}" 
-                     CommandParameter="D" 
-                     Command="{Binding ChangeTypeCommand}"/>
-                <RadioButton Content="Ingresos" 
-                     IsChecked="{Binding Path=IsTypeI, Mode=OneWay}" 
-                     CommandParameter="I" 
-                     Command="{Binding ChangeTypeCommand}"/>
-                <RadioButton Content="Egresos" 
-                     IsChecked="{Binding Path=IsTypeE, Mode=OneWay}" 
-                     CommandParameter="E" 
-                     Command="{Binding ChangeTypeCommand}"/>    
-
-            </StackPanel>
-
+            
+                <TextBlock Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <RadioButton Content="Descuentos" 
+                         IsChecked="{Binding Path=IsTypeD, Mode=OneWay}" 
+                         CommandParameter="D" 
+                         Command="{Binding ChangeTypeCommand}"/>
+                    <RadioButton Content="Ingresos" 
+                         IsChecked="{Binding Path=IsTypeI, Mode=OneWay}" 
+                         CommandParameter="I" 
+                         Command="{Binding ChangeTypeCommand}"/>
+                    <RadioButton Content="Egresos" 
+                         IsChecked="{Binding Path=IsTypeE, Mode=OneWay}" 
+                         CommandParameter="E" 
+                         Command="{Binding ChangeTypeCommand}"/>
+                </StackPanel>
 
 
-            <TextBlock Grid.Row="4" Text="Nombre del concepto:" HorizontalAlignment="Center"></TextBlock>
+
+                <TextBlock Grid.Row="4" Text="Nombre del concepto:" HorizontalAlignment="Center"></TextBlock>
             <dxe:TextEdit Grid.Row="5" 
                           Width="300" 
                           HorizontalAlignment="Center"
+                          x:Name="NameConcept"
                           Text="{Binding Path=NameConcept, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                 
             </dxe:TextEdit>
@@ -145,34 +151,31 @@
                 </dxg:LookUpEdit.PopupContentTemplate>
             </dxg:LookUpEdit>-->
 
-
-
-
-
             <dxe:CheckEdit Grid.Row="8" 
                            Content="Aplicar porcentaje" 
                            HorizontalAlignment="Center" 
                            IsChecked="{Binding IsApplyPercentage, Mode=TwoWay}"
                            Visibility="{Binding IsPercentageSectionVisible}"/>
 
-            <StackPanel Grid.Row="10" 
+                <StackPanel Grid.Row="10" 
                         Orientation="Horizontal" 
                         HorizontalAlignment="Center"
                         Visibility="{Binding IsPercentageOptionsVisible}">
-                <!-- SpinEdit para ingresar el valor numérico -->
-                <dxe:SpinEdit Width="80"
+                    <!-- SpinEdit para ingresar el valor numérico -->
+                    <dxe:SpinEdit Width="80"
                   EditValue="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                   MinValue="0"
                   MaxValue="1000"
                   Increment="0.001"/>
 
-                <!-- Texto descriptivo -->
-                <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>
+                    <!-- Texto descriptivo -->
+                    <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>
 
-                <!-- RadioButtons para las opciones -->
-                <RadioButton GroupName="BaseOptions" Content="100" IsChecked="{Binding IsBase100}" />
-                <RadioButton GroupName="BaseOptions" Content="1000" IsChecked="{Binding IsBase1000}" Margin="10,0,0,0"/>
-            </StackPanel>
-        </Grid>
+                    <!-- RadioButtons para las opciones -->
+                    <RadioButton GroupName="BaseOptions" Content="100" IsChecked="{Binding IsBase100}" />
+                    <RadioButton GroupName="BaseOptions" Content="1000" IsChecked="{Binding IsBase1000}" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Grid>
+        </busyIndicator:BusyMask>
     </Grid>
 </UserControl>
