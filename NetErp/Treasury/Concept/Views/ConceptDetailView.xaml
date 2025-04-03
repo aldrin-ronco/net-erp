@@ -87,23 +87,25 @@
             
                 <TextBlock Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <RadioButton Content="Descuentos" 
+                    <RadioButton Content="DESCUENTOS" 
                          IsChecked="{Binding Path=IsTypeD, Mode=OneWay}" 
                          CommandParameter="D" 
                          Command="{Binding ChangeTypeCommand}"/>
-                    <RadioButton Content="Ingresos" 
+                    <RadioButton Content="INGRESOS" 
                          IsChecked="{Binding Path=IsTypeI, Mode=OneWay}" 
-                         CommandParameter="I" 
+                         CommandParameter="I"
+                         Margin="10,0,0,0"
                          Command="{Binding ChangeTypeCommand}"/>
-                    <RadioButton Content="Egresos" 
+                    <RadioButton Content="EGRESOS" 
                          IsChecked="{Binding Path=IsTypeE, Mode=OneWay}" 
                          CommandParameter="E" 
+                         Margin="10,0,0,0"
                          Command="{Binding ChangeTypeCommand}"/>
                 </StackPanel>
 
 
 
-                <TextBlock Grid.Row="4" Text="Nombre del concepto:" HorizontalAlignment="Center"></TextBlock>
+                <TextBlock Grid.Row="4" Text="Nombre del concepto" HorizontalAlignment="Center"></TextBlock>
             <dxe:TextEdit Grid.Row="5" 
                           Width="300" 
                           HorizontalAlignment="Center"
@@ -112,50 +114,44 @@
                 
             </dxe:TextEdit>
 
-            <TextBlock Grid.Row="6" Text="Cuenta contable:" HorizontalAlignment="Center"></TextBlock>
-            <dxg:LookUpEdit Grid.Row="7" Width="300" HorizontalAlignment="Center" 
+                <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Center" Margin="0,20,0,0"></TextBlock>
+                <dxg:LookUpEdit Grid.Row="7" Width="300" HorizontalAlignment="Center" 
                   ItemsSource="{Binding AccoutingAccount}"
                   SelectedItem="{Binding SelectedAccoutingAccount}"
-                  IsTextEditable="False"
+                  IsTextEditable="True"
+                  AutoComplete="True"
                   DisplayMember="Name"
                   ValueMember="Id"
-                  Margin="0 0 0 10"/>
+                  AutoPopulateColumns="False"
+                  Margin="0 0 0 20">
+                <dxg:LookUpEdit.StyleSettings>
+                    <dxg:SearchLookUpEditStyleSettings/>
+                </dxg:LookUpEdit.StyleSettings>
 
-            <!--<dxg:LookUpEdit
-                Grid.Row="7"
-                Width="300"
-                HorizontalAlignment="Center"
-                ItemsSource="{Binding AccoutingAccount}"
-                SelectedItem="{Binding SelectedAccoutingAccount}"
-                DisplayMember="ProductName"
-                ValueMember="ID"
-                AutoPopulateColumns="False"
-                AutoComplete="True"
-                IncrementalFiltering="True"
-                ImmediatePopup="True"
-                IsPopupAutoWidth="False">
                 <dxg:LookUpEdit.PopupContentTemplate>
                     <ControlTemplate>
-                        <dxg:GridControl Name="PART_GridControl"
-                            ItemsSource="{Binding Path=ItemsSource, RelativeSource={RelativeSource AncestorType=dxg:LookUpEdit}}">
+                        <dxg:GridControl Name="PART_GridControl">
                             <dxg:GridControl.Columns>
-                                <dxg:GridColumn FieldName="ProductName"/>
-                                <dxg:GridColumn FieldName="UnitPrice"/>
-                                <dxg:GridColumn FieldName="Quantity"/>
-                            </dxg:GridControl.Columns>
+                                <dxg:GridColumn FieldName="Code" Header="Código" Width="100"/>
+                                <dxg:GridColumn FieldName="Name" Header="Nombre" Width="200"/>
+                                <dxg:GridColumn FieldName="Margin" Header="Margin" Width="200"/>
+                                <dxg:GridColumn FieldName="Margin Basis" Header="Margin Basis" Width="200"/>
+                                </dxg:GridControl.Columns>
                             <dxg:GridControl.View>
                                 <dxg:TableView AutoWidth="True"/>
                             </dxg:GridControl.View>
                         </dxg:GridControl>
                     </ControlTemplate>
                 </dxg:LookUpEdit.PopupContentTemplate>
-            </dxg:LookUpEdit>-->
 
+                </dxg:LookUpEdit>
+           
             <dxe:CheckEdit Grid.Row="8" 
-                           Content="Aplicar porcentaje" 
+                           Content="¿Aplicar porcentaje?" 
                            HorizontalAlignment="Center" 
                            IsChecked="{Binding IsApplyPercentage, Mode=TwoWay}"
-                           Visibility="{Binding IsPercentageSectionVisible}"/>
+                           Visibility="{Binding IsPercentageSectionVisible}"
+                           Margin="0,0,0,20"/>
 
                 <StackPanel Grid.Row="10" 
                         Orientation="Horizontal" 

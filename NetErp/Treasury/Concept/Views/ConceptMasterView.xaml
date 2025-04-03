@@ -63,24 +63,27 @@
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
-        <TextBlock Grid.Row="1" Grid.Column="0" Margin="10 10 0 10" Text="Seleccione el tipo de concepto que desea modificar:"></TextBlock>
+        <TextBlock Grid.Row="1" Grid.Column="0" Margin="10 10 0 10" Text="Para filtrar, seleccione el tipo de concepto que requiere modificar:"></TextBlock>
 
         <StackPanel Grid.Row="2" Grid.Column="0" Margin="10 10 0 10" Orientation="Horizontal">
-            <RadioButton GroupName="ConceptType" Content="Descuentos"
+            <RadioButton GroupName="ConceptType" Content="DESCUENTOS"
                          IsChecked="{Binding Path=IsTypeD, Mode=TwoWay}"
                          Command="{Binding SelectTypeCommand}" CommandParameter="D"/>
 
-            <RadioButton GroupName="ConceptType" Content="Ingresos"
+            <RadioButton GroupName="ConceptType" Content="INGRESOS"
                          IsChecked="{Binding Path=IsTypeI, Mode=TwoWay}"
-                         Command="{Binding SelectTypeCommand}" CommandParameter="I"/>
+                         Command="{Binding SelectTypeCommand}" CommandParameter="I"
+                         Margin="10,0,0,0"/>
 
-            <RadioButton GroupName="ConceptType" Content="Egresos"
+            <RadioButton GroupName="ConceptType" Content="EGRESOS"
                          IsChecked="{Binding Path=IsTypeE, Mode=TwoWay}"
-                         Command="{Binding SelectTypeCommand}" CommandParameter="E"/>
+                         Command="{Binding SelectTypeCommand}" CommandParameter="E"
+                         Margin="10,0,0,0"/>
 
-            <RadioButton GroupName="ConceptType" Content="Todos"
+            <RadioButton GroupName="ConceptType" Content="TODOS"
                          IsChecked="True"
-                         Command="{Binding SelectTypeCommand}" CommandParameter="T"/>
+                         Command="{Binding SelectTypeCommand}" CommandParameter="T"
+                         Margin="10,0,0,0"/>
         </StackPanel>
 
 
@@ -103,11 +106,11 @@
                                    AllowColumnMoving="False"
                                    AllowSorting="False"/>      
                 </dxg:GridControl.View>
-                <dxg:GridColumn Header="Nombre" HorizontalHeaderContentAlignment="Center" Width="*"
+                <dxg:GridColumn Header="Nombre del concepto" HorizontalHeaderContentAlignment="Center" Width="*"
                                 Binding="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Cuenta" HorizontalHeaderContentAlignment="Center" Width="auto"
+                <dxg:GridColumn Header="Cuenta contable" HorizontalHeaderContentAlignment="Center" Width="auto"
                                 Binding="{Binding Path=AccountingAccountId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     
                 </dxg:GridColumn>

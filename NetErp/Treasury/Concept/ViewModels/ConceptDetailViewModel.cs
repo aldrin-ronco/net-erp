@@ -245,8 +245,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                     : Visibility.Collapsed;
         }
 
-
-
         private AccountingAccountGraphQLModel _selectedAccoutingAccount;
         public AccountingAccountGraphQLModel SelectedAccoutingAccount
         {
@@ -307,12 +305,6 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             await Context.ActivateMasterView();
         }
-
-
-        
-            
-        
-
         public async Task SaveAsync()
         {
             try
@@ -346,10 +338,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 IsBusy = false;
             }
         }
-
-       
-
-
         public async Task<ConceptGraphQLModel> ExecuteSaveAsync()
         {
             dynamic variables = new ExpandoObject();
@@ -397,7 +385,6 @@ namespace NetErp.Treasury.Concept.ViewModels
 
 
         }
-
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
@@ -405,25 +392,17 @@ namespace NetErp.Treasury.Concept.ViewModels
             ValidateProperties();
         }
 
-        
-
-
-
         public bool HasErrors => _errors.Count > 0;
         public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
-
-
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
-
         public IEnumerable GetErrors(string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
             return _errors[propertyName];
         }
-
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
@@ -435,7 +414,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-
         private void ClearErrors(string propertyName)
         {
             if (_errors.ContainsKey(propertyName))
@@ -444,7 +422,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-
         private void ValidateProperty(string propertyName, string value)
         {
             if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
@@ -463,7 +440,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
-
         private void ValidateProperties()
         {
             ValidateProperty(nameof(NameConcept), NameConcept);

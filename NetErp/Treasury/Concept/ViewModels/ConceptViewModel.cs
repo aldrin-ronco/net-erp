@@ -25,7 +25,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 return _conceptMasterViewModel;
             }
         }
-
         public ConceptViewModel(IMapper mapper, IEventAggregator eventAggregator)
         {
             EventAggregator = eventAggregator;
@@ -45,7 +44,6 @@ namespace NetErp.Treasury.Concept.ViewModels
             }
 
         }
-
         public async Task ActivateDetailViewForEdit(ConceptGraphQLModel concept)
         {
             try
@@ -63,7 +61,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 throw;
             }
         }
-
         public async Task ActivateDetailViewForNew()
         {
             try
