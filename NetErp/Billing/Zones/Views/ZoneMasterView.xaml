@@ -113,25 +113,12 @@ RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVi
                             Width="*"
                             Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                             HorizontalHeaderContentAlignment="Center"/>
-            <!--<dxg:GridColumn Header="Activo"
-                Width="45"
-                Binding="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                HorizontalHeaderContentAlignment="Center">
-                <dxg:GridColumn.CellTemplate>
-                    <DataTemplate>
-                        <CheckBox Margin="4" 
-                      HorizontalAlignment="Center"
-                      IsChecked="{Binding RowData.Row.IsActive, Mode=TwoWay}"
-                      IsEnabled="False"/>
-                    </DataTemplate>
-                </dxg:GridColumn.CellTemplate>
-            </dxg:GridColumn>-->
             <dxg:GridColumn Width="50">
                 <dxg:GridColumn.CellTemplate>
                     <DataTemplate>
                         <Button Height="20" Width="35" cal:Message.Attach="[Event Click] = [Action EditZoneAsync]" Margin="5">
                             <Button.Content>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Button.Content>
                         </Button>
                     </DataTemplate> 

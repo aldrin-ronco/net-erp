@@ -98,7 +98,7 @@ namespace NetErp.Billing.Zones.ViewModels
             set
             {
                 if (_filterSearch != value)
-                {
+                {   
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = Task.Run(() => LoadZonesAsync());
