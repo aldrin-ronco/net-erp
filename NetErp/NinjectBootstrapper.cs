@@ -3,14 +3,18 @@ using Caliburn.Micro;
 using Common.Interfaces;
 using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
+using DevExpress.Xpf.Bars.Native;
 using DevExpress.Xpf.Editors;
 using DTOLibrary.Books;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using Models.Billing;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
 using Models.Treasury;
+using NetErp.Billing.PriceList.DTO;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
@@ -19,6 +23,7 @@ using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Services;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
@@ -112,6 +117,17 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
+            _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
+            _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
+            _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
+            _ = kernel.Bind<IServiceProvider>().ToMethod(ctx => ctx.Kernel).InSingletonScope();
+            _ = kernel.Bind<ILoggerFactory>().ToConstant(LoggerFactory.Create(builder =>
+            {
+                builder.AddDebug();
+            })).InSingletonScope();
+            _ = kernel.Bind(typeof(ILogger<>)).To(typeof(Logger<>)).InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
             // Setup application clases
             // Books
@@ -222,6 +238,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

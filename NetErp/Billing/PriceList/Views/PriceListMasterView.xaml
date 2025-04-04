@@ -1,0 +1,155 @@
+﻿<UserControl x:Class="NetErp.Billing.PriceList.Views.PriceListMasterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:local="clr-namespace:NetErp.Billing.PriceList.Views"
+             xmlns:controls="clr-namespace:NetErp.Helpers.Controls"
+             xmlns:services="clr-namespace:NetErp.Helpers.Services"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <services:OperationStatusToColorConverter x:Key="StatusToColorConverter"/>
+        <h:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="1" Margin="0 0 0 5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+
+                <Button Grid.Column="1" Command="{Binding TestCommand}"/>
+
+                <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0 0 10 10">
+                    <TextBlock Text="Catalogo de productos"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
+                                  IsTextEditable="False" DisplayMember="Name"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="1" Margin="0 0 10 0">
+                    <TextBlock Text="Lista"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding PriceLists, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPriceList, UpdateSourceTrigger=PropertyChanged}"
+                                  IsTextEditable="False" DisplayMember="Name"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="10 0 10 0">
+                    <TextBlock Text="Tipo de producto"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemsTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
+                                  IsTextEditable="False" DisplayMember="Name"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1" Margin="10 0 10 0" Visibility="{Binding CanShowItemsCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Linea/Categoria"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemsCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
+                                  IsTextEditable="False" DisplayMember="Name"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="1" Margin="10 0 0 0" Visibility="{Binding CanShowItemsSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Sublinea/Subcategoria"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemsSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
+                                  IsTextEditable="False" DisplayMember="Name" />
+                </StackPanel>
+
+            </Grid>
+
+            <dxg:GridControl Grid.Row="2" ItemsSource="{Binding PriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 5 0 0">
+                <dxg:GridControl.View>
+                    <dxg:TableView
+                                    AllowCascadeUpdate="False" 
+                                    EnableSelectedRowAppearance="True"
+                                    ShowGroupPanel="False" AlternateRowBackground="Beige"
+                                    AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                                    AllowSorting="False" AllowColumnFiltering="False">
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.Price}" Value="0">
+                                        <Setter Property="TextBlock.Foreground" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+                                    <!-- Estilos para estados de operación -->
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Pending">
+                                        <Setter Property="Background" Value="#FFEED0"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Saved">
+                                        <Setter Property="Background" Value="#E0FFE0"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Failed">
+                                        <Setter Property="Background" Value="#FFE0E0"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
+                </dxg:GridControl.View>
+
+                <dxg:GridColumn Header="" Width="24" FixedWidth="True">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Ellipse Width="16" Height="16" 
+                         Fill="{Binding Row.StatusIndicator}" 
+                         Visibility="{Binding Row.Status, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter='Unchanged:Collapsed;Pending:Visible;Saved:Visible;Failed:Visible'}"
+                         ToolTip="{Binding Row.Status}"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+
+                <dxg:GridColumn Header="Nombre del producto" Width="*" Binding="{Binding CatalogItem.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Referencia" HorizontalHeaderContentAlignment="Center" Binding="{Binding CatalogItem.Reference, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Stock" HorizontalHeaderContentAlignment="Center"/>
+                <dxg:GridColumn Header= "UND" Binding="{Binding Measurement.Abbreviation, UpdateSourceTrigger=PropertyChanged}" Width="auto"/>
+                <dxg:GridColumn Header="Costo" HorizontalHeaderContentAlignment="Center" Binding="{Binding Cost, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="%Util" Width="45" HorizontalHeaderContentAlignment="Center" Binding="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                          Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Utilidad" HorizontalHeaderContentAlignment="Center"/>
+                <dxg:GridColumn Header="Precio de venta" HorizontalHeaderContentAlignment="Center" Binding="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                          Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Precio minimo" HorizontalHeaderContentAlignment="Center" Binding="{Binding MinimumPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                          Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="%Dcto" Width="60" HorizontalHeaderContentAlignment="Center" Binding="{Binding DiscountMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                          Mask="{Binding MaskN5, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+
+        </Grid>
+    </Grid>
+</UserControl>
