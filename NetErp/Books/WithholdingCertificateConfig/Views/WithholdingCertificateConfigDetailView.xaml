@@ -12,10 +12,10 @@
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-              xmlns:config="clr-namespace:Common.Config;assembly=Common"
-              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
-
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              >
   
         <Grid >
@@ -38,7 +38,7 @@
                            LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
                            Content="Regresar"
                            RibbonStyle="Large"
-                           Hint="Regresa a la lista de terceros"
+                           Hint="Regresa a la lista"
                            Command="{Binding Path=GoBackCommand}"/>
                     <dxb:BarItemSeparator/>
                     <dxb:BarButtonItem 
@@ -47,11 +47,8 @@
                LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}" 
                Content="Guardar"
                RibbonStyle="Large"
-               IsEnabled="{Binding Path=IsBusy, 
-                                   Mode=OneWay, 
-                                   UpdateSourceTrigger=PropertyChanged, 
-                                   Converter={dxmvvm:BooleanToVisibilityConverter 
-                                   Inverse=True}}"
+               IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+             
                Hint="Guardar">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" 
@@ -73,24 +70,31 @@
         </StackPanel>
         <StackPanel Grid.Row="2" Margin="0 10 0 10" Orientation="Vertical">
             <TextBlock Text="Nombre del certificado de retencion" 
-                       Margin="0 4 0 2"
-                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <dxe:TextEdit Text="{Binding Path=Entity.Name, Mode=TwoWay}"
-     Grid.ColumnSpan="4"
-     Margin="0" Padding="3"                                 
-     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+        Grid.Row="0" 
+        HorizontalAlignment="Left"
+        VerticalAlignment="Center"
+       
+        Margin="0 0 0 10"/>
+
+            <dxe:TextEdit
+         Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+         CharacterCasing="Upper"
+         x:Name="Name"
+         Margin="0"/>
+
+
         </StackPanel>
         <StackPanel Grid.Row="3" Margin="0 10 0 10" Orientation="Vertical">
             <TextBlock Text="Descripcion del certificado de retencion" 
-                  Margin="0 4 0 2"
+                  Margin="0 0 0 30"
                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <dxe:TextEdit Text="{Binding Path=Entity.Description, Mode=TwoWay}"
-Grid.ColumnSpan="4"
-Margin="0" Padding="3"                                 
-FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                CharacterCasing="Upper"
+                x:Name="Description"
+                Margin="0"/>    
         </StackPanel>
         <dxg:GridControl Grid.Row="4" Margin="0 10 0 0"
-             ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                         ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
             <dxg:GridControl.View>
                 <dxg:TableView  AllowEditing="False" 
                         AllowCascadeUpdate="False" 
@@ -105,10 +109,11 @@ HorizontalHeaderContentAlignment="Center">
                 <dxg:GridColumn.CellTemplate>
                     <DataTemplate>
                         <CheckBox Margin="4" 
-                  HorizontalAlignment="Center"
-                  IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+               HorizontalAlignment="Center"
+               IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </DataTemplate>
                 </dxg:GridColumn.CellTemplate>
+               
             </dxg:GridColumn>
            
 

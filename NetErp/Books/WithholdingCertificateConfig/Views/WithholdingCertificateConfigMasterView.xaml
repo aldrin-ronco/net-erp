@@ -44,9 +44,9 @@
                 <dxr:RibbonPage Caption="General">
                 <dxr:RibbonPageGroup Caption="Acciones">
 
-                    <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/New/New_16x16.png'}" 
-                           LargeGlyph="{dx:DXImage 'Images/New/New_16x16.png'}" 
-                           Content="Nuevo"
+                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                            LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
+                            Content="Nuevo"
                            RibbonStyle="Large"
                            IsEnabled="{Binding Path=IsBusy, 
                                                Mode=OneWay, 
@@ -69,18 +69,23 @@
             <dxg:GridControl Grid.Row="2" Margin="0 10 0 0"
                                            
                 EnableSmartColumnsGeneration="True"
-                SelectedItem="{Binding Path=SelectedWithholdingCertificateConfigGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                SelectedItem="{Binding Path=SelectedWithholdingCertificateConfigGraphQLModel, 
+                Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 ItemsSource="{Binding Path=Certificates, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
              >
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" 
-               EnableSelectedRowAppearance="True"
-               ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                               EnableSelectedRowAppearance="True"
+                               ShowGroupPanel="False" 
+                               AllowColumnMoving="False" 
+                               ColumnFilterPopupMode="Disabled"
+                               AllowSorting="False" 
+                               AllowColumnFiltering="False"
+                         AlternateRowBackground="Beige"/>
                     
                 </dxg:GridControl.View>
 
-                <dxg:GridColumn Header="Id" HorizontalHeaderContentAlignment="Center" Width="auto"
-     Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}"/>
+                
 
                 <dxg:GridColumn Header="Nombre" Width="*" HorizontalHeaderContentAlignment="Center"
                  Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>

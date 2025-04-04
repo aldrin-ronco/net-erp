@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -7,8 +8,10 @@ using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
+using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers;
 using Ninject.Infrastructure.Language;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
@@ -19,11 +22,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Xml.Linq;
 using Xceed.Wpf.Toolkit.Primitives;
+using static Dictionaries.BooksDictionaries;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
@@ -38,22 +43,24 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
-           
+
             if (entity != null)
             {
                 Entity = entity;
+                Name = entity.Name;
+                Description = entity.Description;
                 IsNewRecord = false;
             }
             else
             {
                 IsNewRecord = true;
-                Entity = new WithholdingCertificateConfigGraphQLModel();
-            }
                 
+            }
+
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
-           
+
         }
         #region Propiedades
         // Context
@@ -72,20 +79,51 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
 
         // Identity
-
         private WithholdingCertificateConfigGraphQLModel? _entity;
         public WithholdingCertificateConfigGraphQLModel? Entity
         {
             get { return _entity; }
-            set
-            {
+            set {
                 if (_entity != value)
                 {
-                    _entity = value;                  
+                    _entity = value;
                     NotifyOfPropertyChange(nameof(_entity));
                 }
             }
         }
+           
+        private string _description;
+        public string Description
+        {
+            get { return _description; }
+            set
+            {
+                if (_description != value)
+                {
+                    _description = value;
+                    NotifyOfPropertyChange(nameof(Description));
+                    this.NotifyOfPropertyChange(nameof(this.CanSave));
+                    ValidateProperty(nameof(Description), value);
+                }
+            }
+        }
+        private string _name;
+
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(Name), value);
+                }
+            }
+        }
+
         Dictionary<string, List<string>> _errors;
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
         private bool _isNewRecord = false;
@@ -102,15 +140,40 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
-
-
-        public bool HasErrors => _errors.Count > 0;
-
-        public IEnumerable GetErrors(string? propertyName)
+        protected override void OnViewReady(object view)
         {
-            throw new NotImplementedException();
+            base.OnViewReady(view);
+            this.SetFocus(() => Name);
+            ValidateProperties();
         }
         
+        public bool CanSave
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Name)) return false;
+
+                // Debe haber ingresado una descripcion
+                if (string.IsNullOrEmpty(Description)) return false;
+
+                if (SelectedCostCenter == null || SelectedCostCenter.Id == 0) return false;
+
+                if (!AccountingAccounts.Any(x => x.IsChecked == true)) return false;
+
+                // Debe haber ingresado un nombre
+                return true;
+            }
+        }
+        public bool HasErrors => _errors.Count > 0;
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+        private CaptureTypeEnum _selectedCaptureType;
+
+
         private CostCenterDTO _selectedCostCenter;
         public CostCenterDTO SelectedCostCenter
         {
@@ -121,14 +184,14 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _selectedCostCenter = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenter));
-                   
+                    this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
         }
         private ObservableCollection<CostCenterDTO> _costCenters;
 
-      
-        private ObservableCollection<AccountingAccountGroupDetailGraphQLModel> _accountingAccounts;
+
+        private ObservableCollection<AccountingAccountGroupDetailDTO> _accountingAccounts;
 
         public ObservableCollection<CostCenterDTO> CostCenters
         {
@@ -149,7 +212,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 return true;
             }
         }
-        public ObservableCollection<AccountingAccountGroupDetailGraphQLModel> AccountingAccounts
+        public ObservableCollection<AccountingAccountGroupDetailDTO> AccountingAccounts
         {
             get { return _accountingAccounts; }
             set
@@ -158,6 +221,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _accountingAccounts = value;
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
+                    ValidateProperty(nameof(AccountingAccounts), value.Count.ToString());
                 }
             }
         }
@@ -175,7 +239,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
-
+        public bool CaptureInfoAsPN => true;
         #endregion
         #region command
         private ICommand _goBackCommand;
@@ -205,39 +269,46 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
         public void CleanUpControls()
         {
-            Entity = null;
+            Name = "";
+            Description = "";
+            SelectedCostCenter = CostCenters.First(f => f.Id == 0);
         }
         public bool CanGoBack(object p)
         {
             return !IsBusy;
         }
         #endregion
-      
+
         public async Task Initialize()
         {
-           
+
             await getCostCentersAsync();
             await getAccountingAccountsAsync();
-          
+
         }
 
         public async Task SaveAsync()
         {
+            List<int> accountingAccountsIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
+            dynamic data = new ExpandoObject();
+            data.name = Name;
+            data.description = Description;
+            data.costCenterId = SelectedCostCenter.Id;
+            data.accountingAccountsIds = accountingAccountsIds;
             if (IsNewRecord)
             {
-                await CreateAsync();
+                await CreateAsync(data);
             }
             else
             {
-                await UpdateAsync();
+                await UpdateAsync(data);
             }
         }
-        public async Task UpdateAsync()
+        public async Task UpdateAsync(dynamic data)
         {
             try
             {
                 IsBusy = true;
-                List<int> accountingAccountsIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
                 string query = @"
                  mutation($data: UpdateWithholdingCertificateConfigInput!, $id: Int!){
                 UpdateResponse: updateWithholdingCertificateConfig(data: $data, id: $id){
@@ -257,16 +328,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                  }";
 
                 dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.name = Entity.Name;
-                variables.data.description = Entity.Description;
-                variables.data.costCenterId = SelectedCostCenter.Id;
-                variables.data.accountingAccountsIds = accountingAccountsIds;
+                variables.data = data;
                 variables.id = Entity.Id;
                 WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Update(query, variables);
-                Entity.AccountingAccounts = result.AccountingAccounts;
                 GoBack(null);
-               
+
             }
             catch (Exception ex)
             {
@@ -281,12 +347,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task CreateAsync()
+        public async Task CreateAsync(dynamic data)
         {
             try
             {
                 IsBusy = true;
-                List<int> accountingAccountsIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
                 string query = @"
                  mutation($data: CreateWithholdingCertificateConfigInput!){
                  CreateResponse : createWithholdingCertificateConfig(data: $data){
@@ -296,14 +361,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }";
 
                 dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.name = Entity.Name;
-                variables.data.description = Entity.Description;
-                variables.data.costCenterId = SelectedCostCenter.Id;
-                variables.data.accountingAccountsIds = accountingAccountsIds;
-                
+                variables.data = data;
+
                 WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Create(query, variables);
-                Entity.AccountingAccounts = result.AccountingAccounts;
                 GoBack(null);
             }
             catch (Exception ex)
@@ -341,11 +401,17 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             dynamic variables = new ExpandoObject();
             var source = await CostCenterService.GetList(query, variables);
             CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source);
-            if(!IsNewRecord)
+
+            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            if (!IsNewRecord)
             {
                 SelectedCostCenter = CostCenters.First(f => f.Id == Entity?.CostCenter?.Id);
             }
-           
+            else
+            {
+                SelectedCostCenter = CostCenters.First(f => f.Id == 0);
+            }
+
 
         }
         private async Task getAccountingAccountsAsync()
@@ -367,10 +433,77 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             variables.filter = new ExpandoObject();
             variables.filter.key = "CTAS_RETS_VTAS";
             IEnumerable<AccountingAccountGroupGraphQLModel> source = await AccountingAccountGroupGraphQLModelService.GetList(query, variables);
-            var acgd = new ObservableCollection<AccountingAccountGroupDetailGraphQLModel>(source.First().AccountingAccounts);
-             acgd.ForEach(f =>   f.IsChecked = Entity?.AccountingAccounts?.FirstOrDefault(x => x.Id == f.Id) != null ? true : false  );
-            AccountingAccounts = acgd;
 
+            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().AccountingAccounts);
+            foreach (var accountingAccount in acgd)
+            {
+                accountingAccount.Context = this;
+                accountingAccount.IsChecked = Entity?.AccountingAccounts?.FirstOrDefault(x => x.Id == accountingAccount.Id) != null ? true : false;
+            }
+
+            AccountingAccounts = [.. acgd];
+
+        }
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value)  ) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                    case nameof(Description):
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción no puede estar vacío");
+                        break;
+                    case nameof(SelectedCostCenter):
+                        if (value == "0") AddError(propertyName, "Debe Seleccionar un centro de costo");
+                        break;
+                    case nameof(AccountingAccounts):
+                        if (value == "0") AddError(propertyName, "Debe Seleccionar al menos una cuenta");
+                        break;
+                        
+                }
+             }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+       
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Description), Description);
+            ValidateProperty(nameof(SelectedCostCenter), SelectedCostCenter.Id.ToString());
+            ValidateProperty(nameof(AccountingAccounts), AccountingAccounts.Count.ToString());
+        }
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
         }
     }
 }
