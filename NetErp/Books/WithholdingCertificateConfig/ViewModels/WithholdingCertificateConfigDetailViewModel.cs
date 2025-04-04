@@ -221,7 +221,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _accountingAccounts = value;
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
-                    ValidateProperty(nameof(AccountingAccounts), value.Count.ToString());
+                   
                 }
             }
         }
@@ -471,12 +471,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     case nameof(Description):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción no puede estar vacío");
                         break;
-                    case nameof(SelectedCostCenter):
-                        if (value == "0") AddError(propertyName, "Debe Seleccionar un centro de costo");
-                        break;
-                    case nameof(AccountingAccounts):
-                        if (value == "0") AddError(propertyName, "Debe Seleccionar al menos una cuenta");
-                        break;
+                   
                         
                 }
              }
@@ -491,8 +486,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             ValidateProperty(nameof(Name), Name);
             ValidateProperty(nameof(Description), Description);
-            ValidateProperty(nameof(SelectedCostCenter), SelectedCostCenter.Id.ToString());
-            ValidateProperty(nameof(AccountingAccounts), AccountingAccounts.Count.ToString());
+           
         }
         private void AddError(string propertyName, string error)
         {
