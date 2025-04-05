@@ -16,6 +16,7 @@ using GraphQL.Client.Http;
 using Models.Books;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Billing.Customers.ViewModels;
+using NetErp.Billing.PriceList.ViewModels;
 using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Billing.Zones.ViewModels;
 using NetErp.Books.AccountingAccountGroups.ViewModels;
@@ -577,6 +578,22 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 AccountingAccountGroupViewModel instance = IoC.Get<AccountingAccountGroupViewModel>();
                 instance.DisplayName = "Administración de agrupación de cuentas contables";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async void OpenPriceList()
+        {
+            try
+            {
+                PriceListViewModel instance = IoC.Get<PriceListViewModel>();
+                instance.DisplayName = "Administración de listas de precios";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
