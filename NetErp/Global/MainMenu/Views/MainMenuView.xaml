@@ -39,6 +39,7 @@
                 <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
                 <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
                 <MenuItem Header="Tipos de Documentos" x:Name="OpenIdentificationType"/>
+                <MenuItem Header="Presentaciones contables" x:Name="OpenAccountingPresentationAsync"/>
                 <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
                 <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
                 <Separator/>

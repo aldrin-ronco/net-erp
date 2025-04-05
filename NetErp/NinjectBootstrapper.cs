@@ -71,6 +71,7 @@ namespace NetErp
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGraphQLModel>>().To<AccountingAccountService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingEntityGraphQLModel>>().To<AccountingEntityService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<AccountingPresentationGraphQLModel>>().To<AccountingPresentationService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CustomerGraphQLModel>>().To<CustomerService>().InSingletonScope();

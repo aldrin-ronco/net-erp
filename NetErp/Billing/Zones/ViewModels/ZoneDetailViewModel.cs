@@ -87,7 +87,6 @@ namespace NetErp.Billing.Zones.ViewModels
             get
             {
                 if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBackAsync);
-                ZoneName = ZoneName;
                 return _goBackCommand;
             }
         }
