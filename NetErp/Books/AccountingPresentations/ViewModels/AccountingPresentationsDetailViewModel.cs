@@ -196,7 +196,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new PresentationUpdateMessage() { UpdatePresentation = result });
                 }
-                GoBackAsync();
+                await GoBackAsync();
             }
             catch
             {
