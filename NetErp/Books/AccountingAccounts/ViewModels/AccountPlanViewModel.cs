@@ -1,5 +1,7 @@
 ﻿using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using Models.Books;
 using System;
 using System.Collections.Generic;
@@ -27,20 +29,34 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         public AccountPlanViewModel()
         {
-            Task.Run(ActivateMasterViewModel);
+            _ = Task.Run(async () => 
+            {
+                try
+                {
+                    await ActivateMasterViewModel();
+                }
+                catch (AsyncException ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
 
 
         public async Task ActivateMasterViewModel()
         {
             try
-            {                
+            {            
                 await ActivateItemAsync(AccountPlanMasterViewModel, new CancellationToken());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -55,10 +71,18 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new CancellationToken());
             }
-            catch (Exception)
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
             {
 
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
     }

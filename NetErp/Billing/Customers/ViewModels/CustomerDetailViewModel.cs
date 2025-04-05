@@ -647,8 +647,10 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public async Task<IGenericDataAccess<CustomerGraphQLModel>.PageResponseType> LoadPage()
         {
-            string queryForPage;
-            queryForPage = @"
+            try
+            {
+                string queryForPage;
+                queryForPage = @"
                 query ($filter: CustomerFilterInput) {
                   PageResponse: customerPage(filter: $filter) {
                     count
@@ -695,7 +697,6 @@ namespace NetErp.Billing.Customers.ViewModels
                         }
                         emails {
                           id
-                          name
                           description
                           isCorporate
                           sendElectronicInvoice
@@ -711,7 +712,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 }";
 
-            return await CustomerService.GetPage(queryForPage, new object { });
+                return await CustomerService.GetPage(queryForPage, new object { });
+            }
+            catch (Exception ex)
+            {
+
+                throw new AsyncException(innerException: ex);
+            }
+            
         }
         public async Task Save()
         {
@@ -730,18 +738,23 @@ namespace NetErp.Billing.Customers.ViewModels
                     await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result) , Customers = pageResult.PageResponse.Rows });
                 }
                 Context.EnableOnViewReady = false;
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -752,14 +765,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public async Task<CustomerGraphQLModel> ExecuteSave()
         {
-            string queryForCreateOrUpdate;
 
 
             try
             {
-                List<int> retentions = new List<int>();
-                List<object> emailList = new List<object>();
-                List<string> phones = new List<string>();
+                string query;
+                List<int> retentions = [];
+                List<object> emailList = [];
+                List<string> phones = [];
 
                 if (!string.IsNullOrEmpty(Phone1)) phones.Add(Phone1);
                 if (!string.IsNullOrEmpty(Phone2)) phones.Add(Phone2);
@@ -841,7 +854,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 }
 
                 // Query
-                queryForCreateOrUpdate = IsNewRecord
+                query = IsNewRecord
                     ? @"
                     mutation ($data: CreateCustomerInput!) {
                       CreateResponse: createCustomer(data: $data) {
@@ -974,12 +987,12 @@ namespace NetErp.Billing.Customers.ViewModels
                     }";
 
                 
-                dynamic result = IsNewRecord ? await CustomerService.Create(queryForCreateOrUpdate, variables) : await CustomerService.Update(queryForCreateOrUpdate, variables);
-                return (CustomerGraphQLModel)result;
+                CustomerGraphQLModel result = IsNewRecord ? await CustomerService.Create(query, variables) : await CustomerService.Update(query, variables);
+                return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -1003,8 +1016,6 @@ namespace NetErp.Billing.Customers.ViewModels
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
         }
 
         public void AddEmail()
@@ -1020,7 +1031,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -1038,7 +1052,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -1053,7 +1070,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     code
 					name
 					hasVerificationDigit
-					minimumDocumentLength    
+					minimumDocumentLength
 				  },
 				  countries{
 					id
@@ -1088,99 +1105,72 @@ namespace NetErp.Billing.Customers.ViewModels
                 RetentionTypes = new ObservableCollection<RetentionTypeDTO>(Context.AutoMapper.Map<ObservableCollection<RetentionTypeDTO>>(result.RetentionTypes));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                throw new AsyncException(innerException: ex);
             }
         }
 
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
-            CleanUpControls();
+            try
+            {
+                _ = Task.Run(() => Context.ActivateMasterViewAsync());
+                CleanUpControls();
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
 
         public void CleanUpControls()
         {
-            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            SelectedRegime = 'R';
-            IdentificationNumber = string.Empty;
-            VerificationDigit = string.Empty;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-            SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.Undefined;
-            BusinessName = string.Empty;
-            FirstName = string.Empty;
-            MiddleName = string.Empty;
-            FirstLastName = string.Empty;
-            MiddleLastName = string.Empty;
-            Phone1 = string.Empty;
-            Phone2 = string.Empty;
-            CellPhone1 = string.Empty;
-            CellPhone2 = string.Empty;
-            Address = string.Empty;
-            Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
-            foreach (RetentionTypeDTO retention in RetentionTypes)
+            try
             {
-                retentionList.Add(new RetentionTypeDTO()
+                List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+                Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+                SelectedRegime = 'R';
+                IdentificationNumber = string.Empty;
+                VerificationDigit = string.Empty;
+                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+                SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
+                BusinessName = string.Empty;
+                FirstName = string.Empty;
+                MiddleName = string.Empty;
+                FirstLastName = string.Empty;
+                MiddleLastName = string.Empty;
+                Phone1 = string.Empty;
+                Phone2 = string.Empty;
+                CellPhone1 = string.Empty;
+                CellPhone2 = string.Empty;
+                Address = string.Empty;
+                Emails = new ObservableCollection<EmailDTO>();
+                SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+                foreach (RetentionTypeDTO retention in RetentionTypes)
                 {
-                    Id = retention.Id,
-                    Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
-                    IsSelected = false
-                });
+                    retentionList.Add(new RetentionTypeDTO()
+                    {
+                        Id = retention.Id,
+                        Name = retention.Name,
+                        Margin = retention.Margin,
+                        InitialBase = retention.InitialBase,
+                        AccountingAccountSale = retention.AccountingAccountSale,
+                        AccountingAccountPurchase = retention.AccountingAccountPurchase,
+                        IsSelected = false
+                    });
+                }
+                RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
             }
-            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
-        }
-
-        public void CleanUpControlsForNew()
-        {
-            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            SelectedRegime = 'R';
-            IdentificationNumber = string.Empty;
-            VerificationDigit = string.Empty;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-            SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
-            BusinessName = string.Empty;
-            FirstName = string.Empty;
-            MiddleName = string.Empty;
-            FirstLastName = string.Empty;
-            MiddleLastName = string.Empty;
-            Phone1 = string.Empty;
-            Phone2 = string.Empty;
-            CellPhone1 = string.Empty;
-            CellPhone2 = string.Empty;
-            Address = string.Empty;
-            Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
-            foreach (RetentionTypeDTO retention in RetentionTypes)
+            catch (Exception ex)
             {
-                retentionList.Add(new RetentionTypeDTO()
-                {
-                    Id = retention.Id,
-                    Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
-                    IsSelected = false
-                });
+                throw new AsyncException(innerException: ex);
             }
-            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
         }
 
         public void PhoneInputLostFocus(FrameworkElement element)
@@ -1214,7 +1204,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 
@@ -1304,7 +1297,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
             }
         }
 

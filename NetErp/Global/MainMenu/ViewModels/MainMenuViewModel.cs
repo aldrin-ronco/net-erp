@@ -18,7 +18,9 @@ using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Billing.Zones.ViewModels;
+using NetErp.Books.AccountingAccountGroups.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
+using NetErp.Books.AccountingBooks.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.ViewModels;
 using NetErp.Books.AccountingSources.ViewModels;
@@ -553,5 +555,37 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
+        public async void OpenAccountingBooks()
+        {
+            try
+            {
+                AccountingBookViewModel instance = IoC.Get<AccountingBookViewModel>();
+                instance.DisplayName = "Administración de libros contables";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public async void OpenAccountingAccountGroups()
+        {
+            try
+            {
+                AccountingAccountGroupViewModel instance = IoC.Get<AccountingAccountGroupViewModel>();
+                instance.DisplayName = "Administración de agrupación de cuentas contables";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
@@ -41,15 +42,15 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private ZoneGraphQLModel? _SelectedItem = null;
+        private ZoneGraphQLModel? _selectedItem = null;
         public ZoneGraphQLModel? SelectedItem
         {
-            get { return _SelectedItem; }
+            get { return _selectedItem; }
             set
             {
-                if (_SelectedItem != value)
+                if (_selectedItem != value)
                 {
-                    _SelectedItem = value;
+                    _selectedItem = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                     NotifyOfPropertyChange(nameof(CanDeleteZone));
                 }
@@ -179,7 +180,18 @@ namespace NetErp.Billing.Zones.ViewModels
         }
         public async Task CreateZoneAsync()
         {
-            await Context.ActivateDetailViewForNewAsync();
+            try
+            {
+                await Task.Run(() => Context.ActivateDetailViewForNewAsync());
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
 
         private ICommand? _deleteZoneCommand;
@@ -196,7 +208,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                // Si no hay item seleccionado, no coninuar
+                // Si no hay item seleccionado, no continuar
                 if (SelectedItem is null) return;
                 string query = @"mutation($id: Int!){
                 DeleteResponse: deleteZone(id: $id){
@@ -225,7 +237,18 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public async Task EditZoneAsync()
         {
-            await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new());
+            try
+            {
+                await Task.Run(() => Context.ActivateDetailViewForEditAsync(SelectedItem ?? new()));
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
         public async Task LoadZonesAsync()
         {
@@ -268,9 +291,13 @@ namespace NetErp.Billing.Zones.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
         public ZoneMasterViewModel(ZoneViewModel context)

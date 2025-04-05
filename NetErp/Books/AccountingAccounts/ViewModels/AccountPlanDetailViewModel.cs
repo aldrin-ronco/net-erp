@@ -742,7 +742,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 models.Add(modelLv5);
 
                 string query = @"
-                mutation ($data: AccountingAccountListTypeInput!) {
+                mutation ($data: CreateAccountingAccountListInput!) {
                   ListResponse: createAccountinAccountList(data: $data) {
                     id
                     code

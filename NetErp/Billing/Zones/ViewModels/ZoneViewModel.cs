@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
+using DevExpress.Xpf.Core;
 using Models.Billing;
 using NetErp.Billing.Sellers.ViewModels;
 using System;
@@ -12,8 +14,6 @@ namespace NetErp.Billing.Zones.ViewModels
 {
     public class ZoneViewModel : Conductor<Screen>.Collection.OneActive
     {
-        //public IMapper AutoMapper { get; private set; }
-
         public IEventAggregator EventAggregator { get; set; }
 
         private ZoneMasterViewModel _zoneMasterViewModel;
@@ -40,38 +40,61 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 await ActivateItemAsync(ZoneMasterViewModel, new System.Threading.CancellationToken());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
         public async Task ActivateDetailViewForNewAsync()
         {
-            await ActivateItemAsync(ZoneDetailViewModel, new System.Threading.CancellationToken());
+            try
+            {
+                await ActivateItemAsync(ZoneDetailViewModel, new System.Threading.CancellationToken());
+            }
+            catch (Exception ex)
+            {
+
+                throw new AsyncException(innerException: ex);
+            }
         }
-        public async Task ActivateDetailViewForEditAsync(ZoneGraphQLModel Zone)
+        public async Task ActivateDetailViewForEditAsync(ZoneGraphQLModel zone)
         {
             try
             {
                 ZoneDetailViewModel instance = new(this) {
-                    ZoneId = Zone.Id,
-                    ZoneName = Zone.Name,
-                    ZoneIsActive = Zone.IsActive
+                    ZoneId = zone.Id,
+                    ZoneName = zone.Name,
+                    ZoneIsActive = zone.IsActive
                 };
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+
+                throw new AsyncException(innerException: ex);
             }
         }
         public ZoneViewModel(IEventAggregator eventAggregator)
         {
             EventAggregator = eventAggregator;
             _zoneMasterViewModel = new ZoneMasterViewModel(this);
-            _ = Task.Run(ActivateMasterViewAsync);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ActivateMasterViewAsync();
+                }
+                catch (AsyncException ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
     }
 }
