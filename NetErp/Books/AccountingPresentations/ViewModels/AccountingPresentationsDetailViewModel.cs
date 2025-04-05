@@ -208,7 +208,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             
             await Context.ActivateMasterViewAsync();
-            this.PresentationName = null;
+            this.PresentationName = "";
             this.PresentationAllowClosure = false;
             this.PresentationAccountingBooks = null;
             this.AccountingBookClosure = null;
