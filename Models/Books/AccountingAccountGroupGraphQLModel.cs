@@ -17,7 +17,6 @@ namespace Models.Books
     public class AccountingAccountGroupDetailGraphQLModel : AccountingAccountGraphQLModel
     {
         public int GroupId { get; set; }
-        public bool? IsChecked { get; set; }
     }
 
     public class AccountingAccountGroupDataContext

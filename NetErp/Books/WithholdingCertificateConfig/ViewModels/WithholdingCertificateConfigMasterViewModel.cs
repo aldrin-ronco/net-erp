@@ -248,7 +248,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = true;
                 string query = @"
                query( $filter: WithholdingCertificateConfigFilterInput!){
-                      PageResponse: wilthholdingCertificateConfigPage(filter: $filter){
+                      PageResponse: withholdingCertificateConfigPage(filter: $filter){
                         count
                         rows {
                           id

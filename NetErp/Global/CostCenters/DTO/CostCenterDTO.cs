@@ -59,9 +59,9 @@ namespace NetErp.Global.CostCenters.DTO
             get
             {
                 string res = Name;
-                if(string.IsNullOrEmpty(Address)) { res = res + " " + Address; };
-                if (string.IsNullOrEmpty(City?.Name)) { res = res + " " + City; };
-                if (string.IsNullOrEmpty(City?.Department?.Name)) { res = res + " " + City?.Department.Name; };
+                if(!string.IsNullOrEmpty(Address)) { res = res + " " + Address; };
+                if (!string.IsNullOrEmpty(City?.Name)) { res = res + " " + City; };
+                if (!string.IsNullOrEmpty(City?.Department?.Name)) { res = res + " " + City?.Department.Name; };
 
                 return res;
             }
