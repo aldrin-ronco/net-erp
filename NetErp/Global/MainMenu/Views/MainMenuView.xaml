@@ -42,6 +42,7 @@
                 <MenuItem Header="Presentaciones contables" x:Name="OpenAccountingPresentationAsync"/>
                 <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
                 <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
+                <MenuItem Header="Configuración del certificado de retención" x:Name="OpenWithholdingCertificateConfig"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>

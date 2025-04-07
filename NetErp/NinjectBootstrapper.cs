@@ -118,6 +118,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<WithholdingCertificateConfigGraphQLModel>>().To<WithholdingCertificateConfigService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
@@ -239,6 +240,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
             });
 

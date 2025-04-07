@@ -33,6 +33,7 @@ using NetErp.Books.Reports.DailyBook.ViewModels;
 using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
+using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Global.Email.ViewModels;
 using NetErp.Global.Email.Views;
@@ -588,6 +589,22 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
+        public async void OpenWithholdingCertificateConfig()
+        {
+            try
+            {
+                WithholdingCertificateConfigViewModel instance = IoC.Get<WithholdingCertificateConfigViewModel>();
+                instance.DisplayName = "Configuración del certificado de retención";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        
         public async void OpenPriceList()
         {
             try

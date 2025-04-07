@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.ViewModels;
+using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,5 +78,31 @@ namespace NetErp.Books.AccountingAccountGroups.DTO
 
         public AccountingAccountGroupMasterViewModel Context { get; set; }
 
+    }
+    public class AccountingAccountGroupDetailDTO :  PropertyChangedBase
+    {
+        public int Id { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+  
+     
+        public int GroupId { get; set; }
+
+        private bool? _isChecked = false;
+
+        public bool? IsChecked
+        {
+            get { return _isChecked; }
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                    NotifyOfPropertyChange(nameof(IsChecked));
+                    Context?.NotifyOfPropertyChange(nameof(Context.CanSave));
+                }
+            }
+        }
+        public WithholdingCertificateConfigDetailViewModel? Context { get; set; }
     }
 }
