@@ -17,8 +17,10 @@ namespace Models.Treasury
         public decimal Margin { get; set; } = 0;
         public int MarginBasis { get; set; } = 0;
         public string Type { get; set; } = string.Empty;
+        public AccountingAccountGraphQLModel AccountingAccount { get; set; }
+        public string AccountingAccountName => AccountingAccount?.Name ?? string.Empty;
 
-        public AccountingAccountGraphQLModel Account { get; set; }
+
 
         public override string ToString()
         {

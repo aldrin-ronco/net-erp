@@ -119,7 +119,7 @@
                   ItemsSource="{Binding AccoutingAccount}"
                   SelectedItem="{Binding SelectedAccoutingAccount}"
                   IsTextEditable="True"
-                  AutoComplete="True"
+                  AutoComplete="False"
                   DisplayMember="Name"
                   ValueMember="Id"
                   AutoPopulateColumns="False"
@@ -132,10 +132,7 @@
                     <ControlTemplate>
                         <dxg:GridControl Name="PART_GridControl">
                             <dxg:GridControl.Columns>
-                                <dxg:GridColumn FieldName="Code" Header="Código" Width="100"/>
-                                <dxg:GridColumn FieldName="Name" Header="Nombre" Width="200"/>
-                                <dxg:GridColumn FieldName="Margin" Header="Margin" Width="200"/>
-                                <dxg:GridColumn FieldName="Margin Basis" Header="Margin Basis" Width="200"/>
+                                <dxg:GridColumn FieldName="Name" Header="Cuenta contable" Width="100"/>
                                 </dxg:GridControl.Columns>
                             <dxg:GridControl.View>
                                 <dxg:TableView AutoWidth="True"/>

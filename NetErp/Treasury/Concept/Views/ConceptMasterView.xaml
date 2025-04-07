@@ -111,7 +111,7 @@
                     
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Cuenta contable" HorizontalHeaderContentAlignment="Center" Width="auto"
-                                Binding="{Binding Path=AccountingAccountId, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                Binding="{Binding Path=AccountingAccountName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     
                 </dxg:GridColumn>
                 <dxg:GridColumn Width="auto">

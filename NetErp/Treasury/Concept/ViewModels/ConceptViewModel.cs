@@ -67,7 +67,9 @@ namespace NetErp.Treasury.Concept.ViewModels
             {
                 ConceptDetailViewModel instance = new(this);
                 instance.CleanUpControls();
+                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+                instance.SelectedType = "D";
             }
             catch (Exception)
             {

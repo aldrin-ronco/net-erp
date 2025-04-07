@@ -40,7 +40,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             Context = context;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await LoadCodeAccountingAccounts());
+            joinable.Run(async () => await LoadNamesAccountingAccounts());
             _errors = new Dictionary<string, List<string>>();
 
         }
@@ -108,6 +108,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                     if (_isApplyPercentage)
                     {
                         PercentageValue = 0.000m;
+                        IsBase100 = true;
                     }
                 }
             }
@@ -125,9 +126,19 @@ namespace NetErp.Treasury.Concept.ViewModels
                     return false;
                 }
 
+                if (SelectedType == "D" || SelectedType == "E")
+                {
+                    if (IsApplyPercentage && PercentageValue <= 0)
+                    {
+                        return false;
+                    }
+                }
+
                 return true;
             }
         }
+
+
         private decimal _percentageValue = 0.000m;
         public decimal PercentageValue
         {
@@ -138,6 +149,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 {
                     _percentageValue = value;
                     NotifyOfPropertyChange(nameof(PercentageValue));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -233,7 +245,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 return _saveCommand;
             }
         }
-
         public Visibility IsPercentageSectionVisible
         {
             get => (SelectedType == "D" || SelectedType == "E") ? Visibility.Visible : Visibility.Collapsed;
@@ -259,7 +270,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private ObservableCollection<AccountingAccountGraphQLModel> _accoutingAccount;
         public ObservableCollection<AccountingAccountGraphQLModel> AccoutingAccount
         {
@@ -274,7 +284,7 @@ namespace NetErp.Treasury.Concept.ViewModels
             }
         }
 
-        public async Task LoadCodeAccountingAccounts()
+        public async Task LoadNamesAccountingAccounts()
         {
             try
             {
@@ -291,9 +301,12 @@ namespace NetErp.Treasury.Concept.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-
                 var result = await AccountingAccountService.GetList(query, new { });
-                AccoutingAccount = new ObservableCollection<AccountingAccountGraphQLModel>(result);
+                var filteredResult = result
+                    .Where(x => !string.IsNullOrEmpty(x.Name) && x.Name.Length >= 8)
+                    .ToList();
+
+                AccoutingAccount = new ObservableCollection<AccountingAccountGraphQLModel>(filteredResult);
                 AccoutingAccount.Insert(0, new() { Id = 0, Name = "<< SELECCIONE UNA CUENTA >>" });
             }
             catch (Exception ex)
@@ -367,6 +380,11 @@ namespace NetErp.Treasury.Concept.ViewModels
                 UpdateResponse: updateConcept(data: $data, id: $id) {
                 id
                 name
+                type
+                margin
+                allowMargin
+                marginBasis
+                accountingAccountId
                 }
             }";
             var result = IsNewRecord ? await ConceptService.Create(query, variables) : await ConceptService.Update(query, variables);
@@ -445,7 +463,6 @@ namespace NetErp.Treasury.Concept.ViewModels
             ValidateProperty(nameof(NameConcept), NameConcept);
         }
         Dictionary<string, List<string>> _errors;
-
     }
 }
 

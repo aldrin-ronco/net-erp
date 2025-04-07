@@ -35,7 +35,6 @@ namespace NetErp.Treasury.Concept.ViewModels
             SelectTypeCommand = new DelegateCommand<string>(type => SelectedType = type);
 
         }
-
         
         private string _selectedType = string.Empty;
         public string SelectedType
@@ -50,11 +49,11 @@ namespace NetErp.Treasury.Concept.ViewModels
                     NotifyOfPropertyChange(nameof(IsTypeD));
                     NotifyOfPropertyChange(nameof(IsTypeI));
                     NotifyOfPropertyChange(nameof(IsTypeE));
+                    PageIndex = 1;
                     Execute.OnUIThreadAsync(async () => await LoadConceptsAsync());
                 }
             }
         }
-
         private bool _isTypeD;
         public bool IsTypeD
         {
@@ -73,7 +72,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private bool _isTypeI;
         public bool IsTypeI
         {
@@ -92,7 +90,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private bool _isTypeE;
         public bool IsTypeE
         {
@@ -111,9 +108,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private bool _isBusy;
-
         public bool IsBusy
         {
             get { return _isBusy; }
@@ -139,7 +134,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private int _pageIndex = 1; // DevExpress first page is index zero
         public int PageIndex
         {
@@ -153,7 +147,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-
         private int _pageSize = 50; // Default PageSize 50
         public int PageSize
         {
@@ -251,16 +244,19 @@ namespace NetErp.Treasury.Concept.ViewModels
                 string query = @"
                query($filter: ConceptFilterInput!){
                     PageResponse: conceptPage(filter: $filter){
-                    count
-                    rows{
-                        id
-                        name
-                        type
-                        margin
-                        allowMargin
-                        marginBasis
-                        accountingAccountId
-                    }
+                        count
+                        rows{
+                            id
+                            name
+                            type
+                            margin
+                            allowMargin
+                            marginBasis
+                            accountingAccountId
+                            accountingAccount {
+                                  name
+                            }
+                       }
                    }
                 }";
 
@@ -401,12 +397,10 @@ namespace NetErp.Treasury.Concept.ViewModels
             SelectedItem = null;
             return Task.CompletedTask;
         }
-
         public Task HandleAsync(TreasuryConceptUpdateMessage message, CancellationToken cancellationToken)
         {
             return LoadConceptsAsync();
-        }
-                       
+        }                       
         public Task HandleAsync(TreasuryConceptCreateMessage message, CancellationToken cancellationToken)
         {
             return LoadConceptsAsync();
