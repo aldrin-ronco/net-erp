@@ -115,12 +115,12 @@
             </dxe:TextEdit>
 
                 <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Center" Margin="0,20,0,0"></TextBlock>
-                <dxg:LookUpEdit Grid.Row="7" Width="300" HorizontalAlignment="Center" 
+                <dxg:LookUpEdit Grid.Row="7" Width="450" HorizontalAlignment="Center" 
                   ItemsSource="{Binding AccoutingAccount}"
                   SelectedItem="{Binding SelectedAccoutingAccount}"
                   IsTextEditable="True"
                   AutoComplete="False"
-                  DisplayMember="Name"
+                  DisplayMember="FullName"
                   ValueMember="Id"
                   AutoPopulateColumns="False"
                   Margin="0 0 0 20">
@@ -132,7 +132,7 @@
                     <ControlTemplate>
                         <dxg:GridControl Name="PART_GridControl">
                             <dxg:GridControl.Columns>
-                                <dxg:GridColumn FieldName="Name" Header="Cuenta contable" Width="100"/>
+                                <dxg:GridColumn FieldName="FullName" Header="Cuenta contable" Width="100"/>
                                 </dxg:GridControl.Columns>
                             <dxg:GridControl.View>
                                 <dxg:TableView AutoWidth="True"/>
@@ -156,10 +156,12 @@
                         Visibility="{Binding IsPercentageOptionsVisible}">
                     <!-- SpinEdit para ingresar el valor numérico -->
                     <dxe:SpinEdit Width="80"
-                  EditValue="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  MinValue="0"
-                  MaxValue="1000"
-                  Increment="0.001"/>
+                      EditValue="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      MinValue="0"
+                      MaxValue="1000"
+                      Increment="0.01"
+                      Mask="n2"
+                      MaskUseAsDisplayFormat="True"/>
 
                     <!-- Texto descriptivo -->
                     <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>

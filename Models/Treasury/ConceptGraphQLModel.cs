@@ -18,9 +18,6 @@ namespace Models.Treasury
         public int MarginBasis { get; set; } = 0;
         public string Type { get; set; } = string.Empty;
         public AccountingAccountGraphQLModel AccountingAccount { get; set; }
-        public string AccountingAccountName => AccountingAccount?.Name ?? string.Empty;
-
-
 
         public override string ToString()
         {

@@ -110,8 +110,8 @@
                                 Binding="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Cuenta contable" HorizontalHeaderContentAlignment="Center" Width="auto"
-                                Binding="{Binding Path=AccountingAccountName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <dxg:GridColumn Header="Cuenta contable" HorizontalHeaderContentAlignment="Center" Width="500"
+                                Binding="{Binding Path=AccountingAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     
                 </dxg:GridColumn>
                 <dxg:GridColumn Width="auto">

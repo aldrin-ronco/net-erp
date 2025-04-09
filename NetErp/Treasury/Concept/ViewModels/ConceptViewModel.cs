@@ -49,12 +49,18 @@ namespace NetErp.Treasury.Concept.ViewModels
             try
             {
                 ConceptDetailViewModel instance = new(this);
+
                 instance.ConceptId = concept.Id;
                 instance.NameConcept = concept.Name;
                 instance.SelectedType = concept.Type;
                 instance.SelectedAccoutingAccount = instance.AccoutingAccount.FirstOrDefault(account => account.Id == concept.AccountingAccountId) ?? throw new Exception(); //TODO
+                instance.IsApplyPercentage = concept.AllowMargin;
+                instance.PercentageValue = concept.Margin;
+                instance.IsBase100 = concept.MarginBasis == 100;
+                instance.IsBase1000 = concept.MarginBasis == 1000;
 
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+
             }
             catch(Exception)
             {
@@ -66,8 +72,7 @@ namespace NetErp.Treasury.Concept.ViewModels
             try
             {
                 ConceptDetailViewModel instance = new(this);
-                instance.CleanUpControls();
-                
+                instance.CleanUpControls();                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 instance.SelectedType = "D";
             }
@@ -76,7 +81,5 @@ namespace NetErp.Treasury.Concept.ViewModels
                 throw;
             }
         }
-
-
     }
 }

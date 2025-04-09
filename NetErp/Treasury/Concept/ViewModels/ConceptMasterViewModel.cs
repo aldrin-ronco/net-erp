@@ -3,6 +3,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Models.Billing;
 using Models.Global;
 using Models.Treasury;
 using NetErp.Helpers;
@@ -159,7 +160,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-
         }
         public bool CanDeleteConcept
         {
@@ -167,6 +167,21 @@ namespace NetErp.Treasury.Concept.ViewModels
             {
                 if (SelectedItem is null) return false;
                 return true;
+            }
+        }
+
+        // Tiempo de respuesta
+        private string _responseTime;
+        public string ResponseTime
+        {
+            get { return _responseTime; }
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(() => ResponseTime);
+                }
             }
         }
 
@@ -254,7 +269,9 @@ namespace NetErp.Treasury.Concept.ViewModels
                             marginBasis
                             accountingAccountId
                             accountingAccount {
-                                  name
+                                id
+                                code
+                                name                                
                             }
                        }
                    }
@@ -275,7 +292,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 var result = await ConceptService.GetPage(query, variables);
                 TotalCount = result.PageResponse.Count;
                 Concepts = new ObservableCollection<ConceptGraphQLModel>(result.PageResponse.Rows ?? new List<ConceptGraphQLModel>());
-                
+
 
             }
             catch (Exception ex)
@@ -332,10 +349,13 @@ namespace NetErp.Treasury.Concept.ViewModels
 
                 NotifyOfPropertyChange(nameof(CanDeleteConcept));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -374,9 +394,9 @@ namespace NetErp.Treasury.Concept.ViewModels
                 var result = await ConceptService.Delete(query, variables);
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -392,10 +412,19 @@ namespace NetErp.Treasury.Concept.ViewModels
                
         public Task HandleAsync(TreasuryConceptDeleteMessage message, CancellationToken cancellationToken)
         {
-            ConceptGraphQLModel conceptToDelete = Concepts.FirstOrDefault(x => x.Id == message.DeletedTreasuryConcept.Id) ?? new ConceptGraphQLModel();
-            Concepts.Remove(conceptToDelete);
-            SelectedItem = null;
-            return Task.CompletedTask;
+
+            try
+            {
+                ConceptGraphQLModel conceptToDelete = Concepts.FirstOrDefault(x => x.Id == message.DeletedTreasuryConcept.Id) ?? new ConceptGraphQLModel();
+                Concepts.Remove(conceptToDelete);
+                SelectedItem = null;
+                return Task.CompletedTask;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            
         }
         public Task HandleAsync(TreasuryConceptUpdateMessage message, CancellationToken cancellationToken)
         {

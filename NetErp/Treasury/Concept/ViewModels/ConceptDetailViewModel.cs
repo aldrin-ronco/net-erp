@@ -109,10 +109,12 @@ namespace NetErp.Treasury.Concept.ViewModels
                     {
                         PercentageValue = 0.000m;
                         IsBase100 = true;
+                        
                     }
                 }
             }
         }
+
         public bool CanSave
         {
             get
@@ -137,7 +139,6 @@ namespace NetErp.Treasury.Concept.ViewModels
                 return true;
             }
         }
-
 
         private decimal _percentageValue = 0.000m;
         public decimal PercentageValue
@@ -212,6 +213,8 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
+
+
 
         private ICommand _changeTypeCommand;
         public ICommand ChangeTypeCommand
@@ -301,19 +304,22 @@ namespace NetErp.Treasury.Concept.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                var result = await AccountingAccountService.GetList(query, new { });
-                var filteredResult = result
-                    .Where(x => !string.IsNullOrEmpty(x.Name) && x.Name.Length >= 8)
-                    .ToList();
 
-                AccoutingAccount = new ObservableCollection<AccountingAccountGraphQLModel>(filteredResult);
+                var result = (await AccountingAccountService.GetList(query, new { }))
+                .OfType<AccountingAccountGraphQLModel>()
+                .Where(x => !string.IsNullOrWhiteSpace(x.Code) && x.Code.Trim().Length >= 8)
+                .ToList();
+
+                AccoutingAccount = new ObservableCollection<AccountingAccountGraphQLModel>(result);
                 AccoutingAccount.Insert(0, new() { Id = 0, Name = "<< SELECCIONE UNA CUENTA >>" });
             }
             catch (Exception ex)
             {
-                throw new Exception("Error al obtener el código de cuentas", ex);
+                throw new AsyncException(innerException: ex);
             }
         }
+
+
         public async Task GoBack()
         {
             await Context.ActivateMasterView();
@@ -353,42 +359,50 @@ namespace NetErp.Treasury.Concept.ViewModels
         }
         public async Task<ConceptGraphQLModel> ExecuteSaveAsync()
         {
-            dynamic variables = new ExpandoObject();
-            variables.data = new ExpandoObject();
-            if (!IsNewRecord) variables.id = ConceptId;
-            variables.data.name = NameConcept;
-            variables.data.accountingAccountId = SelectedAccoutingAccount.Id;
-            variables.data.allowMargin = IsApplyPercentage;
-            variables.data.margin = IsApplyPercentage ? PercentageValue : 0;
-            variables.data.marginBasis = IsBase100 ? 100 : 1000;
-            variables.data.type = SelectedType;
+            try
+            {
+                dynamic variables = new ExpandoObject();
+                variables.data = new ExpandoObject();
+                if (!IsNewRecord) variables.id = ConceptId;
+                variables.data.name = NameConcept;
+                variables.data.accountingAccountId = SelectedAccoutingAccount.Id;
+                variables.data.allowMargin = IsApplyPercentage;
+                variables.data.margin = IsApplyPercentage ? PercentageValue : 0;
+                variables.data.type = SelectedType;
+                variables.data.marginBasis = IsApplyPercentage ? (IsBase100 ? 100 : 1000) : 0;
 
-            string query = IsNewRecord ? @"
-            mutation ($data: CreateConceptInput!) {
-              CreateResponse: createConcept(data: $data) {
-                id
-                name
-                type
-                margin
-                allowMargin    
-                marginBasis
-                accountingAccountId    
-              }
-            }" :
-            @"
-            mutation($data:UpdateConceptInput!, $id: Int!) {
-                UpdateResponse: updateConcept(data: $data, id: $id) {
-                id
-                name
-                type
-                margin
-                allowMargin
-                marginBasis
-                accountingAccountId
-                }
-            }";
-            var result = IsNewRecord ? await ConceptService.Create(query, variables) : await ConceptService.Update(query, variables);
-            return result;
+                string query = IsNewRecord ? @"
+                mutation ($data: CreateConceptInput!) {
+                  CreateResponse: createConcept(data: $data) {
+                    id
+                    name
+                    type
+                    margin
+                    allowMargin    
+                    marginBasis
+                    accountingAccountId    
+                  }
+                }" :
+                    @"
+                mutation($data:UpdateConceptInput!, $id: Int!) {
+                    UpdateResponse: updateConcept(data: $data, id: $id) {
+                    id
+                    name
+                    type
+                    margin
+                    allowMargin
+                    marginBasis
+                    accountingAccountId
+                    }
+                }";
+                var result = IsNewRecord ? await ConceptService.Create(query, variables) : await ConceptService.Update(query, variables);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+            
         }
 
         public void CleanUpControls()
