@@ -23,9 +23,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
-
         </Grid.RowDefinitions>
-
         <dxr:RibbonControl  IsSimplified="False" Grid.Row="0" Margin="0 0 0 10"
                             AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
                             RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
@@ -56,8 +54,6 @@
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
-
-
         <busyIndicator:BusyMask x:Name="BusyIndicator"
                         IsBusy="{Binding IsBusy}"
                         IndicatorType="BouncingDot"
@@ -65,111 +61,135 @@
                         BusyContentMargin="0,20,0,0"
                         IsBusyAtStartup="False"
                         Grid.Row="1">
-            <Grid Grid.Row=" 1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            
-                <TextBlock Grid.Row="2" HorizontalAlignment="Center"></TextBlock>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <RadioButton Content="DESCUENTOS" 
+                <Grid Grid.Row="0" Grid.Column="1" Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                   
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 0 0 10">
+                        <RadioButton Content="DESCUENTO" 
                          IsChecked="{Binding Path=IsTypeD, Mode=OneWay}" 
                          CommandParameter="D" 
                          Command="{Binding ChangeTypeCommand}"/>
-                    <RadioButton Content="INGRESOS" 
+                        <RadioButton Content="INGRESO" 
                          IsChecked="{Binding Path=IsTypeI, Mode=OneWay}" 
                          CommandParameter="I"
                          Margin="10,0,0,0"
                          Command="{Binding ChangeTypeCommand}"/>
-                    <RadioButton Content="EGRESOS" 
+                        <RadioButton Content="EGRESO" 
                          IsChecked="{Binding Path=IsTypeE, Mode=OneWay}" 
                          CommandParameter="E" 
                          Margin="10,0,0,0"
                          Command="{Binding ChangeTypeCommand}"/>
-                </StackPanel>
+                    </StackPanel>
 
 
 
-                <TextBlock Grid.Row="4" Text="Nombre del concepto" HorizontalAlignment="Center"></TextBlock>
-            <dxe:TextEdit Grid.Row="5" 
-                          Width="300" 
+                    <TextBlock Grid.Row="4" Text="Nombre del concepto" HorizontalAlignment="Left" Margin="0 0 0 5"></TextBlock>
+                    <dxe:TextEdit Grid.Row="5" 
+                          Width="450" 
                           HorizontalAlignment="Center"
                           x:Name="NameConcept"
+                          CharacterCasing="Upper"
+                          Margin="0 0 0 20"
                           Text="{Binding Path=NameConcept, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                
-            </dxe:TextEdit>
 
-                <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Center" Margin="0,20,0,0"></TextBlock>
-                <dxg:LookUpEdit Grid.Row="7" Width="450" HorizontalAlignment="Center" 
-                  ItemsSource="{Binding AccoutingAccount}"
-                  SelectedItem="{Binding SelectedAccoutingAccount}"
-                  IsTextEditable="True"
-                  AutoComplete="False"
-                  DisplayMember="FullName"
-                  ValueMember="Id"
-                  AutoPopulateColumns="False"
-                  Margin="0 0 0 20">
-                <dxg:LookUpEdit.StyleSettings>
-                    <dxg:SearchLookUpEditStyleSettings/>
-                </dxg:LookUpEdit.StyleSettings>
+                    </dxe:TextEdit>
 
-                <dxg:LookUpEdit.PopupContentTemplate>
-                    <ControlTemplate>
-                        <dxg:GridControl Name="PART_GridControl">
-                            <dxg:GridControl.Columns>
-                                <dxg:GridColumn FieldName="FullName" Header="Cuenta contable" Width="100"/>
-                                </dxg:GridControl.Columns>
-                            <dxg:GridControl.View>
-                                <dxg:TableView AutoWidth="True"/>
-                            </dxg:GridControl.View>
-                        </dxg:GridControl>
-                    </ControlTemplate>
-                </dxg:LookUpEdit.PopupContentTemplate>
+                    <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Left" Margin="0,0 ,0,5"></TextBlock>
+                    <dxg:LookUpEdit Grid.Row="7" Width="450" HorizontalAlignment="Center" 
+                      ItemsSource="{Binding AccoutingAccount}"
+                      SelectedItem="{Binding SelectedAccoutingAccount}"
+                      IsTextEditable="True"
+                      AutoComplete="False"
+                      DisplayMember="FullName"
+                      ValueMember="Id"
+                      AutoPopulateColumns="False"
+                      Margin="0 0 0 20">
+                        <dxg:LookUpEdit.StyleSettings>
+                            <dxg:SearchLookUpEditStyleSettings/>
+                        </dxg:LookUpEdit.StyleSettings>
 
-                </dxg:LookUpEdit>
-           
-            <dxe:CheckEdit Grid.Row="8" 
+                        <dxg:LookUpEdit.PopupContentTemplate>
+                            <ControlTemplate>
+                                <dxg:GridControl Name="PART_GridControl">
+                                    <dxg:GridControl.Columns>
+                                        <dxg:GridColumn FieldName="FullName" Header="Cuenta contable" Width="100"/>
+                                    </dxg:GridControl.Columns>
+                                    <dxg:GridControl.View>
+                                        <dxg:TableView AutoWidth="True"/>
+                                    </dxg:GridControl.View>
+                                </dxg:GridControl>
+                            </ControlTemplate>
+                        </dxg:LookUpEdit.PopupContentTemplate>
+
+                    </dxg:LookUpEdit>
+
+                    <dxe:CheckEdit Grid.Row="8" 
                            Content="¿Aplicar porcentaje?" 
                            HorizontalAlignment="Center" 
                            IsChecked="{Binding IsApplyPercentage, Mode=TwoWay}"
                            Visibility="{Binding IsPercentageSectionVisible}"
                            Margin="0,0,0,20"/>
 
-                <StackPanel Grid.Row="10" 
+                    <StackPanel Grid.Row="10" 
                         Orientation="Horizontal" 
                         HorizontalAlignment="Center"
                         Visibility="{Binding IsPercentageOptionsVisible}">
-                    <!-- SpinEdit para ingresar el valor numérico -->
-                    <dxe:SpinEdit Width="80"
-                      EditValue="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      MinValue="0"
-                      MaxValue="1000"
-                      Increment="0.01"
-                      Mask="n2"
-                      MaskUseAsDisplayFormat="True"/>
+                        <!-- SpinEdit para ingresar el valor numérico -->
+                        <dxe:SpinEdit Width="80"
+                          EditValue="{Binding PercentageValue, Mode=TwoWay}"
+                          MinValue="0"
+                          MaxValue="100"
+                          ValidateOnTextInput="True"
+                          Increment="0.01"
+                          Mask="f2" IsTextEditable="False" 
+                          MaskUseAsDisplayFormat="True"/>
 
-                    <!-- Texto descriptivo -->
-                    <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>
+                        <Slider Minimum="0"
+                            Maximum="100"
+                            Value="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TickFrequency="0.01"
+                            IsSnapToTickEnabled="True"
+                            Width="100"
+                            Margin="0,0,0,10"/>     
 
-                    <!-- RadioButtons para las opciones -->
-                    <RadioButton GroupName="BaseOptions" Content="100" IsChecked="{Binding IsBase100}" />
-                    <RadioButton GroupName="BaseOptions" Content="1000" IsChecked="{Binding IsBase1000}" Margin="10,0,0,0"/>
-                </StackPanel>
+                        <!-- Texto descriptivo -->
+                        <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>
+
+                        <!-- RadioButtons para las opciones -->
+                        <RadioButton GroupName="BaseOptions" Content="100" IsChecked="{Binding IsBase100}" />
+                        <RadioButton GroupName="BaseOptions" Content="1000" IsChecked="{Binding IsBase1000}" Margin="10,0,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </busyIndicator:BusyMask>
     </Grid>

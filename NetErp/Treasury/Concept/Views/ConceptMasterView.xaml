@@ -63,7 +63,7 @@
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
-        <TextBlock Grid.Row="1" Grid.Column="0" Margin="10 10 0 10" Text="Para filtrar, seleccione el tipo de concepto que requiere modificar:"></TextBlock>
+        <!--<TextBlock Grid.Row="1" Grid.Column="0" Margin="10 10 0 10" Text="Seleccione el tipo de concepto a filtrar:"></TextBlock>-->
 
         <StackPanel Grid.Row="2" Grid.Column="0" Margin="10 10 0 10" Orientation="Horizontal">
             <RadioButton GroupName="ConceptType" Content="DESCUENTOS"

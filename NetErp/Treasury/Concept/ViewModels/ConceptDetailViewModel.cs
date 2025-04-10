@@ -154,6 +154,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -187,10 +188,10 @@ namespace NetErp.Treasury.Concept.ViewModels
             get { return _isBase100; }
             set
             {
-                if (_isBase100 != value)  // Evita ejecutar código innecesario si el valor no cambia
+                if (_isBase100 != value)
                 {
                     _isBase100 = value;
-                    _isBase1000 = !value; // Modifica la variable interna en lugar de llamar al setter
+                    if (value) _isBase1000 = false;
                     NotifyOfPropertyChange(nameof(IsBase100));
                     NotifyOfPropertyChange(nameof(IsBase1000));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -206,7 +207,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 if (_isBase1000 != value)
                 {
                     _isBase1000 = value;
-                    _isBase100 = !value;
+                    if (value) _isBase100 = false;
                     NotifyOfPropertyChange(nameof(IsBase1000));
                     NotifyOfPropertyChange(nameof(IsBase100));
                     NotifyOfPropertyChange(nameof(CanSave));

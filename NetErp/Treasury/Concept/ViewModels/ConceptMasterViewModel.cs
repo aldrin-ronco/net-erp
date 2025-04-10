@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -255,7 +256,12 @@ namespace NetErp.Treasury.Concept.ViewModels
                 _cts = new CancellationTokenSource();
                 var token = _cts.Token;
 
-                IsBusy = true; 
+                IsBusy = true;
+                Refresh();
+
+                // Iniciar cronometro
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 string query = @"
                query($filter: ConceptFilterInput!){
                     PageResponse: conceptPage(filter: $filter){
@@ -292,7 +298,8 @@ namespace NetErp.Treasury.Concept.ViewModels
                 var result = await ConceptService.GetPage(query, variables);
                 TotalCount = result.PageResponse.Count;
                 Concepts = new ObservableCollection<ConceptGraphQLModel>(result.PageResponse.Rows ?? new List<ConceptGraphQLModel>());
-
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
             }
             catch (Exception ex)
