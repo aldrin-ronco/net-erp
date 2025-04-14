@@ -71,6 +71,7 @@
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
                 <MenuItem Header="Administración de smtp" x:Name="OpenSmtp"/>
                 <MenuItem Header="Administración de correos corporativos" x:Name="OpenEmail"/>
+                <MenuItem Header="Secuencias de Autorización" x:Name="OpenAuthorizationSecuence"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

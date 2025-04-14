@@ -35,6 +35,7 @@ namespace Dictionaries
         /// Enumeracion para el tipo de captura de datos PN = Persona Natural, RS = Razon Social
         /// </summary>
         public enum CaptureTypeEnum { PN, RS, Undefined }
+        public enum SecuenceTypeEnum { M, D, Undefined }
 
         public static Dictionary<string, string> RetentionGroupDictionary = new()
         {
@@ -42,6 +43,13 @@ namespace Dictionaries
             { "RTIVA", "Retención de IVA" },
             { "RTICA", "Retención de ICA" },
             { "RCREE", "Retención de CREE" },
+        };
+
+        public static Dictionary<char, string> ModeDictionary = new()
+        {
+            { 'A', "Autoriza" },
+            { 'H', "Habilita" },
+
         };
 
     }

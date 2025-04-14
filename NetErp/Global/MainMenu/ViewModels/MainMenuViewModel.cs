@@ -45,6 +45,7 @@ using NetErp.Suppliers.Suppliers.ViewModels;
 using NetErp.Treasury.Masters.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
+using NetErp.Global.AuthorizationSequence.ViewModels;
 
 
 namespace NetErp.Global.MainMenu.ViewModels
@@ -604,7 +605,22 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        
+        public async void OpenAuthorizationSecuence()
+        {
+            try
+            {
+                AuthorizationSequenceViewModel instance = IoC.Get<AuthorizationSequenceViewModel>();
+                instance.DisplayName = "Secuencia de Autorizacion";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         public async void OpenPriceList()
         {
             try
