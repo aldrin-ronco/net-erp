@@ -46,7 +46,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             Context = context;
             _errors = new Dictionary<string, List<string>>();
-            IsNewRecord = entity == null? true : false;
+           
+
             if(entity != null)
             {
                 _entity = entity;
@@ -61,8 +62,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         public async Task Initialize()
         {
 
-            await GetCostCentersAsync();
-            await GetAuthorizationSequenceTypesAsync();
+            await LoadListAsync();
         }
         public  void setUpdateProperties(AuthorizationSequenceGraphQLModel entity)
         {
@@ -82,6 +82,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         #region DBProperties
         private AuthorizationSequenceGraphQLModel? _entity;
+        public AuthorizationSequenceGraphQLModel Entity
+        {
+            get { return _entity; }
+
+        }
         private int _id ;
         private int? _startRange;
         private int? _endRange;
@@ -311,6 +316,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
 
         #region Properties
+        public bool SequenceD => SelectedSecuenceType.Equals(SecuenceTypeEnum.D);
         private SecuenceTypeEnum _selectedSecuenceType = SecuenceTypeEnum.M;
        public SecuenceTypeEnum SelectedSecuenceType
         {
@@ -321,6 +327,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _selectedSecuenceType = value;
                     NotifyOfPropertyChange(nameof(SelectedSecuenceType));
+                    NotifyOfPropertyChange(nameof(SequenceD));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -342,19 +349,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         Dictionary<string, List<string>> _errors;
 
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-        private bool _isNewRecord = false;
+        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
 
         public bool IsNewRecord
         {
             get { return _isNewRecord; }
-            set
-            {
-                if (_isNewRecord != value)
-                {
-                    _isNewRecord = value;
-                    NotifyOfPropertyChange(nameof(IsNewRecord));
-                }
-            }
+            
         }
         private bool _isBusy = false;
         public bool IsBusy
@@ -468,7 +468,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             dynamic variables = new ExpandoObject();
             variables.Data = new ExpandoObject();
             variables.Data.number = Number;
-            variables.Data.description = $"RESOLUCION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  //Consultar
+            variables.Data.description = $"AUTORIZACION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  //Consultar
             variables.Data.costCenterId = SelectedCostCenter.Id;
             variables.Data.mode = SelectedMode;
             variables.Data.technicalKey = TechnicalKey;
@@ -500,30 +500,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             get
             {
-       /* private int? _startRange;
-        private int? _endRange;
-        private int _authorizationSequenceTypeId;
-
-
-
-        private DateTime? _startDate = DateTime.Now;
-        private DateTime? _endDate = DateTime.Now;
-        private bool _isActive;*/
-
-                if (string.IsNullOrEmpty(Number)) return false;
-
-                // Debe haber ingresado una descripcion
-                if (string.IsNullOrEmpty(Reference)) return false;
-                if (string.IsNullOrEmpty(TechnicalKey)) return false;
-                if (string.IsNullOrEmpty(Prefix)) return false;
-                if (string.IsNullOrEmpty(CurrentInvoiceNumber)) return false;
-                if (string.IsNullOrEmpty(Number)) return false;
-
+                   
 
                 if (SelectedCostCenter == null || SelectedCostCenter.Id == 0) return false;
                 if (string.IsNullOrEmpty(SelectedMode.ToString())) return false;
                 if (SelectedAuthorizationSequenceType == null || SelectedAuthorizationSequenceType.Id == 0) return false;
-
+                if (_errors.Count > 0) { return false;  }
 
                 return true;
             }
@@ -561,10 +543,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 switch (propertyName)
                 {
                     case nameof(StartRange):
-                        if (!value.HasValue) AddError(propertyName, "El rango inicial estar vacío");
+                        if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
                         break;
                     case nameof(EndRange):
-                        if (!value.HasValue) AddError(propertyName, "El rango final estar vacío");
+                        if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
                         break;
                 }
             }
@@ -583,7 +565,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 switch (propertyName)
                 {
                     case nameof(Number):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El numero de resolucion no puede estar vacío");
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de Autorizacion no puede estar vacío");
                         break;
                     case nameof(Prefix):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "El prefijo no puede estar vacío");
@@ -592,10 +574,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "La Referencia no puede estar vacío");
                         break;
                     case nameof(TechnicalKey):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La Clave tecnica no puede estar vacío");
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La Clave técnica no puede estar vacío");
                         break;
                     case nameof(CurrentInvoiceNumber):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El numero de factura no puede estar vacío");
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de factura no puede estar vacío");
                         break;
                   
 
@@ -661,6 +643,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                         }
                         authorizationSequenceType {
                           id
+                          name
                         }
                         startRange
                         endDate
@@ -714,75 +697,54 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 throw;
             }
         }
-        private async Task GetCostCentersAsync()
+        private async Task LoadListAsync()
         {
             string query = @"
                             query(){
-                               ListResponse:  costCenters(){
-                                id
-                                name
-                                address
-                                city  {
-                                  id
-                                  name
-                                  department {
+                               authorizationSequenceTypes(){
+                                   id
+                                   name
+                                  },
+                                  costCenters(){
                                     id
                                     name
-                                  }
-                                }
+                                    address
+                                    city  {
+                                      id
+                                      name
+                                      department {
+                                       id
+                                       name
+                                      } 
+                                    }
   
-                              }
+                                  }
                             }";
             dynamic variables = new ExpandoObject();
-            var source = await CostCenterService.GetList(query, variables);
-            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source);
+            AuthorizationSequenceDataContext source = await CostCenterService.GetDataContext<AuthorizationSequenceDataContext>(query, variables);
+
+            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source.CostCenters);
+            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes);
 
             CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            AuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
+
             if (!IsNewRecord)
             {
                 SelectedCostCenter = CostCenters.First(f => f.Id == _entity?.CostCenter.Id);
+                SelectedAuthorizationSequenceType = AuthorizationSequenceTypes.First(f => f.Id == _entity.AuthorizationSequenceType.Id);
+
             }
             else
             {
                 SelectedCostCenter = CostCenters.First(f => f.Id == 0);
-            }
-
-
-        }
-        private async Task GetAuthorizationSequenceTypesAsync()
-        {
-            string query = @"query($filter : AuthorizationSequenceTypeFilterInput){
-                               PageResponse:  authorizationSequenceTypePage(filter: $filter){
-                                rows {
-                                  id
-                                  name
-                                }
-                              }
-                            }";
-           
-
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.Pagination = new ExpandoObject();
-            variables.filter.Pagination.Page = 1;
-            variables.filter.Pagination.PageSize = 50;
-
-            var source = await AuthorizationSequenceTypeService.GetPage(query, variables);
-            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.PageResponse.Rows);
-
-
-            AuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
-            if (!IsNewRecord)
-            {
-                SelectedAuthorizationSequenceType = AuthorizationSequenceTypes.First(f => f.Id == _entity.AuthorizationSequenceType.Id);
-            }
-            else
-            {
                 SelectedAuthorizationSequenceType = AuthorizationSequenceTypes.First(f => f.Id == 0);
+
             }
 
 
         }
+        
 
         public async Task<IGenericDataAccess<AuthorizationSequenceGraphQLModel>.PageResponseType> LoadPage()
         {

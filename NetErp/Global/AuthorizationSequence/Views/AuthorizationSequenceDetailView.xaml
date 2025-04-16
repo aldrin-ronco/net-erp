@@ -106,6 +106,7 @@
             <TextBlock Text="Prefijo"       Grid.Row="0" Grid.Column="3" Margin="6 2 0 2"/>
             <dxe:TextEdit  Grid.Row="1" Grid.Column="0"
                 Text="{Binding Path=Number, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                 CharacterCasing="Upper"
                 x:Name="Number"
                 Margin="6 5 0 2"/>
@@ -113,16 +114,20 @@
 
             <DatePicker Grid.Column="1" Grid.Row="1" Margin="6 2 0 2"
             TabIndex="3"
-            SelectedDate="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
+            SelectedDate="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+            IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
             Padding="3"/>
 
             <DatePicker Grid.Column="2" Grid.Row="1" Margin="6 2 0 2"
+             IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
             TabIndex="3"
             SelectedDate="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
             Padding="3"/>
             <dxe:TextEdit   Grid.Row="1" Grid.Column="3"
              Text="{Binding Path=Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
              CharacterCasing="Upper"
+             IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
              x:Name="Prefix"
              Margin="6 5 0 2"/>   
 
@@ -148,7 +153,7 @@
                  MaskType="Numeric"          
                  Text="{Binding Path=StartRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                  CharacterCasing="Upper"
-                          
+                  IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"         
                  x:Name="StartRange"
                  Margin="6 5 0 2"/>  
             
@@ -158,6 +163,7 @@
             <dxe:TextEdit Grid.Row="0" Grid.Column="3"
               Text="{Binding Path=EndRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
               CharacterCasing="Upper"
+              IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
               MaskType="Numeric"  
               x:Name="EndRange"
               Margin="6 5 0 2"/>
@@ -167,26 +173,26 @@
             <TextBlock Text="Factura actual" Grid.Row="1" Grid.Column="0" Margin="6 2 0 2"/>
             <dxe:TextEdit Grid.Row="1" Grid.Column="1"
                Text="{Binding Path=CurrentInvoiceNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+               IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                CharacterCasing="Upper"
                x:Name="CurrentInvoiceNumber"
                Margin="6 5 0 2"/> 
             
             
             <TextBlock Text="Tipo" Grid.Row="1" Grid.Column="2" Margin="20 5 0 2"/>
-            <ComboBox Grid.Column="3" Grid.Row="1" 
-                   VerticalAlignment="Center" 
-                   Margin="4" Padding="3"
-                  
-                   x:Name="ModeDictionary"
-                   DisplayMemberPath="Value"
-                   SelectedValuePath="Key"
-                   SelectedValue="{Binding Path=SelectedMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" >
-                        <ComboBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VirtualizingStackPanel/>
-                            </ItemsPanelTemplate>
-                        </ComboBox.ItemsPanel>  
-            </ComboBox>
+
+            <dxe:ComboBoxEdit  Grid.Column="3" Grid.Row="1"   Margin="6 5 0 2"
+                 x:Name="ModeDictionary"
+                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding Path=ModeDictionary, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
+                DisplayMember="Value" 
+                ValueMember="Key"
+                               
+                EditValue="{Binding Path=SelectedMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                IsSynchronizedWithCurrentItem="True" 
+                IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+           
         </Grid>
         <Grid  Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" Height="auto">
             <Grid.ColumnDefinitions>
@@ -203,8 +209,11 @@
             <TextBlock Text="Referencia"         Grid.Row="1" Grid.Column="0" Margin="6 2 0 2"/>
             <TextBlock Text="Clave Tecnica"         Grid.Row="2" Grid.Column="0" Margin="6 2 0 2"/>
             <dxe:ComboBoxEdit  Grid.Column="1" Grid.Row="0"  Margin="6 5 0 2"
+                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                 ItemsSource="{Binding Path=AuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
-DisplayMember="Name" EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" IsEnabled="{Binding WithholdingCertificateConfigComboBoxIsEnabled, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                DisplayMember="Name" EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                IsSynchronizedWithCurrentItem="True" 
+                IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
             <dxe:TextEdit Grid.Row="1" Grid.Column="1"
                 Text="{Binding Path=Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -215,6 +224,7 @@ DisplayMember="Name" EditValue="{Binding Path=SelectedAuthorizationSequenceType,
             <dxe:TextEdit Grid.Row="2" Grid.Column="1"  Margin="6 5 0 2"
                 Text="{Binding Path=TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 CharacterCasing="Upper"
+                 IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                 x:Name="TechnicalKey"
               />
 

@@ -286,6 +286,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                            }
                            authorizationSequenceType {
                              id
+                             name
                            }
                            startRange
                            endRange

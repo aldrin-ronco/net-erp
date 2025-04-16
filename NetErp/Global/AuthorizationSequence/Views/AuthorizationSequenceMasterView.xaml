@@ -98,7 +98,14 @@
 
                 <dxg:GridColumn Header="Descripción" Width="*" HorizontalHeaderContentAlignment="Center"
                  Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
-
+                
+                <dxg:GridColumn Header="Almacen" Width="*" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding CostCenter.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                
+                <dxg:GridColumn Header="Tipo de resolucion" Width="*" HorizontalHeaderContentAlignment="Center"
+                    Binding="{Binding AuthorizationSequenceType.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                
+                
                 <dxg:GridColumn Header=""
      Width="45"
      HorizontalHeaderContentAlignment="Center">

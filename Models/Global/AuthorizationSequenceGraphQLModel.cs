@@ -13,7 +13,7 @@ namespace Models.Global
         public int Id { get; set; }
         public string Number { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public char Mode { get; set; } 
+        public char Mode { get; set; }
         public string TechnicalKey { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public bool IsActive { get; set; }
@@ -47,5 +47,10 @@ namespace Models.Global
     {
         public AuthorizationSequenceGraphQLModel UpdatedAuthorizationSequence { get; set; }
         public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
+    }
+    public class AuthorizationSequenceDataContext
+    {
+        public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
     }
 }
