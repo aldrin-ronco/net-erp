@@ -100,7 +100,7 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="No Resolucion" Grid.Row="0" Grid.Column="0" Margin="6 2 0 2"/>
+            <TextBlock Text="No Autorizacion" Grid.Row="0" Grid.Column="0" Margin="6 2 0 2"/>
             <TextBlock Text="Fecha"         Grid.Row="0" Grid.Column="1" Margin="6 2 0 2"/>
             <TextBlock Text="Vence"         Grid.Row="0" Grid.Column="2" Margin="6 2 0 2"/>
             <TextBlock Text="Prefijo"       Grid.Row="0" Grid.Column="3" Margin="6 2 0 2"/>
@@ -205,9 +205,9 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Tipo de Authorizacion" Grid.Row="0" Grid.Column="0" Margin="6 2 0 2"/>
+            <TextBlock Text="Tipo de Autorización" Grid.Row="0" Grid.Column="0" Margin="6 2 0 2"/>
             <TextBlock Text="Referencia"         Grid.Row="1" Grid.Column="0" Margin="6 2 0 2"/>
-            <TextBlock Text="Clave Tecnica"         Grid.Row="2" Grid.Column="0" Margin="6 2 0 2"/>
+            <TextBlock Text="Clave Técnica"         Grid.Row="2" Grid.Column="0" Margin="6 2 0 2"/>
             <dxe:ComboBoxEdit  Grid.Column="1" Grid.Row="0"  Margin="6 5 0 2"
                 IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                 ItemsSource="{Binding Path=AuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
@@ -230,7 +230,7 @@
 
 
         </Grid>
-        <CheckBox Content="Resolucion Activa"    Grid.Row="7"                            
+        <CheckBox Content="Autorización activa"    Grid.Row="7"                            
   
         IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     </Grid>
