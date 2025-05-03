@@ -64,10 +64,10 @@
                         LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                         Description="Eliminar"
                         Hint="Eliminar Secuencia"    
-                        IsEnabled="{Binding Path=CanDeleteAuthorizationSecuence, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                        IsEnabled="{Binding Path=CanDeleteAuthorizationSequence, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                         RibbonStyle="Large">
                             <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteAuthorizationSecuenceCommand}" EventName="ItemClick"/>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteAuthorizationSequenceCommand}" EventName="ItemClick"/>
                             </dxmvvm:Interaction.Behaviors>
                         </dxb:BarButtonItem>
 

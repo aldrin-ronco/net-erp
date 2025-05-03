@@ -27,11 +27,11 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Security.Cryptography;
 namespace Common.Helpers
 {
-    public static class GetSequences
+    public static class GetAuthoritationSequences
     {
 
 
-        public static ObservableCollection<SequenceDto> GetNumberingRange(string Method)
+        public static ObservableCollection<AuthoritationSequenceDto> GetNumberingRange(string Method)
         {
             try
             {
@@ -57,7 +57,7 @@ namespace Common.Helpers
                
 
         }
-        private static ObservableCollection<SequenceDto> GetSequencesFromXml(string XmlString)
+        private static ObservableCollection<AuthoritationSequenceDto> GetSequencesFromXml(string XmlString)
         {
             XmlDocument xDoc = new XmlDocument();
             xDoc.LoadXml(XmlString);
@@ -69,12 +69,12 @@ namespace Common.Helpers
             XmlNode ResponseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
 
 
-            ObservableCollection<SequenceDto> sequences = [];
+            ObservableCollection<AuthoritationSequenceDto> sequences = [];
             if(ResponseList != null)
             {
                 foreach (XmlNode Item in ResponseList.ChildNodes)
                 {
-                    SequenceDto sec = new SequenceDto();
+                    AuthoritationSequenceDto sec = new AuthoritationSequenceDto();
                     sec.ResolutionNumber = Item.SelectSingleNode("//c:ResolutionNumber", namespaces).InnerText;
                     sec.ResolutionDate = Item.SelectSingleNode("//c:ResolutionDate", namespaces).InnerText;
                     sec.Prefix = Item.SelectSingleNode("//c:Prefix", namespaces).InnerText;

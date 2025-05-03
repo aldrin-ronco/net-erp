@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Common.Config
 {
-    public class SequenceDto
+    public class AuthoritationSequenceDto
     {
         public string ResolutionNumber { get; set; } = string.Empty;
         public string ResolutionDate { get; set; } = string.Empty;

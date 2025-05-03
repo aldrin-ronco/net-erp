@@ -65,7 +65,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 if (_selectedAuthorizationSequenceGraphQLModel != value)
                 {
                     _selectedAuthorizationSequenceGraphQLModel = value;
-                    NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSecuence));
+                    NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
                     NotifyOfPropertyChange(nameof(SelectedAuthorizationSequenceGraphQLModel));
                 }
             }
@@ -228,7 +228,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             return true;
         }
-        public bool CanDeleteAuthorizationSecuence
+        public bool CanDeleteAuthorizationSequence
         {
             get
             {
@@ -236,13 +236,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 return true;
             }
         }
-        private ICommand _deleteAuthorizationSecuenceCommand;
-        public ICommand DeleteAuthorizationSecuenceCommand
+        private ICommand _deleteAuthorizationSequenceCommand;
+        public ICommand DeleteAuthorizationSequenceCommand
         {
             get
             {
-                if (_deleteAuthorizationSecuenceCommand is null) _deleteAuthorizationSecuenceCommand = new AsyncCommand(DeleteAuthorizationSecuence, CanDeleteAuthorizationSecuence);
-                return _deleteAuthorizationSecuenceCommand;
+                if (_deleteAuthorizationSequenceCommand is null) _deleteAuthorizationSequenceCommand = new AsyncCommand(DeleteAuthorizationSequence, CanDeleteAuthorizationSequence);
+                return _deleteAuthorizationSequenceCommand;
             }
         }
         
@@ -332,7 +332,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        public async Task DeleteAuthorizationSecuence()
+        public async Task DeleteAuthorizationSequence()
         {
             try
             {
@@ -371,7 +371,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceDeleteMessage() { DeletedAuthorizationSequence = deletedAuthorizationSequence });
 
                 // Desactivar opcion de eliminar registros
-                NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSecuence));
+                NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

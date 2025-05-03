@@ -82,13 +82,13 @@
         VerticalAlignment="Center" 
        Margin="6 10 0 2">
             <RadioButton Content="Manual"
-         GroupName="SecuenceType"
+         GroupName="SequenceType"
          FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-         IsChecked="{Binding SelectedSecuenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
+         IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
          Converter={StaticResource EnumBooleanConverter}, ConverterParameter=M}"/>
             <RadioButton Content="Desde Dian"
-         GroupName="SecuenceType"
-         IsChecked="{Binding SelectedSecuenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
+         GroupName="SequenceType"
+         IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
          Converter={StaticResource EnumBooleanConverter}, ConverterParameter=D}"
          Margin="5 0 0 0"
          FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -113,7 +113,7 @@
                         Visibility="{Binding Path=Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                 <TextBlock Text="Selecciona una Autorizacion" Margin="0 0 0 5"/>
                 <dxe:ComboBoxEdit  ItemsSource="{Binding Path=Sequences, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
-DisplayMember="Description" EditValue="{Binding SelectedSecuence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" />
+DisplayMember="Description" EditValue="{Binding SelectedSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" />
             </StackPanel>
             <StackPanel Grid.Row="2" Margin="6 2 0 2" Orientation="Vertical">
                 <TextBlock Text="Autorizacion destinada para el almacen" Margin="0 0 0 5"/>

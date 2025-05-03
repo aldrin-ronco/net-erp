@@ -605,7 +605,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenAuthorizationSecuence()
+        public async void OpenAuthorizationSequence()
         {
             try
             {

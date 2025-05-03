@@ -35,7 +35,7 @@ namespace Dictionaries
         /// Enumeracion para el tipo de captura de datos PN = Persona Natural, RS = Razon Social
         /// </summary>
         public enum CaptureTypeEnum { PN, RS, Undefined }
-        public enum SecuenceOriginEnum { M, D, Undefined }
+        public enum SequenceOriginEnum { M, D, Undefined }
 
         public static Dictionary<string, string> RetentionGroupDictionary = new()
         {
