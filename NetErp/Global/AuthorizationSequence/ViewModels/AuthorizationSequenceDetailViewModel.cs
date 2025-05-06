@@ -65,13 +65,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             await LoadListAsync();
         }
-        public async Task SearchSequences()
+        public async Task SearchAuthorizationSequences()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                Sequences = GetAuthoritationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
+                AuthorizationSequences = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
             }
             catch (Exception e)
             {
@@ -308,8 +308,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        private AuthoritationSequenceDto _selectedSequence;
-        public AuthoritationSequenceDto SelectedSequence
+        private AuthorizationSequenceGraphQLModel _selectedSequence;
+        public AuthorizationSequenceGraphQLModel SelectedSequence
         {
             get { return _selectedSequence; }
             set
@@ -438,16 +438,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        private ObservableCollection<AuthoritationSequenceDto> _sequences;
-        public ObservableCollection<AuthoritationSequenceDto> Sequences
+        private ObservableCollection<AuthorizationSequenceGraphQLModel> _authorizationSequences;
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences
         {
-            get { return _sequences; }
+            get { return _authorizationSequences; }
             set
             {
-                if (_sequences != value)
+                if (_authorizationSequences != value)
                 {
-                    _sequences = value;
-                    NotifyOfPropertyChange(nameof(Sequences));
+                    _authorizationSequences = value;
+                    NotifyOfPropertyChange(nameof(AuthorizationSequences));
                 }
             }
         }
@@ -520,15 +520,15 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             return !IsBusy;
         }
-        public  void setSelectedSequence(AuthoritationSequenceDto authoritationSequence)
+        public  void setSelectedSequence(AuthorizationSequenceGraphQLModel authoritationSequence)
         {
-            Number = authoritationSequence.ResolutionNumber;
+            Number = authoritationSequence.Number;
             Prefix = authoritationSequence.Prefix;
             TechnicalKey = authoritationSequence.TechnicalKey;
-            StartDate = authoritationSequence.ValidDateFrom;
-            EndDate = authoritationSequence.ValidDateTo;
-            StartRange = authoritationSequence.FromNumber;
-            EndRange = authoritationSequence.ToNumber;
+            StartDate = authoritationSequence.StartDate;
+            EndDate = authoritationSequence.EndDate;
+            StartRange = authoritationSequence.StartRange;
+            EndRange = authoritationSequence.EndRange;
             if (string.IsNullOrEmpty(authoritationSequence.TechnicalKey))
             {
                 AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
