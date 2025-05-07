@@ -113,7 +113,7 @@
                         Visibility="{Binding Path=Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                 <TextBlock Text="Selecciona una Autorizacion" Margin="0 0 0 5"/>
                     <dxe:ComboBoxEdit  ItemsSource="{Binding Path=AuthorizationSequences, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
-DisplayMember="Description" EditValue="{Binding SelectedSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" />
+DisplayMember="Description" EditValue="{Binding SelectedAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" />
             </StackPanel>
             <StackPanel Grid.Row="2" Margin="6 2 0 2" Orientation="Vertical">
                 <TextBlock Text="Autorizacion destinada para el almacen" Margin="0 0 0 5"/>

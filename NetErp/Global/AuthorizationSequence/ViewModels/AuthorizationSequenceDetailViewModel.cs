@@ -16,6 +16,7 @@ using Models.Global;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
+using Newtonsoft.Json.Linq;
 using Ninject.Activation;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
@@ -70,6 +71,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             try
             {
                 IsBusy = true;
+                await Task.Delay(1000);
                 Refresh();
                 AuthorizationSequences = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
             }
@@ -305,21 +307,22 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _selectedCostCenter = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenter));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
+                    ValidateProperty(nameof(SelectedCostCenter), value?.Id);
                 }
             }
         }
-        private AuthorizationSequenceGraphQLModel _selectedSequence;
-        public AuthorizationSequenceGraphQLModel SelectedSequence
+        private AuthorizationSequenceGraphQLModel _selectedAuthorizationSequence;
+        public AuthorizationSequenceGraphQLModel SelectedAuthorizationSequence
         {
-            get { return _selectedSequence; }
+            get { return _selectedAuthorizationSequence; }
             set
             {
-                if (_selectedSequence != value)
+                if (_selectedAuthorizationSequence != value)
                 {
-                    _selectedSequence = value;
-                    if (value != null) { setSelectedSequence(value);  }
+                    _selectedAuthorizationSequence = value;
+                    if (value != null) { SetSelectedAuthorizationSequence(value);  }
                     if (value == null) { ClearValues(); }
-                    NotifyOfPropertyChange(nameof(SelectedSequence));
+                    NotifyOfPropertyChange(nameof(SelectedAuthorizationSequence));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -336,6 +339,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     NotifyOfPropertyChange(nameof(SelectedAuthorizationSequenceType));
                     NotifyOfPropertyChange(nameof(TechnicalKey));
                     ValidateProperty(nameof(TechnicalKey), TechnicalKey);
+                    ValidateProperty(nameof(SelectedAuthorizationSequenceType), value?.Id);
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -520,7 +524,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             return !IsBusy;
         }
-        public  void setSelectedSequence(AuthorizationSequenceGraphQLModel authoritationSequence)
+        public  void SetSelectedAuthorizationSequence(AuthorizationSequenceGraphQLModel authoritationSequence)
         {
             Number = authoritationSequence.Number;
             Prefix = authoritationSequence.Prefix;
@@ -533,6 +537,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
                 AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
+                SelectedAuthorizationSequenceType = AvaliableAuthorizationSequenceTypes.First(f => f.Id == 0);
 
             }
             else
@@ -668,6 +673,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 ClearErrors(propertyName);
                 switch (propertyName)
                 {
+
+                    case nameof(SelectedCostCenter):
+                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un centro de costo");
+                        break;
+                    case nameof(SelectedAuthorizationSequenceType):
+                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un tipo de autorización");
+                        break;
                     case nameof(StartRange):
                         if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
                         break;
@@ -729,6 +741,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         private void ValidateProperties()
         {
+            ValidateProperty(nameof(SelectedCostCenter), SelectedCostCenter?.Id);
+            ValidateProperty(nameof(SelectedAuthorizationSequenceType), SelectedAuthorizationSequenceType?.Id);
+
             ValidateProperty(nameof(Number), Number);
             ValidateProperty(nameof(Prefix), Prefix);
             ValidateProperty(nameof(Reference), Reference);
