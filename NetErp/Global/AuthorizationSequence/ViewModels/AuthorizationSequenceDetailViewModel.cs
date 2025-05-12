@@ -533,6 +533,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             EndDate = authoritationSequence.EndDate;
             StartRange = authoritationSequence.StartRange;
             EndRange = authoritationSequence.EndRange;
+            CurrentInvoiceNumber = authoritationSequence.StartRange.ToString();
+
             if (string.IsNullOrEmpty(authoritationSequence.TechnicalKey))
             {
                 AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
@@ -716,6 +718,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                         break;
                     case nameof(CurrentInvoiceNumber):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de factura no puede estar vacío");
+                        if (!string.IsNullOrEmpty(value) && (Convert.ToInt32(value) < StartRange || Convert.ToInt32(value) > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
                         break;
                   
 
