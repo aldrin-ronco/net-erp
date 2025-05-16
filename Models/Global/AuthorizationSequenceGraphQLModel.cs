@@ -1,4 +1,5 @@
-﻿using Models.Books;
+﻿using Common.Interfaces;
+using Models.Books;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -25,7 +26,8 @@ namespace Models.Global
         public int EndRange { get; set; }
         public int AuthorizationSequenceTypeId { get; set; }
         public int CostCenterId { get; set; }
-        public string CurrentInvoceNumber { get; set; } = string.Empty;
+        public string CurrentInvoiceNumber { get; set; } = string.Empty;
+        
 
         public AuthorizationSequenceTypeGraphQLModel AuthorizationSequenceType { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
@@ -48,9 +50,14 @@ namespace Models.Global
         public AuthorizationSequenceGraphQLModel UpdatedAuthorizationSequence { get; set; }
         public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
     }
-    public class AuthorizationSequenceDataContext
+    public class AuthorizationSequenceDetailDataContext
     {
         public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+    }
+    public class AuthorizationSequenceDataContext
+    {
+        public IGenericDataAccess<AuthorizationSequenceGraphQLModel>.PageType AuthorizationSequencePage { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
     }
 }

@@ -3,13 +3,17 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using DTOLibrary.Books;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers;
 using Services.Books.DAL.PostgreSQL;
+using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,10 +21,12 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Net;
+using System.Reactive.Concurrency;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Amazon.S3.Util.S3EventNotification;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 
 namespace NetErp.Global.AuthorizationSequence.ViewModels
@@ -37,6 +43,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
+            _ = Task.Run(() => InitializeAsync());
         }
 
         #region Properties
@@ -55,7 +62,53 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
+        private CostCenterGraphQLModel _selectedCostCenter;
+        public CostCenterGraphQLModel SelectedCostCenter
+        {
+            get { return _selectedCostCenter; }
+            set
+            {
+                if (_selectedCostCenter != value)
+                {
+                    _selectedCostCenter = value;
+                    NotifyOfPropertyChange(nameof(SelectedCostCenter));
+                    PageIndex = 1;
+                    _ = Task.Run(this.LoadAuthorizationSequence);
+                }
+            }
+        }
+        private bool _isActive = true;
+        public bool IsActive
+        {
+            get { return _isActive; }
+            set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                    NotifyOfPropertyChange(nameof(IsActive));
+                   
+                        PageIndex = 1;
+                        _ = Task.Run(this.LoadAuthorizationSequence);
+                    
+                }
+            }
+        }
 
+        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
+
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters
+        {
+            get { return _costCenters; }
+            set
+            {
+                if (_costCenters != value)
+                {
+                    _costCenters = value;
+                    NotifyOfPropertyChange(nameof(CostCenters));
+                }
+            }
+        }
         private AuthorizationSequenceGraphQLModel? _selectedAuthorizationSequenceGraphQLModel;
         public AuthorizationSequenceGraphQLModel? SelectedAuthorizationSequenceGraphQLModel
         {
@@ -245,13 +298,37 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 return _deleteAuthorizationSequenceCommand;
             }
         }
-        
+
         #endregion
+        #region Filtro
+        // Filtro de busqueda
+        private string _filterSearch = "";
+        public string FilterSearch
+        {
+            get { return _filterSearch; }
+            set
+            {
+                if (_filterSearch != value)
+                {
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(() => FilterSearch);
+                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = Task.Run(this.LoadAuthorizationSequence);
+                    }
+                    ;
+                }
+            }
+        }
+
+#endregion
         #region methods
         protected override void OnViewAttached(object view, object context)
         {
             base.OnViewAttached(view, context);
-            _ = Task.Run(() => InitializeAsync());
+           
         }
         public async Task ExecuteActivateDetailViewForEdit()
         {
@@ -260,8 +337,111 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public async Task InitializeAsync()
         {
-            await LoadAuthorizationSequence();
+            this.SetFocus(() => FilterSearch);
+            await LoadListAsync();
         }
+
+        private async Task LoadListAsync()
+        {
+
+           // this.Refresh();
+
+            // Iniciar cronometro
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            IsBusy = true;
+            string query = @"
+                            query($filter: AuthorizationSequenceFilterInput!){
+                              authorizationSequencePage(filter: $filter){
+                                    count
+                                    rows {
+                                      id
+                                        description
+                                        number
+                                        costCenter  {
+                                         id
+                                         name
+                                       }
+                                       authorizationSequenceType {
+                                         id
+                                         name
+                                       }
+                                       startRange
+                                       endRange
+                                       endDate
+                                       startDate
+                                       endDate
+                                       isActive
+                                       prefix
+                                       currentInvoiceNumber
+                                       mode
+                                       technicalKey
+                                       reference
+                                    }
+                                  },
+                                  costCenters(){
+                                    id
+                                    name
+                                    address
+                                    city  {
+                                      id
+                                      name
+                                      department {
+                                       id
+                                       name
+                                      } 
+                                    }
+  
+                                  }
+                            }";
+            dynamic variables = new ExpandoObject();
+            variables.filter = new ExpandoObject();
+            variables.filter.Pagination = new ExpandoObject();
+            variables.filter.Pagination.Page = PageIndex;
+            variables.filter.Pagination.PageSize = PageSize;
+            variables.filter.and = new ExpandoObject[]
+              {
+                     new(),
+                     new()
+              };
+            if (IsActive)
+            {
+                variables.filter.and[0].isActive = new ExpandoObject();
+                variables.filter.and[0].isActive.@operator = "=";
+                variables.filter.and[0].isActive.value = true;
+
+            }
+
+            try
+            {
+               
+
+                AuthorizationSequenceDataContext source = await AuthorizationSequenceService.GetDataContext<AuthorizationSequenceDataContext>(query, variables);
+
+                ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters;
+                costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+
+                CostCenters = [.. costCenter];
+               
+               
+                SelectedCostCenter = CostCenters.First(f => f.Id == 0);
+               
+                stopwatch.Stop();
+                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequencePage.Rows);
+                TotalCount = source.AuthorizationSequencePage.Count;
+            }
+            catch (Exception e)
+            {
+
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+
         public async Task LoadAuthorizationSequence()
         {
             try
@@ -309,6 +489,37 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
+
+
+                variables.filter.and = new ExpandoObject[]
+               {
+                     new(),
+                     new(),
+                     new()
+               };
+                if (IsActive)
+                {
+                    variables.filter.and[1].isActive = new ExpandoObject();
+                    variables.filter.and[1].isActive.@operator = "=";
+                    variables.filter.and[1].isActive.value = true;
+
+                }
+
+                if (!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.filter.and[0].description = new ExpandoObject();
+                    variables.filter.and[0].description.@operator = "like";
+                    variables.filter.and[0].description.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+
+                }
+                if (SelectedCostCenter?.Id != 0)
+                {
+                    variables.filter.and[2].costCenterId = new ExpandoObject();
+                    variables.filter.and[2].costCenterId.@operator = "=";
+                    variables.filter.and[2].costCenterId.value = SelectedCostCenter.Id;
+
+                }
 
                 var result = await AuthorizationSequenceService.GetPage(query, variables);
                 stopwatch.Stop();

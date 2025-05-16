@@ -71,7 +71,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             try
             {
                 IsBusy = true;
-                await Task.Delay(1000);
+               
                 Refresh();
                 AuthorizationSequences = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
             }
@@ -97,7 +97,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             EndDate = entity.EndDate;
             StartRange = entity.StartRange;
             EndRange = entity.EndRange;
-            CurrentInvoiceNumber = entity.CurrentInvoceNumber;
+            CurrentInvoiceNumber = entity.CurrentInvoiceNumber;
             IsActive = entity.IsActive;
         }
         #region DBProperties
@@ -874,7 +874,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
            
-            AuthorizationSequenceDataContext source = await CostCenterService.GetDataContext<AuthorizationSequenceDataContext>(query, variables);
+            AuthorizationSequenceDetailDataContext source = await CostCenterService.GetDataContext<AuthorizationSequenceDetailDataContext>(query, variables);
 
             CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source.CostCenters);
             AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes);
