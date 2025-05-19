@@ -88,7 +88,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         #endregion
 
         #region "Properties"
-        public SearchItemModalViewModel<ItemDTO, ItemGraphQLModel> SearchItemModalViewModel { get; set; }
+        //public SearchItemModalViewModel<ItemDTO, ItemGraphQLModel> SearchItemModalViewModel { get; set; }
         private bool _isNewRecord = false;
 
         public bool IsNewRecord
@@ -1334,7 +1334,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
         public bool CanDeleteImage(object p) => true;
 
-        public void SearchRelatedProducts(object p)
+        public async void SearchRelatedProducts(object p)
         {
             string query = @"query($filter: ItemFilterInput){
                         PageResponse: itemPage(filter: $filter){
@@ -1369,9 +1369,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             variables.filter.and[0].catalogId = new ExpandoObject();
             variables.filter.and[0].catalogId.@operator = "=";
             variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
-            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context);
+            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context, _dialogService);
 
-            _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
 
         }
 
@@ -3370,7 +3370,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public void SearchProducts(object p)
+        public async void SearchProducts(object p)
         {
             string query = @"query($filter: ItemFilterInput){
                             PageResponse: itemPage(filter: $filter){
@@ -3414,9 +3414,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             variables.filter.and[0].catalogId = new ExpandoObject();
             variables.filter.and[0].catalogId.@operator = "=";
             variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
-            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context);
+            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context, _dialogService);
 
-            _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
 
 
         }

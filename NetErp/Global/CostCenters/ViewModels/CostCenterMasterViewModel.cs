@@ -57,7 +57,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
 
-        public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
+        //public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
 
         Dictionary<string, List<string>> _errors;
 
@@ -140,9 +140,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             string fieldHeader2 = "Nombre o razón social";
             string fieldData1 = "IdentificationNumberWithVerificationDigit";
             string fieldData2 = "SearchName";
-            SearchWithTwoColumnsGridViewModel = new(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity);
+            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, _dialogService);
 
-            _dialogService.ShowDialog(SearchWithTwoColumnsGridViewModel, "Búsqueda de terceros");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
         }
 
         public bool CanSearchCompanyAccountingEntityCompany(object p) => true;

@@ -72,7 +72,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
 
-        public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
+        //public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
@@ -3690,9 +3690,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             string fieldHeader2 = "Nombre o razón social";
             string fieldData1 = "IdentificationNumberWithVerificationDigit";
             string fieldData2 = "SearchName";
-            SearchWithTwoColumnsGridViewModel = new(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity);
+            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, _dialogService);
 
-            _dialogService.ShowDialog(SearchWithTwoColumnsGridViewModel, "Búsqueda de terceros");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
         }
 
         public bool CanSearchBankAccountingEntity(object p) => true;

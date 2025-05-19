@@ -62,10 +62,26 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _profitMargin = value;
                     NotifyOfPropertyChange(nameof(ProfitMargin));
-                    Context?.AddModifiedProduct(this);
+                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(ProfitMargin));
                 }
             }
         }
+
+        private decimal _profit;
+
+        public decimal Profit
+        {
+            get { return _profit; }
+            set
+            {
+                if (_profit != value)
+                {
+                    _profit = value;
+                    NotifyOfPropertyChange(nameof(Profit));
+                }
+            }
+        }
+
 
         private decimal _price;
         public decimal Price
@@ -77,7 +93,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _price = value;
                     NotifyOfPropertyChange(nameof(Price));
-                    Context?.AddModifiedProduct(this);
+                    if(!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(Price));
                 }
             }
         }
@@ -92,7 +108,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _minimumPrice = value;
                     NotifyOfPropertyChange(nameof(MinimumPrice));
-                    Context?.AddModifiedProduct(this);
+                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(MinimumPrice));
                 }
             }
         }
@@ -107,10 +123,26 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _discountMargin = value;
                     NotifyOfPropertyChange(nameof(DiscountMargin));
-                    Context?.AddModifiedProduct(this);
+                    if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(DiscountMargin));
                 }
             }
         }
+
+        private decimal _quantity;
+
+        public decimal Quantity
+        {
+            get { return _quantity; }
+            set 
+            {
+                if (_quantity != value)
+                {
+                    _quantity = value;
+                    NotifyOfPropertyChange(nameof(Quantity));
+                }
+            }
+        }
+
 
         public PriceListMasterViewModel Context { get; set; }
 
@@ -169,6 +201,53 @@ namespace NetErp.Billing.PriceList.DTO
         public PriceListDetailDTO()
         {
         }
+
+        private bool _suppressNotifications = false;
+
+        public void UpdatePropertySilently(string propertyName, object value)
+        {
+            _suppressNotifications = true;
+            try
+            {
+                switch (propertyName)
+                {
+                    case nameof(Price):
+                        Price = (decimal)value;
+                        break;
+                    case nameof(MinimumPrice):
+                        MinimumPrice = (decimal)value;
+                        break;
+                    case nameof(Profit):
+                        Profit = (decimal)value;
+                        break;
+                    case nameof(ProfitMargin):
+                        ProfitMargin = (decimal)value;
+                        break;
+                    case nameof(DiscountMargin):
+                        DiscountMargin = (decimal)value;
+                        break;
+                }
+            }
+            finally
+            {
+                _suppressNotifications = false;
+            }
+        }
+
+        private decimal _iva;
+        public decimal IVA
+        {
+            get { return _iva; }
+            set
+            {
+                if (_iva != value)
+                {
+                    _iva = value;
+                    NotifyOfPropertyChange(nameof(IVA));
+                }
+            }
+        }
+
     }
 
     public enum OperationStatus

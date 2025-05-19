@@ -6,25 +6,23 @@ using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Xpf;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
+using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.DTO;
-using NetErp.Inventory.CatalogItems.ViewModels;
+using Ninject.Activation;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace NetErp.Global.Modals.ViewModels
 {
-    public class SearchWithTwoColumnsGridViewModel<XModel>: ViewModelBase
+    public class SearchWithTwoColumnsGridViewModel<XModel> : Screen
     {
         public readonly IGenericDataAccess<XModel> DynamicService = IoC.Get<IGenericDataAccess<XModel>>();
 
-        public Window DialogWindow { get; set; } = new();
+        private readonly Helpers.IDialogService _dialogService;
 
         public string Query { get; set; } = string.Empty;
 
@@ -37,7 +35,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _fieldHeader1; }
             set
             {
-                SetValue(ref _fieldHeader1, value);
+                if(_fieldHeader1 != value)
+                {
+                    _fieldHeader1 = value;
+                    NotifyOfPropertyChange(nameof(FieldHeader1));
+                }
             }
         }
 
@@ -47,10 +49,13 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _fieldHeader2; }
             set
             {
-                SetValue(ref _fieldHeader2, value);
+                if (_fieldHeader2 != value)
+                {
+                    _fieldHeader2 = value;
+                    NotifyOfPropertyChange(nameof(FieldHeader2));
+                }
             }
         }
-
 
         private string _fieldData1;
         public string FieldData1
@@ -58,7 +63,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _fieldData1; }
             set
             {
-                SetValue(ref _fieldData1, value);
+                if (_fieldData1 != value)
+                {
+                    _fieldData1 = value;
+                    NotifyOfPropertyChange(nameof(FieldData1));
+                }
             }
         }
 
@@ -68,7 +77,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _fieldData2; }
             set
             {
-                SetValue(ref _fieldData2, value);
+                if (_fieldData2 != value)
+                {
+                    _fieldData2 = value;
+                    NotifyOfPropertyChange(nameof(FieldData2));
+                }
             }
         }
 
@@ -78,7 +91,8 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _selectedItem; }
             set
             {
-                SetValue(ref _selectedItem, value);
+                _selectedItem = value;
+                NotifyOfPropertyChange(nameof(SelectedItem));
             }
         }
 
@@ -88,7 +102,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _itemsSource; }
             set
             {
-                SetValue(ref _itemsSource, value);
+                if (_itemsSource != value)
+                {
+                    _itemsSource = value;
+                    NotifyOfPropertyChange(nameof(ItemsSource));
+                }
             }
         }
 
@@ -98,29 +116,37 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _filterSearch; }
             set
             {
-                SetValue(ref _filterSearch, value, changedCallback: OnFilterSearChange);
+                if (_filterSearch != value)
+                {
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+                    OnFilterSearhChange();
+                }
             }
         }
 
         private bool _filterSearchFocus;
-
         public bool FilterSearchFocus
         {
             get { return _filterSearchFocus; }
             set
             {
-                SetValue(ref _filterSearchFocus, value);
+                _filterSearchFocus = value;
+                NotifyOfPropertyChange(nameof(FilterSearchFocus));
             }
         }
 
         private bool _gridFocus;
-
         public bool GridFocus
         {
             get { return _gridFocus; }
             set
             {
-                SetValue(ref _gridFocus, value);
+                if (_gridFocus != value)
+                {
+                    _gridFocus = value;
+                    NotifyOfPropertyChange(nameof(GridFocus));
+                }
             }
         }
 
@@ -130,7 +156,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _pageIndex; }
             set
             {
-                SetValue(ref _pageIndex, value);
+                if (_pageIndex != value)
+                {
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
+                }
             }
         }
 
@@ -140,7 +170,11 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _pageSize; }
             set
             {
-                SetValue(ref _pageSize, value);
+                if (_pageSize != value)
+                {
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
+                }
             }
         }
 
@@ -150,22 +184,29 @@ namespace NetErp.Global.Modals.ViewModels
             get { return _totalCount; }
             set
             {
-                SetValue(ref _totalCount, value);
+                if (_totalCount != value)
+                {
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
+                }
             }
         }
 
         private bool _isBusy;
-
         public bool IsBusy
         {
             get { return _isBusy; }
             set
             {
-                SetValue(ref _isBusy, value);
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
             }
         }
 
-        public void OnFilterSearChange()
+        public void OnFilterSearhChange()
         {
             if (FilterSearch.Length > 2 || FilterSearch.Length == 0)
             {
@@ -216,8 +257,8 @@ namespace NetErp.Global.Modals.ViewModels
                 //TODO
                 Variables.filter.or = new ExpandoObject[]
                 {
-                    new(),
-                    new()
+                        new(),
+                        new()
                 };
 
                 Variables.filter.or[0].searchName = new ExpandoObject();
@@ -265,7 +306,17 @@ namespace NetErp.Global.Modals.ViewModels
                 IsBusy = false;
             }
         }
-        [Command]
+
+        private ICommand _filterSearchEnterCommand;
+        public ICommand FilterSearchEnterCommand
+        {
+            get
+            {
+                if (_filterSearchEnterCommand == null) _filterSearchEnterCommand = new DelegateCommand(FilterSearchEnter);
+                return _filterSearchEnterCommand;
+            }
+        }
+
         public void FilterSearchEnter()
         {
             FilterSearchFocus = false;
@@ -273,29 +324,61 @@ namespace NetErp.Global.Modals.ViewModels
             this.SetFocus(() => GridFocus);
         }
 
-        [Command]
-        public void RowDoubleClick(RowClickArgs args)
+        private ICommand _rowDoubleClickCommand;
+
+        public ICommand RowDoubleClickCommand
         {
-            Messenger.Default.Send(message: new ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
-            DialogWindow.Close();
+            get
+            {
+                if (_rowDoubleClickCommand == null) _rowDoubleClickCommand = new AsyncCommand(RowDoubleClick);
+                return _rowDoubleClickCommand;
+            }
         }
 
-        [Command]
-        public void EnterKey()
+        public async Task RowDoubleClick()
         {
             Messenger.Default.Send(message: new ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
-            DialogWindow.Close();
+            await _dialogService.CloseDialogAsync(this, true);
         }
 
-        [Command]
+
+        private ICommand _enterKeyCommand;
+
+        public ICommand EnterKeyCommand
+        {
+            get 
+            {
+                if (_enterKeyCommand == null) _enterKeyCommand = new AsyncCommand(EnterKey);
+                return _enterKeyCommand; 
+            }
+        }
+
+        public async Task EnterKey()
+        {
+            Messenger.Default.Send(message: new ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
+            await _dialogService.CloseDialogAsync(this, true);
+        }
+
+        private ICommand _gridEscKeyCommand;
+
+        public ICommand GridEscKeyCommand
+        {
+            get 
+            {
+                if (_gridEscKeyCommand == null) _gridEscKeyCommand = new DelegateCommand(GridEscKey);
+                return _gridEscKeyCommand; 
+            }
+        }
+
         public void GridEscKey()
         {
             SelectedItem = default;
             this.SetFocus(() => FilterSearch);
         }
 
-        public SearchWithTwoColumnsGridViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldData1, string fieldData2, dynamic? variables, SearchWithTwoColumnsGridMessageToken? messageToken)
+        public SearchWithTwoColumnsGridViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldData1, string fieldData2, dynamic? variables, SearchWithTwoColumnsGridMessageToken? messageToken, Helpers.IDialogService dialogService)
         {
+            _dialogService = dialogService;
             Query = query;
             _fieldHeader1 = fieldHeader1;
             _fieldHeader2 = fieldHeader2;

@@ -15,6 +15,7 @@ using Models.Inventory;
 using Models.Suppliers;
 using Models.Treasury;
 using NetErp.Billing.PriceList.DTO;
+using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
@@ -131,6 +132,9 @@ namespace NetErp
             })).InSingletonScope();
             _ = kernel.Bind(typeof(ILogger<>)).To(typeof(Logger<>)).InSingletonScope();
             _ = kernel.Bind<IDialogService>().To<DialogService>().InSingletonScope();
+            _ = kernel.Bind<IPriceListCalculator>().To<StandardPriceListCalculator>().InSingletonScope().Named("Standard");
+            _ = kernel.Bind<IPriceListCalculator>().To<AlternativePriceListCalculator>().InSingletonScope().Named("Alternative");
+            _ = kernel.Bind<IPriceListCalculatorFactory>().To<PriceListCalculatorFactory>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -242,6 +246,7 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
+                _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());
