@@ -1,4 +1,6 @@
-﻿using Models.Books;
+﻿using Caliburn.Micro;
+using DevExpress.Mvvm;
+using Models.Books;
 using Models.Inventory;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Global.Modals.Views;
@@ -9,58 +11,46 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetErp.Helpers
 {
     public interface IDialogService 
     {
-        void ShowDialog(dynamic viewModel, string tittle);
+        Task<bool?> ShowDialogAsync<T>(T viewModel, string tittle, CancellationToken cancellationToken = default) where T : Screen;
+        Task CloseDialogAsync(Screen viewModel, bool? dialogResult = null);
     }
     public class DialogService : IDialogService
     {
+        private readonly IWindowManager _windowManager;
 
-        public void ShowDialog(dynamic viewModel, string tittle)
+        public DialogService(IWindowManager windowManager)
         {
-            if (viewModel is SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>)
-            {
-                var view = new SearchItemModalView
-                {
-                    DataContext = viewModel
-                };
+            _windowManager = windowManager ?? throw new ArgumentNullException(nameof(windowManager));
+        }
 
-                var window = new Window
-                {
-                    Content = view,
-                    Owner = Application.Current.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    SizeToContent = SizeToContent.WidthAndHeight,
-                    ResizeMode = ResizeMode.NoResize,
-                    Title = tittle
-                };
-                viewModel.DialogWindow = window;
-                window.ShowDialog();
+        public async Task<bool?> ShowDialogAsync<T>(T viewModel, string tittle = null, CancellationToken cancellationToken = default) where T : Screen
+        {
+            var settings = new Dictionary<string, object>
+            {
+                { "WindowStartupLocation", WindowStartupLocation.CenterOwner },
+                { "SizeToContent", SizeToContent.WidthAndHeight },
+                { "ResizeMode", ResizeMode.NoResize },
+            };
+
+            if (!string.IsNullOrEmpty(tittle))
+            {
+                settings.Add("Title", tittle);
             }
 
-            if(viewModel is SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>)
-            {
-                var view = new SearchWithTwoColumnsGridView
-                {
-                    DataContext = viewModel
-                };
+            bool? result = await _windowManager.ShowDialogAsync(viewModel, null, settings);
+            return result;
+        }
 
-                var window = new Window
-                {
-                    Content = view,
-                    Owner = Application.Current.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    SizeToContent = SizeToContent.WidthAndHeight,
-                    ResizeMode = ResizeMode.NoResize,
-                    Title = tittle
-                };
-                viewModel.DialogWindow = window;
-                window.ShowDialog();
-            }
+        public async Task CloseDialogAsync(Screen viewModel, bool? dialogResult = null)
+        {
+            await viewModel.TryCloseAsync(dialogResult);
         }
     }
 }

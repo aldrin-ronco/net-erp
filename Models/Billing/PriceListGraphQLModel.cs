@@ -1,4 +1,5 @@
-﻿using Models.Inventory;
+﻿using Models.Global;
+using Models.Inventory;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,17 +15,18 @@ namespace Models.Billing
         public string Name { get; set; } = string.Empty;
         public bool EditablePrice { get; set; }
         public bool IsActive { get; set; }
-        public bool ShowDiscountedPrice { get; set; }
-        public int PresentationOrder { get; set; }
-        public bool AllowViewDiscount { get; set; }
+        public bool AutoApplyDiscount { get; set; }
         public bool IsPublic { get; set; }
         public bool AllowNewUsersAccess { get; set; }
-        public bool AutoUpdateOnCostChange { get; set; }
         public string ListUpdateBehaviorOnCostChange { get; set; } = string.Empty;
-        public bool IsPromotion { get; set; }
         public int ParentId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsTaxable { get; set; }
+        public bool PriceListIncludeTax { get; set; }
+        public bool UseAlternativeFormula { get; set; }
+        public StorageGraphQLModel Storage { get; set; } = new();
+        public IEnumerable<PaymentMethodGraphQLModel> PaymentMethods { get; set; } = [];
     }
 
     public class PriceListDetailGraphQLModel
@@ -36,6 +38,7 @@ namespace Models.Billing
         public decimal? Price { get; set; }
         public decimal? MinimumPrice { get; set; }
         public decimal? DiscountMargin { get; set; }
+        public decimal? Quantity { get; set; }
     }
 
     public class PriceListDataContext

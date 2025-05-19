@@ -43,7 +43,11 @@
                     <dxg:TableView     AllowCascadeUpdate="False" 
                            AllowPaging="False"
                            EnableSelectedRowAppearance="True"
-                           ShowGroupPanel="False" AlternateRowBackground="Beige" AllowEditing="False" RowDoubleClickCommand="{Binding RowDoubleClickCommand}"/>
+                           ShowGroupPanel="False" AlternateRowBackground="Beige" AllowEditing="False">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand EventName="RowDoubleClick" Command="{Binding RowDoubleClickCommand}" PassEventArgsToCommand="True"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxg:TableView>
                 </dxg:GridControl.View>
                 <dxmvvm:Interaction.Behaviors>
                     <dxmvvm:KeyToCommand KeyGesture="Enter" Command="{Binding EnterKeyCommand}"/>
