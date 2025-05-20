@@ -17,7 +17,8 @@
                  xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
                  xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             FontFamily="Century Gothic">
     <UserControl.Resources>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
     </UserControl.Resources>
@@ -67,10 +68,9 @@
             EventName="ItemClick"/>
                         </dxmvvm:Interaction.Behaviors>
                     </dxb:BarButtonItem>
-                    <dxb:BarItemSeparator/>
+                        <dxb:BarItemSeparator/>
 
-
-                    <dxb:BarItemLinkSeparator/>
+                        <dxb:BarItemLinkSeparator/>
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>
@@ -149,11 +149,11 @@ DisplayMember="Description" EditValue="{Binding SelectedAuthorizationSequence, M
             <DatePicker Grid.Column="1" Grid.Row="1" Margin="6 2 0 2"
             TabIndex="3"
             SelectedDate="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
-            IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+            IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
             Padding="3"/>
 
             <DatePicker Grid.Column="2" Grid.Row="1" Margin="6 2 0 2"
-             IsEnabled="{Binding !SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+             IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
             TabIndex="3"
             SelectedDate="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
             Padding="3"/>
@@ -183,18 +183,20 @@ DisplayMember="Description" EditValue="{Binding SelectedAuthorizationSequence, M
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <TextBlock Text="Rango inicial" Grid.Row="0" Grid.Column="0" Margin="6 2 0 2"/>
-            <dxe:TextEdit Grid.Row="0" Grid.Column="1"
-                 MaskType="Numeric"          
-                 Text="{Binding Path=StartRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                 CharacterCasing="Upper"
-                  IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"         
-                 x:Name="StartRange"
-                 Margin="6 5 0 2"/>  
+
+                <dxe:SpinEdit  Grid.Row="0" Grid.Column="1"  MinValue="0" Increment="1" 
+               Text="{Binding Path=StartRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+               IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+               CharacterCasing="Upper"
+               x:Name="StartRange"
+               Margin="6 5 0 2"/>
+            
+               
             
             
             
             <TextBlock Text="Rango final" Grid.Row="0" Grid.Column="2" Margin="20 5 0 2"/>
-            <dxe:TextEdit Grid.Row="0" Grid.Column="3"
+                <dxe:SpinEdit Grid.Row="0" Grid.Column="3"  MinValue="0" Increment="1" 
               Text="{Binding Path=EndRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
               CharacterCasing="Upper"
               IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -205,7 +207,8 @@ DisplayMember="Description" EditValue="{Binding SelectedAuthorizationSequence, M
             
             
             <TextBlock Text="Factura actual" Grid.Row="1" Grid.Column="0" Margin="6 2 0 2"/>
-            <dxe:TextEdit Grid.Row="1" Grid.Column="1"
+                
+                <dxe:SpinEdit Grid.Row="1" Grid.Column="1"  MinValue="0" Increment="1" 
                Text="{Binding Path=CurrentInvoiceNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
               
                CharacterCasing="Upper"
@@ -243,7 +246,7 @@ DisplayMember="Description" EditValue="{Binding SelectedAuthorizationSequence, M
             <TextBlock Text="Referencia"         Grid.Row="1" Grid.Column="0" Margin="6 2 0 2"/>
             <TextBlock Text="Clave Técnica"         Grid.Row="2" Grid.Column="0" Margin="6 2 0 2"/>
             <dxe:ComboBoxEdit  Grid.Column="1" Grid.Row="0"  Margin="6 5 0 2"
-                IsReadOnly="{Binding !EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                IsReadOnly="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
                 ItemsSource="{Binding Path=AvaliableAuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
                 DisplayMember="Name" EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                 IsSynchronizedWithCurrentItem="True" 

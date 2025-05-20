@@ -3,6 +3,7 @@ using Common.Config;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Internal.WinApi;
 using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
@@ -123,7 +124,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private string _prefix;
         private string _technicalKey;
         private string _reference;
-        private string _currentInvoiceNumber;
+        private int? _currentInvoiceNumber;
         
 
         private DateTime? _startDate = DateTime.Now;
@@ -238,7 +239,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        public string CurrentInvoiceNumber
+        public int? CurrentInvoiceNumber
         {
             get { return _currentInvoiceNumber; }
             set
@@ -533,7 +534,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             EndDate = authoritationSequence.EndDate;
             StartRange = authoritationSequence.StartRange;
             EndRange = authoritationSequence.EndRange;
-            CurrentInvoiceNumber = authoritationSequence.StartRange.ToString();
+            CurrentInvoiceNumber = authoritationSequence.StartRange;
 
             if (string.IsNullOrEmpty(authoritationSequence.TechnicalKey))
             {
@@ -688,6 +689,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     case nameof(EndRange):
                         if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
                         break;
+                    case nameof(CurrentInvoiceNumber):
+                        if (!value.HasValue) AddError(propertyName, "El número de factura no puede estar vacío");
+                        if (value.HasValue && (value < StartRange || value > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
+                        break;
                 }
             }
             catch (Exception ex)
@@ -709,6 +714,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                         break;
                     case nameof(Prefix):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "El prefijo no puede estar vacío");
+                        if(!string.IsNullOrEmpty(value) && int.TryParse(value.Substring(value.Length - 1, 1)[0].ToString(), out int numericValue)) AddError(propertyName, "El ultimo carácter no debe ser numérico ");
                         break;
                     case nameof(Reference):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "La Referencia no puede estar vacío");
@@ -716,10 +722,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     case nameof(TechnicalKey):
                         if (string.IsNullOrEmpty(value) && SelectedAuthorizationSequenceType?.Prefix == "FE") AddError(propertyName, "La Clave técnica no puede estar vacío");
                         break;
-                    case nameof(CurrentInvoiceNumber):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de factura no puede estar vacío");
-                        if (!string.IsNullOrEmpty(value) && (Convert.ToInt32(value) < StartRange || Convert.ToInt32(value) > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
-                        break;
+                   
                   
 
 

@@ -73,7 +73,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _selectedCostCenter = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenter));
                     PageIndex = 1;
-                    _ = Task.Run(this.LoadAuthorizationSequence);
+                    if (_isLoaded)
+                    {
+                        _ = Task.Run(this.LoadAuthorizationSequence);
+                    }
+                   
                 }
             }
         }
@@ -94,7 +98,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-
+        private bool _isLoaded = false;
         private ObservableCollection<CostCenterGraphQLModel> _costCenters;
 
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
@@ -337,8 +341,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public async Task InitializeAsync()
         {
-            this.SetFocus(() => FilterSearch);
+           
             await LoadListAsync();
+            this.SetFocus(() => FilterSearch);
         }
 
         private async Task LoadListAsync()
@@ -430,6 +435,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
                 Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequencePage.Rows);
                 TotalCount = source.AuthorizationSequencePage.Count;
+                _isLoaded = true;
             }
             catch (Exception e)
             {

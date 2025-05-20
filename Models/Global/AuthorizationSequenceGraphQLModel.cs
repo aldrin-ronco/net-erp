@@ -26,7 +26,7 @@ namespace Models.Global
         public int EndRange { get; set; }
         public int AuthorizationSequenceTypeId { get; set; }
         public int CostCenterId { get; set; }
-        public string CurrentInvoiceNumber { get; set; } = string.Empty;
+        public int CurrentInvoiceNumber { get; set; } 
         
 
         public AuthorizationSequenceTypeGraphQLModel AuthorizationSequenceType { get; set; }
