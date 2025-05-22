@@ -371,6 +371,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                                          id
                                          name
                                        }
+,
+                                       AuthorizationSequenceByCostCenter {
+                                            id
+                                            name
+            
+                                       },
                                        startRange
                                        endRange
                                        endDate
@@ -378,6 +384,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                                        endDate
                                        isActive
                                        prefix
+                                       nextAuthorizationSequenceId
                                        currentInvoiceNumber
                                        mode
                                        technicalKey
@@ -458,37 +465,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 IsBusy = true;
-                string query = @"
-               query( $filter: AuthorizationSequenceFilterInput!){
-                      PageResponse: authorizationSequencePage(filter: $filter){
-                        count
-                        rows {
-                          id
-                            description
-                            number
-                            costCenter  {
-                             id
-                             name
-                           }
-                           authorizationSequenceType {
-                             id
-                             name
-                           }
-                           startRange
-                           endRange
-                           endDate
-                           startDate
-                           endDate
-                           isActive
-                           prefix
-                           currentInvoiceNumber
-                           mode
-                           technicalKey
-                           reference
-                        }
-                      }
-                    }
-                ";
+                string query = Context.listquery;
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();

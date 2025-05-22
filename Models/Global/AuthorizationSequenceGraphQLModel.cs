@@ -26,11 +26,13 @@ namespace Models.Global
         public int EndRange { get; set; }
         public int AuthorizationSequenceTypeId { get; set; }
         public int CostCenterId { get; set; }
-        public int CurrentInvoiceNumber { get; set; } 
-        
+        public int CurrentInvoiceNumber { get; set; }
+        public int? NextAuthorizationSequenceId { get; set; }
 
-        public AuthorizationSequenceTypeGraphQLModel AuthorizationSequenceType { get; set; }
-        public CostCenterGraphQLModel CostCenter { get; set; }
+        public AuthorizationSequenceTypeGraphQLModel? AuthorizationSequenceType { get; set; }
+        public CostCenterGraphQLModel? CostCenter { get; set; }
+        public CostCenterGraphQLModel? AuthorizationSequenceByCostCenter { get; set; }
+        
 
     }
 

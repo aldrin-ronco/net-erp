@@ -199,7 +199,7 @@
                         </StackPanel>
                       
                     </Grid>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Rango de facturación "
+                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Rango de facturación" FontWeight="Bold"
                         Margin="6 5 0 5" />
 
 
@@ -299,8 +299,17 @@
                         IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                         x:Name="TechnicalKey" />  
                     </StackPanel>
-
-                    <dxe:CheckEdit Content="Autorización activa" Grid.Row="10" Margin="6 5 0 5"  Style="{StaticResource BlueCheckedTextStyle}"
+                    <StackPanel Grid.Row="10" Margin="6 5 0 5" Orientation="Vertical"
+                        Visibility="{Binding Path=ReliefVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBlock Text="Resolución de relevo" Margin="0 0 0 2" FontWeight="Bold" />
+                        <dxe:ComboBoxEdit
+                         ItemsSource="{Binding Path=OrphanAuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
+                         IsTextEditable="False"
+                         DisplayMember="Description"
+                         EditValue="{Binding SelectedReliefAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         IsSynchronizedWithCurrentItem="True" />
+                    </StackPanel>
+                    <dxe:CheckEdit Content="Autorización activa" Grid.Row="11" Margin="6 5 0 5"  Style="{StaticResource BlueCheckedTextStyle}"
                         IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
 

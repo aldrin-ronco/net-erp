@@ -54,7 +54,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             if(entity != null)
             {
                 _entity = entity;
-                setUpdateProperties(entity);
+              
             }
 
           
@@ -66,6 +66,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
 
             await LoadListAsync();
+            setUpdateProperties(Entity);
         }
         public async Task SearchAuthorizationSequences()
         {
@@ -100,6 +101,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             EndRange = entity.EndRange;
             CurrentInvoiceNumber = entity.CurrentInvoiceNumber;
             IsActive = entity.IsActive;
+            if(Entity.NextAuthorizationSequenceId != null)        SelectedReliefAuthorizationSequence = OrphanAuthorizationSequences.First(f=> f.Id == Entity.NextAuthorizationSequenceId);
         }
         #region DBProperties
         private AuthorizationSequenceGraphQLModel? _entity;
@@ -328,6 +330,21 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
+        private AuthorizationSequenceGraphQLModel _selectedReliefAuthorizationSequence;
+        public AuthorizationSequenceGraphQLModel SelectedReliefAuthorizationSequence
+        {
+            get { return _selectedReliefAuthorizationSequence; }
+            set
+            {
+                if (_selectedReliefAuthorizationSequence != value)
+                {
+                    _selectedReliefAuthorizationSequence = value;
+                    
+                    NotifyOfPropertyChange(nameof(SelectedReliefAuthorizationSequence));
+                    
+                }
+            }
+        }
         private AuthorizationSequenceTypeGraphQLModel _selectedAuthorizationSequenceType;
         public AuthorizationSequenceTypeGraphQLModel SelectedAuthorizationSequenceType
         {
@@ -373,6 +390,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             set
             {
                 _lv1Visibility = value;
+            }
+        }
+
+        private Visibility _reliefVisibility;
+        public Visibility ReliefVisibility
+        {
+            get { return _entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50  ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                _reliefVisibility = value;
             }
         }
 
@@ -457,7 +484,19 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
         private ObservableCollection<CostCenterDTO> _costCenters;
-
+        private ObservableCollection<AuthorizationSequenceGraphQLModel> _orphanAuthorizationSequences;
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> OrphanAuthorizationSequences
+        {
+            get { return _orphanAuthorizationSequences; }
+            set
+            {
+                if (_orphanAuthorizationSequences != value)
+                {
+                    _orphanAuthorizationSequences = value;
+                    NotifyOfPropertyChange(nameof(OrphanAuthorizationSequences));
+                }
+            }
+        }
         public ObservableCollection<CostCenterDTO> CostCenters
         {
             get { return _costCenters; }
@@ -654,8 +693,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
             CleanUpControls();
+            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
+           
         }
         public void CleanUpControls()
         {
@@ -840,6 +880,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                       }
                     }";
                 variables.id = Id;
+                if (SelectedReliefAuthorizationSequence != null)
+                {
+                    variables.Data.NextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id;
+                }
                 return await AuthorizationSequenceService.Update(query, variables);
                
             }
@@ -850,6 +894,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         private async Task LoadListAsync()
         {
+            
             string query = @"
                             query(){
                                authorizationSequenceTypes(){
@@ -876,7 +921,34 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             try
             {
                 IsBusy = true;
+                if (_entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50)
+                {
+                    string queryOrphans = @"
+                            query( $filter: OrphanAuthorizationSequenceFilterInput!){
+                            ListResponse : orphanAuthorizationSequences(filter: $filter){
+        
+                               id
+                                 description
+                                 number
+                                 costCenter  {
+                                  id
+                                  name
+                                }
+                                authorizationSequenceType {
+                                  id
+                                  name
+                                }
            
+                               
+                             }
+       
+                         }";
+                    dynamic variablesOrphan = new ExpandoObject();
+                    variablesOrphan.filter  = new ExpandoObject();
+                    variablesOrphan.filter.costCenterId = _entity.CostCenter.Id;
+                    variablesOrphan.filter.currentAuthorizationSequenceId = _entity.Id;
+                    OrphanAuthorizationSequences = await AuthorizationSequenceService.GetList(queryOrphans, variablesOrphan);
+                }
             AuthorizationSequenceDetailDataContext source = await CostCenterService.GetDataContext<AuthorizationSequenceDetailDataContext>(query, variables);
 
             CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source.CostCenters);
@@ -909,40 +981,28 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
 
         }
-        
+      
 
         public async Task<IGenericDataAccess<AuthorizationSequenceGraphQLModel>.PageResponseType> LoadPage()
         {
-            string query = @"
-               query( $filter: AuthorizationSequenceFilterInput!){
-                      PageResponse: authorizationSequencePage(filter: $filter){
-                        count
-                        rows {
-                          id
-                          description
-                          costCenter  {
-                              id
-                              name
-                            }
-                            authorizationSequenceType {
-                              id
-                            }
-                            startRange
-                            endDate
-                            startDate
-                            endDate
-                            prefix
-                            currentInvoiceNumber
-                        }
-                      }
-                    }
-                ";
+            string query = Context.listquery;
 
             dynamic variables = new ExpandoObject();
             variables.filter = new ExpandoObject();
             variables.filter.Pagination = new ExpandoObject();
             variables.filter.Pagination.Page = 1;
             variables.filter.Pagination.PageSize = 50;
+            variables.filter.and = new ExpandoObject[]
+              {
+                     new(),
+                     new()
+              };
+           
+                variables.filter.and[0].isActive = new ExpandoObject();
+                variables.filter.and[0].isActive.@operator = "=";
+                variables.filter.and[0].isActive.value = true;
+
+  
 
             return await AuthorizationSequenceService.GetPage(query,variables);
         }

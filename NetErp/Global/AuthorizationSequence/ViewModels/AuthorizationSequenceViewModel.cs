@@ -70,5 +70,44 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
+
+        public  string listquery = @"
+               query( $filter: AuthorizationSequenceFilterInput!){
+                      PageResponse: authorizationSequencePage(filter: $filter){
+                        count
+                        rows {
+                          id
+                            description
+                            number
+                            costCenter  {
+                             id
+                             name
+                           }
+                           authorizationSequenceType {
+                             id
+                             name
+                           },
+                           AuthorizationSequenceByCostCenter {
+                                id
+                                name
+            
+                           },
+
+                           startRange
+                           endRange
+                           endDate
+                           startDate
+                           endDate
+                           isActive
+                           prefix
+                           currentInvoiceNumber
+                           nextAuthorizationSequenceId
+                           mode
+                           technicalKey
+                           reference
+                        }
+                      }
+                    }
+                ";
     }
 }
