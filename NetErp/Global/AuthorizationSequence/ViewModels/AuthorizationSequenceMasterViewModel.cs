@@ -621,7 +621,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public Task HandleAsync(AuthorizationSequenceUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Authorizations = new ObservableCollection<AuthorizationSequenceGraphQLModel>(message.AuthorizationSequences));
+           // return LoadAuthorizationSequence();
+              return Task.FromResult(Authorizations = new ObservableCollection<AuthorizationSequenceGraphQLModel>(message.AuthorizationSequences));
         }
         public Task HandleAsync(AuthorizationSequenceDeleteMessage message, CancellationToken cancellationToken)
         {

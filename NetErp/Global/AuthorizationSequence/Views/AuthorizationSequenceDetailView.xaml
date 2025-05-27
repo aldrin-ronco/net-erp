@@ -80,23 +80,16 @@
                     <RowDefinition Height="150" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="150" />
-                   
+
 
                 </Grid.RowDefinitions>
-                <Grid  Grid.Column="1" Grid.Row="1">
+                <Grid Grid.Column="1" Grid.Row="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
+
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal"
@@ -109,208 +102,251 @@
                             GroupName="SequenceType"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                             IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=M}" />
+                            Converter={StaticResource EnumBooleanConverter}, ConverterParameter=M}" />
                         <RadioButton Content="Desde Dian"
                             GroupName="SequenceType"
                             IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=D}"
+                            Converter={StaticResource EnumBooleanConverter}, ConverterParameter=D}"
                             Margin="5 0 0 0"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                     <Button Grid.Row="1" Margin="4 5 0 5" Padding="2"
-                     x:Name="SearchAuthorizationSequences"
-                     Visibility="{Binding Path=Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                        x:Name="SearchAuthorizationSequences"
+                        Visibility="{Binding Path=Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <Image
-                                 Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
-                                 Margin="0 0 4 0" Width="16" />
+                                    Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
+                                    Margin="0 0 4 0" Width="16" />
                                 <TextBlock Text="Buscar autorizaciones de numeración Dian"
-                                 VerticalAlignment="Center" />
+                                    VerticalAlignment="Center" />
                             </StackPanel>
                         </Button.Content>
                     </Button>
                     <StackPanel Grid.Row="2" Margin="6 5 0 5" Orientation="Vertical"
-                    Visibility="{Binding Path=Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                                        <TextBlock Text="Selecciona una Autorizacion" Margin="0 0 0 2" />
-                                        <dxe:ComboBoxEdit
-                        ItemsSource="{Binding Path=AuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="Description"
-                        EditValue="{Binding SelectedAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        IsSynchronizedWithCurrentItem="True" />
-                                    </StackPanel>
-                    <StackPanel Grid.Row="3" Margin="6 5 0 5" Orientation="Vertical">
-                        <TextBlock Text="Autorizacion destinada para el almacen"
-                        Margin="0 0 0 2" />
+                        Visibility="{Binding Path=AuthorizationsVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBlock Text="Selecciona una Autorizacion" Margin="0 0 0 2" />
                         <dxe:ComboBoxEdit
-                        ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="FullName"
-                        EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        IsSynchronizedWithCurrentItem="True" />
+                            Padding="2"
+                            ItemsSource="{Binding Path=AuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
+                            IsTextEditable="False"
+                            DisplayMember="Description"
+                            EditValue="{Binding SelectedAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
-
-                    <Grid x:Name="GridSource" Grid.Row="4" Grid.Column="1"
-                        VerticalAlignment="Center" Height="auto">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="3"   Visibility="{Binding Path=FieldsVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="6 5 10 5" Orientation="Vertical">
-                            <TextBlock Text="No Autorizacion" Margin="0 0 0 2" />
-                            <dxe:TextEdit
-                             Text="{Binding Path=Number, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                             IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                             CharacterCasing="Upper"
-                             x:Name="Number"
-                             Margin="0 0 0 2" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="10 5 10 5" Orientation="Vertical">
-                            <TextBlock Text="Fecha" Margin="0 0 0 2" />
-                            <DatePicker  Margin="0 0 0 2"
-                             TabIndex="3"
-                             SelectedDate="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                             IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
-                             Padding="3" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="10 5 10 5" Orientation="Vertical">
-                            <TextBlock Text="Vence" Margin="0 0 0 2" />
-                            <DatePicker Grid.Column="2" Grid.Row="1" Margin="0 2 0 2"
-                            IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
-                            TabIndex="3"
-                            SelectedDate="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                            Padding="3" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="3" Margin="10 5 0 5" Orientation="Vertical">
-                            <TextBlock Text="Prefijo"  Margin="6 2 0 2" />
-                            <dxe:TextEdit 
-                             Text="{Binding Path=Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                             CharacterCasing="Upper"
-                             IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                             x:Name="Prefix"
-                             Margin="6 5 0 2" />
-                        </StackPanel>
-                      
-                    </Grid>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Rango de facturación" FontWeight="Bold"
-                        Margin="6 5 0 5" />
-
-
-                    <Grid x:Name="GridRange" Grid.Row="6" Grid.Column="1" VerticalAlignment="Center"
-                        Height="auto">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
-
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
                         </Grid.RowDefinitions>
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Rango inicial" Margin="0 0 0 2" />
-                            <dxe:SpinEdit MinValue="0" Increment="1"
-                                Text="{Binding Path=StartRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                CharacterCasing="Upper"
-                                x:Name="StartRange"
+                        <StackPanel Grid.Row="0" Margin="6 5 0 5" Orientation="Vertical"
+                           >
+                            <TextBlock Text="Autorizacion destinada para el almacen"
                                 Margin="0 0 0 2" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Vertical" Margin="10 5 0 5"
-                            Grid.Row="0" Grid.Column="1">
-                            <TextBlock Text="Rango final"
-                                Margin="0 0 0 2" />
-                            <dxe:SpinEdit MinValue="0" Increment="1"
-                                Text="{Binding Path=EndRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                CharacterCasing="Upper"
-                                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                MaskType="Numeric"
-                                x:Name="EndRange"
-                                Margin="0 0 0 2" />
-                        </StackPanel>
-
-
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Grid.Row="1" Grid.Column="0">
-                            <TextBlock Text="Factura actual"
-                                Margin="0 0 0 2" />
-
-                            <dxe:SpinEdit  MinValue="0" Increment="1"
-                                Text="{Binding Path=CurrentInvoiceNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                CharacterCasing="Upper"
-                                x:Name="CurrentInvoiceNumber"
-                                Margin="0 0 0 2" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Vertical" Margin="10 5 0 5"
-                            Grid.Row="1" Grid.Column="1">
-                            <TextBlock Text="Tipo"  Margin=" 0 0 0 2" />
-
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                x:Name="ModeDictionary"
-                                ItemsSource="{Binding Path=ModeDictionary, UpdateSourceTrigger=PropertyChanged}"
+                            <dxe:ComboBoxEdit
+                                Padding="2"
+                                ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
-                                DisplayMember="Value"
-                                ValueMember="Key"
-                                EditValue="{Binding Path=SelectedMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-
+                                DisplayMember="FullName"
+                                EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsSynchronizedWithCurrentItem="True" />
                         </StackPanel>
 
+                        <Grid x:Name="GridSource" Grid.Row="1" 
+                          
+                            VerticalAlignment="Center" Height="auto">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="6 5 10 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="No Autorizacion" Margin="0 0 0 2" />
+                                <dxe:TextEdit
+                                    Padding="2"
+                                    Text="{Binding Path=Number, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    CharacterCasing="Upper"
+                                    x:Name="Number"
+                                />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="10 5 10 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="Fecha" Margin="0 0 0 2" />
+                                <dxe:DateEdit Margin="0 0 0 2"
+                                    TabIndex="3"
+                                    EditValue="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                    IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
+                                    Padding="2" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="10 5 10 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="Vence" Margin="0 0 0 2" />
+                                <dxe:DateEdit Grid.Column="2" Grid.Row="1" Margin="0 2 0 2"
+                                    IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
+                                    TabIndex="3"
+                                    EditValue="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                    Padding="2" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="3" Margin="10 5 0 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="Prefijo" Margin="6 0 0 2" />
+                                <dxe:TextEdit
+                                    Text="{Binding Path=Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    CharacterCasing="Upper"
+                                    Padding="2"
+                                    IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    x:Name="Prefix"
+                                    Margin="6 0 0 2" />
+                            </StackPanel>
 
+                        </Grid>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Rango de facturación"
+                            FontWeight="Bold"
+                           
+                            Margin="6 5 0 5" />
+
+
+                        <Grid x:Name="GridRange" Grid.Row="3" Grid.Column="1"
+                            VerticalAlignment="Center"
+                          
+                            Height="auto">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="Rango inicial" Margin="0 0 0 2" />
+                                <dxe:SpinEdit MinValue="0" Increment="1"
+                                    Padding="2"
+                                    IsFloatValue="False"
+                                    Text="{Binding Path=StartRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    CharacterCasing="Upper"
+                                    x:Name="StartRange"
+                                    Margin="0 0 0 2" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="10 5 0 5"
+                                Grid.Row="0" Grid.Column="1">
+                                <TextBlock Text="Rango final"
+                                    Margin="0 0 0 2" />
+                                <dxe:SpinEdit MinValue="0" Increment="1"
+                                    Padding="2"
+                                    Text="{Binding Path=EndRange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    CharacterCasing="Upper"
+                                    IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsFloatValue="False"
+                                    MaskType="Numeric"
+                                    x:Name="EndRange"
+                                    Margin="0 0 0 2" />
+                            </StackPanel>
+
+
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="1" Grid.Column="0">
+                                <TextBlock Text="Factura actual"
+                                    Margin="0 0 0 2" />
+
+                                <dxe:SpinEdit MinValue="0" Increment="1"
+                                    Padding="2"
+                                    Text="{Binding Path=CurrentInvoiceNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    CharacterCasing="Upper"
+                                    x:Name="CurrentInvoiceNumber"
+                                    Margin="0 0 0 2" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="10 5 0 5"
+                                Grid.Row="1" Grid.Column="1">
+                                <TextBlock Text="Tipo" Margin=" 0 0 0 2" />
+
+                                <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                    Padding="2"
+                                    x:Name="ModeDictionary"
+                                    ItemsSource="{Binding Path=ModeDictionary, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="False"
+                                    DisplayMember="Value"
+                                    ValueMember="Key"
+                                    EditValue="{Binding Path=SelectedMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSynchronizedWithCurrentItem="True"
+                                />
+
+                            </StackPanel>
+
+
+                        </Grid>
+
+
+                        <StackPanel Grid.Row="4" Margin="6 5 0 5" Orientation="Vertical" >
+                            <TextBlock Text="Tipo de Autorización" Grid.Row="0" Grid.Column="0"
+                                Margin="0 0 0 2" />
+                            <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                Padding="2"
+                                IsReadOnly="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
+                                ItemsSource="{Binding Path=AvaliableAuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="False"
+                                DisplayMember="Name"
+                                EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsSynchronizedWithCurrentItem="True"
+                                IsEnabled="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="5" Margin="6 5 0 5" Orientation="Vertical" >
+                            <TextBlock Text="Referencia" Margin="0 0 0 2" />
+                            <dxe:TextEdit
+                                Padding="2"
+                                Text="{Binding Path=Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                CharacterCasing="Upper"
+                                x:Name="Reference"
+                                Margin="0 0 0 2" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="6" Margin="6 5 0 5" Orientation="Vertical" >
+                            <TextBlock Text="Clave Técnica" Margin="0 0 0 2" />
+                            <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0 0 0 2"
+                                Text="{Binding Path=TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                CharacterCasing="Upper"
+                                Padding="2"
+                                IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                x:Name="TechnicalKey" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="7" Margin="6 5 0 5" Orientation="Vertical"
+                                    Visibility="{Binding Path=ReliefVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                           >
+                            <TextBlock Text="Resolución de relevo" Margin="0 0 0 2"
+                                FontWeight="Bold" />
+                            <dxe:ComboBoxEdit
+                                Padding="2"
+                                ItemsSource="{Binding Path=OrphanAuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="False"
+                                DisplayMember="Description"
+                                EditValue="{Binding SelectedReliefAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsSynchronizedWithCurrentItem="True" />
+                        </StackPanel>
+                        <dxe:CheckEdit Content="Autorización activa" Grid.Row="8"
+                            Margin="6 5 0 5"
+                            Style="{StaticResource BlueCheckedTextStyle}"
+                            Padding="2"
+                            IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
 
-
-                    <StackPanel Grid.Row="7"  Margin="6 5 0 5" Orientation="Vertical">
-                        <TextBlock Text="Tipo de Autorización" Grid.Row="0" Grid.Column="0"
-                         Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit  Margin="0 0 0 2"
-                        IsReadOnly="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
-                        ItemsSource="{Binding Path=AvaliableAuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="Name"
-                        EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        IsSynchronizedWithCurrentItem="True"
-                        IsEnabled="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="8"  Margin="6 5 0 5" Orientation="Vertical">
-                        <TextBlock Text="Referencia" Margin="0 0 0 2" />
-                        <dxe:TextEdit
-                        Text="{Binding Path=Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        CharacterCasing="Upper"
-                        x:Name="Reference"
-                        Margin="0 0 0 2" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="9"  Margin="6 5 0 5" Orientation="Vertical">
-                        <TextBlock Text="Clave Técnica"  Margin="0 0 0 2" />
-                        <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0 0 0 2"
-                        Text="{Binding Path=TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        CharacterCasing="Upper"
-                        IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        x:Name="TechnicalKey" />  
-                    </StackPanel>
-                    <StackPanel Grid.Row="10" Margin="6 5 0 5" Orientation="Vertical"
-                        Visibility="{Binding Path=ReliefVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <TextBlock Text="Resolución de relevo" Margin="0 0 0 2" FontWeight="Bold" />
-                        <dxe:ComboBoxEdit
-                         ItemsSource="{Binding Path=OrphanAuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
-                         IsTextEditable="False"
-                         DisplayMember="Description"
-                         EditValue="{Binding SelectedReliefAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <dxe:CheckEdit Content="Autorización activa" Grid.Row="11" Margin="6 5 0 5"  Style="{StaticResource BlueCheckedTextStyle}"
-                        IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
 
 
