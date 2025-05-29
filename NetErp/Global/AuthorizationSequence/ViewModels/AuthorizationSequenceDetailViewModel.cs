@@ -929,6 +929,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     variables.Data.NextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id;
                 }
+               
                 return await AuthorizationSequenceService.Update(query, variables);
                
             }
@@ -990,9 +991,54 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                          }";
                     dynamic variablesOrphan = new ExpandoObject();
                     variablesOrphan.filter  = new ExpandoObject();
-                    variablesOrphan.filter.costCenterId = _entity.CostCenter.Id;
-                    variablesOrphan.filter.currentAuthorizationSequenceId = _entity.Id;
-                    variablesOrphan.filter.selectedAuthorizationSequenceId = _entity.NextAuthorizationSequenceId;
+
+                    variablesOrphan.filter.and = new ExpandoObject[]
+                   {
+                         new(),
+                         new(),
+                         new(),
+                         new(),
+                         new(),
+                         new()
+                   };
+                    if (_entity.NextAuthorizationSequenceId > 0)
+                    {
+                        variablesOrphan.filter.or = new ExpandoObject[]
+                       {
+                             new()
+                       };
+
+                        variablesOrphan.filter.or[0].includeId = new ExpandoObject();
+                        variablesOrphan.filter.or[0].includeId.@operator = "=";
+                        variablesOrphan.filter.or[0].includeId.value = _entity.NextAuthorizationSequenceId;
+                    }
+
+
+                    variablesOrphan.filter.and[0].isActive = new ExpandoObject();
+                    variablesOrphan.filter.and[0].isActive.@operator = "=";
+                    variablesOrphan.filter.and[0].isActive.value = true;
+
+                    variablesOrphan.filter.and[1].costCenterId = new ExpandoObject();
+                    variablesOrphan.filter.and[1].costCenterId.@operator = "=";
+                    variablesOrphan.filter.and[1].costCenterId.value = _entity.CostCenter.Id;
+
+                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId = new ExpandoObject();
+                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId.@operator = "is";
+                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId.value = null;
+
+                    variablesOrphan.filter.and[3].excludeId = new ExpandoObject();
+                    variablesOrphan.filter.and[3].excludeId.@operator = "<>";
+                    variablesOrphan.filter.and[3].excludeId.value = _entity.Id;
+
+                    variablesOrphan.filter.and[4].authorizationOccupied = new ExpandoObject();
+                    variablesOrphan.filter.and[4].authorizationOccupied.@operator = "is";
+                    variablesOrphan.filter.and[4].authorizationOccupied.value = null;
+
+                    variablesOrphan.filter.and[5].endDate = new ExpandoObject();
+                    variablesOrphan.filter.and[5].endDate.@operator = ">=";
+                    variablesOrphan.filter.and[5].endDate.value = DateTime.Today.ToUniversalTime();
+
+                   
                     OrphanAuthorizationSequences = await AuthorizationSequenceService.GetList(queryOrphans, variablesOrphan);
                     SelectedReliefAuthorizationSequence = OrphanAuthorizationSequences.First(f => f.Id == Entity.NextAuthorizationSequenceId);
 
@@ -1019,9 +1065,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-
+                throw;
             }
             finally
             {
