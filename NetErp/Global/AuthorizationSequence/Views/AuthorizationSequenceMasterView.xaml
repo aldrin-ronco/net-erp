@@ -1,0 +1,170 @@
+﻿<UserControl x:Class="NetErp.Global.AuthorizationSequence.Views.AuthorizationSequenceMasterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:local="clr-namespace:NetErp.Global.AuthorizationSequence.Views"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:config="clr-namespace:Common.Config;assembly=Common"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             mc:Ignorable="d" 
+              xmlns:cal="http://caliburnmicro.com"
+             d:DesignHeight="450" d:DesignWidth="800"
+             FontFamily="Century Gothic">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                     IsBusy="{Binding IsBusy}"
+                     IndicatorType="BouncingDot"
+                     BusyContent="Please wait..."
+                     BusyContentMargin="0,20,0,0"
+                     IsBusyAtStartup="False">
+        <Grid >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <dxr:RibbonControl Grid.Column="0" 
+            IsSimplified="False" 
+            Grid.Row="0" 
+            AllowSimplifiedRibbon="True" 
+            ShowApplicationButton="False" 
+            ToolbarShowMode="Hide" 
+            RibbonStyle="Office2010" 
+            ToolbarShowCustomizationButton="False" 
+            RibbonTitleBarVisibility="Collapsed" 
+            VerticalAlignment="Center">
+                <dxr:RibbonPage Caption="General">
+                    <dxr:RibbonPageGroup Caption="Acciones">
+
+                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                            LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
+                            Content="Nuevo"
+                           RibbonStyle="Large"
+                           IsEnabled="{Binding Path=IsBusy, 
+                                               Mode=OneWay, 
+                                               UpdateSourceTrigger=PropertyChanged, 
+                                               Converter={dxmvvm:BooleanToVisibilityConverter 
+                                               Inverse=True}}"
+                           Hint="Nuevo ">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=NewCommand}" 
+                               EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Eliminar" 
+                        Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                        LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
+                        Description="Eliminar"
+                        Hint="Eliminar Secuencia"    
+                        IsEnabled="{Binding Path=CanDeleteAuthorizationSequence, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                        RibbonStyle="Large">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteAuthorizationSequenceCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
+           
+            <Grid  Grid.Row="1"  Margin="0 5 0 5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*"></ColumnDefinition>
+                    <ColumnDefinition Width="5*"></ColumnDefinition>
+                    
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0"  Orientation="Vertical"  Margin="0 5 10 5" >
+                    <TextBlock Text="Selecciona un almacén"  Margin="0 0 0 2"/>
+                    <dxe:ComboBoxEdit  ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}" IsTextEditable="False"
+DisplayMember="Name" EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsSynchronizedWithCurrentItem="True" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="10 5 10 5">
+                    <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 2"/>
+                    <dxe:TextEdit x:Name="FilterSearch"
+                    EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
+                    ShowNullTextForEmptyValue="True"
+                    ShowNullTextIfFocused="True"
+                    EditValuePostMode="Delayed"
+                    CharacterCasing="Upper"
+                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    EditValuePostDelay="1000"/>
+                </StackPanel>       
+
+
+            </Grid>
+            <dxe:CheckEdit Grid.Row="2" Content="Mostrar unicamente autorizaciones activas" Style="{StaticResource BlueCheckedTextStyle}"
+                           IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxg:GridControl Grid.Row="3" Margin="0 10 0 0"
+                                           
+                EnableSmartColumnsGeneration="True"
+                SelectedItem="{Binding Path=SelectedAuthorizationSequenceGraphQLModel, 
+                Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding Path=Authorizations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             >
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowCascadeUpdate="False" 
+                               EnableSelectedRowAppearance="True"
+                               ShowGroupPanel="False" 
+                               AllowColumnMoving="False" 
+                               ColumnFilterPopupMode="Disabled"
+                               AllowSorting="False" 
+                               AllowColumnFiltering="False"
+                         AlternateRowBackground="Beige"/>
+
+                </dxg:GridControl.View>
+
+               
+
+                <dxg:GridColumn Header="Descripción" Width="*" HorizontalHeaderContentAlignment="Center"
+                 Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header="Centro de Costo" Width="auto" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding CostCenter.Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header="Tipo de autorización" Width="auto" HorizontalHeaderContentAlignment="Center"
+                    Binding="{Binding AuthorizationSequenceType.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Consecutivo actual" Width="auto" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding CurrentInvoiceNumber, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header=""
+     Width="45"
+     HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+            BorderThickness="0"
+            Padding="3"
+            Margin="3"
+            Width="auto" Height="auto" 
+            cal:Message.Attach="[Event Click] = [Action EditAuthorizationSequence]">
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+            <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+               HorizontalAlignment="Stretch" 
+               ChangedIndexCommand="{Binding PaginationCommand}" 
+               PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+    </busyIndicator:BusyMask>
+</UserControl>
