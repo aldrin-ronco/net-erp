@@ -154,7 +154,7 @@ namespace Common.Interfaces
                 }
                 return result.Data.ListResponse;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }
