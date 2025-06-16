@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Helpers.Messages;
+using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace NetErp.Global.Shell.ViewModels
     public class ShellViewModel : Conductor<IScreen>.Collection.OneActive, IHandle<NetworkStatusChangedMessage>
     {
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IBackgroundQueueService _backgroundService;
         private readonly IEventAggregator _eventAggregator;
 
         private MainMenuViewModel? _mainMenuViewModel;
@@ -51,7 +53,7 @@ namespace NetErp.Global.Shell.ViewModels
             _eventAggregator = eventAggregator;
             _eventAggregator.SubscribeOnPublishedThread(this);
             _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-
+            _backgroundService = IoC.Get<IBackgroundQueueService>();
             Task.Run(() => ActivateMainMenuView());
         }
 

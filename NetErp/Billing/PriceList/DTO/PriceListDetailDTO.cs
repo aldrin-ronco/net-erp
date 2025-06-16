@@ -248,6 +248,26 @@ namespace NetErp.Billing.PriceList.DTO
             }
         }
 
+        public UpdatePromotionViewModel UpdatePromotionContext { get; set; } 
+
+        private bool _isChecked = false;
+
+        public bool IsChecked
+        {
+            get { return _isChecked; }
+            set 
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value; 
+                    NotifyOfPropertyChange(nameof(IsChecked));
+                    if(value) UpdatePromotionContext?.AddItemsToShadowList(CatalogItem.Id);
+                    else UpdatePromotionContext?.RemoveItemsFromShadowList(CatalogItem.Id);
+                }
+            }
+        }
+
+
     }
 
     public enum OperationStatus

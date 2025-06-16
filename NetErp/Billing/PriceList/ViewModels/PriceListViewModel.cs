@@ -2,6 +2,7 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using DevExpress.Xpf.Core;
+using Models.Billing;
 using NetErp.Billing.CreditLimit.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -60,6 +61,36 @@ namespace NetErp.Billing.PriceList.ViewModels
                 throw new AsyncException(innerException: ex);
             }
 
+        }
+
+        public async Task ActivateUpdatePromotionViewAsync(PriceListGraphQLModel promotion)
+        {
+            try
+            {
+                UpdatePromotionViewModel instance = new(this);
+                instance.Id = promotion.Id;
+                instance.Name = promotion.Name;
+                instance.StartDate = promotion.StartDate;
+                instance.EndDate = promotion.EndDate;
+                await instance.InitializeAsync();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
     }
 }

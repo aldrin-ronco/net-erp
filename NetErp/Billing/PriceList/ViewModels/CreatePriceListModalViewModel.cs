@@ -34,7 +34,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
         private IGenericDataAccess<StorageGraphQLModel> StorageService { get; set; } = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
 
-        private string _name;
+        private string _name = string.Empty;
 
         public string Name
         {
@@ -216,7 +216,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                         isPublic
                         allowNewUsersAccess
                         listUpdateBehaviorOnCostChange
-                        parentId
+                        parent{
+                            id
+                            name
+                        }
                         isTaxable
                         priceListIncludeTax
                         useAlternativeFormula
@@ -253,13 +256,17 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
+        //TODO:  refactorizar mensaje de error
         public async Task InitializeAsync()
         {
             try
@@ -283,12 +290,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 CostCenters = [.. result.CostCenters];
                 RefreshCostCenters();
                 Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
-                SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0);
+                SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("Invalid null reference");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -319,12 +325,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(Cancel);
+                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
         }
 
-        public async Task Cancel()
+        public async Task CancelAsync()
         {
             await _dialogService.CloseDialogAsync(this, true);
         }

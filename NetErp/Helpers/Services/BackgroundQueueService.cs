@@ -15,12 +15,10 @@ namespace NetErp.Helpers.Services
 {
     public interface IDataOperation
     {
-        string Query { get; }
-        object Variables { get; }
-        Type ResponseType { get; }
-        string GenericDataAccessMethod { get; }
         Guid OperationId { get; }
         string DisplayName { get; }
+        Type ResponseType { get; }
+        object Variables { get; }
         int Id { get; }
 
         // Método para obtener la información de lote para esta operación
@@ -32,13 +30,13 @@ namespace NetErp.Helpers.Services
     public class BatchOperationInfo
     {
         // Query a usar para la operación en lote (obligatorio)
-        public string BatchQuery { get; set; }
+        public string BatchQuery { get; set; } = string.Empty;
 
         // Método para extraer el valor a incluir en el lote desde las variables de la operación
         public Func<object, object> ExtractBatchItem { get; set; }
 
         // Método para construir el objeto de variables del lote
-        public Func<IEnumerable<object>, object> BuildBatchVariables { get; set; }
+        public Func<IEnumerable<object>, object> BuildBatchVariables { get; set; } 
     }
 
     public interface IBackgroundQueueService

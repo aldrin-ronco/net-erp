@@ -1,0 +1,294 @@
+﻿<UserControl x:Class="NetErp.Billing.PriceList.Views.AddPromotionProductsModalView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetErp.Billing.PriceList.Views"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:uc="clr-namespace:NetErp.UserControls" 
+             xmlns:cal="http://caliburnmicro.com"
+             mc:Ignorable="d" 
+             d:DesignHeight="1000" d:DesignWidth="1500"
+             d:Background="White" FontFamily="Century Gothic" >
+    <Grid Margin="10" Height="700" Width="1200">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0" Margin="0 0 0 5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+
+            <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0 0 10 10">
+                <TextBlock Text="Catalogo de productos" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                <dxe:ComboBoxEdit   ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
+                IsTextEditable="False" DisplayMember="Name" Padding="2"/>
+            </StackPanel>
+
+
+
+            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="10 0 10 0">
+                <TextBlock Text="Tipo de producto" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                <dxe:ComboBoxEdit ItemsSource="{Binding ItemsTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
+      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="0" Margin="10 0 10 0" Visibility="{Binding CanShowItemsCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                <TextBlock Text="Linea/Categoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                <dxe:ComboBoxEdit ItemsSource="{Binding ItemsCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
+      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="0" Margin="10 0 0 0" Visibility="{Binding CanShowItemsSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                <TextBlock Text="Sublinea/Subcategoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                <dxe:ComboBoxEdit ItemsSource="{Binding ItemsSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
+      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+            </StackPanel>
+
+
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0 5 0 0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Catalogo de productos" Grid.Row="0"  FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 5" FontSize="24"/>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0 0 5 0">
+                    <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <dxe:TextEdit   x:Name="FilterSearch" Padding="2"
+                                    Text="{Binding ItemsFilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
+                                    FontFamily="Century Gothic"
+                                    NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
+                                    ShowNullTextForEmptyValue="True"
+                                    ShowNullTextIfFocused="True"
+                                    EditValuePostMode="Delayed"
+                                    CharacterCasing="Upper"/>
+                </StackPanel>
+
+                <Button Margin="5 0 0 0" Grid.Column="2" Height="30" VerticalAlignment="Bottom" IsEnabled="{Binding CanAddItemList, UpdateSourceTrigger=PropertyChanged}"
+                        Command="{Binding AddItemListCommand}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Agregar seleccionados" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 2 0"/>
+                            <Image Source="{dx:DXImage 'Images/Actions/Fill_16x16.png'}" Stretch="None" Margin="2 0 0 0"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+             </Grid>
+
+            <dxg:GridControl Grid.Row="2" Margin="0 10 0 0" ItemsSource="{Binding Items, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                <dxg:GridControl.View>
+                    <dxg:TableView
+                     AllowCascadeUpdate="False" 
+                     EnableSelectedRowAppearance="True"
+                     ShowGroupPanel="False" AlternateRowBackground="Beige"
+                     AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                     AllowSorting="False" AllowColumnFiltering="False" AllowResizing="False"/>
+                </dxg:GridControl.View>
+
+                <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Width="30">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+                        BorderThickness="0"
+                        Padding="3"
+                        Margin="3"
+                        Width="auto" Height="auto"
+                        cal:Message.Attach="[Event Click] = [Action AddItemAsync]">
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+
+                <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <dxe:CheckEdit VerticalAlignment="Center"
+                          HorizontalAlignment="Center" 
+                          IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.HeaderTemplate>
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
+                          HorizontalAlignment="Center"
+                          IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+
+            <uc:GridPaging Grid.Row="3"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Center"
+               ChangedIndexCommand="{Binding ItemsPaginationCommand}" 
+               PageIndex="{Binding ItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               PageSize="{Binding ItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               TotalCount="{Binding ItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               ResponseTime="{Binding ItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 10"/>
+
+        </Grid>
+
+
+        <Grid Grid.Row="2" Margin="0 5 0 5" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Productos agregados" FontWeight="Bold" HorizontalAlignment="Center" FontSize="24"/>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0 0 5 0">
+                    <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <dxe:TextEdit Padding="2"
+                        Text="{Binding AddedItemsFilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
+                        FontFamily="Century Gothic"
+                        NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
+                        ShowNullTextForEmptyValue="True"
+                        ShowNullTextIfFocused="True"
+                        EditValuePostMode="Delayed"
+                        CharacterCasing="Upper"/>
+                </StackPanel>
+
+                <Button Margin="5 0 0 0" Grid.Column="2" Height="30" VerticalAlignment="Bottom" IsEnabled="{Binding CanRemoveAddedItemList, UpdateSourceTrigger=PropertyChanged}"
+                        Command="{Binding RemoveItemListCommand}">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Eliminar seleccionados" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 2 0"/>
+                            <Image Source="{dx:DXImage 'Images/Actions/Up2_16x16.png'}" Stretch="None" Margin="2 0 0 0"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </Grid>
+
+            <dxg:GridControl Grid.Row="2" Margin="0 10 0 0" ItemsSource="{Binding AddedItems, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedAddedItem, UpdateSourceTrigger=PropertyChanged}">
+                <dxg:GridControl.View>
+                    <dxg:TableView
+                     AllowCascadeUpdate="False" 
+                     EnableSelectedRowAppearance="True"
+                     ShowGroupPanel="False" AlternateRowBackground="Beige"
+                     AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                     AllowColumnFiltering="False" AllowSorting="True"/>
+                </dxg:GridControl.View>
+
+                <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Width="30">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+                                BorderThickness="0"
+                                Padding="3"
+                                Margin="3"
+                                Width="auto" Height="auto"
+                                cal:Message.Attach="[Event Click] = [Action RemoveItemAsync]">
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+
+                <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <dxe:CheckEdit VerticalAlignment="Center"
+                          HorizontalAlignment="Center" 
+                          IsChecked="{Binding AddedItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.HeaderTemplate>
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
+                          HorizontalAlignment="Center"
+                          IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+
+            <uc:GridPaging Grid.Row="3"
+               HorizontalAlignment="Stretch"
+               VerticalAlignment="Center"
+               ChangedIndexCommand="{Binding AddedItemsPaginationCommand}" 
+               PageIndex="{Binding AddedItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               PageSize="{Binding AddedItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               TotalCount="{Binding AddedItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               ResponseTime="{Binding AddedItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 10"/>
+        </Grid>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 5">
+            <Button Margin="0 0 5 0" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Guardar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
+                        <Image Source="{dx:DXImage 'Images/Save/Save_16x16.png'}"/>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+            <Button Command="{Binding CancelCommand}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Cancelar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_16x16.png'}"/>
+                    </StackPanel>
+                </Button.Content>
+            </Button>
+        </StackPanel>
+        
+    </Grid>
+</UserControl>

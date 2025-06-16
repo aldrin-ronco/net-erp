@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -153,6 +154,36 @@ namespace Common.Interfaces
                     throw new Exception(error.Message);
                 }
                 return result.Data.ListResponse;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<XModel> MutationContext<XModel>(string query, object variables)
+        {
+            try
+            {
+                GraphQLHttpClient client = new(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
+                client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+                GraphQLResponse<XModel> result = await client.SendMutationAsync<XModel>(new GraphQLRequest()
+                {
+                    Query = query,
+                    Variables = variables
+                });
+
+                if (result.Errors != null)
+                {
+                    GraphQL.GraphQLError error = result.Errors[0];
+                    Map? extensions = error.Extensions;
+                    if (extensions != null && extensions.TryGetValue("message", out object? value))
+                    {
+                        throw new Exception(value.ToString());
+                    }
+                    throw new Exception(error.Message);
+                }
+                return result.Data;
             }
             catch (Exception)
             {

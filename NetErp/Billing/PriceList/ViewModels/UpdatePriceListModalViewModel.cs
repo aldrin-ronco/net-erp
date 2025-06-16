@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Global;
 using NetErp.Billing.PriceList.DTO;
@@ -140,7 +142,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private bool _isActive;
 
-        public bool IsActive
+        public new bool IsActive
         {
             get { return _isActive; }
             set
@@ -297,10 +299,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                         isPublic
                         allowNewUsersAccess
                         listUpdateBehaviorOnCostChange
-                        parentId
                         isTaxable
                         priceListIncludeTax
                         useAlternativeFormula
+                        parent{
+                            id
+                            name
+                        }
                         storage {
                           id
                           name
@@ -312,7 +317,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         }
                       }
                     }
-                    ";
+                ";
                 dynamic variables = new ExpandoObject();
                 variables.Id = SelectedPriceListId;
                 variables.Data = new ExpandoObject();
@@ -336,10 +341,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Messenger.Default.Send(message: new ReturnedDataFromUpdatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "UpdatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -347,6 +355,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             ShadowCostCenters = [.. CostCenters.Where(x => x.IsTaxable == IsTaxable && x.PriceListIncludeTax == PriceListIncludeTax)];
         }
+
         public async Task InitializeAsync()
         {
             try
@@ -377,10 +386,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
                 PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(result.PaymentMethods)];
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -409,12 +417,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(Cancel);
+                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
         }
 
-        public async Task Cancel()
+        public async Task CancelAsync()
         {
             await _dialogService.CloseDialogAsync(this, true);
         }

@@ -145,6 +145,8 @@ namespace NetErp.Helpers.Services
         {
             Execute.OnUIThread(() =>
             {
+                _notifications.Clear();
+
                 var notification = new NotificationItem(message, title, type);
                 _notifications.Add(notification);
 
