@@ -36,11 +36,11 @@
                         <StackPanel Orientation="Vertical" Margin="0 0 0 5">
                             <TextBlock Text="Nombre de la lista de precios" Margin="0 0 0 2"/>
 
-                            <TextBox CharacterCasing="UPPER" Padding="4" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                            <dxe:TextEdit CharacterCasing="UPPER" Padding="2" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                                 <dxmvvm:Interaction.Behaviors>
                                     <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="NameFocus"/>
                                 </dxmvvm:Interaction.Behaviors>
-                            </TextBox>
+                            </dxe:TextEdit>
                         </StackPanel>
 
                         <StackPanel Orientation="Vertical" Margin="0 5 0 15">
@@ -147,7 +147,7 @@
                     <StackPanel Grid.Row="4" Margin="0 5 0 0" Orientation="Vertical">
                         <TextBlock Text="Cuando la lista de precios cambie quiero..." Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ListUpdateBehaviorOnCostChange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" IsTextEditable="False" DisplayMember="Value"
-                                          EditValue="{Binding SelectedListUpdateBehaviorOnCostChange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" ValueMember="Key"/>
+                                          EditValue="{Binding SelectedListUpdateBehaviorOnCostChange, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" ValueMember="Key" Padding="2"/>
                     </StackPanel>
                 </Grid>
             </dx:DXTabItem>

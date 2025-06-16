@@ -169,7 +169,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return bitmap;
         }
 
-        //TODO
+        //TODO S3 master pending and variables declaration
         public async Task LoadAwsS3Credentials()
         {
             try

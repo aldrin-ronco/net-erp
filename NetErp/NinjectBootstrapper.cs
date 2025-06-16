@@ -138,6 +138,8 @@ namespace NetErp
             _ = kernel.Bind<IPriceListCalculator>().To<StandardPriceListCalculator>().InSingletonScope().Named("Standard");
             _ = kernel.Bind<IPriceListCalculator>().To<AlternativePriceListCalculator>().InSingletonScope().Named("Alternative");
             _ = kernel.Bind<IPriceListCalculatorFactory>().To<PriceListCalculatorFactory>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<TempRecordGraphQLModel>>().To<TempRecordService>().InSingletonScope();
+            _ = kernel.Bind<IParallelBatchProcessor>().To<ParallelBatchProcessor>().InSingletonScope();
             // Setup application clases
             // Books
             //_ = kernel.Bind<IBooksAccountingAccount>().To<BooksAccountingAccount>().InSingletonScope();
@@ -250,6 +252,7 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
+                _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

@@ -19,7 +19,7 @@ namespace Models.Billing
         public bool IsPublic { get; set; }
         public bool AllowNewUsersAccess { get; set; }
         public string ListUpdateBehaviorOnCostChange { get; set; } = string.Empty;
-        public int ParentId { get; set; }
+        public PriceListGraphQLModel? Parent { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsTaxable { get; set; }
@@ -27,6 +27,18 @@ namespace Models.Billing
         public bool UseAlternativeFormula { get; set; }
         public StorageGraphQLModel Storage { get; set; } = new();
         public IEnumerable<PaymentMethodGraphQLModel> PaymentMethods { get; set; } = [];
+        public bool Archived { get; set; }
+        public string FullName 
+        {
+            get
+            {
+                if(Parent != null)
+                {
+                    return $"{Name} ({Parent.Name})";
+                }
+                return Name;
+            }
+        }
     }
 
     public class PriceListDetailGraphQLModel
@@ -45,5 +57,10 @@ namespace Models.Billing
     {
         public ObservableCollection<CatalogGraphQLModel> Catalogs { get; set; } = [];
         public ObservableCollection<PriceListGraphQLModel> PriceLists { get; set; } = [];
+    }
+
+    public class PriceListDeleteMessage
+    {
+        public PriceListGraphQLModel DeletedPriceList { get; set; } = new();
     }
 }
