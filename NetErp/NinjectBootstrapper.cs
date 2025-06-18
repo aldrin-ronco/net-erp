@@ -21,6 +21,7 @@ using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.DynamicControl;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Shell.ViewModels;
@@ -253,8 +254,8 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
-                _ = cfg.CreateMap<ParameterGraphQLModel, ItemViewModel>();
-                _ = cfg.CreateMap<Qualifier, QualifierScreen>();
+                _ = cfg.CreateMap<ParameterGraphQLModel, DynamicControlModel>();
+               
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

@@ -1,32 +1,22 @@
-﻿using AutoMapper;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using DevExpress.Mvvm;
 using Dictionaries;
 using Models.Billing;
 using Models.Books;
 using Models.Global;
-using Models.Inventory;
 using NetErp.Billing.PriceList.ViewModels;
 using NetErp.Global.Modals.ViewModels;
-using NetErp.Inventory.CatalogItems.DTO;
-using NetErp.Inventory.CatalogItems.ViewModels;
-using Ninject.Activation;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace NetErp.Global.Parameter.ViewModels
+
+namespace NetErp.Global.DynamicControl
 {
-    public class ItemViewModel : Screen
+    public class DynamicControlModel : Screen
     {
 
         Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
-        public ItemViewModel()
+        public DynamicControlModel()
         {
             Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, false, OnFindCompanyAccountingEntityMessage);
         }
@@ -35,7 +25,7 @@ namespace NetErp.Global.Parameter.ViewModels
             if (message.ReturnedData is null) return;
             if (Code == "SearchCompany")
             {
-                Value = message.ReturnedData.Id.ToString();
+                Value = message.ReturnedData.Id;
                 SelectedOption = new Qualifier { Id = message.ReturnedData.Id, Name = message.ReturnedData.SearchName };
 
             }
@@ -45,7 +35,7 @@ namespace NetErp.Global.Parameter.ViewModels
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;
-        public string Value { get; set; } = string.Empty;
+        public dynamic Value { get; set; } 
         public int ModuleId { get; set; }
         public int DatatypeId { get; set; }
 
@@ -58,17 +48,18 @@ namespace NetErp.Global.Parameter.ViewModels
                 if (_qualifiers != value)
                 {
                     _qualifiers = value;
-                    if (Qualifiers.Count > 0) 
-                    { Qualifiers[0].IsChecked = true;
+                    if (Qualifiers.Count > 0)
+                    {
+                        Qualifiers[0].IsChecked = true;
                         SelectedOption = Qualifiers[0];
                     }
                     NotifyOfPropertyChange(nameof(Qualifiers));
-                   
+
                 }
             }
-        } 
-        
-       
+        }
+
+
         private Qualifier _selectedOption;
         public Qualifier SelectedOption
         {
@@ -76,7 +67,10 @@ namespace NetErp.Global.Parameter.ViewModels
             set
             {
                 _selectedOption = value;
-                Value = value.Id.ToString();
+                if ((Datatype?.Name == DatatypeEnum.LISTA)) {
+                    Value = value.Id.ToString();
+                }
+               
                 NotifyOfPropertyChange(() => SelectedOption);
             }
         }
@@ -112,12 +106,12 @@ namespace NetErp.Global.Parameter.ViewModels
                     break;
 
                 case "SearchCompany":
-                SearchCompanyAccountingEntityCompany(null);
+                    SearchCompanyAccountingEntityCompany(null);
                     break;
                 default:
                     break;
             }
-           
+
         }
         private Visibility _modalVisibility;
         public Visibility ModalVisibility
@@ -131,7 +125,7 @@ namespace NetErp.Global.Parameter.ViewModels
         private Visibility _alphanumericVisibility;
         public Visibility AlphanumericVisibility
         {
-            get { return (Datatype.Name == DatatypeEnum.ALFANUMERICO ) ? Visibility.Visible : Visibility.Collapsed; }
+            get { return (Datatype.Name == DatatypeEnum.ALFANUMERICO) ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
                 _alphanumericVisibility = value;
@@ -196,59 +190,6 @@ namespace NetErp.Global.Parameter.ViewModels
             }
         }
 
-        //Prueba con modales
-
-        public async void SearchProducts(object p)
-        {
-           /* string query = @"query($filter: ItemFilterInput){
-                            PageResponse: itemPage(filter: $filter){
-                            count
-                            rows{
-                                id
-                                name
-                                code
-                                reference
-                                allowFraction
-                                measurementUnit{
-                                id
-                                name
-                                }
-                                subCategory{
-                                    id
-                                    itemCategory{
-                                        id
-                                        itemType{
-                                            id
-                                        }
-                                    }
-                                }
-                            }
-                            }
-                        }";
-
-            string fieldHeader1 = "Código";
-            string fieldHeader2 = "Nombre";
-            string fieldHeader3 = "Referencia";
-            string fieldData1 = "Code";
-            string fieldData2 = "Name";
-            string fieldData3 = "Reference";
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.and = new ExpandoObject[]
-            {
-                new(),
-                new()
-            };
-            variables.filter.and[0].catalogId = new ExpandoObject();
-            variables.filter.and[0].catalogId.@operator = "=";
-            variables.filter.and[0].catalogId.value = 1;
-            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, null, _dialogService);
-
-            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");*/
-
-         
-
-        }
         public async void SearchCompanyAccountingEntityCompany(object p)
         {
             string query = @"query($filter: AccountingEntityFilterInput!){
@@ -275,14 +216,6 @@ namespace NetErp.Global.Parameter.ViewModels
     }
 
 
-    public class QualifierScreen : Screen
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public int QualifierTypeId { get; set; }
-    }
 
+}
 
-    
-
-    }
