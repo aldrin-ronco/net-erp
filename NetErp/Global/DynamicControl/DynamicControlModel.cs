@@ -6,6 +6,7 @@ using Models.Books;
 using Models.Global;
 using NetErp.Billing.PriceList.ViewModels;
 using NetErp.Global.Modals.ViewModels;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 
@@ -25,7 +26,8 @@ namespace NetErp.Global.DynamicControl
             if (message.ReturnedData is null) return;
             if (Code == "SearchCompany")
             {
-                Value = message.ReturnedData.Id;
+               
+                Value["data"] =   message.ReturnedData.Id ;
                 SelectedOption = new Qualifier { Id = message.ReturnedData.Id, Name = message.ReturnedData.SearchName };
 
             }
@@ -33,13 +35,87 @@ namespace NetErp.Global.DynamicControl
 
         }
         public int Id { get; set; }
+        public Datatype Datatype
+        {
+            get { return _datatype; }
+            set
+            {
+                if (_datatype != value)
+                {
+                    _datatype = value;
+                    var val = Value;
+                    NotifyOfPropertyChange(nameof(AlphanumericVisibility));
+                    NotifyOfPropertyChange(nameof(IntegerVisibility));
+                    NotifyOfPropertyChange(nameof(DecimalVisibility));
+                    NotifyOfPropertyChange(nameof(DateVisibility));
+                    NotifyOfPropertyChange(nameof(ListVisibility));
+                    NotifyOfPropertyChange(nameof(BoolVisibility));
+                    NotifyOfPropertyChange(nameof(Value));
+
+                }
+            }
+        }
+
         public string Name { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;
-        public dynamic Value { get; set; } 
+        private Dictionary<string, object> _value;
+        public Dictionary<string, object> Value
+        {
+            get { return _value; }
+            set
+            {
+                if (_value != value)
+                {
+                    _value = value;
+                    JsonValue = value;
+                    if (Datatype?.Name == DatatypeEnum.ALFANUMERICO)
+                    {
+                        var obj = new object();
+                        Value.TryGetValue("data", out obj);
+                        if (obj != null)
+                        {
+                            StringValue = obj.ToString();
+                        }
+                        else
+                        {
+                            StringValue = "";
+                        }
+
+                    }
+                    NotifyOfPropertyChange(nameof(Value));
+                   
+
+                }
+            }
+        }
+        public string _stringValue { get; set; } = string.Empty;
+
+        public string StringValue
+        {
+            get { return _stringValue; }
+            set
+            {
+                if (_stringValue != value)
+                {
+                    _stringValue = (value != null) ? value : "";
+                    var dict = new Dictionary<string, object>();
+                    
+                    // Asignar un valor nuevo
+                    dict["data"] = StringValue;
+                    Value = dict;
+
+                    NotifyOfPropertyChange(nameof(StringValue));
+                   
+                }
+            }
+        }
+
+       
+        public Dictionary<string, object> JsonValue { get; set; }
         public int ModuleId { get; set; }
         public int DatatypeId { get; set; }
 
-        private ObservableCollection<Qualifier> _qualifiers { get; set; } = [];
+        private ObservableCollection<Qualifier> _qualifiers = [];
         public ObservableCollection<Qualifier> Qualifiers
         {
             get { return _qualifiers; }
@@ -68,7 +144,7 @@ namespace NetErp.Global.DynamicControl
             {
                 _selectedOption = value;
                 if ((Datatype?.Name == DatatypeEnum.LISTA)) {
-                    Value = value.Id.ToString();
+                    Value["data"] = value.Id.ToString();
                 }
                
                 NotifyOfPropertyChange(() => SelectedOption);
@@ -76,25 +152,7 @@ namespace NetErp.Global.DynamicControl
         }
 
         private Datatype _datatype;
-        public Datatype Datatype
-        {
-            get { return _datatype; }
-            set
-            {
-                if (_datatype != value)
-                {
-                    _datatype = value;
-                    NotifyOfPropertyChange(nameof(AlphanumericVisibility));
-                    NotifyOfPropertyChange(nameof(IntegerVisibility));
-                    NotifyOfPropertyChange(nameof(DecimalVisibility));
-                    NotifyOfPropertyChange(nameof(DateVisibility));
-                    NotifyOfPropertyChange(nameof(ListVisibility));
-                    NotifyOfPropertyChange(nameof(BoolVisibility));
-
-                }
-            }
-        }
-
+     
         public async void Execute()
         {
             switch (Code)
@@ -216,6 +274,9 @@ namespace NetErp.Global.DynamicControl
     }
 
 
-
+    public class ValueModel
+    {
+        public dynamic Data { get; set; } = new ExpandoObject();
+    }
 }
 

@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Interfaces;
+using DevExpress.XtraEditors.Filtering;
 using Models.Global;
 using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Global.DynamicControl;
@@ -122,8 +123,54 @@ namespace NetErp.Global.Parameter.ViewModels
 
         public async Task save()
         {
-           
+            dynamic variables = new ExpandoObject();
+            variables.data = new ExpandoObject();
+            switch (SelectedIndex)
+            {
+               
 
+                case 0: //Contabilidad
+                    variables.data.configurationParameters = DynamicControlBook.GetDataControls();
+                break;
+
+                case 1: //Inventarios
+                    variables.data.configurationParameters = DynamicControlInventory.GetDataControls();
+                    break;
+                case 2: //Tesoreria
+                    variables.data.configurationParameters = DynamicControTreasury.GetDataControls();
+                    break;
+                case 3: //Ventas
+                    variables.data.configurationParameters = DynamicControlBilling.GetDataControls();
+                    break;
+                case 4:  //Generales
+                    variables.data.configurationParameters = DynamicControlGlobal.GetDataControls();
+                    break;
+            }
+
+            string query = @"mutation($data : UpdateConfigurationParameterInput!) {
+                          updateConfigurationParameter(data: $data) {
+                            id
+                            name
+                            code
+                            value 
+                          }
+                        }";
+            try
+            {
+                IsBusy = true;
+             var result =  await ParameterSequenceService.Update(query, variables);
+                var a = 1;
+
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+             
         }
      }
 }

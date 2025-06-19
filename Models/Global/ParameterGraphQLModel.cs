@@ -9,7 +9,7 @@ namespace Models.Global
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;
-        public string Value { get; set; } = string.Empty;
+        public Dictionary<string, object> Value { get; set; } 
         public int ModuleId { get; set; }
         public int DatatypeId { get; set; }
 
