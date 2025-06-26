@@ -11,8 +11,10 @@ using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
 using Ninject.Activation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -24,10 +26,11 @@ using System.Windows.Threading;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class UpdatePriceListModalViewModel<TModel>: Screen
+    public class UpdatePriceListModalViewModel<TModel>: Screen, INotifyDataErrorInfo
     {
         private readonly Helpers.IDialogService _dialogService;
         private readonly IMapper _autoMapper;
+        Dictionary<string, List<string>> _errors;
         private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
         private IGenericDataAccess<StorageGraphQLModel> StorageService { get; set; } = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
 
@@ -41,7 +44,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_name != value)
                 {
                     _name = value;
+                    ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     _ = this.SetFocus(nameof(Name));
                 }
             }
@@ -351,6 +356,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        public bool CanSave
+        {
+            get 
+            { 
+                return _errors.Count <= 0;
+            }
+        }
+
         public void RefreshCostCenters()
         {
             ShadowCostCenters = [.. CostCenters.Where(x => x.IsTaxable == IsTaxable && x.PriceListIncludeTax == PriceListIncludeTax)];
@@ -430,6 +443,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public UpdatePriceListModalViewModel(Helpers.IDialogService dialogService, IMapper autoMapper)
         {
+            _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _autoMapper = autoMapper;
         }
@@ -438,6 +452,63 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             base.OnViewReady(view);
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+        }
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
     }
 

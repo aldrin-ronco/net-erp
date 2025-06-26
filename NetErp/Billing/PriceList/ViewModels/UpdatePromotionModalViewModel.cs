@@ -7,7 +7,9 @@ using DevExpress.Xpf.Core;
 using Models.Billing;
 using NetErp.Helpers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -17,9 +19,10 @@ using System.Windows.Threading;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class UpdatePromotionModalViewModel<TModel>: Screen
+    public class UpdatePromotionModalViewModel<TModel>: Screen, INotifyDataErrorInfo
     {
         private readonly Helpers.IDialogService _dialogService;
+        Dictionary<string, List<string>> _errors;
         private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
 
         public DateTime? MinimumDate { get; set; } 
@@ -50,7 +53,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_Name != value)
                 {
                     _Name = value;
+                    ValidateProperty(nameof(Name), _Name);
                     NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -143,6 +148,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        public bool CanSave => _errors.Count <= 0;
+
         private bool _nameFocus;
         public bool NameFocus
         {
@@ -165,6 +172,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
         public UpdatePromotionModalViewModel(Helpers.IDialogService dialogService)
         {
+            _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
         }
 
@@ -172,6 +180,63 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             base.OnViewReady(view);
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+        }
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
     }
 
