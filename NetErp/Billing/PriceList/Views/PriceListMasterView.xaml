@@ -20,7 +20,7 @@
              xmlns:uc="clr-namespace:NetErp.UserControls" 
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
-             d:Background="White">
+             d:Background="White" FontFamily="Century Gothic">
     <UserControl.Resources>
         <services:OperationStatusToColorConverter x:Key="StatusToColorConverter"/>
         <h:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
@@ -34,7 +34,48 @@
                     BusyContentMargin="0,20,0,0"
                     IsBusyAtStartup="False">
         <Grid>
-            <Grid>
+            
+            <Grid Visibility="{Binding ShowAllControls, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.5*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="0.5*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1">
+
+                    <TextBlock Text="LISTAS DE PRECIOS" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 5" FontSize="32"/>
+
+                    <TextBlock Text="Las listas de precios te permiten manejar precios predefinidos para tus diferentes tipos de clientes, por ejemplo: precio al público o precio mayorista" 
+                               HorizontalAlignment="Center" Margin="0 5 0 5" FontSize="20" TextWrapping="Wrap" TextAlignment="Center"/>
+                    
+                    <Image Source="C:\Users\User\source\repos\net-erp\NetErp\Global\Resources\Images\WithoutResponse.png" Width="400" Height="400" Margin="0 0 0 10"/>
+
+                    <TextBlock Text="En este momento no hay ninguna lista de precios" HorizontalAlignment="Center" Margin="0 10 0 5" FontSize="22"/>
+
+                    <Grid Margin="0 5 0 0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.4*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.4*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Command="{Binding CreatePriceListCommand, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" FontSize="20" Padding="10">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Crear nueva lista de precios" Margin="0 0 5 0" VerticalAlignment="Center"/>
+                                    <!--<Image Source="{dx:DXImage 'Images/Actions/New_16x16.png'}" Height="20" Width="20" VerticalAlignment="Center"/>-->
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+            
+            <Grid Visibility="{Binding ShowAllControls, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <!--ribboncontrol-->
                     <RowDefinition Height="auto"/>

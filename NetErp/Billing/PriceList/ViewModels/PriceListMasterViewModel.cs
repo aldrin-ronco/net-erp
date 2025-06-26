@@ -298,9 +298,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private PriceListGraphQLModel _selectedPriceList;
+        private PriceListGraphQLModel? _selectedPriceList;
 
-        public PriceListGraphQLModel SelectedPriceList
+        public PriceListGraphQLModel? SelectedPriceList
         {
             get { return _selectedPriceList; }
             set
@@ -622,10 +622,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.priceListFilter.archived.@operator = "=";
                 variables.priceListFilter.archived.value = false;
 
-                var result = await PriceListDetailService.GetDataContext<PriceListDataContext>(query, variables);
+                PriceListDataContext result = await PriceListDetailService.GetDataContext<PriceListDataContext>(query, variables);
+
+
                 Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.Catalogs);
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceLists);
+                NotifyOfPropertyChange(nameof(ShowAllControls));
+                if(PriceLists is null || PriceLists.Count == 0) return;
                 SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
                 LoadItemTypes();
             }
@@ -640,12 +644,21 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        public bool ShowAllControls
+        {
+            get
+            {
+                return PriceLists != null && PriceLists.Count > 0;
+            }
+        }
+
         public new bool IsInitialized { get; set; } = false;
 
         public async Task LoadPriceList()
         {
             try
             {
+                if (ShowAllControls is false) return;
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -967,8 +980,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 if(message.DeletedPriceList is null) return;
                 PriceLists.Remove(PriceLists.FirstOrDefault(x => x.Id == message.DeletedPriceList.Id) ?? throw new Exception("Invalid null reference"));
-                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("Invalid null reference");
+                SelectedPriceList = PriceLists.FirstOrDefault();
                 _notificationService.ShowSuccess("Lista de precios eliminada correctamente", "Éxito");
+                NotifyOfPropertyChange(nameof(ShowAllControls));
             }
             catch (Exception ex)
             {
@@ -992,6 +1006,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 _notificationService.ShowError("No se pudo crear la lista de precios", "Error");
             }
+            NotifyOfPropertyChange(nameof(ShowAllControls));
         }
 
         public void OnUpdatePriceList(ReturnedDataFromUpdatePriceListModalViewMessage<PriceListGraphQLModel> message)
