@@ -23,7 +23,18 @@ namespace NetErp.Global.DynamicControl.ViewModels
                 }
             }
         }
-
+        private string _title;
+        public string Title {
+            get { return _title; }
+            set
+            {
+                if (_title != value)
+                {
+                    _title = value;
+                    NotifyOfPropertyChange(nameof(Title));
+                }
+            }
+        }
         public List<dynamic> GetDataControls()
         {
             List<dynamic> _controls = [];

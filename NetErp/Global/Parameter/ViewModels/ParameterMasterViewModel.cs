@@ -100,14 +100,19 @@ namespace NetErp.Global.Parameter.ViewModels
                          }";
                 dynamic variables = new ExpandoObject();
                 var parameters = await ParameterSequenceService.GetList(query, variables);
-                //Actions = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(parameters);
+
                 BindableCollection<DynamicControlModel> controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(parameters);
+                DynamicControlInventory.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 1));
                 DynamicControlBilling.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 2));
-                DynamicControlGlobal.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 7));
                 DynamicControTreasury.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 3));
                 DynamicControlBook.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 5));
-                DynamicControlInventory.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 1));
+                DynamicControlGlobal.Controls = Context.AutoMapper.Map<BindableCollection<DynamicControlModel>>(controls.Where(f => f.ModuleId == 7));
 
+                DynamicControlInventory.Title = "Configuración De Parametros De  Inventarios";
+                DynamicControlBilling.Title = "Configuración De Parametros De Ventas";
+                DynamicControTreasury.Title = "Configuración De Parametros De Tesorería ";
+                DynamicControlBook.Title = "Configuración De Parametros De Contabilidad";
+                DynamicControlGlobal.Title = "Configuración De Parametros Globales";
 
             }
             catch (Exception ex)

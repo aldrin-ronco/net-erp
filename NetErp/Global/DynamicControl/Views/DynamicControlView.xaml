@@ -14,7 +14,7 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <TextBlock    Text="hola" Grid.Row="0" ></TextBlock>
+        <TextBlock     Text="{Binding Path=Title, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"  Grid.Row="0" ></TextBlock>
         <StackPanel Margin="20" x:Name="controls" Grid.Row="1">
             <ItemsControl ItemsSource="{Binding Controls}">
                 <ItemsControl.ItemTemplate>
@@ -49,17 +49,26 @@
                 DisplayMember="Name"
                 EditValue="{Binding SelectedOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 IsSynchronizedWithCurrentItem="True" />
-                            <StackPanel Orientation="horizontal" Margin="6 5 10 5" x:Name="modal"
-                                         Visibility="{Binding Path=ModalVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                        >
-                                <TextBlock    Text="{Binding Path=SelectedOption.Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"    Margin="0 0 0 2" />
-                                <Button Content="{Binding Name}" 
-                                       
-                                cal:Message.Attach="Execute" 
-                                Margin="5"/>
+                            <Grid Visibility="{Binding Path=ModalVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="9*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <dxe:TextEdit Grid.Column="0"
+              IsReadOnly="True"
+     Text="{Binding Path=SelectedOption.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                <Button
+       Grid.Column="1"
+ cal:Message.Attach="Execute" 
+ Margin="5">
+                                    <TextBlock>
+            <Run Text="Buscar "/>
+            <Run Text="{Binding Name}"/>
+                                    </TextBlock>
+                                </Button>
 
-
-                            </StackPanel>
+                            </Grid>
+                          
 
 
 
