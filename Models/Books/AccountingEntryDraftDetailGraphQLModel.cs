@@ -21,10 +21,10 @@ namespace Models.Books
         public AccountingEntryTotals Totals { get; set; }
     }
 
-    public class AccountingEntryDraftDetailDTO : AccountingEntryDraftDetailGraphQLModel
-    {
-        public bool IsChecked { get; set; } = false;
+    //public class AccountingEntryDraftDetailDTO : AccountingEntryDraftDetailGraphQLModel
+    //{
+    //    public bool IsChecked { get; set; } = false;
 
-    }
+    //}
 
 }

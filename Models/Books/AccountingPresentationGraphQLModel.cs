@@ -13,7 +13,7 @@ namespace Models.Books
         public string Name { get; set; } = string.Empty;
         public bool AllowsAccountingClosure { get; set; } = false;
         public AccountingBookGraphQLModel? AccountingBookClosure { get; set; }
-        public ObservableCollection<AccountingBookGraphQLModel>? AccountingBooks { get; set; }
+        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; } = [];
 
         public override string ToString()
         {
@@ -22,15 +22,20 @@ namespace Models.Books
     }
     public class AccountingPresentationDataContext
     {
-        public ObservableCollection<AccountingPresentationGraphQLModel>? AccountingPresentations { get; set; }
-        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
+        public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations { get; set; } = [];
+        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; } = [];
     }
-    public class PresentationCreateMessage
+    public class AccountingPresentationCreateMessage
     {
-        public AccountingPresentationGraphQLModel CreatePresentation { get; set; }
+        public AccountingPresentationGraphQLModel CreatedAccountingPresentation { get; set; } = new();
     }
-    public class PresentationUpdateMessage
+    public class AccountingPresentationUpdateMessage
     {
-        public AccountingPresentationGraphQLModel UpdatePresentation { get; set; }
+        public AccountingPresentationGraphQLModel UpdatedAccountingPresentation { get; set; } = new();
+    }
+
+    public class AccountingPresentationDeleteMessage
+    {
+        public AccountingPresentationGraphQLModel DeletedAccountingPresentation { get; set; } = new();
     }
 }

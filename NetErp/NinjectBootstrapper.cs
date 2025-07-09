@@ -5,7 +5,6 @@ using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
 using DevExpress.Xpf.Bars.Native;
 using DevExpress.Xpf.Editors;
-using DTOLibrary.Books;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Models.Billing;
@@ -19,6 +18,7 @@ using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.MainMenu.ViewModels;
@@ -253,6 +253,7 @@ namespace NetErp
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
+                _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

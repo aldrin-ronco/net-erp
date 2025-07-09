@@ -9,7 +9,7 @@ namespace Models.Books
 {
     public class AccountingAccountGraphQLModel
     {
-        public int Id { get; set; }
+        public int Id { get; set; } = 0;
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public char Nature { get; set; }

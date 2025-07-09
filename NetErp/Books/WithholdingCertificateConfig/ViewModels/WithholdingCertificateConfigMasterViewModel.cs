@@ -4,7 +4,6 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using DTOLibrary.Books;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingAccountGroups.DTO;

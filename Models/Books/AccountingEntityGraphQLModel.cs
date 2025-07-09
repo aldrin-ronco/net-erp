@@ -57,21 +57,34 @@ namespace Models.Books
             return this.SearchName;
         }
     }
+    public class AccountingEntityDTO : AccountingEntityGraphQLModel
+    {
+        private bool _isChecked;
+        public bool IsChecked
+        {
+            get { return _isChecked; }
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                }
+            }
+        }
+    }
 
     public class AccountingEntityCreateMessage
     {
-        public AccountingEntityGraphQLModel CreatedAccountingEntity { get; set;}
-        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities { get; set; }
+        public AccountingEntityGraphQLModel CreatedAccountingEntity { get; set; } = new();
     }
     public class AccountingEntityDeleteMessage
     {
-        public AccountingEntityGraphQLModel DeletedAccountingEntity { get; set; }
+        public AccountingEntityGraphQLModel DeletedAccountingEntity { get; set; } = new();
     }
 
     public class AccountingEntityUpdateMessage
     {
-        public AccountingEntityGraphQLModel UpdatedAccountingEntity { get; set; }
-        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities { get; set; }
+        public AccountingEntityGraphQLModel UpdatedAccountingEntity { get; set; } = new();
     }
 
 }

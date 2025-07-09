@@ -25,6 +25,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         #region "Propiedades"
 
         public List<AccountingAccountGraphQLModel> accounts = [];
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public readonly IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
 
         private AccountPlanViewModel _context;
@@ -105,7 +106,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                throw new Exception("test");
                 string parentCode = parent.Code.Trim();
                 if (parent.Childrens[0].IsDummyChild)
                 {
@@ -620,10 +620,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                if(this.accounts.Count == 0) { return; }
+                IsBusy = true;
+                if (this.accounts.Count == 0) { return; }
                 _ = Task.Run(() => accounts.AddRange(message.CreatedAccountingAccountList))
                   .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                   .ContinueWith(antecedent => SearchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
+                _notificationService.ShowSuccess("Cuenta(s) contable(s) creada(s) exitosamente");
             }
             catch (AsyncException ex)
             {
@@ -639,6 +641,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 });
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
@@ -651,17 +657,61 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message) 
         {
-            IsBusy = true;
-            if (this.accounts.Count == 0) { return; }
-            Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
-                .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
-                .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
-            IsBusy = false;
+            try
+            {
+                IsBusy = true;
+                if (this.accounts.Count == 0) { return; }
+                _ = Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
+                    .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
+                    .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
+                _notificationService.ShowSuccess("Cuenta contable actualizada exitosamente");
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         async void OnAccountingAccountDeleteMessage(AccountingAccountDeleteMessage message)
         {
-            await DeleteAccountFromAccountsDTO(message.DeletedAccountingAccount.Code);
+            try
+            {
+                IsBusy = true;
+                await DeleteAccountFromAccountsDTO(message.DeletedAccountingAccount.Code);
+                _notificationService.ShowSuccess("Cuenta contable eliminada exitosamente");
+            }
+            catch (AsyncException ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private void RemoveAccountInMemory(List<AccountingAccountGraphQLModel> accounts, int id)

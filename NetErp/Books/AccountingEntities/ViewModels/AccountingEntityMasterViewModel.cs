@@ -15,7 +15,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using DTOLibrary.Books;
 using System.Dynamic;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Xpf;
@@ -43,6 +42,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
     {
 
         public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         // Context
         private AccountingEntityViewModel _context;
         public AccountingEntityViewModel Context
@@ -214,8 +214,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         #region Colecciones
 
-        private AccountingEntityDTO? _selectedAccountingEntity;
-        public AccountingEntityDTO? SelectedAccountingEntity
+        private AccountingEntityGraphQLModel? _selectedAccountingEntity;
+        public AccountingEntityGraphQLModel? SelectedAccountingEntity
         {
             get { return _selectedAccountingEntity; }
             set
@@ -229,8 +229,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private ObservableCollection<AccountingEntityDTO> _accountingEntities = [];
-        public ObservableCollection<AccountingEntityDTO> AccountingEntities
+        private ObservableCollection<AccountingEntityGraphQLModel> _accountingEntities = [];
+        public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities
         {
             get { return this._accountingEntities; }
             set
@@ -366,7 +366,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
                 var source = await AccountingEntityService.GetPage(query, variables);
                 TotalCount = source.PageResponse.Count;
-                AccountingEntities = Context.AutoMapper.Map<ObservableCollection<AccountingEntityDTO>>(source.PageResponse.Rows);
+                AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(source.PageResponse.Rows);
                 stopwatch.Stop();
 
                 // Detener cronometro
@@ -537,22 +537,43 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public Task HandleAsync(AccountingEntityCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingEntityCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingEntities = new ObservableCollection<AccountingEntityDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingEntityDTO>>(message.AccountingEntities)));
+            try
+            {
+                await LoadAccountingEntities();
+                _notificationService.ShowSuccess("Tercero creado correctamente", "Éxito");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
 
-        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingEntities = new ObservableCollection<AccountingEntityDTO>(Context.AutoMapper.Map<ObservableCollection<AccountingEntityDTO>>(message.AccountingEntities)));
+            try
+            {
+                await LoadAccountingEntities();
+                _notificationService.ShowSuccess("Tercero actualizado correctamente", "Éxito");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
         public Task HandleAsync(AccountingEntityDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                AccountingEntityDTO accountingAccountToDelete = AccountingEntities.First(c => c.Id == message.DeletedAccountingEntity.Id);
+                AccountingEntityGraphQLModel accountingAccountToDelete = AccountingEntities.First(c => c.Id == message.DeletedAccountingEntity.Id);
                 if (accountingAccountToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => AccountingEntities.Remove(accountingAccountToDelete));
+                _notificationService.ShowSuccess("Tercero eliminado correctamente", "Éxito");
                 return LoadAccountingEntities();
             }
             catch (Exception)
