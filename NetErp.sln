@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services", "Services\Servic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "Models\Models.csproj", "{40739804-DE0B-49FE-8AD5-542F9C044A74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DTOLibrary", "DTOLibrary\DTOLibrary.csproj", "{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,10 +45,6 @@ Global
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40739804-DE0B-49FE-8AD5-542F9C044A74}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D12B6C7-AE8B-4D77-81D0-594E1DDA7332}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

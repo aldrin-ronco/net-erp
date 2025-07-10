@@ -1,5 +1,5 @@
 ﻿using Caliburn.Micro;
-using DTOLibrary.Books;
+using Models.Books;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
 using System.Collections.Generic;

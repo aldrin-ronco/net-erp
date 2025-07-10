@@ -27,6 +27,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         IHandle<IdentificationTypeDeleteMessage>
     {
         public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         // Context
         private IdentificationTypeViewModel _context;
         public IdentificationTypeViewModel Context
@@ -356,19 +357,49 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public Task HandleAsync(IdentificationTypeCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(IdentificationTypeCreateMessage message, CancellationToken cancellationToken)
         {
-            return LoadIdentificationTypes();
+            try
+            {
+                await LoadIdentificationTypes();
+                _notificationService.ShowSuccess("Tipo de identificación creado exitosamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(IdentificationTypeUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(IdentificationTypeUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadIdentificationTypes();
+            try
+            {
+                await LoadIdentificationTypes();
+                _notificationService.ShowSuccess("Tipo de identificación actualizado exitosamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(IdentificationTypeDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(IdentificationTypeDeleteMessage message, CancellationToken cancellationToken)
         {
-            return LoadIdentificationTypes();
+            try
+            {
+                await LoadIdentificationTypes();
+                _notificationService.ShowSuccess("Tipo de identificación eliminado exitosamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public bool CanDeleteIdentificationType

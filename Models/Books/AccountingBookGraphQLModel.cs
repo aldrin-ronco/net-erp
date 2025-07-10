@@ -10,11 +10,15 @@ namespace Models.Books
     {
         public int Id { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public bool IsChecked { get; set; } 
         public override string ToString()
         {
             return Name;
         }
+    }
+
+    public class AccountingBookDTO: AccountingBookGraphQLModel
+    {
+        public bool IsChecked { get; set; } = false;
     }
 
     public class AccountingBookCreateMessage

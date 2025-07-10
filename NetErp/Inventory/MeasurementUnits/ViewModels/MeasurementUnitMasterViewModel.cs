@@ -3,7 +3,6 @@ using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using DTOLibrary.Books;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Inventory;

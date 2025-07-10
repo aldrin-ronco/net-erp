@@ -35,6 +35,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         #region Properties
 
         public readonly IGenericDataAccess<SupplierGraphQLModel> SupplierService = IoC.Get<IGenericDataAccess<SupplierGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public SupplierViewModel Context { get; private set; }
 
         private ICommand checkRowCommand;
@@ -409,7 +410,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            //_ = Task.Run(() => LoadSuppliers());
         }
 
         public async Task ExecuteEditSupplier()
@@ -417,21 +417,50 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             await Context.ActivateDetailViewForEdit(SelectedSupplier);
         }
 
-        public Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(message.Suppliers)));
+            try
+            {
+                await LoadSuppliers();
+                _notificationService.ShowSuccess("Proveedor creado correctamente", "Éxito");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(message.Suppliers)));
+            try
+            {
+                await LoadSuppliers();
+                _notificationService.ShowSuccess("Proveedor actualizado correctamente", "Éxito");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public Task HandleAsync(SupplierDeleteMessage message, CancellationToken cancellationToken)
         {
-            SupplierDTO supplierToDelete = Suppliers.First(s => s.Id == message.DeletedSupplier.Id);
-            if (supplierToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Suppliers.Remove(supplierToDelete));
-            return LoadSuppliers();
+            try
+            {
+                SupplierDTO supplierToDelete = Suppliers.First(s => s.Id == message.DeletedSupplier.Id);
+                if (supplierToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Suppliers.Remove(supplierToDelete));
+                _notificationService.ShowSuccess("Proveedor eliminado correctamente", "Éxito");
+                return LoadSuppliers();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         protected override void OnViewReady(object view)
@@ -443,7 +472,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
-        {
+        {       
             return LoadSuppliers();
         }
 

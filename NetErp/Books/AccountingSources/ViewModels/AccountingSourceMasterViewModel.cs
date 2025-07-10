@@ -25,6 +25,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
     public class AccountingSourceMasterViewModel : Screen, IHandle<AccountingSourceCreateMessage>, IHandle<AccountingSourceUpdateMessage>, IHandle<AccountingSourceDeleteMessage>
     {
         public readonly IGenericDataAccess<AccountingSourceGraphQLModel> AccountingSourceService = IoC.Get<IGenericDataAccess<AccountingSourceGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         // Context
         private AccountingSourceViewModel _context;
         public AccountingSourceViewModel Context
@@ -689,19 +690,49 @@ namespace NetErp.Books.AccountingSources.ViewModels
             return true;
         }
 
-        public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingSources = [.. Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)]);
+            try
+            {
+                await LoadAccountingSources();
+                _notificationService.ShowSuccess("Fuente contable creada correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(AccountingSourceUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingSourceUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(AccountingSources = [.. Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(message.AccountingSources)]);
+            try
+            {
+                await LoadAccountingSources();
+                _notificationService.ShowSuccess("Fuente contable actualizada correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public async Task HandleAsync(AccountingSourceDeleteMessage message, CancellationToken cancellationToken)
         {
-            await LoadAccountingSources();
+            try
+            {
+                await LoadAccountingSources();
+                _notificationService.ShowSuccess("Fuente contable eliminada correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         #endregion

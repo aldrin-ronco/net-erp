@@ -17,7 +17,7 @@
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" FontFamily="Century Gothic">
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/> <!--ToolbarTray-->
@@ -155,9 +155,9 @@
                     <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.Info, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15"/>
 
                 <!--Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"-->
-                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Anulado Por" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"/>
+                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Anulado Por" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != &quot;&quot;'}"/>
                 <!--Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"-->
-                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.CancelledBy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != \'\')'}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Path=SelectedAccountingEntryMaster.CancelledBy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Padding="3" FontSize="15" Visibility="{c:Binding '(SelectedAccountingEntryMaster.State != &quot;&quot;'}"/>
 
                     <!--Columna 3-->
                     <TextBlock Grid.Row="0" Grid.Column="3" Text="Débito" VerticalAlignment="Center" Padding="3" FontSize="15" FontWeight="DemiBold"/>

@@ -82,7 +82,7 @@
                                            Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
                                            LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
                                            Description="Creates a new document."
-                                           Hint="Guardda los cambios realizados"    
+                                           Hint="Guarda los cambios realizados"    
                                            IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                            RibbonStyle="Large">
                                 <dxmvvm:Interaction.Behaviors>

@@ -203,7 +203,7 @@ namespace NetErp.Global.MainMenu.ViewModels
         {
             try
             {
-                AccountingPresentationsViewModel instance = IoC.Get<AccountingPresentationsViewModel>();
+                AccountingPresentationViewModel instance = IoC.Get<AccountingPresentationViewModel>();
                 instance.DisplayName = "Presentaciones contables";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);

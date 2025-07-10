@@ -22,6 +22,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
     public class CreditLimitMasterViewModel: Screen,
         IHandle<CreditLimitManagerMessage>
     {
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public IGenericDataAccess<CreditLimitGraphQLModel> CreditLimitService = IoC.Get<IGenericDataAccess<CreditLimitGraphQLModel>>();
         public class CreditLimitDTO: PropertyChangedBase
         {
@@ -512,6 +513,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
             ShadowCreditLimits.Clear();
             NotifyOfPropertyChange(nameof(CanSave));
+            _notificationService.ShowSuccess("Guardado exitoso");
             return Task.CompletedTask;
         }
     }
