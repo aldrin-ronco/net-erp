@@ -1,12 +1,341 @@
-﻿using System;
+﻿using Caliburn.Micro;
+using Common.Extensions;
+using Common.Helpers;
+using Common.Interfaces;
+using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
+using Models.Books;
+using Models.Global;
+using Ninject.Activation;
+using Services.Books.DAL.PostgreSQL;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Dynamic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace NetErp.Books.TaxType.ViewModels
 {
-    class TaxTypeMasterViewModel
+   public class TaxTypeMasterViewModel : Screen,
+         IHandle<TaxTypeDeleteMessage>,
+        IHandle<TaxTypeUpdateMessage>,
+        IHandle<TaxTypeCreateMessage>
     {
+        public TaxTypeViewModel Context { get; set; }
+        public IGenericDataAccess<TaxTypeGraphQLModel> TaxTypeService { get; set; } = IoC.Get<IGenericDataAccess<TaxTypeGraphQLModel>>();
+
+        public TaxTypeMasterViewModel(TaxTypeViewModel context)
+        {
+            Context = context;
+            Context.EventAggregator.SubscribeOnUIThread(this);
+            _ = Task.Run(() => InitializeAsync());
+        }
+
+        public async Task InitializeAsync()
+        {
+            _ = Task.Run(this.LoadTaxTypes);
+           
+        }
+        protected override void OnViewAttached(object view, object context)
+        {
+            base.OnViewAttached(view, context);
+
+        }
+
+        private bool _isBusy;
+
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
+        // Filtro de busqueda
+        private string _filterSearch = "";
+        public string FilterSearch
+        {
+            get { return _filterSearch; }
+            set
+            {
+                if (_filterSearch != value)
+                {
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+                    if (string.IsNullOrEmpty(value) || value.Length >= 2)
+                    {
+                        _ = Task.Run(this.LoadTaxTypes);
+                    }
+                    ;
+                }
+            }
+        }
+        private ObservableCollection<TaxTypeGraphQLModel> _taxTypes;
+
+        public ObservableCollection<TaxTypeGraphQLModel> TaxTypes
+        {
+            get { return _taxTypes; }
+            set
+            {
+                if (_taxTypes != value)
+                {
+                    _taxTypes = value;
+                    NotifyOfPropertyChange(nameof(TaxTypes));
+                }
+            }
+        }
+        private TaxTypeGraphQLModel? _selectedTaxTypeGraphQLModel;
+        public TaxTypeGraphQLModel? SelectedTaxTypeGraphQLModel
+        {
+            get { return _selectedTaxTypeGraphQLModel; }
+            set
+            {
+                if (_selectedTaxTypeGraphQLModel != value)
+                {
+                    _selectedTaxTypeGraphQLModel = value;
+                    NotifyOfPropertyChange(nameof(CanDeleteTaxType));
+                    NotifyOfPropertyChange(nameof(SelectedTaxTypeGraphQLModel));
+                }
+            }
+        }
+
+        #region Command
+        private ICommand _newCommand;
+
+        public ICommand NewCommand
+        {
+            get
+            {
+                if (_newCommand is null) _newCommand = new AsyncCommand(NewAsync);
+                return _newCommand;
+            }
+        }
+        private ICommand _deleteTaxTypeCommand;
+        public ICommand DeleteTaxTypeCommand
+        {
+            get
+            {
+                if (_deleteTaxTypeCommand is null) _deleteTaxTypeCommand = new AsyncCommand(DeleteTaxType, CanDeleteTaxType);
+                return _deleteTaxTypeCommand;
+            }
+        }
+        #endregion
+        public bool CanDeleteTaxType { 
+            get
+            {
+                if (SelectedTaxTypeGraphQLModel is null) return false;
+                return true;
+            }
+        }
+        public async Task NewAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "NewtTaxTypeEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+       
+
+
+
+        public async Task DeleteTaxType()
+        {
+            try
+            {
+                IsBusy = true;
+                int id = SelectedTaxTypeGraphQLModel.Id;
+
+                string query = @"
+                query($id:Int!) {
+                  CanDeleteModel: canDeleteTaxType(id:$id) {
+                    canDelete
+                    message
+                  }
+                }";
+                object variables = new { Id = id };
+
+                var validation = await this.TaxTypeService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedTaxTypeGraphQLModel.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+
+                Refresh();
+                var deletedTaxType = await ExecuteDeleteTaxType(id);
+
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeDeleteMessage() { DeletedTaxType = deletedTaxType });
+                
+                // Desactivar opcion de eliminar registros
+                NotifyOfPropertyChange(nameof(CanDeleteTaxType));
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                if (graphQLError != null && currentMethod != null)
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteTaxType" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task<TaxTypeGraphQLModel> ExecuteDeleteTaxType(int id)
+        {
+            try
+            {
+                string query = @"
+                mutation ($id: Int!) {
+                  DeleteResponse: deleteTaxType(id: $id) {
+                    id
+                  }
+                }";
+                object variables = new { Id = id };
+                var deletedTaxType = await this.TaxTypeService.Delete(query, variables);
+                this.SelectedTaxTypeGraphQLModel = null;
+                return deletedTaxType;
+            }
+
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+        }
+        public async Task LoadTaxTypes()
+        {
+            try
+            {
+                IsBusy = true;
+                string query = Context.listquery;
+
+                dynamic variables = new ExpandoObject();
+                variables.filter = new ExpandoObject();
+
+                variables.filter.or = new ExpandoObject[]
+                {
+                    new(),
+                    new()
+                };
+
+                variables.filter.or[0].name = new ExpandoObject();
+                variables.filter.or[0].name.@operator = "like";
+                variables.filter.or[0].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                variables.filter.or[1].prefix = new ExpandoObject();
+                variables.filter.or[1].prefix.@operator = "like";
+                variables.filter.or[1].prefix.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+
+                var result = await TaxTypeService.GetList(query, variables);
+                ObservableCollection<TaxTypeGraphQLModel> source = new(result);
+                this.TaxTypes = this.Context.AutoMapper.Map<ObservableCollection<TaxTypeGraphQLModel>>(source);
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        public async Task EditTaxType()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+
+                SelectedTaxTypeGraphQLModel = null;
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EditTaxType" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+        public async Task ExecuteActivateDetailViewForEdit()
+        {
+            await Context.ActivateDetailViewForEdit(SelectedTaxTypeGraphQLModel);
+        }
+
+        public Task HandleAsync(TaxTypeDeleteMessage message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                TaxTypeGraphQLModel taxTypeToDelete = TaxTypes.First(c => c.Id == message.DeletedTaxType.Id);
+                if (taxTypeToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => TaxTypes.Remove(taxTypeToDelete));
+                return LoadTaxTypes();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public Task HandleAsync(TaxTypeUpdateMessage message, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(TaxTypes = new ObservableCollection<TaxTypeGraphQLModel>(message.TaxTypes));
+        }
+
+        public Task HandleAsync(TaxTypeCreateMessage message, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(TaxTypes = new ObservableCollection<TaxTypeGraphQLModel>(message.TaxTypes));
+        }
     }
 }

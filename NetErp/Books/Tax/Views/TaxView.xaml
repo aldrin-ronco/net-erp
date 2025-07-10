@@ -6,7 +6,5 @@
              xmlns:local="clr-namespace:NetErp.Books.Tax.Views"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
-    </Grid>
+    <ContentControl x:Name="ActiveItem" Width="auto" Height="auto"/>
 </UserControl>

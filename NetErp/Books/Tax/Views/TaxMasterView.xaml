@@ -4,9 +4,172 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Books.Tax.Views"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:cal="http://caliburnmicro.com"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
-    </Grid>
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+            xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+            xmlns:config="clr-namespace:Common.Config;assembly=Common"
+              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+            xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             d:DesignHeight="450" d:DesignWidth="800"
+              FontFamily="Century Gothic"
+             
+             >
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                     IsBusy="{Binding IsBusy}"
+                     IndicatorType="BouncingDot"
+                     BusyContent="Please wait..."
+                     BusyContentMargin="0,20,0,0"
+                     IsBusyAtStartup="False">
+        <Grid >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <dxr:RibbonControl Grid.Column="0" 
+            IsSimplified="False" 
+            Grid.Row="0" 
+            AllowSimplifiedRibbon="True" 
+            ShowApplicationButton="False" 
+            ToolbarShowMode="Hide" 
+            RibbonStyle="Office2010" 
+            ToolbarShowCustomizationButton="False" 
+            RibbonTitleBarVisibility="Collapsed" 
+            VerticalAlignment="Center">
+                <dxr:RibbonPage Caption="General">
+                    <dxr:RibbonPageGroup Caption="Acciones">
+
+                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                            LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
+                            Content="Nuevo"
+                           RibbonStyle="Large"
+                           IsEnabled="{Binding Path=IsBusy, 
+                                               Mode=OneWay, 
+                                               UpdateSourceTrigger=PropertyChanged, 
+                                               Converter={dxmvvm:BooleanToVisibilityConverter 
+                                               Inverse=True}}"
+                           Hint="Nuevo ">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=NewCommand}" 
+                               EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+
+                        <dxb:BarItemSeparator/>
+                        <dxb:BarButtonItem Content="Eliminar" 
+                        Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                        LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
+                        Description="Eliminar"
+                        Hint="Eliminar Impuesto"    
+                        IsEnabled="{Binding Path=CanDeleteTax, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                        RibbonStyle="Large">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteTaxCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+
+                        <dxb:BarItemLinkSeparator/>
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonControl>
+            <StackPanel Grid.Row="1"  Orientation="Vertical" Margin="10 5 10 5">
+                <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 2"/>
+                <dxe:TextEdit x:Name="FilterSearch"
+                EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
+                ShowNullTextForEmptyValue="True"
+                ShowNullTextIfFocused="True"
+                EditValuePostMode="Delayed"
+                CharacterCasing="Upper"
+                FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                EditValuePostDelay="1000"/>
+            </StackPanel>
+
+            <dxe:CheckEdit Grid.Row="2" Content="Mostrar unicamente autorizaciones activas" Style="{StaticResource BlueCheckedTextStyle}"
+                           IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxg:GridControl Grid.Row="3" Margin="0 10 0 0"
+                                           
+                EnableSmartColumnsGeneration="True"
+                SelectedItem="{Binding Path=SelectedTaxGraphQLModel, 
+                Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding Path=Taxs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             >
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowCascadeUpdate="False" 
+                               EnableSelectedRowAppearance="True"
+                               ShowGroupPanel="False" 
+                               AllowColumnMoving="False" 
+                               ColumnFilterPopupMode="Disabled"
+                               AllowSorting="False" 
+                               AllowColumnFiltering="False"
+                         AlternateRowBackground="Beige"/>
+
+                </dxg:GridControl.View>
+
+
+
+                <dxg:GridColumn Header="Nombre" Width="auto" HorizontalHeaderContentAlignment="Center"
+                 Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header="Margen" Width="auto" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding Margin, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header="Tipo" Width="auto" HorizontalHeaderContentAlignment="Center"
+                    Binding="{Binding TaxType.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Fórmula" Width="auto" HorizontalHeaderContentAlignment="Center"
+                Binding="{Binding Formula, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Fórmula Alternativa" Width="auto" HorizontalHeaderContentAlignment="Center"
+                    Binding="{Binding AlternativeFormula, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Cuenta de Impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
+                    Binding="{Binding GeneratedTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <dxg:GridColumn Header="Cuenta de reembolso de impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
+      Binding="{Binding GeneratedTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+
+                <dxg:GridColumn Header="Cuenta fiscal deducible" Width="auto" HorizontalHeaderContentAlignment="Center"
+      Binding="{Binding DeductibleTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+
+                <dxg:GridColumn Header="Cuenta de reembolso de impuestos deducible" Width="auto" HorizontalHeaderContentAlignment="Center"
+      Binding="{Binding DeductibleTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
+
+
+                
+                <dxg:GridColumn Header=""
+     Width="45"
+     HorizontalHeaderContentAlignment="Center">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button
+            BorderThickness="0"
+            Padding="3"
+            Margin="3"
+            Width="auto" Height="auto" 
+            cal:Message.Attach="[Event Click] = [Action EditTax]">
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+            <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+               HorizontalAlignment="Stretch" 
+               ChangedIndexCommand="{Binding PaginationCommand}" 
+               PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+               TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+               ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+    </busyIndicator:BusyMask>
 </UserControl>
