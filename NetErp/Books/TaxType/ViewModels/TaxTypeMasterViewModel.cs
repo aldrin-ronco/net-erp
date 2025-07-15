@@ -4,6 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Data.Native;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
@@ -253,7 +254,24 @@ namespace NetErp.Books.TaxType.ViewModels
             try
             {
                 IsBusy = true;
-                string query = Context.listquery;
+                string query = @"
+			    query($filter : TaxTypeFilterInput!){
+     
+                   ListResponse : taxTypes(filter : $filter){
+        
+                       id
+                       name
+                      generatedTaxAccountIsRequired
+                      generatedTaxRefundAccountIsRequired
+                      deductibleTaxAccountIsRequired
+                      deductibleTaxRefundAccountIsRequired
+                      prefix
+      
+      
+                    }
+       
+                }
+                ";
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -315,13 +333,12 @@ namespace NetErp.Books.TaxType.ViewModels
             await Context.ActivateDetailViewForEdit(SelectedTaxTypeGraphQLModel);
         }
 
-        public Task HandleAsync(TaxTypeDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(TaxTypeDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                TaxTypeGraphQLModel taxTypeToDelete = TaxTypes.First(c => c.Id == message.DeletedTaxType.Id);
-                if (taxTypeToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => TaxTypes.Remove(taxTypeToDelete));
-                return LoadTaxTypes();
+                await LoadTaxTypes();
+                _notificationService.ShowSuccess("El tipo de impuesto fue eliminado correctamente");
             }
             catch (Exception)
             {
@@ -329,9 +346,10 @@ namespace NetErp.Books.TaxType.ViewModels
             }
         }
 
-        public Task HandleAsync(TaxTypeUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(TaxTypeUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(TaxTypes = new ObservableCollection<TaxTypeGraphQLModel>(message.TaxTypes));
+            await LoadTaxTypes();
+            _notificationService.ShowSuccess("El tipo de impuesto fue actualizado correctamente");
         }
 
         public async Task HandleAsync(TaxTypeCreateMessage message, CancellationToken cancellationToken)

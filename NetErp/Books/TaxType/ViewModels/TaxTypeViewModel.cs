@@ -29,24 +29,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 return _taxTypeMasterViewModel;
             }
         }
-        public string listquery = @"
-			    query($filter : TaxTypeFilterInput!){
-     
-                   ListResponse : taxTypes(filter : $filter){
-        
-                       id
-                       name
-                      generatedTaxAccountIsRequired
-                      generatedTaxRefundAccountIsRequired
-                      deductibleTaxAccountIsRequired
-                      deductibleTaxRefundAccountIsRequired
-                      prefix
-      
-      
-                    }
        
-                }
-                ";
         public TaxTypeViewModel(IMapper mapper, IEventAggregator eventAggregator)
         {
             AutoMapper = mapper;

@@ -29,6 +29,7 @@ namespace NetErp.Books.Tax.ViewModels
     {
         public TaxViewModel Context { get; set; }
         public IGenericDataAccess<TaxGraphQLModel> TaxService { get; set; } = IoC.Get<IGenericDataAccess<TaxGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         public TaxMasterViewModel(TaxViewModel context)
         {
@@ -429,7 +430,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             try
             {
-
+                _notificationService.ShowSuccess("El  impuesto fue eliminado correctamente");
                 return LoadTaxs();
             }
             catch (Exception)
@@ -442,7 +443,9 @@ namespace NetErp.Books.Tax.ViewModels
         {
             try
             {
+                _notificationService.ShowSuccess("El  impuesto fue creado correctamente");
                 return LoadTaxs();
+               
             }
             catch (Exception)
             {
@@ -454,7 +457,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             try
             {
-
+                _notificationService.ShowSuccess("El  impuesto fue actualizado correctamente");
                 return LoadTaxs();
             }
             catch (Exception)

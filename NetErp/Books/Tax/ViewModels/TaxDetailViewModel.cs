@@ -75,11 +75,11 @@ namespace NetErp.Books.Tax.ViewModels
             AlternativeFormula = entity.AlternativeFormula;
             IsActive = entity.IsActive;
             SelectedTaxTypeGraphQLModel = TaxTypes.FirstOrDefault(f => f.Id == entity.TaxType.Id);
-
-            SelectedGeneratedTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.GeneratedTaxAccount.Id);
-            SelectedGeneratedTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.GeneratedTaxRefundAccount.Id);
-            SelectedDeductibleTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.DeductibleTaxAccount.Id);
-            SelectedDeductibleTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.DeductibleTaxRefundAccount.Id);
+            if (entity.GeneratedTaxAccount != null) { SelectedGeneratedTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.GeneratedTaxAccount.Id);  } 
+            if (entity.GeneratedTaxRefundAccount != null) { SelectedGeneratedTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.GeneratedTaxRefundAccount.Id); }
+            if (entity.DeductibleTaxAccount != null) { SelectedDeductibleTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.DeductibleTaxAccount.Id); }
+            if (entity.DeductibleTaxRefundAccount != null) { SelectedDeductibleTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.DeductibleTaxRefundAccount.Id); }
+            
         }
         private TaxViewModel _context;
         public TaxViewModel Context
@@ -718,15 +718,16 @@ namespace NetErp.Books.Tax.ViewModels
 
                 AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
                 AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
-                if (IsNewRecord)
-                {
-                    SelectedGeneratedTaxAccount = AccountingAccountOperations.First(f => f.Id == 0);
-                    SelectedDeductibleTaxAccount = AccountingAccountOperations.First(f => f.Id == 0);
+                
+                SelectedGeneratedTaxAccount = Entity?.GeneratedTaxAccount !=null ? AccountingAccountOperations.First(f => f.Id == Entity?.GeneratedTaxAccount.Id) :   AccountingAccountOperations.First(f => f.Id == 0);
+                SelectedDeductibleTaxAccount = Entity?.DeductibleTaxAccount != null ? AccountingAccountOperations.First(f => f.Id == Entity?.DeductibleTaxAccount.Id) : AccountingAccountOperations.First(f => f.Id == 0);
 
-                    SelectedGeneratedTaxRefundAccount = AccountingAccountDevolutions.First(f => f.Id == 0);
-                    SelectedDeductibleTaxRefundAccount = AccountingAccountDevolutions.First(f => f.Id == 0);
+                SelectedGeneratedTaxRefundAccount = Entity?.GeneratedTaxRefundAccount != null ? AccountingAccountDevolutions.First(f => f.Id == Entity?.GeneratedTaxRefundAccount.Id) : AccountingAccountDevolutions.First(f => f.Id == 0);
+                SelectedDeductibleTaxRefundAccount = Entity?.DeductibleTaxRefundAccount != null ? AccountingAccountDevolutions.First(f => f.Id == Entity?.DeductibleTaxRefundAccount.Id) : AccountingAccountDevolutions.First(f => f.Id == 0);
 
-                }
+
+               
+               
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

@@ -347,14 +347,14 @@ namespace NetErp.Books.TaxType.ViewModels
                 IsBusy = true;
                 Refresh();
                 TaxTypeGraphQLModel result = await ExecuteSave();
-                var TaxTypes = await LoadList();
+               
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeCreateMessage() { CreatedTaxType = result, TaxTypes = TaxTypes });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeCreateMessage() { CreatedTaxType = result });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeUpdateMessage() { UpdatedTaxType = result, TaxTypes = TaxTypes });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeUpdateMessage() { UpdatedTaxType = result });
                 }
                 // Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewModelAsync();
@@ -395,19 +395,7 @@ namespace NetErp.Books.TaxType.ViewModels
             }
 
         }
-        public async Task<ObservableCollection<TaxTypeGraphQLModel>> LoadList()
-        {
-            string query = Context.listquery;
-
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-
-
-            var result = await TaxTypeService.GetList(query, variables);
-            ObservableCollection<TaxTypeGraphQLModel> source = this.Context.AutoMapper.Map<ObservableCollection<TaxTypeGraphQLModel>>(result);
-            
-            return source;
-        }
+       
         private async Task<TaxTypeGraphQLModel> CreateAsync(dynamic variables)
         {
             try
