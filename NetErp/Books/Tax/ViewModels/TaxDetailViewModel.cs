@@ -34,6 +34,7 @@ namespace NetErp.Books.Tax.ViewModels
     {
         public readonly IGenericDataAccess<TaxGraphQLModel> TaxService = IoC.Get<IGenericDataAccess<TaxGraphQLModel>>();
 
+
         public TaxDetailViewModel(TaxViewModel context, TaxGraphQLModel? entity)
         {
 
@@ -60,6 +61,7 @@ namespace NetErp.Books.Tax.ViewModels
         public async Task InitializeAsync()
         {
             await LoadListAsync();
+            IsActive = true;
             if (Entity != null)
             {
                 SetUpdateProperties(Entity);
@@ -73,10 +75,11 @@ namespace NetErp.Books.Tax.ViewModels
             AlternativeFormula = entity.AlternativeFormula;
             IsActive = entity.IsActive;
             SelectedTaxTypeGraphQLModel = TaxTypes.FirstOrDefault(f => f.Id == entity.TaxType.Id);
-            SelectedGeneratedTaxAccount = AccountingAccounts.FirstOrDefault(f => f.Id == entity.GeneratedTaxAccount.Id);
-            SelectedGeneratedTaxRefundAccount = AccountingAccounts.FirstOrDefault(f => f.Id == entity.GeneratedTaxRefundAccount.Id);
-            SelectedDeductibleTaxAccount = AccountingAccounts.FirstOrDefault(f => f.Id == entity.DeductibleTaxAccount.Id);
-            SelectedDeductibleTaxRefundAccount = AccountingAccounts.FirstOrDefault(f => f.Id == entity.DeductibleTaxRefundAccount.Id);
+
+            SelectedGeneratedTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.GeneratedTaxAccount.Id);
+            SelectedGeneratedTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.GeneratedTaxRefundAccount.Id);
+            SelectedDeductibleTaxAccount = AccountingAccountOperations.FirstOrDefault(f => f.Id == entity.DeductibleTaxAccount.Id);
+            SelectedDeductibleTaxRefundAccount = AccountingAccountDevolutions.FirstOrDefault(f => f.Id == entity.DeductibleTaxRefundAccount.Id);
         }
         private TaxViewModel _context;
         public TaxViewModel Context
@@ -105,17 +108,31 @@ namespace NetErp.Books.Tax.ViewModels
                 }
             }
         }
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountOperations;
 
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountOperations
         {
-            get { return _accountingAccounts; }
+            get { return _accountingAccountOperations; }
             set
             {
-                if (_accountingAccounts != value)
+                if (_accountingAccountOperations != value)
                 {
-                    _accountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccounts));
+                    _accountingAccountOperations = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountOperations));
+                }
+            }
+        }
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountDevolutions;
+
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountDevolutions
+        {
+            get { return _accountingAccountDevolutions; }
+            set
+            {
+                if (_accountingAccountDevolutions != value)
+                {
+                    _accountingAccountDevolutions = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountDevolutions));
                 }
             }
         }
@@ -143,6 +160,13 @@ namespace NetErp.Books.Tax.ViewModels
                 {
                     _selectedTaxTypeGraphQLModel = value;
                     NotifyOfPropertyChange(nameof(SelectedTaxTypeGraphQLModel));
+                    NotifyOfPropertyChange(nameof(IsEnabledSelectedGeneratedTaxAccount));
+                    NotifyOfPropertyChange(nameof(IsEnabledSelectedGeneratedTaxRefundAccount));
+                    NotifyOfPropertyChange(nameof(IsEnabledSelectedDeductibleTaxAccount));
+                    NotifyOfPropertyChange(nameof(IsEnabledSelectedDeductibleTaxRefundAccount));
+                    ValidateProperties();
+                    NotifyOfPropertyChange(nameof(CanSave));
+
                 }
             }
         }
@@ -151,7 +175,7 @@ namespace NetErp.Books.Tax.ViewModels
 
 
         private string _name;
-        private decimal _margin;
+        private decimal? _margin;
         private AccountingAccountGraphQLModel _selectedGeneratedTaxAccount;
         private AccountingAccountGraphQLModel _selectedGeneratedTaxRefundAccount;
         private AccountingAccountGraphQLModel _selectedDeductibleTaxAccount;
@@ -169,11 +193,12 @@ namespace NetErp.Books.Tax.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
-
+                    ValidateProperty(nameof(Name), Name);
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
-        public decimal Margin
+        public decimal? Margin
         {
             get { return _margin; }
             set
@@ -181,7 +206,9 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_margin != value)
                 {
                     _margin = value;
+                    ValidateProperty(nameof(Margin), Margin);
                     NotifyOfPropertyChange(nameof(Margin));
+                    NotifyOfPropertyChange(nameof(CanSave));
 
                 }
             }
@@ -194,8 +221,9 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_selectedGeneratedTaxAccount != value)
                 {
                     _selectedGeneratedTaxAccount = value;
+                    ValidateProperty(nameof(SelectedGeneratedTaxAccount), SelectedGeneratedTaxAccount.Id);
                     NotifyOfPropertyChange(nameof(SelectedGeneratedTaxAccount));
-
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -207,6 +235,7 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_selectedGeneratedTaxRefundAccount != value)
                 {
                     _selectedGeneratedTaxRefundAccount = value;
+                    ValidateProperty(nameof(SelectedGeneratedTaxRefundAccount), SelectedGeneratedTaxRefundAccount.Id);
                     NotifyOfPropertyChange(nameof(SelectedGeneratedTaxRefundAccount));
 
                 }
@@ -220,6 +249,8 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_selectedDeductibleTaxAccount != value)
                 {
                     _selectedDeductibleTaxAccount = value;
+                    ValidateProperty(nameof(SelectedDeductibleTaxAccount), SelectedDeductibleTaxAccount.Id);
+                    NotifyOfPropertyChange(nameof(CanSave));
                     NotifyOfPropertyChange(nameof(SelectedDeductibleTaxAccount));
 
                 }
@@ -233,12 +264,19 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_selectedDeductibleTaxRefundAccount != value)
                 {
                     _selectedDeductibleTaxRefundAccount = value;
+                    ValidateProperty(nameof(SelectedDeductibleTaxRefundAccount), SelectedDeductibleTaxRefundAccount.Id);
+                    NotifyOfPropertyChange(nameof(CanSave));
                     NotifyOfPropertyChange(nameof(SelectedDeductibleTaxRefundAccount));
 
                 }
             }
         }
-       
+
+        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
+        public bool IsEnabledSelectedGeneratedTaxAccount => (SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel?.Id >  0 &&  SelectedTaxTypeGraphQLModel.GeneratedTaxAccountIsRequired.Equals(true));
+        public bool IsEnabledSelectedGeneratedTaxRefundAccount => (SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel?.Id > 0 && SelectedTaxTypeGraphQLModel.GeneratedTaxRefundAccountIsRequired.Equals(true) && SelectedTaxTypeGraphQLModel.GeneratedTaxAccountIsRequired.Equals(true));
+        public bool IsEnabledSelectedDeductibleTaxAccount => (SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel?.Id > 0 && SelectedTaxTypeGraphQLModel.DeductibleTaxAccountIsRequired.Equals(true));
+        public bool IsEnabledSelectedDeductibleTaxRefundAccount => (SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel?.Id > 0 && SelectedTaxTypeGraphQLModel.DeductibleTaxRefundAccountIsRequired.Equals(true) && SelectedTaxTypeGraphQLModel.DeductibleTaxAccountIsRequired.Equals(true));
 
 
         public bool IsActive
@@ -262,6 +300,7 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_formula != value)
                 {
                     _formula = value;
+
                     NotifyOfPropertyChange(nameof(Formula));
 
                 }
@@ -275,6 +314,7 @@ namespace NetErp.Books.Tax.ViewModels
                 if (_alternativeFormula != value)
                 {
                     _alternativeFormula = value;
+
                     NotifyOfPropertyChange(nameof(AlternativeFormula));
 
                 }
@@ -327,8 +367,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             return !IsBusy;
         }
-        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
-
+      
         public bool IsNewRecord
         {
             get { return _isNewRecord; }
@@ -508,14 +547,17 @@ namespace NetErp.Books.Tax.ViewModels
         private void ValidateProperties()
         {
             ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Margin), Margin);
+            ValidateProperty(nameof(SelectedTaxTypeGraphQLModel), SelectedTaxTypeGraphQLModel?.Id);
             ValidateProperty(nameof(SelectedGeneratedTaxAccount), SelectedGeneratedTaxAccount?.Id);
-
-            //ValidateProperty(nameof(GeneratedTaxRefundAccountId), GeneratedTaxRefundAccountId);
-            //ValidateProperty(nameof(Margin), Margin);
+            ValidateProperty(nameof(SelectedGeneratedTaxRefundAccount), SelectedGeneratedTaxRefundAccount?.Id);
+            ValidateProperty(nameof(SelectedDeductibleTaxAccount), SelectedDeductibleTaxAccount?.Id);
+            ValidateProperty(nameof(SelectedDeductibleTaxRefundAccount), SelectedDeductibleTaxRefundAccount?.Id);
+          
         }
         public void CleanUpControls()
         {
-
+            
         }
         public async Task<IGenericDataAccess<TaxGraphQLModel>.PageResponseType> LoadPage()
         {
@@ -548,9 +590,40 @@ namespace NetErp.Books.Tax.ViewModels
                 ClearErrors(propertyName);
                 switch (propertyName)
                 {
+                    case nameof(SelectedTaxTypeGraphQLModel):
+                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un tipo de impuesto");
+                        break;
 
                     case nameof(SelectedGeneratedTaxAccount):
-                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un GeneratedTaxAccountId");
+                        if ((SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel.GeneratedTaxAccountIsRequired) &&  ( !value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar un GeneratedTaxAccountId");
+                        break;
+                    case nameof(SelectedGeneratedTaxRefundAccount):
+                        if ((SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel.GeneratedTaxRefundAccountIsRequired) && (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar un GeneratedTaxAccountId");
+                        break;
+                    case nameof(SelectedDeductibleTaxAccount):
+                        if ((SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel.DeductibleTaxAccountIsRequired) && (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar un GeneratedTaxAccountId");
+                        break;
+                    case nameof(SelectedDeductibleTaxRefundAccount):
+                        if ((SelectedTaxTypeGraphQLModel != null && SelectedTaxTypeGraphQLModel.DeductibleTaxRefundAccountIsRequired) &&  (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar un GeneratedTaxAccountId");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+        private void ValidateProperty(string propertyName, decimal? value)
+        {
+            try
+            {
+
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+
+                    case nameof(Margin):
+                        if (!value.HasValue || value == 0) AddError(propertyName, "El margen es requerido");
                         break;
                 }
             }
@@ -639,8 +712,21 @@ namespace NetErp.Books.Tax.ViewModels
                 variables.taxTypeFilter = new ExpandoObject();
                 TaxDataContext result = await TaxService.GetDataContext<TaxDataContext>(query, variables);
                
-                AccountingAccounts = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts)];
+                AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts)];
+                AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts)];
                 TaxTypes = [.. Context.AutoMapper.Map<ObservableCollection<TaxTypeGraphQLModel>>(result.TaxTypes)];
+
+                AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
+                AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
+                if (IsNewRecord)
+                {
+                    SelectedGeneratedTaxAccount = AccountingAccountOperations.First(f => f.Id == 0);
+                    SelectedDeductibleTaxAccount = AccountingAccountOperations.First(f => f.Id == 0);
+
+                    SelectedGeneratedTaxRefundAccount = AccountingAccountDevolutions.First(f => f.Id == 0);
+                    SelectedDeductibleTaxRefundAccount = AccountingAccountDevolutions.First(f => f.Id == 0);
+
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

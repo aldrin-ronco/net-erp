@@ -214,6 +214,7 @@ namespace NetErp.Books.Tax.ViewModels
             {
                 IsBusy = true;
                 Refresh();
+                SelectedTaxGraphQLModel = null;
                 await Task.Run(() => ExecuteActivateDetailViewForEdit());
             }
             catch (Exception ex)
@@ -441,7 +442,6 @@ namespace NetErp.Books.Tax.ViewModels
         {
             try
             {
-               
                 return LoadTaxs();
             }
             catch (Exception)

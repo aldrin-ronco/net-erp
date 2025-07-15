@@ -80,7 +80,7 @@
                     </dxr:RibbonPageGroup>
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
-            <StackPanel Grid.Row="1"  Orientation="Vertical" Margin="10 5 10 5">
+            <StackPanel Grid.Row="1"  Orientation="Vertical" Margin="0 5 10 5">
                 <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 2"/>
                 <dxe:TextEdit x:Name="FilterSearch"
                 EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -106,28 +106,38 @@
                     <dxg:TableView AllowCascadeUpdate="False" 
                                EnableSelectedRowAppearance="True"
                                ShowGroupPanel="False" 
+                                   IsColumnMenuEnabled="False"
                                AllowColumnMoving="False" 
                                ColumnFilterPopupMode="Disabled"
                                AllowSorting="False" 
                                AllowColumnFiltering="False"
-                         AlternateRowBackground="Beige"/>
-
+                         AlternateRowBackground="Beige">
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
+                                        <Setter Property="Background" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
                 </dxg:GridControl.View>
+               
+                        
+             
 
 
-
-                <dxg:GridColumn Header="Nombre" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <dxg:GridColumn Header="Nombre" Width="*" HorizontalHeaderContentAlignment="Center"
                  Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="Margen" Width="auto" HorizontalHeaderContentAlignment="Center"
-                Binding="{Binding Margin, UpdateSourceTrigger=PropertyChanged}"/>
+                
 
                 <dxg:GridColumn Header="Tipo" Width="auto" HorizontalHeaderContentAlignment="Center"
                     Binding="{Binding TaxType.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Fórmula" Width="auto" HorizontalHeaderContentAlignment="Center"
-                Binding="{Binding Formula, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Fórmula Alternativa" Width="auto" HorizontalHeaderContentAlignment="Center"
-                    Binding="{Binding AlternativeFormula, UpdateSourceTrigger=PropertyChanged}"/>
+               
                 <dxg:GridColumn Header="Cuenta de Impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
                     Binding="{Binding GeneratedTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
 

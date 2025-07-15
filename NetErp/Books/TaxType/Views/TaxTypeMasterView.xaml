@@ -65,7 +65,7 @@
             Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
             LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
             Description="Eliminar"
-            Hint="Eliminar Secuencia"    
+            Hint="Eliminar Tipo de Impuesto"    
             IsEnabled="{Binding Path=CanDeleteTaxType, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
             RibbonStyle="Large">
                             <dxmvvm:Interaction.Behaviors>
@@ -78,7 +78,7 @@
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
 
-            <StackPanel Grid.Row="1" Orientation="Vertical" Margin="10 5 10 5">
+            <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0 5 10 5">
                 <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 2"/>
                 <dxe:TextEdit x:Name="FilterSearch"
             EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -102,6 +102,7 @@
                           EnableSelectedRowAppearance="True"
                           ShowGroupPanel="False" 
                           AllowColumnMoving="False" 
+                                   IsColumnMenuEnabled="False"
                           ColumnFilterPopupMode="Disabled"
                           AllowSorting="False" 
                           AllowColumnFiltering="False"
@@ -117,15 +118,15 @@
                 <dxg:GridColumn Header="Prefijo" Width="auto" HorizontalHeaderContentAlignment="Center"
            Binding="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="Cuenta de Imp. Req" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <dxg:GridColumn Header="Impuesto Generado Requerido" Width="auto" HorizontalHeaderContentAlignment="Center"
                Binding="{Binding GeneratedTaxAccountIsRequired, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="Cuenta de reembolso Imp. Req" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <dxg:GridColumn Header="Reembolso Impuesto Generado Requerido" Width="auto" HorizontalHeaderContentAlignment="Center"
            Binding="{Binding GeneratedTaxRefundAccountIsRequired, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="deductibleTaxAccountIsRequired" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <dxg:GridColumn Header="Impuesto Descontable Requerido " Width="auto" HorizontalHeaderContentAlignment="Center"
              Binding="{Binding DeductibleTaxAccountIsRequired, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="deductibleTaxRefundAccountIsRequired" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <dxg:GridColumn Header="Reembolso Impuesto Descontable Requerido" Width="auto" HorizontalHeaderContentAlignment="Center"
             Binding="{Binding DeductibleTaxRefundAccountIsRequired, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <dxg:GridColumn Header=""

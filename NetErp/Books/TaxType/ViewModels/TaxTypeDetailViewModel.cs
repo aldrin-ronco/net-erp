@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Global.AuthorizationSequence.ViewModels;
+using NetErp.Helpers;
 using Ninject.Activation;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -58,10 +59,18 @@ namespace NetErp.Books.TaxType.ViewModels
         }
         public async Task InitializeAsync()
         {
+            CleanUpControls();
             if (Entity != null)
             {
                 SetUpdateProperties(Entity);
             }
+        }
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            this.SetFocus(() => Name);
+
+            ValidateProperties();
         }
         private TaxTypeViewModel _context;
         public TaxTypeViewModel Context
@@ -100,7 +109,8 @@ namespace NetErp.Books.TaxType.ViewModels
             DeductibleTaxRefundAccountIsRequired = entity.DeductibleTaxRefundAccountIsRequired;
         }
         private bool _isNewRecord => Entity?.Id > 0 ? false : true;
-
+        public bool IsReadOnlyGeneratedTaxRefundAccountIsRequired => GeneratedTaxAccountIsRequired.Equals(false);
+        public bool IsReadOnlyDeductibleTaxRefundAccountIsRequired => DeductibleTaxAccountIsRequired.Equals(false);
         public bool IsNewRecord
         {
             get { return _isNewRecord; }
@@ -115,7 +125,9 @@ namespace NetErp.Books.TaxType.ViewModels
                 if (_name != value)
                 {
                     _name = value;
+                    ValidateProperty(nameof(Name), Name);
                     NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
 
                 }
             }
@@ -129,8 +141,10 @@ namespace NetErp.Books.TaxType.ViewModels
                 if (_prefix != value)
                 {
                     _prefix = value;
+                    ValidateProperty(nameof(Prefix), Prefix);
                     NotifyOfPropertyChange(nameof(Prefix));
-
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(Prefix), Prefix);
                 }
             }
         }
@@ -143,7 +157,12 @@ namespace NetErp.Books.TaxType.ViewModels
                 if (_generatedTaxAccountIsRequired != value)
                 {
                     _generatedTaxAccountIsRequired = value;
+                    
                     NotifyOfPropertyChange(nameof(GeneratedTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(IsReadOnlyGeneratedTaxRefundAccountIsRequired));
+                    if (value == false) GeneratedTaxRefundAccountIsRequired = false;
+
 
                 }
             }
@@ -172,8 +191,13 @@ namespace NetErp.Books.TaxType.ViewModels
                 {
                     _deductibleTaxAccountIsRequired = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(IsReadOnlyDeductibleTaxRefundAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    if (value == false) DeductibleTaxRefundAccountIsRequired = false;
+
 
                 }
+               
             }
         }
         private bool _deductibleTaxRefundAccountIsRequired;
@@ -243,6 +267,59 @@ namespace NetErp.Books.TaxType.ViewModels
 
         }
         #endregion
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Prefix), Prefix); 
+
+        }
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                    case nameof(Prefix):
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El Prefijo no puede estar vacío");
+                        break;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+
+        }
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
         public void CleanUpControls()
         {
             Name = "";
@@ -251,13 +328,15 @@ namespace NetErp.Books.TaxType.ViewModels
             GeneratedTaxRefundAccountIsRequired = false;
             DeductibleTaxAccountIsRequired = false;
             DeductibleTaxRefundAccountIsRequired = false;
+            
+
         }
         public bool CanSave
         {
             get
             {
                  if (_errors.Count > 0) { return false; }
-
+                 if (GeneratedTaxAccountIsRequired == false && DeductibleTaxAccountIsRequired == false) { return false; }
                 return true;
             }
         }
@@ -388,5 +467,6 @@ namespace NetErp.Books.TaxType.ViewModels
                 throw;
             }
         }
+
     }
 }

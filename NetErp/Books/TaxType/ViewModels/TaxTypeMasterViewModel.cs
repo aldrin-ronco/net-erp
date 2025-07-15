@@ -29,7 +29,7 @@ namespace NetErp.Books.TaxType.ViewModels
     {
         public TaxTypeViewModel Context { get; set; }
         public IGenericDataAccess<TaxTypeGraphQLModel> TaxTypeService { get; set; } = IoC.Get<IGenericDataAccess<TaxTypeGraphQLModel>>();
-
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public TaxTypeMasterViewModel(TaxTypeViewModel context)
         {
             Context = context;
@@ -144,6 +144,7 @@ namespace NetErp.Books.TaxType.ViewModels
             {
                 IsBusy = true;
                 Refresh();
+                SelectedTaxTypeGraphQLModel = null;
                 await Task.Run(() => ExecuteActivateDetailViewForEdit());
             }
             catch (Exception ex)
@@ -333,9 +334,18 @@ namespace NetErp.Books.TaxType.ViewModels
             return Task.FromResult(TaxTypes = new ObservableCollection<TaxTypeGraphQLModel>(message.TaxTypes));
         }
 
-        public Task HandleAsync(TaxTypeCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(TaxTypeCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(TaxTypes = new ObservableCollection<TaxTypeGraphQLModel>(message.TaxTypes));
+            try
+            {
+                await LoadTaxTypes();
+                _notificationService.ShowSuccess("El tipo de impuesto fue creado correctamente");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

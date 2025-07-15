@@ -90,6 +90,8 @@
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />
                         <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="6 5 10 5"
                         Orientation="Vertical">
@@ -113,24 +115,34 @@
                          x:Name="Prefix"
  />
                     </StackPanel>
-                    <dxe:CheckEdit Content="GeneratedTaxAccountIsRequired" Grid.Row="2"
+                    <TextBlock Grid.Row="2" Text="IMPUESTO GENERADO"
+                     FontWeight="Bold"
+                     Margin="6 5 0 5" />
+                    <dxe:CheckEdit Content="Cuenta de Operación Requerida" Grid.Row="3"
                      Margin="6 5 0 5"
                      Style="{StaticResource BlueCheckedTextStyle}"
                      Padding="2"
                      IsChecked="{Binding GeneratedTaxAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <dxe:CheckEdit Content="GeneratedTaxRefundAccountIsRequired" Grid.Row="3"
+                    <dxe:CheckEdit Content="Cuenta De Devolución Requerida" Grid.Row="4"
                       Margin="6 5 0 5"
                       Style="{StaticResource BlueCheckedTextStyle}"
+                      IsReadOnly="{Binding IsReadOnlyGeneratedTaxRefundAccountIsRequired, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                       Padding="2"
+                      
                       IsChecked="{Binding GeneratedTaxRefundAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <dxe:CheckEdit Content="DeductibleTaxAccountIsRequired" Grid.Row="4"
+                    <TextBlock Grid.Row="5" Text="IMPUESTO DESCONTABLE"
+                       FontWeight="Bold"
+                       Margin="6 5 0 5" />
+                    <dxe:CheckEdit Content="Cuenta de Operación Requerida" Grid.Row="6"
                       Margin="6 5 0 5"
                       Style="{StaticResource BlueCheckedTextStyle}"
                       Padding="2"
                       IsChecked="{Binding DeductibleTaxAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <dxe:CheckEdit Content="DeductibleTaxRefundAccountIsRequired" Grid.Row="5"
+                    <dxe:CheckEdit Content="Cuenta De Devolución Requerida" Grid.Row="7"
                        Margin="6 5 0 5"
                        Style="{StaticResource BlueCheckedTextStyle}"
+                      IsReadOnly="{Binding IsReadOnlyDeductibleTaxRefundAccountIsRequired, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                        Padding="2"
                        IsChecked="{Binding DeductibleTaxRefundAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>

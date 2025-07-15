@@ -132,9 +132,11 @@
                         <TextBlock Text="Operación" Margin="0 0 0 2" />
                         <dxe:ComboBoxEdit
                         Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                        ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
                         IsTextEditable="False"
                         DisplayMember="FullName"
+                        IsEnabled="{Binding IsEnabledSelectedGeneratedTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                         EditValue="{Binding SelectedGeneratedTaxAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
@@ -142,22 +144,26 @@
                         <TextBlock Text="Devolución" Margin="0 0 0 2" />
                         <dxe:ComboBoxEdit
                         Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                        ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
                         IsTextEditable="False"
                         DisplayMember="FullName"
+                        IsEnabled="{Binding IsEnabledSelectedGeneratedTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                         EditValue="{Binding SelectedGeneratedTaxRefundAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
-                    <TextBlock Grid.Row="6" Text="IMPUESTO GENERADO"
+                    <TextBlock Grid.Row="6" Text="IMPUESTO DESCONTABLE"
                       FontWeight="Bold"
                       Margin="6 5 0 5" />
                         <StackPanel Grid.Row="7" Margin="6 5 0 5" Orientation="Vertical" >
                         <TextBlock Text="Operación" Margin="0 0 0 2" />
                         <dxe:ComboBoxEdit
                         Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                        ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
                         IsTextEditable="False"
                         DisplayMember="FullName"
+                        IsEnabled="{Binding IsEnabledSelectedDeductibleTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                         EditValue="{Binding SelectedDeductibleTaxAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
@@ -165,9 +171,11 @@
                         <TextBlock Text="Devolución" Margin="0 0 0 2" />
                         <dxe:ComboBoxEdit
                         Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                        ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
                         IsTextEditable="False"
                         DisplayMember="FullName"
+                        IsEnabled="{Binding IsEnabledSelectedDeductibleTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                         EditValue="{Binding SelectedDeductibleTaxRefundAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
