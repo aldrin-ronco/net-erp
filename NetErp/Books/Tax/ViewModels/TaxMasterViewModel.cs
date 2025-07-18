@@ -11,6 +11,7 @@ using NetErp.Books.Tax.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Net;
@@ -141,7 +142,7 @@ namespace NetErp.Books.Tax.ViewModels
             {
                 if (_filterSearch != value)
                 {
-                    _filterSearch = value;
+                    _filterSearch = value == null? "" : value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
@@ -151,17 +152,17 @@ namespace NetErp.Books.Tax.ViewModels
                 }
             }
         }
-        private ObservableCollection<TaxGraphQLModel> _Taxs;
+        private ObservableCollection<TaxGraphQLModel> _Taxes;
 
-        public ObservableCollection<TaxGraphQLModel> Taxs
+        public ObservableCollection<TaxGraphQLModel> Taxes
         {
-            get { return _Taxs; }
+            get { return _Taxes; }
             set
             {
-                if (_Taxs != value)
+                if (_Taxes != value)
                 {
-                    _Taxs = value;
-                    NotifyOfPropertyChange(nameof(Taxs));
+                    _Taxes = value;
+                    NotifyOfPropertyChange(nameof(Taxes));
                 }
             }
         }
@@ -179,8 +180,42 @@ namespace NetErp.Books.Tax.ViewModels
                 }
             }
         }
-
+        // Tiempo de respuesta
+        private string _responseTime;
+        public string ResponseTime
+        {
+            get { return _responseTime; }
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        }
         #region Command
+        /// <summary>
+        /// PaginationCommand para controlar evento
+        /// </summary>
+        private ICommand _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecuteChangeIndex, ExecuteChangeIndex);
+                return _paginationCommand;
+            }
+        }
+        private async void ExecuteChangeIndex(object parameter)
+        {
+            await LoadTaxs();
+        }
+
+        private bool CanExecuteChangeIndex(object parameter)
+        {
+            return true;
+        }
         private ICommand _newCommand;
 
         public ICommand NewCommand
@@ -323,6 +358,8 @@ namespace NetErp.Books.Tax.ViewModels
         {
             try
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 IsBusy = true;
                 string query = @"
 			    query($filter : TaxFilterInput!){
@@ -366,11 +403,11 @@ namespace NetErp.Books.Tax.ViewModels
                      new(),
                      new()
                };
-                if (FilterSearch.Length > 0)
+                if (FilterSearch?.Length > 0)
                 {
                     variables.filter.and[0].name = new ExpandoObject();
                     variables.filter.and[0].name.@operator = "like";
-                    variables.filter.and[0].name.value = FilterSearch;
+                    variables.filter.and[0].name.value = FilterSearch.Trim().RemoveExtraSpaces();
 
                 }
                 if (IsActive)
@@ -382,10 +419,12 @@ namespace NetErp.Books.Tax.ViewModels
                 }
 
                 var result = await TaxService.GetPage(query, variables);
-
-                Taxs = Context.AutoMapper.Map<ObservableCollection<TaxGraphQLModel>>(result.PageResponse.Rows);
+                stopwatch.Stop();
+                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                Taxes = Context.AutoMapper.Map<ObservableCollection<TaxGraphQLModel>>(result.PageResponse.Rows);
                 TotalCount = result.PageResponse.Count;
-                
+               
+
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

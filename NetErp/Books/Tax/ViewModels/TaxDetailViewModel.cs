@@ -414,7 +414,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             dynamic variables = new ExpandoObject();
             variables.Data = new ExpandoObject();
-            variables.Data.name = Name;
+            variables.Data.name = Name.Trim().RemoveExtraSpaces(); ;
             variables.Data.margin = Margin;
             variables.Data.formula = "Formula por definir";
             variables.Data.alternativeFormula = "AlternativeFormula por definir";

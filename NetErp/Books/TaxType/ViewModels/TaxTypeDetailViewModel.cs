@@ -102,7 +102,7 @@ namespace NetErp.Books.TaxType.ViewModels
         public void SetUpdateProperties(TaxTypeGraphQLModel entity)
         {
             Name = entity.Name;
-            Prefix = entity.Name;
+            Prefix = entity.Prefix;
             GeneratedTaxAccountIsRequired = entity.GeneratedTaxAccountIsRequired;
             GeneratedTaxRefundAccountIsRequired = entity.GeneratedTaxRefundAccountIsRequired;
             DeductibleTaxAccountIsRequired = entity.DeductibleTaxAccountIsRequired;

@@ -20,12 +20,7 @@
               FontFamily="Century Gothic"
              
              >
-    <busyIndicator:BusyMask x:Name="BusyIndicator"
-                     IsBusy="{Binding IsBusy}"
-                     IndicatorType="BouncingDot"
-                     BusyContent="Please wait..."
-                     BusyContentMargin="0,20,0,0"
-                     IsBusyAtStartup="False">
+   
         <Grid >
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -83,6 +78,7 @@
             <StackPanel Grid.Row="1"  Orientation="Vertical" Margin="0 5 10 5">
                 <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 2"/>
                 <dxe:TextEdit x:Name="FilterSearch"
+                              
                 EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
                 ShowNullTextForEmptyValue="True"
@@ -95,12 +91,19 @@
 
             <dxe:CheckEdit Grid.Row="2" Content="Mostrar unicamente autorizaciones activas" Style="{StaticResource BlueCheckedTextStyle}"
                            IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <dxg:GridControl Grid.Row="3" Margin="0 10 0 0"
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                Grid.Row="3"
+                  IsBusy="{Binding IsBusy}"
+                  IndicatorType="BouncingDot"
+                  BusyContent="Please wait..."
+                  BusyContentMargin="0,20,0,0"
+                  IsBusyAtStartup="False">
+            <dxg:GridControl  Margin="0 10 0 0"
                                            
                 EnableSmartColumnsGeneration="True"
                 SelectedItem="{Binding Path=SelectedTaxGraphQLModel, 
                 Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                ItemsSource="{Binding Path=Taxs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                ItemsSource="{Binding Path=Taxes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
              >
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" 
@@ -138,7 +141,7 @@
                 <dxg:GridColumn Header="Tipo" Width="auto" HorizontalHeaderContentAlignment="Center"
                     Binding="{Binding TaxType.Name, UpdateSourceTrigger=PropertyChanged}"/>
                
-                <dxg:GridColumn Header="Cuenta de Impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
+                <!--<dxg:GridColumn Header="Cuenta de Impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
                     Binding="{Binding GeneratedTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <dxg:GridColumn Header="Cuenta de reembolso de impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
@@ -150,7 +153,7 @@
 
 
                 <dxg:GridColumn Header="Cuenta de reembolso de impuestos deducible" Width="auto" HorizontalHeaderContentAlignment="Center"
-      Binding="{Binding DeductibleTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
+      Binding="{Binding DeductibleTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>-->
 
 
                 
@@ -173,7 +176,8 @@
                     </dxg:GridColumn.CellTemplate>
                 </dxg:GridColumn>
             </dxg:GridControl>
-            <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+        </busyIndicator:BusyMask>
+        <uc:GridPaging Grid.Row="4" Grid.Column="0" 
                HorizontalAlignment="Stretch" 
                ChangedIndexCommand="{Binding PaginationCommand}" 
                PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -181,5 +185,5 @@
                TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
-    </busyIndicator:BusyMask>
+   
 </UserControl>

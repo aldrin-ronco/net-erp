@@ -72,7 +72,7 @@ namespace NetErp.Books.TaxType.ViewModels
             {
                 if (_filterSearch != value)
                 {
-                    _filterSearch = value;
+                    _filterSearch = value == null ? "" : value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
@@ -131,6 +131,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 return _deleteTaxTypeCommand;
             }
         }
+      
         #endregion
         public bool CanDeleteTaxType { 
             get

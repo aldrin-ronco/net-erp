@@ -102,29 +102,35 @@
                          EditValue="{Binding SelectedTaxTypeGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
-                    <StackPanel Grid.Row="1" Margin="10 5 0 5" Orientation="Vertical" >
-                        <TextBlock Text="NOMBRE DEL IMPUESTO" Margin="0 0 0 2" />
-                        <dxe:TextEdit
-                         Padding="2"
-                         Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                         CharacterCasing="Upper"
-                         x:Name="Name"
-                         Margin="0 0 0 2" />
-                    </StackPanel>
-                    <StackPanel Orientation="Vertical" Margin="10 5 0 5"
-                    Grid.Row="2" Grid.Column="1">
-                        <TextBlock Text="Margen"
-                        Margin="0 0 0 2" />
-                        <dxe:SpinEdit MinValue="0" Increment="1"
-                        Padding="2"
-                        Text="{Binding Path=Margin, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                        CharacterCasing="Upper"
-                       
-                        IsFloatValue="False"
-                        MaskType="Numeric"
-                        x:Name="Margin"
-                        Margin="0 0 0 2" />
-                    </StackPanel>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="10 5 0 5" Orientation="Vertical" >
+                            <TextBlock Text="Nombre del impuesto" Margin="0 0 0 2" />
+                            <dxe:TextEdit
+                             Padding="2"
+                             Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                             CharacterCasing="Upper"
+                             x:Name="Name"
+                             Margin="0 0 0 2" />
+                         </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="10 5 0 5" Grid.Column="1">
+                            <TextBlock Text="Margen"
+                            Margin="0 0 0 2" />
+                            <dxe:SpinEdit MinValue="0" Increment="1"
+                            Padding="2"
+                            Text="{Binding Path=Margin, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            CharacterCasing="Upper"
+   
+                            IsFloatValue="False"
+                            MaskType="Numeric"
+                            x:Name="Margin"
+                            Margin="0 0 0 2" />
+                        </StackPanel>
+                    </Grid>
+                    
                     <TextBlock Grid.Row="3" Text="IMPUESTO GENERADO"
                      FontWeight="Bold"
                      Margin="6 5 0 5" />
