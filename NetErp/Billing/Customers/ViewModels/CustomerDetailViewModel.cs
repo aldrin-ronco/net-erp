@@ -645,82 +645,6 @@ namespace NetErp.Billing.Customers.ViewModels
 
         #region Methods
 
-        public async Task<IGenericDataAccess<CustomerGraphQLModel>.PageResponseType> LoadPage()
-        {
-            try
-            {
-                string queryForPage;
-                queryForPage = @"
-                query ($filter: CustomerFilterInput) {
-                  PageResponse: customerPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      creditTerm
-                      isTaxFree
-                      isActive
-                      blockingReason
-                      retainsAnyBasis
-                      sellerId      
-                      entity {
-                        id
-                        identificationNumber
-                        verificationDigit
-                        captureType
-                        searchName
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        businessName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        telephonicInformation
-                        address
-                        identificationType {
-                            id
-                            name
-                        }
-                        country {
-                          id
-                          name
-                        }
-                        department {
-                          id
-                          name
-                        }
-                        city {
-                          id
-                          name
-                        }
-                        emails {
-                          id
-                          description
-                          isCorporate
-                          sendElectronicInvoice
-                        }
-                      }
-                      retentions {
-                        id
-                        name
-                        margin
-                      }
-                    }
-                  }
-
-                }";
-
-                return await CustomerService.GetPage(queryForPage, new object { });
-            }
-            catch (Exception ex)
-            {
-
-                throw new AsyncException(innerException: ex);
-            }
-            
-        }
         public async Task Save()
         {
             try
@@ -728,14 +652,13 @@ namespace NetErp.Billing.Customers.ViewModels
                 IsBusy = true;
                 Refresh();
                 CustomerGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result), Customers = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result)});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result) , Customers = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result)});
                 }
                 Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewAsync();

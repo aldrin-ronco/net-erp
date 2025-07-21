@@ -91,8 +91,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             {
                 if (priceList.PriceListIncludeTax)
                 {
-                    TaxGraphQLModel tax = priceListDetail.CatalogItem.AccountingGroup.SellTaxes.First();
-                    priceWithoutTax = priceListDetail.Price / (1 + (tax.Margin / 100));
+                    decimal taxMargin = ExtractIvaMargin(priceListDetail, priceList);
+                    priceWithoutTax = priceListDetail.Price / (1 + (taxMargin / 100));
                 }
             }
 
@@ -107,34 +107,52 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
         {
             decimal priceWithoutDiscount = (priceListDetail.Cost / (1 - (priceListDetail.ProfitMargin / 100)));
             FormulaVariables["PRECIO_SIN_DCTO"] = priceWithoutDiscount;
-            decimal totalTax = 0;
-            if(priceList.IsTaxable && priceList.PriceListIncludeTax)
-            {
-                string pattern = string.Join("|", FormulaVariables.Keys.Select(Regex.Escape));
-                totalTax = CalculateTotalTax(priceListDetail.CatalogItem.AccountingGroup.SellTaxes ?? [], pattern);
-                priceWithoutDiscount = priceWithoutDiscount + totalTax;
-            }
+
+            string pattern = string.Join("|", FormulaVariables.Keys.Select(Regex.Escape));
+            decimal ivaValue = priceList.IsTaxable && priceList.PriceListIncludeTax ? CalculateIvaValue(GetIvaTax(priceListDetail), pattern) : 0;
+            priceWithoutDiscount += ivaValue;
+
             priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.Price), priceWithoutDiscount);
             decimal discountValue = priceWithoutDiscount * (priceListDetail.DiscountMargin / 100);
             decimal priceWithDiscount = priceWithoutDiscount - discountValue;
-            decimal profit = priceWithoutDiscount - priceListDetail.Cost - totalTax;
+            decimal profit = priceWithoutDiscount - priceListDetail.Cost - ivaValue;
             priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.MinimumPrice), priceWithDiscount);
             priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.Profit), profit);
         }
 
-        public decimal CalculateTotalTax(IEnumerable<TaxGraphQLModel> taxes, string pattern)
+        public decimal ExtractIvaMargin(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList)
         {
-            decimal totalTaxRate = 0;
-            foreach (var tax in taxes)
-            {
-                string formula = tax.Formula;
-                FormulaVariables["MARGEN_IMPUESTO"] = tax.Margin;
-                formula = Regex.Replace(formula, pattern, m => FormulaVariables[m.Value].ToString(CultureInfo.InvariantCulture));
-                decimal currentTax = Convert.ToDecimal(new DataTable().Compute(formula, null), CultureInfo.InvariantCulture);
-                totalTaxRate += currentTax;
-            }
+            if (!priceList.IsTaxable || !priceList.PriceListIncludeTax) return 0;
 
-            return totalTaxRate;
+            TaxGraphQLModel sellTax1 = priceListDetail.CatalogItem.AccountingGroup.SellTax1;
+            TaxGraphQLModel sellTax2 = priceListDetail.CatalogItem.AccountingGroup.SellTax2;
+
+            if (sellTax1 != null && sellTax1.TaxType != null && sellTax1.TaxType.Prefix == "IVA") return sellTax1.Margin;
+            if (sellTax2 != null && sellTax2.TaxType != null && sellTax2.TaxType.Prefix == "IVA") return sellTax2.Margin;
+
+            return 0;
+        }
+
+        public TaxGraphQLModel? GetIvaTax(PriceListDetailDTO priceListDetail)
+        {
+            TaxGraphQLModel? sellTax1 = priceListDetail.CatalogItem.AccountingGroup.SellTax1;
+            TaxGraphQLModel? sellTax2 = priceListDetail.CatalogItem.AccountingGroup.SellTax2;
+
+            if (sellTax1 != null && sellTax1.TaxType != null && sellTax1.TaxType.Prefix == "IVA") return sellTax1;
+            if (sellTax2 != null && sellTax2.TaxType != null && sellTax2.TaxType.Prefix == "IVA") return sellTax2;
+
+            return null;
+        }
+
+        public decimal CalculateIvaValue(TaxGraphQLModel? ivaTax, string pattern)
+        {
+            if (ivaTax is null || string.IsNullOrEmpty(ivaTax.Formula)) return 0;
+
+            FormulaVariables["MARGEN_IMPUESTO"] = ivaTax.Margin;
+
+            string formula = Regex.Replace(ivaTax.Formula, pattern, m => FormulaVariables[m.Value].ToString(CultureInfo.InvariantCulture));
+
+            return Convert.ToDecimal(new DataTable().Compute(formula, null), CultureInfo.InvariantCulture);
         }
     }
 }

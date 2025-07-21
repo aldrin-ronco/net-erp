@@ -663,46 +663,54 @@ namespace NetErp.Billing.PriceList.ViewModels
                 stopwatch.Start();
 
                 string query = @"
-                        query($filter: PriceListDetailFilterInput){
-                          PageResponse: priceListDetailPage(filter: $filter){
-                            count
-                            rows{
-                              catalogItem{
-                                id
-                                name
-                                reference
-                                stock{
-                                    storage{
-                                        id
-                                        name
-                                    }
-                                cost
-                                quantity
-                                }
-                                accountingGroup{
-                                    sellTaxes{
-                                        margin
-                                        formula
-                                        alternativeFormula
-                                        taxType{
-                                            prefix
-                                        }
-                                    }
-                                }
-                              }
-                              measurement{
-                                id
-                                abbreviation
-                              }
-                              cost
-                              profitMargin
-                              price
-                              minimumPrice
-                              discountMargin
-                              quantity
+                query ($filter: PriceListDetailFilterInput) {
+                  PageResponse: priceListDetailPage(filter: $filter) {
+                    count
+                    rows {
+                      catalogItem {
+                        id
+                        name
+                        reference
+                        stock {
+                          storage {
+                            id
+                            name
+                          }
+                          cost
+                          quantity
+                        }
+                        accountingGroup {
+                          sellTax1 {
+                            margin
+                            formula
+                            alternativeFormula
+                            taxType {
+                              prefix
                             }
                           }
-                        }";
+                          sellTax2 {
+                            margin
+                            formula
+                            alternativeFormula
+                            taxType {
+                              prefix
+                            }
+                          }
+                        }
+                      }
+                      measurement {
+                        id
+                        abbreviation
+                      }
+                      cost
+                      profitMargin
+                      price
+                      minimumPrice
+                      discountMargin
+                      quantity
+                    }
+                  }
+                }";
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 variables.filter.catalogId = new ExpandoObject();
@@ -748,7 +756,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (var item in PriceListDetail)
                 {
                     item.Context = this;
-                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SellTaxes);
+                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SellTax1, item.CatalogItem.AccountingGroup.SellTax2);
                     item.Profit = GetProfit(item);
                 }
 
@@ -771,15 +779,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             return profit;
         }
 
-        private decimal GetIvaValue(IEnumerable<TaxGraphQLModel> sellTaxes) 
+        private decimal GetIvaValue(TaxGraphQLModel? tax1, TaxGraphQLModel? tax2) 
         {
-            if(sellTaxes == null || !sellTaxes.Any()) return -1;
+            if(tax1 is null && tax2 is null) return -1;
 
-            var ivaTax = sellTaxes.FirstOrDefault(x => x.TaxType != null && x.TaxType.Prefix == "IVA");
+            if(tax1 != null && tax1.TaxType.Prefix == "IVA") return tax1.Margin;
+            if(tax2 != null && tax2.TaxType.Prefix == "IVA") return tax2.Margin;
 
-            if(ivaTax is null) return -1;
-
-            return ivaTax.Margin;
+            return -1; // No IVA found
         }
 
         private void LoadItemTypes()

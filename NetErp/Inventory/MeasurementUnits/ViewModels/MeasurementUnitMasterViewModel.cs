@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
@@ -29,6 +30,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         IHandle<MeasurementUnitDeleteMessage>
     {
         public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
+
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         private MeasurementUnitViewModel _context;
         public MeasurementUnitViewModel Context
@@ -335,23 +338,21 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
 
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
+                await Execute.OnUIThreadAsync(() =>
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountingEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -373,26 +374,52 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 this.SelectedMeasurementUnit = null;
                 return deletedMeasurementUnit;
             }
+            catch (AsyncException ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+
+        public async Task HandleAsync(MeasurementUnitCreateMessage message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await LoadMeasurementUnits();
+                _notificationService.ShowSuccess("Unidad de medida creada correctamente");
+            }
             catch (Exception)
             {
+
                 throw;
             }
         }
 
-        public Task HandleAsync(MeasurementUnitCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(MeasurementUnitUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(MeasurementUnits = new ObservableCollection<MeasurementUnitDTO>(Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(message.MeasurementUnits)));
+            try
+            {
+                await LoadMeasurementUnits();
+                _notificationService.ShowSuccess("Unidad de medida actualizada correctamente");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(MeasurementUnitUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(MeasurementUnitDeleteMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(MeasurementUnits = new ObservableCollection<MeasurementUnitDTO>(Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(message.MeasurementUnits)));
-        }
+            try
+            {
+                await LoadMeasurementUnits();
+                _notificationService.ShowSuccess("Unidad de medida eliminada correctamente");
+            }
+            catch (Exception)
+            {
 
-        public Task HandleAsync(MeasurementUnitDeleteMessage message, CancellationToken cancellationToken)
-        {
-            _ = this.SetFocus(nameof(FilterSearch));
-            return LoadMeasurementUnits();
+                throw;
+            }
         }
     }
 }

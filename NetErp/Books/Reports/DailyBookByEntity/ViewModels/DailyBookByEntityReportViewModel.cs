@@ -370,8 +370,8 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 variables.filter = new ExpandoObject();
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
-                variables.filter.StartDate = this.InitialDate.ToUniversalTime();
-                variables.filter.EndDate = this.FinalDate.ToUniversalTime();
+                variables.filter.StartDate = DateTimeHelper.DateTimeKindUTC(this.InitialDate);
+                variables.filter.EndDate = DateTimeHelper.DateTimeKindUTC(this.FinalDate);
                 variables.filter.CostCentersIds = costCentersIds;
                 variables.filter.AccountingEntityId = IsFilterSearchAccountinEntityOnEditMode ? 0 : SelectedAccountingEntityId;
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
@@ -445,7 +445,9 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.SearchName = this.FilterSearchAccountingEntity.Replace(" ", "%");
+                variables.filter.searchName = new ExpandoObject();
+                variables.filter.searchName.@operator = "like";    
+                variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
                 IEnumerable<AccountingEntityGraphQLModel> accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
                 AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                 App.Current.Dispatcher.Invoke(() =>

@@ -27,14 +27,12 @@ namespace Models.Billing
     {
         public SellerGraphQLModel CreatedSeller { get; set; }
 
-        public ObservableCollection<SellerGraphQLModel> Sellers { get; set;}
     }
 
     public class SellerUpdateMessage
     {
         public SellerGraphQLModel UpdatedSeller { get; set; }
 
-        public ObservableCollection<SellerGraphQLModel> Sellers { get; set; }
     }
 
     public class SellerDeleteMessage

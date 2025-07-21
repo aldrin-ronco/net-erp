@@ -34,6 +34,7 @@ namespace NetErp.Billing.Customers.ViewModels
     {
 
         public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public CustomerViewModel Context { get; private set; }
 
         private CustomerDTO? _selectedCustomer;
@@ -420,13 +421,12 @@ namespace NetErp.Billing.Customers.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteCustomer));
         }
 
-        public Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                CustomerDTO customerToDelete = Customers.First(c => c.Id == message.DeletedCustomer.Id);
-                if (customerToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Customers.Remove(customerToDelete));
-                return LoadCustomers();
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente eliminado correctamente.");
             }
             catch (Exception)
             {
@@ -434,14 +434,32 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
+            try
+            {
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente creado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
+            try
+            {
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente actualizado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)

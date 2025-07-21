@@ -25,6 +25,7 @@ namespace NetErp.Billing.Zones.ViewModels
         IHandle<ZoneUpdateMessage>
     {
         public IGenericDataAccess<ZoneGraphQLModel> ZoneService { get; set; } = IoC.Get<IGenericDataAccess<ZoneGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         public ZoneViewModel Context { get; set; }
 
@@ -122,6 +123,24 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
+        private bool _isBusy = true;
+
+        public bool IsBusy
+        {
+            get { return _isBusy; }
+            set 
+            {
+                if(_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanDeleteZone));
+                }
+            }
+        }
+
+
+
         private int _pageIndex = 1; // DevExpress first page is index zero
         public int PageIndex
         {
@@ -153,7 +172,7 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private ICommand? _createZoneCommand;
+        private ICommand _createZoneCommand;
         public ICommand CreateZoneCommand
         {
             get
@@ -164,7 +183,7 @@ namespace NetErp.Billing.Zones.ViewModels
 
         }
 
-        private ICommand? _paginationCommand;
+        private ICommand _paginationCommand;
         public ICommand PaginationCommand
         {
             get
@@ -194,7 +213,7 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private ICommand? _deleteZoneCommand;
+        private ICommand _deleteZoneCommand;
         public ICommand DeleteZoneCommand
         {
             get
@@ -204,34 +223,85 @@ namespace NetErp.Billing.Zones.ViewModels
             }
 
         }
+
         public async Task DeleteZoneAsync()
         {
             try
             {
                 // Si no hay item seleccionado, no continuar
                 if (SelectedItem is null) return;
+                int id = SelectedItem.Id;
+                dynamic variables = new ExpandoObject();
+                variables.id = id;
+
+
+                string query = @"query($id:Int!){
+                  CanDeleteModel: canDeleteZone(id: $id){
+                    canDelete
+                    message
+                  }
+                }";
+
+
+                var validation = await this.ZoneService.CanDelete(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    if (result != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
+                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+
+                ZoneGraphQLModel deletedZone = await ExecuteDeleteAsync(id);
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneDeleteMessage() { DeletedZone = deletedZone });
+
+                NotifyOfPropertyChange(nameof(CanDeleteZone));
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
+        public async Task<ZoneGraphQLModel> ExecuteDeleteAsync(int id)
+        {
+            try
+            {
                 string query = @"mutation($id: Int!){
-                DeleteResponse: deleteZone(id: $id){
-                       id
+                    DeleteResponse: deleteZone(id: $id){
+                        id
+                        name
+                        isActive
                     }
                 }";
-                
-                MessageBoxResult answer = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name} ?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                if (answer != MessageBoxResult.Yes) return;
-
                 dynamic variables = new ExpandoObject();
-                variables.id = SelectedItem.Id;
-                ZoneGraphQLModel result = await ZoneService.Delete(query, variables);
-                if (result == null)
-                {
-                    MessageBox.Show($"No se pudo eliminar la zona: {SelectedItem.Name}, Intente de nuevo.");
-                }
-                SelectedItem = null;
-                await LoadZonesAsync();
+                variables.id = id;
+                var result = await ZoneService.Delete(query, variables);
+                return result;
             }
-            catch(Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -254,6 +324,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
+                IsBusy = true;
                 string query = @"
                 query($filter: ZoneFilterInput){
                      PageResponse :zonePage(filter: $filter) {
@@ -299,6 +370,10 @@ namespace NetErp.Billing.Zones.ViewModels
                     return Task.CompletedTask;
                 });
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
         public ZoneMasterViewModel(ZoneViewModel context)
         {
@@ -307,17 +382,44 @@ namespace NetErp.Billing.Zones.ViewModels
             _ = Task.Run(() =>  LoadZonesAsync());
 
         }
-        public Task HandleAsync(ZoneUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(ZoneUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadZonesAsync();
+            try
+            {
+                await LoadZonesAsync();
+                _notificationService.ShowSuccess("Zona eliminada correctamente");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(ZoneCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(ZoneCreateMessage message, CancellationToken cancellationToken)
         {
-            return LoadZonesAsync();
+            try
+            {
+                await LoadZonesAsync();
+                _notificationService.ShowSuccess("Zona creada correctamente");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(ZoneDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(ZoneDeleteMessage message, CancellationToken cancellationToken)
         {
-            return LoadZonesAsync();
+            try
+            {
+                await LoadZonesAsync();
+                _notificationService.ShowSuccess("Zona eliminada correctamente");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }
