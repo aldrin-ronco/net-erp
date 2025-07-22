@@ -197,7 +197,7 @@
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
                                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                    <RadioButton Content="Rason Social"
+                    <RadioButton Content="Razón Social"
                                  GroupName="CaptureType"
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 

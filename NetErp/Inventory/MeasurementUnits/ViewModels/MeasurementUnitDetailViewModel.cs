@@ -169,19 +169,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             Name = "";
             Abbreviation = "";
         }
-        public async Task<IEnumerable<MeasurementUnitGraphQLModel>> LoadMeasurementUnits()
-        {
-            string queryForPage;
-            queryForPage = @"
-                query($filter: MeasurementUnitFilterInput){
-                    ListResponse: measurementUnits(filter: $filter){
-                    id
-                    abbreviation
-                    name
-                    }
-                }";
-            return await MeasurementUnitService.GetList(queryForPage, new object { });
-        }
+
         public async Task Save()
         {
             try
@@ -189,26 +177,31 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 IsBusy = true;
                 Refresh();
                 MeasurementUnitGraphQLModel result = await ExecuteSave();
-                var listResult = await LoadMeasurementUnits();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitCreateMessage() { CreatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result), MeasurementUnits = listResult.ToObservableCollection() });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitCreateMessage() { CreatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result)});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result), MeasurementUnits = listResult.ToObservableCollection() });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result)});
                 }
                 await Context.ActivateMasterView();
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -229,7 +222,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 if (IsNewRecord)
                 {
                     query = @"
-                    mutation($data: CreateMeasurementUnitDataInputModelInput!){
+                    mutation($data: CreateMeasurementUnitInput!){
                       CreateResponse: createMeasurementUnit(data: $data){
                         id
                         abbreviation
@@ -243,7 +236,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 else
                 {
                     query = @"
-                    mutation($data: UpdateMeasurementUnitDataInputModelInput!, $id: ID){
+                    mutation($data: UpdateMeasurementUnitInput!, $id: ID){
                       updateMeasurementUnit(data: $data, id: $id){
                         id
                         abbreviation
@@ -254,9 +247,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     return updatedMeasurementUnit;
                 }
             }
-            catch (Exception)
+            catch (AsyncException ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
         public bool CanSave

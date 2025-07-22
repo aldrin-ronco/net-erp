@@ -27,7 +27,6 @@ namespace Models.Inventory
     {
         public MeasurementUnitGraphQLModel CreatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
 
-        public ObservableCollection<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; } = new ObservableCollection<MeasurementUnitGraphQLModel>();
     }
     public class MeasurementUnitDeleteMessage
     {
@@ -37,7 +36,6 @@ namespace Models.Inventory
     public class MeasurementUnitUpdateMessage
     {
         public MeasurementUnitGraphQLModel UpdatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
-        public ObservableCollection<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; } = new ObservableCollection<MeasurementUnitGraphQLModel>();
     }
 }
 

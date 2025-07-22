@@ -5,10 +5,12 @@ using Models.Books;
 using Models.Global;
 using Services.Books.DAL.PostgreSQL;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 {
@@ -116,9 +118,13 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             }";
             dynamic variables = new ExpandoObject();
             variables.AccountingSourceFilter = new ExpandoObject();
-            variables.AccountingSourceFilter.Annulment = false;
+            variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+            variables.AccountingSourceFilter.Annulment.@operator = "=";
+            variables.AccountingSourceFilter.Annulment.value = true;
             variables.AccountingAccountFilter = new ExpandoObject();
-            variables.AccountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
+            variables.AccountingAccountFilter.Code = new ExpandoObject();
+            variables.AccountingAccountFilter.Code.@operator = new List<string>() { "length", ">=" };
+            variables.AccountingAccountFilter.Code.value = 8;
             var dataContext = await AuxiliaryBookService.GetDataContext<AuxiliaryBookDataContext>(query, variables);
             if (dataContext != null)
             {

@@ -473,7 +473,7 @@
                                         <!--CostCenterCountry-->
                                         <TextBlock Text="País" Grid.Column="0" Grid.Row="7" Margin="0 5 0 5"/>
                                         <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="8"
-                                                    Margin="0 0 5 0" Padding="3"
+                                                    Margin="0 0 5 0" Padding="2"
                                                     AllowSpin="True"
                                                     AutoPopulateColumns="False"  
                                                     IsCaseSensitiveSearch="False"
@@ -509,7 +509,7 @@
                                         <!--CostCenterDepartment-->
                                         <TextBlock Text="Departamento" Grid.Column="0" Grid.Row="9" Margin="0 5 0 5"/>
                                         <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="10" 
-             Margin="0 0 5 0" Padding="3"
+             Margin="0 0 5 0" Padding="2"
              AllowSpin="True"
              AutoPopulateColumns="False"  
              IsCaseSensitiveSearch="False"
@@ -545,7 +545,7 @@
                                         <!--CostCenterCity-->
                                         <TextBlock Text="Ciudad" Grid.Column="0" Grid.Row="11" Margin="0 5 0 5"/>
                                         <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12" 
-             Margin="0 0 5 0" Padding="3"
+             Margin="0 0 5 0" Padding="2"
              AllowSpin="True"
              AutoPopulateColumns="False"  
              IsCaseSensitiveSearch="False"
@@ -718,7 +718,7 @@
                                         <!--StorageName-->
                                         <TextBlock Text="Nombre de la bodega" Grid.Row="1" Grid.Column="0" Margin="0 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.StorageName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
-                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" x:Name="StorageName"/>
+                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" x:Name="StorageName" CharacterCasing="Upper"/>
 
                                         <!--StateCountry-->
                                         <TextBlock Text="País" Grid.Column="0" Grid.Row="3" Margin="0 5 0 5"/>

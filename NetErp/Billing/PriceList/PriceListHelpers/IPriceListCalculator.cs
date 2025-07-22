@@ -17,6 +17,5 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
         void CalculateFromMinimumPrice(PriceListDetailDTO priceListDetail);
         void CalculateFromPrice(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList);
         void CalculateFromProfitMargin(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList);
-        decimal CalculateTotalTax(IEnumerable<TaxGraphQLModel> taxes, string pattern);
     }
 }

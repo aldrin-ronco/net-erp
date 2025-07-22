@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
@@ -148,8 +149,14 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.AccountingSourceFilter = new ExpandoObject();
                 variables.AccountingAccountFilter = new ExpandoObject();
-                variables.AccountingSourceFilter.Annulment = false;
-                variables.AccountingAccountFilter.includeOnlyAuxiliaryAccounts = true;
+
+                variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+                variables.AccountingSourceFilter.Annulment.@operator = "=";
+                variables.AccountingSourceFilter.Annulment.value = false;
+
+                variables.AccountingAccountFilter.Code = new ExpandoObject();
+                variables.AccountingAccountFilter.Code.@operator = new List<string> { "length", ">=" };
+                variables.AccountingAccountFilter.Code.value = 8;
                 var dataContext = await this.EntityVsAccountService.GetDataContext<EntityVsAccountDataContext>(query, variables);
                 if (dataContext != null)
                 {
