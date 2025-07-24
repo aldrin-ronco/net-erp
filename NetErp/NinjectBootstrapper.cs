@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
+using Common.Validators;
 using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
 using DevExpress.Xpf.Bars.Native;
@@ -34,6 +35,7 @@ using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using Services.Inventory.DAL.PostgreSQL;
+using Services.Validators;
 using Services.Suppliers.DAL.PostgreSQL;
 using Services.Treasury.DAL.PostgreSQL;
 using System;
@@ -44,6 +46,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
+using Models.DTO.Billing;
 
 namespace NetErp
 {
@@ -128,6 +131,7 @@ namespace NetErp
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
+            _ = kernel.Bind<ICreditLimitValidator>().To<CreditLimitValidator>().InSingletonScope();
             _ = kernel.Bind<IServiceProvider>().ToMethod(ctx => ctx.Kernel).InSingletonScope();
             _ = kernel.Bind<ILoggerFactory>().ToConstant(LoggerFactory.Create(builder =>
             {
