@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
+using Common.Validators;
 using DevExpress.Xpf.Core;
+using Models.Billing;
 using NetErp.Billing.Customers.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -15,6 +18,10 @@ namespace NetErp.Billing.CreditLimit.ViewModels
     {
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
+        
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly ICreditLimitValidator _validator;
+        private readonly IGenericDataAccess<CreditLimitGraphQLModel> _creditLimitService;
 
         private CreditLimitMasterViewModel? _creditLimitMasterViewModel;
 
@@ -22,15 +29,23 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             get 
             {
-                if(_creditLimitMasterViewModel is null) _creditLimitMasterViewModel = new CreditLimitMasterViewModel(this);
+                _creditLimitMasterViewModel ??= new CreditLimitMasterViewModel(this, _notificationService, _validator, _creditLimitService);
                 return _creditLimitMasterViewModel;
             }
         }
 
-        public CreditLimitViewModel(IMapper autoMapper, IEventAggregator eventAggregator)
+        public CreditLimitViewModel(
+            IMapper autoMapper, 
+            IEventAggregator eventAggregator,
+            Helpers.Services.INotificationService notificationService,
+            ICreditLimitValidator validator,
+            IGenericDataAccess<CreditLimitGraphQLModel> creditLimitService)
         {
-            AutoMapper = autoMapper;
-            EventAggregator = eventAggregator;
+            AutoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
+            EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _creditLimitService = creditLimitService ?? throw new ArgumentNullException(nameof(creditLimitService));
             _ = Task.Run(async () => 
             {
                 try
@@ -52,7 +67,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             try
             {
-                await ActivateItemAsync(CreditLimitMasterViewModel ?? new CreditLimitMasterViewModel(this), new System.Threading.CancellationToken());
+                await ActivateItemAsync(CreditLimitMasterViewModel ?? new CreditLimitMasterViewModel(this, _notificationService, _validator, _creditLimitService), new System.Threading.CancellationToken());
             }
             catch(Exception ex)
             {
