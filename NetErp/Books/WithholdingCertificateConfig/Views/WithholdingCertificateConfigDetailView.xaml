@@ -74,7 +74,7 @@
         HorizontalAlignment="Left"
         VerticalAlignment="Center"
        
-        Margin="0 0 0 10"/>
+        Margin="0 0 0 5"/>
 
             <dxe:TextEdit
          Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -86,7 +86,7 @@
         </StackPanel>
         <StackPanel Grid.Row="3" Margin="0 10 0 10" Orientation="Vertical">
             <TextBlock Text="Descripcion del certificado de retencion" 
-                  Margin="0 0 0 30"
+                  Margin="0 0 0 5"
                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
             <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 CharacterCasing="Upper"
