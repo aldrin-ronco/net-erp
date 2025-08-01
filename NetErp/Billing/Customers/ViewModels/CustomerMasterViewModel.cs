@@ -241,6 +241,7 @@ namespace NetErp.Billing.Customers.ViewModels
                           id
                           name
                         }
+                        
                         emails {
                           id
                           description
@@ -254,6 +255,10 @@ namespace NetErp.Billing.Customers.ViewModels
                         name
                         margin
                       }
+                        zones {
+                            id
+                            name
+                        }
                     }
                   }
 

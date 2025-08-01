@@ -16,6 +16,7 @@ namespace Models.Billing
         public bool IsActive { get; set; } = true;
         public  AccountingEntityGraphQLModel Entity { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
     }
 
     public class SellerDTO : SellerGraphQLModel
@@ -45,6 +46,7 @@ namespace Models.Billing
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
         public ObservableCollection<CountryGraphQLModel> Countries { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
         public IGenericDataAccess<SellerGraphQLModel>.PageType SellerPage { get; set; }
     }
 }

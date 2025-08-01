@@ -663,6 +663,22 @@
                         </DataGrid>
                     </Grid>
                 </dx:DXTabItem>
+                <dx:DXTabItem Header="Zonas">
+                    <ListView Margin="4" ItemsSource="{Binding Path=Zones, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Width="auto">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="auto" Header="Zona" DisplayMemberBinding="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </dx:DXTabItem>
             </dx:DXTabControl>
 
         </Grid>

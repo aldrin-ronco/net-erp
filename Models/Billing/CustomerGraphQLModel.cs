@@ -19,6 +19,8 @@ namespace Models.Billing
         public bool RetainAnyBasis { get; set; } = false;
         public AccountingEntityGraphQLModel Entity { get; set; }
         public ObservableCollection<RetentionTypeDTO> Retentions { get; set; }
+        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
+
         public int SellerId { get; set; } = 0;
     }
 
@@ -57,6 +59,7 @@ namespace Models.Billing
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
         public ObservableCollection<CountryGraphQLModel> Countries { get; set; }
         public ObservableCollection<CustomerGraphQLModel> Sellers { get; set; }
+        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
         public ObservableCollection<RetentionTypeGraphQLModel> RetentionTypes { get; set; }
     }
 }

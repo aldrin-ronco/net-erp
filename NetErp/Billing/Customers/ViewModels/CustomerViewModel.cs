@@ -6,8 +6,10 @@ using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
+using NetErp.Billing.Zones.DTO;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -84,6 +86,8 @@ namespace NetErp.Billing.Customers.ViewModels
                 CustomerDetailViewModel instance = new(this);
                 await instance.Initialize();
                 List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+                ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType); 
@@ -120,6 +124,17 @@ namespace NetErp.Billing.Customers.ViewModels
                         });
                     }
                     instance.RetentionTypes = new System.Collections.ObjectModel.ObservableCollection<RetentionTypeDTO>(retentionList);
+                    foreach (ZoneGraphQLModel zone in instance.ZoneGraphQLModels)
+                    {
+                        bool exist = !(customer.Zones is null) && customer.Zones.Any(c => c.Id == zone.Id);
+                        zonesSelection.Add(new ZoneDTO()
+                        {
+                            Id = zone.Id,
+                            Name = zone.Name,
+                            IsSelected = exist
+                        });
+                    }
+                    instance.Zones = new ObservableCollection<ZoneDTO>(zonesSelection);
 
                 });
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());

@@ -9,6 +9,7 @@ using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
 using NetErp.Billing.Customers.ViewModels;
+using NetErp.Billing.Zones.DTO;
 using NetErp.Global.CostCenters.DTO;
 using System;
 using System.Collections.ObjectModel;
@@ -35,7 +36,19 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
-
+        private ObservableCollection<ZoneDTO> _zones;
+        public ObservableCollection<ZoneDTO> Zones
+        {
+            get => _zones;
+            set
+            {
+                if (_zones != value)
+                {
+                    _zones = value;
+                    NotifyOfPropertyChange(nameof(Zones));
+                }
+            }
+        }
         private ObservableCollection<CostCenterDTO> _costCenters;
         public ObservableCollection<CostCenterDTO> CostCenters
         {
@@ -150,6 +163,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
+                ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
                 SellerDetailViewModel instance = new SellerDetailViewModel(this);
                 await instance.Initialize();
                 instance.Id = seller.Id;
@@ -178,6 +192,17 @@ namespace NetErp.Billing.Sellers.ViewModels
                         IsSelected = exist
                     });
                 }
+                foreach (ZoneDTO zone in Zones)
+                {
+                    bool exist = !(seller.Zones is null) && seller.Zones.Any(c => c.Id == zone.Id);
+                    zonesSelection.Add(new ZoneDTO()
+                    {
+                        Id = zone.Id,
+                        Name = zone.Name,
+                        IsSelected = exist
+                    });
+                }
+                instance.Zones = new ObservableCollection<ZoneDTO>(zonesSelection);
                 instance.CostCenters = new ObservableCollection<CostCenterDTO>(costCentersSelection);
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
