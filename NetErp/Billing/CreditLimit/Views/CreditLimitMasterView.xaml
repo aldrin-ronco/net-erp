@@ -59,7 +59,7 @@
         <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
                             Grid.Row="2">
@@ -67,7 +67,8 @@
                          ItemsSource="{Binding Path=CreditLimits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" AllowColumnMoving="False" AllowSorting="False"
-                                   EnableSelectedRowAppearance="True" AllowDragDrop="False"
+                                   EnableSelectedRowAppearance="True" AllowDragDrop="False" AllowFilterEditor="False"
+                                   AllowResizing="False" AllowColumnFiltering="False"
                                    ShowGroupPanel="False" AlternateRowBackground="Beige"/>
                 </dxg:GridControl.View>
 

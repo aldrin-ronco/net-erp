@@ -22,22 +22,6 @@ namespace Models.Billing
         public int SellerId { get; set; } = 0;
     }
 
-    public class CustomerDTO : CustomerGraphQLModel
-    {
-        private bool _isChecked;
-        public bool IsChecked
-        {
-            get => _isChecked;
-            set
-            {
-                if (_isChecked != value)
-                {
-                    _isChecked = value;
-                }
-            }
-        }
-    }
-
     public class CustomerCreateMessage
     {
         public CustomerGraphQLModel CreatedCustomer { get; set; }
@@ -45,12 +29,12 @@ namespace Models.Billing
 
     public class CustomerUpdateMessage
     {
-        public CustomerDTO UpdatedCustomer { get; set; }
+        public CustomerGraphQLModel UpdatedCustomer { get; set; }
     }
 
     public class CustomerDeleteMessage
     {
-        public CustomerDTO DeletedCustomer { get; set; }
+        public CustomerGraphQLModel DeletedCustomer { get; set; }
     }
     public class CustomersDataContext
     {

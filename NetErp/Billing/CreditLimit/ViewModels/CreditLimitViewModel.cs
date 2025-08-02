@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetErp.Billing.CreditLimit.ViewModels
@@ -21,7 +22,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly ICreditLimitValidator _validator;
-        private readonly IGenericDataAccess<CreditLimitGraphQLModel> _creditLimitService;
+        private readonly IRepository<CreditLimitGraphQLModel> _creditLimitService;
 
         private CreditLimitMasterViewModel? _creditLimitMasterViewModel;
 
@@ -39,28 +40,51 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             IEventAggregator eventAggregator,
             Helpers.Services.INotificationService notificationService,
             ICreditLimitValidator validator,
-            IGenericDataAccess<CreditLimitGraphQLModel> creditLimitService)
+            IRepository<CreditLimitGraphQLModel> creditLimitService)
         {
             AutoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
             EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _creditLimitService = creditLimitService ?? throw new ArgumentNullException(nameof(creditLimitService));
-            _ = Task.Run(async () => 
+        }
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            _ = InitializeAsync().ConfigureAwait(false);
+        }
+
+        private async Task InitializeAsync()
+        {
+            try
             {
-                try
+                await ActivateMasterViewAsync();
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
                 {
-                    await ActivateMasterViewAsync();
-                }
-                catch (AsyncException ex)
+                    ThemedMessageBox.Show(
+                        title: "Atención!", 
+                        text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", 
+                        messageBoxButtons: MessageBoxButton.OK, 
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
                 {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
+                    ThemedMessageBox.Show(
+                        title: "Error Inesperado!", 
+                        text: $"{this.GetType().Name}.InitializeAsync \r\n{ex.Message}", 
+                        messageBoxButtons: MessageBoxButton.OK, 
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
 
         public async Task ActivateMasterViewAsync()

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -24,8 +19,8 @@ using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingBooks.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.ViewModels;
-using NetErp.Books.AccountingSources.ViewModels;
 using NetErp.Books.AccountingPresentations.ViewModels;
+using NetErp.Books.AccountingSources.ViewModels;
 using NetErp.Books.IdentificationTypes.ViewModels;
 using NetErp.Books.Reports.AnnualIncomeStatement.ViewModels;
 using NetErp.Books.Reports.AuxiliaryBook.ViewModels;
@@ -34,6 +29,7 @@ using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Global.Email.ViewModels;
 using NetErp.Global.Email.Views;
@@ -45,15 +41,18 @@ using NetErp.Suppliers.Suppliers.ViewModels;
 using NetErp.Treasury.Masters.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
-using NetErp.Global.AuthorizationSequence.ViewModels;
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace NetErp.Global.MainMenu.ViewModels
 {
     public class MainMenuViewModel: Conductor<IScreen>.Collection.OneActive
     {
-
-
         private int selectedIndex;
 
         public int SelectedIndex
@@ -124,7 +123,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 CustomerViewModel instance = IoC.Get<CustomerViewModel>();
                 instance.DisplayName = "Administración de clientes";
-                await ActivateItemAsync(instance, new CancellationToken());
+                await ActivateItemAsync(instance, new CancellationToken()).ConfigureAwait(false);
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
             }

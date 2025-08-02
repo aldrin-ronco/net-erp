@@ -47,6 +47,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
 using Models.DTO.Billing;
+using Common.Services;
 
 namespace NetErp
 {
@@ -83,7 +84,6 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingPresentationGraphQLModel>>().To<AccountingPresentationService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CustomerGraphQLModel>>().To<CustomerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingSourceGraphQLModel>>().To<AccountingSourceService>().InSingletonScope();
@@ -118,7 +118,6 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<FranchiseGraphQLModel>>().To<FranchiseService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SmtpGraphQLModel>>().To<SmtpService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CreditLimitGraphQLModel>>().To<CreditLimitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
@@ -127,6 +126,19 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
+            
+            // New GraphQL Infrastructure
+            // Nueva estructura de servicios e inyección de dependencias
+            // IRepository reemplaza IGenericDataAccess
+            _ = kernel.Bind<IGraphQLClient>().To<GraphQLClient>().InSingletonScope();
+            _ = kernel.Bind<IRepository<MeasurementUnitGraphQLModel>>().To<GraphQLRepository<MeasurementUnitGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CreditLimitGraphQLModel>>().To<GraphQLRepository<CreditLimitGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CustomerGraphQLModel>>().To<GraphQLRepository<CustomerGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PriceListDetailGraphQLModel>>().To<GraphQLRepository<PriceListDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PriceListGraphQLModel>>().To<GraphQLRepository<PriceListGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
 
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
@@ -210,7 +222,6 @@ namespace NetErp
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
                 _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
-                _ = cfg.CreateMap<CustomerGraphQLModel, CustomerDTO>();
                 _ = cfg.CreateMap<RetentionTypeGraphQLModel, RetentionTypeDTO>();
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();

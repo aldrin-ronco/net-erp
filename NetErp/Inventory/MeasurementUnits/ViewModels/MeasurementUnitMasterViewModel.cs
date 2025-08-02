@@ -29,9 +29,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         IHandle<MeasurementUnitUpdateMessage>,
         IHandle<MeasurementUnitDeleteMessage>
     {
-        public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
-
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         private MeasurementUnitViewModel _context;
         public MeasurementUnitViewModel Context
@@ -166,19 +165,14 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         public bool CanCreateMeasurementUnit() => !IsBusy;
 
 
-        public MeasurementUnitMasterViewModel(MeasurementUnitViewModel context)
+        public MeasurementUnitMasterViewModel(MeasurementUnitViewModel context,
+            IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
+            Helpers.Services.INotificationService notificationService)
         {
-            try
-            {
-                Context = context;
-                Context.EventAggregator.SubscribeOnUIThread(this);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            Context.EventAggregator.SubscribeOnUIThread(this);
         }
         protected override void OnViewReady(object view)
         {
@@ -212,7 +206,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                var source = await MeasurementUnitService.GetList(query, variables);
+                var source = await _measurementUnitService.GetListAsync(query, variables);
                 MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(source);
                 stopwatch.Stop();
 
@@ -310,7 +304,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.MeasurementUnitService.CanDelete(query, variables);
+                var validation = await _measurementUnitService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -370,7 +364,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedMeasurementUnit = await this.MeasurementUnitService.Delete(query, variables);
+                var deletedMeasurementUnit = await _measurementUnitService.DeleteAsync(query, variables);
                 this.SelectedMeasurementUnit = null;
                 return deletedMeasurementUnit;
             }
