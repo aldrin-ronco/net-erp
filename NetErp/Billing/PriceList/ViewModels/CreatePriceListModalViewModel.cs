@@ -33,8 +33,8 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private readonly Helpers.IDialogService _dialogService;
         Dictionary<string, List<string>> _errors;
-        private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
-        private IGenericDataAccess<StorageGraphQLModel> StorageService { get; set; } = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly IRepository<StorageGraphQLModel> _storageService;
 
         private string _name = string.Empty;
 
@@ -255,7 +255,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.PriceListIncludeTax = IsTaxable && PriceListIncludeTax; //capture the value from the UI
                 variables.Data.UseAlternativeFormula = UseAlternativeFormula; //capture the value from the UI
                 variables.Data.StorageId = SelectedStorage.Id; //capture the value from the UI
-                var result = await PriceListService.Create(query, variables);
+                var result = await _priceListService.CreateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
@@ -297,7 +297,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                       }
                     }
                 ";
-                var result = await StorageService.GetDataContext<InitializeDataContext>(query, new { });
+                var result = await _storageService.GetDataContextAsync<InitializeDataContext>(query, new { });
                 Storages = [.. result.Storages];
                 CostCenters = [.. result.CostCenters];
                 RefreshCostCenters();
@@ -348,10 +348,15 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 
-        public CreatePriceListModalViewModel(Helpers.IDialogService dialogService)
+        public CreatePriceListModalViewModel(
+            Helpers.IDialogService dialogService,
+            IRepository<PriceListGraphQLModel> priceListService,
+            IRepository<StorageGraphQLModel> storageService)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
+            _priceListService = priceListService;
+            _storageService = storageService;
         }
 
         protected override void OnViewReady(object view)

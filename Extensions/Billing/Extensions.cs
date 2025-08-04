@@ -15,9 +15,9 @@ namespace Extensions.Billing
         /// </summary>
         /// <param name="customers">ObservableCollection<BillingCustomerDTO></param>
         /// <param name="updatedCustomer">BillingCustomerDTO instance</param>
-        public static void Replace(this ObservableCollection<CustomerDTO> customers, CustomerDTO updatedCustomer)
+        public static void Replace(this ObservableCollection<CustomerGraphQLModel> customers, CustomerGraphQLModel updatedCustomer)
         {
-            CustomerDTO customerToReplace = customers.FirstOrDefault(x => x.Id == updatedCustomer.Id);
+            CustomerGraphQLModel customerToReplace = customers.FirstOrDefault(x => x.Id == updatedCustomer.Id);
             if (customerToReplace != null)
             {
                 int index = customers.IndexOf(customerToReplace);

@@ -26,7 +26,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
     {
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly ICreditLimitValidator _validator;
-        private readonly IGenericDataAccess<CreditLimitGraphQLModel> _creditLimitService;
+        private readonly IRepository<CreditLimitGraphQLModel> _creditLimitService;
 
         private ObservableCollection<CreditLimitDTO> _creditLimits = [];
 
@@ -49,7 +49,6 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         public string Mask { get; set; } = "n2";
 
         private string _filterSearch = "";
-        private CancellationTokenSource _searchCancellationTokenSource;
 
         public string FilterSearch
         {
@@ -84,13 +83,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
         }
 
-        public bool CanSave
-        {
-            get 
-            { 
-                return ShadowCreditLimits.Count > 0;
-            }
-        }
+        public bool CanSave => ShadowCreditLimits.Count > 0 && !IsBusy;
 
         private bool _isBusy;
 
@@ -103,6 +96,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 {
                     _isBusy = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -111,13 +105,12 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             CreditLimitViewModel context,
             Helpers.Services.INotificationService notificationService,
             ICreditLimitValidator validator,
-            IGenericDataAccess<CreditLimitGraphQLModel> creditLimitService)
+            IRepository<CreditLimitGraphQLModel> creditLimitService)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _creditLimitService = creditLimitService ?? throw new ArgumentNullException(nameof(creditLimitService));
-            
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -286,9 +279,9 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
-                var result = await _creditLimitService.GetPage(query, variables);
-                TotalCount = result.PageResponse.Count;
-                var loadedCreditLimits = new ObservableCollection<CreditLimitGraphQLModel>(result.PageResponse.Rows);
+                var result = await _creditLimitService.GetPageAsync(query, variables);
+                TotalCount = result.Count;
+                var loadedCreditLimits = new ObservableCollection<CreditLimitGraphQLModel>(result.Rows);
                 //TODO evaluar comportamiento
                 if (ShadowCreditLimits.Count > 0)
                 {
@@ -414,7 +407,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 variables.data = new ExpandoObject();
                 variables.data.creditLimits = creditLimits;
 
-                var result = await _creditLimitService.SendMutationList(query, variables);
+                var result = await _creditLimitService.SendMutationListAsync(query, variables);
                 return result;
             }
             catch (Exception ex)
@@ -499,15 +492,13 @@ namespace NetErp.Billing.CreditLimit.ViewModels
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            _searchCancellationTokenSource?.Cancel();
-            _searchCancellationTokenSource?.Dispose();
             
             // Desconectar eventos para evitar memory leaks
             foreach (var creditLimit in CreditLimits)
             {
                 creditLimit.LimitChanged -= OnCreditLimitChanged;
             }
-            
+            Context.EventAggregator.Unsubscribe(this);
             CreditLimits.Clear();
             ShadowCreditLimits.Clear();
             return base.OnDeactivateAsync(close, cancellationToken);

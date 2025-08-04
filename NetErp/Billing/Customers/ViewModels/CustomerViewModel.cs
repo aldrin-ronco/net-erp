@@ -2,6 +2,7 @@
 using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Books;
@@ -22,43 +23,41 @@ namespace NetErp.Billing.Customers.ViewModels
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
 
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<CustomerGraphQLModel> _customerService;
+        
         private CustomerMasterViewModel? _customerMasterViewModel;
         public CustomerMasterViewModel? CustomerMasterViewModel
         {
             get
             {
-                if (_customerMasterViewModel is null) _customerMasterViewModel = new CustomerMasterViewModel(this);
+                if (_customerMasterViewModel is null) _customerMasterViewModel = new CustomerMasterViewModel(this, _notificationService, _customerService);
                 return _customerMasterViewModel;
             }
         }
 
         public CustomerViewModel(IMapper mapper,
-                                 IEventAggregator eventAggregator)
+                                 IEventAggregator eventAggregator,
+                                 Helpers.Services.INotificationService notificationService,
+                                 IRepository<CustomerGraphQLModel> customerService)
         {
-            EventAggregator = eventAggregator;
-            AutoMapper = mapper;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ActivateMasterViewAsync();
-                }
-                catch (AsyncException ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
+            EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+        }
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            _ = ActivateMasterViewAsync();
         }
 
         public async Task ActivateMasterViewAsync()
         {
             try
             {
-                await ActivateItemAsync(CustomerMasterViewModel ?? new CustomerMasterViewModel(this), new System.Threading.CancellationToken());
+                await ActivateItemAsync(CustomerMasterViewModel ?? new CustomerMasterViewModel(this, _notificationService, _customerService), new System.Threading.CancellationToken());
             }
             catch (Exception ex)
             {
@@ -79,15 +78,15 @@ namespace NetErp.Billing.Customers.ViewModels
         }
 
 
-        public async Task ActivateDetailViewForEdit(CustomerGraphQLModel customer)
+        public async Task ActivateDetailViewForEditAsync(CustomerGraphQLModel customer)
         {
             try
             {
-                CustomerDetailViewModel instance = new(this);
+                CustomerDetailViewModel instance = new(this, _customerService);
                 await instance.Initialize();
                 List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
                 ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
-
+                List<RetentionTypeDTO> retentionList = [];
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType); 
@@ -155,11 +154,11 @@ namespace NetErp.Billing.Customers.ViewModels
 
         }
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
             try
             {
-                CustomerDetailViewModel instance = new(this);
+                CustomerDetailViewModel instance = new(this, _customerService);
                 await instance.Initialize();
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());

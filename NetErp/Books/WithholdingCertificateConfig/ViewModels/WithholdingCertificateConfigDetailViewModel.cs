@@ -5,6 +5,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
@@ -289,6 +290,43 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task SaveAsync()
         {
+
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                WithholdingCertificateConfigGraphQLModel result = await ExecuteSave();
+
+                if (IsNewRecord)
+                {
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new WithholdingCertificateConfigCreateMessage() { CreatedWithholdingCertificateConfig = result });
+                }
+                else
+                {
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new WithholdingCertificateConfigUpdateMessage() { UpdatedWithholdingCertificateConfig = result });
+                }
+                // Context.EnableOnViewReady = false;
+                await Context.ActivateMasterViewModelAsync();
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            //////////////////
+           
+        }
+        public async Task<WithholdingCertificateConfigGraphQLModel> ExecuteSave()
+        {
             List<int> accountingAccountsIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
             dynamic data = new ExpandoObject();
             data.name = Name;
@@ -297,14 +335,14 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             data.accountingAccountsIds = accountingAccountsIds;
             if (IsNewRecord)
             {
-                await CreateAsync(data);
+               return await CreateAsync(data);
             }
             else
             {
-                await UpdateAsync(data);
+                return await UpdateAsync(data);
             }
         }
-        public async Task UpdateAsync(dynamic data)
+        public async Task<WithholdingCertificateConfigGraphQLModel> UpdateAsync(dynamic data)
         {
             try
             {
@@ -331,23 +369,19 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 variables.data = data;
                 variables.id = Entity.Id;
                 WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Update(query, variables);
-                GoBack(null);
+                return result;
 
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                throw;
             }
             finally
             {
                 IsBusy = false;
             }
         }
-        public async Task CreateAsync(dynamic data)
+        public async Task<WithholdingCertificateConfigGraphQLModel> CreateAsync(dynamic data)
         {
             try
             {
@@ -364,15 +398,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 variables.data = data;
 
                 WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Create(query, variables);
-                GoBack(null);
+                return result;
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                throw;
             }
             finally
             {
