@@ -6,6 +6,7 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Books;
+using Models.Global;
 using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
@@ -27,27 +28,34 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Xml.Linq;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
     public class PriceListMasterViewModel : Screen, IHandle<OperationCompletedMessage>  
     {
-        //Propiedad para controlar la ejecución de algunos métodos de carga
+        // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
         private readonly Dictionary<Guid, int> _operationItemMapping = new Dictionary<Guid, int>();
+        
+        // Dependency injection fields
         private readonly Helpers.Services.INotificationService _notificationService;
-        public IGenericDataAccess<PriceListDetailGraphQLModel> PriceListDetailService { get; set; } = IoC.Get<IGenericDataAccess<PriceListDetailGraphQLModel>>();
-        public IBackgroundQueueService BackgroundQueueService { get; set; } = IoC.Get<IBackgroundQueueService>();
-        public IPriceListCalculatorFactory CalculatorFactory { get; set; } = IoC.Get<IPriceListCalculatorFactory>();
-        public PriceListViewModel Context { get; set; }
+        private readonly IRepository<PriceListDetailGraphQLModel> _priceListDetailService;
+        private readonly IBackgroundQueueService _backgroundQueueService;
+        private readonly IPriceListCalculatorFactory _calculatorFactory;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
 
-        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
+        //Service necesario en ventanas modales
+        private readonly IRepository<StorageGraphQLModel> _storageService;
+        
+        public PriceListViewModel Context { get; set; }
         public string MaskN2 { get; set; } = "n2";
 
         public string MaskN5 { get; set; } = "n5";
 
-        private bool _mainIsBusy;
+        private bool _mainIsBusy = true;
         public bool MainIsBusy
         {
             get { return _mainIsBusy; }
@@ -104,7 +112,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 
-        private ObservableCollection<PriceListDetailDTO> _priceListDetail = new();
+        private ObservableCollection<PriceListDetailDTO> _priceListDetail = [];
         public ObservableCollection<PriceListDetailDTO> PriceListDetail
         {
             get { return _priceListDetail; }
@@ -118,7 +126,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<CatalogGraphQLModel> _catalogs = new();
+        private ObservableCollection<CatalogGraphQLModel> _catalogs = [];
 
         public ObservableCollection<CatalogGraphQLModel> Catalogs
         {
@@ -133,6 +141,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        private CancellationTokenSource _cascadeCancellation = new();
+
         private CatalogGraphQLModel _selectedCatalog;
 
         public CatalogGraphQLModel SelectedCatalog
@@ -144,15 +154,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedCatalog = value;
                     NotifyOfPropertyChange(nameof(SelectedCatalog));
-                    if (!_isUpdating)
+                    if (!_isUpdating && value != null)
                     {
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation = new CancellationTokenSource();
+                        
                         LoadItemTypes();
-                        if (IsInitialized) _ = Execute.OnUIThreadAsync(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadPriceList();
-                            IsBusy = false;
-                        });
+                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -184,15 +192,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemType = value;
                     NotifyOfPropertyChange(nameof(SelectedItemType));
-                    if (!_isUpdating)
+                    if (!_isUpdating && value != null)
                     {
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation = new CancellationTokenSource();
+                        
                         LoadItemCategories();
-                        if (IsInitialized) _ = Execute.OnUIThreadAsync(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadPriceList();
-                            IsBusy = false;
-                        });
+                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -226,15 +232,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemCategory = value;
                     NotifyOfPropertyChange(nameof(SelectedItemCategory));
-                    if (!_isUpdating)
+                    if (!_isUpdating && value != null)
                     {
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation = new CancellationTokenSource();
+                        
                         LoadItemSubCategories();
-                        if (IsInitialized) _ = Execute.OnUIThreadAsync(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadPriceList();
-                            IsBusy = false;
-                        });
+                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -266,14 +270,12 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemSubCategory = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating)
+                    if (!_isUpdating && value != null && IsInitialized)
                     {
-                        if (IsInitialized) _ = Execute.OnUIThreadAsync(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadPriceList();
-                            IsBusy = false;
-                        });
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation = new CancellationTokenSource();
+                        
+                        _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -281,7 +283,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemsSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
 
-        private ObservableCollection<PriceListGraphQLModel> _priceLists = new();
+        private ObservableCollection<PriceListGraphQLModel> _priceLists = [];
 
         public ObservableCollection<PriceListGraphQLModel> PriceLists
         {
@@ -296,9 +298,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private PriceListGraphQLModel _selectedPriceList;
+        private PriceListGraphQLModel? _selectedPriceList;
 
-        public PriceListGraphQLModel SelectedPriceList
+        public PriceListGraphQLModel? SelectedPriceList
         {
             get { return _selectedPriceList; }
             set
@@ -308,17 +310,24 @@ namespace NetErp.Billing.PriceList.ViewModels
                     _selectedPriceList = value;
                     NotifyOfPropertyChange(nameof(SelectedPriceList));
                     NotifyOfPropertyChange(nameof(CostByStorageInformation));
-                    LoadItemTypes();
-                    if (IsInitialized) _ = Execute.OnUIThreadAsync(async () =>
+                    NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
+                    NotifyOfPropertyChange(nameof(IsPriceList));
+                    NotifyOfPropertyChange(nameof(CanCreatePromotion));
+                    
+                    _cascadeCancellation?.Cancel();
+                    _cascadeCancellation = new CancellationTokenSource();
+                    
+                    if (value != null)
                     {
-                        IsBusy = true;
-                        await LoadPriceList();
-                        IsBusy = false;
-                    });
-                    FilterSearch = "";
+                        LoadItemTypes();
+                        FilterSearch = "";
+                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                    }
                 }
             }
         }
+
+        public bool SelectedPriceListIsNotActive => SelectedPriceList != null && !SelectedPriceList.IsActive;
 
         private PriceListDetailDTO? _selectedPriceListDetail;
 
@@ -333,6 +342,15 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(SelectedPriceListDetail));
                     NotifyOfPropertyChange(nameof(ShowInventoryQuantity));
                 }
+            }
+        }
+
+        public bool IsPriceList
+        {
+            get
+            {
+                if (SelectedPriceList == null) return false;
+                return SelectedPriceList.Parent == null || SelectedPriceList.Parent.Id == 0;
             }
         }
 
@@ -362,99 +380,158 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task CreatePriceListAsync()
         {
-            var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService);
-            await viewModel.InitializeAsync();
-            await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
+            try
+            {
+                var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, _priceListService, _storageService);
+                await viewModel.InitializeAsync();
+                await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
 
-        private ICommand _updatePriceListCommand;
-        public ICommand UpdatePriceListCommand
+        private ICommand _configurationCommand;
+        public ICommand ConfigurationCommand
         {
             get
             {
-                if (_updatePriceListCommand is null) _updatePriceListCommand = new AsyncCommand(UpdatePriceListAsync);
-                return _updatePriceListCommand;
+                if (_configurationCommand is null) _configurationCommand = new AsyncCommand(ConfigurationAsync);
+                return _configurationCommand;
             }
         }
 
-        public async Task UpdatePriceListAsync()
-        {
-            var viewModel = new UpdatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, Context.AutoMapper);
-            await viewModel.InitializeAsync();
-            viewModel.SelectedPriceListId = SelectedPriceList.Id;
-            viewModel.Name = SelectedPriceList.Name;
-            viewModel.IsTaxable = SelectedPriceList.IsTaxable;
-            viewModel.PriceListIncludeTax = SelectedPriceList.PriceListIncludeTax;
-            viewModel.UseAlternativeFormula = SelectedPriceList.UseAlternativeFormula;
-            viewModel.SelectedFormula = SelectedPriceList.UseAlternativeFormula ? "A" : "D";
-            viewModel.EditablePrice = SelectedPriceList.EditablePrice;
-            viewModel.AutoApplyDiscount = SelectedPriceList.AutoApplyDiscount;
-            viewModel.IsPublic = SelectedPriceList.IsPublic;
-            viewModel.SelectedStorage = SelectedPriceList.Storage is null ? viewModel.Storages.FirstOrDefault(x => x.Id == 0) : viewModel.Storages.FirstOrDefault(x => x.Id == SelectedPriceList.Storage.Id);
-            foreach(PaymentMethodGraphQLModel item in SelectedPriceList.PaymentMethods)
-            {
-                PaymentMethodPriceListDTO paymentMethod = viewModel.PaymentMethods.FirstOrDefault(x => x.Id == item.Id);
-                if (paymentMethod != null)
-                {
-                    paymentMethod.IsChecked = false;
-                }
-            }
-            viewModel.SelectedListUpdateBehaviorOnCostChange = SelectedPriceList.ListUpdateBehaviorOnCostChange;
-            viewModel.IsActive = SelectedPriceList.IsActive;
-            await _dialogService.ShowDialogAsync(viewModel, "Configuración de lista de precios");
-        }
-
-        public async Task InitializeAsync()
+        //TODO: Refactorizar throw exception en FirstOrDefault
+        public async Task ConfigurationAsync()
         {
             try
             {
-                _isUpdating = true;
-                string query = @"
-                        query {
-                          catalogs {
-                            id
-                            name
-                            itemsTypes {
-                              id
-                              name
-                              itemsCategories {
-                                id
-                                name
-                                itemsSubCategories: subCategories {
-                                  id
-                                  name
-                                }
-                              }
-                            }
-                          }
-                          priceLists{
-                            id
-                            name
-                            isTaxable
-                            priceListIncludeTax
-                            useAlternativeFormula
-                            editablePrice
-                            autoApplyDiscount
-                            listUpdateBehaviorOnCostChange
-                            isPublic
-                            isActive
-                            storage{
-                                id
-                                name
-                                }
-                            paymentMethods{
-                                id
-                                name
-                                abbreviation
-                            }
-                          }
-                        }";
-                var result = await PriceListDetailService.GetDataContext<PriceListDataContext>(query, new { });
-                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.Catalogs);
-                SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceLists);
-                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
-                LoadItemTypes();
+                if (!IsPriceList)
+                {
+                    MainIsBusy = true;
+                    await Task.Run(() => Context.ActivateUpdatePromotionViewAsync(SelectedPriceList));
+                    MainIsBusy = false;
+                    return;
+                }
+                var viewModel = new UpdatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, Context.AutoMapper, _priceListService, _storageService);
+                await viewModel.InitializeAsync();
+                viewModel.SelectedPriceListId = SelectedPriceList.Id;
+                viewModel.Name = SelectedPriceList.Name;
+                viewModel.IsTaxable = SelectedPriceList.IsTaxable;
+                viewModel.PriceListIncludeTax = SelectedPriceList.PriceListIncludeTax;
+                viewModel.UseAlternativeFormula = SelectedPriceList.UseAlternativeFormula;
+                viewModel.SelectedFormula = SelectedPriceList.UseAlternativeFormula ? "A" : "D";
+                viewModel.EditablePrice = SelectedPriceList.EditablePrice;
+                viewModel.AutoApplyDiscount = SelectedPriceList.AutoApplyDiscount;
+                viewModel.IsPublic = SelectedPriceList.IsPublic;
+                viewModel.SelectedStorage = SelectedPriceList.Storage is null ? viewModel.Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception($"Invalid null reference") : viewModel.Storages.FirstOrDefault(x => x.Id == SelectedPriceList.Storage.Id) ?? throw new Exception("Invalid null reference");
+                foreach(PaymentMethodGraphQLModel item in SelectedPriceList.PaymentMethods)
+                {
+                    PaymentMethodPriceListDTO paymentMethod = viewModel.PaymentMethods.FirstOrDefault(x => x.Id == item.Id) ?? throw new Exception("Invalid nullreference");
+                    if (paymentMethod != null)
+                    {
+                        paymentMethod.IsChecked = false;
+                    }
+                }
+                viewModel.SelectedListUpdateBehaviorOnCostChange = SelectedPriceList.ListUpdateBehaviorOnCostChange;
+                viewModel.IsActive = SelectedPriceList.IsActive;
+                await _dialogService.ShowDialogAsync(viewModel, "Configuración de lista de precios");
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
+        private ICommand _deletePriceListCommand;
+        public ICommand DeletePriceListCommand
+        {
+            get
+            {
+                if (_deletePriceListCommand is null) _deletePriceListCommand = new AsyncCommand(DeletePriceListAsync);
+                return _deletePriceListCommand;
+            }
+        }
+
+        public async Task DeletePriceListAsync()
+        {
+            try
+            {
+                MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedPriceList.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                if (result != MessageBoxResult.Yes) return;
+                IsBusy = true;
+                int id = SelectedPriceList.Id;
+                string query;
+
+                query = @"
+                    query($id: Int!){
+                      CanDeleteModel: canDeletePriceList(id: $id){
+                        canDelete
+                        message
+                      }
+                    }";
+
+                dynamic variables = new ExpandoObject();
+                variables.id = id;
+
+                var validation = await _priceListService.CanDeleteAsync(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    query = @"
+                    mutation($id: Int!){
+                      DeleteResponse: deletePriceList(id: $id){
+                        id
+                      }
+                    }";
+                    variables = new ExpandoObject();
+                    variables.id = id;
+                    PriceListGraphQLModel deletedPriceList = await _priceListService.DeleteAsync(query, variables);
+                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = deletedPriceList });
+                    return;
+                }
+                else
+                {
+                    query = @"
+                    mutation($id: Int!, $data: UpdatePriceListInput!){
+                      UpdateResponse: updatePriceList(id: $id, data: $data){
+                        id
+                      }
+                    }";
+
+                    variables = new ExpandoObject();
+                    variables.id = id;
+                    variables.data = new ExpandoObject();
+                    variables.data.Archived = true;
+                    PriceListGraphQLModel deletedPriceList = await _priceListService.UpdateAsync(query, variables);
+                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = deletedPriceList });
+                    return;
+                }
             }
             catch (Exception ex)
             {
@@ -466,8 +543,114 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             finally
             {
+                IsBusy = false;
+            }
+        }
+
+        private ICommand _createPromotionCommand;
+        public ICommand CreatePromotionCommand
+        {
+            get
+            {
+                if (_createPromotionCommand is null) _createPromotionCommand = new AsyncCommand(CreatePromotionAsync);
+                return _createPromotionCommand;
+            }
+        }
+
+        public async Task CreatePromotionAsync()
+        {
+            var viewModel = new CreatePromotionModalViewModel<PriceListGraphQLModel>(_dialogService, SelectedPriceList, _priceListService);
+            await _dialogService.ShowDialogAsync(viewModel, "Creación de promociones");
+        }
+
+        public bool CanCreatePromotion => SelectedPriceList != null && SelectedPriceList.IsActive && SelectedPriceList.Parent == null;
+
+        public async Task InitializeAsync()
+        {
+            try
+            {
+                _isUpdating = true;
+                string query = @"
+                    query ($priceListFilter: PriceListFilterInput) {
+                      catalogs {
+                        id
+                        name
+                        itemsTypes {
+                          id
+                          name
+                          itemsCategories {
+                            id
+                            name
+                            itemsSubCategories: subCategories {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      }
+                      priceLists(filter: $priceListFilter) {
+                        id
+                        name
+                        isTaxable
+                        priceListIncludeTax
+                        useAlternativeFormula
+                        editablePrice
+                        autoApplyDiscount
+                        listUpdateBehaviorOnCostChange
+                        isPublic
+                        isActive
+                        startDate
+                        endDate
+                        archived
+                        parent{
+                            id
+                            name
+                        }
+                        storage {
+                          id
+                          name
+                        }
+                        paymentMethods {
+                          id
+                          name
+                          abbreviation
+                        }
+                      }
+                    }";
+
+                dynamic variables = new ExpandoObject();
+                variables.priceListFilter = new ExpandoObject();
+                variables.priceListFilter.archived = new ExpandoObject();
+                variables.priceListFilter.archived.@operator = "=";
+                variables.priceListFilter.archived.value = false;
+
+                PriceListDataContext result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, variables);
+
+
+                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.Catalogs);
+                SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
+                PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceLists);
+                NotifyOfPropertyChange(nameof(ShowAllControls));
+                if(PriceLists is null || PriceLists.Count == 0) return;
+                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
+                LoadItemTypes();
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+            finally
+            {
                 IsInitialized = true;
                 _isUpdating = false;
+            }
+        }
+
+        public bool ShowAllControls
+        {
+            get
+            {
+                return PriceLists != null && PriceLists.Count > 0;
             }
         }
 
@@ -477,51 +660,59 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                // Iniciar cronometro
+                if (ShowAllControls is false) return;
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
                 string query = @"
-                        query($filter: PriceListDetailFilterInput){
-                          PageResponse: priceListDetailPage(filter: $filter){
-                            count
-                            rows{
-                              catalogItem{
-                                id
-                                name
-                                reference
-                                stock{
-                                    storage{
-                                        id
-                                        name
-                                    }
-                                cost
-                                quantity
-                                }
-                                accountingGroup{
-                                    sellTaxes{
-                                        margin
-                                        formula
-                                        alternativeFormula
-                                        taxType{
-                                            prefix
-                                        }
-                                    }
-                                }
-                              }
-                              measurement{
-                                id
-                                abbreviation
-                              }
-                              cost
-                              profitMargin
-                              price
-                              minimumPrice
-                              discountMargin
-                              quantity
+                query ($filter: PriceListDetailFilterInput) {
+                  PageResponse: priceListDetailPage(filter: $filter) {
+                    count
+                    rows {
+                      catalogItem {
+                        id
+                        name
+                        reference
+                        stock {
+                          storage {
+                            id
+                            name
+                          }
+                          cost
+                          quantity
+                        }
+                        accountingGroup {
+                          sellTax1 {
+                            margin
+                            formula
+                            alternativeFormula
+                            taxType {
+                              prefix
                             }
                           }
-                        }";
+                          sellTax2 {
+                            margin
+                            formula
+                            alternativeFormula
+                            taxType {
+                              prefix
+                            }
+                          }
+                        }
+                      }
+                      measurement {
+                        id
+                        abbreviation
+                      }
+                      cost
+                      profitMargin
+                      price
+                      minimumPrice
+                      discountMargin
+                      quantity
+                    }
+                  }
+                }";
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 variables.filter.catalogId = new ExpandoObject();
@@ -557,9 +748,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.filter.filterSearch.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
                 variables.filter.filterSearch.exclude = true;
 
-                IGenericDataAccess<PriceListDetailGraphQLModel>.PageResponseType result = await PriceListDetailService.GetPage(query, variables);
-                TotalCount = result.PageResponse.Count;
-                PriceListDetail = [.. Context.AutoMapper.Map<ObservableCollection<PriceListDetailDTO>>(result.PageResponse.Rows)];
+                PageResult<PriceListDetailGraphQLModel> result = await _priceListDetailService.GetPageAsync(query, variables);
+                TotalCount = result.Count;
+                PriceListDetail = [.. Context.AutoMapper.Map<ObservableCollection<PriceListDetailDTO>>(result.Rows)];
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -567,14 +758,18 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (var item in PriceListDetail)
                 {
                     item.Context = this;
-                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SellTaxes);
+                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SellTax1, item.CatalogItem.AccountingGroup.SellTax2);
                     item.Profit = GetProfit(item);
                 }
 
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -586,42 +781,65 @@ namespace NetErp.Billing.PriceList.ViewModels
             return profit;
         }
 
-        private decimal GetIvaValue(IEnumerable<TaxGraphQLModel> sellTaxes) 
+        private decimal GetIvaValue(TaxGraphQLModel? tax1, TaxGraphQLModel? tax2) 
         {
-            if(sellTaxes == null || !sellTaxes.Any()) return -1;
+            if(tax1 is null && tax2 is null) return -1;
 
-            var ivaTax = sellTaxes.FirstOrDefault(x => x.TaxType != null && x.TaxType.Prefix == "IVA");
+            if(tax1 != null && tax1.TaxType.Prefix == "IVA") return tax1.Margin;
+            if(tax2 != null && tax2.TaxType.Prefix == "IVA") return tax2.Margin;
 
-            if(ivaTax is null) return -1;
+            return -1; // No IVA found
+        }
 
-            return ivaTax.Margin;
+        private async Task ReloadDataAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Execute.OnUIThreadAsync(async () =>
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+
+                    IsBusy = true;
+                    await LoadPriceList();
+                    IsBusy = false;
+                });
+            }
+            catch (OperationCanceledException)
+            {
+
+            } 
         }
 
         private void LoadItemTypes()
         {
+            if (SelectedCatalog?.ItemsTypes is null) return;
+
             _isUpdating = true;
-            ItemsTypes = [.. _selectedCatalog.ItemsTypes];
+            ItemsTypes = new ObservableCollection<ItemTypeGraphQLModel>(SelectedCatalog.ItemsTypes);
             ItemsTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
-            SelectedItemType = ItemsTypes.First(x => x.Id == 0);
+            SelectedItemType = ItemsTypes.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemType can't be null");
             LoadItemCategories();
-            LoadItemSubCategories();
             _isUpdating = false;
         }
 
         private void LoadItemCategories()
         {
             _isUpdating = true;
-            if (SelectedItemType.Id != 0)
+            
+            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemsCategories != null)
             {
-                ItemsCategories = new ObservableCollection<ItemCategoryGraphQLModel>(_selectedItemType.ItemsCategories);
+                ItemsCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemsCategories);
                 ItemsCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemCategory = ItemsCategories.First(x => x.Id == 0);
+                SelectedItemCategory = ItemsCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemCategory can't be null");
             }
             else
             {
+                // Reset categories when ItemType is "Show All" (Id = 0)
                 ItemsCategories.Clear();
                 SelectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
             }
+            
+            LoadItemSubCategories();
             NotifyOfPropertyChange(nameof(CanShowItemsCategories));
             NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
             _isUpdating = false;
@@ -630,20 +848,20 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void LoadItemSubCategories()
         {
             _isUpdating = true;
-            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0)
+            
+            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemsSubCategories != null)
             {
-                if (SelectedItemCategory.ItemsSubCategories != null)
-                    ItemsSubCategories = [.. SelectedItemCategory.ItemsSubCategories];
-                else
-                    ItemsSubCategories = [];
+                ItemsSubCategories = new ObservableCollection<ItemSubCategoryGraphQLModel>(SelectedItemCategory.ItemsSubCategories);
                 ItemsSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemSubCategory = ItemsSubCategories.First(x => x.Id == 0);
+                SelectedItemSubCategory = ItemsSubCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemSubCategory can't be null");
             }
             else
             {
+                // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
                 ItemsSubCategories.Clear();
                 SelectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
             }
+            
             NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
             _isUpdating = false;
         }
@@ -652,7 +870,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private ObservableCollection<PriceListDetailDTO> ModifiedProduct { get; set; } = [];
         public void AddModifiedProduct(PriceListDetailDTO priceListDetail, string modifiedProperty)
         {
-            IPriceListCalculator calculator = CalculatorFactory.GetCalculator(SelectedPriceList.UseAlternativeFormula);
+            IPriceListCalculator calculator = _calculatorFactory.GetCalculator(SelectedPriceList.UseAlternativeFormula);
             calculator.RecalculateProductValues(priceListDetail, modifiedProperty, SelectedPriceList);
             priceListDetail.Status = OperationStatus.Pending;
 
@@ -671,7 +889,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _operationItemMapping[operation.OperationId] = priceListDetail.CatalogItem.Id;
 
             // Encolar la operación
-            _ = BackgroundQueueService.EnqueueOperationAsync(operation);
+            _ = _backgroundQueueService.EnqueueOperationAsync(operation);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -683,17 +901,25 @@ namespace NetErp.Billing.PriceList.ViewModels
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 
-        protected override void OnViewAttached(object view, object context)
-        {
-            base.OnViewAttached(view, context);
 
-            _ = Execute.OnUIThreadAsync(async () =>
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            this.SetFocus(nameof(FilterSearch));
+        }
+
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
+        {
+            await Execute.OnUIThreadAsync(async () =>
             {
                 try
                 {
-                    MainIsBusy = true;
-                    await InitializeAsync();
-                    await LoadPriceList();
+                    if (IsInitialized && IsActive)
+                    {
+                        IsBusy = true;
+                        await LoadPriceList();
+                        IsBusy = false;
+                    }
                 }
                 catch (AsyncException ex)
                 {
@@ -703,19 +929,32 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 }
-                finally
-                {
-                    MainIsBusy = false;
-                }
             });
-            _ = this.SetFocus(nameof(FilterSearch));
+            await base.OnActivateAsync(cancellationToken);
         }
 
-
-        public async void SaveChangesAsync(object state)
+        protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
         {
-            if (ModifiedProduct.Count == 0) return;
+            await Execute.OnUIThreadAsync(async () =>
+            {
+                try
+                {
+                    MainIsBusy = true;
+                    await InitializeAsync();
+                    await LoadPriceList();
+                    MainIsBusy = false;
+                }
+                catch (AsyncException ex)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                }
+            });
 
+            await base.OnInitializeAsync(cancellationToken);
         }
 
         public Task HandleAsync(OperationCompletedMessage message, CancellationToken cancellationToken)
@@ -738,13 +977,67 @@ namespace NetErp.Billing.PriceList.ViewModels
             return Task.CompletedTask;
         }
 
-        public PriceListMasterViewModel(PriceListViewModel context)
+        public PriceListMasterViewModel(
+            PriceListViewModel context,
+            IRepository<PriceListDetailGraphQLModel> priceListDetailService,
+            IBackgroundQueueService backgroundQueueService,
+            Helpers.Services.INotificationService notificationService,
+            IPriceListCalculatorFactory calculatorFactory,
+            Helpers.IDialogService dialogService,
+            IRepository<PriceListGraphQLModel> priceListService,
+            IRepository<StorageGraphQLModel> storageService)
         {
             Context = context;
+            _priceListDetailService = priceListDetailService;
+            _backgroundQueueService = backgroundQueueService;
+            _notificationService = notificationService;
+            _calculatorFactory = calculatorFactory;
+            _dialogService = dialogService;
+            _priceListService = priceListService;
+            _storageService = storageService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
             Messenger.Default.Register<ReturnedDataFromCreatePriceListModalViewMessage<PriceListGraphQLModel>>(this, "CreatePriceList", false, OnCreatePriceList);
             Messenger.Default.Register<ReturnedDataFromUpdatePriceListModalViewMessage<PriceListGraphQLModel>>(this, "UpdatePriceList", false, OnUpdatePriceList);
-            _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+            Messenger.Default.Register<PriceListDeleteMessage>(this, null, false, OnDeletePriceList);
+            Messenger.Default.Register<ReturnedDataFromUpdatePromotionModalViewMessage<PriceListGraphQLModel>>(this, "UpdatePromotion", false, OnUpdatePromotion);
+        }
+
+        public void OnUpdatePromotion(ReturnedDataFromUpdatePromotionModalViewMessage<PriceListGraphQLModel> message)
+        {
+            if (message.ReturnedData is null) return;
+            if (message.ReturnedData is PriceListGraphQLModel priceList)
+            {
+                var existingPriceList = PriceLists.FirstOrDefault(x => x.Id == priceList.Id);
+                if (existingPriceList != null)
+                {
+                    existingPriceList.Name = priceList.Name;
+                    existingPriceList.StartDate = priceList.StartDate;
+                    existingPriceList.EndDate = priceList.EndDate;
+                    var selectedItem = SelectedPriceList;
+                    SelectedPriceList = null;
+                    SelectedPriceList = selectedItem;
+                }
+            }
+        }
+
+        //TODO : Posible refactorización en en el mensaje de throw exception
+        public void OnDeletePriceList(PriceListDeleteMessage message)
+        {
+            try
+            {
+                if(message.DeletedPriceList is null) return;
+                PriceLists.Remove(PriceLists.FirstOrDefault(x => x.Id == message.DeletedPriceList.Id) ?? throw new Exception("Invalid null reference"));
+                SelectedPriceList = PriceLists.FirstOrDefault();
+                _notificationService.ShowSuccess("Lista de precios eliminada correctamente", "Éxito");
+                NotifyOfPropertyChange(nameof(ShowAllControls));
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
 
         public void OnCreatePriceList(ReturnedDataFromCreatePriceListModalViewMessage<PriceListGraphQLModel> message)
@@ -760,6 +1053,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 _notificationService.ShowError("No se pudo crear la lista de precios", "Error");
             }
+            NotifyOfPropertyChange(nameof(ShowAllControls));
         }
 
         public void OnUpdatePriceList(ReturnedDataFromUpdatePriceListModalViewMessage<PriceListGraphQLModel> message)
@@ -780,8 +1074,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                     existingPriceList.IsPublic = priceList.IsPublic;
                     existingPriceList.IsActive = priceList.IsActive;
                     existingPriceList.PaymentMethods = priceList.PaymentMethods;
+                    SelectedPriceList = null;
                     SelectedPriceList = existingPriceList;
                 }
+                NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
                 _notificationService.ShowSuccess("Lista de precios actualizada correctamente", "Éxito");
             }
             else
@@ -898,28 +1194,6 @@ namespace NetErp.Billing.PriceList.ViewModels
         public int PriceListId { get; set; }
         public string ItemName { get; set; } = "";
 
-        // Esta query sería solo para referencia, siempre se usará la BatchQuery para operaciones
-        public string Query => @"
-        mutation($data:UpdatePriceListInput!){
-          UpdateResponse: updatePriceListDetail(data: $data){
-            catalogItem{
-              id
-              name
-              code
-            }
-            measurement{
-              id
-              abbreviation
-            }
-            cost
-            profitMargin
-            price
-            minimumPrice
-            discountMargin
-          }
-        }";
-
-        // Variables para una operación individual (no se usará directamente)
         public object Variables => new
         {
             data = new
@@ -934,7 +1208,6 @@ namespace NetErp.Billing.PriceList.ViewModels
         };
 
         public Type ResponseType => typeof(PriceListDetailGraphQLModel);
-        public string GenericDataAccessMethod => "SendMutationList"; // Siempre usamos el método de lotes
         public Guid OperationId { get; set; } = Guid.NewGuid();
         public string DisplayName => !string.IsNullOrEmpty(ItemName) ? ItemName : $"Producto #{CatalogItemId}";
         public int Id => CatalogItemId;

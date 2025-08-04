@@ -48,6 +48,7 @@ namespace NetErp.Global.Email.ViewModels
 
 
         public IGenericDataAccess<EmailGraphQLModel> EmailService { get; set; } = IoC.Get<IGenericDataAccess<EmailGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public EmailViewModel Context { get; set; }        
 
 
@@ -339,20 +340,47 @@ namespace NetErp.Global.Email.ViewModels
         }
 
 
-        public Task HandleAsync(EmailUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(EmailUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadEmailsAsync();
+            try
+            {
+                await LoadEmailsAsync();
+                _notificationService.ShowSuccess("Correo corporativo actualizado correctamente.");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(EmailCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(EmailCreateMessage message, CancellationToken cancellationToken)
         {
-            return LoadEmailsAsync();
+            try
+            {
+                await LoadEmailsAsync();
+                _notificationService.ShowSuccess("Correo corporativo creado correctamente.");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(EmailDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(EmailDeleteMessage message, CancellationToken cancellationToken)
         {
-            EmailGraphQLModel emailToDelete = Emails.FirstOrDefault(x => x.Id == message.DeleteEmail.Id) ?? new EmailGraphQLModel();
-            Emails.Remove(emailToDelete);
-            SelectedItem = null;
-            return Task.CompletedTask;
+            try
+            {
+                await LoadEmailsAsync();
+                _notificationService.ShowSuccess("Correo corporativo eliminado correctamente.");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

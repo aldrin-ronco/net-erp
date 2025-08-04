@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
+using NetErp.Books.AccountingEntries.DTO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

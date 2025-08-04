@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace NetErp.Books.AccountingPresentations.Views
+namespace NetErp.Billing.PriceList.Views
 {
     /// <summary>
-    /// Lógica de interacción para AccountingPresentationsDetailView.xaml
+    /// Lógica de interacción para UpdatePromotionView.xaml
     /// </summary>
-    public partial class AccountingPresentationsDetailView : UserControl
+    public partial class UpdatePromotionView : UserControl
     {
-        public AccountingPresentationsDetailView()
+        public UpdatePromotionView()
         {
             InitializeComponent();
         }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -24,8 +19,8 @@ using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Books.AccountingBooks.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.ViewModels;
-using NetErp.Books.AccountingSources.ViewModels;
 using NetErp.Books.AccountingPresentations.ViewModels;
+using NetErp.Books.AccountingSources.ViewModels;
 using NetErp.Books.IdentificationTypes.ViewModels;
 using NetErp.Books.Reports.AnnualIncomeStatement.ViewModels;
 using NetErp.Books.Reports.AuxiliaryBook.ViewModels;
@@ -34,6 +29,7 @@ using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Global.Email.ViewModels;
 using NetErp.Global.Email.Views;
@@ -42,19 +38,24 @@ using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.ViewModels;
 using NetErp.Inventory.MeasurementUnits.ViewModels;
 using NetErp.Suppliers.Suppliers.ViewModels;
+using NetErp.Treasury.Concept.ViewModels;
 using NetErp.Treasury.Masters.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
 using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Global.Parameter.ViewModels;
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace NetErp.Global.MainMenu.ViewModels
 {
     public class MainMenuViewModel: Conductor<IScreen>.Collection.OneActive
     {
-
-
         private int selectedIndex;
 
         public int SelectedIndex
@@ -125,7 +126,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             {
                 CustomerViewModel instance = IoC.Get<CustomerViewModel>();
                 instance.DisplayName = "Administración de clientes";
-                await ActivateItemAsync(instance, new CancellationToken());
+                await ActivateItemAsync(instance, new CancellationToken()).ConfigureAwait(false);
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
             }
@@ -204,7 +205,7 @@ namespace NetErp.Global.MainMenu.ViewModels
         {
             try
             {
-                AccountingPresentationsViewModel instance = IoC.Get<AccountingPresentationsViewModel>();
+                AccountingPresentationViewModel instance = IoC.Get<AccountingPresentationViewModel>();
                 instance.DisplayName = "Presentaciones contables";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
@@ -568,6 +569,26 @@ namespace NetErp.Global.MainMenu.ViewModels
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        public async void OpenTreasuryConcept()
+        {
+            try
+            {
+                ConceptViewModel instance = IoC.Get<ConceptViewModel>();
+                instance.DisplayName = "Administración de conceptos de ingresos, egresos y descuentos";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {

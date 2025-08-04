@@ -11,8 +11,10 @@ using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -26,25 +28,27 @@ using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class CreatePriceListModalViewModel<TModel>: Screen
+    public class CreatePriceListModalViewModel<TModel> : Screen, INotifyDataErrorInfo
     {
 
         private readonly Helpers.IDialogService _dialogService;
+        Dictionary<string, List<string>> _errors;
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly IRepository<StorageGraphQLModel> _storageService;
 
-        private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
-        private IGenericDataAccess<StorageGraphQLModel> StorageService { get; set; } = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
-
-        private string _name;
+        private string _name = string.Empty;
 
         public string Name
         {
             get { return _name; }
-            set 
+            set
             {
-                if (_name != value) 
+                if (_name != value)
                 {
                     _name = value;
+                    ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -54,9 +58,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool IsTaxable
         {
             get { return _isTaxable; }
-            set 
+            set
             {
-                if (_isTaxable != value) 
+                if (_isTaxable != value)
                 {
                     _isTaxable = value;
                     NotifyOfPropertyChange(nameof(IsTaxable));
@@ -71,7 +75,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool PriceListIncludeTax
         {
             get { return _priceListIncludeTax; }
-            set 
+            set
             {
                 if (_priceListIncludeTax != value)
                 {
@@ -87,7 +91,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public bool UseAlternativeFormula
         {
             get { return _useAlternativeFormula; }
-            set 
+            set
             {
                 if (_useAlternativeFormula != value)
                 {
@@ -102,7 +106,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public ObservableCollection<StorageGraphQLModel> Storages
         {
             get { return _storages; }
-            set 
+            set
             {
                 if (_storages != value)
                 {
@@ -117,7 +121,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
             get { return _costCenters; }
-            set 
+            set
             {
                 if (_costCenters != value)
                 {
@@ -132,7 +136,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public ObservableCollection<CostCenterGraphQLModel> ShadowCostCenters
         {
             get { return _shadowCostCenters; }
-            set 
+            set
             {
                 if (_shadowCostCenters != value)
                 {
@@ -149,7 +153,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public StorageGraphQLModel SelectedStorage
         {
             get { return _selectedStorage; }
-            set 
+            set
             {
                 if (_selectedStorage != value)
                 {
@@ -216,7 +220,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                         isPublic
                         allowNewUsersAccess
                         listUpdateBehaviorOnCostChange
-                        parentId
+                        parent{
+                            id
+                            name
+                        }
                         isTaxable
                         priceListIncludeTax
                         useAlternativeFormula
@@ -248,18 +255,30 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.PriceListIncludeTax = IsTaxable && PriceListIncludeTax; //capture the value from the UI
                 variables.Data.UseAlternativeFormula = UseAlternativeFormula; //capture the value from the UI
                 variables.Data.StorageId = SelectedStorage.Id; //capture the value from the UI
-                var result = await PriceListService.Create(query, variables);
+                var result = await _priceListService.CreateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
+        public bool CanSave
+        {
+            get
+            {
+                return _errors.Count <= 0;
+            }
+        }
+
+        //TODO:  refactorizar mensaje de error
         public async Task InitializeAsync()
         {
             try
@@ -278,17 +297,16 @@ namespace NetErp.Billing.PriceList.ViewModels
                       }
                     }
                 ";
-                var result = await StorageService.GetDataContext<InitializeDataContext>(query, new { });
+                var result = await _storageService.GetDataContextAsync<InitializeDataContext>(query, new { });
                 Storages = [.. result.Storages];
                 CostCenters = [.. result.CostCenters];
                 RefreshCostCenters();
                 Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
-                SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0);
+                SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("Invalid null reference");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -319,26 +337,90 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(Cancel);
+                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
         }
 
-        public async Task Cancel()
+        public async Task CancelAsync()
         {
             await _dialogService.CloseDialogAsync(this, true);
         }
 
 
-        public CreatePriceListModalViewModel(Helpers.IDialogService dialogService) 
+        public CreatePriceListModalViewModel(
+            Helpers.IDialogService dialogService,
+            IRepository<PriceListGraphQLModel> priceListService,
+            IRepository<StorageGraphQLModel> storageService)
         {
+            _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
+            _priceListService = priceListService;
+            _storageService = storageService;
         }
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+            ValidateProperty(nameof(Name), Name);
+        }
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
     }
 
@@ -353,4 +435,6 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         public TModel? ReturnedData { get; set; }
     }
+
+
 }

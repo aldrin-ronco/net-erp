@@ -42,6 +42,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public List<ItemSizeMasterGraphQLModel> itemsSizesMaster = [];
 
         public readonly IGenericDataAccess<ItemSizeMasterGraphQLModel> ItemSizeMasterService = IoC.Get<IGenericDataAccess<ItemSizeMasterGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         private ObservableCollection<ItemSizeMasterDTO> _itemSizesMaster = [];
         public ObservableCollection<ItemSizeMasterDTO> ItemSizesMaster
@@ -285,6 +286,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 ItemSizeMasterDTO itemSizeMasterDTO = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeMaster.Id).First();
                 int indexToUpdate = ItemSizesMaster.IndexOf(itemSizeMasterDTO);
                 _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster[indexToUpdate] = Context.AutoMapper.Map<ItemSizeMasterDTO>(message.UpdatedItemSizeMaster));
+                _notificationService.ShowSuccess("Grupo de tallaje actualizado correctamente");
             }
             catch (Exception)
             {
@@ -300,6 +302,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 ItemSizeMasterDTO itemSizeMasterDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeMaster.Id).First();
                 _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Remove(itemSizeMasterDTO));
+                _notificationService.ShowSuccess("Grupo de tallaje eliminado correctamente");
             }
             catch (Exception)
             {
@@ -329,6 +332,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                     }
 
                 });
+                _notificationService.ShowSuccess("Grupo de tallaje creado correctamente");
             }
             catch (Exception)
             {
@@ -541,6 +545,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 ItemSizeDetailDTO itemDetailDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeDetail.ItemSizeMasterId).FirstOrDefault().Sizes.First(x => x.Id == message.DeletedItemSizeDetail.Id);
                 _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemDetailDTO.ItemSizeMasterId).FirstOrDefault().Sizes.Remove(itemDetailDTO));
+                _notificationService.ShowSuccess("Tallaje eliminado correctamente");
             }
             catch (Exception)
             {
@@ -558,6 +563,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 int indexToUpdate = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeDetail.ItemSizeMasterId).First().Sizes.IndexOf(itemSizeDetailDTO);
                 _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemSizeDetailDTO.ItemSizeMasterId).First()
                                                                 .Sizes[indexToUpdate] = Context.AutoMapper.Map<ItemSizeDetailDTO>(message.UpdatedItemSizeDetail));
+                _notificationService.ShowSuccess("Tallaje actualizado correctamente");
             }
             catch (Exception)
             {
@@ -586,9 +592,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                     {
                         ItemSizesMaster.Where(x => x.Id == message.CreatedItemSizeDetail.ItemSizeMasterId).First().Sizes.Add(Context.AutoMapper.Map<ItemSizeDetailDTO>(message.CreatedItemSizeDetail));
                     }
-
                 });
-
+                _notificationService.ShowSuccess("Tallaje creado correctamente");
             }
             catch (Exception)
             {

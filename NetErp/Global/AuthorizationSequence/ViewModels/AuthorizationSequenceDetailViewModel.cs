@@ -9,7 +9,6 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using DevExpress.Xpo.DB.Helpers;
 using Dictionaries;
-using DTOLibrary.Books;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;

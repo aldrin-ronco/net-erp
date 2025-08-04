@@ -336,50 +336,51 @@ namespace NetErp.Books.AccountingSources.ViewModels
             this.SetFocus(() => Code);
         }
 
-        public async Task<IGenericDataAccess<AccountingSourceGraphQLModel>.PageResponseType> LoadPage()
-        {
-            try
-            {
-                string queryPage;
-                queryPage = @"query($filter: AccountingSourceFilterInput) {
-                    PageResponse: accountingSourcePage(filter:$filter) {
-                        count
-                        rows {
-                            id
-                            code
-                          fullCode
-                          annulmentCode
-                          name
-                          isSystemSource
-                          annulmentCharacter
-                          isKardexTransaction
-                          kardexFlow
-                          accountingAccount {
-                                id
-                          }
-                            processType {
-                                id
-                                name
-                              module {
-                                    id
-                                    name
-                            }
-                            }
-                        }
-                    }
-                }
-                ";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.Annulment = false;
-                return await AccountingSourceService.GetPage(queryPage, variables);
-            }
-            catch (Exception)
-            {
+        //public async Task<IGenericDataAccess<AccountingSourceGraphQLModel>.PageResponseType> LoadPage()
+        //{
+        //    try
+        //    {
+        //        string queryPage;
+        //        queryPage = @"query($filter: AccountingSourceFilterInput) {
+        //            PageResponse: accountingSourcePage(filter:$filter) {
+        //                count
+        //                rows {
+        //                    id
+        //                    code
+        //                  fullCode
+        //                  annulmentCode
+        //                  name
+        //                  isSystemSource
+        //                  annulmentCharacter
+        //                  isKardexTransaction
+        //                  kardexFlow
+        //                  accountingAccount {
+        //                        id
+        //                  }
+        //                    processType {
+        //                        id
+        //                        name
+        //                      module {
+        //                            id
+        //                            name
+        //                    }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        ";
+        //        dynamic variables = new ExpandoObject();
+        //        variables.filter = new ExpandoObject();
+        //        variables.filter.Annulment = false;
+        //        return await AccountingSourceService.GetPage(queryPage, variables);
+        //    }
+        //    catch (Exception)
+        //    {
 
-                throw;
-            }
-        }
+        //        throw;
+        //    }
+        //}
+
         public async Task Save()
         {
             try
@@ -387,16 +388,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
                 var result = await ExecuteSave();
-                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceCreateMessage() { CreatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result), AccountingSources = pageResult.PageResponse.Rows });
+                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceCreateMessage() { CreatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
                 }
                 else
                 {
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceUpdateMessage() { UpdatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result), AccountingSources = pageResult.PageResponse.Rows });
+                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceUpdateMessage() { UpdatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
                 }
-                //this.Context.AccountingSourceMasterViewModel.UpdateAccountingSourceDataGridView();
                 Context.EnableOnViewReady = false;
                 await this.Context.ActivateMasterView();
                 
@@ -438,7 +437,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 if (this.Id == 0)
                 {
                     string query = @"
-				mutation ($data: CreateAccountingSourceDataInput!) {
+				mutation ($data: CreateAccountingSourceInput!) {
 				  CreateResponse: createAccountingSource(data: $data) {
 					id
 					code
@@ -482,7 +481,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 else
                 {
                     string query = @"
-				mutation ($data: UpdateAccountingSourceDataInput!, $id: Int!) {
+				mutation ($data: UpdateAccountingSourceInput!, $id: Int!) {
 				  UpdateResponse: updateAccountingSource(data: $data, id: $id) {
 					id
 					code

@@ -424,7 +424,9 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
-                variables.filter.SearchName = this.FilterSearchAccountingEntity.Replace(" ", "%");
+                variables.filter.searchName = new ExpandoObject();
+                variables.filter.searchName.@operator = "like";
+                variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
                 var accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
                 this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
 

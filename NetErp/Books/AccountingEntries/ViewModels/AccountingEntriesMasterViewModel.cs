@@ -44,6 +44,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         IHandle<AccountingEntryDraftMasterUpdateMessage>
     {
         #region Popiedades
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         // Context
         public AccountingEntriesViewModel Context { get; set; }
@@ -421,6 +422,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _IsSelectedTab1 = value;
                     NotifyOfPropertyChange(nameof(IsSelectedTab1));
                     NotifyOfPropertyChange(nameof(CanDeleteEntry));
+                    ValidateProperties();
                 }
             }
         }
@@ -528,7 +530,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
                 else
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "No hubieron resultados", MessageBoxButton.OK, MessageBoxImage.Error));
+                    _notificationService.ShowInfo("No se encontraron registros");
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -622,14 +624,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     variables.filter.DocumentDate = new ExpandoObject();
                     variables.filter.DocumentDate.@operator = SelectedDateFilterOption.ToString();
-                    variables.filter.DocumentDate.value = StartDateFilter!.Value.Date.ToUniversalTime();
+                    variables.filter.DocumentDate.value = DateTimeHelper.DateTimeKindUTC(StartDateFilter);
                 }
 
                 if(SearchOnDate && IsDateRange)
                 {
                     variables.filter.DocumentDate = new ExpandoObject();
                     variables.filter.DocumentDate.@operator = "between";
-                    variables.filter.DocumentDate.value = new List<DateTime>{ StartDateFilter!.Value.Date.ToUniversalTime(), EndDateFilter!.Value.Date.ToUniversalTime() };
+                    variables.filter.DocumentDate.value = new List<DateTime>{ DateTimeHelper.DateTimeKindUTC(StartDateFilter), DateTimeHelper.DateTimeKindUTC(EndDateFilter) };
                 }
 
                 // Paginacion
@@ -690,6 +692,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             this.IsBusy = false;
             NotifyOfPropertyChange(nameof(CanDeleteEntry));
+            _notificationService.ShowSuccess(IsSelectedTab1 ? "Comprobante(s) contable(s) eliminado(s) correctamente" : "Borrador(es) contable(s) eliminado(s) correctamente");
         }
 
         public async Task<int> ExecuteDeleteEntry()
@@ -700,9 +703,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             if (IsSelectedTab1)
             {
-                ids = (from e in this.AccountingEntriesMaster
+                ids = [.. (from e in this.AccountingEntriesMaster
                        where e.IsChecked
-                       select e.Id).ToArray();
+                       select e.Id)];
 
                 query = @"
                 mutation($connectionId: String!, $masterIds:[ID!]!) {
@@ -714,9 +717,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
             else
             {
-                ids = (from e in this.AccountingEntriesDraftMaster
+                ids = [.. (from e in this.AccountingEntriesDraftMaster
                        where e.IsChecked
-                       select e.Id).ToArray();
+                       select e.Id)];
 
                 query = @"
                 mutation($draftMasterIds:[ID!]!) {
@@ -963,7 +966,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                     dynamic variables = new ExpandoObject();
                     variables.filter = new ExpandoObject();
-                    variables.filter.SearchName = this.FilterSearchAccountingEntity.Replace(" ", "%");
+                    variables.filter.SearchName = new ExpandoObject();
+                    variables.filter.SearchName.@operator = "like";
+                    // Reemplazo los espacios por % para que la busqueda sea mas flexible
+                    variables.filter.SearchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
                     var accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
                     this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                     App.Current.Dispatcher.Invoke(() =>
@@ -1129,9 +1135,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(SelectedAccountingBookId));
-            ValidateProperty(nameof(SelectedCostCenterId));
-            ValidateProperty(nameof(SelectedAccountingSourceId));
+            if (SearchOnAccountingBook) ValidateProperty(nameof(SelectedAccountingBookId));
+            if (SearchOnCostCenter) ValidateProperty(nameof(SelectedCostCenterId));
+            if (SearchOnAccountingSource) ValidateProperty(nameof(SelectedAccountingSourceId));
+            if (SearchOnDocumentNumber) ValidateProperty(nameof(DocumentNumber));
+            if (SearchOnAccountingEntity) ValidateProperty(nameof(SelectedAccountingEntityId));
         }
         #endregion
 
@@ -1320,6 +1328,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 AccountingEntryMasterDTO entry = this.AccountingEntriesMaster.Where(x => x.Id == message.Id).FirstOrDefault();
                 if (entry != null) AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message));
                 this.AccountingEntriesMaster = new ObservableCollection<AccountingEntryMasterDTO>(this.AccountingEntriesMaster);
+                _notificationService.ShowSuccess("Comprobante contable guardado correctamente");
             }
             catch (Exception ex)
             {
@@ -1390,6 +1399,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 AccountingEntryMasterDTO entry = this.AccountingEntriesMaster.Where(x => x.Id == message.CancelledAccountingEntry.Id).FirstOrDefault();
                 if (entry != null) this.AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message.CancelledAccountingEntry));
+                _notificationService.ShowSuccess("Comprobante contable anulado exitosamente");
             }
             catch (Exception ex)
             {
@@ -1488,6 +1498,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 AccountingEntryDraftMasterDTO updatedAccountigEntryDraftMaster = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.UpdatedAccountingEntryDraftMaster.Id).FirstOrDefault();
                 if (updatedAccountigEntryDraftMaster != null) this.AccountingEntriesDraftMaster.Replace(message.UpdatedAccountingEntryDraftMaster);
+                _notificationService.ShowSuccess("Actualización exitosa");
             }
             catch (Exception ex)
             {

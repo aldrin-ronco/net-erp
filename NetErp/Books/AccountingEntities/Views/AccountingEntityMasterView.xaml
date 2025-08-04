@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Books.AccountingEntities.ViewModels"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:dto="clr-namespace:DTOLibrary.Books;assembly=DTOLibrary"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"

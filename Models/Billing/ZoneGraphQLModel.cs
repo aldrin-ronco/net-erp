@@ -14,14 +14,14 @@ namespace Models.Billing
     }
     public class ZoneCreateMessage
     {
-        public ZoneGraphQLModel CreateZone { get; set; } = new ZoneGraphQLModel();
+        public ZoneGraphQLModel CreatedZone { get; set; } = new ZoneGraphQLModel();
     }
     public class ZoneUpdateMessage
     {
-        public ZoneGraphQLModel UpdateZone { get; set; } = new ZoneGraphQLModel();
+        public ZoneGraphQLModel UpdatedZone { get; set; } = new ZoneGraphQLModel();
     }
     public class ZoneDeleteMessage
     {
-        public ZoneGraphQLModel DeleteZone { get; set; } = new ZoneGraphQLModel();
+        public ZoneGraphQLModel DeletedZone { get; set; } = new ZoneGraphQLModel();
     }
 }

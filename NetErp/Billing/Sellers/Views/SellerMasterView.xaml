@@ -114,8 +114,9 @@
                             <Style TargetType="dxg:RowControl">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
-                                        <Setter Property="Background" Value="LightPink"/>
+                                        <Setter Property="Background" Value="Red"/>
                                         <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Foreground" Value="White"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

@@ -68,7 +68,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
-    <ProjectReference Include="..\DTOLibrary\DTOLibrary.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>

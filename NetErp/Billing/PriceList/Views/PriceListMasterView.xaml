@@ -19,7 +19,8 @@
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:uc="clr-namespace:NetErp.UserControls" 
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:Background="White" FontFamily="Century Gothic">
     <UserControl.Resources>
         <services:OperationStatusToColorConverter x:Key="StatusToColorConverter"/>
         <h:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
@@ -33,22 +34,64 @@
                     BusyContentMargin="0,20,0,0"
                     IsBusyAtStartup="False">
         <Grid>
-            <Grid>
+            
+            <Grid Visibility="{Binding ShowAllControls, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.5*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="0.5*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1">
+
+                    <TextBlock Text="LISTAS DE PRECIOS" FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 5" FontSize="32"/>
+
+                    <TextBlock Text="Las listas de precios te permiten manejar precios predefinidos para tus diferentes tipos de clientes, por ejemplo: precio al público o precio mayorista" 
+                               HorizontalAlignment="Center" Margin="0 5 0 5" FontSize="20" TextWrapping="Wrap" TextAlignment="Center"/>
+                    
+                    <Image Source="/Global/Resources/Images/WithoutResponse.png" Width="400" Height="400" Margin="0 0 0 10"/>
+
+                    <TextBlock Text="En este momento no hay ninguna lista de precios" HorizontalAlignment="Center" Margin="0 10 0 5" FontSize="22"/>
+
+                    <Grid Margin="0 5 0 0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.4*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.4*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Command="{Binding CreatePriceListCommand, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" FontSize="20" Padding="10">
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Crear nueva lista de precios" Margin="0 0 5 0" VerticalAlignment="Center"/>
+                                    <!--<Image Source="{dx:DXImage 'Images/Actions/New_16x16.png'}" Height="20" Width="20" VerticalAlignment="Center"/>-->
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+            
+            <Grid Visibility="{Binding ShowAllControls, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <!--ribboncontrol-->
                     <RowDefinition Height="auto"/>
                     <!--Controles y filtros-->
                     <RowDefinition Height="auto"/>
+                    <!--banner isActive-->
+                    <RowDefinition Height="auto"/>
                     <!--gridcontrol-->
                     <RowDefinition Height="*"/>
-                    
                     <!--informacion-->
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <!--control stock inventario-->
                     <RowDefinition Height="auto"/>
                     <!--paginación-->
-                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
 
                 <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" Margin="0 0 0 5"
@@ -56,44 +99,62 @@
                            RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
                     <dxr:RibbonPage Caption="General">
-
+                        
                         <dxr:RibbonPageGroup Caption="Acciones">
+                            
                             <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
                                            LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
-                                           Content="Crear nueva lista de precios"
+                                           Content="Nueva lista de precios"
                                            RibbonStyle="Large"
                                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
-                                           Hint="Crear un nueva lista de precios">
+                                           Hint="Crear lista de precios">
                                 <dxmvvm:Interaction.Behaviors>
                                     <dxmvvm:EventToCommand Command="{Binding Path=CreatePriceListCommand}" EventName="ItemClick"/>
                                 </dxmvvm:Interaction.Behaviors>
                             </dxb:BarButtonItem>
+                            
                             <dxb:BarItemSeparator/>
+                            
+                            <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
+                                           LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
+                                           Content="Nueva promoción"
+                                           RibbonStyle="Large"
+                                           IsEnabled="{Binding CanCreatePromotion, UpdateSourceTrigger=PropertyChanged}"
+                                           Hint="Crear promoción">
+                                <dxmvvm:Interaction.Behaviors>
+                                    <dxmvvm:EventToCommand Command="{Binding Path=CreatePromotionCommand}" EventName="ItemClick"/>
+                                </dxmvvm:Interaction.Behaviors>
+                            </dxb:BarButtonItem>
+                            
+                            <dxb:BarItemSeparator/>
+                            
                             <dxb:BarButtonItem Content="Eliminar" 
                                            Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
                                            LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
                                            Description="Eliminar"
-                                           Hint="Eliminar el cliente seleccionado"    
-                                           IsEnabled="{Binding Path=CanDeleteCustomer, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Hint="Eliminar lista de precios o promoción seleccionada"    
                                            RibbonStyle="Large">
                                 <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding Path=DeleteCustomerCommand}" EventName="ItemClick"/>
+                                    <dxmvvm:EventToCommand Command="{Binding Path=DeletePriceListCommand}" EventName="ItemClick"/>
                                 </dxmvvm:Interaction.Behaviors>
                             </dxb:BarButtonItem>
+                            
                             <dxb:BarItemSeparator/>
-                            <dxb:BarButtonItem Content="Configuración de lista de precios actual" 
+
+                            <dxb:BarButtonItem Content="Configuración" 
                                                Glyph="{dx:DXImage 'Images/Setup/Properties_16x16.png'}" 
                                                LargeGlyph="{dx:DXImage 'Images/Setup/Properties_32x32.png'}"                                             
-                                               Description="Eliminar"
-                                               Hint="Modificar configuración para la lista de precios actual"    
-                                               IsEnabled="{Binding Path=CanDeleteCustomer, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                               Description="Configuración"
+                                               Hint="Configuración de lista de precios o promoción seleccionada"    
                                                RibbonStyle="Large">
                                 <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding Path=UpdatePriceListCommand}" EventName="ItemClick"/>
+                                    <dxmvvm:EventToCommand Command="{Binding Path=ConfigurationCommand}" EventName="ItemClick"/>
                                 </dxmvvm:Interaction.Behaviors>
                             </dxb:BarButtonItem>
-                            <dxb:BarItemSeparator/>
+
                         </dxr:RibbonPageGroup>
+                      
+                            
                     </dxr:RibbonPage>
                 </dxr:RibbonControl>
                 
@@ -111,14 +172,14 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0 0 10 10">
-                        <TextBlock Text="Catalogo de productos" FontFamily="Century Gothic"/>
+                        <TextBlock Text="Catalogo de productos" FontFamily="Century Gothic" Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit   ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
-                                            IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic"/>
+                                            IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="10 0 10 10">
-                        <TextBlock Text="Buscar" FontFamily="Century Gothic"/>
-                        <dxe:TextEdit   x:Name="FilterSearch"
+                        <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                        <dxe:TextEdit   x:Name="FilterSearch" Padding="2"
                                         Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
                                         FontFamily="Century Gothic"
                                         NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
@@ -129,31 +190,52 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="1" Margin="0 0 10 0">
-                        <TextBlock Text="Lista" FontFamily="Century Gothic"/>
+                        <TextBlock Text="Lista" FontFamily="Century Gothic" Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding PriceLists, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedPriceList, UpdateSourceTrigger=PropertyChanged}"
-                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic"/>
+                                  IsTextEditable="False" FontFamily="Century Gothic" DisplayMember="FullName" ApplyItemTemplateToSelectedItem="True" Padding="2">
+                            <dxe:ComboBoxEdit.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" 
+                                                FontFamily="Century Gothic">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                        <Setter Property="Foreground" Value="Red"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </dxe:ComboBoxEdit.ItemTemplate>
+                        </dxe:ComboBoxEdit>
                     </StackPanel>
 
                     <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="10 0 10 0">
-                        <TextBlock Text="Tipo de producto" FontFamily="Century Gothic"/>
+                        <TextBlock Text="Tipo de producto" FontFamily="Century Gothic" Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemsTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
-                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic"/>
+                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1" Margin="10 0 10 0" Visibility="{Binding CanShowItemsCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                        <TextBlock Text="Linea/Categoria" FontFamily="Century Gothic"/>
+                        <TextBlock Text="Linea/Categoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemsCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
-                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic"/>
+                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="1" Margin="10 0 0 0" Visibility="{Binding CanShowItemsSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                        <TextBlock Text="Sublinea/Subcategoria" FontFamily="Century Gothic"/>
+                        <TextBlock Text="Sublinea/Subcategoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
                         <dxe:ComboBoxEdit ItemsSource="{Binding ItemsSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
-                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic"/>
+                                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
                     </StackPanel>
 
                     
                 </Grid>
+
+                <StackPanel Grid.Row="2" Visibility="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}" Background="Red">
+                    <TextBlock Text="ESTA LISTA DE PRECIOS NO ESTÁ ACTIVA" HorizontalAlignment="Center" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
+                </StackPanel>
 
                 <busyIndicator:BusyMask
                     IsBusy="{Binding IsBusy}"
@@ -161,7 +243,7 @@
                     BusyContent="Please wait..."
                     BusyContentMargin="0,20,0,0"
                     IsBusyAtStartup="False"
-                    Grid.Row="2" Margin="0 5 0 0">
+                    Grid.Row="3" Margin="0 5 0 0">
 
                     <dxg:GridControl ItemsSource="{Binding PriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              SelectedItem="{Binding SelectedPriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
@@ -195,7 +277,7 @@
                             </dxg:TableView>
                         </dxg:GridControl.View>
 
-                        <dxg:GridColumn Header="" Width="24" FixedWidth="True">
+                        <!--<dxg:GridColumn Header="" Width="24" FixedWidth="True">
                             <dxg:GridColumn.CellTemplate>
                                 <DataTemplate>
                                     <Ellipse Width="16" Height="16" 
@@ -204,7 +286,7 @@
                          ToolTip="{Binding Row.Status}"/>
                                 </DataTemplate>
                             </dxg:GridColumn.CellTemplate>
-                        </dxg:GridColumn>
+                        </dxg:GridColumn>-->
 
                         <dxg:GridColumn Header="Nombre del producto" Width="*" Binding="{Binding CatalogItem.Name, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxg:GridColumn Header="Referencia" HorizontalHeaderContentAlignment="Center" Binding="{Binding CatalogItem.Reference, UpdateSourceTrigger=PropertyChanged}"/>
@@ -212,39 +294,40 @@
                         <dxg:GridColumn Header= "UND" Binding="{Binding Measurement.Abbreviation, UpdateSourceTrigger=PropertyChanged}" Width="auto"/>
                         <dxg:GridColumn Header="Costo" HorizontalHeaderContentAlignment="Center" Binding="{Binding Cost, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxg:GridColumn Header="IVA" Width="auto" Binding="{Binding IVA, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IvaValueConverter}}"/>
-                        <dxg:GridColumn Header="%Util" Width="45" HorizontalHeaderContentAlignment="Center" Binding="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridColumn Header="%Util" Width="45" HorizontalHeaderContentAlignment="Center" Binding="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ReadOnly="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridColumn.EditSettings>
-                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True" AllowSpinOnMouseWheel="False"
                                           Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
                         <dxg:GridColumn Header="Utilidad" HorizontalHeaderContentAlignment="Center" Binding="{Binding Profit, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridColumn.EditSettings>
-                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True" AllowSpinOnMouseWheel="False"
                                           Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
-                        <dxg:GridColumn Header="Precio de venta" HorizontalHeaderContentAlignment="Center" Binding="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridColumn Header="Precio de venta" HorizontalHeaderContentAlignment="Center" Binding="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ReadOnly="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridColumn.EditSettings>
-                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True" AllowSpinOnMouseWheel="False"
                                           Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
-                        <dxg:GridColumn Header="Precio minimo" HorizontalHeaderContentAlignment="Center" Binding="{Binding MinimumPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridColumn Header="Precio minimo" HorizontalHeaderContentAlignment="Center" Binding="{Binding MinimumPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ReadOnly="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridColumn.EditSettings>
-                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True" AllowSpinOnMouseWheel="False"
                                           Mask="{Binding MaskN2, UpdateSourceTrigger=PropertyChanged}"/>
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
-                        <dxg:GridColumn Header="%Dcto" Width="60" HorizontalHeaderContentAlignment="Center" Binding="{Binding DiscountMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridColumn Header="%Dcto" Width="60" HorizontalHeaderContentAlignment="Center" Binding="{Binding DiscountMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ReadOnly="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged}">
                             <dxg:GridColumn.EditSettings>
-                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
+                                <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True" AllowSpinOnMouseWheel="False"
                                           Mask="{Binding MaskN5, UpdateSourceTrigger=PropertyChanged}"/>
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
                     </dxg:GridControl>
                 </busyIndicator:BusyMask>
-                <StackPanel Orientation="Vertical" Grid.Row="3" Grid.ColumnSpan="2" Margin="0 10 0 4">
+                
+                <StackPanel Orientation="Vertical" Grid.Row="4" Grid.ColumnSpan="2" Margin="0 10 0 4" Visibility="{Binding IsPriceList, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                     <ContentControl>
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
@@ -299,7 +382,7 @@
                     </ContentControl>
                 </StackPanel>
 
-                <StackPanel Grid.Row="4" Grid.ColumnSpan="2">
+                <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Visibility="{Binding IsPriceList, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                     <ContentControl>
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
@@ -341,7 +424,7 @@
 
 
 
-                <Border Grid.Row="5" Margin="0,10,0,0" BorderThickness="1" BorderBrush="#DDDDDD" Visibility="{Binding ShowInventoryQuantity, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                <Border Grid.Row="6" Margin="0,10,0,0" BorderThickness="1" BorderBrush="#DDDDDD" Visibility="{Binding ShowInventoryQuantity, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="STOCK POR BODEGA" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" Margin="0 4 0 0"/>
                         <ItemsControl ItemsSource="{Binding SelectedPriceListDetail.CatalogItem.Stock, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
@@ -390,7 +473,7 @@
                     </StackPanel>
                 </Border>
 
-                <uc:GridPaging Grid.Row="6" Grid.Column="0" 
+                <uc:GridPaging Grid.Row="7" Grid.Column="0" 
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Center"
                        Margin="0 0 0 0"

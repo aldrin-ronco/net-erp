@@ -1,16 +1,21 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
+using Common.Interfaces;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Global;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
 using Ninject.Activation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -22,12 +27,13 @@ using System.Windows.Threading;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class UpdatePriceListModalViewModel<TModel>: Screen
+    public class UpdatePriceListModalViewModel<TModel>: Screen, INotifyDataErrorInfo
     {
         private readonly Helpers.IDialogService _dialogService;
         private readonly IMapper _autoMapper;
-        private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
-        private IGenericDataAccess<StorageGraphQLModel> StorageService { get; set; } = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
+        Dictionary<string, List<string>> _errors;
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly IRepository<StorageGraphQLModel> _storageService;
 
         private string _name;
 
@@ -39,7 +45,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_name != value)
                 {
                     _name = value;
+                    ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     _ = this.SetFocus(nameof(Name));
                 }
             }
@@ -140,7 +148,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private bool _isActive;
 
-        public bool IsActive
+        public new bool IsActive
         {
             get { return _isActive; }
             set
@@ -297,10 +305,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                         isPublic
                         allowNewUsersAccess
                         listUpdateBehaviorOnCostChange
-                        parentId
                         isTaxable
                         priceListIncludeTax
                         useAlternativeFormula
+                        parent{
+                            id
+                            name
+                        }
                         storage {
                           id
                           name
@@ -312,7 +323,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         }
                       }
                     }
-                    ";
+                ";
                 dynamic variables = new ExpandoObject();
                 variables.Id = SelectedPriceListId;
                 variables.Data = new ExpandoObject();
@@ -331,15 +342,26 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.UseAlternativeFormula = UseAlternativeFormula;
                 variables.Data.StorageId = SelectedStorage.Id;
                 variables.Data.PaymentMethodsIds = paymentMethodsIds;
-                var result = await PriceListService.Update(query, variables);
+                var result = await _priceListService.UpdateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromUpdatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "UpdatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+        }
 
-                throw;
+        public bool CanSave
+        {
+            get 
+            { 
+                return _errors.Count <= 0;
             }
         }
 
@@ -347,6 +369,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             ShadowCostCenters = [.. CostCenters.Where(x => x.IsTaxable == IsTaxable && x.PriceListIncludeTax == PriceListIncludeTax)];
         }
+
         public async Task InitializeAsync()
         {
             try
@@ -370,17 +393,16 @@ namespace NetErp.Billing.PriceList.ViewModels
                       }
                     }
                 ";
-                var result = await StorageService.GetDataContext<InitializeDataContext>(query, new { });
+                var result = await _storageService.GetDataContextAsync<InitializeDataContext>(query, new { });
                 Storages = [.. result.Storages];
                 CostCenters = [.. result.CostCenters];
                 RefreshCostCenters();
                 Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
                 PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(result.PaymentMethods)];
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -409,27 +431,91 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(Cancel);
+                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
         }
 
-        public async Task Cancel()
+        public async Task CancelAsync()
         {
             await _dialogService.CloseDialogAsync(this, true);
         }
 
 
-        public UpdatePriceListModalViewModel(Helpers.IDialogService dialogService, IMapper autoMapper)
+        public UpdatePriceListModalViewModel(
+            Helpers.IDialogService dialogService, 
+            IMapper autoMapper,
+            IRepository<PriceListGraphQLModel> priceListService,
+            IRepository<StorageGraphQLModel> storageService)
         {
+            _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _autoMapper = autoMapper;
+            _priceListService = priceListService;
+            _storageService = storageService;
         }
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+        }
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Execute.OnUIThread(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                });
+            }
         }
     }
 

@@ -10,7 +10,8 @@
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-             xmlns:ioc="clr-namespace:NetErp.IoContainer" 
+             xmlns:ioc="clr-namespace:NetErp.IoContainer"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator" 
              d:DataContext="{d:DesignInstance Type=mainMenuViewModel:MainMenuViewModel}"
              DataContext="{ioc:DISource Type=mainMenuViewModel:MainMenuViewModel}"
              mc:Ignorable="d" 
@@ -66,6 +67,7 @@
             </MenuItem>
             <MenuItem Header="Tesorería">
                 <MenuItem Header="Administración de cajas, bancos y franquicias" x:Name="OpenTreasuryRootMaster"/>
+                <MenuItem Header="Administración de conceptos de ingresos, egresos y descuentos" x:Name="OpenTreasuryConcept"/>
             </MenuItem>
             <MenuItem Header="Global" Click="MenuItem_Click">
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>

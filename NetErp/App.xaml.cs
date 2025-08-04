@@ -1,20 +1,10 @@
-﻿using Common.Interfaces;
-using Models.Books;
-using NetErp.IoContainer;
-using Ninject;
-using Ninject.Modules;
-using System;
-using System.ComponentModel;
+﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
-using System.Reflection;
-using System.Windows.Controls;
-using BooksServicesPostgreSQL = Services.Books.DAL.PostgreSQL;
-using BooksServicesSQLServer = Services.Books.DAL.SQLServer;
-using DevExpress.Xpf.WindowsUI.Navigation;
-using Services.Books.DAL.PostgreSQL;
-using NetErp.Books.AccountingAccounts.ViewModels;
-using DevExpress.Mvvm;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace NetErp
 {
@@ -25,33 +15,27 @@ namespace NetErp
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            PreloadDevExpressAssemblies();
             base.OnStartup(e);
-            NinjectKernel.Kernel = new StandardKernel(new MyDIContainer());
-            DISource.Resolver = Resolve;
         }
 
-        object Resolve(Type type, object key, string name)
+        private static void PreloadDevExpressAssemblies()
         {
-            if (type == null) throw new ArgumentNullException(nameof(type));
-            if (name != null)
-                return NinjectKernel.Kernel.Get(type, name);
-            return NinjectKernel.Kernel.Get(type);
-        }
-    }
-
-    public class MyDIContainer : NinjectModule
-    {
-        string? SQLEngine = Environment.GetEnvironmentVariable("NET_ERP_SQL_ENGINE");
-
-        public override void Load()
-        {
-            if (SQLEngine == null || SQLEngine.Trim() == string.Empty) throw new InvalidEnumArgumentException(nameof(SQLEngine));
-
-            Bind(typeof(IGenericDataAccess<AccountingAccountGraphQLModel>)).To(SQLEngine == "POSTGRESQL" ? typeof(BooksServicesPostgreSQL.AccountingAccountService) : typeof(BooksServicesSQLServer.AccountingAccountService)).InSingletonScope();
-            Bind(typeof(AccountPlanMasterViewModel)).To(typeof(AccountPlanMasterViewModel)).InTransientScope();
-            //Bind(typeof(AccountPlanDetailViewModel)).To(typeof(AccountPlanDetailViewModel)).InTransientScope();
-            Bind(typeof(INavigationService)).To(typeof(FrameNavigationService)).InTransientScope();
-            //Bind(typeof(IEventAggregator)).To(typeof(EventAggregator)).InSingletonScope();
+            // DevExpress controls
+            _ = new DevExpress.Xpf.Grid.GridControl();
+            _ = new DevExpress.Xpf.Editors.TextEdit();
+            _ = new DevExpress.Xpf.Ribbon.RibbonControl();
+            
+            // Force load critical assemblies that cause delays
+            _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Serializer.Newtonsoft.dll");
+            _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Abstractions.dll");
+            _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Primitives.dll");
+            _ = System.Reflection.Assembly.LoadFrom(@"DevExpress.Images.v24.2.dll");
+            _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Abstractions.Websocket.dll");
+            
+            // Trigger System.Drawing and Microsoft.CSharp loading
+            System.Drawing.Color.FromArgb(255, 0, 0);
+            dynamic dummy = new System.Dynamic.ExpandoObject();
         }
     }
 }

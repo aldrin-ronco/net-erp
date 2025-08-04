@@ -7,7 +7,7 @@
         xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
         xmlns:h="clr-namespace:NetErp.Helpers"
         xmlns:controls="clr-namespace:NetErp.Helpers.Controls"
-        mc:Ignorable="d"
+        mc:Ignorable="d" FontFamily="Century Gothic"
         Title="ShellView" Width="auto" Height="auto" WindowState="Maximized">
 
     <Grid>
