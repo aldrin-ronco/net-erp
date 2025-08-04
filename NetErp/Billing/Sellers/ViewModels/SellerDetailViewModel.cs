@@ -27,6 +27,7 @@ using DevExpress.Mvvm;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Billing.Zones.DTO;
 using System.Diagnostics;
+using System.Collections.Specialized;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
@@ -329,6 +330,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _costCenters = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ListenCostCenterChek();
                 }
             }
         }
@@ -561,6 +564,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 //if (SelectedIdentificationType == null) return false;
                 // Si el documento de identidad esta vacion o su longitud es inferior a la longitud minima definida para ese tipo de documento
                 if (string.IsNullOrEmpty(IdentificationNumber.Trim()) || IdentificationNumber.Length < SelectedIdentificationType.MinimumDocumentLength) return false;
+                if (CostCenters.Where(f => f.IsSelected == true).Count() == 0) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
                 // Si el control de errores por propiedades tiene algun error
@@ -673,7 +677,42 @@ namespace NetErp.Billing.Sellers.ViewModels
                     break;
             }
         }
+        private void ListenCostCenterChek()
+        {
+            foreach (var costCenter in CostCenters)
+            {
+                costCenter.PropertyChanged += CostCenter_PropertyChanged;
+            }
 
+            // Escuchar cuando se agregan nuevos elementos
+            CostCenters.CollectionChanged += CostCenter_CollectionChanged;
+        }
+        private void CostCenter_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CostCenterDTO.IsSelected))
+            {
+                // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
+                NotifyOfPropertyChange(() => CanSave);
+            }
+        }
+        private void CostCenter_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Escuchar cambios de los nuevos elementos
+            if (e.NewItems != null)
+            {
+                foreach (CostCenterDTO p in e.NewItems)
+                    p.PropertyChanged += CostCenter_PropertyChanged;
+            }
+
+            // Opcional: dejar de escuchar eliminados
+            if (e.OldItems != null)
+            {
+                foreach (CostCenterDTO p in e.OldItems)
+                    p.PropertyChanged -= CostCenter_PropertyChanged;
+            }
+
+            NotifyOfPropertyChange(() => CanSave);
+        }
         public async Task Save()
         {
             try
