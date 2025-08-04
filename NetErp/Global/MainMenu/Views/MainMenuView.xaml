@@ -67,6 +67,7 @@
             </MenuItem>
             <MenuItem Header="Tesorería">
                 <MenuItem Header="Administración de cajas, bancos y franquicias" x:Name="OpenTreasuryRootMaster"/>
+                <MenuItem Header="Administración de conceptos de ingresos, egresos y descuentos" x:Name="OpenTreasuryConcept"/>
             </MenuItem>
             <MenuItem Header="Global" Click="MenuItem_Click">
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
