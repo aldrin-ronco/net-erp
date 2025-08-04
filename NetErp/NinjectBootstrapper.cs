@@ -22,7 +22,9 @@ using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.DynamicControl;
 using NetErp.Global.MainMenu.ViewModels;
+using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Services;
@@ -127,6 +129,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
             
             // New GraphQL Infrastructure
             // Nueva estructura de servicios e inyección de dependencias
@@ -140,7 +143,7 @@ namespace NetErp
             _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
-
+            
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
@@ -268,6 +271,7 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
+                _ = cfg.CreateMap<ParameterGraphQLModel, DynamicControlModel>();
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
                 _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
             });
