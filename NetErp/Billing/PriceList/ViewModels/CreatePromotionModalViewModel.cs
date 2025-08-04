@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
@@ -24,7 +25,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 {
     public class CreatePromotionModalViewModel<TModel>: Screen, INotifyDataErrorInfo
     {
-        private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly Helpers.IDialogService _dialogService;
         Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
@@ -153,7 +154,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.PriceListIncludeTax = true; //capture the value from the UI
                 variables.Data.UseAlternativeFormula = false; //capture the value from the UI
                 variables.Data.StorageId = 0; //capture the value from the UI
-                var result = await PriceListService.Create(query, variables);
+                var result = await _priceListService.CreateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
                 await _dialogService.CloseDialogAsync(this, true);
@@ -204,11 +205,15 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
         }
 
-		public CreatePromotionModalViewModel(Helpers.IDialogService dialogService, PriceListGraphQLModel parentPriceList)
+		public CreatePromotionModalViewModel(
+			Helpers.IDialogService dialogService, 
+			PriceListGraphQLModel parentPriceList,
+			IRepository<PriceListGraphQLModel> priceListService)
 		{
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             ParentPriceList = parentPriceList;
+            _priceListService = priceListService;
         }
 
         public bool HasErrors => _errors.Count > 0;

@@ -32,7 +32,7 @@ Example: `$env:NET_ERP_SQL_ENGINE="POSTGRESQL"`
 - **NetErp** - Main WPF application with MVVM pattern using Caliburn.Micro
 - **Models** - GraphQL models and DTOs for all business entities
 - **Services** - Data access layer with PostgreSQL/SQL Server support via GraphQL
-- **Common** - Shared interfaces, helpers, and utilities (including `IGenericDataAccess<T>`)
+- **Common** - Shared interfaces, helpers, and utilities (including `IRepository<T>` and deprecated `IGenericDataAccess<T>`)
 - **Extensions** - Extension methods for different modules
 - **Dictionaries** - Static data and lookup tables
 
@@ -43,11 +43,13 @@ Example: `$env:NET_ERP_SQL_ENGINE="POSTGRESQL"`
 - Master/Detail pattern: `*MasterViewModel` for list views, `*DetailViewModel` for forms
 - Views auto-bind to ViewModels by naming convention
 
-**Data Access Pattern**: All services implement `IGenericDataAccess<TModel>` interface providing:
-- CRUD operations via GraphQL (Create, Update, Delete, FindById)
-- Pagination support (GetPage)
-- List operations (GetList, CreateList)
-- Generic context methods (GetDataContext, MutationContext)
+**Data Access Pattern**: 
+- **NEW STANDARD**: Use `IRepository<TModel>` with `GraphQLRepository<TModel>` implementation for all new services
+  - CRUD operations via GraphQL with CancellationToken support (CreateAsync, UpdateAsync, DeleteAsync, FindByIdAsync)
+  - Pagination support (GetPageAsync)
+  - List operations (GetListAsync, CreateListAsync, SendMutationListAsync)
+  - Generic context methods (GetDataContextAsync, MutationContextAsync)
+- **DEPRECATED**: `IGenericDataAccess<TModel>` interface is being phased out gradually - avoid using for new implementations
 
 **Dependency Injection**: Uses Ninject with database engine selection in `App.xaml.cs`:
 ```csharp

@@ -28,7 +28,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
     public class MeasurementUnitDetailViewModel : Screen
     {
-        public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
+        public readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
 
         private MeasurementUnitViewModel _context;
         public MeasurementUnitViewModel Context
@@ -59,7 +59,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         }
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
+            _ = Task.Run(() => Context.ActivateMasterViewAsync());
             CleanUpControls();
         }
 
@@ -151,10 +151,12 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         }
 
 
-        public MeasurementUnitDetailViewModel(MeasurementUnitViewModel context)
+        public MeasurementUnitDetailViewModel(MeasurementUnitViewModel context,
+            IRepository<MeasurementUnitGraphQLModel> measurementUnitService)
         {
             //_errors = new Dictionary<string, List<string>>();
-            Context = context;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
         protected override void OnViewReady(object view)
@@ -185,7 +187,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result)});
                 }
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
             catch (AsyncException ex)
             {
@@ -230,7 +232,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                       }
                     }";
 
-                    var createdMeasurementUnit = await MeasurementUnitService.Create(query, variables);
+                    var createdMeasurementUnit = await _measurementUnitService.CreateAsync(query, variables);
                     return createdMeasurementUnit;
                 }
                 else
@@ -243,7 +245,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                         name
                       }
                     }";
-                    var updatedMeasurementUnit = await MeasurementUnitService.Update(query, variables);
+                    var updatedMeasurementUnit = await _measurementUnitService.UpdateAsync(query, variables);
                     return updatedMeasurementUnit;
                 }
             }

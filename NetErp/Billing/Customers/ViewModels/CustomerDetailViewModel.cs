@@ -31,7 +31,7 @@ namespace NetErp.Billing.Customers.ViewModels
     public class CustomerDetailViewModel : Screen,
         INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
+        private readonly IRepository<CustomerGraphQLModel> _customerService;
 
         #region Commands
 
@@ -654,11 +654,11 @@ namespace NetErp.Billing.Customers.ViewModels
                 CustomerGraphQLModel result = await ExecuteSave();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result)});
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = result});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = Context.AutoMapper.Map<CustomerDTO>(result)});
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = result});
                 }
                 Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewAsync();
@@ -910,7 +910,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     }";
 
                 
-                CustomerGraphQLModel result = IsNewRecord ? await CustomerService.Create(query, variables) : await CustomerService.Update(query, variables);
+                CustomerGraphQLModel result = IsNewRecord ? await _customerService.CreateAsync(query, variables) : await _customerService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception ex)
@@ -934,10 +934,11 @@ namespace NetErp.Billing.Customers.ViewModels
             });
         }
 
-        public CustomerDetailViewModel(CustomerViewModel context)
+        public CustomerDetailViewModel(CustomerViewModel context, IRepository<CustomerGraphQLModel> customerService)
         {
             _errors = new Dictionary<string, List<string>>();
-            Context = context;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -1023,7 +1024,7 @@ namespace NetErp.Billing.Customers.ViewModels
 					name
 				  }  
 				}";
-                var result = await CustomerService.GetDataContext<CustomersDataContext>(query, new object{ });
+                var result = await _customerService.GetDataContextAsync<CustomersDataContext>(query, new object{ });
                 IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
                 RetentionTypes = new ObservableCollection<RetentionTypeDTO>(Context.AutoMapper.Map<ObservableCollection<RetentionTypeDTO>>(result.RetentionTypes));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
@@ -1038,7 +1039,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                _ = Task.Run(() => Context.ActivateMasterViewAsync());
+                _ = Context.ActivateMasterViewAsync();
                 CleanUpControls();
             }
             catch (AsyncException ex)
@@ -1243,6 +1244,17 @@ namespace NetErp.Billing.Customers.ViewModels
         }
 
         #endregion
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            // Desuscribirse del EventAggregator para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            
+            // Limpiar colecciones
+            Emails.Clear();
+            
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
 
     }
 }

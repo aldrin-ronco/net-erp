@@ -106,57 +106,60 @@
                 </Button>
              </Grid>
 
-            <dxg:GridControl Grid.Row="2" Margin="0 10 0 0" ItemsSource="{Binding Items, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                <dxg:GridControl.View>
-                    <dxg:TableView
-                     AllowCascadeUpdate="False" 
-                     EnableSelectedRowAppearance="True"
-                     ShowGroupPanel="False" AlternateRowBackground="Beige"
-                     AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
-                     AllowSorting="False" AllowColumnFiltering="False" AllowResizing="False"/>
-                </dxg:GridControl.View>
+            <busyIndicator:BusyMask Grid.Row="2" Margin="0 10 0 0" IsBusy="{Binding ItemsGridIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
+                                    BusyContent="Por favor espere...">
+                <dxg:GridControl ItemsSource="{Binding Items, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView
+                         AllowCascadeUpdate="False" 
+                         EnableSelectedRowAppearance="True"
+                         ShowGroupPanel="False" AlternateRowBackground="Beige"
+                         AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                         AllowSorting="False" AllowColumnFiltering="False" AllowResizing="False"/>
+                    </dxg:GridControl.View>
 
-                <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                    <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Width="30">
-                    <dxg:GridColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button
-                        BorderThickness="0"
-                        Padding="3"
-                        Margin="3"
-                        Width="auto" Height="auto"
-                        cal:Message.Attach="[Event Click] = [Action AddItemAsync]">
-                                <Button.Content>
-                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
-                                </Button.Content>
-                            </Button>
-                        </DataTemplate>
-                    </dxg:GridColumn.CellTemplate>
-                </dxg:GridColumn>
+                    <dxg:GridColumn Width="30">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button
+                            BorderThickness="0"
+                            Padding="3"
+                            Margin="3"
+                            Width="auto" Height="auto"
+                            cal:Message.Attach="[Event Click] = [Action AddItemAsync]">
+                                    <Button.Content>
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
+                                    </Button.Content>
+                                </Button>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
 
-                <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
-                    <dxg:GridColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <dxe:CheckEdit VerticalAlignment="Center"
-                          HorizontalAlignment="Center" 
-                          IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </dxg:GridColumn.HeaderTemplate>
-                    <dxg:GridColumn.CellTemplate>
-                        <DataTemplate>
-                            <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
-                          HorizontalAlignment="Center"
-                          IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </dxg:GridColumn.CellTemplate>
-                </dxg:GridColumn>
-            </dxg:GridControl>
+                    <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <dxe:CheckEdit VerticalAlignment="Center"
+                              HorizontalAlignment="Center" 
+                              IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.HeaderTemplate>
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
+                              HorizontalAlignment="Center"
+                              IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
+                </dxg:GridControl>
+            </busyIndicator:BusyMask>
 
             <uc:GridPaging Grid.Row="3"
                HorizontalAlignment="Stretch"
@@ -209,57 +212,60 @@
                 </Button>
             </Grid>
 
-            <dxg:GridControl Grid.Row="2" Margin="0 10 0 0" ItemsSource="{Binding AddedItems, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedAddedItem, UpdateSourceTrigger=PropertyChanged}">
-                <dxg:GridControl.View>
-                    <dxg:TableView
-                     AllowCascadeUpdate="False" 
-                     EnableSelectedRowAppearance="True"
-                     ShowGroupPanel="False" AlternateRowBackground="Beige"
-                     AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
-                     AllowColumnFiltering="False" AllowSorting="True"/>
-                </dxg:GridControl.View>
+            <busyIndicator:BusyMask Grid.Row="2" Margin="0 10 0 0" IsBusy="{Binding AddedItemsGridIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
+                                    BusyContent="Por favor espere...">
+                <dxg:GridControl ItemsSource="{Binding AddedItems, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedAddedItem, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView
+                         AllowCascadeUpdate="False" 
+                         EnableSelectedRowAppearance="True"
+                         ShowGroupPanel="False" AlternateRowBackground="Beige"
+                         AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
+                         AllowColumnFiltering="False" AllowSorting="True"/>
+                    </dxg:GridControl.View>
 
-                <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
-                <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                    <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Width="30">
-                    <dxg:GridColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button
-                                BorderThickness="0"
-                                Padding="3"
-                                Margin="3"
-                                Width="auto" Height="auto"
-                                cal:Message.Attach="[Event Click] = [Action RemoveItemAsync]">
-                                <Button.Content>
-                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
-                                </Button.Content>
-                            </Button>
-                        </DataTemplate>
-                    </dxg:GridColumn.CellTemplate>
-                </dxg:GridColumn>
+                    <dxg:GridColumn Width="30">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button
+                                    BorderThickness="0"
+                                    Padding="3"
+                                    Margin="3"
+                                    Width="auto" Height="auto"
+                                    cal:Message.Attach="[Event Click] = [Action RemoveItemAsync]">
+                                    <Button.Content>
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
+                                    </Button.Content>
+                                </Button>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
 
-                <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
-                    <dxg:GridColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <dxe:CheckEdit VerticalAlignment="Center"
-                          HorizontalAlignment="Center" 
-                          IsChecked="{Binding AddedItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </dxg:GridColumn.HeaderTemplate>
-                    <dxg:GridColumn.CellTemplate>
-                        <DataTemplate>
-                            <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
-                          HorizontalAlignment="Center"
-                          IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </dxg:GridColumn.CellTemplate>
-                </dxg:GridColumn>
-            </dxg:GridControl>
+                    <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
+                        <dxg:GridColumn.HeaderTemplate>
+                            <DataTemplate>
+                                <dxe:CheckEdit VerticalAlignment="Center"
+                              HorizontalAlignment="Center" 
+                              IsChecked="{Binding AddedItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.HeaderTemplate>
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
+                              HorizontalAlignment="Center"
+                              IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
+                </dxg:GridControl>
+            </busyIndicator:BusyMask>
 
             <uc:GridPaging Grid.Row="3"
                HorizontalAlignment="Stretch"
