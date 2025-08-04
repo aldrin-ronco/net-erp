@@ -8,7 +8,11 @@ using System.Threading.Tasks;
 
 namespace Services.Billing.DAL.PostgreSQL
 {
-    public class CreditLimitService: IGenericDataAccess<CreditLimitGraphQLModel>
+    public class PriceListService: IGenericDataAccess<PriceListGraphQLModel>
+    {
+    }
+
+    public class PriceListDetailService: IGenericDataAccess<PriceListDetailGraphQLModel>
     {
     }
 }

@@ -47,20 +47,17 @@ namespace Models.Books
 
     public class AccountingSourceCreateMessage
     {
-        public AccountingSourceGraphQLModel CreatedAccountingSource { get; set; }
-
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
+        public AccountingSourceGraphQLModel CreatedAccountingSource { get; set; } = new();
     }
 
     public class AccountingSourceUpdateMessage
     {
-        public AccountingSourceGraphQLModel UpdatedAccountingSource { get; set; }
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
+        public AccountingSourceGraphQLModel UpdatedAccountingSource { get; set; } = new();
     }
 
     public class AccountingSourceDeleteMessage
     {
-        public AccountingSourceGraphQLModel DeletedAccountingSource { get; set; }
+        public AccountingSourceGraphQLModel DeletedAccountingSource { get; set; } = new();
     }
 
     public class AccountingSourceDataContext

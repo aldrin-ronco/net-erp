@@ -27,6 +27,7 @@ namespace Models.Inventory
         public IEnumerable<ItemDetailGraphQLModel> RelatedProducts { get; set; } = [];
         public IEnumerable<EanCodeGraphQLModel> EanCodes { get; set; } = [];
         public IEnumerable<ItemImageGraphQLModel> Images { get; set; } = [];
+        public IEnumerable<StockGraphQLModel> Stock {  get; set; } = [];
     }
 
     public class ItemCreateMessage

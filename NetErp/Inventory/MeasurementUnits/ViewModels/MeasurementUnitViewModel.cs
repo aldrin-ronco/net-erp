@@ -1,5 +1,8 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
+using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using Models.Books;
 using Models.DTO.Global;
 using Models.Inventory;
@@ -19,39 +22,67 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         public IMapper AutoMapper { get; private set; }
 
         public IEventAggregator EventAggregator { get; set; }
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
 
         private MeasurementUnitMasterViewModel _measurementUnitMasterViewModel;
         public MeasurementUnitMasterViewModel MeasurementUnitMasterViewModel
         {
             get
             {
-                if (_measurementUnitMasterViewModel is null) _measurementUnitMasterViewModel = new MeasurementUnitMasterViewModel(this);
+                _measurementUnitMasterViewModel ??= new MeasurementUnitMasterViewModel(this, _measurementUnitService, _notificationService);
                 return _measurementUnitMasterViewModel;
             }
         }
 
-        public MeasurementUnitViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public MeasurementUnitViewModel(IMapper mapper, 
+            IEventAggregator eventAggregator,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<MeasurementUnitGraphQLModel> measuremetunitService)
         {
-            AutoMapper = mapper;
-            EventAggregator = eventAggregator;
-            Task.Run(ActivateMasterView);
+            AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _measurementUnitService = measuremetunitService ?? throw new ArgumentNullException(nameof(measuremetunitService));
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ActivateMasterViewAsync();
+                }
+                catch (AsyncException ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+                catch(Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.ActivateMasterViewAsync \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             try
             {
                 await ActivateItemAsync(MeasurementUnitMasterViewModel, new System.Threading.CancellationToken());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
         public async Task ActivateDetailViewForEdit(MeasurementUnitGraphQLModel selectedItem)
         {
-            MeasurementUnitDetailViewModel instance = new(this);
+            MeasurementUnitDetailViewModel instance = new(this, _measurementUnitService);
             instance.Id = selectedItem.Id;
             instance.Name = selectedItem.Name;
             instance.Abbreviation = selectedItem.Abbreviation;
@@ -62,7 +93,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             try
             {
-                MeasurementUnitDetailViewModel instance = new(this);
+                MeasurementUnitDetailViewModel instance = new(this, _measurementUnitService);
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

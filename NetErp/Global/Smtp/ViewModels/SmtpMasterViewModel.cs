@@ -26,6 +26,7 @@ namespace NetErp.Global.Smtp.ViewModels
         IHandle<SmtpCreateMessage>
     {
         public IGenericDataAccess<SmtpGraphQLModel> SmtpService { get; set; } = IoC.Get<IGenericDataAccess<SmtpGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public SmtpViewModel Context { get; set; }
 
         private bool _isBusy;
@@ -364,22 +365,49 @@ namespace NetErp.Global.Smtp.ViewModels
             await Context.ActivateDetailViewForNew();
         }
 
-        public Task HandleAsync(SmtpDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SmtpDeleteMessage message, CancellationToken cancellationToken)
         {
-            SmtpGraphQLModel smtpToDelete = Smtps.FirstOrDefault(x => x.Id == message.DeletedSmtp.Id) ?? new SmtpGraphQLModel();
-            Smtps.Remove(smtpToDelete);
-            SelectedItem = null;
-            return Task.CompletedTask;
+            try
+            {
+                await LoadSmtpsAsync();
+                _notificationService.ShowSuccess("SMTP eliminado correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(SmtpUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SmtpUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadSmtpsAsync();
+            try
+            {
+                await LoadSmtpsAsync();
+                _notificationService.ShowSuccess("SMTP actualizado correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(SmtpCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SmtpCreateMessage message, CancellationToken cancellationToken)
         {
-            return LoadSmtpsAsync();
+            try
+            {
+                await LoadSmtpsAsync();
+                _notificationService.ShowSuccess("SMTP creado correctamente");
+                return;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

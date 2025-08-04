@@ -4,8 +4,30 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NetErp.Global.Shell.Views"
-        mc:Ignorable="d"
+        xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+        xmlns:h="clr-namespace:NetErp.Helpers"
+        xmlns:controls="clr-namespace:NetErp.Helpers.Controls"
+        mc:Ignorable="d" FontFamily="Century Gothic"
         Title="ShellView" Width="auto" Height="auto" WindowState="Maximized">
 
-    <ContentControl x:Name="ActiveItem" Width="auto" Height="auto" />
+    <Grid>
+        <!-- Contenido principal de la aplicación -->
+        <ContentControl x:Name="ActiveItem" Width="auto" Height="auto" />
+
+        <Border VerticalAlignment="Top" 
+                Background="#FFD700" 
+                Panel.ZIndex="9998"
+                Visibility="{Binding ShowInternetWarning, Converter={dx:BooleanToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <TextBlock Text="⚠" FontSize="16" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding InternetStatusText}" 
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Overlay de notificaciones que flota sobre todo el contenido -->
+        <controls:NotificationsControl 
+            Panel.ZIndex="9999" 
+            IsHitTestVisible="True"/>
+    </Grid>
 </Window>

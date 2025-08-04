@@ -16,6 +16,11 @@ namespace Models.Books
         }
     }
 
+    public class AccountingBookDTO: AccountingBookGraphQLModel
+    {
+        public bool IsChecked { get; set; } = false;
+    }
+
     public class AccountingBookCreateMessage
     {
         public AccountingBookGraphQLModel CreatedAccountingBook { get; set; } = new AccountingBookGraphQLModel();

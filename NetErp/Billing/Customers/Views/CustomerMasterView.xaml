@@ -84,14 +84,12 @@
         <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0 5 0 0">
             <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 5"/>
             <dxe:TextEdit x:Name="FilterSearch"
-                              EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}"
                               NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
                               ShowNullTextForEmptyValue="True"
                               ShowNullTextIfFocused="True"
-                              EditValuePostMode="Delayed"
                               CharacterCasing="Upper"
-                              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                              EditValuePostDelay="1000"/>
+                              FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize }, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
         </StackPanel>
         <!--DataGridView Terceros-->
         <busyIndicator:BusyMask x:Name="BusyIndicator"

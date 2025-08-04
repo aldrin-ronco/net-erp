@@ -85,10 +85,11 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public readonly IGenericDataAccess<AwsS3ConfigGraphQLModel> AwsS3Service = IoC.Get<IGenericDataAccess<AwsS3ConfigGraphQLModel>>();
 
         Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         #endregion
 
         #region "Properties"
-        public SearchItemModalViewModel<ItemDTO, ItemGraphQLModel> SearchItemModalViewModel { get; set; }
+        //public SearchItemModalViewModel<ItemDTO, ItemGraphQLModel> SearchItemModalViewModel { get; set; }
         private bool _isNewRecord = false;
 
         public bool IsNewRecord
@@ -169,7 +170,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return bitmap;
         }
 
-        //TODO
+        //TODO S3 master pending and variables declaration
         public async Task LoadAwsS3Credentials()
         {
             try
@@ -309,6 +310,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (SelectedCatalog.Id != itemTypeDTO.Catalog.Id) return Task.CompletedTask;
             SelectedCatalog.ItemsTypes.Add(itemTypeDTO);
             SelectedItem = itemTypeDTO;
+            _notificationService.ShowSuccess("Tipo de item creado correctamente");
             return Task.CompletedTask;
         }
 
@@ -321,6 +323,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 SelectedCatalog.ItemsTypes.Remove(itemTypeDTO);
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Tipo de item eliminado correctamente");
             return Task.CompletedTask;
         }
 
@@ -335,6 +338,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemToUpdate.StockControl = itemTypeDTO.StockControl;
             itemToUpdate.MeasurementUnitByDefault = itemTypeDTO.MeasurementUnitByDefault;
             itemToUpdate.AccountingGroupByDefault = itemTypeDTO.AccountingGroupByDefault;
+            _notificationService.ShowSuccess("Tipo de item actualizado correctamente");
             return Task.CompletedTask;
         }
 
@@ -352,6 +356,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 ItemCategoryDTO? itemCategory = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemCategoryDTO.Id);
                 if (itemCategory is null) return;
                 SelectedItem = itemCategory;
+                _notificationService.ShowSuccess("Categoría de item creada correctamente");
                 return;
             }
             //si el nodo no está expandido, pero ya fueron cargados sus hijos
@@ -360,11 +365,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemTypeDTO.IsExpanded = true;
                 itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
                 SelectedItem = itemCategoryDTO;
+                _notificationService.ShowSuccess("Categoría de item creada correctamente");
                 return;
             }
             //si el nodo está expandido
             itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
             SelectedItem = itemCategoryDTO;
+            _notificationService.ShowSuccess("Categoría de item creada correctamente");
             return;
         }
 
@@ -379,6 +386,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemTypeDTO.ItemsCategories.Remove(itemTypeDTO.ItemsCategories.Where(x => x.Id == message.DeletedItemCategory.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Categoría de item eliminada correctamente");
             return Task.CompletedTask;
         }
 
@@ -390,6 +398,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (itemCategoryDTOToUpdate is null) return Task.CompletedTask;
             itemCategoryDTOToUpdate.Id = message.UpdatedItemCategory.Id;
             itemCategoryDTOToUpdate.Name = message.UpdatedItemCategory.Name;
+            _notificationService.ShowSuccess("Categoría de item actualizada correctamente");
             return Task.CompletedTask;
         }
 
@@ -408,6 +417,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 ItemSubCategoryDTO? itemSubCategory = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.Id);
                 if (itemSubCategory is null) return;
                 SelectedItem = itemSubCategory;
+                _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
                 return;
             }
             if (!itemCategoryDTO.IsExpanded)
@@ -415,10 +425,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemCategoryDTO.IsExpanded = true;
                 itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
                 SelectedItem = itemSubCategoryDTO;
+                _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
                 return;
             }
             itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
             SelectedItem = itemSubCategoryDTO;
+            _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
             return;
         }
 
@@ -435,6 +447,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemCategoryDTO.SubCategories.Remove(itemCategoryDTO.SubCategories.Where(x => x.Id == message.DeletedItemSubCategory.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Subcategoría de item eliminada correctamente");
             return Task.CompletedTask;
         }
 
@@ -448,6 +461,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (itemSubCategoryDTOToUpdate is null) return Task.CompletedTask;
             itemSubCategoryDTOToUpdate.Id = message.UpdatedItemSubCategory.Id;
             itemSubCategoryDTOToUpdate.Name = message.UpdatedItemSubCategory.Name;
+            _notificationService.ShowSuccess("Subcategoría de item actualizada correctamente");
             return Task.CompletedTask;
         }
 
@@ -455,6 +469,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             Catalogs.Add(Context.AutoMapper.Map<CatalogDTO>(message.CreatedCatalog));
             SelectedCatalog = Catalogs.FirstOrDefault(x => x.Id == message.CreatedCatalog.Id);
+            _notificationService.ShowSuccess("Catálogo creado correctamente");
             return Task.CompletedTask;
         }
 
@@ -465,6 +480,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (catalogToUpdate is null) return Task.CompletedTask;
             catalogToUpdate.Id = catalogDTO.Id;
             catalogToUpdate.Name = catalogDTO.Name;
+            _notificationService.ShowSuccess("Catálogo actualizado correctamente");
             return Task.CompletedTask;
         }
 
@@ -475,6 +491,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Catalogs.Remove(Catalogs.Where(x => x.Id == message.DeletedCatalog.Id).First());
                 SelectedCatalog = Catalogs.First();
             });
+            _notificationService.ShowSuccess("Catálogo eliminado correctamente");
             return Task.CompletedTask;
         }
 
@@ -492,6 +509,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemSubCategoryDTO.Items.Remove(itemSubCategoryDTO.Items.Where(x => x.Id == message.DeletedItem.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Item eliminado correctamente");
             return Task.CompletedTask;
         }
 
@@ -511,6 +529,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
                 if (item is null) return;
                 SelectedItem = item;
+                _notificationService.ShowSuccess("Item creado correctamente");
                 return;
             }
             if (!itemSubCategoryDTO.IsExpanded)
@@ -518,10 +537,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemSubCategoryDTO.IsExpanded = true;
                 itemSubCategoryDTO.Items.Add(itemDTO);
                 SelectedItem = itemDTO;
+                _notificationService.ShowSuccess("Item creado correctamente");
                 return;
             }
             itemSubCategoryDTO.Items.Add(itemDTO);
             SelectedItem = itemDTO;
+            _notificationService.ShowSuccess("Item creado correctamente");
             return;
         }
 
@@ -549,6 +570,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemDTOToUpdate.EanCodes = new ObservableCollection<EanCodeDTO>(item.EanCodes);
             itemDTOToUpdate.RelatedProducts = new ObservableCollection<ItemDetailDTO>(item.RelatedProducts);
             itemDTOToUpdate.Images = new ObservableCollection<ItemImageDTO>(item.Images);
+            _notificationService.ShowSuccess("Item actualizado correctamente");
             return Task.CompletedTask;
         }
         #endregion
@@ -1334,7 +1356,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
         public bool CanDeleteImage(object p) => true;
 
-        public void SearchRelatedProducts(object p)
+        public async void SearchRelatedProducts(object p)
         {
             string query = @"query($filter: ItemFilterInput){
                         PageResponse: itemPage(filter: $filter){
@@ -1369,9 +1391,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             variables.filter.and[0].catalogId = new ExpandoObject();
             variables.filter.and[0].catalogId.@operator = "=";
             variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
-            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context);
+            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.RelatedProduct, Context, _dialogService);
 
-            _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
 
         }
 
@@ -2774,6 +2796,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEditItem = false;
             IsNewRecord = true;
             ValidateProperty(nameof(Name), Name);
+            NotifyOfPropertyChange(nameof(CanSaveItem));
             this.SetFocus(() => Name);
         }
 
@@ -3370,7 +3393,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public void SearchProducts(object p)
+        public async void SearchProducts(object p)
         {
             string query = @"query($filter: ItemFilterInput){
                             PageResponse: itemPage(filter: $filter){
@@ -3414,9 +3437,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             variables.filter.and[0].catalogId = new ExpandoObject();
             variables.filter.and[0].catalogId.@operator = "=";
             variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
-            SearchItemModalViewModel = new(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context);
+            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context, _dialogService);
 
-            _dialogService.ShowDialog(SearchItemModalViewModel, "Búsqueda de productos");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
 
 
         }

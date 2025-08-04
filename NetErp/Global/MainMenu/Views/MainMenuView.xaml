@@ -10,7 +10,8 @@
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-             xmlns:ioc="clr-namespace:NetErp.IoContainer" 
+             xmlns:ioc="clr-namespace:NetErp.IoContainer"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator" 
              d:DataContext="{d:DesignInstance Type=mainMenuViewModel:MainMenuViewModel}"
              DataContext="{ioc:DISource Type=mainMenuViewModel:MainMenuViewModel}"
              mc:Ignorable="d" 
@@ -39,7 +40,10 @@
                 <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
                 <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
                 <MenuItem Header="Tipos de Documentos" x:Name="OpenIdentificationType"/>
+                <MenuItem Header="Presentaciones contables" x:Name="OpenAccountingPresentationAsync"/>
                 <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
+                <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
+                <MenuItem Header="Configuración del certificado de retención" x:Name="OpenWithholdingCertificateConfig"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
@@ -54,6 +58,7 @@
                 <MenuItem Header="Administración de clientes" x:Name="OpenCustomer"></MenuItem>
                 <MenuItem Header="Administración de cupos de crédito" x:Name="OpenCreditLimit"/>
                 <MenuItem Header="Administracion de zonas de ventas" x:Name="OpenZone"/>
+                <MenuItem Header="Administración de listas de precios" x:Name="OpenPriceList"/>
             </MenuItem>
             <MenuItem Header="Inventario">
                 <MenuItem Header="Unidades de medida" x:Name="OpenMeasurementUnits"/>
@@ -68,6 +73,7 @@
                 <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
                 <MenuItem Header="Administración de smtp" x:Name="OpenSmtp"/>
                 <MenuItem Header="Administración de correos corporativos" x:Name="OpenEmail"/>
+                <MenuItem Header="Secuencias de Autorización" x:Name="OpenAuthorizationSequence"/>
             </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"

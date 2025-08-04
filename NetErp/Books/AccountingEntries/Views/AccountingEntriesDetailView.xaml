@@ -15,10 +15,11 @@
              xmlns:uc="clr-namespace:NetErp.UserControls"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dotNetKitControls="clr-namespace:DotNetKit.Windows.Controls;assembly=DotNetKit.Wpf.AutoCompleteComboBox"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Background="White">
+             d:DesignHeight="450" d:DesignWidth="800" Background="White" FontFamily="Century Gothic">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
@@ -165,59 +166,62 @@
                 Text="Libro contable"
                 VerticalAlignment="Bottom"
                 Margin="4 0 0 0"/>
-                <ComboBox Grid.Row="1" Grid.Column="0"
-                    Margin="4" Padding="3"
+                <dxe:ComboBoxEdit Grid.Row="1" Grid.Column="0"
+                    Margin="4" Padding="2"
                     TabIndex="0"
                     x:Name="SelectedAccountingBookId"
-                    DisplayMemberPath="Name"
-                    SelectedValuePath="Id"
+                    DisplayMember="Name"
+                    ValueMember="Id"
+                    IsTextEditable="False"
                     IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                    SelectedValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    EditValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     ItemsSource="{Binding Path=Context.AccountingBooks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemsPanel>
+                    <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
+                    </dxe:ComboBoxEdit.ItemsPanel>
+                </dxe:ComboBoxEdit>
                 <!--Centro de Costo-->
                 <TextBlock Grid.Row="2" Grid.Column="0"
                 Text="Centro de costo"
                 VerticalAlignment="Bottom"
                 Margin="4 0 0 0"/>
-                <ComboBox Grid.Row="3" Grid.Column="0"
-                    Margin="4" Padding="3"
-                    DisplayMemberPath="Name"
-                    SelectedValuePath="Id"
+                <dxe:ComboBoxEdit Grid.Row="3" Grid.Column="0"
+                    Margin="4" Padding="2"
+                    DisplayMember="Name"
+                    ValueMember="Id"
+                    IsTextEditable="False"
                     TabIndex="1"
                     IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                    SelectedValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    EditValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemsPanel>
+                    <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
+                    </dxe:ComboBoxEdit.ItemsPanel>
+                </dxe:ComboBoxEdit>
                 <!--Fuente Contable-->
                 <TextBlock Grid.Row="4" Grid.Column="0"
                 Text="Fuente contable"
                 VerticalAlignment="Bottom"
                 Margin="4 0 0 0"/>
-                <ComboBox Grid.Row="5" Grid.Column="0"
-                    Margin="4" Padding="3"
+                <dxe:ComboBoxEdit Grid.Row="5" Grid.Column="0"
+                    Margin="4" Padding="2"
                     TabIndex="2"
+                    IsTextEditable="False"
                     IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                    DisplayMemberPath="Name"
-                    SelectedValuePath="Id"
-                    SelectedValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                        
+                    DisplayMember="Name"
+                    ValueMember="Id"
+                    EditValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                        
                     ItemsSource="{Binding Path=Context.AccountingSources, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemsPanel>
+                    <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
+                    </dxe:ComboBoxEdit.ItemsPanel>
+                </dxe:ComboBoxEdit>
                 <!--Fecha de Documento & Descripcion-->
                 <Grid Grid.Row="6" Grid.Column="0" Margin="4">
                     <Grid.ColumnDefinitions>
@@ -230,18 +234,18 @@
                     </Grid.RowDefinitions>
                     <!--Fecha-->
                     <TextBlock Text="Fecha" Grid.Column="0" Grid.Row="0"/>
-                    <DatePicker Grid.Column="0" Grid.Row="1" Margin="0 4 6 0"
-                                TabIndex="3"
-                                SelectedDate="{Binding Path=DocumentDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
-                                Padding="3"/>
+                    <dxe:DateEdit Grid.Column="0" Grid.Row="1" Margin="0 4 6 0"
+                                TabIndex="3" ShowClearButton="False"
+                                DateTime="{Binding Path=DocumentDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"                                
+                                Padding="2"/>
                     <!--Descripcion-->
                     <TextBlock Text="Descripción" Grid.Column="1" Grid.Row="0"/>
-                    <TextBox Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
-                             Grid.Column="1" Grid.Row="1" Margin="0 4 0 0"
+                    <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                             Grid.Column="1" Grid.Row="1" Margin="0 4 0 0" CharacterCasing="Upper"
                              TextWrapping="WrapWithOverflow"
                              TabIndex="4"
                              FontSize="14"
-                             Padding="3"/>
+                             Padding="2"/>
                 </Grid>
                 <!--Columna 2-->
                 <!--Totalizacion debitos y creditos-->
@@ -296,21 +300,44 @@
                     <TextBlock Text="Cuenta contable" 
                     Grid.Row="0" Grid.Column="0" 
                     Margin="4 0 0 0"/>
-                <dotNetKitControls:AutoCompleteComboBox Grid.Row="1" Grid.Column="0"
-                                                    Margin="4"
-                                                    x:Name="AutoCompleteComboBox"
-                                                    SelectedValuePath="Id"
-                                                    TabIndex="5"
-                                                    DisplayMemberPath="FullName"
-                                                    Focusable="True"
-                                                    SelectedValue="{Binding Path=SelectedAccountingAccountOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    ItemsSource="{Binding Path=Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <dotNetKitControls:AutoCompleteComboBox.ItemsPanel>
+                    <dxg:LookUpEdit Grid.Row="1" Grid.Column="0" Padding="2"
+                                    Margin="4"
+                                    ValueMember="Id"
+                                    x:Name="AutoCompleteComboBox"
+                                    TabIndex="5"
+                                    DisplayMember="FullName"
+                                    Focusable="True"
+                                    NullValue="0"
+                                    AllowSpin="True"
+                                    CharacterCasing="Upper"
+                                    AutoPopulateColumns="False"  
+                                    IsCaseSensitiveSearch="False"
+                                    IncrementalFiltering="True"
+                                    IncrementalSearch="True"
+                                    ValidateOnTextInput="False"
+                                    FilterCondition="Contains"
+                                    ImmediatePopup="True"
+                                    ClearSelectionOnBackspace="True"
+                                    EditValue="{Binding Path=SelectedAccountingAccountOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:LookUpEdit.PopupContentTemplate>
+                        <ControlTemplate>
+                            <dxg:GridControl Name="PART_GridControl" AutoGenerateColumns="None">
+                                <dxg:GridControl.View>
+                                    <dxg:TableView AutoWidth="True"/>
+                                </dxg:GridControl.View>
+                                <dxg:GridControl.Columns>
+                                    <dxg:GridColumn Header="Nombre completo" FieldName="FullName"/>
+                                </dxg:GridControl.Columns>
+                            </dxg:GridControl>
+                        </ControlTemplate>
+                    </dxg:LookUpEdit.PopupContentTemplate>
+                    <dxg:LookUpEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
-                    </dotNetKitControls:AutoCompleteComboBox.ItemsPanel>
-                </dotNetKitControls:AutoCompleteComboBox>
+                    </dxg:LookUpEdit.ItemsPanel>
+                </dxg:LookUpEdit>
                 <!--Tercero-->
                     <TextBlock Text="Tercero" Grid.Row="0" Grid.Column="1" Margin="4 0 0 0"/>
                     <Grid Grid.Row="1" Grid.Column="1" Margin="4">
@@ -393,18 +420,19 @@
                     </Grid>
                     <!--Centro de Costo-->
                     <TextBlock Text="Centro de costo" Grid.Row="0" Grid.Column="2" Margin="4 0 0 0"/>
-                    <ComboBox Grid.Row="1" Grid.Column="2"
+                    <dxe:ComboBoxEdit Grid.Row="1" Grid.Column="2"
                     Margin="4"
                     TabIndex="9"
-                    DisplayMemberPath="Name"
-                    SelectedValuePath="Id"
-                    SelectedValue="{Binding Path=SelectedCostCenterOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    DisplayMember="Name"
+                    ValueMember="Id"
+                    IsTextEditable="False"
+                    EditValue="{Binding Path=SelectedCostCenterOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <!--Detalle-->
                     <TextBlock Text="Detalle"
                     Grid.Row="0" Grid.Column="3" 
                     Margin="4 0 0 0"/>
-                    <TextBox Grid.Row="1" Grid.Column="3"
+                    <dxe:TextEdit Grid.Row="1" Grid.Column="3"
                     TabIndex="10"
                     CharacterCasing="Upper"
                     Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -470,6 +498,7 @@
                     HorizontalGridLinesBrush="LightGray"
                     BorderThickness="0"
                     CanUserAddRows="false"
+                    AllowDrop="False"
                     SelectionMode="Single"
                     SelectionUnit="FullRow"     
                     MinRowHeight="30"
@@ -512,19 +541,43 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <dotNetKitControls:AutoCompleteComboBox ItemsSource="{Binding Path=Data.Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                                                                    DisplayMemberPath="FullName"
-                                                                    SelectedValuePath="Id"
-                                                                    SelectedValue="{Binding Path=AccountingAccount.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                    SelectedItem="{Binding Path=AccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                    VerticalContentAlignment="Center"
-                                                                    Padding="3">
-                                        <ComboBox.ItemsPanel>
+                                    <dxg:LookUpEdit Grid.Row="1" Grid.Column="0" Padding="2"
+                                    Margin="4"
+                                    x:Name="AutoCompleteComboBox"
+                                    TabIndex="5"
+                                    DisplayMember="FullName"
+                                    Focusable="True"
+                                    AllowSpin="True"
+                                    CharacterCasing="Upper"
+                                    AutoPopulateColumns="False"  
+                                    IsCaseSensitiveSearch="False"
+                                    IncrementalFiltering="True"
+                                    IncrementalSearch="True"
+                                    ValidateOnTextInput="False"
+                                    FilterCondition="Contains"
+                                    ImmediatePopup="True"
+                                    ClearSelectionOnBackspace="True"
+                                    ItemsSource="{Binding Path=Data.Context.AccountingAccounts, Source={StaticResource DataContextProxy}}"
+                                    ValueMember="Id"
+                                    EditValue="{Binding Path=AccountingAccount.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                        <dxg:LookUpEdit.PopupContentTemplate>
+                                            <ControlTemplate>
+                                                <dxg:GridControl Name="PART_GridControl" AutoGenerateColumns="None">
+                                                    <dxg:GridControl.View>
+                                                        <dxg:TableView AutoWidth="True"/>
+                                                    </dxg:GridControl.View>
+                                                    <dxg:GridControl.Columns>
+                                                        <dxg:GridColumn Header="Nombre completo" FieldName="FullName"/>
+                                                    </dxg:GridControl.Columns>
+                                                </dxg:GridControl>
+                                            </ControlTemplate>
+                                        </dxg:LookUpEdit.PopupContentTemplate>
+                                        <dxg:LookUpEdit.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <VirtualizingStackPanel/>
                                             </ItemsPanelTemplate>
-                                        </ComboBox.ItemsPanel>
-                                    </dotNetKitControls:AutoCompleteComboBox>
+                                        </dxg:LookUpEdit.ItemsPanel>
+                                    </dxg:LookUpEdit>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
@@ -562,18 +615,17 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding Path=Data.Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"                                          
-                                        DisplayMemberPath="Name"
-                                        SelectedValuePath="Id"
-                                        SelectedItem="{Binding Path=CostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                                          
-                                        SelectedValue="{Binding Path=CostCenter.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        VerticalContentAlignment="Center">
-                                        <ComboBox.ItemsPanel>
+                                    <dxe:ComboBoxEdit ItemsSource="{Binding Path=Data.Context.CostCenters, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"                                          
+                                        DisplayMember="Name" IsTextEditable="False" AllowNullInput="False"
+                                        ValueMember="Id" ImmediatePopup="True"                                     
+                                        EditValue="{Binding Path=CostCenter.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalContentAlignment="Center" FilterCriteria="{Binding Data.ExcludeCostCenterIdZeroFilter, Source={StaticResource DataContextProxy}}">
+                                        <dxe:ComboBoxEdit.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <VirtualizingStackPanel/>
                                             </ItemsPanelTemplate>
-                                        </ComboBox.ItemsPanel>
-                                    </ComboBox>
+                                        </dxe:ComboBoxEdit.ItemsPanel>
+                                    </dxe:ComboBoxEdit>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
@@ -596,8 +648,8 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        TextWrapping="WrapWithOverflow"
+                                    <dxe:TextEdit Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        TextWrapping="WrapWithOverflow" CharacterCasing="Upper"
                                         VerticalContentAlignment="Center"
                                         Padding="3"/>
                                 </DataTemplate>

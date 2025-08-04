@@ -103,7 +103,9 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.AccountingSourceFilter = new ExpandoObject();
-                variables.AccountingSourceFilter.Annulment = false;
+                variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+                variables.AccountingSourceFilter.Annulment.@operator = "=";
+                variables.AccountingSourceFilter.Annulment.value = false;
                 var dataContext = await this.DailyBookService.GetDataContext<DailyBookDataContext>(query, variables);
                 if (dataContext != null)
                 {

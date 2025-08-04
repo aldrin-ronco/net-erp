@@ -6,7 +6,6 @@ using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Core;
 using Dictionaries;
-using DTOLibrary.Books;
 using Extensions.Books;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
@@ -1040,14 +1039,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 IsBusy = true;
                 Refresh();
                 AccountingEntityGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result), AccountingEntities = pageResult.PageResponse.Rows});
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result) , AccountingEntities = pageResult.PageResponse.Rows});
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
                 }
                 Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();

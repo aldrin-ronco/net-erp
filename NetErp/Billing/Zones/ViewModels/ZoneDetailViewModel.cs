@@ -1,6 +1,8 @@
 ﻿using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Global;
 using Ninject.Activation;
@@ -53,7 +55,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 } 
             }
         }
-        private string? _ZoneName;
+        private string _ZoneName;
         public string ZoneName
         {
             get { return _ZoneName; }
@@ -67,7 +69,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 }
             }
         }
-        private bool _ZoneIsActive= true;
+        private bool _ZoneIsActive = true;
         public bool ZoneIsActive
         {
             get { return _ZoneIsActive; }
@@ -87,7 +89,6 @@ namespace NetErp.Billing.Zones.ViewModels
             get
             {
                 if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBackAsync);
-                ZoneName = ZoneName;
                 return _goBackCommand;
             }
         }
@@ -109,18 +110,30 @@ namespace NetErp.Billing.Zones.ViewModels
                 ZoneGraphQLModel result = await ExecuteSaveAsync();
                 if (IsNewZone)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneCreateMessage() { CreateZone = result });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneCreateMessage() { CreatedZone = result });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneUpdateMessage() { UpdateZone = result });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneUpdateMessage() { UpdatedZone = result });
                 }
-                this.ZoneName = null;
+                this.ZoneName = string.Empty;
                 await Context.ActivateMasterViewAsync();
             }
-            catch(Exception ex) 
+            catch (AsyncException ex)
             {
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -138,7 +151,7 @@ namespace NetErp.Billing.Zones.ViewModels
                         isActive
                     }
                 }" : @"mutation($id: Int!, $data: UpdateZoneInput!){
-                    updateZone(id: $id, data: $data){
+                    UpdateResponse: updateZone(id: $id, data: $data){
                         name
                         isActive
                     }
@@ -153,12 +166,12 @@ namespace NetErp.Billing.Zones.ViewModels
             }
             catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
         }
         public async Task GoBackAsync()
         {
-            this.ZoneName = null;
+            this.ZoneName = string.Empty;
             await Context.ActivateMasterViewAsync();
         }
     }

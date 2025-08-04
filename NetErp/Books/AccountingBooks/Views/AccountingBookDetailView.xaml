@@ -5,8 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:NetErp.Books.AccountingBooks.Views"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             
+             d:DesignHeight="450" d:DesignWidth="800"     
             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"      
             xmlns:h="clr-namespace:NetErp.Helpers"
@@ -16,7 +15,8 @@
             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
             xmlns:cal="http://caliburnmicro.com"
             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-            xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator">
+            xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+            d:Background="White">
 
 
     <Grid>

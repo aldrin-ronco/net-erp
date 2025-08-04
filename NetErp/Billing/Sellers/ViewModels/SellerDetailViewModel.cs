@@ -647,90 +647,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<SellerGraphQLModel>.PageResponseType> LoadPage()
-        {
-            try
-            {
-                string queryForPage;
-                queryForPage = @"
-                    query ($filter: SellerFilterInput){
-                      PageResponse: sellerPage(filter: $filter) {
-                        count
-                        rows {
-                          id
-                          isActive
-                          entity {
-                            id
-                            verificationDigit
-                            identificationNumber
-                            firstName
-                            middleName
-                            firstLastName
-                            middleLastName
-                            searchName
-                            phone1
-                            phone2
-                            cellPhone1
-                            cellPhone2
-                            address
-                            telephonicInformation
-                            country {
-                              id
-                            }
-                            department {
-                              id
-                            }
-                            city {
-                              id
-                            }
-                            emails {
-                              id
-                              description
-                              email
-                              sendElectronicInvoice
-                            }
-                          }
-                          costCenters {
-                            id
-                            name
-                          }
-                        }
-                      }
-                      identificationTypes {
-                        id
-                        code
-                        name
-                        hasVerificationDigit
-                        minimumDocumentLength
-                      }
-                      countries{
-                        id
-                        code
-                        name
-                        departments {
-                          id
-                          code
-                          name
-                          cities {
-                            id
-                            code
-                            name
-                          }
-                        }
-                      }
-                      costCenters{
-                        id
-                        name
-                      }
-                    }";
-                return await SellerService.GetPage(queryForPage, new object { });
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-        }
-
         public async Task Save()
         {
             try
@@ -738,14 +654,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 IsBusy = true;
                 Refresh();
                 SellerGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows});
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = Context.AutoMapper.Map<SellerDTO>(result)});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = Context.AutoMapper.Map<SellerDTO>(result), Sellers = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = Context.AutoMapper.Map<SellerDTO>(result)});
                 }
                 Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewAsync();
@@ -797,12 +712,9 @@ namespace NetErp.Billing.Sellers.ViewModels
 
                 foreach (CostCenterDTO costCenter in CostCenters)
                 {
-                    if (IsNewRecord)
+                    if (costCenter.IsSelected)
                     {
-                        if (costCenter.IsSelected)
-                        {
-                            costCenterSelection.Add(costCenter.Id);
-                        }
+                        costCenterSelection.Add(costCenter.Id);
                     }
                 }
 
@@ -856,8 +768,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
 
                 query = IsNewRecord ?
-                    @"mutation($data:CreateSellerDataInput!) {
-                      createResponse: createSeller(data:$data) {
+                    @"mutation($data:CreateSellerInput!) {
+                      CreateResponse: createSeller(data:$data) {
                         id
                         isActive
                         entity {
@@ -897,8 +809,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                       }
                     }" :
-                    @"mutation ($data: UpdateSellerDataInput!, $id: Int!) {
-                        updateResponse: updateSeller(data: $data, id: $id) {
+                    @"mutation ($data: UpdateSellerInput!, $id: Int!) {
+                        UpdateResponse: updateSeller(data: $data, id: $id) {
                         id
                         isActive
                         entity {

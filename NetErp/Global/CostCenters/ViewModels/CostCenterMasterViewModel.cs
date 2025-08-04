@@ -57,7 +57,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
 
-        public SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel> SearchWithTwoColumnsGridViewModel { get; set; }
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
 
         Dictionary<string, List<string>> _errors;
 
@@ -140,9 +140,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             string fieldHeader2 = "Nombre o razón social";
             string fieldData1 = "IdentificationNumberWithVerificationDigit";
             string fieldData2 = "SearchName";
-            SearchWithTwoColumnsGridViewModel = new(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity);
+            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, _dialogService);
 
-            _dialogService.ShowDialog(SearchWithTwoColumnsGridViewModel, "Búsqueda de terceros");
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
         }
 
         public bool CanSearchCompanyAccountingEntityCompany(object p) => true;
@@ -1535,7 +1535,8 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = true;
             SelectedItem = new CompanyLocationDTO();
-
+            ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
+            NotifyOfPropertyChange(nameof(CanSave));
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
                 this.SetFocus(nameof(CompanyLocationName));
@@ -2373,7 +2374,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                   }
                 }";
 
-                //TODO: Implementar el uso de variables
+                //TODO: corregir a usar el id de la compañia y no un id quemado
                 dynamic variables = new ExpandoObject();
                 variables.Ids = new List<int>() { 1 };
 
@@ -2448,6 +2449,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 costCenterDummyDTO.IsExpanded = true;
                 CostCenterDTO? costCenter = costCenterDummyDTO.CostCenters.FirstOrDefault(x => x.Id == costCenterDTO.Id);
                 if (costCenter is null) return;
+                _notificationService.ShowSuccess("Centro de costo creado correctamente.");
                 SelectedItem = costCenter;
                 return;
             }
@@ -2456,10 +2458,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                 costCenterDummyDTO.IsExpanded = true;
                 costCenterDummyDTO.CostCenters.Add(costCenterDTO);
                 SelectedItem = costCenterDTO;
+                _notificationService.ShowSuccess("Centro de costo creado correctamente.");
                 return;
             }
             costCenterDummyDTO.CostCenters.Add(costCenterDTO);
             SelectedItem = costCenterDTO;
+            _notificationService.ShowSuccess("Centro de costo creado correctamente.");
             return;
         }
 
@@ -2499,6 +2503,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             costCenterToUpdate.Department = costCenterDTO.Department;
             costCenterToUpdate.City = costCenterDTO.City;
             costCenterToUpdate.Location = costCenterDTO.Location;
+            _notificationService.ShowSuccess("Centro de costo actualizado correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2515,6 +2520,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 costCenterDummyDTO.CostCenters.Remove(costCenterDummyDTO.CostCenters.Where(costCenter => costCenter.Id == message.DeletedCostCenter.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Centro de costo eliminado correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2650,6 +2656,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 StorageDTO? storage = storageDummyDTO.Storages.FirstOrDefault(x => x.Id == storageDTO.Id);
                 if (storage is null) return;
                 SelectedItem = storage;
+                _notificationService.ShowSuccess("Almacén creado correctamente.");
                 return;
             }
             if (!storageDummyDTO.IsExpanded)
@@ -2657,10 +2664,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                 storageDummyDTO.IsExpanded = true;
                 storageDummyDTO.Storages.Add(storageDTO);
                 SelectedItem = storageDTO;
+                _notificationService.ShowSuccess("Almacén creado correctamente.");
                 return;
             }
             storageDummyDTO.Storages.Add(storageDTO);
             SelectedItem = storageDTO;
+            _notificationService.ShowSuccess("Almacén creado correctamente.");
             return;
         }
 
@@ -2681,6 +2690,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             storageToUpdate.State = storageDTO.State;
             storageToUpdate.City = storageDTO.City;
             storageToUpdate.Location = storageDTO.Location;
+            _notificationService.ShowSuccess("Almacén actualizado correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2697,6 +2707,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 storageDummyDTO.Storages.Remove(storageDummyDTO.Storages.Where(storage => storage.Id == message.DeletedStorage.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Almacén eliminado correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2712,6 +2723,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 companyDTO.IsExpanded = true;
                 CompanyLocationDTO? companyLocation = companyDTO.Locations.FirstOrDefault(x => x.Id == companyLocationDTO.Id);
                 if (companyLocation is null) return;
+                _notificationService.ShowSuccess("Ubicación de la compañía creada correctamente.");
                 SelectedItem = companyLocation;
                 return;
             }
@@ -2722,12 +2734,14 @@ namespace NetErp.Global.CostCenters.ViewModels
                 companyLocationDTO.DummyItems.Add(new StorageDummyDTO(this, companyLocationDTO));
                 companyDTO.Locations.Add(companyLocationDTO);
                 SelectedItem = companyLocationDTO;
+                _notificationService.ShowSuccess("Ubicación de la compañía creada correctamente.");
                 return;
             }
             companyLocationDTO.DummyItems.Add(new CostCenterDummyDTO(this, companyLocationDTO));
             companyLocationDTO.DummyItems.Add(new StorageDummyDTO(this, companyLocationDTO));
             companyDTO.Locations.Add(companyLocationDTO);
             SelectedItem = companyLocationDTO;
+            _notificationService.ShowSuccess("Ubicación de la compañía creada correctamente.");
             return;
         }
 
@@ -2741,6 +2755,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             companyLocationToUpdate.Id = companyLocationDTO.Id;
             companyLocationToUpdate.Name = companyLocationDTO.Name;
             companyLocationToUpdate.Company = companyLocationDTO.Company;
+            _notificationService.ShowSuccess("Ubicación de la compañía actualizada correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2753,6 +2768,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 companyDTO.Locations.Remove(companyDTO.Locations.Where(location => location.Id == message.DeletedCompanyLocation.Id).First());
                 SelectedItem = null;
             });
+            _notificationService.ShowSuccess("Ubicación de la compañía eliminada correctamente.");
             return Task.CompletedTask;
         }
 
@@ -2763,6 +2779,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (companyToUpdate is null) return Task.CompletedTask;
             companyToUpdate.Id = companyDTO.Id;
             companyToUpdate.AccountingEntityCompany = companyDTO.AccountingEntityCompany;
+            _notificationService.ShowSuccess("Compañía actualizada correctamente.");
             return Task.CompletedTask;
         }
     }

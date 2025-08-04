@@ -1,5 +1,5 @@
 ﻿using Caliburn.Micro;
-using DTOLibrary.Books;
+using Models.Books;
 using Models.Global;
 using NetErp.Global.CostCenters.ViewModels;
 using System;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace NetErp.Global.CostCenters.DTO
 {
@@ -53,7 +54,18 @@ namespace NetErp.Global.CostCenters.DTO
                 }
             }
         }
+        public string FullName
+        {
+            get
+            {
+                string res = Name;
+                if(!string.IsNullOrEmpty(Address)) { res = res + " " + Address; };
+                if (!string.IsNullOrEmpty(City?.Name)) { res = res + " " + City; };
+                if (!string.IsNullOrEmpty(City?.Department?.Name)) { res = res + " " + City?.Department.Name; };
 
+                return res;
+            }
+        }
         private string _shortName;
         public string ShortName
         {
