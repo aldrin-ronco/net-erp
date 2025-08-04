@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
+using Common.Validators;
 using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
 using DevExpress.Xpf.Bars.Native;
 using DevExpress.Xpf.Editors;
-using DTOLibrary.Books;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Models.Billing;
@@ -19,9 +19,12 @@ using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.DynamicControl;
 using NetErp.Global.MainMenu.ViewModels;
+using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Services;
@@ -34,6 +37,7 @@ using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using Services.Inventory.DAL.PostgreSQL;
+using Services.Validators;
 using Services.Suppliers.DAL.PostgreSQL;
 using Services.Treasury.DAL.PostgreSQL;
 using System;
@@ -44,6 +48,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
+using Models.DTO.Billing;
+using Common.Services;
 
 namespace NetErp
 {
@@ -80,7 +86,6 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingPresentationGraphQLModel>>().To<AccountingPresentationService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CustomerGraphQLModel>>().To<CustomerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingSourceGraphQLModel>>().To<AccountingSourceService>().InSingletonScope();
@@ -115,9 +120,9 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<FranchiseGraphQLModel>>().To<FranchiseService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SmtpGraphQLModel>>().To<SmtpService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CreditLimitGraphQLModel>>().To<CreditLimitService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<WithholdingCertificateConfigGraphQLModel>>().To<WithholdingCertificateConfigService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
@@ -126,10 +131,25 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TaxTypeGraphQLModel>>().To<TaxTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TaxGraphQLModel>>().To<TaxService>().InSingletonScope();
-
+            _ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
+            
+            // New GraphQL Infrastructure
+            // Nueva estructura de servicios e inyección de dependencias
+            // IRepository reemplaza IGenericDataAccess
+            _ = kernel.Bind<IGraphQLClient>().To<GraphQLClient>().InSingletonScope();
+            _ = kernel.Bind<IRepository<MeasurementUnitGraphQLModel>>().To<GraphQLRepository<MeasurementUnitGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CreditLimitGraphQLModel>>().To<GraphQLRepository<CreditLimitGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CustomerGraphQLModel>>().To<GraphQLRepository<CustomerGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PriceListDetailGraphQLModel>>().To<GraphQLRepository<PriceListDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PriceListGraphQLModel>>().To<GraphQLRepository<PriceListGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
+            
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
+            _ = kernel.Bind<ICreditLimitValidator>().To<CreditLimitValidator>().InSingletonScope();
             _ = kernel.Bind<IServiceProvider>().ToMethod(ctx => ctx.Kernel).InSingletonScope();
             _ = kernel.Bind<ILoggerFactory>().ToConstant(LoggerFactory.Create(builder =>
             {
@@ -208,7 +228,6 @@ namespace NetErp
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
                 _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
-                _ = cfg.CreateMap<CustomerGraphQLModel, CustomerDTO>();
                 _ = cfg.CreateMap<RetentionTypeGraphQLModel, RetentionTypeDTO>();
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();
@@ -254,7 +273,9 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
+                _ = cfg.CreateMap<ParameterGraphQLModel, DynamicControlModel>();
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
+                _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

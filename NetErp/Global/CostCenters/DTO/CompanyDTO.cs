@@ -1,5 +1,5 @@
 ﻿using Caliburn.Micro;
-using DTOLibrary.Books;
+using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Global.CostCenters.ViewModels;

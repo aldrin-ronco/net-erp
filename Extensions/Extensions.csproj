@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DTOLibrary\DTOLibrary.csproj" />
     <ProjectReference Include="..\Models\Models.csproj" />
   </ItemGroup>
 

@@ -869,14 +869,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 IsBusy = true;
                 Refresh();
                 SupplierGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) , Suppliers = pageResult.PageResponse.Rows});
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result)});
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierUpdateMessage() { UpdatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result) , Suppliers = pageResult.PageResponse.Rows});
+                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierUpdateMessage() { UpdatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result)});
                 }
                 Context.EnableOnViewReady = false;
                 await Context.ActivateMasterView();
@@ -899,7 +898,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public async Task<SupplierGraphQLModel> ExecuteSave()
         {
-            string action = string.Empty;
             string query;
 
             try
@@ -986,7 +984,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
 
                 query = IsNewRecord ?
-                        @"mutation ($data: CreateSupplierDataInput!) {
+                        @"mutation ($data: CreateSupplierInput!) {
                           createResponse: createSupplier(data: $data) {
                             id
                             isTaxFree
@@ -1041,14 +1039,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                               telephonicInformation
                               emails {
                                 id
-                                name
                                 description
                                 password
                                 sendElectronicInvoice
                               }
                             }
                           }
-                        }" : @"mutation($data:UpdateSupplierDataInput!, $id:Int!) {
+                        }" : @"mutation($data:UpdateSupplierInput!, $id:Int!) {
                           updateResponse: updateSupplier(data:$data, id:$id) {
                             id
                             isTaxFree
@@ -1103,7 +1100,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                               telephonicInformation
                               emails {
                                 id
-                                name
                                 description
                                 password
                                 sendElectronicInvoice

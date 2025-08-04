@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace NetErp.Books.AccountingPresentations.Views
+namespace NetErp.Global.Parameter.Views
 {
     /// <summary>
-    /// Lógica de interacción para AccountingPresentationsMasterView.xaml
+    /// Lógica de interacción para ParameterMasterView.xaml
     /// </summary>
-    public partial class AccountingPresentationsMasterView : UserControl
+    public partial class ParameterMasterView : UserControl
     {
-        public AccountingPresentationsMasterView()
+        public ParameterMasterView()
         {
             InitializeComponent();
         }

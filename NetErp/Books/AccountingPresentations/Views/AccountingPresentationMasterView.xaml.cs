@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace NetErp.Books.AccountingPresentations.Views
 {
     /// <summary>
-    /// Lógica de interacción para AccountingPresentationsDetailView.xaml
+    /// Lógica de interacción para AccountingPresentationsMasterView.xaml
     /// </summary>
-    public partial class AccountingPresentationsDetailView : UserControl
+    public partial class AccountingPresentationMasterView : UserControl
     {
-        public AccountingPresentationsDetailView()
+        public AccountingPresentationMasterView()
         {
             InitializeComponent();
         }

@@ -379,6 +379,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public void GoBack(object p)
         {
             Context.EnableOnActivateAsync = false;
+            MeasurementUnits = [];
+            AccountingGroups = [];
             _ = Task.Run(() => Context.ActivateMasterView());
         }
 
@@ -424,8 +426,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public ItemTypeDetailViewModel(CatalogViewModel context, ObservableCollection<MeasurementUnitDTO> measurementUnits, ObservableCollection<AccountingGroupDTO> accountingGroups)
         {
             Context = context;
-            MeasurementUnits = measurementUnits;
-            AccountingGroups = accountingGroups;
+            MeasurementUnits = new ObservableCollection<MeasurementUnitDTO>(measurementUnits);
+            AccountingGroups = new ObservableCollection<AccountingGroupDTO>(accountingGroups);
             _errors = new Dictionary<string, List<string>>();
         }
 

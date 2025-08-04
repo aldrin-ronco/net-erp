@@ -28,6 +28,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         IHandle<AccountingBookCreateMessage>
     {
         public IGenericDataAccess<AccountingBookGraphQLModel> AccountingBookService { get; set; } = IoC.Get<IGenericDataAccess<AccountingBookGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public AccountingBookMasterViewModel(AccountingBookViewModel context)
         {
             Context = context;
@@ -148,8 +149,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 variables.filter.name = new ExpandoObject();
                 variables.filter.name.@operator = "like";
                 variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                var result = await AccountingBookService.GetList(query, variables); //Al final va al IGenericDataAccess.
+                var result = await AccountingBookService.GetList(query, variables);
                 AccountingBooks = new ObservableCollection<AccountingBookGraphQLModel>(result);
                 IsBusy = false;     
             }
@@ -175,7 +175,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                     }
                 }";                
                 object variables = new { Id = id };
-                var validation = await this.AccountingBookService.CanDelete(query, variables); //IGenericDataAccess al final.   
+                var validation = await this.AccountingBookService.CanDelete(query, variables);
                 if (validation.CanDelete)
                 {
                     IsBusy = false; 
@@ -246,20 +246,44 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         }
 
 
-        public Task HandleAsync(AccountingBookDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingBookDeleteMessage message, CancellationToken cancellationToken)
         {
-            AccountingBookGraphQLModel accountingBookToDelete = AccountingBooks.FirstOrDefault(x => x.Id == message.DeletedAccountingBook.Id) ?? new AccountingBookGraphQLModel();
-            AccountingBooks.Remove(accountingBookToDelete);
-            SelectedItem = null;
-            return Task.CompletedTask;
+            try
+            {
+                await LoadAccountingBooksAsync();
+                _notificationService.ShowSuccess("Libro contable eliminado correctamente", "Éxito");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(AccountingBookUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingBookUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadAccountingBooksAsync();
+            try
+            {
+                await LoadAccountingBooksAsync();
+                _notificationService.ShowSuccess("Libro contable actualizado correctamente", "Éxito");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-        public Task HandleAsync(AccountingBookCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AccountingBookCreateMessage message, CancellationToken cancellationToken)
         {
-            return LoadAccountingBooksAsync();
+            try
+            {
+                await LoadAccountingBooksAsync();
+                _notificationService.ShowSuccess("Libro contable creado correctamente", "Éxito");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

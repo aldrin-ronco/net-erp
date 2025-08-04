@@ -34,6 +34,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         IHandle<SupplierUpdateMessage>
     {
         public readonly IGenericDataAccess<SellerGraphQLModel> SellerService = IoC.Get<IGenericDataAccess<SellerGraphQLModel>>();
+
+        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         public SellerViewModel Context { get; set; }
 
         private bool _isBusy = false;
@@ -628,23 +630,40 @@ namespace NetErp.Billing.Sellers.ViewModels
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
-        public Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
-        }
-
-        public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(message.Sellers)));
-        }
-
-        public Task HandleAsync(SellerDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                SellerDTO sellerToDelete = Sellers.FirstOrDefault(seller => seller.Id == message.DeletedSeller.Id);
-                if (sellerToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Sellers.Remove(sellerToDelete));
-                return LoadSellers();
+                await LoadSellers();
+                _notificationService.ShowSuccess("Vendedor creado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await LoadSellers();
+                _notificationService.ShowSuccess("Vendedor actualizado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public async Task HandleAsync(SellerDeleteMessage message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await LoadSellers();
+                _notificationService.ShowSuccess("Vendedor eliminado correctamente.");
             }
             catch (Exception)
             {

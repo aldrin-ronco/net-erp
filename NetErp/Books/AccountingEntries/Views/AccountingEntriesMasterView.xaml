@@ -15,7 +15,7 @@
              xmlns:cal="http://www.caliburnproject.org"
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
-             d:DesignHeight="550" d:DesignWidth="800">
+             d:DesignHeight="550" d:DesignWidth="800" FontFamily="Century Gothic">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
@@ -68,11 +68,11 @@
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
             <!--Tabs-->
-            <TabControl Width="auto" Height="auto" Grid.Row="1" Margin="4">
-                <TabItem Padding="10" IsSelected="{Binding Path=IsSelectedTab1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <TabItem.Header>
+            <dx:DXTabControl Width="auto" Height="auto" Grid.Row="1" Margin="4">
+                <dx:DXTabItem Padding="10" IsSelected="{Binding Path=IsSelectedTab1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dx:DXTabItem.Header>
                         <TextBlock Text="Buscar Comprobante" FontSize="15"/>
-                    </TabItem.Header>
+                    </dx:DXTabItem.Header>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.2*"/>
@@ -97,14 +97,14 @@
                                   FontSize="15"
                                   Foreground="{Binding Path=SearchOnAccountingBook, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CheckBoxForeColorConverter}}"
                                   IsChecked="{Binding Path=SearchOnAccountingBook, Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"></CheckBox>
-                        <ComboBox Grid.Row="0" Grid.Column="1"
-                                  Margin="4, 6, 4, 4" Padding="3"
+                        <dxe:ComboBoxEdit Grid.Row="0" Grid.Column="1"
+                                  Margin="4, 6, 4, 4" Padding="2"
                                   Visibility="{Binding Path=SearchOnAccountingBook, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                   ItemsSource="{Binding Path=Context.AccountingBooks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  DisplayMemberPath="Name"
-                                  SelectedValuePath="Id"
+                                  DisplayMember="Name"
+                                  ValueMember="Id"
                                   VerticalContentAlignment="Center"
-                                  SelectedValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                  EditValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Centro de Costo-->
                         <CheckBox Grid.Row="1" Grid.Column="0"
                                   Content="Centro de costo" 
@@ -113,12 +113,12 @@
                                   FontSize="15"
                                   Foreground="{Binding Path=SearchOnCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CheckBoxForeColorConverter}}"
                                   IsChecked="{Binding Path=SearchOnCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ComboBox Grid.Row="1" Grid.Column="1"
-                                  Margin="4" Padding="3"
-                                  DisplayMemberPath="Name"
-                                  SelectedValuePath="Id"
+                        <dxe:ComboBoxEdit Grid.Row="1" Grid.Column="1"
+                                  Margin="4" Padding="2"
+                                  DisplayMember="Name" IsTextEditable="False"
+                                  ValueMember="Id"
                                   VerticalContentAlignment="Center"
-                                  SelectedValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  EditValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Visibility="{Binding Path=SearchOnCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                   ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Fuente Contable-->
@@ -129,12 +129,12 @@
                                   FontSize="15"
                                   Foreground="{Binding Path=SearchOnAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CheckBoxForeColorConverter}}"
                                   IsChecked="{Binding Path=SearchOnAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ComboBox Grid.Row="2" Grid.Column="1"
-                                  Margin="4" Padding="3"
-                                  DisplayMemberPath="Name"
-                                  SelectedValuePath="Id"
+                        <dxe:ComboBoxEdit Grid.Row="2" Grid.Column="1"
+                                  Margin="4" Padding="2" IsTextEditable="False"
+                                  DisplayMember="Name"
+                                  ValueMember="Id"
                                   VerticalContentAlignment="Center"
-                                  SelectedValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  EditValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Visibility="{Binding Path=SearchOnAccountingSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                   ItemsSource="{Binding Path=Context.AccountingSources, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Fecha-->
@@ -171,12 +171,12 @@
                                   FontSize="15"
                                   Foreground="{Binding Path=SearchOnDocumentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CheckBoxForeColorConverter}}"
                                   IsChecked="{Binding Path=SearchOnDocumentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <TextBox Grid.Row="4" Grid.Column="1"
+                        <dxe:TextEdit Grid.Row="4" Grid.Column="1"
                                  Width="120" 
                                  HorizontalAlignment="Left"
                                  HorizontalContentAlignment="Center"
                                  MaxLength="9"
-                                 Margin="4" Padding="3"
+                                 Margin="4" Padding="2"
                                  x:Name="DocumentNumber"
                                  Text="{Binding Path=DocumentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Visibility="{Binding Path=SearchOnDocumentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -198,44 +198,45 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
-                            <ComboBox Grid.Row="0" Grid.Column="0" Margin="0 0 8 0" Padding="3"
-                                      VerticalContentAlignment="Center"
-                                      ItemTemplateSelector="{DynamicResource itemTemplateSelector}"
-                                      Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"
-                                      x:Name="SelectedAccountingEntityId"
-                                      SelectedValuePath="Id"
-                                      SelectedValue="{Binding Path=SelectedAccountingEntityId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      ItemsSource="{Binding Path=AccountingEntitiesSearchResults, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                <ComboBox.Resources>
-                                    <DataTemplate x:Key="selectedTemplate">
-                                        <TextBlock Text="{Binding Path=SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                    <DataTemplate x:Key="dropDownTemplate">
+
+                            <dxe:ComboBoxEdit Grid.Row="0" Grid.Column="0" 
+                                  Margin="0,0,8,0" 
+                                  Padding="3"
+                                  VerticalContentAlignment="Center" 
+                                  IsTextEditable="False"
+                                  Visibility="{Binding Path=IsFilterSearchAccountinEntityOnEditMode, Converter={StaticResource SimpleBooleanConverter}}"
+                                  x:Name="SelectedAccountingEntityId"
+                                  DisplayMember="SearchName"
+                                  ValueMember="Id"
+                                  EditValue="{Binding Path=SelectedAccountingEntityId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  ItemsSource="{Binding Path=AccountingEntitiesSearchResults}"
+                                  ApplyItemTemplateToSelectedItem="False">
+                                <dxe:ComboBoxEdit.ItemTemplate>
+
+                                    <DataTemplate>
                                         <StackPanel Orientation="Vertical">
-                                            <TextBlock Text="{Binding Path=SearchName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="{Binding Path=SearchName}"/>
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Foreground="Gray" FontSize="12">
-                                                            Nit. <TextBlock Text="{Binding Path=IdentificationNumberWithVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                                <TextBlock Text="Nit."  Foreground="Gray" FontSize="12"/>
+                                                <TextBlock Text="{Binding Path=IdentificationNumberWithVerificationDigit}"
                                                             Foreground="Gray" FontSize="12"/>
-                                                    </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
                                     </DataTemplate>
-                                    <h:ComboBoxItemTemplateSelector x:Key="itemTemplateSelector" 
-                                            SelectedTemplate="{StaticResource selectedTemplate}"
-                                            DropDownTemplate="{StaticResource dropDownTemplate}"/>
-                                </ComboBox.Resources>
-                                <ComboBox.ItemsPanel>
+
+                                </dxe:ComboBoxEdit.ItemTemplate>
+
+                                <dxe:ComboBoxEdit.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <VirtualizingStackPanel/>
                                     </ItemsPanelTemplate>
-                                </ComboBox.ItemsPanel>
-                            </ComboBox>
-                            <xctk:WatermarkTextBox Grid.Row="0" Grid.Column="0" Margin="0 0 8 0" Padding="3"
+                                </dxe:ComboBoxEdit.ItemsPanel>
+                            </dxe:ComboBoxEdit>
+                            <dxe:TextEdit Grid.Row="0" Grid.Column="0" Margin="0 0 8 0" Padding="2"
                                                    CharacterCasing="Upper"
-                                                   Watermark="Digite por lo menos 3 caracteres y presiona el boton Buscar"
-                                                   KeepWatermarkOnGotFocus="True"
+                                                   NullText="Digite por lo menos 3 caracteres y presiona el boton Buscar"
                                                    FontSize="13"
+                                                   ShowNullTextIfFocused="True"
                                                    Width="auto"
                                                    x:Name="FilterSearchAccountingEntity"             
                                                    VerticalContentAlignment="Center"
@@ -642,11 +643,12 @@
                                        TotalCount="{Binding Path=TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        ResponseTime="{Binding Path=ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
-                </TabItem>
-                <TabItem Padding="10" IsSelected="{Binding Path=IsSelectedTab2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <TabItem.Header>
+                </dx:DXTabItem>
+                
+                <dx:DXTabItem Padding="10" IsSelected="{Binding Path=IsSelectedTab2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dx:DXTabItem.Header>
                         <TextBlock Text="Buscar Borradores" FontSize="15"/>
-                    </TabItem.Header>
+                    </dx:DXTabItem.Header>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
@@ -654,7 +656,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="¿ Que desea buscar ?" Grid.Row="0" Margin="4" Padding="3"/>
+                        <TextBlock Text="¿Qué desea buscar?" Grid.Row="0" Margin="4" Padding="3" FontSize="15"/>
                         <TextBox Grid.Row="1" Margin="4" Padding="3"/>
                         <DataGrid Grid.Row="2" Margin="4"
                                   AutoGenerateColumns="False" 
@@ -926,8 +928,8 @@
                                        TotalCount="{Binding Path=DraftTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        ResponseTime="{Binding Path=DraftResponseTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
-                </TabItem>
-            </TabControl>
+                </dx:DXTabItem>
+            </dx:DXTabControl>
         </Grid>
     </busyIndicator:BusyMask>
 </UserControl>

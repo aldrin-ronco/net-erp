@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
@@ -145,12 +146,15 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
                   }
                 }";
 
-                //object variables = new { Config.ConnectionId, AccountingAccountsWhere = new { IncludeOnlyAuxiliaryAccounts = true }, AccountingSourcesWhere = new { Annulment = false } };
                 dynamic variables = new ExpandoObject();
                 variables.AccountingSourceFilter = new ExpandoObject();
-                variables.AccountingSourceFilter.Annulment = false;
+                variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+                variables.AccountingSourceFilter.Annulment.@operator = "=";
+                variables.AccountingSourceFilter.Annulment.value = false;
                 variables.AccountingAccountFilter = new ExpandoObject();
-                variables.AccountingAccountFilter.IncludeOnlyAuxiliaryAccounts = true;
+                variables.AccountingAccountFilter.Code = new ExpandoObject();
+                variables.AccountingAccountFilter.Code.@operator = new List<string> { "length", ">=" };
+                variables.AccountingAccountFilter.Code.value = 8;
                 var dataContext = await this.TestBalanceByEntityService.GetDataContext<TestBalanceByEntityDataContext>(query, variables);
                 if (dataContext != null)
                 {

@@ -52,6 +52,12 @@ namespace Models.Books
         public decimal Credit { get; set; } = 0;
     }
 
+    public class AccountingEntryDraftTotals
+    {
+        public decimal Debit { get; set; } = 0;
+        public decimal Credit { get; set; } = 0;
+    }
+
     public class AccountingEntryCountDelete
     {
         public int Count { get; set; }
@@ -62,8 +68,12 @@ namespace Models.Books
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
         public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-
         public IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>.PageType  AccountingEntryDraftMasterPage { get; set; }
+    }
+
+    public class AccountingEntriesDraftDetailDataContext
+    {
+        public AccountingEntryDraftTotals AccountingEntryDraftTotals { get; set; } = new();
     }
 
     //TODO

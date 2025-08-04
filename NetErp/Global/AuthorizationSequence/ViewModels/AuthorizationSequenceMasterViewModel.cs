@@ -5,7 +5,6 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
-using DTOLibrary.Books;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;

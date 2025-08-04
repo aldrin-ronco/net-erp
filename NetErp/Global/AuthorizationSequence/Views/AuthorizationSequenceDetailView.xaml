@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:NetErp.Global.AuthorizationSequence.Views"
     xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
     mc:Ignorable="d"
-    d:DesignHeight="450" d:DesignWidth="800"
+    d:DesignHeight="800" d:DesignWidth="800"
     xmlns:cal="http://caliburnmicro.com"
     xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
     xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
@@ -17,7 +17,7 @@
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
     xmlns:h="clr-namespace:NetErp.Helpers"
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-    FontFamily="Century Gothic">
+    FontFamily="Century Gothic" d:Background="White">
     <UserControl.Resources>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter" />
     </UserControl.Resources>
@@ -30,11 +30,10 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-
                 <RowDefinition Height="*" />
+
             </Grid.RowDefinitions>
-            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False"
+            <dxr:RibbonControl Grid.Row="0" Grid.ColumnSpan="3" IsSimplified="False"
                 AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide"
                 RibbonStyle="Office2010" ToolbarShowCustomizationButton="False"
                 RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
@@ -69,6 +68,7 @@
                     </dxr:RibbonPageGroup>
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
+            
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*" />
@@ -77,12 +77,14 @@
 
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="150" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="150" />
+                    <!--TODO corroborar distribución no responsive-->
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
 
 
                 </Grid.RowDefinitions>
+                
                 <Grid Grid.Column="1" Grid.Row="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto" />
