@@ -25,6 +25,7 @@ using Microsoft.VisualStudio.Threading;
 using DevExpress.Xpf.Core;
 using DevExpress.Mvvm;
 using System.Windows.Threading;
+using NetErp.Billing.Zones.DTO;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
@@ -85,7 +86,22 @@ namespace NetErp.Billing.Customers.ViewModels
                 }
             }
         }
+        public ObservableCollection<ZoneGraphQLModel> ZoneGraphQLModels { get; set; }
+      
 
+        private ObservableCollection<ZoneDTO> _zones;
+        public ObservableCollection<ZoneDTO> Zones
+        {
+            get => _zones;
+            set
+            {
+                if (_zones != value)
+                {
+                    _zones = value;
+                    NotifyOfPropertyChange(nameof(Zones));
+                }
+            }
+        }
         private int _selectedIndexPage = 0;
         public int SelectedIndexPage
         {
@@ -696,6 +712,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 List<int> retentions = [];
                 List<object> emailList = [];
                 List<string> phones = [];
+                List<int> zonesSelection = new List<int>();
 
                 if (!string.IsNullOrEmpty(Phone1)) phones.Add(Phone1);
                 if (!string.IsNullOrEmpty(Phone2)) phones.Add(Phone2);
@@ -706,7 +723,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice });
+                        emailList.Add(new {name = email.ServerName, email.Description, email.Email, email.SendElectronicInvoice });
                     }
                 }
 
@@ -716,6 +733,13 @@ namespace NetErp.Billing.Customers.ViewModels
                     {
                         if (retention.IsSelected)
                             retentions.Add(retention.Id);
+                    }
+                }
+                foreach (ZoneDTO zone in Zones)
+                {
+                    if (zone.IsSelected)
+                    {
+                        zonesSelection.Add(zone.Id);
                     }
                 }
 
@@ -767,7 +791,8 @@ namespace NetErp.Billing.Customers.ViewModels
                     variables.Data.Entity.Emails = new List<object>();
                     variables.Data.Entity.Emails = emailList;
                 }
-
+                // zones
+                variables.Data.Zones = zonesSelection;
                 // Retentions
                 if (retentions.Count == 0) variables.Data.Retentions = new List<object>();
                 if (retentions.Count > 0) 
@@ -1022,12 +1047,19 @@ namespace NetErp.Billing.Customers.ViewModels
 				  retentionTypes{
 					id
 					name
-				  }  
+				  }
+                        zones {
+                        id
+                        name
+                        isActive
+                    }
 				}";
                 var result = await _customerService.GetDataContextAsync<CustomersDataContext>(query, new object{ });
                 IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
                 RetentionTypes = new ObservableCollection<RetentionTypeDTO>(Context.AutoMapper.Map<ObservableCollection<RetentionTypeDTO>>(result.RetentionTypes));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
+                ZoneGraphQLModels = new ObservableCollection<ZoneGraphQLModel>(result.Zones);
+               
             }
             catch (Exception ex)
             {
@@ -1055,6 +1087,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
+                List<ZoneDTO> zones = new List<ZoneDTO>();
                 List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
                 SelectedRegime = 'R';
@@ -1089,6 +1122,16 @@ namespace NetErp.Billing.Customers.ViewModels
                         IsSelected = false
                     });
                 }
+                foreach (ZoneGraphQLModel zone in ZoneGraphQLModels)
+                {
+                    zones.Add(new ZoneDTO()
+                    {
+                        Id = zone.Id,
+                        Name = zone.Name,
+                        IsSelected = false
+                    });
+                }
+                Zones = new ObservableCollection<ZoneDTO>(zones);
                 RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
             }
             catch (Exception ex)

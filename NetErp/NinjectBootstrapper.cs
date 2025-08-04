@@ -49,6 +49,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
 using Models.DTO.Billing;
+using NetErp.Billing.Zones.DTO;
 using Common.Services;
 
 namespace NetErp
@@ -276,6 +277,7 @@ namespace NetErp
                 _ = cfg.CreateMap<ParameterGraphQLModel, DynamicControlModel>();
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
                 _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
+                _ = cfg.CreateMap<ZoneGraphQLModel, ZoneDTO>();
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

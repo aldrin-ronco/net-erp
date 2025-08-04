@@ -25,13 +25,16 @@ using Microsoft.VisualStudio.Threading;
 using System.Windows.Threading;
 using DevExpress.Mvvm;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Billing.Zones.DTO;
+using System.Diagnostics;
+using System.Collections.Specialized;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
     public class SellerDetailViewModel : Screen, INotifyDataErrorInfo
     {
-
+        public IGenericDataAccess<ZoneGraphQLModel> ZoneService { get; set; } = IoC.Get<IGenericDataAccess<ZoneGraphQLModel>>();
         #region Commands
 
         private ICommand _deleteMailCommand;
@@ -327,9 +330,25 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _costCenters = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ListenCostCenterChek();
                 }
             }
         }
+        private ObservableCollection<ZoneDTO> _zones;
+        public ObservableCollection<ZoneDTO> Zones
+        {
+            get => _zones;
+            set
+            {
+                if (_zones != value)
+                {
+                    _zones = value;
+                    NotifyOfPropertyChange(nameof(Zones));
+                }
+            }
+        }
+        
 
         private IdentificationTypeGraphQLModel _selectedIdentificationType;
         public IdentificationTypeGraphQLModel SelectedIdentificationType
@@ -545,6 +564,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 //if (SelectedIdentificationType == null) return false;
                 // Si el documento de identidad esta vacion o su longitud es inferior a la longitud minima definida para ese tipo de documento
                 if (string.IsNullOrEmpty(IdentificationNumber.Trim()) || IdentificationNumber.Length < SelectedIdentificationType.MinimumDocumentLength) return false;
+                if (CostCenters.Where(f => f.IsSelected == true).Count() == 0) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
                 // Si el control de errores por propiedades tiene algun error
@@ -593,6 +613,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 List<CostCenterDTO> costCenters = new List<CostCenterDTO>();
+                List<ZoneDTO> zones = new List<ZoneDTO>();
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
                 IdentificationNumber = string.Empty;
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
@@ -618,6 +639,16 @@ namespace NetErp.Billing.Sellers.ViewModels
                         IsSelected = false
                     });
                 }
+                foreach (ZoneDTO zone in Context.Zones)
+                {
+                    zones.Add(new ZoneDTO()
+                    {
+                        Id = zone.Id,
+                        Name = zone.Name,
+                        IsSelected = false
+                    });
+                }
+                Zones = new ObservableCollection<ZoneDTO>(zones);
                 CostCenters = new ObservableCollection<CostCenterDTO>(costCenters);
             }
             catch (Exception ex)
@@ -646,7 +677,42 @@ namespace NetErp.Billing.Sellers.ViewModels
                     break;
             }
         }
+        private void ListenCostCenterChek()
+        {
+            foreach (var costCenter in CostCenters)
+            {
+                costCenter.PropertyChanged += CostCenter_PropertyChanged;
+            }
 
+            // Escuchar cuando se agregan nuevos elementos
+            CostCenters.CollectionChanged += CostCenter_CollectionChanged;
+        }
+        private void CostCenter_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CostCenterDTO.IsSelected))
+            {
+                // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
+                NotifyOfPropertyChange(() => CanSave);
+            }
+        }
+        private void CostCenter_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Escuchar cambios de los nuevos elementos
+            if (e.NewItems != null)
+            {
+                foreach (CostCenterDTO p in e.NewItems)
+                    p.PropertyChanged += CostCenter_PropertyChanged;
+            }
+
+            // Opcional: dejar de escuchar eliminados
+            if (e.OldItems != null)
+            {
+                foreach (CostCenterDTO p in e.OldItems)
+                    p.PropertyChanged -= CostCenter_PropertyChanged;
+            }
+
+            NotifyOfPropertyChange(() => CanSave);
+        }
         public async Task Save()
         {
             try
@@ -686,7 +752,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 IsBusy = false;
             }
         }
-
+       
         public async Task<SellerGraphQLModel> ExecuteSave()
         {
             string action = string.Empty;
@@ -694,6 +760,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 List<int> costCenterSelection = new List<int>();
+                List<int> zonesSelection = new List<int>();
                 List<object> emailList = new List<object>();
                 List<string> phones = new List<string>();
 
@@ -717,6 +784,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                         costCenterSelection.Add(costCenter.Id);
                     }
                 }
+                foreach (ZoneDTO zone in Zones)
+                {
+                    if (zone.IsSelected)
+                    {
+                        zonesSelection.Add(zone.Id);
+                    }
+                }
 
                 dynamic variables = new ExpandoObject();
                 // Root
@@ -734,7 +808,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 variables.Data.Entity.MiddleName = MiddleName;
                 variables.Data.Entity.FirstLastName = FirstLastName;
                 variables.Data.Entity.MiddleLastName = MiddleLastName;
-                variables.Data.Entity.FullName = $"{FirstName} {MiddleName} {FirstLastName} {MiddleLastName}".Trim().RemoveExtraSpaces();
+                variables.Data.Entity.FullName = $"{ FirstName} {MiddleName} {FirstLastName} {MiddleLastName}".Trim().RemoveExtraSpaces();
                 variables.Data.Entity.Phone1 = Phone1;
                 variables.Data.Entity.Phone2 = Phone2;
                 variables.Data.Entity.CellPhone1 = CellPhone1;
@@ -752,6 +826,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 // Seller
                 variables.Data.IsActive = true;
                 variables.Data.CostCenters = costCenterSelection;
+                variables.Data.Zones = zonesSelection;
                 // Emails
                 if (emailList.Count == 0) variables.Data.Entity.Emails = new List<object>();
                 if (emailList.Count > 0)
@@ -803,6 +878,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                             sendElectronicInvoice
                           }
                         }
+                        zones {
+                        id
+                        name
+                      }
                         costCenters {
                           id
                           name
@@ -844,6 +923,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                               sendElectronicInvoice
                             }
                         }
+                        zones {
+                        id
+                        name
+                      }
                         costCenters {
                             id
                             name
@@ -911,6 +994,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             Countries = Context.Countries;
             SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == "13"); // 13 es CC
+           
         }
 
         protected override void OnViewAttached(object view, object context)

@@ -22,6 +22,8 @@ using NetErp.Helpers;
 using Models.Books;
 using Models.Suppliers;
 using NetErp.Global.CostCenters.DTO;
+using Ninject.Activation;
+using NetErp.Billing.Zones.DTO;
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
@@ -412,6 +414,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                         id
                         name
                       }
+                        zones {
+                        id
+                        name
+                      }
                     }
                   }
                   identificationTypes {
@@ -440,6 +446,11 @@ namespace NetErp.Billing.Sellers.ViewModels
                     id
                     name
                   }
+                   zones {
+                        id
+                        name
+                        isActive
+                    }
                 }";
 
                 
@@ -479,6 +490,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Context.CostCenters = new ObservableCollection<CostCenterDTO>(Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters));
                 Context.IdentificationTypes = new ObservableCollection<Models.Books.IdentificationTypeGraphQLModel>(result.IdentificationTypes);
                 Context.Countries = result.Countries;
+                Context.Zones = new ObservableCollection<ZoneDTO>(Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(result.Zones));
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     CostCenters = new ObservableCollection<CostCenterGraphQLModel>(result.CostCenters);
@@ -546,6 +558,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                           email
                           sendElectronicInvoice
                         }
+                      }
+                    zones {
+                        id
+                        name
                       }
                     costCenters {
                     id
