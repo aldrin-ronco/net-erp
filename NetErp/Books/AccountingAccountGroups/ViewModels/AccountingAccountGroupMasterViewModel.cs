@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace NetErp.Books.AccountingAccountGroups.ViewModels
@@ -41,6 +42,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 {
                     _groups = value;
                     NotifyOfPropertyChange(nameof(Groups));
+                    NotifyOfPropertyChange(nameof(ShowAllControls));
+                    
                 }
             }
         }
@@ -56,6 +59,19 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 {
                     _selectedGroupAccountingAccounts = value;
                     NotifyOfPropertyChange(nameof(SelectedGroupAccountingAccounts));
+                }
+            }
+        }
+        private AccountingAccountGroupDTO _selectedGroupAccountingAccountToDeleted;
+        public AccountingAccountGroupDTO SelectedGroupAccountingAccountToDeleted
+        {
+            get { return _selectedGroupAccountingAccountToDeleted; }
+            set
+            {
+                if (_selectedGroupAccountingAccountToDeleted != value)
+                {
+                    _selectedGroupAccountingAccountToDeleted = value;
+                    NotifyOfPropertyChange(nameof(SelectedGroupAccountingAccountToDeleted));
                 }
             }
         }
@@ -168,7 +184,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 return true;
             }
         }
-
+        public bool ShowAllControls
+        {
+            get
+            {
+                return Groups != null && Groups.Count > 0;
+            }
+        }
         private ICommand _addAccountingAccountCommand;
 
         public ICommand AddAccountingAccountCommand
@@ -225,10 +247,15 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         public async Task SaveAsync()
         {
+           List<int> accountingAccountsIds = [.. _selectedGroupAccountingAccountsShadow.Select(x => x.Id)];
+           await ExcecuteSaveAsync(accountingAccountsIds);
+        }
+        public async Task ExcecuteSaveAsync(List<int> accountingAccountsIds)
+        {
             try
             {
                 IsBusy = true;
-                List<int> accountingAccountsIds = [.. _selectedGroupAccountingAccountsShadow.Select(x => x.Id)];
+
                 string query = @"
                 mutation($data: UpdateAccountingAccountGroupInput!, $id: Int!){
                   UpdateResponse: updateAccountingAccountGroup(data: $data, id: $id){
@@ -266,7 +293,20 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 IsBusy = false;
             }
         }
+        public async Task DeleteAccountingAccount()
+        {
+           
+                MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedGroupAccountingAccountToDeleted.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                if (result != MessageBoxResult.Yes) return;
+            
+           
+            var Accounts = SelectedGroupAccountingAccounts.Where(f => f.Id != SelectedGroupAccountingAccountToDeleted.Id);
+            List<int> accountingAccountsIds = [.. Accounts.Select(x => x.Id)];
+            await ExcecuteSaveAsync(accountingAccountsIds);
+            _selectedGroupAccountingAccountsShadow.Remove(_selectedGroupAccountingAccountsShadow.First(f => f.Id == SelectedGroupAccountingAccountToDeleted.Id));
+            SelectedGroupAccountingAccounts = [.. Accounts];
 
+        }
         public void DeleteAccountingAccounts()
         {
             foreach (var accountingAccount in SelectedGroupAccountingAccounts)
@@ -286,7 +326,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         protected override void OnViewAttached(object view, object context)
         {
             base.OnViewAttached(view, context);
-            _ = Task.Run(() => InitializeAsync());
+          //  _ = Task.Run(() => InitializeAsync());
         }
 
         public void UpdateMainList()

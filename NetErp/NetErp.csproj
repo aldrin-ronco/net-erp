@@ -74,7 +74,9 @@
 
   <ItemGroup>
     <Reference Include="DevExpress.Images.v24.2">
-      <HintPath>..\..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Images.v24.2.dll</HintPath>      </Reference>
+      <HintPath>..\..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Images.v24.2.dll</HintPath>      
+   </Reference>
+
     <Reference Include="DevExpress.Xpf.Ribbon.v24.2">
       <HintPath>..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v24.2.dll</HintPath>
     </Reference>

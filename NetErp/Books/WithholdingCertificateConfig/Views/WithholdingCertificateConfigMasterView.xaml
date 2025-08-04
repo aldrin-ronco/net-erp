@@ -61,8 +61,18 @@
                     </dxb:BarButtonItem>
 
                     <dxb:BarItemSeparator/>
-                  
-                    <dxb:BarItemLinkSeparator/>
+                        <dxb:BarButtonItem Content="Eliminar" 
+                        Glyph="{dx:DXImage 'Images/Actions/DeleteList_16x16.png'}" 
+                        LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
+                        Description="Eliminar"
+                        Hint="Eliminar Certificado"    
+                        IsEnabled="{Binding Path=CanDelete, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                        RibbonStyle="Large">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteCommand}" EventName="ItemClick"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxb:BarButtonItem>
+                        <dxb:BarItemLinkSeparator/>
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
             </dxr:RibbonControl>
