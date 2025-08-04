@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,5 +20,26 @@ namespace Models.Books
         public bool IsActive { get; set; }
         public string Formula { get; set; } = string.Empty;
         public string AlternativeFormula { get; set; } = string.Empty;
+    }
+
+    public class TaxDataContext
+    {
+        public IEnumerable<TaxTypeGraphQLModel> TaxTypes { get; set; } = [];
+        public IEnumerable<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } = [];
+    }
+    public class TaxCreateMessage
+    {
+        public TaxGraphQLModel CreatedTax { get; set; }
+        public ObservableCollection<TaxGraphQLModel> Taxs { get; set; }
+    }
+    public class TaxDeleteMessage
+    {
+        public TaxGraphQLModel DeletedTax { get; set; }
+    }
+
+    public class TaxUpdateMessage
+    {
+        public TaxGraphQLModel UpdatedTax { get; set; }
+        public ObservableCollection<TaxGraphQLModel> Taxs { get; set; }
     }
 }

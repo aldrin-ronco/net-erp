@@ -43,6 +43,8 @@ using NetErp.Treasury.Masters.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
 using NetErp.Global.AuthorizationSequence.ViewModels;
+using NetErp.Books.Tax.ViewModels;
+using NetErp.Books.TaxType.ViewModels;
 using NetErp.Global.Parameter.ViewModels;
 using System;
 using System.Collections.ObjectModel;
@@ -54,7 +56,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Global.MainMenu.ViewModels
 {
-    public class MainMenuViewModel: Conductor<IScreen>.Collection.OneActive
+    public class MainMenuViewModel : Conductor<IScreen>.Collection.OneActive
     {
         private int selectedIndex;
 
@@ -94,9 +96,9 @@ namespace NetErp.Global.MainMenu.ViewModels
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "OpenOption1" : currentMethod.Name.Between("<", ">"))} \r\n{exGraphQL.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                ThemedMessageBox.Show(text: ex.Message,title: "Atencion!", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information);
+                ThemedMessageBox.Show(text: ex.Message, title: "Atencion!", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information);
             }
         }
         public async void OpenAccountingEntities()
@@ -219,7 +221,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             catch (Exception ex)
             {
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }   
+            }
 
         }
         public async void OpenAccountingSource()
@@ -673,6 +675,36 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
+        public async void OpenTax()
+        {
+            try
+            {
+                TaxViewModel instance = IoC.Get<TaxViewModel>();
+                instance.DisplayName = "Administración de Impuestos";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
+        }
+        public async void OpenTaxType()
+        {
+            try
+            {
+                TaxTypeViewModel instance = IoC.Get<TaxTypeViewModel>();
+                instance.DisplayName = "Administración de Tipos de Impuesto";
+                await ActivateItemAsync(instance, new CancellationToken());
+                int MyNewIndex = Items.IndexOf(instance);
+                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
     }
 }

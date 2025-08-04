@@ -44,6 +44,8 @@
                 <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
                 <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
                 <MenuItem Header="Configuración del certificado de retención" x:Name="OpenWithholdingCertificateConfig"/>
+                <MenuItem Header="Administración de Impuestos" x:Name="OpenTax"/>
+                <MenuItem Header="Administración de Tipos de Impuesto" x:Name="OpenTaxType"/>
                 <Separator/>
                 <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
                 <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>

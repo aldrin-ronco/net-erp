@@ -129,6 +129,8 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<TaxTypeGraphQLModel>>().To<TaxTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<TaxGraphQLModel>>().To<TaxService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
             
             // New GraphQL Infrastructure
