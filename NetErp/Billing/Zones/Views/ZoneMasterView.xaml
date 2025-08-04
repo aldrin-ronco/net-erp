@@ -8,6 +8,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
@@ -89,42 +90,57 @@ RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVi
             </xctk:WatermarkTextBox>
 
         </StackPanel>
-        <dxg:GridControl Grid.Row="3" ItemsSource="{Binding Path=Zones, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            Grid.Row="3">
+            
+            <dxg:GridControl ItemsSource="{Binding Path=Zones, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                          SelectedItem="{Binding Path=SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="0 5 0 0">
-            <dxg:GridControl.View>
-                <dxg:TableView AllowCascadeUpdate="False" 
+                <dxg:GridControl.View>
+                    <dxg:TableView AllowCascadeUpdate="False" 
                    EnableSelectedRowAppearance="True" AllowSorting="False"
                    AllowColumnMoving="False"
                    ShowGroupPanel="False" AlternateRowBackground="Beige">
-                    <dxg:TableView.RowStyle>
-                        <Style TargetType="dxg:RowControl">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
-                                    <Setter Property="Background" Value="Red"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </dxg:TableView.RowStyle>
-                </dxg:TableView>
-            </dxg:GridControl.View>
-            <dxg:GridColumn Header="Nombre de la zona" 
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
+                                        <Setter Property="Background" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
+                </dxg:GridControl.View>
+                <dxg:GridColumn Header="Nombre de la zona" 
                             Width="*"
                             Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                             HorizontalHeaderContentAlignment="Center"/>
-            <dxg:GridColumn Width="50">
-                <dxg:GridColumn.CellTemplate>
-                    <DataTemplate>
-                        <Button Height="20" Width="35" cal:Message.Attach="[Event Click] = [Action EditZoneAsync]" Margin="5">
-                            <Button.Content>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Button.Content>
-                        </Button>
-                    </DataTemplate> 
-                </dxg:GridColumn.CellTemplate>
-            </dxg:GridColumn>
-        </dxg:GridControl>
+                <dxg:GridColumn Width="50">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button cal:Message.Attach="[Event Click] = [Action EditZoneAsync]" 
+                                BorderThickness="0"
+                                Padding="3"
+                                Margin="3"
+                                Width="auto" Height="auto" >
+                                <Button.Content>
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                </Button.Content>
+                            </Button>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+        </busyIndicator:BusyMask>
+        
         <uc:GridPaging Grid.Row="4" Grid.Column="0" 
            HorizontalAlignment="stretch"
            VerticalAlignment = "center" 

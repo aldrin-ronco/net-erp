@@ -380,8 +380,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
                 variables.filter.AccountingPresentationId = this.SelectedAccountingPresentationId;
-                variables.filter.StartDate = this.InitialDate.ToUniversalTime();
-                variables.filter.EndDate = this.FinalDate.ToUniversalTime();
+                variables.filter.StartDate = DateTimeHelper.DateTimeKindUTC(this.InitialDate);
+                variables.filter.EndDate = DateTimeHelper.DateTimeKindUTC(this.FinalDate);
                 variables.filter.CostCentersIds = costCentersIds;
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.AccountingCodeStart = accountingCodeStart;

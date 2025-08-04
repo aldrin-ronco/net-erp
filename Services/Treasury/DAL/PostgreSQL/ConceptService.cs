@@ -1,14 +1,14 @@
 ﻿using Common.Interfaces;
-using Models.Billing;
+using Models.Treasury;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Services.Billing.DAL.PostgreSQL
+namespace Services.Treasury.DAL.PostgreSQL
 {
-    public class CreditLimitService: IGenericDataAccess<CreditLimitGraphQLModel>
+    public class ConceptService: IGenericDataAccess<ConceptGraphQLModel>
     {
     }
 }

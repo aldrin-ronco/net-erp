@@ -33,11 +33,12 @@ namespace NetErp.Billing.Customers.ViewModels
         IHandle<SupplierUpdateMessage>
     {
 
-        public readonly IGenericDataAccess<CustomerGraphQLModel> CustomerService = IoC.Get<IGenericDataAccess<CustomerGraphQLModel>>();
+        private readonly IRepository<CustomerGraphQLModel> _customerService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         public CustomerViewModel Context { get; private set; }
 
-        private CustomerDTO? _selectedCustomer;
-        public CustomerDTO? SelectedCustomer
+        private CustomerGraphQLModel? _selectedCustomer;
+        public CustomerGraphQLModel? SelectedCustomer
         {
             get { return _selectedCustomer; }
             set
@@ -51,8 +52,8 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private ObservableCollection<CustomerDTO> _customers = [];
-        public ObservableCollection<CustomerDTO> Customers
+        private ObservableCollection<CustomerGraphQLModel> _customers = [];
+        public ObservableCollection<CustomerGraphQLModel> Customers
         {
             get { return _customers; }
             set
@@ -91,9 +92,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public bool CanCreateCustomer() => !IsBusy;
 
-        public CustomerMasterViewModel(CustomerViewModel context)
+        public CustomerMasterViewModel(CustomerViewModel context,
+                                      Helpers.Services.INotificationService notificationService,
+                                      IRepository<CustomerGraphQLModel> customerService)
         {
-            Context = context;
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+            
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -127,7 +133,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedCustomer = null;
-                await Task.Run(() => Context.ActivateDetailViewForNew());
+                await Context.ActivateDetailViewForNewAsync();
             }
             catch(AsyncException ex)
             {
@@ -157,7 +163,7 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => Context.ActivateDetailViewForEdit(SelectedCustomer));
+                await Context.ActivateDetailViewForEditAsync(SelectedCustomer);
                 SelectedCustomer = null;
             }
             catch (AsyncException ex)
@@ -187,7 +193,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-
+                System.Diagnostics.Debug.WriteLine($"=== LoadCustomers STARTED at {DateTime.Now:HH:mm:ss.fff} ===");
                 IsBusy = true;
                 Refresh();
 
@@ -281,10 +287,10 @@ namespace NetErp.Billing.Customers.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                var result = await CustomerService.GetPage(query, variables);
+                var result = await _customerService.GetPageAsync(query, variables);
 
-                TotalCount = result.PageResponse.Count;
-                Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(result.PageResponse.Rows));
+                TotalCount = result.Count;
+                Customers = new ObservableCollection<CustomerGraphQLModel>(result.Rows);
                 stopwatch.Stop();
 
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -300,6 +306,7 @@ namespace NetErp.Billing.Customers.ViewModels
             finally
             {
                 IsBusy = false;
+                System.Diagnostics.Debug.WriteLine($"=== LoadCustomers FINISHED at {DateTime.Now:HH:mm:ss.fff} ===");
             }
         }
 
@@ -319,7 +326,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CustomerService.CanDelete(query, variables);
+                var validation = await _customerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete) 
                 {
@@ -339,7 +346,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 CustomerGraphQLModel deletedCustomer = await ExecuteDeleteCustomer(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerDeleteMessage() { DeletedCustomer = Context.AutoMapper.Map<CustomerDTO>(deletedCustomer) });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerDeleteMessage() { DeletedCustomer = deletedCustomer });
 
                 NotifyOfPropertyChange(nameof(CanDeleteCustomer));
             }
@@ -382,7 +389,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                CustomerGraphQLModel deletedCustomer = await CustomerService.Delete(query, variables);
+                CustomerGraphQLModel deletedCustomer = await _customerService.DeleteAsync(query, variables);
                 this.SelectedCustomer = null;
                 return deletedCustomer;
             }
@@ -405,28 +412,19 @@ namespace NetErp.Billing.Customers.ViewModels
         protected override void OnViewReady(object view)
         {
             if (Context.EnableOnViewReady is false) return;
+            System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady STARTED at {DateTime.Now:HH:mm:ss.fff} ===");
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadCustomers());
+            _ = LoadCustomers();
             _ = this.SetFocus(nameof(FilterSearch));
+            System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady FINISHED at {DateTime.Now:HH:mm:ss.fff} ===");
         }
 
-        public void OnChecked()
-        {
-            NotifyOfPropertyChange(nameof(CanDeleteCustomer));
-        }
-
-        public void OnUnchecked()
-        {
-            NotifyOfPropertyChange(nameof(CanDeleteCustomer));
-        }
-
-        public Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                CustomerDTO customerToDelete = Customers.First(c => c.Id == message.DeletedCustomer.Id);
-                if (customerToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Customers.Remove(customerToDelete));
-                return LoadCustomers();
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente eliminado correctamente.");
             }
             catch (Exception)
             {
@@ -434,14 +432,32 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
+            try
+            {
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente creado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Customers = new ObservableCollection<CustomerDTO>(Context.AutoMapper.Map<ObservableCollection<CustomerDTO>>(message.Customers)));
+            try
+            {
+                await LoadCustomers();
+                _notificationService.ShowSuccess("Cliente actualizado correctamente.");
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
@@ -561,12 +577,23 @@ namespace NetErp.Billing.Customers.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3) 
                     {
                         PageIndex = 1;
-                        _ = Task.Run(this.LoadCustomers);
-                    };
+                        _ = LoadCustomers();
+                    }
                 }
             }
         }
 
         #endregion
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            // Desuscribirse del EventAggregator para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            
+            // Limpiar colecciones
+            Customers.Clear();
+            
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

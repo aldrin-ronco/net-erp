@@ -120,33 +120,35 @@
                 <!--adorners:Watermark.Text="Selecciona el tipo de proceso al cual pertenece esta fuente contable"-->
 
                 <TextBlock Grid.Column="0" Grid.Row="1" Text="Régimen" VerticalAlignment="Center" Margin="4" Padding="3"/>
-                <ComboBox Grid.Column="1" Grid.Row="1" 
+                <dxe:ComboBoxEdit Grid.Column="1" Grid.Row="1" 
                       VerticalAlignment="Center" 
                       Margin="4" Padding="3"
                       IsEnabled="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                      x:Name="RegimeDictionary"
-                      DisplayMemberPath="Value"
-                      SelectedValuePath="Key"
-                      SelectedValue="{Binding Path=SelectedRegime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemsPanel>
+                      ItemsSource="{Binding RegimeDictionary, UpdateSourceTrigger=PropertyChanged}"
+                      DisplayMember="Value"
+                      ValueMember="Key"
+                      IsTextEditable="False"
+                      EditValue="{Binding Path=SelectedRegime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
+                    </dxe:ComboBoxEdit.ItemsPanel>
+                </dxe:ComboBoxEdit>
 
                 <!--Tipo de Documento-->
                 <TextBlock Grid.Column="0" Grid.Row="2" 
                        Text="Tipo de Documento" 
                        VerticalAlignment="Center" 
                        Margin="4" Padding="3"/>
-                <ComboBox Grid.Column="1" Grid.Row="2" 
+                <dxe:ComboBoxEdit Grid.Column="1" Grid.Row="2" 
                      Width="auto" 
                      VerticalAlignment="Center" 
                      Margin="4" Padding="3"
-                     x:Name="IdentificationTypes"
-                     DisplayMemberPath="Name"
-                     SelectedValuePath="Id"
+                     IsTextEditable="False"
+                     ItemsSource="{Binding IdentificationTypes, UpdateSourceTrigger=PropertyChanged}"
+                     DisplayMember="Name"
+                     ValueMember="Id"
                      IsEnabled="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
                      SelectedItem="{Binding Path=SelectedIdentificationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
@@ -197,7 +199,7 @@
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
                                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                    <RadioButton Content="Rason Social"
+                    <RadioButton Content="Razón Social"
                                  GroupName="CaptureType"
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
@@ -488,7 +490,7 @@
                                 <GridViewColumn Width="auto">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <dxe:CheckEdit IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

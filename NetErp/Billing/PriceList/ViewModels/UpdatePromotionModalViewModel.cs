@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
@@ -23,7 +24,7 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         private readonly Helpers.IDialogService _dialogService;
         Dictionary<string, List<string>> _errors;
-        private IGenericDataAccess<PriceListGraphQLModel> PriceListService { get; set; } = IoC.Get<IGenericDataAccess<PriceListGraphQLModel>>();
+        private readonly IRepository<PriceListGraphQLModel> _priceListService;
 
         public DateTime? MinimumDate { get; set; } 
 
@@ -133,7 +134,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.Name = Name.Trim().RemoveExtraSpaces();
                 variables.Data.StartDate = DateTimeHelper.DateTimeKindUTC(StartDate);
                 variables.Data.EndDate = DateTimeHelper.DateTimeKindUTC(EndDate);
-                var result = await PriceListService.Update(query, variables);
+                var result = await _priceListService.UpdateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromUpdatePromotionModalViewMessage<TModel>() { ReturnedData = result }, token: "UpdatePromotion");
                 await _dialogService.CloseDialogAsync(this, true);
@@ -170,10 +171,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 return _saveCommand;
             }
         }
-        public UpdatePromotionModalViewModel(Helpers.IDialogService dialogService)
+        public UpdatePromotionModalViewModel(
+            Helpers.IDialogService dialogService,
+            IRepository<PriceListGraphQLModel> priceListService)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
+            _priceListService = priceListService;
         }
 
         protected override void OnViewReady(object view)

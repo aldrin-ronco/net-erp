@@ -15,7 +15,7 @@
              xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Background="AliceBlue">
+             d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
