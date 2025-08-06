@@ -30,7 +30,7 @@ namespace Models.Books
     public class TaxCreateMessage
     {
         public TaxGraphQLModel CreatedTax { get; set; }
-        public ObservableCollection<TaxGraphQLModel> Taxs { get; set; }
+       
     }
     public class TaxDeleteMessage
     {
@@ -40,6 +40,5 @@ namespace Models.Books
     public class TaxUpdateMessage
     {
         public TaxGraphQLModel UpdatedTax { get; set; }
-        public ObservableCollection<TaxGraphQLModel> Taxs { get; set; }
     }
 }

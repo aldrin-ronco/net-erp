@@ -32,12 +32,11 @@ namespace NetErp.Books.Tax.ViewModels
 {
     public class TaxDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<TaxGraphQLModel> TaxService = IoC.Get<IGenericDataAccess<TaxGraphQLModel>>();
+        private readonly IRepository<TaxGraphQLModel> _taxService;
 
-
-        public TaxDetailViewModel(TaxViewModel context, TaxGraphQLModel? entity)
+        public TaxDetailViewModel(TaxViewModel context, TaxGraphQLModel? entity, IRepository<TaxGraphQLModel> taxService)
         {
-
+            _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
 
             Context = context;
             _errors = new Dictionary<string, List<string>>();
@@ -381,15 +380,15 @@ namespace NetErp.Books.Tax.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                TaxGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
+                TaxGraphQLModel result = await ExecuteSaveAsync();
+              
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxCreateMessage() { CreatedTax = result, Taxs = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxCreateMessage() { CreatedTax = result });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxUpdateMessage() { UpdatedTax = result, Taxs = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxUpdateMessage() { UpdatedTax = result });
                 }
                 // Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewModelAsync();
@@ -402,7 +401,7 @@ namespace NetErp.Books.Tax.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                _ = App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
@@ -410,7 +409,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        public async Task<TaxGraphQLModel> ExecuteSave()
+        public async Task<TaxGraphQLModel> ExecuteSaveAsync()
         {
             dynamic variables = new ExpandoObject();
             variables.Data = new ExpandoObject();
@@ -465,7 +464,7 @@ namespace NetErp.Books.Tax.ViewModels
                       }
                     }";
 
-                TaxGraphQLModel record = await TaxService.Create(query, variables);
+                TaxGraphQLModel record = await _taxService.CreateAsync(query, variables);
                 return record;
             }
             catch (Exception ex)
@@ -510,7 +509,7 @@ namespace NetErp.Books.Tax.ViewModels
                 variables.id = Entity.Id;
 
 
-                return await TaxService.Update(query, variables);
+                return await _taxService.UpdateAsync(query, variables);
 
             }
             catch (Exception ex)
@@ -559,29 +558,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             
         }
-        public async Task<IGenericDataAccess<TaxGraphQLModel>.PageResponseType> LoadPage()
-        {
-            string query = Context.listquery;
-
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.Pagination = new ExpandoObject();
-            variables.filter.Pagination.Page = 1;
-            variables.filter.Pagination.PageSize = 50;
-            variables.filter.and = new ExpandoObject[]
-              {
-                     new(),
-                     new()
-              };
-
-            variables.filter.and[0].isActive = new ExpandoObject();
-            variables.filter.and[0].isActive.@operator = "=";
-            variables.filter.and[0].isActive.value = true;
-
-
-
-            return await TaxService.GetPage(query, variables);
-        }
+      
         private void ValidateProperty(string propertyName, int? value)
         {
             try
@@ -710,7 +687,7 @@ namespace NetErp.Books.Tax.ViewModels
                 variables.accountingAccountFilter.code.value = 8;
 
                 variables.taxTypeFilter = new ExpandoObject();
-                TaxDataContext result = await TaxService.GetDataContext<TaxDataContext>(query, variables);
+                TaxDataContext result = await _taxService.GetDataContextAsync<TaxDataContext>(query, variables);
                
                 AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts)];
                 AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts)];

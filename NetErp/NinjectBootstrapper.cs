@@ -131,7 +131,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TaxTypeGraphQLModel>>().To<TaxTypeService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<TaxGraphQLModel>>().To<TaxService>().InSingletonScope();
+          
             _ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
             
             // New GraphQL Infrastructure
@@ -146,12 +146,19 @@ namespace NetErp
             _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
-            
+            // Books
+            _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();
+
+
+
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();
             _ = kernel.Bind<ICreditLimitValidator>().To<CreditLimitValidator>().InSingletonScope();
             _ = kernel.Bind<IServiceProvider>().ToMethod(ctx => ctx.Kernel).InSingletonScope();
+
+           
+
             _ = kernel.Bind<ILoggerFactory>().ToConstant(LoggerFactory.Create(builder =>
             {
                 builder.AddDebug();

@@ -2,9 +2,11 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Common.Validators;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
+using Models.Billing;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.Tax.ViewModels;
@@ -29,19 +31,23 @@ namespace NetErp.Books.Tax.ViewModels
         IHandle<TaxCreateMessage>
     {
         public TaxViewModel Context { get; set; }
-        public IGenericDataAccess<TaxGraphQLModel> TaxService { get; set; } = IoC.Get<IGenericDataAccess<TaxGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+      
 
-        public TaxMasterViewModel(TaxViewModel context)
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<TaxGraphQLModel> _taxService;
+
+        public TaxMasterViewModel(TaxViewModel context, Helpers.Services.INotificationService notificationService, IRepository<TaxGraphQLModel> taxService)
         {
             Context = context;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => InitializeAsync());
+            _ =  InitializeAsync();
         }
 
         public async Task InitializeAsync()
         {
-            _ = Task.Run(this.LoadTaxs);
+            await this.LoadTaxesAsync();
 
         }
         protected override void OnViewAttached(object view, object context)
@@ -76,7 +82,7 @@ namespace NetErp.Books.Tax.ViewModels
                     NotifyOfPropertyChange(nameof(IsActive));
 
                     PageIndex = 1;
-                    _ = Task.Run(this.LoadTaxs);
+                    _ = this.LoadTaxesAsync();
 
                 }
             }
@@ -146,22 +152,22 @@ namespace NetErp.Books.Tax.ViewModels
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
-                        _ = Task.Run(this.LoadTaxs);
+                        _ = this.LoadTaxesAsync();
                     }
                     ;
                 }
             }
         }
-        private ObservableCollection<TaxGraphQLModel> _Taxes;
+        private ObservableCollection<TaxGraphQLModel> _taxes;
 
         public ObservableCollection<TaxGraphQLModel> Taxes
         {
-            get { return _Taxes; }
+            get { return _taxes; }
             set
             {
-                if (_Taxes != value)
+                if (_taxes != value)
                 {
-                    _Taxes = value;
+                    _taxes = value;
                     NotifyOfPropertyChange(nameof(Taxes));
                 }
             }
@@ -209,7 +215,7 @@ namespace NetErp.Books.Tax.ViewModels
         }
         private async void ExecuteChangeIndex(object parameter)
         {
-            await LoadTaxs();
+            await LoadTaxesAsync();
         }
 
         private bool CanExecuteChangeIndex(object parameter)
@@ -231,7 +237,7 @@ namespace NetErp.Books.Tax.ViewModels
         {
             get
             {
-                if (_deleteTaxCommand is null) _deleteTaxCommand = new AsyncCommand(DeleteTax, CanDeleteTax);
+                if (_deleteTaxCommand is null) _deleteTaxCommand = new AsyncCommand(DeleteTaxAsync, CanDeleteTax);
                 return _deleteTaxCommand;
             }
         }
@@ -251,7 +257,7 @@ namespace NetErp.Books.Tax.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedTaxGraphQLModel = null;
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await ExecuteActivateDetailViewForEdit();
             }
             catch (Exception ex)
             {
@@ -267,7 +273,7 @@ namespace NetErp.Books.Tax.ViewModels
 
 
 
-        public async Task DeleteTax()
+        public async Task DeleteTaxAsync()
         {
             try
             {
@@ -283,7 +289,7 @@ namespace NetErp.Books.Tax.ViewModels
                 }";
                 object variables = new { Id = id };
 
-                var validation = await this.TaxService.CanDelete(query, variables);
+                var validation = await this._taxService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -301,7 +307,7 @@ namespace NetErp.Books.Tax.ViewModels
 
 
                 Refresh();
-                var deletedTax = await ExecuteDeleteTax(id);
+                var deletedTax = await ExecuteDeleteTaxAsync(id);
 
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxDeleteMessage() { DeletedTax = deletedTax });
 
@@ -332,7 +338,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        public async Task<TaxGraphQLModel> ExecuteDeleteTax(int id)
+        public async Task<TaxGraphQLModel> ExecuteDeleteTaxAsync(int id)
         {
             try
             {
@@ -343,7 +349,7 @@ namespace NetErp.Books.Tax.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedTax = await this.TaxService.Delete(query, variables);
+                var deletedTax = await this._taxService.DeleteAsync(query, variables);
                 this.SelectedTaxGraphQLModel = null;
                 return deletedTax;
             }
@@ -354,7 +360,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
 
         }
-        public async Task LoadTaxs()
+        public async Task LoadTaxesAsync()
         {
             try
             {
@@ -418,11 +424,11 @@ namespace NetErp.Books.Tax.ViewModels
 
                 }
 
-                var result = await TaxService.GetPage(query, variables);
+                var result = await _taxService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Taxes = Context.AutoMapper.Map<ObservableCollection<TaxGraphQLModel>>(result.PageResponse.Rows);
-                TotalCount = result.PageResponse.Count;
+                Taxes = Context.AutoMapper.Map<ObservableCollection<TaxGraphQLModel>>(result.Rows);
+                TotalCount = result.Count;
                
 
             }
@@ -446,7 +452,7 @@ namespace NetErp.Books.Tax.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await ExecuteActivateDetailViewForEdit();
 
                 SelectedTaxGraphQLModel = null;
             }
@@ -470,7 +476,7 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 _notificationService.ShowSuccess("El  impuesto fue eliminado correctamente");
-                return LoadTaxs();
+                return LoadTaxesAsync();
             }
             catch (Exception)
             {
@@ -483,7 +489,7 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 _notificationService.ShowSuccess("El  impuesto fue creado correctamente");
-                return LoadTaxs();
+                return LoadTaxesAsync();
                
             }
             catch (Exception)
@@ -497,7 +503,7 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 _notificationService.ShowSuccess("El  impuesto fue actualizado correctamente");
-                return LoadTaxs();
+                return LoadTaxesAsync();
             }
             catch (Exception)
             {
