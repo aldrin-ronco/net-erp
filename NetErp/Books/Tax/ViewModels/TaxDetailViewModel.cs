@@ -540,7 +540,7 @@ namespace NetErp.Books.Tax.ViewModels
         public void GoBack(object p)
         {
             CleanUpControls();
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
+            _ =  Context.ActivateMasterViewModelAsync();
 
         }
         private void ValidateProperties()
