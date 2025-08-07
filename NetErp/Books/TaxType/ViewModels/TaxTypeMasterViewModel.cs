@@ -29,18 +29,23 @@ namespace NetErp.Books.TaxType.ViewModels
         IHandle<TaxTypeCreateMessage>
     {
         public TaxTypeViewModel Context { get; set; }
-        public IGenericDataAccess<TaxTypeGraphQLModel> TaxTypeService { get; set; } = IoC.Get<IGenericDataAccess<TaxTypeGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-        public TaxTypeMasterViewModel(TaxTypeViewModel context)
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<TaxTypeGraphQLModel> _taxTypeService;
+
+        public TaxTypeMasterViewModel(TaxTypeViewModel context, Helpers.Services.INotificationService notificationService, IRepository<TaxTypeGraphQLModel> taxTypeService)
         {
             Context = context;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _taxTypeService = taxTypeService ?? throw new ArgumentNullException(nameof(taxTypeService));
+
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => InitializeAsync());
+            _ =InitializeAsync();
         }
 
         public async Task InitializeAsync()
         {
-            _ = Task.Run(this.LoadTaxTypes);
+            await this.LoadTaxTypes();
            
         }
         protected override void OnViewAttached(object view, object context)
@@ -147,7 +152,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedTaxTypeGraphQLModel = null;
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await  ExecuteActivateDetailViewForEdit();
             }
             catch (Exception ex)
             {
@@ -179,7 +184,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 }";
                 object variables = new { Id = id };
 
-                var validation = await this.TaxTypeService.CanDelete(query, variables);
+                var validation = await this._taxTypeService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -239,7 +244,7 @@ namespace NetErp.Books.TaxType.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedTaxType = await this.TaxTypeService.Delete(query, variables);
+                var deletedTaxType = await this._taxTypeService.DeleteAsync(query, variables);
                 this.SelectedTaxTypeGraphQLModel = null;
                 return deletedTaxType;
             }
@@ -291,7 +296,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 variables.filter.or[1].prefix.@operator = "like";
                 variables.filter.or[1].prefix.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                var result = await TaxTypeService.GetList(query, variables);
+                var result = await _taxTypeService.GetListAsync(query, variables);
                 ObservableCollection<TaxTypeGraphQLModel> source = new(result);
                 this.TaxTypes = this.Context.AutoMapper.Map<ObservableCollection<TaxTypeGraphQLModel>>(source);
             }

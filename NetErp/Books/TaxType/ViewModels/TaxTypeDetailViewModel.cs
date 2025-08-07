@@ -32,13 +32,15 @@ namespace NetErp.Books.TaxType.ViewModels
 {
     public class TaxTypeDetailViewModel :  Screen, INotifyDataErrorInfo
     {
-        public IGenericDataAccess<TaxTypeGraphQLModel> TaxTypeService { get; set; } = IoC.Get<IGenericDataAccess<TaxTypeGraphQLModel>>();
+        private readonly IRepository<TaxTypeGraphQLModel> _taxTypeService;
 
-        public TaxTypeDetailViewModel(TaxTypeViewModel context, TaxTypeGraphQLModel? entity)
+        public TaxTypeDetailViewModel(TaxTypeViewModel context, TaxTypeGraphQLModel? entity, IRepository<TaxTypeGraphQLModel> taxTypeService)
         {
 
 
             Context = context;
+            _taxTypeService = taxTypeService ?? throw new ArgumentNullException(nameof(taxTypeService));
+
             _errors = new Dictionary<string, List<string>>();
 
 
@@ -414,7 +416,7 @@ namespace NetErp.Books.TaxType.ViewModels
                       }
                     }";
 
-                TaxTypeGraphQLModel record = await TaxTypeService.Create(query, variables);
+                TaxTypeGraphQLModel record = await _taxTypeService.CreateAsync(query, variables);
                 return record;
             }
             catch (Exception ex)
@@ -447,7 +449,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 variables.id = Entity.Id;
                 
 
-                return await TaxTypeService.Update(query, variables);
+                return await _taxTypeService.UpdateAsync(query, variables);
 
             }
             catch (Exception ex)
