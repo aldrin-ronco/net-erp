@@ -125,7 +125,6 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<AccountingBookGraphQLModel>>().To<AccountingBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>().To<AccountingAccountGroupService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<WithholdingCertificateConfigGraphQLModel>>().To<WithholdingCertificateConfigService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
@@ -148,6 +147,7 @@ namespace NetErp
             // Books
             _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TaxTypeGraphQLModel>>().To<GraphQLRepository<TaxTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<WithholdingCertificateConfigGraphQLModel>>().To<GraphQLRepository<WithholdingCertificateConfigGraphQLModel>>().InSingletonScope();
 
 
 

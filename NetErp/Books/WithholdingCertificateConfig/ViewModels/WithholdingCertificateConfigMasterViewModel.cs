@@ -31,14 +31,16 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         IHandle<WithholdingCertificateConfigUpdateMessage>,
         IHandle<WithholdingCertificateConfigCreateMessage>
     {
-        public IGenericDataAccess<WithholdingCertificateConfigGraphQLModel> WithholdingCertificateConfigService { get; set; } = IoC.Get<IGenericDataAccess<WithholdingCertificateConfigGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
-        public WithholdingCertificateConfigMasterViewModel(WithholdingCertificateConfigViewModel context)
+        public WithholdingCertificateConfigMasterViewModel(WithholdingCertificateConfigViewModel context, Helpers.Services.INotificationService notificationService, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
         {
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
         }
         private ObservableCollection<WithholdingCertificateConfigGraphQLModel> _certificates;
 
@@ -224,7 +226,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }";
                 object variables = new { Id = id };
 
-                var validation = await this.WithholdingCertificateConfigService.CanDelete(query, variables);
+                var validation = await this._withholdingCertificateConfigService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -283,7 +285,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedCertificate = await this.WithholdingCertificateConfigService.Delete(query, variables);
+                var deletedCertificate = await this._withholdingCertificateConfigService.DeleteAsync(query, variables);
                 this.SelectedWithholdingCertificateConfigGraphQLModel = null;
                 return deletedCertificate;
             }
@@ -386,11 +388,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
 
-                var result = await WithholdingCertificateConfigService.GetPage(query, variables);
+                var result = await _withholdingCertificateConfigService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Certificates = Context.AutoMapper.Map<ObservableCollection<WithholdingCertificateConfigGraphQLModel>>(result.PageResponse.Rows);
-                TotalCount = result.PageResponse.Count;
+                Certificates = Context.AutoMapper.Map<ObservableCollection<WithholdingCertificateConfigGraphQLModel>>(result.Rows);
+                TotalCount = result.Count;
 
             }
             catch (Exception ex)

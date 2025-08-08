@@ -35,16 +35,15 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
     public class WithholdingCertificateConfigDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<CostCenterGraphQLModel> CostCenterService = IoC.Get<IGenericDataAccess<CostCenterGraphQLModel>>();
-        public readonly IGenericDataAccess<AccountingAccountGroupGraphQLModel> AccountingAccountGroupGraphQLModelService = IoC.Get<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>();
-        public IGenericDataAccess<WithholdingCertificateConfigGraphQLModel> WithholdingCertificateConfigService { get; set; } = IoC.Get<IGenericDataAccess<WithholdingCertificateConfigGraphQLModel>>();
+
+        private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
 
 
-        public WithholdingCertificateConfigDetailViewModel(WithholdingCertificateConfigViewModel context, WithholdingCertificateConfigGraphQLModel? entity)
+        public WithholdingCertificateConfigDetailViewModel(WithholdingCertificateConfigViewModel context, WithholdingCertificateConfigGraphQLModel? entity, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
-
+            _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
             if (entity != null)
             {
                 Entity = entity;
@@ -60,7 +59,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
 
         }
         #region Propiedades
@@ -280,11 +279,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
         #endregion
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
 
-            await getCostCentersAsync();
-            await getAccountingAccountsAsync();
+            await getDataAsync();
 
         }
 
@@ -368,7 +366,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.data = data;
                 variables.id = Entity.Id;
-                WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Update(query, variables);
+                WithholdingCertificateConfigGraphQLModel result = await _withholdingCertificateConfigService.UpdateAsync(query, variables);
                 return result;
 
             }
@@ -397,7 +395,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.data = data;
 
-                WithholdingCertificateConfigGraphQLModel result = await WithholdingCertificateConfigService.Create(query, variables);
+                WithholdingCertificateConfigGraphQLModel result = await _withholdingCertificateConfigService.CreateAsync(query, variables);
                 return result;
             }
             catch (Exception ex)
@@ -409,11 +407,25 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
-        private async Task getCostCentersAsync()
+       
+        private async Task getDataAsync()
         {
-            string query = @"
-                            query(){
-                               ListResponse:  costCenters(){
+            try
+            {
+                string query = @"
+                query ($accountingAccountGroupFilterInput: AccountingAccountGroupFilterInput) {
+                 accountingAccountGroups(filter:  $accountingAccountGroupFilterInput){
+                                    name
+                                    key
+                                    accountingAccounts  {
+                                      name,
+                                      code
+                                      id
+                                    }
+   
+  
+                                  }
+                 CostCenters:  costCenters(){
                                 id
                                 name
                                 address
@@ -427,11 +439,18 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                                 }
   
                               }
-                            }";
-            dynamic variables = new ExpandoObject();
-            var source = await CostCenterService.GetList(query, variables);
-            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source);
+                }
+                ";
 
+            dynamic variables = new ExpandoObject();
+            variables.accountingAccountGroupFilterInput = new ExpandoObject();
+            variables.accountingAccountGroupFilterInput.key  = "CTAS_RETS_VTAS";
+
+
+            WithholdingCertificateConfigDataContext result = await _withholdingCertificateConfigService.GetDataContextAsync<WithholdingCertificateConfigDataContext>(query, variables);
+
+            // CostCenters
+            CostCenters = [.. Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters)];
             CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             if (!IsNewRecord)
             {
@@ -441,29 +460,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 SelectedCostCenter = CostCenters.First(f => f.Id == 0);
             }
-
-
-        }
-        private async Task getAccountingAccountsAsync()
-        {
-            string query = @"query($filter : AccountingAccountGroupFilterInput!){
-                                   ListResponse : accountingAccountGroups(filter:  $filter){
-                                    name
-                                    key
-                                    accountingAccounts  {
-                                      name,
-                                      code
-                                      id
-                                    }
-   
-  
-                                  }
-                                }";
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.key = "CTAS_RETS_VTAS";
-            IEnumerable<AccountingAccountGroupGraphQLModel> source = await AccountingAccountGroupGraphQLModelService.GetList(query, variables);
-
+            //Cuentas
+            IEnumerable<AccountingAccountGroupGraphQLModel> source = result.AccountingAccountGroups;
             ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().AccountingAccounts);
             foreach (var accountingAccount in acgd)
             {
@@ -472,6 +470,15 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
 
             AccountingAccounts = [.. acgd];
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
 
         }
         private void ClearErrors(string propertyName)

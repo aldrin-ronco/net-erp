@@ -45,7 +45,7 @@ namespace NetErp.Books.TaxType.ViewModels
 
         public async Task InitializeAsync()
         {
-            await this.LoadTaxTypes();
+            await this.LoadTaxTypesAsync();
            
         }
         protected override void OnViewAttached(object view, object context)
@@ -81,7 +81,7 @@ namespace NetErp.Books.TaxType.ViewModels
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
-                        _ = Task.Run(this.LoadTaxTypes);
+                        _ = this.LoadTaxTypesAsync();
                     }
                     ;
                 }
@@ -132,7 +132,7 @@ namespace NetErp.Books.TaxType.ViewModels
         {
             get
             {
-                if (_deleteTaxTypeCommand is null) _deleteTaxTypeCommand = new AsyncCommand(DeleteTaxType, CanDeleteTaxType);
+                if (_deleteTaxTypeCommand is null) _deleteTaxTypeCommand = new AsyncCommand(DeleteTaxTypeAsync, CanDeleteTaxType);
                 return _deleteTaxTypeCommand;
             }
         }
@@ -152,7 +152,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedTaxTypeGraphQLModel = null;
-                await  ExecuteActivateDetailViewForEdit();
+                await  ExecuteActivateDetailViewForEditAsync();
             }
             catch (Exception ex)
             {
@@ -168,12 +168,12 @@ namespace NetErp.Books.TaxType.ViewModels
 
 
 
-        public async Task DeleteTaxType()
+        public async Task DeleteTaxTypeAsync()
         {
             try
             {
                 IsBusy = true;
-                int id = SelectedTaxTypeGraphQLModel.Id;
+                int? id = SelectedTaxTypeGraphQLModel?.Id;
 
                 string query = @"
                 query($id:Int!) {
@@ -202,7 +202,7 @@ namespace NetErp.Books.TaxType.ViewModels
 
 
                 Refresh();
-                var deletedTaxType = await ExecuteDeleteTaxType(id);
+                var deletedTaxType = await ExecuteDeleteTaxTypeAsync(id.Value);
 
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(new TaxTypeDeleteMessage() { DeletedTaxType = deletedTaxType });
                 
@@ -233,7 +233,7 @@ namespace NetErp.Books.TaxType.ViewModels
             }
         }
 
-        public async Task<TaxTypeGraphQLModel> ExecuteDeleteTaxType(int id)
+        public async Task<TaxTypeGraphQLModel> ExecuteDeleteTaxTypeAsync(int id)
         {
             try
             {
@@ -255,7 +255,7 @@ namespace NetErp.Books.TaxType.ViewModels
             }
 
         }
-        public async Task LoadTaxTypes()
+        public async Task LoadTaxTypesAsync()
         {
             try
             {
@@ -314,13 +314,13 @@ namespace NetErp.Books.TaxType.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task EditTaxType()
+        public async Task EditTaxTypeAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await  ExecuteActivateDetailViewForEditAsync();
 
                 SelectedTaxTypeGraphQLModel = null;
             }
@@ -334,7 +334,7 @@ namespace NetErp.Books.TaxType.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task ExecuteActivateDetailViewForEdit()
+        public async Task ExecuteActivateDetailViewForEditAsync()
         {
             await Context.ActivateDetailViewForEdit(SelectedTaxTypeGraphQLModel);
         }
@@ -343,7 +343,7 @@ namespace NetErp.Books.TaxType.ViewModels
         {
             try
             {
-                await LoadTaxTypes();
+                await LoadTaxTypesAsync();
                 _notificationService.ShowSuccess("El tipo de impuesto fue eliminado correctamente");
             }
             catch (Exception)
@@ -354,7 +354,7 @@ namespace NetErp.Books.TaxType.ViewModels
 
         public async Task HandleAsync(TaxTypeUpdateMessage message, CancellationToken cancellationToken)
         {
-            await LoadTaxTypes();
+            await LoadTaxTypesAsync();
             _notificationService.ShowSuccess("El tipo de impuesto fue actualizado correctamente");
         }
 
@@ -362,7 +362,7 @@ namespace NetErp.Books.TaxType.ViewModels
         {
             try
             {
-                await LoadTaxTypes();
+                await LoadTaxTypesAsync();
                 _notificationService.ShowSuccess("El tipo de impuesto fue creado correctamente");
             }
             catch (Exception)
