@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Models.Books;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -15,7 +17,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
     public class AccountingAccountGroupViewModel: Conductor<object>.Collection.OneActive
     {
         public IMapper AutoMapper { get; private set; }
-
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         public IEventAggregator EventAggregator { get; private set; }
 
         private AccountingAccountGroupMasterViewModel _accountingAccountGroupMasterViewModel;
@@ -24,15 +27,17 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 		{
             get
             {
-                if (_accountingAccountGroupMasterViewModel is null) _accountingAccountGroupMasterViewModel = new AccountingAccountGroupMasterViewModel(this);
+                if (_accountingAccountGroupMasterViewModel is null) _accountingAccountGroupMasterViewModel = new AccountingAccountGroupMasterViewModel(this, _notificationService, _accountingAccountGroupService);
                 return _accountingAccountGroupMasterViewModel;
             }
         }
 
-        public AccountingAccountGroupViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public AccountingAccountGroupViewModel(IMapper mapper, IEventAggregator eventAggregator, Helpers.Services.INotificationService notificationService, IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _notificationService = notificationService;
+            _accountingAccountGroupService = accountingAccountGroupService;
             _ = Task.Run(async () =>
             {
                 try
