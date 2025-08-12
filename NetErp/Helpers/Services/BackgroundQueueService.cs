@@ -10,6 +10,7 @@ using System.Threading.Channels;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Net.Http;
 
 namespace NetErp.Helpers.Services
 {
@@ -43,6 +44,8 @@ namespace NetErp.Helpers.Services
     {
         Task<Guid> EnqueueOperationAsync(IDataOperation operation);
         Task CompleteAsync();
+        bool HasCriticalError();
+        string GetCriticalErrorMessage();
     }
 
     public class BackgroundQueueService : IBackgroundQueueService, IDisposable
@@ -59,10 +62,15 @@ namespace NetErp.Helpers.Services
         private const int BatchTimeoutMs = 10000; // 20 segundos
         private const int MaxRetries = 3;
         private readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
+        private bool _serviceHasCriticalError = false;
+        private string _criticalErrorMessage = string.Empty;
 
         // Almacenamiento de operaciones por ID de producto
         private readonly Dictionary<int, IDataOperation> _pendingOperationsById = new();
+        private readonly Dictionary<int, DateTime> _completedOperationsTimestamp = new();
         private readonly object _lockObject = new();
+        private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(5);
+        private DateTime _lastCleanup = DateTime.UtcNow;
 
         public BackgroundQueueService(
             IServiceProvider serviceProvider,
@@ -86,7 +94,7 @@ namespace NetErp.Helpers.Services
             _retryQueue = Channel.CreateBounded<IDataOperation>(new BoundedChannelOptions(1000)
             {
                 FullMode = BoundedChannelFullMode.Wait,
-                SingleWriter = true,
+                SingleWriter = false,
                 SingleReader = true
             });
 
@@ -97,6 +105,13 @@ namespace NetErp.Helpers.Services
 
         public async Task<Guid> EnqueueOperationAsync(IDataOperation operation)
         {
+            // Verificar si el servicio tiene un error crítico
+            if (_serviceHasCriticalError)
+            {
+                _logger.LogError("Rechazando operación debido a error crítico del servicio: {ErrorMessage}", _criticalErrorMessage);
+                throw new InvalidOperationException($"Background service has critical error: {_criticalErrorMessage}");
+            }
+
             // Reemplazar o agregar operación por el Id definido en la operación
             lock (_lockObject)
             {
@@ -120,7 +135,7 @@ namespace NetErp.Helpers.Services
                 while (await timer.WaitForNextTickAsync(_cts.Token))
                 {
                     // Verificamos la conectividad antes de procesar
-                    if (!_networkService.IsConnected())
+                    if (!await _networkService.IsConnectedAsync())
                     {
                         _logger.LogWarning("No hay conexión a Internet. Esperando...");
                         continue;
@@ -164,6 +179,12 @@ namespace NetErp.Helpers.Services
                         await ProcessBatchWithRetry(batch);
                         batch.Clear();
                     }
+                    
+                    // Limpieza periódica de operaciones completadas
+                    if (DateTime.UtcNow - _lastCleanup > _cleanupInterval)
+                    {
+                        CleanupCompletedOperations();
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -181,7 +202,7 @@ namespace NetErp.Helpers.Services
             try
             {
                 // Si no hay conectividad, enviamos todo a la cola de reintentos
-                if (!_networkService.IsConnected())
+                if (!await _networkService.IsConnectedAsync())
                 {
                     _logger.LogWarning("Sin conexión a Internet. Moviendo batch a cola de reintentos.");
                     foreach (var op in batch)
@@ -197,6 +218,22 @@ namespace NetErp.Helpers.Services
             {
                 _logger.LogError(ex, "Error procesando batch. Reintento {RetryCount}/{MaxRetries}", retryCount, MaxRetries);
 
+                // Verificar si es un error irrecuperable
+                bool isRecoverable = IsRecoverableError(ex);
+                
+                if (!isRecoverable)
+                {
+                    // Error irrecuperable - parar el servicio
+                    _serviceHasCriticalError = true;
+                    _criticalErrorMessage = $"Critical error in batch processing: {ex.Message}";
+                    
+                    _logger.LogCritical("Servicio pausado debido a error irrecuperable: {ErrorMessage}", ex.Message);
+                    
+                    // El mensaje crítico ya fue enviado desde ProcessOperationBatch
+                    return; // No continuar con reintentos
+                }
+
+                // Error recuperable - lógica normal de reintentos
                 if (retryCount < MaxRetries)
                 {
                     // Esperamos antes de reintentar
@@ -205,12 +242,12 @@ namespace NetErp.Helpers.Services
                 }
                 else
                 {
-                    _logger.LogError("Batch fallido después de {MaxRetries} reintentos. Moviendo a cola de reintentos para posterior procesamiento.", MaxRetries);
+                    _logger.LogWarning("Batch fallido después de {MaxRetries} reintentos (error recuperable). Moviendo a cola de reintentos.", MaxRetries);
 
-                    // Movemos a la cola de reintentos para procesar más tarde
+                    // Solo para errores recuperables, movemos a la cola de reintentos
                     foreach (var op in batch)
                     {
-                        // Notificamos el fallo
+                        // Notificamos el fallo temporal
                         await _eventAggregator.PublishOnUIThreadAsync(
                             new OperationCompletedMessage(
                                 op.OperationId,
@@ -242,9 +279,15 @@ namespace NetErp.Helpers.Services
                     var operations = group.ToList();
                     var responseType = group.Key;
 
-                    // Get the generic data access service
-                    var dataAccessType = typeof(IGenericDataAccess<>).MakeGenericType(responseType);
-                    var dataAccess = _serviceProvider.GetService(dataAccessType);
+                    // Get the repository service
+                    var repositoryType = typeof(IRepository<>).MakeGenericType(responseType);
+                    var repository = _serviceProvider.GetService(repositoryType);
+                    
+                    if (repository == null)
+                    {
+                        _logger.LogError("No se pudo obtener el repositorio para el tipo {ResponseTypeName}", responseType.Name);
+                        throw new InvalidOperationException($"Repository for type {responseType.Name} not found in service provider");
+                    }
 
                     // Group by operation type for optimal batching
                     var typeGroups = operations.GroupBy(op => op.GetType());
@@ -263,7 +306,7 @@ namespace NetErp.Helpers.Services
                             var batchSize = Math.Min(MaxBatchSize, opsOfSameType.Count - i);
                             var batchToProcess = opsOfSameType.GetRange(i, batchSize);
 
-                            await ProcessOperationBatch(batchToProcess, batchInfo, dataAccessType, dataAccess);
+                            await ProcessOperationBatch(batchToProcess, batchInfo, repositoryType, repository, responseType);
                         }
                     });
 
@@ -283,8 +326,9 @@ namespace NetErp.Helpers.Services
         private async Task ProcessOperationBatch(
             List<IDataOperation> batch,
             BatchOperationInfo batchInfo,
-            Type dataAccessType,
-            object dataAccess)
+            Type repositoryType,
+            object repository,
+            Type responseType)
         {
             try
             {
@@ -297,14 +341,26 @@ namespace NetErp.Helpers.Services
                 // Obtener la query del lote
                 var batchQuery = batchInfo.BatchQuery;
 
-                // Método siempre es SendMutationList para procesar lotes
-                var sendMutationListMethod = dataAccessType.GetMethod("SendMutationList");
+                string methodName = "SendMutationListAsync";
+                // Método es SendMutationListAsync para procesar lotes en IRepository
+                var mutationMethod = repositoryType.GetMethod(methodName);
+                if (mutationMethod == null)
+                {
+                    _logger.LogError("Método {MethodName} no encontrado en {repositoryTypeName}", methodName, repositoryType.Name);
+                    throw new InvalidOperationException($"Method {methodName} not found on {repositoryType.Name}");
+                }
 
                 // Invocar la operación en lote
-                var taskObj = sendMutationListMethod.Invoke(
-                    dataAccess,
-                    new object[] { batchQuery, batchVariables }
+                var taskObj = mutationMethod.Invoke(
+                    repository,
+                    [batchQuery, batchVariables, _cts.Token]
                 );
+                
+                if (taskObj == null)
+                {
+                    _logger.LogError("La invocación del método {MethodName} retornó null", methodName);
+                    throw new InvalidOperationException("Method invocation returned null");
+                }
 
                 // Esperar a que termine la tarea
                 await (Task)taskObj;
@@ -320,16 +376,36 @@ namespace NetErp.Helpers.Services
                         )
                     );
 
-                    // Eliminar de operaciones pendientes
+                    // Eliminar de operaciones pendientes y marcar como completada
                     lock (_lockObject)
                     {
                         _pendingOperationsById.Remove(op.Id);
+                        _completedOperationsTimestamp[op.Id] = DateTime.UtcNow;
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error procesando lote de operaciones");
+
+                // Verificar si es un error irrecuperable y tenemos información del tipo
+                bool isIrrecoverable = !IsRecoverableError(ex);
+                if (isIrrecoverable && responseType != null)
+                {
+                    // Enviar mensaje crítico para bloquear el módulo afectado
+                    string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
+                                       $"Error: {ex.Message}\n\n" +
+                                       $"Por favor, comuníquese con el área de soporte técnico.";
+                    
+                    await _eventAggregator.PublishOnUIThreadAsync(
+                        new CriticalSystemErrorMessage(
+                            responseType,
+                            nameof(BackgroundQueueService),
+                            ex.Message, 
+                            userMessage
+                        )
+                    );
+                }
 
                 // Notificar error a todos los elementos del lote
                 foreach (var op in batch)
@@ -348,10 +424,80 @@ namespace NetErp.Helpers.Services
             }
         }
 
+        private void CleanupCompletedOperations()
+        {
+            lock (_lockObject)
+            {
+                try
+                {
+                    // Limpiar operaciones completadas hace más de 30 minutos
+                    var cutoffTime = DateTime.UtcNow.AddMinutes(-30);
+                    var keysToRemove = _completedOperationsTimestamp
+                        .Where(kvp => kvp.Value < cutoffTime)
+                        .Select(kvp => kvp.Key)
+                        .ToList();
+
+                    foreach (var key in keysToRemove)
+                    {
+                        _completedOperationsTimestamp.Remove(key);
+                    }
+
+                    _lastCleanup = DateTime.UtcNow;
+
+                    if (keysToRemove.Count > 0)
+                    {
+                        _logger.LogDebug("Limpieza completada: {Count} operaciones eliminadas", keysToRemove.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error durante la limpieza de operaciones completadas");
+                }
+            }
+        }
+
+        private bool IsRecoverableError(Exception ex)
+        {
+            // Errores de red/conectividad - recuperables
+            if (ex is HttpRequestException || 
+                ex is TaskCanceledException ||
+                ex is TimeoutException ||
+                ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Errores de código/reflexión/configuración - irrecuperables
+            if (ex is InvalidOperationException ||
+                ex is ArgumentException ||
+                ex is NotSupportedException ||
+                ex is System.Reflection.TargetParameterCountException ||
+                ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("method", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Por defecto, consideramos recuperables los errores desconocidos
+            return true;
+        }
+
         public async Task CompleteAsync()
         {
             _queue.Writer.Complete();
             await (_processingTask ?? Task.CompletedTask);
+        }
+
+        public bool HasCriticalError()
+        {
+            return _serviceHasCriticalError;
+        }
+
+        public string GetCriticalErrorMessage()
+        {
+            return _criticalErrorMessage;
         }
 
         public void Dispose()

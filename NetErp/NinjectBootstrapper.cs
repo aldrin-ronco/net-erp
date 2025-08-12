@@ -138,6 +138,7 @@ namespace NetErp
             // Nueva estructura de servicios e inyección de dependencias
             // IRepository reemplaza IGenericDataAccess
             _ = kernel.Bind<IGraphQLClient>().To<GraphQLClient>().InSingletonScope();
+
             _ = kernel.Bind<IRepository<MeasurementUnitGraphQLModel>>().To<GraphQLRepository<MeasurementUnitGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CreditLimitGraphQLModel>>().To<GraphQLRepository<CreditLimitGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CustomerGraphQLModel>>().To<GraphQLRepository<CustomerGraphQLModel>>().InSingletonScope();

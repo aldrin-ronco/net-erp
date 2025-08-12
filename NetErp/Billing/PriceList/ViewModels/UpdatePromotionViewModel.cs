@@ -28,7 +28,8 @@ namespace NetErp.Billing.PriceList.ViewModels
 {
     public class UpdatePromotionViewModel: Screen,
                 IHandle<PromotionTempRecordResponseMessage>,
-                IHandle<ParallelBatchCompletedMessage>
+                IHandle<ParallelBatchCompletedMessage>,
+                IHandle<CriticalSystemErrorMessage>
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -39,6 +40,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
         public PriceListViewModel Context { get; set; }
+        
+        // Referencia al modal activo para poder cerrarlo en caso de error crítico
+        private AddPromotionProductsModalViewModel _activeModal;
         
         public UpdatePromotionViewModel(
             PriceListViewModel context,
@@ -464,6 +468,25 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        private bool _hasCriticalError = false;
+        public bool HasCriticalError
+        {
+            get { return _hasCriticalError; }
+            set
+            {
+                if (_hasCriticalError != value)
+                {
+                    _hasCriticalError = value;
+                    NotifyOfPropertyChange(nameof(HasCriticalError));
+                    NotifyOfPropertyChange(nameof(CanPerformDataOperations));
+                    NotifyOfPropertyChange(nameof(CanDelete)); // Actualizar CanDelete también
+                }
+            }
+        }
+
+        // Propiedad computed que determina si se pueden realizar operaciones de datos
+        public bool CanPerformDataOperations => !HasCriticalError;
+
 
         private ICommand _editCommand;
         public ICommand EditCommand
@@ -511,11 +534,11 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                AddPromotionProductsModalViewModel instance = new(Context, _dialogService, _priceListDetailService, _itemService, _tempRecordService, _parallelBatchProcessor);
+                _activeModal = new(Context, _dialogService, _priceListDetailService, _itemService, _tempRecordService, _parallelBatchProcessor);
                 MainIsBusy = true;
-                instance.PromotionId = Id;
-                await instance.InitializeAsync();
-                await _dialogService.ShowDialogAsync(instance, "Agregar productos a la promoción");
+                _activeModal.PromotionId = Id;
+                await _activeModal.InitializeAsync();
+                await _dialogService.ShowDialogAsync(_activeModal, "Agregar productos a la promoción");
                 MainIsBusy = false;
             }
             catch (AsyncException ex)
@@ -680,7 +703,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                return ShadowItems != null && ShadowItems.Count > 0;
+                return ShadowItems != null && ShadowItems.Count > 0 && CanPerformDataOperations;
             }
         }
 
@@ -855,6 +878,28 @@ namespace NetErp.Billing.PriceList.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            if (_parallelBatchProcessor.HasCriticalError())
+            {
+                string criticalErrorMessage = _parallelBatchProcessor.GetCriticalErrorMessage();
+                string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
+                                   $"Error: {criticalErrorMessage}\n\n" +
+                                   $"Por favor, comuníquese con el área de soporte técnico.";
+
+                // Activar estado de error crítico para bloqueo granular
+                HasCriticalError = true;
+
+                ThemedMessageBox.Show(
+                    title: "Error Crítico del Sistema",
+                    text: userMessage,
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error
+                );
+
+                // Mostrar notificación adicional
+                _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
+
+                return; // No continuar con la inicialización
+            }
             this.SetFocus(nameof(FilterSearch));
         }
 
@@ -877,6 +922,40 @@ namespace NetErp.Billing.PriceList.ViewModels
                 _notificationService.ShowError($"Error al eliminar productos: {(message.Exception is null ? "" : message.Exception.Message)}");
             }
             return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CriticalSystemErrorMessage message, CancellationToken cancellationToken)
+        {
+            // Manejar errores críticos de ParallelBatchProcessor para ambos tipos (padre maneja comunicación con usuario)
+            if (message.ServiceName == nameof(ParallelBatchProcessor) && 
+                (message.ResponseType == typeof(PriceListDetailGraphQLModel) || message.ResponseType == typeof(TempRecordGraphQLModel)))
+            {
+                await Execute.OnUIThreadAsync(async () =>
+                {
+                    IsBusy = false; // Desbloquear UI que pueda estar en estado busy
+                    
+                    // Si es un error de TempRecord (modal), cerrar cualquier modal abierto primero
+                    if (message.ResponseType == typeof(TempRecordGraphQLModel))
+                    {
+                        // Cerrar modal si está abierto (buscar ventanas modales activas)
+                        await _dialogService.CloseDialogAsync(_activeModal, null);
+
+                    }
+                    
+                    // Activar estado de error crítico para bloqueo granular
+                    HasCriticalError = true;
+                    
+                    ThemedMessageBox.Show(
+                        title: "Error Crítico del Sistema",
+                        text: message.UserMessage,
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error
+                    );
+
+                    _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
+                    return;
+                });
+            }
         }
 
         private string _responseTime;

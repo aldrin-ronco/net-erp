@@ -16,7 +16,9 @@
              mc:Ignorable="d" 
              d:DesignHeight="1000" d:DesignWidth="1500"
              d:Background="White" FontFamily="Century Gothic" >
-    <Grid Margin="10" Height="700" Width="1200">
+    <busyIndicator:BusyMask IsBusy="{Binding MainIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
+                            BusyContent="Por favor espere...">
+        <Grid Margin="10" Height="700" Width="1200">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
@@ -296,5 +298,6 @@
             </Button>
         </StackPanel>
         
-    </Grid>
+        </Grid>
+    </busyIndicator:BusyMask>
 </UserControl>

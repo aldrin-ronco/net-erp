@@ -2,11 +2,7 @@
 using DevExpress.Xpf.Core;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -22,6 +18,23 @@ namespace NetErp.Helpers.Services
 
     public class NotificationItem : PropertyChangedBase
     {
+        // Brushes estáticos reutilizables
+        private static readonly SolidColorBrush SuccessBrush = new(Color.FromRgb(76, 175, 80));
+        private static readonly SolidColorBrush ErrorBrush = new(Color.FromRgb(244, 67, 54));
+        private static readonly SolidColorBrush WarningBrush = new(Color.FromRgb(255, 152, 0));
+        private static readonly SolidColorBrush InfoBrush = new(Color.FromRgb(33, 150, 243));
+        private static readonly SolidColorBrush DefaultBrush = new(Color.FromRgb(97, 97, 97));
+        
+        static NotificationItem()
+        {
+            // Congelar para mejor performance
+            SuccessBrush.Freeze();
+            ErrorBrush.Freeze();
+            WarningBrush.Freeze();
+            InfoBrush.Freeze();
+            DefaultBrush.Freeze();
+        }
+
         public Guid Id { get; } = Guid.NewGuid();
         public DateTime CreatedAt { get; } = DateTime.Now;
 
@@ -59,20 +72,14 @@ namespace NetErp.Helpers.Services
         }
 
         // Propiedades para UI
-        public SolidColorBrush Background
+        public SolidColorBrush Background => Type switch
         {
-            get
-            {
-                return Type switch
-                {
-                    NotificationType.Success => new SolidColorBrush(Color.FromRgb(76, 175, 80)),   // Verde
-                    NotificationType.Error => new SolidColorBrush(Color.FromRgb(244, 67, 54)),     // Rojo
-                    NotificationType.Warning => new SolidColorBrush(Color.FromRgb(255, 152, 0)),   // Naranja
-                    NotificationType.Info => new SolidColorBrush(Color.FromRgb(33, 150, 243)),     // Azul
-                    _ => new SolidColorBrush(Color.FromRgb(97, 97, 97))                            // Gris
-                };
-            }
-        }
+            NotificationType.Success => SuccessBrush,
+            NotificationType.Error => ErrorBrush,
+            NotificationType.Warning => WarningBrush,
+            NotificationType.Info => InfoBrush,
+            _ => DefaultBrush
+        };
 
         public string Symbol
         {
@@ -150,18 +157,19 @@ namespace NetErp.Helpers.Services
                 var notification = new NotificationItem(message, title, type);
                 _notifications.Add(notification);
 
-                // Programar la eliminación automática
-                DispatcherTimer timer = new DispatcherTimer
+                // Timer con cleanup apropiado
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(durationMs) };
+                
+                EventHandler tickHandler = null;
+                tickHandler = (s, e) =>
                 {
-                    Interval = TimeSpan.FromMilliseconds(durationMs)
-                };
-
-                timer.Tick += (s, e) =>
-                {
+                    timer.Tick -= tickHandler;  // Desuscribir handler
                     timer.Stop();
+                    timer = null;                // Limpiar referencia
                     _notifications.Remove(notification);
                 };
-
+                
+                timer.Tick += tickHandler;
                 timer.Start();
             });
         }

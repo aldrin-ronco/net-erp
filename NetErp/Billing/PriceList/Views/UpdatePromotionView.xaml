@@ -16,12 +16,7 @@
              d:DesignHeight="450" d:DesignWidth="800"
              d:Background="White">
     
-    <busyIndicator:BusyMask x:Name="BusyIndicator"
-                    IsBusy="{Binding MainIsBusy}"
-                    IndicatorType="BouncingDot"
-                    BusyContent="Please wait..."
-                    BusyContentMargin="0,20,0,0"
-                    IsBusyAtStartup="False">
+    <Grid>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -51,6 +46,7 @@
                         LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
                         Content="Agregar productos"
                         RibbonStyle="Large"
+                        IsEnabled="{Binding CanPerformDataOperations, UpdateSourceTrigger=PropertyChanged}"
                         Hint="Agregar productos"
                         Command="{Binding Path=AddCommand}"/>
 
@@ -71,6 +67,7 @@
                         LargeGlyph="{dx:DXImage 'Images/Actions/Clear_32x32.png'}"    
                         Content="Eliminar TODO"
                         RibbonStyle="Large"
+                        IsEnabled="{Binding CanPerformDataOperations, UpdateSourceTrigger=PropertyChanged}"
                         Hint="Eliminar TODOS los productos"
                         Command="{Binding Path=ClearPromotionCommand}"/>
 
@@ -80,6 +77,7 @@
                         LargeGlyph="{dx:DXImage 'Images/Edit/Edit_32x32.png'}"    
                         Content="Editar promoción"
                         RibbonStyle="Large"
+                        IsEnabled="{Binding CanPerformDataOperations, UpdateSourceTrigger=PropertyChanged}"
                         Hint="Editar promoción"
                         Command="{Binding Path=EditCommand}"/>
 
@@ -89,7 +87,22 @@
 
             </dxr:RibbonControl>
 
+            <busyIndicator:BusyMask x:Name="DataControlsBusyIndicator"
+                            IsBusy="{Binding HasCriticalError}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Módulo bloqueado por error crítico. Use el botón Regresar para salir."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False"
+                            Grid.Row="1" Grid.RowSpan="4">
             <Grid Margin="0 5 0 5" Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+                
+                <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -125,8 +138,9 @@
                     </dxe:DateEdit>
                 </StackPanel>
 
-            </Grid>
-            <Grid Grid.Row="2" Margin="0 5 0 5">
+                </Grid>
+                
+                <Grid Grid.Row="1" Margin="0 5 0 5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -180,13 +194,13 @@
 
             </Grid>
 
-            <busyIndicator:BusyMask
-                    IsBusy="{Binding IsBusy}"
-                    IndicatorType="BouncingDot"
-                    BusyContent="Please wait..."
-                    BusyContentMargin="0,20,0,0"
-                    IsBusyAtStartup="False"
-                    Grid.Row="3" Margin="0 5 0 0">
+                <busyIndicator:BusyMask
+                        IsBusy="{Binding IsBusy}"
+                        IndicatorType="BouncingDot"
+                        BusyContent="Please wait..."
+                        BusyContentMargin="0,20,0,0"
+                        IsBusyAtStartup="False"
+                        Grid.Row="2" Margin="0 5 0 0">
                 
                 <dxg:GridControl ItemsSource="{Binding PriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl.View>
@@ -221,10 +235,9 @@
 
                 </dxg:GridControl>
 
-            </busyIndicator:BusyMask>
+                </busyIndicator:BusyMask>
             
-
-            <uc:GridPaging Grid.Row="4"
+                <uc:GridPaging Grid.Row="3"
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Center"
                        Margin="0 0 0 0"
@@ -233,6 +246,8 @@
                        PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                        ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            </Grid>
+            </busyIndicator:BusyMask>
         </Grid>
-    </busyIndicator:BusyMask>
+    </Grid>
 </UserControl>

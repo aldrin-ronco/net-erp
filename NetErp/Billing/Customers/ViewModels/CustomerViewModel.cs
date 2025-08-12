@@ -84,7 +84,6 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 CustomerDetailViewModel instance = new(this, _customerService);
                 await instance.Initialize();
-                List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
                 ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
                 List<RetentionTypeDTO> retentionList = [];
                 Application.Current.Dispatcher.Invoke(() =>
