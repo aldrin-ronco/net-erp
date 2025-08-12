@@ -412,20 +412,23 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
         {
-            await LoadWithholdingCertificateConfig();
             _notificationService.ShowSuccess("El Certificado fue eliminado correctamente");
+            await LoadWithholdingCertificateConfig();
+           
         }
 
         public async Task HandleAsync(WithholdingCertificateConfigUpdateMessage message, CancellationToken cancellationToken)
         {
-            await LoadWithholdingCertificateConfig();
             _notificationService.ShowSuccess("El Certificado fue actualizado correctamente");
+            await LoadWithholdingCertificateConfig();
+            
         }
 
         public async Task HandleAsync(WithholdingCertificateConfigCreateMessage message, CancellationToken cancellationToken)
         {
-            await LoadWithholdingCertificateConfig();
             _notificationService.ShowSuccess("El Certificado fue creado correctamente");
+            await LoadWithholdingCertificateConfig();
+            
         }
     }
 }

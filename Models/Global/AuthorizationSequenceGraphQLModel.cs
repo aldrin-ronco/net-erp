@@ -40,7 +40,6 @@ namespace Models.Global
     public class AuthorizationSequenceCreateMessage
     {
         public AuthorizationSequenceGraphQLModel CreatedAuthorizationSequence { get; set; }
-        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
     }
     public class AuthorizationSequenceDeleteMessage
     {
@@ -50,7 +49,6 @@ namespace Models.Global
     public class AuthorizationSequenceUpdateMessage
     {
         public AuthorizationSequenceGraphQLModel UpdatedAuthorizationSequence { get; set; }
-        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
     }
     public class AuthorizationSequenceDetailDataContext
     {

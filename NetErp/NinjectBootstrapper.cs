@@ -149,6 +149,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<WithholdingCertificateConfigGraphQLModel>>().To<GraphQLRepository<WithholdingCertificateConfigGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingAccountGroupGraphQLModel>>().To<GraphQLRepository<AccountingAccountGroupGraphQLModel>>().InSingletonScope();
 
+
+            // Global
+            _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             
 
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();

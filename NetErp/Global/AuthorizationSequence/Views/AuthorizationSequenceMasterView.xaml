@@ -149,7 +149,7 @@ DisplayMember="Name" EditValue="{Binding SelectedCostCenter, Mode=TwoWay, Update
             Padding="3"
             Margin="3"
             Width="auto" Height="auto" 
-            cal:Message.Attach="[Event Click] = [Action EditAuthorizationSequence]">
+            cal:Message.Attach="[Event Click] = [Action EditAuthorizationSequenceAsync]">
                                 <Button.Content>
                                     <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>

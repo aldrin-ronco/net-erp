@@ -2,10 +2,12 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Common.Validators;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
+using Models.Billing;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
@@ -36,13 +38,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         IHandle<AuthorizationSequenceCreateMessage>
     {
         public AuthorizationSequenceViewModel Context { get; set; }
-        public IGenericDataAccess<AuthorizationSequenceGraphQLModel> AuthorizationSequenceService { get; set; } = IoC.Get<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>();
-
-        public AuthorizationSequenceMasterViewModel(AuthorizationSequenceViewModel context)
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
+        public AuthorizationSequenceMasterViewModel(AuthorizationSequenceViewModel context, Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService)
         {
             Context = context;
+            _notificationService = notificationService;
+            _authorizationSequenceService = authorizationSequenceService;
+
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => InitializeAsync());
+            _ = InitializeAsync();
         }
 
         #region Properties
@@ -74,7 +79,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     PageIndex = 1;
                     if (_isLoaded)
                     {
-                        _ = Task.Run(this.LoadAuthorizationSequence);
+                        _ = this.LoadAuthorizationSequenceAsync();
                     }
                    
                 }
@@ -92,7 +97,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     NotifyOfPropertyChange(nameof(IsActive));
                    
                         PageIndex = 1;
-                        _ = Task.Run(this.LoadAuthorizationSequence);
+                        _ = this.LoadAuthorizationSequenceAsync();
                     
                 }
             }
@@ -157,13 +162,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
         
-        public async Task EditAuthorizationSequence()
+        public async Task EditAuthorizationSequenceAsync()
              {
                 try
                 {
                     IsBusy = true;
                     Refresh();
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await  ExecuteActivateDetailViewForEditAsync();
                    
                     SelectedAuthorizationSequenceGraphQLModel = null;
                 }
@@ -183,7 +188,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteActivateDetailViewForEdit());
+                await Task.Run(() => ExecuteActivateDetailViewForEditAsync());
             }
             catch (Exception ex)
             {
@@ -277,7 +282,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         private async void ExecuteChangeIndex(object parameter)
         {
-            await LoadAuthorizationSequence();
+            await LoadAuthorizationSequenceAsync();
         }
 
         private bool CanExecuteChangeIndex(object parameter)
@@ -297,7 +302,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             get
             {
-                if (_deleteAuthorizationSequenceCommand is null) _deleteAuthorizationSequenceCommand = new AsyncCommand(DeleteAuthorizationSequence, CanDeleteAuthorizationSequence);
+                if (_deleteAuthorizationSequenceCommand is null) _deleteAuthorizationSequenceCommand = new AsyncCommand(DeleteAuthorizationSequenceAsync, CanDeleteAuthorizationSequence);
                 return _deleteAuthorizationSequenceCommand;
             }
         }
@@ -319,7 +324,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = Task.Run(this.LoadAuthorizationSequence);
+                        _ = this.LoadAuthorizationSequenceAsync();
                     }
                     ;
                 }
@@ -333,7 +338,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             base.OnViewAttached(view, context);
            
         }
-        public async Task ExecuteActivateDetailViewForEdit()
+        public async Task ExecuteActivateDetailViewForEditAsync()
         {
             await Context.ActivateDetailViewForEdit(SelectedAuthorizationSequenceGraphQLModel);
         }
@@ -427,7 +432,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                
 
-                AuthorizationSequenceDataContext source = await AuthorizationSequenceService.GetDataContext<AuthorizationSequenceDataContext>(query, variables);
+                AuthorizationSequenceDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDataContext>(query, variables);
 
                 ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters;
                 costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
@@ -454,7 +459,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         }
 
-        public async Task LoadAuthorizationSequence()
+        public async Task LoadAuthorizationSequenceAsync()
         {
             try
             {
@@ -464,7 +469,44 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 IsBusy = true;
-                string query = Context.listquery;
+                string query = @"
+               query( $filter: AuthorizationSequenceFilterInput!){
+                      PageResponse: authorizationSequencePage(filter: $filter){
+                        count
+                        rows {
+                          id
+                            description
+                            number
+                            costCenter  {
+                             id
+                             name
+                           }
+                           authorizationSequenceType {
+                             id
+                             name
+                           },
+                           AuthorizationSequenceByCostCenter {
+                                id
+                                name
+            
+                           },
+
+                           startRange
+                           endRange
+                           endDate
+                           startDate
+                           endDate
+                           isActive
+                           prefix
+                           currentInvoiceNumber
+                           nextAuthorizationSequenceId
+                           mode
+                           technicalKey
+                           reference
+                        }
+                      }
+                    }
+                ";
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -495,7 +537,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
 
                 }
-                if (SelectedCostCenter?.Id != 0)
+                if (SelectedCostCenter == null && SelectedCostCenter?.Id > 0)
                 {
                     variables.filter.and[2].costCenterId = new ExpandoObject();
                     variables.filter.and[2].costCenterId.@operator = "=";
@@ -503,11 +545,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
                 }
 
-                var result = await AuthorizationSequenceService.GetPage(query, variables);
+                var result = await _authorizationSequenceService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(result.PageResponse.Rows);
-                TotalCount = result.PageResponse.Count;
+                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(result.Rows);
+                TotalCount = result.Count;
 
             }
             catch (Exception ex)
@@ -525,7 +567,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        public async Task DeleteAuthorizationSequence()
+        public async Task DeleteAuthorizationSequenceAsync()
         {
             try
             {
@@ -541,7 +583,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }";
                 object variables = new { Id = id };
 
-                var validation = await this.AuthorizationSequenceService.CanDelete(query, variables);
+                var validation = await this._authorizationSequenceService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -559,7 +601,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
 
                 Refresh();
-                var deletedAuthorizationSequence = await ExecuteDeleteAuthorizationSequence(id);
+                var deletedAuthorizationSequence = await ExecuteDeleteAuthorizationSequenceAsync(id);
 
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceDeleteMessage() { DeletedAuthorizationSequence = deletedAuthorizationSequence });
 
@@ -589,7 +631,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task<AuthorizationSequenceGraphQLModel> ExecuteDeleteAuthorizationSequence(int id)
+        public async Task<AuthorizationSequenceGraphQLModel> ExecuteDeleteAuthorizationSequenceAsync(int id)
         {
             try
             {
@@ -600,7 +642,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedAuthorization = await this.AuthorizationSequenceService.Delete(query, variables);
+                var deletedAuthorization = await this._authorizationSequenceService.DeleteAsync(query, variables);
                 this.SelectedAuthorizationSequenceGraphQLModel = null;
                 return deletedAuthorization;
             }
@@ -614,22 +656,26 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public Task HandleAsync(AuthorizationSequenceCreateMessage message, CancellationToken cancellationToken)
         {
-            return Task.FromResult(Authorizations = new ObservableCollection<AuthorizationSequenceGraphQLModel>(message.AuthorizationSequences));
+            _notificationService.ShowSuccess("La autorización fue creada  correctamente");
+            return LoadAuthorizationSequenceAsync();
+          
         }
 
 
         public Task HandleAsync(AuthorizationSequenceUpdateMessage message, CancellationToken cancellationToken)
         {
-           // return LoadAuthorizationSequence();
-              return Task.FromResult(Authorizations = new ObservableCollection<AuthorizationSequenceGraphQLModel>(message.AuthorizationSequences));
+            _notificationService.ShowSuccess("La autorización fue actualizada  correctamente");
+            return LoadAuthorizationSequenceAsync();
+             
         }
         public Task HandleAsync(AuthorizationSequenceDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
+                _notificationService.ShowSuccess("La autorización fue eliminada correctamente");
                 AuthorizationSequenceGraphQLModel authorizationSequenceToDelete = Authorizations.First(c => c.Id == message.DeletedAuthorizationSequence.Id);
                 if (authorizationSequenceToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Authorizations.Remove(authorizationSequenceToDelete));
-                return LoadAuthorizationSequence();
+                return LoadAuthorizationSequenceAsync();
             }
             catch (Exception)
             {
@@ -637,10 +683,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        public Task HandleAsync(AccountingBookDeleteMessage message, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
+       
         #endregion
     }
 }
