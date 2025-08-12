@@ -67,7 +67,6 @@
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Crear nueva lista de precios" Margin="0 0 5 0" VerticalAlignment="Center"/>
-                                    <!--<Image Source="{dx:DXImage 'Images/Actions/New_16x16.png'}" Height="20" Width="20" VerticalAlignment="Center"/>-->
                                 </StackPanel>
                             </Button.Content>
                         </Button>

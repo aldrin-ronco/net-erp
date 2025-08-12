@@ -153,24 +153,24 @@ namespace NetErp.Global.DynamicControl
 
         private Datatype _datatype;
      
-        public async void Execute()
-        {
-            switch (Code)
-            {
-                case "CostCenter":
-                    var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService);
-                    await viewModel.InitializeAsync();
-                    await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
-                    break;
+        //public async void Execute()
+        //{
+        //    switch (Code)
+        //    {
+        //        case "CostCenter":
+        //            var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService);
+        //            await viewModel.InitializeAsync();
+        //            await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
+        //            break;
 
-                case "SearchCompany":
-                    SearchCompanyAccountingEntityCompany(null);
-                    break;
-                default:
-                    break;
-            }
+        //        case "SearchCompany":
+        //            SearchCompanyAccountingEntityCompany(null);
+        //            break;
+        //        default:
+        //            break;
+        //    }
 
-        }
+        //}
         private Visibility _modalVisibility;
         public Visibility ModalVisibility
         {

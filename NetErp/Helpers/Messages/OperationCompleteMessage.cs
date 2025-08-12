@@ -32,4 +32,23 @@ namespace NetErp.Helpers.Messages
             IsConnected = isConnected;
         }
     }
+
+    // Mensaje para errores críticos del sistema que requieren bloqueo de módulo
+    public class CriticalSystemErrorMessage
+    {
+        public Type ResponseType { get; }
+        public string ServiceName { get; }
+        public string ErrorMessage { get; }
+        public string UserMessage { get; }
+        public DateTime Timestamp { get; }
+
+        public CriticalSystemErrorMessage(Type responseType, string serviceName, string errorMessage, string userMessage)
+        {
+            ResponseType = responseType;
+            ServiceName = serviceName;
+            ErrorMessage = errorMessage;
+            UserMessage = userMessage;
+            Timestamp = DateTime.UtcNow;
+        }
+    }
 }

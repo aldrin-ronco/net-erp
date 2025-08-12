@@ -33,7 +33,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class PriceListMasterViewModel : Screen, IHandle<OperationCompletedMessage>  
+    public class PriceListMasterViewModel : Screen, IHandle<OperationCompletedMessage>, IHandle<CriticalSystemErrorMessage>  
     {
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
@@ -939,6 +939,30 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 try
                 {
+                    // Verificar si el BackgroundQueueService tiene un error crítico
+                    if (_backgroundQueueService.HasCriticalError())
+                    {
+                        string criticalErrorMessage = _backgroundQueueService.GetCriticalErrorMessage();
+                        string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
+                                           $"Error: {criticalErrorMessage}\n\n" +
+                                           $"Por favor, comuníquese con el área de soporte técnico.";
+                        
+                        ThemedMessageBox.Show(
+                            title: "Error Crítico del Sistema", 
+                            text: userMessage,
+                            messageBoxButtons: MessageBoxButton.OK, 
+                            image: MessageBoxImage.Error
+                        );
+                        
+                        // Bloquear la vista
+                        MainIsBusy = true;
+                        
+                        // Mostrar notificación adicional
+                        _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
+                        
+                        return; // No continuar con la inicialización
+                    }
+
                     MainIsBusy = true;
                     await InitializeAsync();
                     await LoadPriceList();
@@ -975,6 +999,32 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
 
             return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CriticalSystemErrorMessage message, CancellationToken cancellationToken)
+        {
+            // Solo procesar si el error afecta al tipo de datos que maneja este ViewModel
+            if (message.ResponseType == typeof(PriceListDetailGraphQLModel))
+            {
+                // Mostrar mensaje al usuario
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(
+                        title: "Error Crítico del Sistema", 
+                        text: message.UserMessage,
+                        messageBoxButtons: MessageBoxButton.OK, 
+                        image: MessageBoxImage.Error
+                    );
+                    
+                    // Bloquear la vista
+                    MainIsBusy = true;
+                    
+                    // Mostrar notificación adicional
+                    _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
+                    
+                    return Task.CompletedTask;
+                });
+            }
         }
 
         public PriceListMasterViewModel(

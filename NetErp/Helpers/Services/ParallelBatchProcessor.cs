@@ -5,9 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
+using NetErp.Helpers.Messages;
 
 namespace NetErp.Helpers.Services
 {
@@ -19,6 +20,9 @@ namespace NetErp.Helpers.Services
             Type responseType,
             int maxBatchSize,
             CancellationToken cancellationToken = default);
+        
+        bool HasCriticalError();
+        string GetCriticalErrorMessage();
     }
 
     public class ParallelBatchProcessor : IParallelBatchProcessor
@@ -29,6 +33,8 @@ namespace NetErp.Helpers.Services
         private readonly IEventAggregator _eventAggregator;
         private const int MaxRetries = 3;
         private readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
+        private bool _serviceHasCriticalError = false;
+        private string _criticalErrorMessage = string.Empty;
 
         public ParallelBatchProcessor(
             IServiceProvider serviceProvider,
@@ -49,6 +55,13 @@ namespace NetErp.Helpers.Services
             int maxBatchSize,
             CancellationToken cancellationToken = default)
         {
+            // Verificar si el servicio tiene un error crítico
+            if (_serviceHasCriticalError)
+            {
+                _logger.LogError("Rechazando procesamiento debido a error crítico del servicio: {ErrorMessage}", _criticalErrorMessage);
+                throw new InvalidOperationException($"ParallelBatchProcessor has critical error: {_criticalErrorMessage}");
+            }
+            
             var stopwatch = Stopwatch.StartNew();
             var dataList = batchData.ToList();
             int totalProcessed = 0;
@@ -158,22 +171,15 @@ namespace NetErp.Helpers.Services
             try
             {
                 // Verificar conectividad antes de procesar
-                if (!_networkService.IsConnected())
+                if (!await _networkService.IsConnectedAsync())
                 {
-                    _logger.LogWarning("Sin conexión a Internet para el lote {BatchIndex}. Esperando...", batchIndex);
-
-                    // Esperar un poco antes de verificar nuevamente
-                    await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-
-                    if (!_networkService.IsConnected())
-                    {
-                        throw new InvalidOperationException("No hay conexión a Internet disponible");
-                    }
+                    _logger.LogWarning("Sin conexión a Internet para el lote {BatchIndex}", batchIndex);
+                    throw new InvalidOperationException("No hay conexión a Internet disponible");
                 }
 
                 return await ProcessSingleBatch(query, batch, responseType, batchIndex, cancellationToken);
             }
-            catch (Exception ex) when (retryCount < MaxRetries)
+            catch (Exception ex) when (retryCount < MaxRetries && IsRecoverableError(ex))
             {
                 _logger.LogWarning(ex, "Error procesando lote {BatchIndex}. Reintento {RetryCount}/{MaxRetries}",
                     batchIndex, retryCount + 1, MaxRetries);
@@ -185,6 +191,21 @@ namespace NetErp.Helpers.Services
             }
             catch (Exception ex)
             {
+                // Verificar si es un error irrecuperable
+                bool isRecoverable = IsRecoverableError(ex);
+                
+                if (!isRecoverable)
+                {
+                    // Error irrecuperable - parar el servicio
+                    _serviceHasCriticalError = true;
+                    _criticalErrorMessage = $"Critical error in parallel batch processing: {ex.Message}";
+                    
+                    _logger.LogCritical("ParallelBatchProcessor pausado debido a error irrecuperable: {ErrorMessage}", ex.Message);
+                    
+                    // El mensaje crítico se envía desde ProcessSingleBatch
+                    throw; // Re-lanzar para que el caller maneje el error crítico
+                }
+                
                 _logger.LogError(ex, "Lote {BatchIndex} falló después de {MaxRetries} reintentos", batchIndex, MaxRetries);
 
                 return new SingleBatchResult
@@ -207,29 +228,30 @@ namespace NetErp.Helpers.Services
                 _logger.LogDebug("Procesando lote {BatchIndex} con {Count} elementos usando tipo de respuesta {ResponseType}",
                     batchIndex, batch.Count, responseType.Name);
 
-                // Obtener el servicio de acceso a datos genérico usando el responseType proporcionado
-                var dataAccessType = typeof(IGenericDataAccess<>).MakeGenericType(responseType);
-                var dataAccess = _serviceProvider.GetService(dataAccessType);
+                // Obtener el repositorio usando el responseType proporcionado
+                var repositoryType = typeof(IRepository<>).MakeGenericType(responseType);
+                var repository = _serviceProvider.GetService(repositoryType);
 
-                if (dataAccess == null)
+                if (repository == null)
                 {
-                    throw new InvalidOperationException($"No se pudo obtener el servicio de acceso a datos para el tipo {responseType.Name}");
+                    throw new InvalidOperationException($"No se pudo obtener el repositorio para el tipo {responseType.Name}");
                 }
 
-                // Obtener el método SendMutationList
-                var sendMutationListMethod = dataAccessType.GetMethod("SendMutationList");
-                if (sendMutationListMethod == null)
+                // Obtener el método 
+                string methodName = "NoJodaPai";
+                var mutationMethod = repositoryType.GetMethod(methodName);
+                if (mutationMethod == null)
                 {
-                    throw new InvalidOperationException($"No se encontró el método SendMutationList en {dataAccessType.Name}");
+                    throw new InvalidOperationException($"No se encontró el método {methodName} en {repositoryType.Name}");
                 }
 
                 // Crear las variables del lote (asumiendo que el batch es directamente utilizable)
                 var batchVariables = new { data = batch };
 
                 // Invocar la operación en lote
-                var taskObj = sendMutationListMethod.Invoke(
-                    dataAccess,
-                    new object[] { query, batchVariables }
+                var taskObj = mutationMethod.Invoke(
+                    repository,
+                    new object[] { query, batchVariables, cancellationToken }
                 );
 
                 // Esperar a que termine la tarea
@@ -246,8 +268,75 @@ namespace NetErp.Helpers.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error procesando lote {BatchIndex}", batchIndex);
+                
+                // Verificar si es un error irrecuperable antes de re-lanzar
+                if (!IsRecoverableError(ex))
+                {
+                    // Solo enviar mensaje crítico la primera vez
+                    if (!_serviceHasCriticalError)
+                    {
+                        // Error irrecuperable - parar el servicio
+                        _serviceHasCriticalError = true;
+                        _criticalErrorMessage = $"Critical error in single batch processing: {ex.Message}";
+                        
+                        _logger.LogCritical("ParallelBatchProcessor pausado debido a error irrecuperable en procesamiento de lote: {ErrorMessage}", ex.Message);
+                        
+                        // Enviar mensaje crítico
+                        string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
+                                           $"Error: {ex.Message}\n\n" +
+                                           $"Por favor, comuníquese con el área de soporte técnico.";
+
+                        await _eventAggregator.PublishOnUIThreadAsync(
+                            new CriticalSystemErrorMessage(
+                                responseType,
+                                nameof(ParallelBatchProcessor),
+                                ex.Message, 
+                                userMessage
+                            )
+                        );
+                    }
+                }
+                
                 throw;
             }
+        }
+
+        public bool HasCriticalError()
+        {
+            return _serviceHasCriticalError;
+        }
+
+        public string GetCriticalErrorMessage()
+        {
+            return _criticalErrorMessage;
+        }
+        
+        private bool IsRecoverableError(Exception ex)
+        {
+            // Errores de red/conectividad - recuperables
+            if (ex is HttpRequestException || 
+                ex is TaskCanceledException ||
+                ex is TimeoutException ||
+                ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Errores de código/reflexión/configuración - irrecuperables
+            if (ex is InvalidOperationException ||
+                ex is ArgumentException ||
+                ex is NotSupportedException ||
+                ex is System.Reflection.TargetParameterCountException ||
+                ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                ex.Message.Contains("method", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Por defecto, consideramos recuperables los errores desconocidos
+            return true;
         }
 
         private class SingleBatchResult

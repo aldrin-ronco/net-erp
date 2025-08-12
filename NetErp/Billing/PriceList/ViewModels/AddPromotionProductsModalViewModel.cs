@@ -3,6 +3,7 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Core;
 using Microsoft.Extensions.Logging.Abstractions;
 using Models.Billing;
@@ -11,6 +12,7 @@ using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.Views;
 using NetErp.Helpers;
+using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
 using Newtonsoft.Json;
 using Ninject.Activation;
@@ -1219,7 +1221,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                if (AddedItemsShadowListIds is null || AddedItemsShadowListIds.Count == 0) return await base.CanCloseAsync(cancellationToken);
+                if (AddedItemsShadowListIds is null || AddedItemsShadowListIds.Count == 0 || _parallelBatchProcessor.HasCriticalError()) return await base.CanCloseAsync(cancellationToken);
                 var result = ThemedMessageBox.Show("Confirmar cierre",
                     "¿Confirma que desea guardar los cambios?",
                     MessageBoxButton.YesNoCancel,
@@ -1453,6 +1455,31 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
         #endregion
+
+        protected override void OnViewReady(object view)
+        {
+            if (_parallelBatchProcessor.HasCriticalError())
+            {
+                string criticalErrorMessage = _parallelBatchProcessor.GetCriticalErrorMessage();
+                string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
+                                   $"Error: {criticalErrorMessage}\n\n" +
+                                   $"Por favor, comuníquese con el área de soporte técnico.";
+
+                ThemedMessageBox.Show(
+                    title: "Error Crítico del Sistema",
+                    text: userMessage,
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error
+                );
+
+                // Bloquear la vista
+                MainIsBusy = true;
+
+
+                return; // No continuar con la inicialización
+            }
+            base.OnViewReady(view);
+        }
     }
 
     public class PromotionTempRecordResponseMessage
