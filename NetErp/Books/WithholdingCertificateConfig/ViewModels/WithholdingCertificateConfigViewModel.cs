@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using Ninject.Activation;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +20,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
     public class WithholdingCertificateConfigViewModel : Conductor<object>.Collection.OneActive
     {
         public IMapper AutoMapper { get; private set; }
-
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
         public IEventAggregator EventAggregator { get; private set; }
 
         private WithholdingCertificateConfigMasterViewModel _withholdingCertificateConfigMasterViewModel;
@@ -27,15 +30,17 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             get
             {
-                if (_withholdingCertificateConfigMasterViewModel is null) _withholdingCertificateConfigMasterViewModel = new WithholdingCertificateConfigMasterViewModel(this);
+                if (_withholdingCertificateConfigMasterViewModel is null) _withholdingCertificateConfigMasterViewModel = new WithholdingCertificateConfigMasterViewModel(this, _notificationService, _withholdingCertificateConfigService);
                 return _withholdingCertificateConfigMasterViewModel;
             }
         }
 
-        public WithholdingCertificateConfigViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public WithholdingCertificateConfigViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
             _ = Task.Run(async () =>
             {
                 try
@@ -67,7 +72,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
         public async Task ActivateDetailViewForEdit(WithholdingCertificateConfigGraphQLModel? selectedItem)
         {
-            WithholdingCertificateConfigDetailViewModel instance = new(this, selectedItem);
+            WithholdingCertificateConfigDetailViewModel instance = new(this, selectedItem, _withholdingCertificateConfigService);
            
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());

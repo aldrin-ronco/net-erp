@@ -23,10 +23,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 {
     public class AccountingAccountGroupMasterViewModel: Screen
     {
-        public IGenericDataAccess<AccountingAccountGroupGraphQLModel> AccountingAccountGroupService { get; set; } = IoC.Get<IGenericDataAccess<AccountingAccountGroupGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         public AccountingAccountGroupViewModel Context { get; set; }
-        public AccountingAccountGroupMasterViewModel(AccountingAccountGroupViewModel context)
+        public AccountingAccountGroupMasterViewModel(AccountingAccountGroupViewModel context,  Helpers.Services.INotificationService notificationService, IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService)
         {
+            _notificationService = notificationService;
+            _accountingAccountGroupService = accountingAccountGroupService;
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
@@ -276,9 +279,10 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 variables.data.key = SelectedGroup.Key;
                 variables.data.accountingAccountsIds = accountingAccountsIds;
                 variables.id = SelectedGroup.Id;
-                AccountingAccountGroupGraphQLModel result = await AccountingAccountGroupService.Update(query, variables);
+                AccountingAccountGroupGraphQLModel result = await _accountingAccountGroupService.UpdateAsync(query, variables);
                 SelectedGroup.AccountingAccounts = result.AccountingAccounts;
                 NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
+                _notificationService.ShowSuccess("La configuración se ha guardado correctamente");
             }
             catch (Exception ex)
             {
@@ -326,7 +330,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         protected override void OnViewAttached(object view, object context)
         {
             base.OnViewAttached(view, context);
-          //  _ = Task.Run(() => InitializeAsync());
+            _ = InitializeAsync();
         }
 
         public void UpdateMainList()
@@ -379,8 +383,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 variables.accountingAccountFilter = new ExpandoObject();
                 variables.accountingAccountFilter.code = new ExpandoObject();
                 variables.accountingAccountFilter.code.@operator = new List<string>() { "length", ">=" };
-                variables.accountingAccountFilter.code.value = 4;
-                AccountingAccountGroupDataContext result = await AccountingAccountGroupService.GetDataContext<AccountingAccountGroupDataContext>(query, variables);
+                variables.accountingAccountFilter.code.value = 8;
+                AccountingAccountGroupDataContext result = await _accountingAccountGroupService.GetDataContextAsync<AccountingAccountGroupDataContext>(query, variables);
                 Groups = [.. result.AccountingAccountGroups];
                 SelectedGroup = Groups.First();
                 AccountingAccounts = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(result.AccountingAccounts)];

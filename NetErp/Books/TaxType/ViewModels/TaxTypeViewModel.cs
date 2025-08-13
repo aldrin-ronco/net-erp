@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
 using Models.Global;
@@ -16,6 +17,8 @@ namespace NetErp.Books.TaxType.ViewModels
 {
     public class TaxTypeViewModel : Conductor<object>.Collection.OneActive
     {
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<TaxTypeGraphQLModel> _taxTypeService;
 
         public IEventAggregator EventAggregator { get; private set; }
         public IMapper AutoMapper { get; private set; }
@@ -25,15 +28,17 @@ namespace NetErp.Books.TaxType.ViewModels
         {
             get
             {
-                if (_taxTypeMasterViewModel is null) _taxTypeMasterViewModel = new TaxTypeMasterViewModel(this);
+                if (_taxTypeMasterViewModel is null) _taxTypeMasterViewModel = new TaxTypeMasterViewModel(this, _notificationService, _taxTypeService);
                 return _taxTypeMasterViewModel;
             }
         }
        
-        public TaxTypeViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public TaxTypeViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxTypeGraphQLModel> taxTypeService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _taxTypeService = taxTypeService ?? throw new ArgumentNullException(nameof(taxTypeService));
             _ = Task.Run(async () =>
             {
                 try
@@ -63,7 +68,7 @@ namespace NetErp.Books.TaxType.ViewModels
         }
         public async Task ActivateDetailViewForEdit(TaxTypeGraphQLModel? entity)
         {
-            TaxTypeDetailViewModel instance = new(this, entity);
+            TaxTypeDetailViewModel instance = new(this, entity, _taxTypeService);
 
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());

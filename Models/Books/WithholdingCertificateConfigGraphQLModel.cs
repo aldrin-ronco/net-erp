@@ -18,7 +18,11 @@ namespace Models.Books
 
     }
 
-
+    public class WithholdingCertificateConfigDataContext
+    {
+        public IEnumerable<CostCenterGraphQLModel> CostCenters { get; set; } = [];
+        public IEnumerable<AccountingAccountGroupGraphQLModel> AccountingAccountGroups { get; set; } = [];
+    }   
 
     public class WithholdingCertificateConfigCreateMessage
     {

@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
 using Models.Global;
+using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,96 +21,51 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
     {
         public IEventAggregator EventAggregator { get; private set; }
         public IMapper AutoMapper { get; private set; }
-
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
         private AuthorizationSequenceMasterViewModel _authorizationSequenceMasterViewModel;
 
         public AuthorizationSequenceMasterViewModel AuthorizationSequenceMasterViewModel
         {
             get
             {
-                if (_authorizationSequenceMasterViewModel is null) _authorizationSequenceMasterViewModel = new AuthorizationSequenceMasterViewModel(this);
+                if (_authorizationSequenceMasterViewModel is null) _authorizationSequenceMasterViewModel = new AuthorizationSequenceMasterViewModel(this, _notificationService, _authorizationSequenceService);
                 return _authorizationSequenceMasterViewModel;
             }
         }
 
 
-        public AuthorizationSequenceViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public AuthorizationSequenceViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ActivateMasterViewModelAsync();
-                }
-                catch (AsyncException ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
+            _notificationService = notificationService;
+            _authorizationSequenceService = authorizationSequenceService;
+            _= ActivateMasterViewModelAsync();
+          
         }
-
+       
         public async Task ActivateMasterViewModelAsync()
         {
             try
             {
-                await ActivateItemAsync(AuthorizationSequenceMasterViewModel, new CancellationToken());
+                await ActivateItemAsync(AuthorizationSequenceMasterViewModel ?? new AuthorizationSequenceMasterViewModel(this, _notificationService, _authorizationSequenceService), new System.Threading.CancellationToken());
             }
             catch (Exception ex)
             {
                 throw new AsyncException(innerException: ex);
             }
+
         }
+       
         public async Task ActivateDetailViewForEdit(AuthorizationSequenceGraphQLModel? entity)
         {
-            AuthorizationSequenceDetailViewModel instance = new(this, entity);
+            AuthorizationSequenceDetailViewModel instance = new(this, entity, _notificationService, _authorizationSequenceService);
 
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public  string listquery = @"
-               query( $filter: AuthorizationSequenceFilterInput!){
-                      PageResponse: authorizationSequencePage(filter: $filter){
-                        count
-                        rows {
-                          id
-                            description
-                            number
-                            costCenter  {
-                             id
-                             name
-                           }
-                           authorizationSequenceType {
-                             id
-                             name
-                           },
-                           AuthorizationSequenceByCostCenter {
-                                id
-                                name
-            
-                           },
-
-                           startRange
-                           endRange
-                           endDate
-                           startDate
-                           endDate
-                           isActive
-                           prefix
-                           currentInvoiceNumber
-                           nextAuthorizationSequenceId
-                           mode
-                           technicalKey
-                           reference
-                        }
-                      }
-                    }
-                ";
+       
     }
 }

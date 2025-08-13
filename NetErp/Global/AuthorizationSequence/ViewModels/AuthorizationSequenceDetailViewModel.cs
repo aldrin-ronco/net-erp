@@ -13,7 +13,6 @@ using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
-using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
 using Newtonsoft.Json.Linq;
@@ -40,14 +39,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
     public class AuthorizationSequenceDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<CostCenterGraphQLModel> CostCenterService = IoC.Get<IGenericDataAccess<CostCenterGraphQLModel>>();
-        public readonly IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypeService = IoC.Get<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>();
-        public readonly IGenericDataAccess<AuthorizationSequenceGraphQLModel> AuthorizationSequenceService = IoC.Get<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>();
 
-        public AuthorizationSequenceDetailViewModel(AuthorizationSequenceViewModel context, AuthorizationSequenceGraphQLModel? entity)
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
+
+
+        public AuthorizationSequenceDetailViewModel(AuthorizationSequenceViewModel context, AuthorizationSequenceGraphQLModel? entity, Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService)
         {
-          
 
+            _notificationService = notificationService;
+            _authorizationSequenceService = authorizationSequenceService;
             Context = context;
             _errors = new Dictionary<string, List<string>>();
 
@@ -61,6 +62,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
+
             joinable.Run(async () => await InitializeAsync());
 
 
@@ -649,14 +651,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 IsBusy = true;
                 Refresh();
                 AuthorizationSequenceGraphQLModel result = await ExecuteSave();
-                var pageResult = await LoadPage();
+                
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceCreateMessage() { CreatedAuthorizationSequence =result, AuthorizationSequences = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceCreateMessage() { CreatedAuthorizationSequence =result });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceUpdateMessage() { UpdatedAuthorizationSequence = result, AuthorizationSequences = pageResult.PageResponse.Rows });
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceUpdateMessage() { UpdatedAuthorizationSequence = result});
                 }
                // Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewModelAsync();
@@ -885,7 +887,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                       }
                     }";
 
-                AuthorizationSequenceGraphQLModel record = await AuthorizationSequenceService.Create(query, variables);
+                AuthorizationSequenceGraphQLModel record = await _authorizationSequenceService.CreateAsync(query, variables);
                 return record;
             }
             catch (Exception ex)
@@ -929,7 +931,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     variables.Data.NextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id;
                 }
                
-                return await AuthorizationSequenceService.Update(query, variables);
+                return await _authorizationSequenceService.UpdateAsync(query, variables);
                
             }
             catch (Exception ex)
@@ -1038,11 +1040,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     variablesOrphan.filter.and[5].endDate.value = DateTime.Today.ToUniversalTime();
 
                    
-                    OrphanAuthorizationSequences = await AuthorizationSequenceService.GetList(queryOrphans, variablesOrphan);
+                    OrphanAuthorizationSequences = await _authorizationSequenceService.GetListAsync(queryOrphans, variablesOrphan);
                     SelectedReliefAuthorizationSequence = OrphanAuthorizationSequences.First(f => f.Id == Entity.NextAuthorizationSequenceId);
 
                 }
-                AuthorizationSequenceDetailDataContext source = await CostCenterService.GetDataContext<AuthorizationSequenceDetailDataContext>(query, variables);
+                AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
 
             CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source.CostCenters);
             AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes);
@@ -1076,29 +1078,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
       
 
-        public async Task<IGenericDataAccess<AuthorizationSequenceGraphQLModel>.PageResponseType> LoadPage()
-        {
-            string query = Context.listquery;
-
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.Pagination = new ExpandoObject();
-            variables.filter.Pagination.Page = 1;
-            variables.filter.Pagination.PageSize = 50;
-            variables.filter.and = new ExpandoObject[]
-              {
-                     new(),
-                     new()
-              };
-           
-                variables.filter.and[0].isActive = new ExpandoObject();
-                variables.filter.and[0].isActive.@operator = "=";
-                variables.filter.and[0].isActive.value = true;
-
-  
-
-            return await AuthorizationSequenceService.GetPage(query,variables);
-        }
+        
             #endregion
         }
 }

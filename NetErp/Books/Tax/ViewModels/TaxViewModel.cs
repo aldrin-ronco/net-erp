@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
 using NetErp.Books.Tax.ViewModels;
@@ -15,15 +16,19 @@ namespace NetErp.Books.Tax.ViewModels
 {
     public class TaxViewModel : Conductor<object>.Collection.OneActive
     {
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<TaxGraphQLModel> _taxService;
+
         public IEventAggregator EventAggregator { get; private set; }
         public IMapper AutoMapper { get; private set; }
+
         private TaxMasterViewModel _TaxMasterViewModel;
 
         public TaxMasterViewModel TaxMasterViewModel
         {
             get
             {
-                if (_TaxMasterViewModel is null) _TaxMasterViewModel = new TaxMasterViewModel(this);
+                if (_TaxMasterViewModel is null) _TaxMasterViewModel = new TaxMasterViewModel(this, _notificationService, _taxService);
                 return _TaxMasterViewModel;
             }
         }
@@ -56,10 +61,12 @@ namespace NetErp.Books.Tax.ViewModels
        
                 }
                 ";
-        public TaxViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public TaxViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxGraphQLModel> taxService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
             _ = Task.Run(async () =>
             {
                 try
@@ -89,7 +96,7 @@ namespace NetErp.Books.Tax.ViewModels
         }
         public async Task ActivateDetailViewForEdit(TaxGraphQLModel? entity)
         {
-            TaxDetailViewModel instance = new(this, entity);
+            TaxDetailViewModel instance = new(this, entity, _taxService);
 
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
