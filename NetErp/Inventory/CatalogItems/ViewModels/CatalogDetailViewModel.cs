@@ -23,7 +23,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 {
     public class CatalogDetailViewModel: Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<CatalogGraphQLModel> CatalogService = IoC.Get<IGenericDataAccess<CatalogGraphQLModel>>();
+        private readonly IRepository<CatalogGraphQLModel> _catalogService;
 
         private CatalogViewModel _context;
 
@@ -195,7 +195,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                             name
                             }
                         }";
-                var result = IsNewRecord ? await CatalogService.Create(query, variables) : await CatalogService.Update(query, variables);
+                var result = IsNewRecord ? await _catalogService.CreateAsync(query, variables) : await _catalogService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -212,9 +212,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             Name = string.Empty;
         }
 
-        public CatalogDetailViewModel(CatalogViewModel context)
+        public CatalogDetailViewModel(
+            CatalogViewModel context,
+            IRepository<CatalogGraphQLModel> catalogService)
         {
             Context = context;
+            _catalogService = catalogService;
             _errors = [];
 
             ValidateProperty(nameof(Name), Name);

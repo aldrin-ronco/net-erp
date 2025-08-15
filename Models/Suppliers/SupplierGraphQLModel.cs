@@ -39,14 +39,11 @@ namespace Models.Suppliers
     public class SupplierCreateMessage
     {
         public SupplierDTO CreatedSupplier { get; set; }
-
-        public ObservableCollection<SupplierGraphQLModel> Suppliers { get; set; }
     }
 
     public class SupplierUpdateMessage
     {
         public SupplierDTO UpdatedSupplier { get; set; }
-        public ObservableCollection<SupplierGraphQLModel> Suppliers { get; set; }
     }
 
     public class SupplierDeleteMessage

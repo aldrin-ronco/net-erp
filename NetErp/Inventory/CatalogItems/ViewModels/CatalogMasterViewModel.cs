@@ -70,22 +70,15 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         #region "Global"
 
         #region "Services"
-        public readonly IGenericDataAccess<CatalogGraphQLModel> CatalogService = IoC.Get<IGenericDataAccess<CatalogGraphQLModel>>();
-
-        public readonly IGenericDataAccess<ItemTypeGraphQLModel> ItemTypeService = IoC.Get<IGenericDataAccess<ItemTypeGraphQLModel>>();
-
-        public readonly IGenericDataAccess<ItemCategoryGraphQLModel> ItemCategoryService = IoC.Get<IGenericDataAccess<ItemCategoryGraphQLModel>>();
-
-        public readonly IGenericDataAccess<ItemSubCategoryGraphQLModel> ItemSubCategoryService = IoC.Get<IGenericDataAccess<ItemSubCategoryGraphQLModel>>();
-
-        public readonly IGenericDataAccess<ItemGraphQLModel> ItemService = IoC.Get<IGenericDataAccess<ItemGraphQLModel>>();
-
-        public readonly IGenericDataAccess<MeasurementUnitGraphQLModel> MeasurementUnitService = IoC.Get<IGenericDataAccess<MeasurementUnitGraphQLModel>>();
-
-        public readonly IGenericDataAccess<AwsS3ConfigGraphQLModel> AwsS3Service = IoC.Get<IGenericDataAccess<AwsS3ConfigGraphQLModel>>();
-
-        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<CatalogGraphQLModel> _catalogService;
+        private readonly IRepository<ItemTypeGraphQLModel> _itemTypeService;
+        private readonly IRepository<ItemCategoryGraphQLModel> _itemCategoryService;
+        private readonly IRepository<ItemSubCategoryGraphQLModel> _itemSubCategoryService;
+        private readonly IRepository<ItemGraphQLModel> _itemService;
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
+        private readonly IRepository<AwsS3ConfigGraphQLModel> _awsS3Service;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         #endregion
 
         #region "Properties"
@@ -187,7 +180,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }
                 ";
                 //Código para posible cambio
-                AwsS3Config = await AwsS3Service.FindById(query, new { });
+                AwsS3Config = await _awsS3Service.FindByIdAsync(query, new { });
                 S3Helper.Initialize("qtsattachments".ToLower(), "berdic/products_images".ToLower(), AwsS3Config.AccessKey, AwsS3Config.SecretKey, GlobalDictionaries.AwsSesRegionDictionary[AwsS3Config.Region]);
                 // Get the path of the executable
 
@@ -227,14 +220,33 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region "Constructor"
 
-        public CatalogMasterViewModel(CatalogViewModel context)
+        public CatalogMasterViewModel(
+            CatalogViewModel context,
+            IRepository<CatalogGraphQLModel> catalogService,
+            IRepository<ItemTypeGraphQLModel> itemTypeService,
+            IRepository<ItemCategoryGraphQLModel> itemCategoryService,
+            IRepository<ItemSubCategoryGraphQLModel> itemSubCategoryService,
+            IRepository<ItemGraphQLModel> itemService,
+            IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
+            IRepository<AwsS3ConfigGraphQLModel> awsS3Service,
+            Helpers.IDialogService dialogService,
+            Helpers.Services.INotificationService notificationService)
         {
+            Context = context;
+            _catalogService = catalogService;
+            _itemTypeService = itemTypeService;
+            _itemCategoryService = itemCategoryService;
+            _itemSubCategoryService = itemSubCategoryService;
+            _itemService = itemService;
+            _measurementUnitService = measurementUnitService;
+            _awsS3Service = awsS3Service;
+            _dialogService = dialogService;
+            _notificationService = notificationService;
+            _errors = new Dictionary<string, List<string>>();
+            
             Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.RelatedProduct, false, OnFindRelatedProductMessage);
             Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.SearchProduct, false, OnFindProductMessage);
-            Context = context;
-            _errors = new Dictionary<string, List<string>>();
             Context.EventAggregator.SubscribeOnUIThread(this);
-
         }
         #endregion
 
@@ -1786,7 +1798,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                       }
                     }";
                 }
-                var result = IsNewRecord ? await ItemService.Create(query, variables) : await ItemService.Update(query, variables);
+                var result = IsNewRecord ? await _itemService.CreateAsync(query, variables) : await _itemService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1847,7 +1859,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                         }
                 }";
 
-                var dataContext = await MeasurementUnitService.GetDataContext<CatalogMasterDataContext>(query, new { });
+                var dataContext = await _measurementUnitService.GetDataContextAsync<CatalogMasterDataContext>(query, new { });
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(dataContext.MeasurementUnits);
@@ -2224,7 +2236,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 dynamic variables = new ExpandoObject();
 
-                IEnumerable<CatalogGraphQLModel> source = await CatalogService.GetList(query, variables);
+                IEnumerable<CatalogGraphQLModel> source = await _catalogService.GetListAsync(query, variables);
                 Catalogs = Context.AutoMapper.Map<ObservableCollection<CatalogDTO>>(source);
                 if (Catalogs.Count > 0)
                 {
@@ -2305,7 +2317,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await ItemCategoryService.GetList(query, variables);
+                var source = await _itemCategoryService.GetListAsync(query, variables);
                 ItemsCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -2371,7 +2383,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await ItemSubCategoryService.GetList(query, variables);
+                var source = await _itemSubCategoryService.GetListAsync(query, variables);
                 ItemsSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(source);
 
                 foreach (ItemSubCategoryDTO itemSubCategory in ItemsSubCategories)
@@ -2479,7 +2491,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await ItemService.GetList(query, variables);
+                var source = await _itemService.GetListAsync(query, variables);
                 Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(source);
 
                 foreach (ItemDTO item in Items)
@@ -2542,7 +2554,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ItemService.CanDelete(query, variables);
+                var validation = await this._itemService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -2643,7 +2655,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                         IsActive = false
                     }
                 };
-                ItemGraphQLModel discontinuedItem = await ItemService.Update(query, variables);
+                ItemGraphQLModel discontinuedItem = await _itemService.UpdateAsync(query, variables);
                 this.SelectedItem = null;
                 return discontinuedItem;
             }
@@ -2669,7 +2681,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ItemService.CanDelete(query, variables);
+                var validation = await this._itemService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -2777,7 +2789,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                ItemGraphQLModel deletedItem = await ItemService.Delete(query, variables);
+                ItemGraphQLModel deletedItem = await _itemService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedItem;
             }
@@ -2816,7 +2828,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CatalogService.CanDelete(query, variables);
+                var validation = await _catalogService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -2877,7 +2889,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                CatalogGraphQLModel deletedCatalog = await CatalogService.Delete(query, variables);
+                CatalogGraphQLModel deletedCatalog = await _catalogService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCatalog;
             }
@@ -3137,7 +3149,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ItemSubCategoryService.CanDelete(query, variables);
+                var validation = await this._itemSubCategoryService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -3204,7 +3216,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                ItemSubCategoryGraphQLModel deletedItemSubCategory = await ItemSubCategoryService.Delete(query, variables);
+                ItemSubCategoryGraphQLModel deletedItemSubCategory = await _itemSubCategoryService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedItemSubCategory;
             }
@@ -3230,7 +3242,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ItemTypeService.CanDelete(query, variables);
+                var validation = await this._itemTypeService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -3293,7 +3305,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                ItemTypeGraphQLModel deletedItemType = await ItemTypeService.Delete(query, variables);
+                ItemTypeGraphQLModel deletedItemType = await _itemTypeService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedItemType;
             }
@@ -3319,7 +3331,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ItemCategoryService.CanDelete(query, variables);
+                var validation = await this._itemCategoryService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -3383,7 +3395,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                ItemCategoryGraphQLModel deletedItemCategory = await ItemCategoryService.Delete(query, variables);
+                ItemCategoryGraphQLModel deletedItemCategory = await _itemCategoryService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedItemCategory;
             }
@@ -3679,6 +3691,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         #endregion
 
         #endregion
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+                Messenger.Default.Unregister(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
+        }
 
     }
 

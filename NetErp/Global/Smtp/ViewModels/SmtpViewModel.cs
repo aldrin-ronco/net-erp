@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using Models.Global;
-using NetErp.Global.CostCenters.ViewModels;
+using NetErp.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,23 +16,47 @@ namespace NetErp.Global.Smtp.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
+        
+        private readonly IRepository<SmtpGraphQLModel> _smtpService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         private SmtpMasterViewModel _smtpMasterViewModel;
         public SmtpMasterViewModel SmtpMasterViewModel
         {
             get
             {
-                if (_smtpMasterViewModel is null) _smtpMasterViewModel = new SmtpMasterViewModel(this);
+                if (_smtpMasterViewModel is null) 
+                    _smtpMasterViewModel = new SmtpMasterViewModel(this, _smtpService, _notificationService);
                 return _smtpMasterViewModel;
             }
         }
 
-        public SmtpViewModel(IMapper mapper,
-                                 IEventAggregator eventAggregator)
+        public SmtpViewModel(
+            IMapper mapper,
+            IEventAggregator eventAggregator,
+            IRepository<SmtpGraphQLModel> smtpService,
+            Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _ = Task.Run(ActivateMasterView);
+            _smtpService = smtpService;
+            _notificationService = notificationService;
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ActivateMasterView();
+                }
+                catch (Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al activar vista de SMTP: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
 
         public async Task ActivateMasterView()
@@ -50,7 +76,7 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             try
             {
-                SmtpDetailViewModel instance = new(this);
+                SmtpDetailViewModel instance = new(this, _smtpService);
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
@@ -65,7 +91,7 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             try
             {
-                SmtpDetailViewModel instance = new(this);
+                SmtpDetailViewModel instance = new(this, _smtpService);
                 instance.SmtpId = smtp.Id;
                 instance.SmtpName = smtp.Name;
                 instance.SmtpHost = smtp.Host;

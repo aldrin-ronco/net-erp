@@ -21,7 +21,10 @@ namespace NetErp.Billing.Sellers.ViewModels
     public class SellerViewModel : Conductor<Screen>.Collection.OneActive
     {
         public IMapper AutoMapper { get; private set; }
-        public IEventAggregator EventAggregator { get; private set; }     
+        public IEventAggregator EventAggregator { get; private set; }
+        private readonly IRepository<SellerGraphQLModel> _sellerService;
+        private readonly IRepository<ZoneGraphQLModel> _zoneService;
+        private readonly Helpers.Services.INotificationService _notificationService;     
 
         private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
@@ -82,7 +85,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         { 
             get 
             {
-                if (_sellerMasterViewModel is null) _sellerMasterViewModel = new SellerMasterViewModel(this);
+                if (_sellerMasterViewModel is null) _sellerMasterViewModel = new SellerMasterViewModel(this, _sellerService, _notificationService);
                 return _sellerMasterViewModel;
             } 
         }
@@ -98,11 +101,18 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public SellerViewModel(IMapper mapper,
-                               IEventAggregator eventAggregator)
+        public SellerViewModel(
+            IMapper mapper,
+            IEventAggregator eventAggregator,
+            IRepository<SellerGraphQLModel> sellerService,
+            IRepository<ZoneGraphQLModel> zoneService,
+            Helpers.Services.INotificationService notificationService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _sellerService = sellerService;
+            _zoneService = zoneService;
+            _notificationService = notificationService;
             _ = Task.Run(async () => 
             {
                 try
@@ -114,6 +124,14 @@ namespace NetErp.Billing.Sellers.ViewModels
                     await Execute.OnUIThreadAsync(() =>
                     {
                         ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al activar vista de vendedores: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                         return Task.CompletedTask;
                     });
                 }
@@ -138,7 +156,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                SellerDetailViewModel instance = new SellerDetailViewModel(this);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
                 await instance.Initialize();
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -164,7 +182,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
                 ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
-                SellerDetailViewModel instance = new SellerDetailViewModel(this);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
                 await instance.Initialize();
                 instance.Id = seller.Id;
                 instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "13");

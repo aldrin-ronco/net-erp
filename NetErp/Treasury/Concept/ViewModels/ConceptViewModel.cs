@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Interfaces;
+using Models.Books;
 using Models.Global;
 using Models.Treasury;
 using System;
@@ -16,20 +18,29 @@ namespace NetErp.Treasury.Concept.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
+        
+        private readonly IRepository<ConceptGraphQLModel> _conceptService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private ConceptMasterViewModel _conceptMasterViewModel;
         public ConceptMasterViewModel ConceptMasterViewModel
         {
             get
             {
-                if (_conceptMasterViewModel is null) _conceptMasterViewModel = new ConceptMasterViewModel(this);
+                if (_conceptMasterViewModel is null) _conceptMasterViewModel = new ConceptMasterViewModel(this, _conceptService);
                 return _conceptMasterViewModel;
             }
         }
-        public ConceptViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public ConceptViewModel(
+            IMapper mapper, 
+            IEventAggregator eventAggregator,
+            IRepository<ConceptGraphQLModel> conceptService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _ = Task.Run(ActivateMasterView);
+            _conceptService = conceptService;
+            _accountingAccountService = accountingAccountService;
+            _ = ActivateMasterView();
         }
         
         public async Task ActivateMasterView()
@@ -48,7 +59,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             try
             {
-                ConceptDetailViewModel instance = new(this);
+                ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
 
                 instance.ConceptId = concept.Id;
                 instance.NameConcept = concept.Name;
@@ -71,7 +82,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             try
             {
-                ConceptDetailViewModel instance = new(this);
+                ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
                 instance.CleanUpControls();                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 instance.SelectedType = "D";

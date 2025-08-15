@@ -123,3 +123,9 @@ Detail ViewModels handle:
 - **Localization Guidelines**:
   - Informative messages to the user should be in Spanish
   - Class names, method names, variables, and other code elements should be in English
+
+## Service Usage Guidelines
+
+- `BackgroundQueueService` and `ParallelBatchProcessor` are not standard services across the application
+- Explicit instructions will be provided on when and how to use these services
+- If a ViewModel uses these services, it does not mean all ViewModels should use them

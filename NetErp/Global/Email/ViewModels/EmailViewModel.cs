@@ -1,18 +1,14 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
-using DevExpress.ClipboardSource.SpreadsheetML;
-using DevExpress.Internal.WinApi.Windows.UI.Notifications;
-using DevExpress.Xpf.Grid;
+using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using Models.Global;
-using NetErp.Global.Smtp.ViewModels;
-using Newtonsoft.Json;
+using NetErp.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Global.Email.ViewModels
 {
@@ -20,22 +16,50 @@ namespace NetErp.Global.Email.ViewModels
     {
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
+        
+        private readonly IRepository<EmailGraphQLModel> _emailService;
+        private readonly IRepository<SmtpGraphQLModel> _smtpService;
+        private readonly Helpers.Services.INotificationService _notificationService;
+        
         private EmailMasterViewModel _emailMasterViewModel;
         private EmailMasterViewModel EmailMasterViewModel
         {
             get
             {
-
-                if (_emailMasterViewModel is null) _emailMasterViewModel = new EmailMasterViewModel(this);
+                if (_emailMasterViewModel is null) 
+                    _emailMasterViewModel = new EmailMasterViewModel(this, _emailService, _notificationService);
                 return _emailMasterViewModel;
             }
         }
-        public EmailViewModel(IMapper mapper,
-                                 IEventAggregator eventAggregator)
+        
+        public EmailViewModel(
+            IMapper mapper,
+            IEventAggregator eventAggregator,
+            IRepository<EmailGraphQLModel> emailService,
+            IRepository<SmtpGraphQLModel> smtpService,
+            Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _ = Task.Run(ActivateMasterView);
+            _emailService = emailService;
+            _smtpService = smtpService;
+            _notificationService = notificationService;
+            
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await ActivateMasterView();
+                }
+                catch (Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al activar vista de email: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+            });
         }
 
         public async Task ActivateMasterView()
@@ -54,7 +78,7 @@ namespace NetErp.Global.Email.ViewModels
         {
             try
             {
-                EmailDetailViewModel instance = new(this);
+                EmailDetailViewModel instance = new(this, _emailService, _smtpService);
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
 
@@ -69,7 +93,7 @@ namespace NetErp.Global.Email.ViewModels
 
             try
             {
-                EmailDetailViewModel instance = new(this);
+                EmailDetailViewModel instance = new(this, _emailService, _smtpService);
                 instance.EmailPassword = email.Password;
                 instance.EmailDescription = email.Description;
                 instance.EmailEmail = email.Email;

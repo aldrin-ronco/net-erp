@@ -45,19 +45,13 @@ namespace NetErp.Global.CostCenters.ViewModels
     {
         public CostCenterViewModel Context { get; set; }
 
-        public readonly IGenericDataAccess<CompanyGraphQLModel> CompanyService = IoC.Get<IGenericDataAccess<CompanyGraphQLModel>>();
-
-        public readonly IGenericDataAccess<CompanyLocationGraphQLModel> CompanyLocationService = IoC.Get<IGenericDataAccess<CompanyLocationGraphQLModel>>();
-
-        public readonly IGenericDataAccess<CostCenterGraphQLModel> CostCenterService = IoC.Get<IGenericDataAccess<CostCenterGraphQLModel>>();
-
-        public readonly IGenericDataAccess<StorageGraphQLModel> StorageService = IoC.Get<IGenericDataAccess<StorageGraphQLModel>>();
-
-        public readonly IGenericDataAccess<CountryGraphQLModel> CountryService = IoC.Get<IGenericDataAccess<CountryGraphQLModel>>();
-
-        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
-
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<CompanyGraphQLModel> _companyService;
+        private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
+        private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
+        private readonly IRepository<StorageGraphQLModel> _storageService;
+        private readonly IRepository<CountryGraphQLModel> _countryService;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         Dictionary<string, List<string>> _errors;
 
@@ -1174,7 +1168,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CompanyLocationService.CanDelete(query, variables);
+                var validation = await _companyLocationService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1240,7 +1234,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                CompanyLocationGraphQLModel deletedCompanyLocation = await CompanyLocationService.Delete(query, variables);
+                CompanyLocationGraphQLModel deletedCompanyLocation = await _companyLocationService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCompanyLocation;
             }
@@ -1279,7 +1273,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.StorageService.CanDelete(query, variables);
+                var validation = await _storageService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1359,7 +1353,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                StorageGraphQLModel deletedStorage = await StorageService.Delete(query, variables);
+                StorageGraphQLModel deletedStorage = await _storageService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedStorage;
             }
@@ -1398,7 +1392,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CostCenterService.CanDelete(query, variables);
+                var validation = await _costCenterService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1505,7 +1499,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     }
                 }";
                 object variables = new { Id = id };
-                CostCenterGraphQLModel deletedCostCenter = await CostCenterService.Delete(query, variables);
+                CostCenterGraphQLModel deletedCostCenter = await _costCenterService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCostCenter;
             }
@@ -1704,7 +1698,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                         }
                       }
                     }";
-                var result = await CompanyService.Update(query, variables);
+                var result = await _companyService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1751,7 +1745,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                           }
                         }";
                 }
-                var result = IsNewRecord ? await CompanyLocationService.Create(query, variables) : await CompanyLocationService.Update(query, variables);
+                var result = IsNewRecord ? await _companyLocationService.CreateAsync(query, variables) : await _companyLocationService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1832,7 +1826,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                           }
                         }";
                 }
-                var result = IsNewRecord ? await StorageService.Create(query, variables) : await StorageService.Update(query, variables);
+                var result = IsNewRecord ? await _storageService.CreateAsync(query, variables) : await _storageService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1991,7 +1985,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                           }
                         }";
                 }
-                var result = IsNewRecord ? await CostCenterService.Create(query, variables) : await CostCenterService.Update(query, variables);
+                var result = IsNewRecord ? await _costCenterService.CreateAsync(query, variables) : await _costCenterService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -2120,7 +2114,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await StorageService.GetList(query, variables);
+                var source = await _storageService.GetListAsync(query, variables);
                 Storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -2211,7 +2205,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await CostCenterService.GetList(query, variables);
+                var source = await _costCenterService.GetListAsync(query, variables);
                 CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -2264,7 +2258,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await CompanyLocationService.GetList(query, variables);
+                var source = await _companyLocationService.GetListAsync(query, variables);
                 Locations = Context.AutoMapper.Map<ObservableCollection<CompanyLocationDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -2336,7 +2330,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                       }
                     }";
 
-                var source = await CountryService.GetList(query, new {  });
+                var source = await _countryService.GetListAsync(query, new {  });
                 Countries = new ObservableCollection<CountryGraphQLModel>(source);
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -2378,7 +2372,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.Ids = new List<int>() { 1 };
 
-                IEnumerable<CompanyGraphQLModel> source = await CompanyService.GetList(query, variables);
+                IEnumerable<CompanyGraphQLModel> source = await _companyService.GetListAsync(query, variables);
                 Companies = Context.AutoMapper.Map<ObservableCollection<CompanyDTO>>(source);
                 if (Companies.Count > 0)
                 {
@@ -2412,11 +2406,27 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        public CostCenterMasterViewModel(CostCenterViewModel context) 
+        public CostCenterMasterViewModel(
+            CostCenterViewModel context,
+            IRepository<CompanyGraphQLModel> companyService,
+            IRepository<CompanyLocationGraphQLModel> companyLocationService,
+            IRepository<CostCenterGraphQLModel> costCenterService,
+            IRepository<StorageGraphQLModel> storageService,
+            IRepository<CountryGraphQLModel> countryService,
+            Helpers.IDialogService dialogService,
+            Helpers.Services.INotificationService notificationService) 
         {
+            Context = context;
+            _companyService = companyService;
+            _companyLocationService = companyLocationService;
+            _costCenterService = costCenterService;
+            _storageService = storageService;
+            _countryService = countryService;
+            _dialogService = dialogService;
+            _notificationService = notificationService;
+            
             Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, false, OnFindCompanyAccountingEntityMessage);
             _errors = new Dictionary<string, List<string>>();
-            Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -2781,6 +2791,15 @@ namespace NetErp.Global.CostCenters.ViewModels
             companyToUpdate.AccountingEntityCompany = companyDTO.AccountingEntityCompany;
             _notificationService.ShowSuccess("Compañía actualizada correctamente.");
             return Task.CompletedTask;
+        }
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

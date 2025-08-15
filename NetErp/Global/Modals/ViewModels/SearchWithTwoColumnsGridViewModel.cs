@@ -257,8 +257,8 @@ namespace NetErp.Global.Modals.ViewModels
                 //TODO
                 Variables.filter.or = new ExpandoObject[]
                 {
-                        new(),
-                        new()
+                    new(),
+                    new()
                 };
 
                 Variables.filter.or[0].searchName = new ExpandoObject();
