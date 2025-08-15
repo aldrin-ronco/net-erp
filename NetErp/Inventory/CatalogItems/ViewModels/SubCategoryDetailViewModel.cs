@@ -21,7 +21,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 {
     public class SubCategoryDetailViewModel: Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<ItemSubCategoryGraphQLModel> ItemSubCategoryService = IoC.Get<IGenericDataAccess<ItemSubCategoryGraphQLModel>>();
+        private readonly IRepository<ItemSubCategoryGraphQLModel> _itemSubCategoryService;
 
         private CatalogViewModel _context;
 
@@ -212,7 +212,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                                 }
                             }
                         }";
-                var result = IsNewRecord ? await ItemSubCategoryService.Create(query, variables) : await ItemSubCategoryService.Update(query, variables);
+                var result = IsNewRecord ? await _itemSubCategoryService.CreateAsync(query, variables) : await _itemSubCategoryService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -224,12 +224,6 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public bool CanSave => _errors.Count <= 0;
 
 
-        public SubCategoryDetailViewModel(CatalogViewModel context)
-        {
-            Context = context;
-            _errors = [];
-            ValidateProperty(nameof(Name), Name);
-        }
 
         protected override void OnViewReady(object view)
         {
@@ -309,5 +303,15 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ValidateProperty(nameof(Name), Name);
         }
         #endregion
+        
+        public SubCategoryDetailViewModel(
+            CatalogViewModel context,
+            IRepository<ItemSubCategoryGraphQLModel> itemSubCategoryService)
+        {
+            Context = context;
+            _itemSubCategoryService = itemSubCategoryService;
+            _errors = new Dictionary<string, List<string>>();
+            ValidateProperty(nameof(Name), Name);
+        }
     }
 }

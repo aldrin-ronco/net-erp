@@ -17,6 +17,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; private set; }
+        
+        private readonly IRepository<SupplierGraphQLModel> _supplierService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         private SupplierMasterViewModel _supplierMasterViewModel;
 
@@ -24,18 +27,23 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get 
             {
-                if (_supplierMasterViewModel is null) _supplierMasterViewModel = new(this);
+                if (_supplierMasterViewModel is null) _supplierMasterViewModel = new(this, _supplierService, _notificationService);
                 return _supplierMasterViewModel; 
             }
             
         }
 
-        public SupplierViewModel(IEventAggregator eventAggregator,
-                                 IMapper mapper)
+        public SupplierViewModel(
+            IEventAggregator eventAggregator,
+            IMapper mapper,
+            IRepository<SupplierGraphQLModel> supplierService,
+            Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _ = Task.Run(() => ActivateMasterView());
+            _supplierService = supplierService;
+            _notificationService = notificationService;
+            _ = ActivateMasterView();
         }
 
         private bool _enableOnViewReady = true;
@@ -63,14 +71,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public async Task ActivateDetailViewForNew()
         {
-            SupplierDetailViewModel instance = new(this);
+            SupplierDetailViewModel instance = new(this, _supplierService);
             instance.CleanUpControlsForNew();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
         public async Task ActivateDetailViewForEdit(SupplierGraphQLModel supplier)
         {
-            SupplierDetailViewModel instance = new(this);
+            SupplierDetailViewModel instance = new(this, _supplierService);
             List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
             instance.Id = supplier.Id;
             instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.Entity.CaptureType);

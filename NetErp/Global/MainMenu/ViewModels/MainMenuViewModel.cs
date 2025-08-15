@@ -101,7 +101,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 ThemedMessageBox.Show(text: ex.Message, title: "Atencion!", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information);
             }
         }
-        public async void OpenAccountingEntities()
+        public async Task OpenAccountingEntities()
         {
             try
             {
@@ -224,7 +224,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
 
         }
-        public async void OpenAccountingSource()
+        public async Task OpenAccountingSource()
         {
             try
             {
@@ -366,7 +366,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenAccountingEntries()
+        public async Task OpenAccountingEntries()
         {
             try
             {
@@ -387,7 +387,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenMeasurementUnits()
+        public async Task OpenMeasurementUnits()
         {
             try
             {
@@ -407,7 +407,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenItemSizes()
+        public async Task OpenItemSizes()
         {
             try
             {
@@ -427,7 +427,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenIdentificationType()
+        public async Task OpenIdentificationType()
         {
             try
             {
@@ -447,7 +447,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenCatalogItems()
+        public async Task OpenCatalogItems()
         {
             try
             {
@@ -468,7 +468,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenCostCenters()
+        public async Task OpenCostCenters()
         {
             try
             {
@@ -489,7 +489,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenTreasuryRootMaster()
+        public async Task OpenTreasuryRootMaster()
         {
             try
             {
@@ -510,7 +510,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenSmtp()
+        public async Task OpenSmtp()
         {
             try
             {
@@ -531,7 +531,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenCreditLimit()
+        public async Task OpenCreditLimit()
         {
             try
             {
@@ -547,7 +547,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenEmail()
+        public async Task OpenEmail()
         {
             try
             {
@@ -562,7 +562,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenAccountingBooks()
+        public async Task OpenAccountingBooks()
         {
             try
             {
@@ -577,7 +577,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenTreasuryConcept()
+        public async Task OpenTreasuryConcept()
         {
             try
             {
@@ -598,7 +598,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenAccountingAccountGroups()
+        public async Task OpenAccountingAccountGroups()
         {
             try
             {
@@ -614,7 +614,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
 
-        public async void OpenWithholdingCertificateConfig()
+        public async Task OpenWithholdingCertificateConfig()
         {
             try
             {
@@ -629,7 +629,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenAuthorizationSequence()
+        public async Task OpenAuthorizationSequence()
         {
             try
             {
@@ -644,7 +644,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenParameter()
+        public async Task OpenParameter()
         {
             try
             {
@@ -660,7 +660,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
         }
         
-        public async void OpenPriceList()
+        public async Task OpenPriceList()
         {
             try
             {
@@ -675,7 +675,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        public async void OpenTax()
+        public async Task OpenTax()
         {
             try
             {
@@ -691,7 +691,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
 
         }
-        public async void OpenTaxType()
+        public async Task OpenTaxType()
         {
             try
             {

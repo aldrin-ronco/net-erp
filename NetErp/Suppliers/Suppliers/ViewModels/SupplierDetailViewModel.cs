@@ -65,7 +65,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         #region Properties
 
-        public readonly IGenericDataAccess<SupplierGraphQLModel> SupplierService = IoC.Get<IGenericDataAccess<SupplierGraphQLModel>>();
+        private readonly IRepository<SupplierGraphQLModel> _supplierService;
         public SupplierViewModel Context { get; private set; }
 
         Dictionary<string, List<string>> _errors;
@@ -789,79 +789,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
         }
 
-        public async Task<IGenericDataAccess<SupplierGraphQLModel>.PageResponseType> LoadPage()
-        {
-            string queryForPage;
-            queryForPage = @"
-                query ($filter: SupplierFilterInput) {
-                  pageResponse : supplierPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      isTaxFree
-                      icaRetentionMargin
-                      icaRetentionMarginBasis
-                      retainsAnyBasis
-                      icaAccountingAccount {
-                        id
-                        code
-                        name
-                      }
-                      retentions {
-                        id
-                        name
-                        initialBase
-                        margin
-                        marginBase
-                        retentionGroup
-                      }
-                      entity {
-                        id
-                        identificationType {
-                          id
-                          code
-                        }
-                        country {
-                          id
-                          code
-                        }
-                        department {
-                          id
-                          code
-                        }
-                        city {
-                          id
-                          code
-                        }
-                        identificationNumber
-                        verificationDigit
-                        captureType
-                        searchName
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        businessName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        address
-                        telephonicInformation
-                        emails {
-                          id
-                          name
-                          email
-                          password
-                          sendElectronicInvoice
-                        }
-                      }
-                    }
-                  }
-                }";
-
-            return await SupplierService.GetPage(queryForPage, new object { });
-        }
+        
         public async Task Save()
         {
             try
@@ -1108,7 +1036,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                           }
                         }";
 
-                SupplierGraphQLModel result = IsNewRecord ? await SupplierService.Create(query, variables) : await SupplierService.Update(query, variables);
+                SupplierGraphQLModel result = IsNewRecord ? await _supplierService.CreateAsync(query, variables) : await _supplierService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1135,10 +1063,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public SupplierDetailViewModel(SupplierViewModel context)
+        public SupplierDetailViewModel(
+            SupplierViewModel context,
+            IRepository<SupplierGraphQLModel> supplierService)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+            _supplierService = supplierService;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
         }
@@ -1178,7 +1109,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }";
 
                 object variables = new();
-                var result = await SupplierService.GetDataContext<SupplierDataContext>(query, variables);
+                var result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
                 IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
                 RetentionTypes = new ObservableCollection<RetentionTypeDTO>(Context.AutoMapper.Map<ObservableCollection<RetentionTypeDTO>>(result.RetentionTypes));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);

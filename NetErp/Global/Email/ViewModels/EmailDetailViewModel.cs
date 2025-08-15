@@ -6,43 +6,38 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Caliburn.Micro;
-using DevExpress.Drawing.Internal.Fonts.Interop;
 using System.Collections.ObjectModel;
-using Services.Global.DAL.PostgreSQL;
 using static Models.Global.EmailGraphQLModel;
-using DevExpress.Internal.WinApi.Windows.UI.Notifications;
 using Models.Global;
 using System.Dynamic;
 using Common.Interfaces;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using System.Diagnostics;
-using System.IO;
-using Microsoft.VisualStudio.Threading;
 using System.Collections;
 using System.ComponentModel;
 using Common.Extensions;
-using DevExpress.Pdf.Xmp;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Common.Helpers;
 using NetErp.Helpers;
-using System.Windows.Threading;
 
 namespace NetErp.Global.Email.ViewModels
 {
     public class EmailDetailViewModel: Screen, INotifyDataErrorInfo
     {
-        public EmailDetailViewModel(EmailViewModel context)
+        private readonly IRepository<EmailGraphQLModel> _emailService;
+        private readonly IRepository<SmtpGraphQLModel> _smtpService;
+        
+        public EmailDetailViewModel(
+            EmailViewModel context,
+            IRepository<EmailGraphQLModel> emailService,
+            IRepository<SmtpGraphQLModel> smtpService)
         {
             Context = context;
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await LoadSmtps());
+            _emailService = emailService;
+            _smtpService = smtpService;
             _errors = new Dictionary<string, List<string>>();
+            _ = LoadSmtps();
         }
-
-        public IGenericDataAccess<EmailGraphQLModel> EmailService = IoC.Get<IGenericDataAccess<EmailGraphQLModel>>(); 
-        public IGenericDataAccess<SmtpGraphQLModel> SmtpService = IoC.Get<IGenericDataAccess<SmtpGraphQLModel>>();
 
 
         public ICommand _goBackCommand;
@@ -189,7 +184,7 @@ namespace NetErp.Global.Email.ViewModels
                         }
                 }";
 
-                var result = await SmtpService.GetList(query, new { });
+                var result = await _smtpService.GetListAsync(query, new { });
                 EmailSmtp = new ObservableCollection<SmtpGraphQLModel>(result);
                 EmailSmtp.Insert(0, new() { Id = 0, Name = "<< SELECCIONE UN SMTP >>"});
             }
@@ -282,7 +277,7 @@ namespace NetErp.Global.Email.ViewModels
                   }
                 }";
 
-                var result = IsNewRecord ? await EmailService.Create(query, variables) : await EmailService.Update(query, variables);                
+                var result = IsNewRecord ? await _emailService.CreateAsync(query, variables) : await _emailService.UpdateAsync(query, variables);                
                 return result;
             }
             catch (Exception ex)

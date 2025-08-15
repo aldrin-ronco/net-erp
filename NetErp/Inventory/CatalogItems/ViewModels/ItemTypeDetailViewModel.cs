@@ -27,7 +27,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 {
     public class ItemTypeDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<ItemTypeGraphQLModel> ItemTypeService = IoC.Get<IGenericDataAccess<ItemTypeGraphQLModel>>();
+        private readonly IRepository<ItemTypeGraphQLModel> _itemTypeService;
 
         private CatalogViewModel _context;
 
@@ -359,7 +359,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                                 }
                             }
                         }";
-                var result = IsNewRecord ? await ItemTypeService.Create(query, variables) : await ItemTypeService.Update(query, variables);
+                var result = IsNewRecord ? await _itemTypeService.CreateAsync(query, variables) : await _itemTypeService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -423,11 +423,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return;
         }
 
-        public ItemTypeDetailViewModel(CatalogViewModel context, ObservableCollection<MeasurementUnitDTO> measurementUnits, ObservableCollection<AccountingGroupDTO> accountingGroups)
+        public ItemTypeDetailViewModel(
+            CatalogViewModel context, 
+            ObservableCollection<MeasurementUnitDTO> measurementUnits, 
+            ObservableCollection<AccountingGroupDTO> accountingGroups,
+            IRepository<ItemTypeGraphQLModel> itemTypeService)
         {
             Context = context;
             MeasurementUnits = new ObservableCollection<MeasurementUnitDTO>(measurementUnits);
             AccountingGroups = new ObservableCollection<AccountingGroupDTO>(accountingGroups);
+            _itemTypeService = itemTypeService;
             _errors = new Dictionary<string, List<string>>();
         }
 

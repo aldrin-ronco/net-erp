@@ -58,21 +58,14 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         Dictionary<string, List<string>> _errors;
 
-        public readonly IGenericDataAccess<CompanyLocationGraphQLModel> CompanyLocationService = IoC.Get<IGenericDataAccess<CompanyLocationGraphQLModel>>();
-
-        public readonly IGenericDataAccess<CostCenterGraphQLModel> CostCenterService = IoC.Get<IGenericDataAccess<CostCenterGraphQLModel>>();
-
-        public readonly IGenericDataAccess<CashDrawerGraphQLModel> CashDrawerService = IoC.Get<IGenericDataAccess<CashDrawerGraphQLModel>>();
-
-        public readonly IGenericDataAccess<BankGraphQLModel> BankService = IoC.Get<IGenericDataAccess<BankGraphQLModel>>();
-
-        public readonly IGenericDataAccess<BankAccountGraphQLModel> BankAccountService = IoC.Get<IGenericDataAccess<BankAccountGraphQLModel>>();
-
-        public readonly IGenericDataAccess<FranchiseGraphQLModel> FranchiseService = IoC.Get<IGenericDataAccess<FranchiseGraphQLModel>>();
-
-        Helpers.IDialogService _dialogService = IoC.Get<Helpers.IDialogService>();
-
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
+        private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
+        private readonly IRepository<CashDrawerGraphQLModel> _cashDrawerService;
+        private readonly IRepository<BankGraphQLModel> _bankService;
+        private readonly IRepository<BankAccountGraphQLModel> _bankAccountService;
+        private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
@@ -1026,7 +1019,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                             }
                         }";
                 }
-                var result = IsNewRecord ? await CashDrawerService.Create(query, variables) : await CashDrawerService.Update(query, variables);
+                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1102,7 +1095,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                             }
                         }";
                 }
-                var result = IsNewRecord ? await CashDrawerService.Create(query, variables) : await CashDrawerService.Update(query, variables);
+                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1215,7 +1208,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                           }
                         }";
                 }
-                var result = IsNewRecord ? await CashDrawerService.Create(query, variables) : await CashDrawerService.Update(query, variables);
+                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1263,7 +1256,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                             }
                         }";
                 }
-                var result = IsNewRecord ? await BankService.Create(query, variables) : await BankService.Update(query, variables);
+                var result = IsNewRecord ? await _bankService.CreateAsync(query, variables) : await _bankService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1370,7 +1363,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                             }
                         }";
                 }
-                var result = IsNewRecord ? await BankAccountService.Create(query, variables) : await BankAccountService.Update(query, variables);
+                var result = IsNewRecord ? await _bankAccountService.CreateAsync(query, variables) : await _bankAccountService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1493,7 +1486,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                           }
                         }";
                 }
-                var result = IsNewRecord ? await FranchiseService.Create(query, variables) : await FranchiseService.Update(query, variables);
+                var result = IsNewRecord ? await _franchiseService.CreateAsync(query, variables) : await _franchiseService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -1529,7 +1522,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CashDrawerService.CanDelete(query, variables);
+                var validation = await this._cashDrawerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1619,7 +1612,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await CashDrawerService.Delete(query, variables);
+                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCashDrawer;
             }
@@ -1658,7 +1651,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CashDrawerService.CanDelete(query, variables);
+                var validation = await this._cashDrawerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1748,7 +1741,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await CashDrawerService.Delete(query, variables);
+                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCashDrawer;
             }
@@ -1787,7 +1780,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.CashDrawerService.CanDelete(query, variables);
+                var validation = await this._cashDrawerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1880,7 +1873,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await CashDrawerService.Delete(query, variables);
+                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedCashDrawer;
             }
@@ -1919,7 +1912,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.BankService.CanDelete(query, variables);
+                var validation = await this._bankService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -1986,7 +1979,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                       }
                     }";
                 object variables = new { Id = id };
-                BankGraphQLModel deletedBank = await BankService.Delete(query, variables);
+                BankGraphQLModel deletedBank = await _bankService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedBank;
             }
@@ -2025,7 +2018,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.BankService.CanDelete(query, variables);
+                var validation = await this._bankService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -2101,7 +2094,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     }";
                 object variables = new { Id = id };
-                BankAccountGraphQLModel deletedBankAccount = await BankAccountService.Delete(query, variables);
+                BankAccountGraphQLModel deletedBankAccount = await _bankAccountService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedBankAccount;
             }
@@ -2140,7 +2133,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.FranchiseService.CanDelete(query, variables);
+                var validation = await this._franchiseService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -2222,7 +2215,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                 }";
                 object variables = new { Id = id };
-                FranchiseGraphQLModel deletedFranchise = await FranchiseService.Delete(query, variables);
+                FranchiseGraphQLModel deletedFranchise = await _franchiseService.DeleteAsync(query, variables);
                 this.SelectedItem = null;
                 return deletedFranchise;
             }
@@ -3716,7 +3709,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     }";
 
-                IEnumerable<CompanyLocationGraphQLModel> source = await CompanyLocationService.GetList(query, new { });
+                IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO>>(source);
                 if (locations.Count > 0)
                 {
@@ -3770,7 +3763,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     }";
 
-                IEnumerable<CompanyLocationGraphQLModel> source = await CompanyLocationService.GetList(query, new { });
+                IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO>>(source);
                 if (locations.Count > 0)
                 {
@@ -3829,7 +3822,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     }";
 
-                var source = await BankService.GetList(query, new { });
+                var source = await _bankService.GetListAsync(query, new { });
                 var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(source);
                 if (banks.Count > 0)
                 {
@@ -3915,7 +3908,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.filter.BankId.@operator = "=";
                 variables.filter.BankId.value = bank.Id;
 
-                var source = await BankAccountService.GetList(query, variables);
+                var source = await _bankAccountService.GetListAsync(query, variables);
                 var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -3970,7 +3963,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await CostCenterService.GetList(query, variables);
+                var source = await _costCenterService.GetListAsync(query, variables);
                 var CostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryMajorCashDrawerCostCenterMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -4026,7 +4019,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
-                var source = await CostCenterService.GetList(query, variables);
+                var source = await _costCenterService.GetListAsync(query, variables);
                 var CostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryMinorCashDrawerCostCenterMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -4118,7 +4111,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.filter.isPettyCash.@operator = "=";
                 variables.filter.isPettyCash.value = false;
 
-                var source = await CashDrawerService.GetList(query, variables);
+                var source = await _cashDrawerService.GetListAsync(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<MajorCashDrawerMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -4203,7 +4196,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.filter.isPettyCash.@operator = "=";
                 variables.filter.isPettyCash.value = false;
 
-                var source = await CashDrawerService.GetList(query, variables);
+                var source = await _cashDrawerService.GetListAsync(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<TreasuryAuxiliaryCashDrawerMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -4278,7 +4271,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.filter.parentId.@operator = "=";
                 variables.filter.parentId.value = 0;
 
-                var source = await CashDrawerService.GetList(query, variables);
+                var source = await _cashDrawerService.GetListAsync(query, variables);
                 var CashDrawers = Context.AutoMapper.Map<ObservableCollection<MinorCashDrawerMasterTreeDTO>>(source);
 
                 Application.Current.Dispatcher.Invoke(() =>
@@ -4364,7 +4357,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.filter.CompanyId = new ExpandoObject();
                 variables.filter.CompanyId.@operator = "=";
                 variables.filter.CompanyId.value = 1;
-                var source = await FranchiseService.GetList(query, variables);
+                var source = await _franchiseService.GetListAsync(query, variables);
                 var franchises = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseMasterTreeDTO>>(source);
                 if (franchises.Count > 0)
                 {
@@ -4439,7 +4432,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.bankAccountFilter.allowedTypes.value = "AC";
                 variables.bankAccountFilter.allowedTypes.exclude = true;
 
-                var result = await CashDrawerService.GetDataContext<CashDrawerComboBoxesDataContext>(query, variables);
+                var result = await _cashDrawerService.GetDataContextAsync<CashDrawerComboBoxesDataContext>(query, variables);
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
                 BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(result.CostCenters);
@@ -4472,8 +4465,26 @@ namespace NetErp.Treasury.Masters.ViewModels
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCompanyLocations" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
-        public TreasuryRootMasterViewModel(TreasuryRootViewModel context)
+        public TreasuryRootMasterViewModel(
+            TreasuryRootViewModel context,
+            IRepository<CompanyLocationGraphQLModel> companyLocationService,
+            IRepository<CostCenterGraphQLModel> costCenterService,
+            IRepository<CashDrawerGraphQLModel> cashDrawerService,
+            IRepository<BankGraphQLModel> bankService,
+            IRepository<BankAccountGraphQLModel> bankAccountService,
+            IRepository<FranchiseGraphQLModel> franchiseService,
+            Helpers.IDialogService dialogService,
+            Helpers.Services.INotificationService notificationService)
         {
+            _companyLocationService = companyLocationService;
+            _costCenterService = costCenterService;
+            _cashDrawerService = cashDrawerService;
+            _bankService = bankService;
+            _bankAccountService = bankAccountService;
+            _franchiseService = franchiseService;
+            _dialogService = dialogService;
+            _notificationService = notificationService;
+            
             Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, false, OnFindBankAccountingEntityMessage);
             DummyItems = [
             new MajorCashDrawerDummyDTO() { 
@@ -5036,6 +5047,16 @@ namespace NetErp.Treasury.Masters.ViewModels
             await Task.Run(() => SetFranchiseForEdit(franchiseToUpdate));
             _notificationService.ShowSuccess("Franquicia actualizada correctamente.");
             return;
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Messenger.Default.Unregister<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this);
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 

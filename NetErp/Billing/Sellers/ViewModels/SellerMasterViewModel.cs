@@ -35,9 +35,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         IHandle<CustomerUpdateMessage>,
         IHandle<SupplierUpdateMessage>
     {
-        public readonly IGenericDataAccess<SellerGraphQLModel> SellerService = IoC.Get<IGenericDataAccess<SellerGraphQLModel>>();
-
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<SellerGraphQLModel> _sellerService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         public SellerViewModel Context { get; set; }
 
         private bool _isBusy = false;
@@ -65,7 +64,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = Task.Run(() => LoadSellers());
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadSellers();
                 }
             }
         }
@@ -80,7 +79,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _showActiveSellersOnly = value;
                     NotifyOfPropertyChange(nameof(ShowActiveSellersOnly));
-                    _ = Task.Run(() => LoadSellers());
+                    _ = LoadSellers();
                 }
             }
         }
@@ -95,7 +94,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _selectedCostCenterId = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterId));
-                    _ = Task.Run(() => LoadSellers());
+                    _ = LoadSellers();
                 }
             }
         }
@@ -181,7 +180,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedSeller = null;
-                await Task.Run(() => Context.ActivateDetailViewForNew());
+                await Context.ActivateDetailViewForNew();
             }
             catch (AsyncException ex)
             {
@@ -221,7 +220,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.SellerService.CanDelete(query, variables);
+                var validation = await _sellerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -281,7 +280,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
                 ";
                 object variables = new { Id = id };
-                SellerGraphQLModel deletedSeller = await SellerService.Delete(query, variables);
+                SellerGraphQLModel deletedSeller = await _sellerService.DeleteAsync(query, variables);
                 SelectedSeller = null;
                 return deletedSeller;
             }
@@ -307,7 +306,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => Context.ActivateDetailViewForEdit(SelectedSeller));
+                await Context.ActivateDetailViewForEdit(SelectedSeller);
                 SelectedSeller = null;
             }
             catch (AsyncException ex)
@@ -342,9 +341,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteSeller));
         }
 
-        public SellerMasterViewModel(SellerViewModel context)
+        public SellerMasterViewModel(
+            SellerViewModel context,
+            IRepository<SellerGraphQLModel> sellerService,
+            Helpers.Services.INotificationService notificationService)
         {
             Context = context;
+            _sellerService = sellerService;
+            _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ = Task.Run(async () => 
             {
@@ -357,6 +361,14 @@ namespace NetErp.Billing.Sellers.ViewModels
                     await Execute.OnUIThreadAsync(() =>
                     {
                         ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al cargar vendedores: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                         return Task.CompletedTask;
                     });
                 }
@@ -485,7 +497,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;              
 
-                var result = await SellerService.GetDataContext<SellersDataContext>(query, variables);
+                var result = await _sellerService.GetDataContextAsync<SellersDataContext>(query, variables);
                 stopwatch.Stop();
                 Context.CostCenters = new ObservableCollection<CostCenterDTO>(Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters));
                 Context.IdentificationTypes = new ObservableCollection<Models.Books.IdentificationTypeGraphQLModel>(result.IdentificationTypes);
@@ -615,7 +627,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
 
-                var result = await SellerService.GetPage(query, variables);
+                var result = await _sellerService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -646,6 +658,16 @@ namespace NetErp.Billing.Sellers.ViewModels
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
+        }
+
         public async Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
         {
             try
@@ -653,10 +675,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await LoadSellers();
                 _notificationService.ShowSuccess("Vendedor creado correctamente.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -667,10 +692,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await LoadSellers();
                 _notificationService.ShowSuccess("Vendedor actualizado correctamente.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -681,9 +709,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await LoadSellers();
                 _notificationService.ShowSuccess("Vendedor eliminado correctamente.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 

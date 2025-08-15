@@ -25,8 +25,9 @@ namespace NetErp.Global.Smtp.ViewModels
         IHandle<SmtpUpdateMessage>,
         IHandle<SmtpCreateMessage>
     {
-        public IGenericDataAccess<SmtpGraphQLModel> SmtpService { get; set; } = IoC.Get<IGenericDataAccess<SmtpGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<SmtpGraphQLModel> _smtpService;
+        private readonly Helpers.Services.INotificationService _notificationService;
+        
         public SmtpViewModel Context { get; set; }
 
         private bool _isBusy;
@@ -87,7 +88,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if(string.IsNullOrEmpty(value) || value.Length >= 3) _ = Task.Run(() => LoadSmtpsAsync());
+                    if(string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadSmtpsAsync();
                 }
             }
         }
@@ -218,7 +219,7 @@ namespace NetErp.Global.Smtp.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.SmtpService.CanDelete(query, variables);
+                var validation = await _smtpService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -268,7 +269,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
-                var result = await SmtpService.Delete(query, variables);
+                var result = await _smtpService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -277,17 +278,21 @@ namespace NetErp.Global.Smtp.ViewModels
             }
         }
 
-        public SmtpMasterViewModel(SmtpViewModel context)
+        public SmtpMasterViewModel(
+            SmtpViewModel context,
+            IRepository<SmtpGraphQLModel> smtpService,
+            Helpers.Services.INotificationService notificationService)
         {
             Context = context;
+            _smtpService = smtpService;
+            _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
-            
         }
 
-        protected override void OnViewReady(object view)
+        protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadSmtpsAsync());
+            await LoadSmtpsAsync();
             this.SetFocus(() => FilterSearch);
         }
 
@@ -327,7 +332,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
-                var result = await SmtpService.GetPage(query, variables);
+                var result = await _smtpService.GetPageAsync(query, variables);
                 TotalCount = result.PageResponse.Count;
                 Smtps = new ObservableCollection<SmtpGraphQLModel>(result.PageResponse.Rows);
                 // Detener cronometro
@@ -408,6 +413,15 @@ namespace NetErp.Global.Smtp.ViewModels
 
                 throw;
             }
+        }
+        
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

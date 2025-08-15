@@ -174,6 +174,12 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            Context.EventAggregator.Unsubscribe(this);
+            await base.OnDeactivateAsync(close, cancellationToken);
+        }
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);

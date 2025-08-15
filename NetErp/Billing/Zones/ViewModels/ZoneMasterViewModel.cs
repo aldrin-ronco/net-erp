@@ -24,8 +24,8 @@ namespace NetErp.Billing.Zones.ViewModels
         IHandle<ZoneDeleteMessage>,
         IHandle<ZoneUpdateMessage>
     {
-        public IGenericDataAccess<ZoneGraphQLModel> ZoneService { get; set; } = IoC.Get<IGenericDataAccess<ZoneGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<ZoneGraphQLModel> _zoneService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         public ZoneViewModel Context { get; set; }
 
@@ -103,7 +103,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 {   
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = Task.Run(() => LoadZonesAsync());
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadZonesAsync();
                 }
             }
         }
@@ -118,7 +118,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     _showActiveZonesOnly = value;
                     NotifyOfPropertyChange(nameof(ShowActiveZonesOnly));
-                    _ = Task.Run(() => LoadZonesAsync());
+                    _ = LoadZonesAsync();
                 }
             }
         }
@@ -201,7 +201,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                await Task.Run(() => Context.ActivateDetailViewForNewAsync());
+                await Context.ActivateDetailViewForNewAsync();
             }
             catch (AsyncException ex)
             {
@@ -243,7 +243,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 }";
 
 
-                var validation = await this.ZoneService.CanDelete(query, variables);
+                var validation = await _zoneService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -296,7 +296,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
-                var result = await ZoneService.Delete(query, variables);
+                var result = await _zoneService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception ex)
@@ -309,7 +309,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                await Task.Run(() => Context.ActivateDetailViewForEditAsync(SelectedItem ?? new()));
+                await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new());
             }
             catch (AsyncException ex)
             {
@@ -356,7 +356,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 variables.filter.pagination.pageSize = PageSize;
                 Stopwatch stopwatch= new();
                 stopwatch.Start();
-                var result = await ZoneService.GetPage(query, variables);
+                var result = await _zoneService.GetPageAsync(query, variables);
                 TotalCount = result.PageResponse.Count;
                 Zones = new ObservableCollection<ZoneGraphQLModel>(result.PageResponse.Rows);
                 stopwatch.Stop();
@@ -375,12 +375,16 @@ namespace NetErp.Billing.Zones.ViewModels
                 IsBusy = false;
             }
         }
-        public ZoneMasterViewModel(ZoneViewModel context)
+        public ZoneMasterViewModel(
+            ZoneViewModel context,
+            IRepository<ZoneGraphQLModel> zoneService,
+            Helpers.Services.INotificationService notificationService)
         {
             Context = context;
+            _zoneService = zoneService;
+            _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
-            _ = Task.Run(() =>  LoadZonesAsync());
-
+            _ = LoadZonesAsync();
         }
         public async Task HandleAsync(ZoneUpdateMessage message, CancellationToken cancellationToken)
         {
@@ -420,6 +424,15 @@ namespace NetErp.Billing.Zones.ViewModels
 
                 throw;
             }
+        }
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

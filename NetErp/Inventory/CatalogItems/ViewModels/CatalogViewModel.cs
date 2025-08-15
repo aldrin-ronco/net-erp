@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Interfaces;
 using Models.Books;
+using Models.Global;
 using Models.Inventory;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.MeasurementUnits.ViewModels;
@@ -16,8 +18,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
     public class CatalogViewModel : Conductor<object>.Collection.OneActive
     {
         public IMapper AutoMapper { get; private set; }
-
         public IEventAggregator EventAggregator { get; set; }
+        
+        private readonly IRepository<CatalogGraphQLModel> _catalogService;
+        private readonly IRepository<ItemTypeGraphQLModel> _itemTypeService;
+        private readonly IRepository<ItemCategoryGraphQLModel> _itemCategoryService;
+        private readonly IRepository<ItemSubCategoryGraphQLModel> _itemSubCategoryService;
+        private readonly IRepository<ItemGraphQLModel> _itemService;
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
+        private readonly IRepository<AwsS3ConfigGraphQLModel> _awsS3Service;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         private CatalogMasterViewModel _catalogMasterViewModel;
 
@@ -25,7 +36,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                if (_catalogMasterViewModel is null) _catalogMasterViewModel = new CatalogMasterViewModel(this);
+                if (_catalogMasterViewModel is null) _catalogMasterViewModel = new CatalogMasterViewModel(this, _catalogService, _itemTypeService, _itemCategoryService, _itemSubCategoryService, _itemService, _measurementUnitService, _awsS3Service, _dialogService, _notificationService);
                 return _catalogMasterViewModel;
             }
         }
@@ -45,10 +56,30 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public CatalogViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public CatalogViewModel(
+            IMapper mapper, 
+            IEventAggregator eventAggregator,
+            IRepository<CatalogGraphQLModel> catalogService,
+            IRepository<ItemTypeGraphQLModel> itemTypeService,
+            IRepository<ItemCategoryGraphQLModel> itemCategoryService,
+            IRepository<ItemSubCategoryGraphQLModel> itemSubCategoryService,
+            IRepository<ItemGraphQLModel> itemService,
+            IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
+            IRepository<AwsS3ConfigGraphQLModel> awsS3Service,
+            Helpers.IDialogService dialogService,
+            Helpers.Services.INotificationService notificationService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
+            _catalogService = catalogService;
+            _itemTypeService = itemTypeService;
+            _itemCategoryService = itemCategoryService;
+            _itemSubCategoryService = itemSubCategoryService;
+            _itemService = itemService;
+            _measurementUnitService = measurementUnitService;
+            _awsS3Service = awsS3Service;
+            _dialogService = dialogService;
+            _notificationService = notificationService;
             Task.Run(ActivateMasterView);
         }
 
@@ -68,7 +99,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                ItemTypeDetailViewModel instance = new(this, measurementUnits, accountingGroups);
+                ItemTypeDetailViewModel instance = new(this, measurementUnits, accountingGroups, _itemTypeService);
                 instance.CatalogId = selectedCatalogId;
                 instance.StockControlEnable = true;
                 instance.CleanUpControls();
@@ -85,7 +116,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                ItemTypeDetailViewModel instance = new(this, measurementUnits, accountingGroups);
+                ItemTypeDetailViewModel instance = new(this, measurementUnits, accountingGroups, _itemTypeService);
                 instance.Id = itemType.Id;
                 instance.Name = itemType.Name;
                 instance.PrefixChar = itemType.PrefixChar;
@@ -106,7 +137,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                CategoryDetailViewModel instance = new(this)
+                CategoryDetailViewModel instance = new(this, _itemCategoryService)
                 {
                     ItemTypeId = selectedItemType
                 };
@@ -124,7 +155,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                CategoryDetailViewModel instance = new(this)
+                CategoryDetailViewModel instance = new(this, _itemCategoryService)
                 {
                     Id = itemCategory.Id,
                     Name = itemCategory.Name,
@@ -143,7 +174,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                SubCategoryDetailViewModel instance = new(this)
+                SubCategoryDetailViewModel instance = new(this, _itemSubCategoryService)
                 {
                     ItemCategoryId = selectedItemCategory
                 };
@@ -161,7 +192,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                SubCategoryDetailViewModel instance = new(this)
+                SubCategoryDetailViewModel instance = new(this, _itemSubCategoryService)
                 {
                     Id = itemSubCategory.Id,
                     Name = itemSubCategory.Name,
@@ -180,7 +211,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                CatalogDetailViewModel instance = new(this);
+                CatalogDetailViewModel instance = new(this, _catalogService);
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
@@ -195,7 +226,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                CatalogDetailViewModel instance = new(this)
+                CatalogDetailViewModel instance = new(this, _catalogService)
                 {
                     Id = catalog.Id,
                     Name = catalog.Name
