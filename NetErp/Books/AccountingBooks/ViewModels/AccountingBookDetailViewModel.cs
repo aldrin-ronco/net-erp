@@ -22,12 +22,15 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 {
     public class AccountingBookDetailViewModel: Screen, INotifyDataErrorInfo
     {
-        IGenericDataAccess<AccountingBookGraphQLModel> AccountingBookService = IoC.Get<IGenericDataAccess<AccountingBookGraphQLModel>>();
         public AccountingBookViewModel Context { get; set; }
-        public AccountingBookDetailViewModel(AccountingBookViewModel context)
+        private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService;
+
+        public AccountingBookDetailViewModel(AccountingBookViewModel context, IRepository<AccountingBookGraphQLModel> accountingBookService)
         {
             Context = context;
             _errors = new Dictionary<string, List<string>>();
+            _accountingBookService = accountingBookService;
+
         }
         public async Task GoBack()
         {
@@ -177,8 +180,8 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 result = IsNewRecord
-                    ? await AccountingBookService.Create(query, variables)
-                    : await AccountingBookService.Update(query, variables);
+                    ? await _accountingBookService.CreateAsync(query, variables)
+                    : await _accountingBookService.UpdateAsync(query, variables);
             }
             catch (Exception ex)
             {

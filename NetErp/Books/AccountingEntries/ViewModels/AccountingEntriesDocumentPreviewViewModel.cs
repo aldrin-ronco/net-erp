@@ -209,7 +209,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await this.Context.AccountingEntryMasterService.FindById(query, variables);
+                var result = await this.Context._accountingEntryMasterService.FindByIdAsync(query, variables);
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -261,7 +261,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this.Refresh();
                 var result = await ExecuteCancelAccountingEntry();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryMasterCancellationMessage() { CancelledAccountingEntry = result });
-                await this.Context.ActivateMasterView();
+                await this.Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -334,7 +334,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     }
                 };
 
-                var result = await this.Context.AccountingEntryMasterService.Update(query, variables);
+                var result = await this.Context._accountingEntryMasterService.UpdateAsync(query, variables);
 
                 return result;
             }
@@ -360,7 +360,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     // Notificar la eliminacion del registro
                     await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryMasterDeleteMessage() { Id = this.SelectedAccountingEntry.Id });
-                    await this.Context.ActivateMasterView();
+                    await this.Context.ActivateMasterViewAsync();
                 }
                 else
                 {
@@ -388,7 +388,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     MasterIds = new List<BigInteger>() { this.SelectedAccountingEntry.Id }
                 };
-                var result = await this.Context.AccountingEntryMasterService.GetDataContext<BulkDeleteAccountingEntryMaster>(query, variables);
+                var result = await this.Context._accountingEntryMasterService.GetDataContextAsync<BulkDeleteAccountingEntryMaster>(query, variables);
                 return result.Count;
             }
             catch (Exception)
@@ -415,7 +415,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         // Back Button
         public async Task GoBack()
         {
-            await this.Context.ActivateMasterView();
+            await this.Context.ActivateMasterViewAsync();
         }
 
         public bool CanGoBack => true;
@@ -508,7 +508,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     {
                         MasterId = this.SelectedAccountingEntryMaster.Id
                     };
-                    var result = await this.Context.AccountingEntryDraftMasterService.Create(query, variables);
+                    var result = await this.Context._accountingEntryDraftMasterService.CreateAsync(query, variables);
                     return result;
                 }
                 else
@@ -542,7 +542,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                         this.SelectedAccountingEntry.DraftMasterId
                     };
 
-                    var result = await this.Context.AccountingEntryDraftMasterService.FindById(query, variables);
+                    var result = await this.Context._accountingEntryDraftMasterService.FindByIdAsync(query, variables);
                     return result;
                 }
 

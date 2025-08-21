@@ -5,6 +5,7 @@ using Common.Interfaces;
 using Models.Books;
 using Models.DTO.Global;
 using NetErp.Books.AccountingAccounts.ViewModels;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,6 +21,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public IMapper AutoMapper { get; private set; }
 
         public IEventAggregator EventAggregator { get; set; }
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
         // MasterVM
         private AccountingEntityMasterViewModel _accountingEntityMasterViewModel;
@@ -27,7 +30,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             get
             {
-                if (_accountingEntityMasterViewModel is null) _accountingEntityMasterViewModel = new AccountingEntityMasterViewModel(this);
+                if (_accountingEntityMasterViewModel is null) _accountingEntityMasterViewModel = new AccountingEntityMasterViewModel(this, _notificationService, _accountingEntityService);
                 return _accountingEntityMasterViewModel;
             }
         }
@@ -44,10 +47,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         public AccountingEntityViewModel(IMapper mapper,
-                                         IEventAggregator eventAggregator)
+                                         IEventAggregator eventAggregator, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
+            _notificationService = notificationService;
+            _accountingEntityService = accountingEntityService;
             Task.Run(ActivateMasterView);
         }
 
@@ -66,7 +72,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public async Task ActivateDetailViewForEdit(AccountingEntityGraphQLModel selectedItem)
         {
-            AccountingEntityDetailViewModel instance = new(this);
+            AccountingEntityDetailViewModel instance = new(this, _accountingEntityService);
             instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == selectedItem.IdentificationType.Id);
             instance.Id = selectedItem.Id;
             instance.VerificationDigit = selectedItem.VerificationDigit;
@@ -94,7 +100,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                AccountingEntityDetailViewModel instance = new(this);
+                AccountingEntityDetailViewModel instance = new(this, _accountingEntityService);
                 instance.CleanUpControlsForNew();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

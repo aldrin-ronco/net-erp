@@ -22,6 +22,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Chilkat.Http;
@@ -719,6 +720,13 @@ namespace NetErp.Books.Tax.ViewModels
             {
                 IsBusy = false;
             }
+        }
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 

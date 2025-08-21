@@ -23,17 +23,24 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     {
 
 
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
 
-        public  readonly IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel> AccountingEntryDraftDetailService = IoC.Get<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel> AccountingEntryDraftMasterService = IoC.Get<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingEntryMasterGraphQLModel> AccountingEntryMasterService = IoC.Get<IGenericDataAccess<AccountingEntryMasterGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingEntryDetailGraphQLModel> AccountingEntryDetailService = IoC.Get<IGenericDataAccess<AccountingEntryDetailGraphQLModel>>();
+
+        
+        public readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        public readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        public readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        public readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        public readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        public readonly IRepository<AccountingEntryDetailGraphQLModel> _accountingEntryDetailService;
+
+
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+
         public IMapper Mapper { get; private set; }
 
         public IEventAggregator EventAggregator;
@@ -103,31 +110,47 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService);
                 return _accountingEntriesMasterViewModel;
             }
         }
 
         public AccountingEntriesViewModel(IMapper mapper,
-                                          IEventAggregator eventAggregator)
+                                          IEventAggregator eventAggregator,
+                                          Helpers.Services.INotificationService notificationService,
+                                          IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+                                          IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+                                          IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
+                                          IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+                                          IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
+                                          IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService
+                                          )
         {
             this.EventAggregator = eventAggregator;
             this.Mapper = mapper;
-            Task.Run(() => this.ActivateMasterView());
+            this._accountingEntityService = accountingEntityService;
+            this._accountingAccountService = accountingAccountService;
+            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
+            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            this._accountingEntryMasterService = accountingEntryMasterService;
+            this._accountingEntryDetailService = accountingEntryDetailService;
+            this._notificationService = notificationService;
+            _ = this.ActivateMasterViewAsync();
+            
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             await ActivateItemAsync(this.AccountingEntriesMasterViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDocumentPreviewView(AccountingEntryMasterDTO selectedAccountingEntry)
+        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryMasterDTO selectedAccountingEntry)
         {
             AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
             AccountingEntriesDetailViewModel instance = new(this);
             // Header
@@ -203,7 +226,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 stopwatch.Start();
 
                 // Get Entries
-                var entries = await this.AccountingEntryDraftDetailService.GetList(query, variables);
+                var entries = await this._accountingEntryDraftDetailService.GetListAsync(query, variables);
 
                 // Totals
                 var totals =(

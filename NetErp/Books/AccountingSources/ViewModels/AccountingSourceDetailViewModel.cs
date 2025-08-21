@@ -28,8 +28,9 @@ namespace NetErp.Books.AccountingSources.ViewModels
     {
         #region Propiedades
 
-        public readonly IGenericDataAccess<AccountingSourceGraphQLModel> AccountingSourceService = IoC.Get<IGenericDataAccess<AccountingSourceGraphQLModel>>();
-        public readonly IGenericDataAccess<ProcessTypeGraphQLModel> ProcessTypeService = IoC.Get<IGenericDataAccess<ProcessTypeGraphQLModel>>();
+
+        private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
+
         // Context
         private AccountingSourceViewModel _context;
         public AccountingSourceViewModel Context
@@ -311,11 +312,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
         #endregion
 
-        public AccountingSourceDetailViewModel(AccountingSourceViewModel context)
+        public AccountingSourceDetailViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService)
         {
             // Contexto
             this.Context = context;
-
+            this._accountingSourceService = accountingSourceService;
             // Cargar cuentas contables
             var auxiliaryAccounts = from account in this.Context.AccountingSourceMasterViewModel.AccountingAccounts
                                     select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
@@ -397,7 +398,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                     await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceUpdateMessage() { UpdatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
                 }
                 Context.EnableOnViewReady = false;
-                await this.Context.ActivateMasterView();
+                await this.Context.ActivateMasterViewAsync();
                 
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -475,7 +476,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                     variables.Data.AccountingAccountId = SelectedAccountingAccountId;
                     variables.Data.ProcessTypeId = SelectedProcessTypeId;
                     variables.Data.CreatedBy = SessionInfo.UserEmail;
-                    var result = await AccountingSourceService.Create(query, variables);
+                    var result = await _accountingSourceService.CreateAsync(query, variables);
                     return result;
                 }
                 else
@@ -515,7 +516,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 variables.Data.FullCode = FullCode;
                 variables.Data.AnnulmentCharacter = SelectedAnnulmentType;
                 variables.Data.AccountingAccountId = SelectedAccountingAccountId;
-                var result = await AccountingSourceService.Update(query, variables);
+                var result = await _accountingSourceService.UpdateAsync(query, variables);
                 return result;
                 }
             }
@@ -542,7 +543,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
+            _ = Task.Run(() => Context.ActivateMasterViewAsync());
         }
 
         public bool CanGoBack(object p)

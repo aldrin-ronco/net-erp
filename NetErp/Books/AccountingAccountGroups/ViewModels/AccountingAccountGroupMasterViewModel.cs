@@ -403,5 +403,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 IsBusy = false;
             }
         }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

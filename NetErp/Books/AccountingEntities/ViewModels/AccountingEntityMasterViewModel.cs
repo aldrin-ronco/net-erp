@@ -41,8 +41,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         IHandle<SupplierUpdateMessage>
     {
 
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+
         // Context
         private AccountingEntityViewModel _context;
         public AccountingEntityViewModel Context
@@ -256,11 +258,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
-        public AccountingEntityMasterViewModel(AccountingEntityViewModel context)
+        public AccountingEntityMasterViewModel(AccountingEntityViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
             try
             {
+
                 Context = context;
+                _notificationService = notificationService;
+                _accountingEntityService = accountingEntityService;
+
                 Context.EventAggregator.SubscribeOnUIThread(this);
             }
             catch (Exception)
@@ -364,9 +371,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                var source = await AccountingEntityService.GetPage(query, variables);
-                TotalCount = source.PageResponse.Count;
-                AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(source.PageResponse.Rows);
+                var source = await _accountingEntityService.GetPageAsync(query, variables);
+                TotalCount = source.Count;
+                AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(source.Rows);
                 stopwatch.Stop();
 
                 // Detener cronometro
@@ -463,7 +470,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.AccountingEntityService.CanDelete(query, variables);
+                var validation = await this._accountingEntityService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -527,7 +534,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                   }
                 }";
                 object variables = new { Id = id };
-                var deletedEntity = await this.AccountingEntityService.Delete(query, variables);
+                var deletedEntity = await this._accountingEntityService.DeleteAsync(query, variables);
                 this.SelectedAccountingEntity = null;
                 return deletedEntity;
             }

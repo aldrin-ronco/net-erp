@@ -61,7 +61,7 @@
                                            IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
                                            Hint="Crear una nueva cuenta contable">
                             <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=CreateCommand}" EventName="ItemClick"/>
+                                <dxmvvm:EventToCommand Command="{Binding Path=CreateAsyncCommand}" EventName="ItemClick"/>
                             </dxmvvm:Interaction.Behaviors>
                         </dxb:BarButtonItem>
                     </dxr:RibbonPageGroup>
@@ -134,9 +134,9 @@
                                    ContextMenuService.Placement="MousePoint" VerticalAlignment="Center">
                                 <TextBlock.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"/>
+                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}"/>
                                         <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                        <MenuItem Command="{Binding Path=Data.EditAsyncCommand, Source={StaticResource DataContextProxy}}"
                                               CommandParameter="{Binding Code}">
                                             <MenuItem.Header>
                                                 <StackPanel Orientation="Horizontal">
@@ -167,7 +167,7 @@
                                    ContextMenuService.Placement="MousePoint" VerticalAlignment="Center">
                                 <TextBlock.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"/>
+                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}"/>
                                         <Separator/>
                                         <MenuItem Command="{Binding Path=Data.EditCommand, Source={StaticResource DataContextProxy}}"
                                               CommandParameter="{Binding Code}">

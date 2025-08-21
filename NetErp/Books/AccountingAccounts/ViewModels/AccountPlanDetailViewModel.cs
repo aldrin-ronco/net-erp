@@ -24,7 +24,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         private List<string> _debitAccounts = new List<string>() { "1", "5", "6", "7" };
 
-        public IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         public Dictionary<char, string> AccountNature => Dictionaries.BooksDictionaries.AccountNatureDictionary;
 
         private AccountPlanViewModel _context;
@@ -504,10 +504,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         #region "Constructores"
 
-        public AccountPlanDetailViewModel(AccountPlanViewModel context)
+        public AccountPlanDetailViewModel(AccountPlanViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             this.Context = context;
             this.Parent = context.AccountPlanMasterViewModel;
+            this._accountingAccountService = accountingAccountService;
         }
 
         #endregion
@@ -657,7 +659,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 };
 
                 if (model is null) throw new Exception("model no puede ser null");
-                AccountingAccountGraphQLModel updatedAccount = await AccountingAccountService.Update(query, variables);
+                AccountingAccountGraphQLModel updatedAccount = await _accountingAccountService.UpdateAsync(query, variables);
                 return updatedAccount;
             }
             catch (Exception)
@@ -759,10 +761,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.data = new ExpandoObject();
                 variables.data.accountingAccounts = modelsWithOutIds;
-                ObservableCollection<AccountingAccountGraphQLModel> createdAccounts = await AccountingAccountService.CreateList(query, variables);
+                ObservableCollection<AccountingAccountGraphQLModel> createdAccounts = await _accountingAccountService.CreateListAsync(query, variables);
                 return [.. createdAccounts];
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 throw;
             }

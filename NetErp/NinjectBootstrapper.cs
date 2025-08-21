@@ -82,15 +82,13 @@ namespace NetErp
             //kernel = new StandardKernel();
             _ = kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<AccountingAccountGraphQLModel>>().To<AccountingAccountService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<AccountingEntityGraphQLModel>>().To<AccountingEntityService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingPresentationGraphQLModel>>().To<AccountingPresentationService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<IdentificationTypeGraphQLModel>>().To<IdentificationTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AccountingSourceGraphQLModel>>().To<AccountingSourceService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope(); //implementado por books, revisar 
             _ = kernel.Bind<IGenericDataAccess<AuxiliaryBookGraphQLModel>>().To<AuxiliaryBookService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<TestBalanceGraphQLModel>>().To<TestBalanceService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<DailyBookByEntityGraphQLModel>>().To<DailyBookByEntityService>().InSingletonScope();
@@ -149,10 +147,28 @@ namespace NetErp
             _ = kernel.Bind<IRepository<TaxTypeGraphQLModel>>().To<GraphQLRepository<TaxTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<WithholdingCertificateConfigGraphQLModel>>().To<GraphQLRepository<WithholdingCertificateConfigGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingAccountGroupGraphQLModel>>().To<GraphQLRepository<AccountingAccountGroupGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingAccountGraphQLModel>>().To<GraphQLRepository<AccountingAccountGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntityGraphQLModel>>().To<GraphQLRepository<AccountingEntityGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingBookGraphQLModel>>().To<GraphQLRepository<AccountingBookGraphQLModel>>().InSingletonScope();
+
+            _ = kernel.Bind<IRepository<AccountingEntryMasterGraphQLModel>>().To<GraphQLRepository<AccountingEntryMasterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryDraftMasterGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftMasterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryDraftDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftDetailGraphQLModel>>().InSingletonScope();
+
+            _ = kernel.Bind<IRepository<AccountingPresentationGraphQLModel>>().To<GraphQLRepository<AccountingPresentationGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingSourceGraphQLModel>>().To<GraphQLRepository<AccountingSourceGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<IdentificationTypeGraphQLModel>>().To<GraphQLRepository<IdentificationTypeGraphQLModel>>().InSingletonScope();
 
 
-            // Global
-            _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
+
+            
+
+
+                        // Global
+                        _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
+
             
 
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();

@@ -510,5 +510,12 @@ namespace NetErp.Books.Tax.ViewModels
                 throw;
             }
         }
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

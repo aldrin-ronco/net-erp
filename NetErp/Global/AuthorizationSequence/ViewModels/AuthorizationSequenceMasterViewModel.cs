@@ -33,6 +33,7 @@ using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
     public class AuthorizationSequenceMasterViewModel  : Screen,
+      
          IHandle<AuthorizationSequenceDeleteMessage>,
         IHandle<AuthorizationSequenceUpdateMessage>,
         IHandle<AuthorizationSequenceCreateMessage>
@@ -683,7 +684,19 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-       
+
+
+
         #endregion
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
     }
+
+    
 }

@@ -24,8 +24,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
 {
     public class AccountingSourceMasterViewModel : Screen, IHandle<AccountingSourceCreateMessage>, IHandle<AccountingSourceUpdateMessage>, IHandle<AccountingSourceDeleteMessage>
     {
-        public readonly IGenericDataAccess<AccountingSourceGraphQLModel> AccountingSourceService = IoC.Get<IGenericDataAccess<AccountingSourceGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+
+        private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         // Context
         private AccountingSourceViewModel _context;
         public AccountingSourceViewModel Context
@@ -375,7 +377,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await AccountingSourceService.GetDataContext<AccountingSourceDataContext>(query, variables);
+                var result = await _accountingSourceService.GetDataContextAsync<AccountingSourceDataContext>(query, variables);
 
                 // Detener cronometro
                 stopwatch.Stop();
@@ -405,8 +407,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public AccountingSourceMasterViewModel(AccountingSourceViewModel context)
+        public AccountingSourceMasterViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService)
         {
+            this._notificationService = notificationService;
+            this._accountingSourceService = accountingSourceService;
             this.Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ = Task.Run(() => Initialize());
@@ -486,13 +490,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 variables.filter.pagination.page = PageIndex;
                 variables.filter.pagination.pageSize = PageSize;
 
-                var source = await AccountingSourceService.GetPage(query, variables);
+                var source = await _accountingSourceService.GetPageAsync(query, variables);
 
                 // Detener cronometro
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                this.TotalCount = source.PageResponse.Count;
-                this.AccountingSources = this.Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(source.PageResponse.Rows);
+                this.TotalCount = source.Count;
+                this.AccountingSources = this.Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(source.Rows);
 
 
                 this.IsBusy = false;
@@ -544,7 +548,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                await this.Context.ActivateDetailViewForEdit(this.SelectedAccountingSource);
+                await this.Context.ActivateDetailViewForEditAsync(this.SelectedAccountingSource);
             }
             catch (Exception ex)
             {
@@ -573,7 +577,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task ExecuteCreateSource()
         {
-            await Context.ActivateDetailViewForNew();
+            await Context.ActivateDetailViewForNewAsync();
         }
 
         public async Task DeleteSource()
@@ -594,7 +598,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await AccountingSourceService.CanDelete(query, variables);
+                var validation = await _accountingSourceService.CanDeleteAsync(query, variables);
                 if (validation.CanDelete)
                 {
                     this.IsBusy = false;
@@ -670,7 +674,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 };
 
                 // Eliminar registros
-                var accountingSourceDeleted = await AccountingSourceService.Delete(query, variables);
+                var accountingSourceDeleted = await _accountingSourceService.DeleteAsync(query, variables);
                 return accountingSourceDeleted;
             }
             catch (Exception)

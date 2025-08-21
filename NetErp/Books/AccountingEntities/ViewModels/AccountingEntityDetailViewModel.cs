@@ -38,8 +38,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public readonly IGenericDataAccess<CountryGraphQLModel> CountryService = IoC.Get<IGenericDataAccess<CountryGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
-
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         Dictionary<string, List<string>> _errors;
 
         #region Commands
@@ -863,10 +863,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public AccountingEntityDetailViewModel(AccountingEntityViewModel context)
+        public AccountingEntityDetailViewModel(AccountingEntityViewModel context, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+
+            _accountingEntityService = accountingEntityService;
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
@@ -982,7 +984,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public bool CanAddEmail => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(EmailDescription) && Email.IsValidEmail();
 
 
-        public async Task<IGenericDataAccess<AccountingEntityGraphQLModel>.PageResponseType> LoadPage()
+        public async Task<PageResult<AccountingEntityGraphQLModel>> LoadPage()
         {
             string queryForPage;
             queryForPage = @"
@@ -1030,7 +1032,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                         }
                     }
                  }";
-            return await AccountingEntityService.GetPage(queryForPage, new object { });
+            return await _accountingEntityService.GetPageAsync(queryForPage, new object { });
         }
         public async Task Save()
         { 
@@ -1167,7 +1169,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 					  }
 					}";
                     
-                    var createdAccountingEntity = await AccountingEntityService.Create(query, variables);
+                    var createdAccountingEntity = await _accountingEntityService.CreateAsync(query, variables);
                     return createdAccountingEntity;
                 }
                 else
@@ -1215,7 +1217,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 						}
 					  }
 					}";
-                    var updatedAccountingEntity = await AccountingEntityService.Update(query, variables);
+                    var updatedAccountingEntity = await _accountingEntityService.UpdateAsync(query, variables);
                     return updatedAccountingEntity;
                 }
             }

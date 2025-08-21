@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Interfaces;
 using Models.Books;
 using NetErp.Books.AccountingEntities.ViewModels;
 using System;
@@ -14,20 +15,26 @@ namespace NetErp.Books.AccountingBooks.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService;
         private AccountingBookMasterViewModel _accountingBookMasterViewModel;
         private AccountingBookMasterViewModel AccountingBookMasterViewModel
         {
             get
             {
-                if (_accountingBookMasterViewModel is null) _accountingBookMasterViewModel = new AccountingBookMasterViewModel(this);
+                if (_accountingBookMasterViewModel is null) _accountingBookMasterViewModel = new AccountingBookMasterViewModel(this, _notificationService, _accountingBookService);
                 return _accountingBookMasterViewModel;
 
             }
         }
-        public AccountingBookViewModel(IMapper mapper, IEventAggregator eventAggregator)
+        public AccountingBookViewModel(IMapper mapper, IEventAggregator eventAggregator, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingBookGraphQLModel> accountingBookService)
         {
+            _accountingBookService = accountingBookService;
+            _notificationService = notificationService;
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
+
             _ = Task.Run(ActivateMasterView);
         }
 
@@ -46,7 +53,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             try
             {
-                AccountingBookDetailViewModel instance = new(this);
+                AccountingBookDetailViewModel instance = new(this, _accountingBookService);
                 instance.AccountingBookId = accountingBook.Id;
                 instance.AccountingBookName = accountingBook.Name;
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -60,7 +67,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             try
             {
-                AccountingBookDetailViewModel instance = new(this);
+                AccountingBookDetailViewModel instance = new(this, _accountingBookService);
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

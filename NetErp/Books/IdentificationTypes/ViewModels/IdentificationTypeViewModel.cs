@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Interfaces;
 using Models.Books;
+using Services.Books.DAL.PostgreSQL;
 using System.Threading.Tasks;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
@@ -10,11 +12,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         // MasterViewModel
         private IdentificationTypeMasterViewModel _identificationTypeMasterViewModel;
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         public IdentificationTypeMasterViewModel IdentificationTypeMasterViewModel
         {
             get
             {
-                if (_identificationTypeMasterViewModel == null) this._identificationTypeMasterViewModel = new IdentificationTypeMasterViewModel(this);
+                if (_identificationTypeMasterViewModel == null) this._identificationTypeMasterViewModel = new IdentificationTypeMasterViewModel(this, _identificationTypeService, _notificationService);
                 return this._identificationTypeMasterViewModel;
             }
         }
@@ -24,28 +28,30 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         public IEventAggregator EventAggregator { get; set; }
 
         public IdentificationTypeViewModel(IMapper mapper,
-                                 IEventAggregator eventAggregator)
+                                 IEventAggregator eventAggregator, IRepository<IdentificationTypeGraphQLModel> identificationTypeService, Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
+            this._identificationTypeService = identificationTypeService;
+            this._notificationService = notificationService;
             AutoMapper = mapper;
-            Task.Run(() => this.ActivateMasterView());
+           _= this.ActivateMasterViewAsync();
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             await ActivateItemAsync(this.IdentificationTypeMasterViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
-            IdentificationTypeDetailViewModel instance = new(this);
+            IdentificationTypeDetailViewModel instance = new(this, _identificationTypeService);
             instance.CleanUpControlsForNew();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEdit(IdentificationTypeGraphQLModel model)
+        public async Task ActivateDetailViewForEditAsync(IdentificationTypeGraphQLModel model)
         {
-            IdentificationTypeDetailViewModel instance = new(this);
+            IdentificationTypeDetailViewModel instance = new(this, _identificationTypeService);
             App.Current.Dispatcher.Invoke(() =>
             {
                 instance.Id = model.Id;

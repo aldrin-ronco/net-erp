@@ -16,6 +16,8 @@ using System.Threading;
 using Caliburn.Micro;
 using NetErp.Books.AccountingAccounts.DTO;
 using Common.Helpers;
+using Common.Validators;
+using Models.Billing;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
@@ -25,8 +27,9 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         #region "Propiedades"
 
         public List<AccountingAccountGraphQLModel> accounts = [];
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-        public readonly IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
         private AccountPlanViewModel _context;
 
@@ -78,7 +81,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         #endregion
 
         #region "Constructores"
-        public AccountPlanMasterViewModel(AccountPlanViewModel context)
+        public AccountPlanMasterViewModel(AccountPlanViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             try
             {
@@ -86,6 +90,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 Messenger.Default.Register<AccountingAccountUpdateMessage>(this, OnAccountingAccountUpdateMessage);
                 Messenger.Default.Register<AccountingAccountDeleteMessage>(this, OnAccountingAccountDeleteMessage);
                 this.Context = context;
+                this._accountingAccountService = accountingAccountService;
+                this._notificationService = notificationService;
             }
             catch (Exception ex)
             {
@@ -333,7 +339,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             return accountsDTO;
         }
 
-        public async Task DeleteAccountFromAccountsDTO(string code)
+        public async Task DeleteAccountFromAccountsDTOAsync(string code)
         {
             try
             {
@@ -384,7 +390,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         nature
                       }
                     }";
-                        await this.AccountingAccountService.Delete(query, new { Lv1.Id });
+                        await this._accountingAccountService.DeleteAsync(query, new { Lv1.Id });
                     });
                 }
                 else
@@ -431,7 +437,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountFromAccountsDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
-        public async Task<AccountingAccountGraphQLModel> ExecuteDelete(int id)
+        public async Task<AccountingAccountGraphQLModel> ExecuteDeleteAsync(int id)
         {
             try
             {
@@ -452,7 +458,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     Id = (int)id
                 };
 
-                var deletedAccountingAccount = await AccountingAccountService.Delete(query, variables);
+                var deletedAccountingAccount = await _accountingAccountService.DeleteAsync(query, variables);
                 RemoveAccountInMemory(accounts, (int)id);
 
                 return deletedAccountingAccount;
@@ -487,7 +493,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }"
 ;
                 // Loading Data 
-                var result = await this.AccountingAccountService.GetList(query, new object());
+                var result = await this._accountingAccountService.GetListAsync(query, new object());
                 accounts = new List<AccountingAccountGraphQLModel>(result);
                 this.AccountingAccounts = PopulateAccountingAccountDTO(accounts);
 
@@ -524,7 +530,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // TODO parameter type revision
         [Command]
-        public async Task Create(object parameter)
+        public async Task CreateAsync(object parameter)
         {
             await Context.ActivateDetailViewModel("");
         }
@@ -535,7 +541,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
         [Command]
-        public async Task Edit(object code)
+        public async Task EditAsync(object code)
         {
             //TODO edit wait indicator
             this.IsBusy = true;
@@ -565,7 +571,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 object variables = new {  Id = (int)id };
 
-                var validation = await this.AccountingAccountService.CanDelete(query, variables);
+                var validation = await this._accountingAccountService.CanDeleteAsync(query, variables);
 
                 this.IsBusy = false;
 
@@ -582,7 +588,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
 
                 this.IsBusy = true;
-                var deletedAccountingAccount = await Task.Run(() => this.ExecuteDelete((int)id));
+                var deletedAccountingAccount = await Task.Run(() => this.ExecuteDeleteAsync((int)id));
                 Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = deletedAccountingAccount });    
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -691,7 +697,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 IsBusy = true;
-                await DeleteAccountFromAccountsDTO(message.DeletedAccountingAccount.Code);
+                await DeleteAccountFromAccountsDTOAsync(message.DeletedAccountingAccount.Code);
                 _notificationService.ShowSuccess("Cuenta contable eliminada exitosamente");
             }
             catch (AsyncException ex)
