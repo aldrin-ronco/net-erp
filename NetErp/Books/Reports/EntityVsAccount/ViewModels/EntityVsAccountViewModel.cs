@@ -19,6 +19,11 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
 {
     public class EntityVsAccountViewModel : Conductor<IScreen>.Collection.OneActive
     {
+        //
+
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IRepository<EntityVsAccountGraphQLModel> _entityVsAccountService;
+
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
         public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations
@@ -94,20 +99,20 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
             }
         }
 
-        //
-        public readonly IGenericDataAccess<EntityVsAccountGraphQLModel> EntityVsAccountService = IoC.Get<IGenericDataAccess<EntityVsAccountGraphQLModel>>();
-
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
+        
         public EntityVsAccountReportViewModel EntityVsAccountReportViewModel { get; set; }
 
-        public EntityVsAccountViewModel()
+        public EntityVsAccountViewModel(IRepository<AccountingEntityGraphQLModel> accountingEntityService, IRepository<EntityVsAccountGraphQLModel> entityVsAccountService)
         {
+            this._accountingEntityService = accountingEntityService;
+            this._entityVsAccountService = entityVsAccountService;
             try
             {
-                this.EntityVsAccountReportViewModel = new EntityVsAccountReportViewModel(this);
+                this.EntityVsAccountReportViewModel = new EntityVsAccountReportViewModel(this, this._accountingEntityService, this._entityVsAccountService);
                 var joinable = new JoinableTaskFactory(new JoinableTaskContext());
                 joinable.Run(async () => await Initialize());
-                Task.Run(() => ActivateReportView());
+
+               _= ActivateReportView();
             }
             catch (Exception)
             {
@@ -157,7 +162,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 variables.AccountingAccountFilter.Code = new ExpandoObject();
                 variables.AccountingAccountFilter.Code.@operator = new List<string> { "length", ">=" };
                 variables.AccountingAccountFilter.Code.value = 8;
-                var dataContext = await this.EntityVsAccountService.GetDataContext<EntityVsAccountDataContext>(query, variables);
+                var dataContext = await this._entityVsAccountService.GetDataContextAsync<EntityVsAccountDataContext>(query, variables);
                 if (dataContext != null)
                 {
                     this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);

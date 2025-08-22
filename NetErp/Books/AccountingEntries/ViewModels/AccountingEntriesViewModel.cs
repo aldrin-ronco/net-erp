@@ -22,14 +22,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesViewModel : Conductor<Screen>.Collection.OneActive
     {
 
-
-
-
-
-
-
-
-        
+  
         public readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         public readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         public readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;

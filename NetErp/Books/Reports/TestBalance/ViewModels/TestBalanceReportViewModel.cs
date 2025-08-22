@@ -25,6 +25,8 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
 {
     public class TestBalanceReportViewModel : Screen
     {
+        private readonly IRepository<TestBalanceGraphQLModel> _testBalanceService;
+
         public TestBalanceViewModel Context { get; set; }
 
         #region Command's
@@ -72,7 +74,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
 
         private async void ExecutePaginationChangeIndex(object parameter)
         {
-            await Task.Run(() => this.Search());
+            await Task.Run(() => this.SearchAsync());
         }
         private bool CanExecutePaginationChangeIndex(object parameter)
         {
@@ -234,10 +236,11 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
 
         #region Constructor
 
-        public TestBalanceReportViewModel(TestBalanceViewModel context)
+        public TestBalanceReportViewModel(TestBalanceViewModel context, IRepository<TestBalanceGraphQLModel> testBalanceService)
         {
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
+            _testBalanceService = testBalanceService;
         }
 
         #endregion
@@ -250,7 +253,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -273,8 +276,8 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<TestBalanceGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<TestBalanceGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -293,7 +296,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<TestBalanceGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<TestBalanceGraphQLModel>> ExecuteSearch()
         {
             try
             {
@@ -326,7 +329,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
                 variables.filter.EndDate = Helpers.DateTimeHelper.DateTimeKindUTC(FinalDate);
                 variables.filter.CostCentersIds = costCentersIds;
                 variables.filter.Level = Level;
-                var testBalancePage = await this.Context.TestBalanceService.GetPage(query, variables);
+                var testBalancePage = await this._testBalanceService.GetPageAsync(query, variables);
                 return testBalancePage;
             }
             catch (Exception)

@@ -25,6 +25,9 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
 {
     public class DailyBookByEntityReportViewModel : Screen
     {
+        private readonly IRepository<DailyBookByEntityGraphQLModel> _dailyBookService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+
         public DailyBookByEntityViewModel Context { get; set; }
 
         #region Properties
@@ -285,7 +288,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -308,8 +311,8 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<DailyBookByEntityGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<DailyBookByEntityGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -328,7 +331,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<DailyBookByEntityGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<DailyBookByEntityGraphQLModel>> ExecuteSearch()
         {
             try
             {
@@ -377,7 +380,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                var dailyBookPage = await this.Context.DailyBookService.GetPage(query, variables);
+                var dailyBookPage = await this._dailyBookService.GetPageAsync(query, variables);
                 return dailyBookPage;
             }
             catch (Exception)
@@ -448,7 +451,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 variables.filter.searchName = new ExpandoObject();
                 variables.filter.searchName.@operator = "like";    
                 variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                IEnumerable<AccountingEntityGraphQLModel> accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
+                IEnumerable<AccountingEntityGraphQLModel> accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
                 AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                 App.Current.Dispatcher.Invoke(() =>
                 {
@@ -469,8 +472,9 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
 
         #endregion
 
-        public DailyBookByEntityReportViewModel(DailyBookByEntityViewModel context)
+        public DailyBookByEntityReportViewModel(DailyBookByEntityViewModel context, IRepository<DailyBookByEntityGraphQLModel> dailyBookService, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
+            this._dailyBookService = dailyBookService;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
@@ -593,7 +597,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
         {
             try
             {
-                await Task.Run(() => this.Search());
+                await Task.Run(() => this.SearchAsync());
             }
             catch (Exception ex)
             {

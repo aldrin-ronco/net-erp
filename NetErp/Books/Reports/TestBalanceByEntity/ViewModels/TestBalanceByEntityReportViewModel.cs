@@ -26,6 +26,10 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
     public class TestBalanceByEntityReportViewModel : Screen, INotifyDataErrorInfo
     {
         public TestBalanceByEntityViewModel Context { get; set; }
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+
+        private readonly IRepository<TestBalanceByEntityGraphQLModel> _testBalanceByEntityService;
+
 
         #region Command's
 
@@ -72,7 +76,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
 
         private async void ExecutePaginationChangeIndex(object parameter)
         {
-            await Task.Run(() => this.Search());
+            await Task.Run(() => this.SearchAsync());
         }
 
         private bool CanExecutePaginationChangeIndex(object parameter)
@@ -366,8 +370,10 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
 
         #region Constructor
 
-        public TestBalanceByEntityReportViewModel(TestBalanceByEntityViewModel context)
+        public TestBalanceByEntityReportViewModel(TestBalanceByEntityViewModel context, IRepository<TestBalanceByEntityGraphQLModel> testBalanceByEntityService, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
+            this._accountingEntityService = accountingEntityService;
+            this._testBalanceByEntityService = testBalanceByEntityService;
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
         }
@@ -386,7 +392,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
                 if (this.IsFilterSearchAccountinEntityOnEditMode)
                 {
                     this.IsFilterSearchAccountinEntityOnEditMode = false;
-                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatch());
+                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatchAsync());
                     App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(SelectedAccountingEntityId)));
                 }
                 else
@@ -411,7 +417,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
             }
         }
 
-        public async Task ExecuteSearchForAccountingEntityMatch()
+        public async Task ExecuteSearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -438,7 +444,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
                 variables.filter.searchName = new ExpandoObject();
                 variables.filter.searchName.@operator = "like";
                 variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                var accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
+                var accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
                 this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                 App.Current.Dispatcher.Invoke(() =>
                 {
@@ -468,7 +474,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -491,8 +497,8 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<TestBalanceByEntityGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<TestBalanceByEntityGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -511,7 +517,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<TestBalanceByEntityGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<TestBalanceByEntityGraphQLModel>> ExecuteSearch()
         {
             try
             {
@@ -558,7 +564,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.AccountingCodeStart = accountingCodeStart;
                 variables.filter.AccountingCodeEnd = accountingCodeEnd;
-                var testBalanceByEntityPage = await this.Context.TestBalanceByEntityService.GetPage(query, variables);
+                var testBalanceByEntityPage = await this._testBalanceByEntityService.GetPageAsync(query, variables);
                 return testBalanceByEntityPage;
             }
             catch (Exception)

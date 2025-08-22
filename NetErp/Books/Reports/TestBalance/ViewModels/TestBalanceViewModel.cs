@@ -17,7 +17,8 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
     {
         public TestBalanceReportViewModel TestBalanceReportViewModel { get; set; }
 
-        public readonly IGenericDataAccess<TestBalanceGraphQLModel> TestBalanceService = IoC.Get<IGenericDataAccess<TestBalanceGraphQLModel>>();
+        private readonly IRepository<TestBalanceGraphQLModel> _testBalanceService;
+
 
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
@@ -49,11 +50,12 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             }
         }
 
-        public TestBalanceViewModel()
+        public TestBalanceViewModel(IRepository<TestBalanceGraphQLModel> testBalanceService)
         {
+            this._testBalanceService = testBalanceService;
             try
             {
-                this.TestBalanceReportViewModel = new TestBalanceReportViewModel(this);
+                this.TestBalanceReportViewModel = new TestBalanceReportViewModel(this, testBalanceService);
                 var joinable = new JoinableTaskFactory(new JoinableTaskContext());
                 joinable.Run(async () => await Initialize());
                 _ = Task.Run(() => ActivateReportView());
@@ -85,7 +87,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
                     }
                 }";
 
-                var dataContext = await this.TestBalanceService.GetDataContext<TestBalanceDataContext>(query, new { });
+                var dataContext = await this._testBalanceService.GetDataContextAsync<TestBalanceDataContext>(query, new { });
                 if (dataContext != null)
                 {
                     this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);

@@ -25,6 +25,8 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
 {
     public class EntityVsAccountReportViewModel : Screen, INotifyDataErrorInfo
     {
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IRepository<EntityVsAccountGraphQLModel> _entityVsAccountService;
 
         public EntityVsAccountViewModel Context { get; set; }
 
@@ -73,7 +75,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
 
         private async void ExecutePaginationChangeIndex(object parameter)
         {
-            await Task.Run(() => this.Search());
+            await Task.Run(() => this.SearchAsync());
         }
         private bool CanExecutePaginationChangeIndex(object parameter)
         {
@@ -376,7 +378,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 if (this.IsFilterSearchAccountinEntityOnEditMode)
                 {
                     this.IsFilterSearchAccountinEntityOnEditMode = false;
-                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatch());
+                     _= this.ExecuteSearchForAccountingEntityMatchAsync();
                     App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(SelectedAccountingEntityId)));
                 }
                 else
@@ -401,7 +403,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
             }
         }
 
-        public async Task ExecuteSearchForAccountingEntityMatch()
+        public async Task ExecuteSearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -427,7 +429,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 variables.filter.searchName = new ExpandoObject();
                 variables.filter.searchName.@operator = "like";
                 variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                var accountingEntities = await this.Context.AccountingEntityService.GetList(query, variables);
+                var accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
                 this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
 
                 App.Current.Dispatcher.Invoke(() =>
@@ -459,7 +461,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -475,15 +477,15 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await Task.Run(() => ExecuteSearch());
+                var result = await Task.Run(() => ExecuteSearchAsync());
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<EntityVsAccountGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<EntityVsAccountGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -502,7 +504,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<EntityVsAccountGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<EntityVsAccountGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -554,7 +556,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
                 variables.filter.AccountingCodeEnd = accountingCodeEnd;
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                var entityVsAccountsPage = await this.Context.EntityVsAccountService.GetPage(query, variables);
+                var entityVsAccountsPage = await this._entityVsAccountService.GetPageAsync(query, variables);
                 return entityVsAccountsPage;
             }
             catch (Exception)
@@ -568,8 +570,10 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
 
         #region Constructor
 
-        public EntityVsAccountReportViewModel(EntityVsAccountViewModel context)
+        public EntityVsAccountReportViewModel(EntityVsAccountViewModel context, IRepository<AccountingEntityGraphQLModel> accountingEntityService, IRepository<EntityVsAccountGraphQLModel> entityVsAccountService)
         {
+            this._accountingEntityService = accountingEntityService;
+            this._entityVsAccountService = entityVsAccountService;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;

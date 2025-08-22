@@ -16,7 +16,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 {
     public class AuxiliaryBookViewModel : Conductor<Screen>.Collection.OneActive
     {
-        public readonly IGenericDataAccess<AuxiliaryBookGraphQLModel> AuxiliaryBookService = IoC.Get<IGenericDataAccess<AuxiliaryBookGraphQLModel>>();
+         private readonly IRepository<AuxiliaryBookGraphQLModel> _auxiliaryBookService;
+
 
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
@@ -93,7 +94,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             }
         }
 
-        private async Task Initialize()
+        private async Task InitializeAsync()
         {
             string query = @"
             query ($accountingAccountFilter: AccountingAccountFilterInput, $accountingSourceFilter:AccountingSourceFilterInput ) {
@@ -125,7 +126,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             variables.AccountingAccountFilter.Code = new ExpandoObject();
             variables.AccountingAccountFilter.Code.@operator = new List<string>() { "length", ">=" };
             variables.AccountingAccountFilter.Code.value = 8;
-            var dataContext = await AuxiliaryBookService.GetDataContext<AuxiliaryBookDataContext>(query, variables);
+            var dataContext = await _auxiliaryBookService.GetDataContextAsync<AuxiliaryBookDataContext>(query, variables);
             if (dataContext != null)
             {
                 this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);
@@ -149,14 +150,15 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         public AuxiliaryBookReportViewModel AuxiliaryBookResportViewModel { get; set; }
 
-        public AuxiliaryBookViewModel()
+        public AuxiliaryBookViewModel(IRepository<AuxiliaryBookGraphQLModel> auxiliaryBookService)
         {
             try
             {
-                AuxiliaryBookResportViewModel = new AuxiliaryBookReportViewModel(this);
+                this._auxiliaryBookService = auxiliaryBookService;
+                AuxiliaryBookResportViewModel = new AuxiliaryBookReportViewModel(this, this._auxiliaryBookService);
                 var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-                joinable.Run(async () => await Initialize());
-                _ = Task.Run(() => ActivateReportView());
+                joinable.Run(async () => await InitializeAsync());
+                _ = Task.Run(() => ActivateReportViewAsync());
             }
             catch (Exception)
             {
@@ -164,7 +166,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             }
         }
 
-        public async Task ActivateReportView()
+        public async Task ActivateReportViewAsync()
         {
             await ActivateItemAsync(this.AuxiliaryBookResportViewModel, new System.Threading.CancellationToken());
         }

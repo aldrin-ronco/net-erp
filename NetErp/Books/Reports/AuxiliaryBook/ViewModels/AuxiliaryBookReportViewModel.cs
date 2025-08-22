@@ -26,6 +26,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 {
     public class AuxiliaryBookReportViewModel : Screen, INotifyDataErrorInfo
     {
+        private readonly IRepository<AuxiliaryBookGraphQLModel> _auxiliaryBookService;
 
         #region Command's
 
@@ -65,7 +66,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         private async void ExecutePaginationChangeIndex(object parameter)
         {
-            await Task.Run(() => this.Search());
+            await Task.Run(() => this.SearchAsync());
         }
         private bool CanExecutePaginationChangeIndex(object parameter)
         {
@@ -277,11 +278,11 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         #region Constructor
 
-        public AuxiliaryBookReportViewModel(AuxiliaryBookViewModel context)
+        public AuxiliaryBookReportViewModel(AuxiliaryBookViewModel context, IRepository<AuxiliaryBookGraphQLModel> auxiliaryBookService)
         {
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
-
+            this._auxiliaryBookService = auxiliaryBookService;
             this.Context = context;
         }
 
@@ -299,7 +300,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             return true;
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -315,15 +316,15 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await ExecuteSearch();
+                var result = await ExecuteSearchAsync();
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<AuxiliaryBookGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<AuxiliaryBookGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -342,7 +343,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<AuxiliaryBookGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<AuxiliaryBookGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -386,7 +387,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.AccountingCodeStart = accountingCodeStart;
                 variables.filter.AccountingCodeEnd = accountingCodeEnd;
-                var auxiliaryBookPage = await this.Context.AuxiliaryBookService.GetPage(query, variables);
+                var auxiliaryBookPage = await this._auxiliaryBookService.GetPageAsync(query, variables);
                 return auxiliaryBookPage;
             }
             catch (Exception)

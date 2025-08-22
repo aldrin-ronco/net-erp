@@ -19,8 +19,9 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
     public class DailyBookByEntityViewModel : Conductor<IScreen>.Collection.OneActive
     {
         public DailyBookByEntityReportViewModel DailyBookReportViewModel { get; set; }
-        public readonly IGenericDataAccess<DailyBookByEntityGraphQLModel> DailyBookService = IoC.Get<IGenericDataAccess<DailyBookByEntityGraphQLModel>>();
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
+
+        private readonly IRepository<DailyBookByEntityGraphQLModel> _dailyBookService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
@@ -68,20 +69,23 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
         }
 
 
-        public DailyBookByEntityViewModel()
+        public DailyBookByEntityViewModel(IRepository<DailyBookByEntityGraphQLModel> dailyBookService, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
-            DailyBookReportViewModel = new DailyBookByEntityReportViewModel(this);
+            this._dailyBookService = dailyBookService;
+            this._accountingEntityService = accountingEntityService;
+
+            DailyBookReportViewModel = new DailyBookByEntityReportViewModel(this, this._dailyBookService, this._accountingEntityService);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
-            Task.Run(() => ActivateReportView());
+            _= InitializeAsync();
+            _= ActivateReportViewAsync();
         }
 
-        public async Task ActivateReportView()
+        public async Task ActivateReportViewAsync()
         {
             await ActivateItemAsync(DailyBookReportViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -106,7 +110,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 variables.AccountingSourceFilter.Annulment = new ExpandoObject();
                 variables.AccountingSourceFilter.Annulment.@operator = "=";
                 variables.AccountingSourceFilter.Annulment.value = false;
-                var dataContext = await this.DailyBookService.GetDataContext<DailyBookDataContext>(query, variables);
+                var dataContext = await this._dailyBookService.GetDataContextAsync<DailyBookDataContext>(query, variables);
                 if (dataContext != null)
                 {
                     this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);

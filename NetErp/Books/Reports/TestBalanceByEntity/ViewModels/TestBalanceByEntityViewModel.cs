@@ -21,9 +21,10 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
     {
         public TestBalanceByEntityReportViewModel TestBalanceByEntityReportViewModel { get; set; }
 
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
-        public readonly IGenericDataAccess<TestBalanceByEntityGraphQLModel> TestBalanceByEntityService = IoC.Get<IGenericDataAccess<TestBalanceByEntityGraphQLModel>>();
+        private readonly IRepository<TestBalanceByEntityGraphQLModel> _testBalanceByEntityService;
+
 
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
@@ -100,14 +101,16 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
             }
         }
 
-        public TestBalanceByEntityViewModel()
+        public TestBalanceByEntityViewModel(IRepository<TestBalanceByEntityGraphQLModel> testBalanceByEntityService, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
+            this._accountingEntityService = accountingEntityService;
+            this._testBalanceByEntityService = testBalanceByEntityService;
             try
             {
-                this.TestBalanceByEntityReportViewModel = new TestBalanceByEntityReportViewModel(this);
+                this.TestBalanceByEntityReportViewModel = new TestBalanceByEntityReportViewModel(this, _testBalanceByEntityService, _accountingEntityService);
                 var joinable = new JoinableTaskFactory(new JoinableTaskContext());
                 joinable.Run(async () => await Initialize());
-                Task.Run(() => ActivateReportView());
+                _= ActivateReportView();
             }
             catch (Exception)
             {
@@ -155,7 +158,7 @@ namespace NetErp.Books.Reports.TestBalanceByEntity.ViewModels
                 variables.AccountingAccountFilter.Code = new ExpandoObject();
                 variables.AccountingAccountFilter.Code.@operator = new List<string> { "length", ">=" };
                 variables.AccountingAccountFilter.Code.value = 8;
-                var dataContext = await this.TestBalanceByEntityService.GetDataContext<TestBalanceByEntityDataContext>(query, variables);
+                var dataContext = await this._testBalanceByEntityService.GetDataContextAsync<TestBalanceByEntityDataContext>(query, variables);
                 if (dataContext != null)
                 {
                     this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);
