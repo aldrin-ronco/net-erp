@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
@@ -21,6 +22,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesDocumentPreviewViewModel : Screen
     {
         private IEventAggregator _eventAggregator;
+        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+
 
         private ObservableCollection<AccountingEntryDetailGraphQLModel> _accountingEntries;
 
@@ -209,7 +213,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await this.Context._accountingEntryMasterService.FindByIdAsync(query, variables);
+                var result = await this._accountingEntryMasterService.FindByIdAsync(query, variables);
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -225,10 +229,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry)
+        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService)
         {
             this.Context = context;
+            this._accountingEntryMasterService = accountingEntryMasterService;
             this.SelectedAccountingEntry = selectedAccountingEntry;
+            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
 
             // Mensajes
             this._eventAggregator = IoC.Get<IEventAggregator>();
@@ -236,6 +242,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
+           
         }
 
         // Print
@@ -334,7 +341,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     }
                 };
 
-                var result = await this.Context._accountingEntryMasterService.UpdateAsync(query, variables);
+                var result = await this._accountingEntryMasterService.UpdateAsync(query, variables);
 
                 return result;
             }
@@ -388,7 +395,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     MasterIds = new List<BigInteger>() { this.SelectedAccountingEntry.Id }
                 };
-                var result = await this.Context._accountingEntryMasterService.GetDataContextAsync<BulkDeleteAccountingEntryMaster>(query, variables);
+                var result = await this._accountingEntryMasterService.GetDataContextAsync<BulkDeleteAccountingEntryMaster>(query, variables);
                 return result.Count;
             }
             catch (Exception)
@@ -508,7 +515,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     {
                         MasterId = this.SelectedAccountingEntryMaster.Id
                     };
-                    var result = await this.Context._accountingEntryDraftMasterService.CreateAsync(query, variables);
+                    var result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
                     return result;
                 }
                 else
@@ -542,7 +549,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                         this.SelectedAccountingEntry.DraftMasterId
                     };
 
-                    var result = await this.Context._accountingEntryDraftMasterService.FindByIdAsync(query, variables);
+                    var result = await this._accountingEntryDraftMasterService.FindByIdAsync(query, variables);
                     return result;
                 }
 

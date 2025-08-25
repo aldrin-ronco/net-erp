@@ -26,6 +26,7 @@ using DevExpress.Mvvm;
 using DevExpress.Data.Filtering;
 using NetErp.Billing.PriceList.ViewModels;
 using NetErp.Books.AccountingEntries.DTO;
+using Common.Interfaces;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
 {
@@ -38,6 +39,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     {
         Dictionary<string, List<string>> _errors;
         private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+
+
+
+
         #region Propiedades
 
         // Context
@@ -451,7 +461,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_publishAccountingEntryCommand is null) _publishAccountingEntryCommand = new AsyncCommand(PublishAccountingEntry, CanPublishAccountingEntry);
+                if (_publishAccountingEntryCommand is null) _publishAccountingEntryCommand = new AsyncCommand(PublishAccountingEntryAsync, CanPublishAccountingEntry);
                 return _publishAccountingEntryCommand;
             }
         }
@@ -463,7 +473,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_deleteAccountingEntriesCommand is null) _deleteAccountingEntriesCommand = new AsyncCommand(DeleteAccountingEntries, CanDeleteAccountingEntries);
+                if (_deleteAccountingEntriesCommand is null) _deleteAccountingEntriesCommand = new AsyncCommand(DeleteAccountingEntriesAsync, CanDeleteAccountingEntries);
                 return _deleteAccountingEntriesCommand;
             }
         }
@@ -472,7 +482,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         #region Metodos
 
-        public async Task PublishAccountingEntry()
+        public async Task PublishAccountingEntryAsync()
         {
             try
             {
@@ -481,7 +491,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 this.IsBusy = true;
                 this.Refresh();
-                var createdEntry = await this.ExecutePublishAccountingEntry();
+                var createdEntry = await this.ExecutePublishAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(createdEntry);
                 if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDraftMasterDeleteMessage { Id = this.DraftMasterId });
                 if (createdEntry != null)
@@ -505,7 +515,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryMasterGraphQLModel> ExecutePublishAccountingEntry()
+        public async Task<AccountingEntryMasterGraphQLModel> ExecutePublishAccountingEntryAsync()
         {
             AccountingEntryMasterGraphQLModel entry = null;
             object variables = new
@@ -541,7 +551,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                         description    
                       }
                     }";
-                    entry = await this.Context._accountingEntryMasterService.CreateAsync(query, variables);
+                    entry = await this._accountingEntryMasterService.CreateAsync(query, variables);
                 }
                 else
                 {
@@ -569,7 +579,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                         createdAt
                       }
                     }";
-                    entry = await this.Context._accountingEntryMasterService.UpdateAsync(query, variables);
+                    entry = await this._accountingEntryMasterService.UpdateAsync(query, variables);
                 }
             }
             catch (Exception)
@@ -633,7 +643,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 variables.Data.Credit = SelectedAccountingEntryDraftDetail.Credit;
                 variables.Data.Base = SelectedAccountingEntryDraftDetail.Base;
 
-                AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this.Context._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
+                AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
                 // Actualizo el registro en la lista
                 var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
                 if (entryToUpdate != null)
@@ -658,7 +668,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     this.DraftMasterId
                 };
-                var result = await this.Context._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
+                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
                 this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
                 this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
                 this.IsBusy = false;
@@ -696,7 +706,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             NotifyOfPropertyChange(() => CanDeleteAccountingEntries);
         }
 
-        public async Task DeleteAccountingEntries()
+        public async Task DeleteAccountingEntriesAsync()
         {
             try
             {
@@ -722,7 +732,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     Ids = ids
                 };
 
-                var response = await this.Context._accountingEntryDraftDetailService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
+                var response = await this._accountingEntryDraftDetailService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
 
                 if(!response.Data.Success)
                 {
@@ -743,7 +753,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     this.DraftMasterId
                 };
 
-                var result = await this.Context._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
+                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
 
                 this.IsBusy = false;
 
@@ -793,7 +803,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 if (this.IsFilterSearchAccountinEntityOnEditMode)
                 {
-                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatch());
+                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatchAsync());
                     App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(SelectedAccountingEntityOnEntryId)));
                 }
                 else
@@ -847,7 +857,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     variables.AccountingAccountFilter.Code = new ExpandoObject();
                     variables.AccountingAccountFilter.Code.@operator = new List<string>() { "length", ">=" };
                     variables.AccountingAccountFilter.Code.value = 8;
-                    var result = await this.Context._accountingAccountService.GetListAsync(query, variables);
+                    var result = await this._accountingAccountService.GetListAsync(query, variables);
                     this.Context.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result);
                 }
             }
@@ -866,14 +876,25 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context)
+        public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context, 
+            IRepository<AccountingEntryMasterGraphQLModel>accountingEntryMasterService, 
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             this.Context = context;
+            this._accountingEntryMasterService = accountingEntryMasterService;
+            this._accountingEntityService = accountingEntityService;
+            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
+            this._accountingAccountService = accountingAccountService;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
+            
         }
 
-        public async Task ExecuteSearchForAccountingEntityMatch()
+        public async Task ExecuteSearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -900,7 +921,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 variables.filter.searchName = new ExpandoObject();
                 variables.filter.searchName.@operator = "like";
                 variables.filter.searchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                var accountingEntities = await this.Context._accountingEntityService.GetListAsync(query, variables);
+                var accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
                 this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                 App.Current.Dispatcher.Invoke(() =>
                 {
@@ -962,7 +983,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     },
                     _ => new { },
                 };
-                var result = await this.Context._accountingEntryDraftMasterService.UpdateAsync(query, variables);
+                var result = await this._accountingEntryDraftMasterService.UpdateAsync(query, variables);
                 var message = new AccountingEntryDraftMasterUpdateMessage() { UpdatedAccountingEntryDraftMaster = this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(result) };
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
                 return result;
@@ -982,7 +1003,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 this.IsBusy = true;
                 this.Refresh();
-                await ExecuteAddRecord();
+                await ExecuteAddRecordAsync();
                 CleanEntry();
                 this.Refresh();
                 this.SetFocus(nameof(this.Context.AccountingAccounts));
@@ -1002,7 +1023,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task ExecuteAddRecord()
+        public async Task ExecuteAddRecordAsync()
         {
             try
             {
@@ -1091,7 +1112,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     // Iniciar cronometro
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    AccountingEntryDraftMasterGraphQLModel result = await this.Context._accountingEntryDraftMasterService.CreateAsync(query, variables);
+                    AccountingEntryDraftMasterGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
                     stopwatch.Stop();
 
                     // Message
@@ -1154,7 +1175,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     // Iniciar cronometro
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    var entry = await this.Context._accountingEntryDraftDetailService.CreateAsync(query, variables);
+                    var entry = await this._accountingEntryDraftDetailService.CreateAsync(query, variables);
                     stopwatch.Stop();
 
                     this.TotalCredit = entry.Totals.Credit;

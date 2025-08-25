@@ -45,6 +45,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     {
         #region Popiedades
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+
+
         // Context
         public AccountingEntriesViewModel Context { get; set; }
 
@@ -637,7 +642,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                var result = await this.Context._accountingEntryMasterService.GetPageAsync(query, variables);
+                var result = await this._accountingEntryMasterService.GetPageAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -736,12 +741,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             //TODO
             if (IsSelectedTab1)
             {
-                var result = await this.Context._accountingEntryMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
+                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
                 count = result.Count;
             }
             else
             {
-                var result = await this.Context._accountingEntryDraftMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
+                var result = await this._accountingEntryDraftMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
                 count = result.Count;
             }
 
@@ -783,10 +788,18 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteEntry));
         }
 
-        public AccountingEntriesMasterViewModel(AccountingEntriesViewModel context, Helpers.Services.INotificationService notificationService)
+        public AccountingEntriesMasterViewModel(AccountingEntriesViewModel context,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
+            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
             this.Context = context;
             _notificationService = notificationService;
+            _accountingEntryMasterService = accountingEntryMasterService;
+            _accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            _accountingEntityService = accountingEntityService;
+
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
 
@@ -795,7 +808,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await Initialize());
-
         }
 
         public async Task Initialize()
@@ -859,7 +871,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     Stopwatch stopwatch = new();
                     stopwatch.Start();
 
-                    var data = await this.Context._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDataContext>(query, variables);
+                    var data = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDataContext>(query, variables);
 
                     stopwatch.Stop();
                     this.DraftResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -969,7 +981,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     variables.filter.SearchName.@operator = "like";
                     // Reemplazo los espacios por % para que la busqueda sea mas flexible
                     variables.filter.SearchName.value = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
-                    var accountingEntities = await this.Context._accountingEntityService.GetListAsync(query, variables);
+                    var accountingEntities = await this._accountingEntityService.GetListAsync(query, variables);
                     this.AccountingEntitiesSearchResults = new ObservableCollection<AccountingEntityGraphQLModel>(accountingEntities);
                     App.Current.Dispatcher.Invoke(() =>
                     {

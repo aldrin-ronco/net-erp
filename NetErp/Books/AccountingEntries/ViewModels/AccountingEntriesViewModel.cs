@@ -22,13 +22,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesViewModel : Conductor<Screen>.Collection.OneActive
     {
 
-  
-        public readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        public readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
-        public readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
-        public readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
-        public readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
-        public readonly IRepository<AccountingEntryDetailGraphQLModel> _accountingEntryDetailService;
+
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryDetailGraphQLModel> _accountingEntryDetailService;
 
 
 
@@ -103,7 +103,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService);
                 return _accountingEntriesMasterViewModel;
             }
         }
@@ -139,13 +139,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public async Task ActivateDocumentPreviewViewAsync(AccountingEntryMasterDTO selectedAccountingEntry)
         {
-            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry);
+            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry, this._accountingEntryMasterService, this._accountingEntryDraftMasterService);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
         public async Task ActivateDetailViewForNewAsync()
         {
-            AccountingEntriesDetailViewModel instance = new(this);
+            AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService);
             // Header
             instance.SelectedAccountingEntryDraftMaster = null;
             instance.DraftMasterId = 0;
@@ -182,7 +182,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 object variables;
-                AccountingEntriesDetailViewModel instance = new(this);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService);
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
