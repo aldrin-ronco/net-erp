@@ -32,9 +32,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             _accountingBookService = accountingBookService;
 
         }
-        public async Task GoBack()
+        public async Task GoBackAsync()
         {
-            await Context.ActivateMasterView();
+            await Context.ActivateMasterViewAsync();
         }
 
         public int _accountingBookId;
@@ -58,7 +58,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBack);
+                if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBackAsync);
                 return _goBackCommand;
             }
         }
@@ -133,7 +133,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                     //Pasamos el mensaje a un escuchador.
                     await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingBookUpdateMessage() { UpdatedAccountingBook = result });
                 }
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
             catch (Exception)
             {
@@ -214,7 +214,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
 
         public bool HasErrors => _errors.Count > 0;
-        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
 
         private void RaiseErrorsChanged(string propertyName)
@@ -222,9 +222,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        public IEnumerable GetErrors(string propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return new List<object>();
             return _errors[propertyName];
         }
 

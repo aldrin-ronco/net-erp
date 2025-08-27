@@ -133,7 +133,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         }
         public async Task CreateAccountingBookAsync()
         {
-            await Context.ActivateDetailViewForNew();
+            await Context.ActivateDetailViewForNewAsync();
         }
         public async Task LoadAccountingBooksAsync()
         {
@@ -226,7 +226,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         }        
         public async Task EditAccountingBook()
         {
-            await Context.ActivateDetailViewForEdit(SelectedItem ?? new ());
+            await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new ());
 
         }
         public async Task<AccountingBookGraphQLModel> ExecuteDeleteAccountingBookAsync(int id)

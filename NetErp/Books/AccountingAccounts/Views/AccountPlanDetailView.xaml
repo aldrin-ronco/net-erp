@@ -63,7 +63,7 @@
                     </Button.ToolTip>
                 </Button>
                 <Separator Margin="5 0 5 0"/>
-                <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding Data.SaveCommand, Source={StaticResource DataContextProxy}}">
+                    <Button Margin="2" ToolBar.OverflowMode="AsNeeded" Command="{Binding Data.SaveAsyncCommand, Source={StaticResource DataContextProxy}}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                                 <Image Source="pack://application:,,,/DevExpress.Images.v24.2;component/Images/Save/Save_32x32.png" Stretch="None" Margin="2">

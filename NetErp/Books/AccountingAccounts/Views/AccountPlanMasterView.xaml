@@ -148,7 +148,7 @@
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
+                                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
                                               CommandParameter="{Binding Id}">
                                             <MenuItem.Header>
                                                 <StackPanel Orientation="Horizontal">
@@ -181,7 +181,7 @@
                                             </MenuItem.Header>
                                         </MenuItem>
                                         <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
+                                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
                                               CommandParameter="{Binding Id}">
                                             <MenuItem.Header>
                                                 <StackPanel Orientation="Horizontal">

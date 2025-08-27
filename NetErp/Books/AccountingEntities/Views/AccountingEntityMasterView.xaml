@@ -168,7 +168,7 @@
                                 Padding="3"
                                 Margin="3"
                                 Width="auto" Height="auto" 
-                                cal:Message.Attach="[Event Click] = [Action EditAccountingEntity]">
+                                cal:Message.Attach="[Event Click] = [Action EditAccountingEntityAsync]">
                                 <Button.Content>
                                     <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>

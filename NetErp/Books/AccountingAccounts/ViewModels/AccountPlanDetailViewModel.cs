@@ -558,7 +558,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         }
 
-        public async Task<AccountingAccountGraphQLModel> Update()
+        public async Task<AccountingAccountGraphQLModel> UpdateAsync()
         {
             try
             {
@@ -671,7 +671,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// <summary>
         /// Guarda la nueva cuenta contable o actualiza los cambios
         /// </summary>
-        public async Task<List<AccountingAccountGraphQLModel>> Insert()
+        public async Task<List<AccountingAccountGraphQLModel>> InsertAsync()
         {
             try
             {
@@ -1315,7 +1315,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
 
         [Command]
-        public async void Initialize()
+        public void Initialize()
         {
             try
             {
@@ -1339,7 +1339,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// Retorna a la vista padre
         /// </summary>
         [Command]
-        public void ReturnToAccountingAccountPlanMaster()
+        public async Task ReturnToAccountingAccountPlanMasterAsync()
         {
             this.Code = "";
             this.Lv5CodeIsFocused = false;
@@ -1349,26 +1349,26 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             this.Lv2NameIsFocused = false;
             this.Lv1NameIsFocused = false;
             CleanUpControls();
-            this.Context.ActivateMasterViewModel();
+            await this.Context.ActivateMasterViewModel();
         }
 
         public bool CanReturnToAccountingAccountPlanMaster() => true;
 
         [Command]
-        public async Task Save()
+        public async Task SaveAsync()
         {
             try
             {
                 this.IsBusy = true;
                 if (this.IsNewRecord)
                 {
-                    List<AccountingAccountGraphQLModel> result = await Task.Run(() => this.Insert());
+                    List<AccountingAccountGraphQLModel> result = await Task.Run(() => this.InsertAsync());
                     Messenger.Default.Send(new AccountingAccountCreateListMessage() { CreatedAccountingAccountList = result });
                 }
                 else
                 {
                     if (Context.AccountPlanMasterViewModel.SelectedItem is null) throw new ArgumentException(nameof(Parent.SelectedItem));
-                    AccountingAccountGraphQLModel result = await Task.Run(() => this.Update());
+                    AccountingAccountGraphQLModel result = await Task.Run(() => this.UpdateAsync());
                     Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpdatedAccountingAccount = result });
                 }
             }
@@ -1381,7 +1381,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 //await Task.Delay(3000);
                 this.IsBusy = false;
-                ReturnToAccountingAccountPlanMaster();
+                ReturnToAccountingAccountPlanMasterAsync();
             }
         }
         public bool CanSave

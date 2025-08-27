@@ -35,10 +35,10 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
 
-            _ = Task.Run(ActivateMasterView);
+            _ = Task.Run(ActivateMasterViewAsync);
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             try
             {
@@ -49,7 +49,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 throw;
             }
         }
-        public async Task ActivateDetailViewForEdit(AccountingBookGraphQLModel accountingBook)
+        public async Task ActivateDetailViewForEditAsync(AccountingBookGraphQLModel accountingBook)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
             }
         }
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
             try
             {

@@ -4,9 +4,11 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
+using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -38,24 +40,45 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             EventAggregator = eventAggregator;
             _notificationService = notificationService;
             _accountingAccountGroupService = accountingAccountGroupService;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ActivateMasterViewModelAsync();
-                }
-                catch (AsyncException ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
-            EventAggregator = eventAggregator;
+           EventAggregator = eventAggregator;
+        }
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            _ = InitializeAsync().ConfigureAwait(false);
         }
 
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                await ActivateMasterViewModelAsync();
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(
+                        title: "Error Inesperado!",
+                        text: $"{this.GetType().Name}.InitializeAsync \r\n{ex.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
+        }
         public async Task ActivateMasterViewModelAsync()
         {
             try
@@ -66,6 +89,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             {
                 throw new AsyncException(innerException: ex);
             }
+          
         }
     }
 }

@@ -555,7 +555,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
         [Command]
-        public async void Delete(object id)
+        public async Task DeleteAsync(object id)
         {
             try
             {
@@ -670,6 +670,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 _ = Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
                     .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
                     .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
+
                 _notificationService.ShowSuccess("Cuenta contable actualizada exitosamente");
             }
             catch (AsyncException ex)

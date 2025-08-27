@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Common.Constants;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -34,12 +35,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 {
     public class AccountingEntityDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
 
-        public readonly IGenericDataAccess<CountryGraphQLModel> CountryService = IoC.Get<IGenericDataAccess<CountryGraphQLModel>>();
 
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+
+
         Dictionary<string, List<string>> _errors;
 
         #region Commands
@@ -68,7 +69,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -806,28 +807,21 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             });
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
                 // Validaciones
                 string query = @"
-			    query{
-			        ListResponse: identificationTypes{
+                query () {
+                    identificationTypes{
 			        id
 			        code
 			        name
 			        hasVerificationDigit
 			        minimumDocumentLength
 			        }
-			    }";
-
-                IEnumerable<IdentificationTypeGraphQLModel> result = await IdentificationTypeService.GetList(query, new object { });
-                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result);
-                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-                string countriesQuery = @"
-                    query{
-                    ListResponse: countries{
+                  countries{
                     id
                     code
                     name
@@ -842,8 +836,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                         }
                     }
                     }
-                }";
-                Countries = new ObservableCollection<CountryGraphQLModel>(await CountryService.GetList(countriesQuery, new object { }));
+                }
+                ";
+                var result = await this._accountingEntityService.GetDataContextAsync<AccountingEntityDataContext>(query, new object { });
+
+               // IEnumerable<IdentificationTypeGraphQLModel> result = await IdentificationTypeService.GetList(query, new object { });
+                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
+                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+                
+                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
 
                 //this.Detail.GlobalCountryId = 46;
                 //var dptId = from city in this.Departments where city.Id == this.Detail.GlobalCityId select city.Id;
@@ -871,7 +872,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _accountingEntityService = accountingEntityService;
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
         }
 
         public void CleanUpControls()
@@ -903,7 +904,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
             SelectedRegime = 'R';
             VerificationDigit = "";
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
             IdentificationNumber = "";
             SelectedCaptureType = CaptureTypeEnum.PN;
             BusinessName = "";
@@ -917,9 +918,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             CellPhone2 = "";
             Address = "";
             Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
         }
 
 
@@ -984,63 +985,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public bool CanAddEmail => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(EmailDescription) && Email.IsValidEmail();
 
 
-        public async Task<PageResult<AccountingEntityGraphQLModel>> LoadPage()
-        {
-            string queryForPage;
-            queryForPage = @"
-                query ($filter: AccountingEntityFilterInput) {
-                  PageResponse:accountingEntityPage(filter: $filter) {
-		                count
-                        rows {
-                            id
-                            identificationNumber
-                            verificationDigit
-                            captureType
-                            businessName
-                            firstName
-                            middleName
-                            firstLastName
-                            middleLastName
-                            phone1
-                            phone2
-                            cellPhone1
-                            cellPhone2
-                            address
-                            regime
-                            fullName
-                            tradeName
-                            searchName
-                            telephonicInformation
-                            commercialCode
-                            identificationType {
-                               id
-                            }
-                            country {
-                               id 
-                            }
-                            department {
-                               id
-                            }
-                            city {
-                               id 
-                            }
-                            emails {
-                              id
-                              description
-                              email
-                            }
-                        }
-                    }
-                 }";
-            return await _accountingEntityService.GetPageAsync(queryForPage, new object { });
-        }
-        public async Task Save()
+     
+        public async Task SaveAsync()
         { 
             try
             {
                 IsBusy = true;
                 Refresh();
-                AccountingEntityGraphQLModel result = await ExecuteSave();
+                AccountingEntityGraphQLModel result = await ExecuteSaveAsync();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
@@ -1068,7 +1020,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public async Task<AccountingEntityGraphQLModel> ExecuteSave()
+        public async Task<AccountingEntityGraphQLModel> ExecuteSaveAsync()
         {
             try
             {
