@@ -15,6 +15,9 @@ namespace NetErp
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Initialize SQLite
+            SQLitePCL.Batteries.Init();
+            
             PreloadDevExpressAssemblies();
             base.OnStartup(e);
         }

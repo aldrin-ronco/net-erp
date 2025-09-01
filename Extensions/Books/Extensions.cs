@@ -45,43 +45,31 @@ namespace Extensions.Books
         {
             AccountingSourceGraphQLModel accountingSoureToReplace = accountingSources.Where(x => x.Id == updatedAccountingSource.Id).FirstOrDefault();
             int index = accountingSources.IndexOf(accountingSoureToReplace);
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                accountingSources.Remove(accountingSoureToReplace);
-                accountingSources.Insert(index, updatedAccountingSource);
-            });
+            accountingSources.Remove(accountingSoureToReplace);
+            accountingSources.Insert(index, updatedAccountingSource);
         }
         public static void Replace(this ObservableCollection<AccountingEntryDraftMasterDTO> accountingEntriesDraft, AccountingEntryDraftMasterDTO updatedAccountingEntryDraft)
         {
             AccountingEntryDraftMasterDTO accountingEntryDraftToReplace = accountingEntriesDraft.Where(x => x.Id == updatedAccountingEntryDraft.Id).FirstOrDefault();
             int index = accountingEntriesDraft.IndexOf(accountingEntryDraftToReplace);
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                accountingEntriesDraft.Remove(accountingEntryDraftToReplace);
-                accountingEntriesDraft.Insert(index, updatedAccountingEntryDraft);
-            });
+            accountingEntriesDraft.Remove(accountingEntryDraftToReplace);
+            accountingEntriesDraft.Insert(index, updatedAccountingEntryDraft);
         }
 
         public static void Replace(this ObservableCollection<AccountingEntryMasterDTO> accountingEntries, AccountingEntryMasterDTO updatedAccountingEntry)
         {
             AccountingEntryMasterDTO accountingEntryToReplace = accountingEntries.Where(x => x.Id == updatedAccountingEntry.Id).FirstOrDefault();
             int index = accountingEntries.IndexOf(accountingEntryToReplace);
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                accountingEntries.Remove(accountingEntryToReplace);
-                accountingEntries.Insert(index, updatedAccountingEntry);
-            });
+            accountingEntries.Remove(accountingEntryToReplace);
+            accountingEntries.Insert(index, updatedAccountingEntry);
         }
 
         public static void Replace(this ObservableCollection<IdentificationTypeDTO> identificationTypes, IdentificationTypeDTO updatedIdentificationType)
         {
             IdentificationTypeDTO identificationTypeToReplace = identificationTypes.Where(x => x.Id == updatedIdentificationType.Id).FirstOrDefault();
             int index = identificationTypes.IndexOf(identificationTypeToReplace);
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                identificationTypes.Remove(identificationTypeToReplace);
-                identificationTypes.Insert(index, updatedIdentificationType);
-            });
+            identificationTypes.Remove(identificationTypeToReplace);
+            identificationTypes.Insert(index, updatedIdentificationType);
         }
 
         public static void RemoveById(this ObservableCollection<AccountingEntityDTO> accountingEntities, int id)
@@ -96,10 +84,7 @@ namespace Extensions.Books
         public static void RemoveById(this ObservableCollection<IdentificationTypeDTO> identificationTypes, int id)
         {
             IdentificationTypeDTO identificationTypeToDelete = identificationTypes.Where(x => x.Id == id).FirstOrDefault();
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                identificationTypes.Remove(identificationTypeToDelete);
-            });
+            identificationTypes.Remove(identificationTypeToDelete);
         }
     }
 }

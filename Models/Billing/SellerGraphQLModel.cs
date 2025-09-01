@@ -1,5 +1,4 @@
-﻿using Common.Interfaces;
-using Models.Books;
+﻿using Models.Books;
 using Models.Global;
 using System;
 using System.Collections.Generic;
@@ -7,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Billing
 {
@@ -47,6 +47,6 @@ namespace Models.Billing
         public ObservableCollection<CountryGraphQLModel> Countries { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
         public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
-        public IGenericDataAccess<SellerGraphQLModel>.PageType SellerPage { get; set; }
+        public PageType<SellerGraphQLModel> SellerPage { get; set; }
     }
 }

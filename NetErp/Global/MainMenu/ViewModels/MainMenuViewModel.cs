@@ -9,6 +9,8 @@ using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
+using NetErp.Helpers.Messages;
+using NetErp.Login.ViewModels;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.PriceList.ViewModels;
@@ -58,6 +60,7 @@ namespace NetErp.Global.MainMenu.ViewModels
 {
     public class MainMenuViewModel : Conductor<IScreen>.Collection.OneActive
     {
+        private readonly IEventAggregator _eventAggregator;
         private int selectedIndex;
 
         public int SelectedIndex
@@ -74,7 +77,7 @@ namespace NetErp.Global.MainMenu.ViewModels
         }
         public MainMenuViewModel()
         {
-
+            _eventAggregator = IoC.Get<IEventAggregator>();
         }
 
 
@@ -704,6 +707,18 @@ namespace NetErp.Global.MainMenu.ViewModels
             catch (Exception ex)
             {
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        public void ReturnToCompanySelection()
+        {
+            try
+            {
+                _eventAggregator.PublishOnUIThreadAsync(new ReturnToCompanySelectionMessage());
+            }
+            catch (Exception ex)
+            {
+                _ = ThemedMessageBox.Show("Atención !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

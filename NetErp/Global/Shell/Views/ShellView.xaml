@@ -12,7 +12,7 @@
 
     <Grid>
         <!-- Contenido principal de la aplicación -->
-        <ContentControl x:Name="ActiveItem" Width="auto" Height="auto" />
+        <ContentControl x:Name="ActiveItem" Width="auto" Height="auto" Focusable="False"/>
 
         <Border VerticalAlignment="Top" 
                 Background="#FFD700" 

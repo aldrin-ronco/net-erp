@@ -1,11 +1,11 @@
-﻿using Common.Interfaces;
-using Models.Books;
+﻿using Models.Books;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -57,7 +57,7 @@ namespace Models.Global
     }
     public class AuthorizationSequenceDataContext
     {
-        public IGenericDataAccess<AuthorizationSequenceGraphQLModel>.PageType AuthorizationSequencePage { get; set; }
+        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequencePage { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
     }
 }

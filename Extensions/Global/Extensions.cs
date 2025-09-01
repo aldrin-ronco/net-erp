@@ -15,11 +15,8 @@ namespace Extensions.Global
         {
             CostCenterGraphQLModel centerToReplace = centers.Where(x => x.Id == updatedCostCenter.Id).FirstOrDefault();
             int index = centers.IndexOf(centerToReplace);
-            Application.Current.Dispatcher.Invoke(() =>
-            {
                 centers.Remove(centerToReplace);
                 centers.Insert(index, updatedCostCenter);
-            });
         }
     }
 }

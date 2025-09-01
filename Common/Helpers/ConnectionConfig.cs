@@ -11,7 +11,7 @@ namespace Common.Helpers
     {
         //public static string GraphQLAPIUrl { get; set; } = Debugger.IsAttached ? @"https://qts-erp-fox-api-staging.herokuapp.com/graphql" : @"https://qts-erp-fox-api.herokuapp.com/graphql";
         public static string GraphQLAPIUrl { get; set; } = Debugger.IsAttached ? @"https://localhost:7048/graphql/" : @"https://qts-erp-fox-api.herokuapp.com/graphql";
-
+        public static readonly string LoginAPIUrl = "https://app-11e3260f-9c90-4680-a0d0-09119c57e830.cleverapps.io/graphql";
         public static string DatabaseId { get; set; } = "b1df16c1-9e80-412f-9da0-c74c061de320";
     }
 }
