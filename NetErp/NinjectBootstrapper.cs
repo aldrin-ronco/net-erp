@@ -188,6 +188,11 @@ namespace NetErp
             _ = kernel.Bind<IRepository<EmailGraphQLModel>>().To<GraphQLRepository<EmailGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<SmtpGraphQLModel>>().To<GraphQLRepository<SmtpGraphQLModel>>().InSingletonScope();
             
+            // Login service
+            _ = kernel.Bind<ILoginService>().To<LoginService>().InSingletonScope();
+            //Servicio SQLite usado para almacenar los correos electrónicos guardados localmente para autocompletar en el inicio de sesión
+            _ = kernel.Bind<ISQLiteEmailStorageService>().To<SQLiteEmailStorageService>().InSingletonScope();
+            
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();

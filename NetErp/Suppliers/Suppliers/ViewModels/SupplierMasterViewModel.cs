@@ -20,6 +20,7 @@ using DevExpress.Xpf.Core;
 using System.Dynamic;
 using Models.Billing;
 using Models.Books;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
@@ -375,7 +376,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                PageResult<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
+                PageType<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
 
 
                 TotalCount = result.Count;

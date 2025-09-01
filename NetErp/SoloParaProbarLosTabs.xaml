@@ -14,72 +14,61 @@
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:cal="http://caliburnmicro.com"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
-        <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
-        <h:CharToBooleanConverter x:Key="CharToBooleanConverter"/>
-    </UserControl.Resources>
-    <Grid>
+             d:DesignHeight="450" d:DesignWidth="800" d:Background="White">
+    <Grid MinHeight="24">
         <Grid.ColumnDefinitions>
-            
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="25"/>
         </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
-        <!--aplicación general-->
-        <TextBlock Text="Aplicación" Grid.Column="0" Grid.Row="0" Margin="0 5 0 5"/>
-        <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="1" Margin="0 5 0 10"/>
 
-        <TextBlock Text="Cuenta Bancaria" Grid.Column="0" Grid.Row="2" Margin="0 10 0 5"/>
-        <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="3" Margin="0 5 0 10"/>
+        <!-- Email text -->
+        <TextBlock Grid.Column="0" 
+                Text="{Binding}" 
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                Margin="8,4"
+                TextTrimming="CharacterEllipsis"/>
 
-        <TextBlock Text="Nombre de la franquicia" Grid.Column="0" Grid.Row="4" Margin="0 10 0 5"/>
-        <dxe:TextEdit Grid.Column="0" Grid.Row="5" Margin="0 5 0 10"/>
-
-        <TextBlock Text="Tipo de tarjeta" Grid.Column="0" Grid.Row="6" Margin="0 10 0 5"/>
-        <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="7" Margin="0 5 0 10">
-            <RadioButton Content="Débito" Margin="0 0 5 0" VerticalAlignment="Center"/>
-            <RadioButton Content="Crédito" Margin="5 0 0 0" VerticalAlignment="Center"/>
-        </StackPanel>
-
-        <TextBlock Text="Cuenta de comisiones" Grid.Column="0" Grid.Row="8" Margin="0 10 0 5"/>
-        <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="9" Margin="0 5 0 10"/>
-
-        <Grid Grid.Column="0" Grid.Row="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-            </Grid.RowDefinitions>
-            <Button Content="Valor Tarjetas" Grid.Column="0" Grid.Row="0">
-                <Button.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Probando esta cagada"/>
-                    </ContextMenu>
-                </Button.ContextMenu>
-            </Button>
-        </Grid>
+        <!-- Delete button -->
+        <Button Grid.Column="1"
+             Content="×"
+             Width="18"
+             Height="18"
+             FontSize="12"
+             FontWeight="Bold"
+             Background="Transparent"
+             BorderThickness="0"
+             Foreground="#dc3545"
+             Cursor="Hand"
+             ToolTip="Eliminar email guardado"
+             HorizontalAlignment="Right"
+             VerticalAlignment="Center"
+             Margin="0,0,4,0"
+             cal:Message.Attach="[Event Click] = [Action RemoveEmailAsync($dataContext)]"
+             cal:Action.TargetWithoutContext="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=DataContext}">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                     CornerRadius="9">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                 VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#f8d7da"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
     </Grid>
 </UserControl>

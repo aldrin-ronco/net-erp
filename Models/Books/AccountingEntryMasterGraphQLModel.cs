@@ -1,5 +1,4 @@
-﻿using Common.Interfaces;
-using Models.Global;
+﻿using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -68,7 +68,7 @@ namespace Models.Books
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
         public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>.PageType  AccountingEntryDraftMasterPage { get; set; }
+        public PageType<AccountingEntryDraftMasterGraphQLModel>  AccountingEntryDraftMasterPage { get; set; }
     }
 
     public class AccountingEntriesDraftDetailDataContext
@@ -84,7 +84,7 @@ namespace Models.Books
     public class AccountingEntryDocumentPreviewDataContext
     {
         public AccountingEntryMasterGraphQLModel AccountingEntryMaster { get; set; }
-        public IGenericDataAccess<AccountingEntryDetailGraphQLModel>.PageResponseType AccountingEntryDetailPage { get; set; }
+        public PageType<AccountingEntryDetailGraphQLModel> AccountingEntryDetailPage { get; set; }
     }
 
     public class AccountingEntryMasterDTO : AccountingEntryMasterGraphQLModel

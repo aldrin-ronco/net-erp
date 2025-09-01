@@ -2,7 +2,9 @@
 using DevExpress.Xpf.Core;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -13,7 +15,16 @@ namespace NetErp.Helpers.Services
         Success,
         Error,
         Warning,
-        Info
+        Info,
+        Question
+    }
+
+    public class NotificationAction
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Style { get; set; } = "Default"; // Primary, Secondary, Success, Danger
+        public System.Action? Action { get; set; }
+        public System.Func<Task>? AsyncAction { get; set; }
     }
 
     public class NotificationItem : PropertyChangedBase
@@ -23,6 +34,7 @@ namespace NetErp.Helpers.Services
         private static readonly SolidColorBrush ErrorBrush = new(Color.FromRgb(244, 67, 54));
         private static readonly SolidColorBrush WarningBrush = new(Color.FromRgb(255, 152, 0));
         private static readonly SolidColorBrush InfoBrush = new(Color.FromRgb(33, 150, 243));
+        private static readonly SolidColorBrush QuestionBrush = new(Color.FromRgb(156, 39, 176));
         private static readonly SolidColorBrush DefaultBrush = new(Color.FromRgb(97, 97, 97));
         
         static NotificationItem()
@@ -32,11 +44,14 @@ namespace NetErp.Helpers.Services
             ErrorBrush.Freeze();
             WarningBrush.Freeze();
             InfoBrush.Freeze();
+            QuestionBrush.Freeze();
             DefaultBrush.Freeze();
         }
 
         public Guid Id { get; } = Guid.NewGuid();
         public DateTime CreatedAt { get; } = DateTime.Now;
+        public List<NotificationAction> Actions { get; set; } = new();
+        public bool IsInteractive => Actions.Count > 0;
 
         private string _message;
         public string Message
@@ -78,6 +93,7 @@ namespace NetErp.Helpers.Services
             NotificationType.Error => ErrorBrush,
             NotificationType.Warning => WarningBrush,
             NotificationType.Info => InfoBrush,
+            NotificationType.Question => QuestionBrush,
             _ => DefaultBrush
         };
 
@@ -91,6 +107,7 @@ namespace NetErp.Helpers.Services
                     NotificationType.Error => "✗",    // X
                     NotificationType.Warning => "⚠",  // Triángulo
                     NotificationType.Info => "ℹ",     // i
+                    NotificationType.Question => "?", // Pregunta
                     _ => "•"
                 };
             }
@@ -109,6 +126,7 @@ namespace NetErp.Helpers.Services
         void ShowError(string message, string title = "Error", int durationMs = 3000);
         void ShowWarning(string message, string title = "Advertencia", int durationMs = 3000);
         void ShowInfo(string message, string title = "Información", int durationMs = 3000);
+        void ShowQuestion(string message, List<NotificationAction> actions, string title = "Pregunta");
     }
 
     public class NotificationService : INotificationService
@@ -148,6 +166,12 @@ namespace NetErp.Helpers.Services
             _logger.LogInformation($"Info: {title} - {message}");
         }
 
+        public void ShowQuestion(string message, List<NotificationAction> actions, string title = "Pregunta")
+        {
+            ShowInteractiveNotification(message, title, NotificationType.Question, actions);
+            _logger.LogInformation($"Question: {title} - {message}");
+        }
+
         private void ShowNotification(string message, string title, NotificationType type, int durationMs)
         {
             Execute.OnUIThread(() =>
@@ -171,6 +195,58 @@ namespace NetErp.Helpers.Services
                 
                 timer.Tick += tickHandler;
                 timer.Start();
+            });
+        }
+
+        private void ShowInteractiveNotification(string message, string title, NotificationType type, List<NotificationAction> actions)
+        {
+            Execute.OnUIThread(() =>
+            {
+                _notifications.Clear();
+
+                var notification = new NotificationItem(message, title, type)
+                {
+                    Actions = actions
+                };
+
+                // Configurar acciones para que se auto-eliminen al ejecutarse
+                foreach (var action in actions)
+                {
+                    var originalAction = action.Action;
+                    var originalAsyncAction = action.AsyncAction;
+
+                    if (originalAction != null)
+                    {
+                        action.Action = () =>
+                        {
+                            try
+                            {
+                                originalAction();
+                            }
+                            finally
+                            {
+                                RemoveNotification(notification);
+                            }
+                        };
+                    }
+                    else if (originalAsyncAction != null)
+                    {
+                        action.AsyncAction = async () =>
+                        {
+                            try
+                            {
+                                await originalAsyncAction();
+                            }
+                            finally
+                            {
+                                RemoveNotification(notification);
+                            }
+                        };
+                    }
+                }
+
+                _notifications.Add(notification);
+                // No timer - la notificación permanece hasta que se interactúe con ella
             });
         }
 

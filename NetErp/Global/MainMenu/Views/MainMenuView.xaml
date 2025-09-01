@@ -78,6 +78,9 @@
                 <MenuItem Header="Secuencias de Autorización" x:Name="OpenAuthorizationSequence"/>
                 <MenuItem Header="Configuración" x:Name="OpenParameter"/>
             </MenuItem>
+            <MenuItem Header="Sistema">
+                <MenuItem Header="Volver a la selección de empresa" x:Name="ReturnToCompanySelection"/>
+            </MenuItem>
         </Menu>
         <dx:DXTabControl     x:Name="Items"
                              Grid.Row="1"

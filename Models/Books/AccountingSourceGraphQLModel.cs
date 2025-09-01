@@ -5,8 +5,8 @@ using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using Common.Interfaces;
 using System.Collections.ObjectModel;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -66,7 +66,7 @@ namespace Models.Books
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
 
         public ObservableCollection<ProcessTypeGraphQLModel> ProcessTypes {  get; set; }
-        public IGenericDataAccess<AccountingSourceGraphQLModel>.PageType AccountingSourcePage {  get; set; } 
+        public PageType<AccountingSourceGraphQLModel> AccountingSourcePage {  get; set; } 
     }
 
 }

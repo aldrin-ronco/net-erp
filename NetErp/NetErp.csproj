@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Global\Resources\Images\QualityLogo.BMP" />
+    <None Remove="Global\Resources\Images\WithoutResponse.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Billing\Customers\Views\" />
     <Folder Include="Billing\Sellers\Views\" />
     <Folder Include="Billing\Sellers\ViewModels\" />
@@ -32,6 +37,7 @@
     <Folder Include="Books\Reports\TestBalanceByEntity\Views\" />
     <Folder Include="Books\Reports\TestBalance\Views\" />
     <Folder Include="Books\Reports\TestBalance\ViewModels\" />
+    <Folder Include="Login\DTO\" />
     <Folder Include="Suppliers\Suppliers\" />
     <Folder Include="Suppliers\Suppliers\Views\" />
     <Folder Include="Suppliers\Suppliers\ViewModels\" />
@@ -50,6 +56,7 @@
     <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
     <PackageReference Include="CurrencyTextBox" Version="2.0.2" />
     <PackageReference Include="DeepCloner" Version="0.10.4" />
+    <PackageReference Include="devexpress.wpf.accordion" Version="24.2.3" />
     <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
     <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
@@ -63,12 +70,14 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
     <PackageReference Include="Ninject" Version="3.3.6" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
     <ProjectReference Include="..\Extensions\Extensions.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
     <ProjectReference Include="..\Services\Services.csproj" />
   </ItemGroup>
 
@@ -82,6 +91,11 @@
       <HintPath>..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v24.2.dll</HintPath>
     </Reference>
 
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Global\Resources\Images\QualityLogo.BMP" />
+    <Resource Include="Global\Resources\Images\WithoutResponse.png" />
   </ItemGroup>
 
 </Project>
