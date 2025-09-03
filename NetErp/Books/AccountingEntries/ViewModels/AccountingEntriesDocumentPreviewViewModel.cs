@@ -106,7 +106,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBack, CanGoBack);
+                if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBackAsync, CanGoBack);
                 return _goBackCommand;
             }
         }
@@ -117,7 +117,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_editAccountingEntryCommand is null) _editAccountingEntryCommand = new AsyncCommand(EditAccountingEntry, CanEditAccountingEntry);
+                if (_editAccountingEntryCommand is null) _editAccountingEntryCommand = new AsyncCommand(EditAccountingEntryAsync, CanEditAccountingEntry);
                 return _editAccountingEntryCommand;
             }
         }
@@ -139,14 +139,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_deleteAccountingEntryCommand is null) _deleteAccountingEntryCommand = new AsyncCommand(DeleteAccountingEntry, CanDeleteAccountingEntry);
+                if (_deleteAccountingEntryCommand is null) _deleteAccountingEntryCommand = new AsyncCommand(DeleteAccountingEntryAsync, CanDeleteAccountingEntry);
                 return _deleteAccountingEntryCommand;
             }
         }
 
 
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -241,7 +241,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._eventAggregator.SubscribeOnUIThread(this);
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
            
         }
 
@@ -266,7 +266,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 this.IsBusy = true;
                 this.Refresh();
-                var result = await ExecuteCancelAccountingEntry();
+                var result = await ExecuteCancelAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryMasterCancellationMessage() { CancelledAccountingEntry = result });
                 await this.Context.ActivateMasterViewAsync();
             }
@@ -300,7 +300,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryMasterGraphQLModel> ExecuteCancelAccountingEntry()
+        public async Task<AccountingEntryMasterGraphQLModel> ExecuteCancelAccountingEntryAsync()
         {
             try
             {
@@ -352,7 +352,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         // Delete Accounting Entry
-        public async Task DeleteAccountingEntry()
+        public async Task DeleteAccountingEntryAsync()
         {
             if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el comprobante?", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.No) return;
 
@@ -361,7 +361,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
 
-                var deletedRecord = await Task.Run(() => this.ExecuteDeleteAccountingEntry());
+                var deletedRecord = await Task.Run(() => this.ExecuteDeleteAccountingEntryAsync());
 
                 if (deletedRecord > 0)
                 {
@@ -381,7 +381,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<int> ExecuteDeleteAccountingEntry()
+        public async Task<int> ExecuteDeleteAccountingEntryAsync()
         {
             try
             {
@@ -420,7 +420,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         // Back Button
-        public async Task GoBack()
+        public async Task GoBackAsync()
         {
             await this.Context.ActivateMasterViewAsync();
         }
@@ -428,7 +428,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         public bool CanGoBack => true;
 
         // Edit Accounting Entry
-        public async Task EditAccountingEntry()
+        public async Task EditAccountingEntryAsync()
         {
             try
             {
@@ -436,7 +436,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this.IsBusy = true;
 
                 this.Refresh();
-                var result = await this.ExecuteEditAccountingEntry();
+                var result = await this.ExecuteEditAccountingEntryAsync();
 
                 // Informar a la vista de que la entrada ahora tiene un draft
                 await this._eventAggregator.PublishOnUIThreadAsync(result);
@@ -478,7 +478,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryDraftMasterGraphQLModel> ExecuteEditAccountingEntry()
+        public async Task<AccountingEntryDraftMasterGraphQLModel> ExecuteEditAccountingEntryAsync()
         {
             string query = "";
             object variables;

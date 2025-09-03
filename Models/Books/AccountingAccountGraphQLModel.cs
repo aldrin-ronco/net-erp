@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Global;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -34,7 +35,28 @@ namespace Models.Books
         public AccountingAccountGraphQLModel UpdatedAccountingAccount { get; set; }
 
     }
+    public class AccountingAccountUpdateMasterListMessage
+    {
 
+        public List<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
+
+    }
+    public class CostCenterUpdateMasterListMessage
+    {
+        public List<CostCenterGraphQLModel> CostCenters { get; set; }
+
+    }
+    public class AccountingSourceUpdateMasterListMessage
+    {
+        public List<AccountingSourceGraphQLModel> AccountingSources { get; set; }
+
+    }
+    public class AccountingBookUpdateMasterListMessage
+    {
+        public List<AccountingBookGraphQLModel> AccountingBooks { get; set; }
+
+    }
+    
     public class AccountingAccountDeleteMessage
     {
         public AccountingAccountGraphQLModel DeletedAccountingAccount { get; set; }
