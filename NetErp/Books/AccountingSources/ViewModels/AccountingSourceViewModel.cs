@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
@@ -35,19 +36,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
 
-        private ObservableCollection<ProcessTypeGraphQLModel> _processTypes;
-        public ObservableCollection<ProcessTypeGraphQLModel> ProcessTypes
-        {
-            get => _processTypes;
-            set
-            {
-                if (_processTypes != value)
-                {
-                    _processTypes = value;
-                    NotifyOfPropertyChange(nameof(ProcessTypes));
-                }
-            }
-        }
+       
 
         private bool _enableOnViewReady = true;
 
@@ -83,17 +72,18 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForNewAsync()
+        public async Task ActivateDetailViewForNewAsync(ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
         {
-            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService);
+            
+            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService, processTypes, auxiliaryAccounts);
             //instance.Id = 0; // Necesario para saber que es un nuevo registro
             instance.CleanUpControls();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEditAsync(AccountingSourceDTO selectedItem)
+        public async Task ActivateDetailViewForEditAsync(AccountingSourceDTO selectedItem, ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
         {
-            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService);
+            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService, processTypes, auxiliaryAccounts);
 
             // Esta tecnica se una cuando se trabaja con SelectedItem
             // this.AccountingSourceDetailViewModel.SelectedProcessType = this.AccountingSourceDetailViewModel.ProcessTypes.Where(x => x.Id == selectedItem.ProcessType.Id).FirstOrDefault();

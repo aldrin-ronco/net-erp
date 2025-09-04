@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
@@ -42,7 +43,19 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 }
             }
         }
-
+        private ObservableCollection<ProcessTypeGraphQLModel> _processTypes;
+        public ObservableCollection<ProcessTypeGraphQLModel> ProcessTypes
+        {
+            get => _processTypes;
+            set
+            {
+                if (_processTypes != value)
+                {
+                    _processTypes = value;
+                    NotifyOfPropertyChange(nameof(ProcessTypes));
+                }
+            }
+        }
         /// <summary>
         /// Establece cuando la aplicacion esta ocupada
         /// </summary>
@@ -155,7 +168,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length >= 3) _ = Task.Run(LoadAccountingSources);
+                    if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length >= 3) _ = Task.Run(LoadAccountingSourcesAsync);
                 }
             }
         }
@@ -171,7 +184,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _selectedModuleId = value;
                     NotifyOfPropertyChange(nameof(SelectedModuleId));
-                    _ = Task.Run(LoadAccountingSources);
+                    _ = Task.Run(LoadAccountingSourcesAsync);
                 }
             }
         }
@@ -183,7 +196,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             get
             {
-                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSource, CanCreateSource);
+                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSourceAsync, CanCreateSource);
                 return _createSellerCommand;
             }
 
@@ -194,7 +207,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             get
             {
-                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSource, CanDeleteSource);
+                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSourceAsync, CanDeleteSource);
                 return _deleteSellerCommand;
             }
         }
@@ -290,7 +303,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         #endregion
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -382,7 +395,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 // Detener cronometro
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                this.Context.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(result.ProcessTypes);
+                this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(result.ProcessTypes);
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     this.Modules = new ObservableCollection<ModuleGraphQLModel>(result.Modules);
@@ -413,7 +426,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             this._accountingSourceService = accountingSourceService;
             this.Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => Initialize());
+            _ =  InitializeAsync();
         }
 
         #region Metodos
@@ -425,7 +438,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
-        public async Task LoadAccountingSources()
+        public async Task LoadAccountingSourcesAsync()
         {
 
             try
@@ -526,13 +539,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteSource));
         }
 
-        public async Task EditSource()
+        public async Task EditSourceAsync()
         {
             try
             {
                 this.IsBusy = true;
                 this.Refresh();
-                await Task.Run(() => this.ExecuteEditSource());
+                await Task.Run(() => this.ExecuteEditSourceAsync());
             }
             catch (Exception ex)
             {
@@ -544,11 +557,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task ExecuteEditSource()
+        public async Task ExecuteEditSourceAsync()
         {
             try
             {
-                await this.Context.ActivateDetailViewForEditAsync(this.SelectedAccountingSource);
+                var auxiliaryAccounts = from account in this.AccountingAccounts
+                                        select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
+
+                await this.Context.ActivateDetailViewForEditAsync(this.SelectedAccountingSource, ProcessTypes, auxiliaryAccounts);
             }
             catch (Exception ex)
             {
@@ -556,13 +572,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task CreateSource()
+        public async Task CreateSourceAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteCreateSource());
+                await Task.Run(() => ExecuteCreateSourceAsync());
                 SelectedAccountingSource = null;
             }
             catch (Exception ex)
@@ -575,12 +591,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task ExecuteCreateSource()
+        public async Task ExecuteCreateSourceAsync()
         {
-            await Context.ActivateDetailViewForNewAsync();
+            var auxiliaryAccounts = from account in this.AccountingAccounts
+                                    select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
+            await Context.ActivateDetailViewForNewAsync(ProcessTypes, auxiliaryAccounts);
         }
 
-        public async Task DeleteSource()
+        public async Task DeleteSourceAsync()
         {
             try
             {
@@ -615,7 +633,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
 
-                var deletedAccountingSource = await this.ExecuteDeleteSource(id);
+                var deletedAccountingSource = await this.ExecuteDeleteSourceAsync(id);
 
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceDeleteMessage() { DeletedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(deletedAccountingSource) });
 
@@ -638,7 +656,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task<AccountingSourceGraphQLModel> ExecuteDeleteSource(int id)
+        public async Task<AccountingSourceGraphQLModel> ExecuteDeleteSourceAsync(int id)
         {
             try
             {
@@ -686,7 +704,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         private async void ExecuteChangeIndex(object parameter)
         {
-            await LoadAccountingSources();
+            await LoadAccountingSourcesAsync();
         }
 
         private bool CanExecuteChangeIndex(object parameter)
@@ -698,7 +716,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                await LoadAccountingSources();
+                await LoadAccountingSourcesAsync();
                 _notificationService.ShowSuccess("Fuente contable creada correctamente");
                 return;
             }
@@ -713,7 +731,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                await LoadAccountingSources();
+                await LoadAccountingSourcesAsync();
                 _notificationService.ShowSuccess("Fuente contable actualizada correctamente");
                 return;
             }
@@ -728,7 +746,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                await LoadAccountingSources();
+                await LoadAccountingSourcesAsync();
                 _notificationService.ShowSuccess("Fuente contable eliminada correctamente");
                 return;
             }

@@ -444,7 +444,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (result != null)
                 {
                     this.BusyContent = @"Iniciando edición de borrador ...";
-                    await this.Context.ActivateDetailViewForEdit(result);
+                    await this.Context.ActivateDetailViewForEditAsync(result);
                 }
                 else
                 {

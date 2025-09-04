@@ -260,7 +260,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -312,24 +312,25 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
         #endregion
 
-        public AccountingSourceDetailViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService)
+        public AccountingSourceDetailViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
         {
             // Contexto
             this.Context = context;
             this._accountingSourceService = accountingSourceService;
+            this.ProcessTypes = processTypes;
             // Cargar cuentas contables
-            var auxiliaryAccounts = from account in this.Context.AccountingSourceMasterViewModel.AccountingAccounts
-                                    select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
+           
             this.AuxiliaryAccountingAccounts = new ObservableCollection<AccountingAccountPOCO>(auxiliaryAccounts);
             // Cargar tipos de procesos
             //this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(ProcessTypeService.GetList());
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+         
         }
 
-        public async Task Initialize()
+        public Task InitializeAsync()
         {
-            ProcessTypes = Context.ProcessTypes;
+           
+            return Task.CompletedTask;
         }
         protected override void OnViewReady(object view)
         {
@@ -382,13 +383,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
         //    }
         //}
 
-        public async Task Save()
+        public async Task SaveAsync()
         {
             try
             {
                 this.IsBusy = true;
                 this.Refresh();
-                var result = await ExecuteSave();
+                var result = await ExecuteSaveAsync();
                 if (IsNewRecord)
                 {
                     await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceCreateMessage() { CreatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
@@ -430,7 +431,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             
         }
 
-        public async Task<AccountingSourceGraphQLModel> ExecuteSave()
+        public async Task<AccountingSourceGraphQLModel> ExecuteSaveAsync()
         {
             // Guardar datos
             try
@@ -543,7 +544,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterViewAsync());
+            _ = Context.ActivateMasterViewAsync();
+           
         }
 
         public bool CanGoBack(object p)

@@ -1086,7 +1086,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                await this.Context.ActivateDetailViewForEdit(p as AccountingEntryDraftMasterGraphQLModel);
+                await this.Context.ActivateDetailViewForEditAsync(p as AccountingEntryDraftMasterGraphQLModel);
             }
             catch (Exception)
             {
