@@ -22,11 +22,28 @@ namespace NetErp.Helpers.Messages
         }
     }
 
-    // Mensaje para estado de red
+    /// <summary>
+    /// Message published when network connectivity status changes.
+    /// Used by NetworkConnectivityService to notify other components about connection state changes.
+    /// </summary>
+    /// <remarks>
+    /// This message is published through Caliburn.Micro's event aggregator whenever
+    /// the network connectivity status changes from connected to disconnected or vice versa.
+    /// Components like BackgroundQueueService and ParallelBatchProcessor subscribe to
+    /// these events to adjust their behavior based on connectivity status.
+    /// </remarks>
     public class NetworkStatusChangedMessage
     {
+        /// <summary>
+        /// Indicates the current network connectivity status.
+        /// True if internet connection is available, false if disconnected.
+        /// </summary>
         public bool IsConnected { get; }
 
+        /// <summary>
+        /// Initializes a new network status change message.
+        /// </summary>
+        /// <param name="isConnected">The current connectivity status</param>
         public NetworkStatusChangedMessage(bool isConnected)
         {
             IsConnected = isConnected;
