@@ -205,7 +205,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                IdentificationTypeGraphQLModel result = await ExecuteSave();
+                IdentificationTypeGraphQLModel result = await ExecuteSaveAsync();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeCreateMessage() { CreatedIdentificationType = result });
@@ -234,7 +234,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         }
 
-        public async Task<IdentificationTypeGraphQLModel> ExecuteSave()
+        public async Task<IdentificationTypeGraphQLModel> ExecuteSaveAsync()
         {
 
             try

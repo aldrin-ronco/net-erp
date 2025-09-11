@@ -241,7 +241,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteIdentificationType));
         }
 
-        public async Task EditIdentificationType()
+        public async Task EditIdentificationTypeAsync()
         {
             try
             {
