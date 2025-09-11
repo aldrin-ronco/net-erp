@@ -85,6 +85,35 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
 
         #region Properties
 
+        // Presentaciones
+        private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
+        public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations
+        {
+            get { return _accountingPresentations; }
+            set
+            {
+                if (_accountingPresentations != value)
+                {
+                    _accountingPresentations = value;
+                    NotifyOfPropertyChange(nameof(AccountingPresentations));
+                }
+            }
+        }
+
+        // Centros de costos
+        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters
+        {
+            get { return _costCenters; }
+            set
+            {
+                if (_costCenters != value)
+                {
+                    _costCenters = value;
+                    NotifyOfPropertyChange(nameof(CostCenters));
+                }
+            }
+        }
         // When search parameters change, page need back to 1
         public bool RestartPage { get; set; } = false;
 
@@ -241,12 +270,48 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
             _testBalanceService = testBalanceService;
+            _ = InitializeAsync();
         }
 
         #endregion
 
         #region Metodos
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                string query = @"
+                query{
+                    accountingPresentations{
+                    id
+                    name
+                    },
+                    costCenters {
+                    id
+                    name
+                    }
+                }";
 
+                var dataContext = await this._testBalanceService.GetDataContextAsync<TestBalanceDataContext>(query, new { });
+                if (dataContext != null)
+                {
+                    this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);
+                    this.CostCenters = new ObservableCollection<CostCenterGraphQLModel>(dataContext.CostCenters);
+
+                    // Initial Selected Values
+                    if (this.CostCenters != null)
+                        this.SelectedCostCenters = new ObservableCollection<CostCenterGraphQLModel>(this.CostCenters);
+
+                    if (this.AccountingPresentations != null)
+                        this.SelectedAccountingPresentationId = this.AccountingPresentations.FirstOrDefault().Id;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
         // Print
         public void Print()
         {
@@ -269,7 +334,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await Task.Run(() => ExecuteSearch());
+                var result = await Task.Run(() => ExecuteSearchAsync());
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -296,7 +361,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             }
         }
 
-        public async Task<PageResult<TestBalanceGraphQLModel>> ExecuteSearch()
+        public async Task<PageResult<TestBalanceGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -317,7 +382,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
                 }";
 
                 // Si han seleccionado todos los centros de costos, mandar un array de enteros vacio
-                int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
+                int[] costCentersIds = SelectedCostCenters.Count == this.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();

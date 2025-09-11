@@ -128,7 +128,7 @@
 
                 <TextBlock Text="Presentacion" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0 0 4 0"/>
                 <ComboBox Grid.Column="1" Grid.Row="0" Margin="4"
-                          ItemsSource="{Binding Path=Context.AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{Binding Path=AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"
                           SelectedValue="{Binding Path=SelectedAccountingPresentationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="Name"
@@ -160,7 +160,7 @@
                                     Command="{Binding Path=InteractionCommand}"
                                     TabIndex="4"
                                     SelectedItemsOverride="{Binding Path=SelectedCostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMemberPath="Name"
                                     ValueMemberPath="Id"                                    
                                     SelectedValue="{Binding Path=SelectedCostCenterId, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
