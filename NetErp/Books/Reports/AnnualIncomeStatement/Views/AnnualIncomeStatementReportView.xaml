@@ -172,7 +172,7 @@
                         TabIndex="11"
                         HorizontalAlignment="Right" 
                         Margin="0 0 4 4" 
-                        x:Name="Search">
+                        x:Name="SearchAsync">
 
                     <StackPanel Orientation="Horizontal">
                         <Image Source="{dx:DXImage 'Images/Print/Preview_16x16.png'}" Stretch="None" VerticalAlignment="Center">

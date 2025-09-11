@@ -31,6 +31,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
         {
             ValidateProperty(nameof(SelectedCostCenters));
         }
+       
 
         public bool CanExecuteUIChange(object p)
         {
@@ -256,7 +257,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -272,7 +273,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await Task.Run(() => ExecuteSearch());
+                var result = await Task.Run(() => ExecuteSearchAsync());
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -298,7 +299,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             }
         }
 
-        public async Task<PageResult<AnnualIncomeStatementGraphQLModel>> ExecuteSearch()
+        public async Task<PageResult<AnnualIncomeStatementGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -380,6 +381,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
             _annualIncomeStatementService = annualIncomeStatementService;
+
         }
 
         #endregion
