@@ -140,7 +140,7 @@
 
                 <TextBlock Text="Presentacion" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0 0 4 0"/>
                 <ComboBox Grid.Column="1" Grid.Row="0" Margin="4"
-                          ItemsSource="{Binding Path=Context.AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{Binding Path=AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"
                           SelectedValue="{Binding Path=SelectedAccountingPresentationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="Name"
@@ -172,7 +172,7 @@
                                     Command="{Binding Path=InteractionCommand}"
                                     TabIndex="4"
                                     SelectedItemsOverride="{Binding Path=SelectedCostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMemberPath="Name"
                                     ValueMemberPath="Id"
                                     SelectedValue="{Binding Path=SelectedCostCenterId, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -181,7 +181,7 @@
                 <xctk:CheckComboBox Grid.Column="1" Grid.Row="3" Padding="3" Margin="4"
                                     IsSelectAllActive="True"
                                     SelectedItemsOverride="{Binding Path=SelectedAccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.AccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=AccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMemberPath="Name"
                                     ValueMemberPath="Id"
                                     TabIndex="5"
@@ -279,7 +279,7 @@
                                                         Grid.Row="5" 
                                                         Margin="4"
                                                         TabIndex="9"
-                                                        ItemsSource="{Binding Path=Context.AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                                         DisplayMemberPath="FullName"
                                                         SelectedValuePath="Id"
                                                         SelectedValue="{Binding Path=SelectedAccountingAccountStartId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -289,7 +289,7 @@
                                                         Grid.Row="6" 
                                                         Margin="4"
                                                         TabIndex="10"
-                                                        ItemsSource="{Binding Path=Context.AccountingAccountsEnd, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        ItemsSource="{Binding Path=AccountingAccountsEnd, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                                         DisplayMemberPath="FullName"
                                                         SelectedValuePath="Id"
                                                         SelectedValue="{Binding Path=SelectedAccountingAccountEndId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
