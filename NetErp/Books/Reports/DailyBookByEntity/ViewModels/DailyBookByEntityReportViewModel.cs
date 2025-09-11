@@ -53,6 +53,50 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 }
             }
         }
+        // Presentaciones
+        private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
+        public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations
+        {
+            get { return _accountingPresentations; }
+            set
+            {
+                if (_accountingPresentations != value)
+                {
+                    _accountingPresentations = value;
+                    NotifyOfPropertyChange(nameof(AccountingPresentations));
+                }
+            }
+        }
+
+        // Fuentes Contables
+        private ObservableCollection<AccountingSourceGraphQLModel> _accountingSources;
+        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources
+        {
+            get { return _accountingSources; }
+            set
+            {
+                if (_accountingSources != value)
+                {
+                    _accountingSources = value;
+                    NotifyOfPropertyChange(nameof(AccountingSources));
+                }
+            }
+        }
+
+        // Centros de costos
+        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters
+        {
+            get { return _costCenters; }
+            set
+            {
+                if (_costCenters != value)
+                {
+                    _costCenters = value;
+                    NotifyOfPropertyChange(nameof(CostCenters));
+                }
+            }
+        }
 
         // Auxiliary Book Data
         private ObservableCollection<DailyBookByEntityGraphQLModel> _results;
@@ -304,7 +348,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await ExecuteSearch();
+                var result = await ExecuteSearchAsync();
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -331,7 +375,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             }
         }
 
-        public async Task<PageResult<DailyBookByEntityGraphQLModel>> ExecuteSearch()
+        public async Task<PageResult<DailyBookByEntityGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -364,10 +408,10 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 }";
 
                 // Si han seleccionado todos los centros de costos, mandar un array de enteros vacio
-                int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
+                int[] costCentersIds = SelectedCostCenters.Count == this.CostCenters.Count ? new int[0] : (from c in SelectedCostCenters select c.Id).ToArray();
 
                 // Si han seleccionado todas las fuentes contables, mandar un array de enteros vacio
-                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.Context.AccountingSources.Count ? new int[0] : (from s in SelectedAccountingSources select s.Id).ToArray();
+                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.AccountingSources.Count ? new int[0] : (from s in SelectedAccountingSources select s.Id).ToArray();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -389,7 +433,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             }
         }
 
-        public async void SearchForAccountingEntityMatch()
+        public async Task SearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -399,7 +443,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 if (this.IsFilterSearchAccountinEntityOnEditMode)
                 {
                     this.IsFilterSearchAccountinEntityOnEditMode = false;
-                    await this.ExecuteSearchForAccountingEntityMatch();
+                    await this.ExecuteSearchForAccountingEntityMatchAsync();
                     App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(SelectedAccountingEntityId)));
                 }
                 else
@@ -424,7 +468,7 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             }
         }
 
-        public async Task ExecuteSearchForAccountingEntityMatch()
+        public async Task ExecuteSearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -469,7 +513,59 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
                 throw;
             }
         }
+        public async Task InitializeAsync()
+        {
+            try
+            {
+                string query = @"
+                query ($accountingSourceFilter: AccountingSourceFilterInput) {
+                    accountingPresentations{
+                    id
+                    name
+                    },
+                    costCenters{
+                    id
+                    name
+                    },
+                    accountingSources(filter: $accountingSourceFilter) {
+                    id
+                    name
+                   }
+                }";
 
+                dynamic variables = new ExpandoObject();
+                variables.AccountingSourceFilter = new ExpandoObject();
+                variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+                variables.AccountingSourceFilter.Annulment.@operator = "=";
+                variables.AccountingSourceFilter.Annulment.value = false;
+                var dataContext = await this._dailyBookService.GetDataContextAsync<DailyBookDataContext>(query, variables);
+                if (dataContext != null)
+                {
+                    this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);
+                    this.CostCenters = new ObservableCollection<CostCenterGraphQLModel>(dataContext.CostCenters);
+                    this.AccountingSources = new ObservableCollection<AccountingSourceGraphQLModel>(dataContext.AccountingSources);
+
+                    // Initial Selected Values
+                    if (this.CostCenters != null)
+                        this.SelectedCostCenters = new ObservableCollection<CostCenterGraphQLModel>(this.CostCenters);
+
+                    if (this.AccountingPresentations != null)
+                        this.SelectedAccountingPresentationId = this.AccountingPresentations.FirstOrDefault().Id;
+
+                    if (this.AccountingSources != null)
+                        this.SelectedAccountingSources = new ObservableCollection<AccountingSourceGraphQLModel>(dataContext.AccountingSources);
+                }
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
         #endregion
 
         public DailyBookByEntityReportViewModel(DailyBookByEntityViewModel context, IRepository<DailyBookByEntityGraphQLModel> dailyBookService, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
@@ -477,7 +573,10 @@ namespace NetErp.Books.Reports.DailyBook.ViewModels
             this._dailyBookService = dailyBookService;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
+            this._dailyBookService = dailyBookService;
+            this._accountingEntityService = accountingEntityService;
             this.Context = context;
+            _ = InitializeAsync();
         }
 
         #region Paginacion
