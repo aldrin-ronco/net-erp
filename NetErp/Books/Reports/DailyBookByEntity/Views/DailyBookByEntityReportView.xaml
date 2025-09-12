@@ -87,7 +87,7 @@
 
                 <TextBlock Text="Presentacion" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Margin="0 0 4 0"/>
                 <ComboBox Grid.Column="1" Grid.Row="0" Margin="4"
-                          ItemsSource="{Binding Path=Context.AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{Binding Path=AccountingPresentations, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                           SelectedValuePath="Id"
                           SelectedValue="{Binding Path=SelectedAccountingPresentationId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="Name"
@@ -119,7 +119,7 @@
                                     Command="{Binding Path=InteractionCommand}"
                                     TabIndex="4"
                                     SelectedItemsOverride="{Binding Path=SelectedCostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMemberPath="Name"
                                     ValueMemberPath="Id"
                                     SelectedValue="{Binding Path=SelectedCostCenterId, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -128,7 +128,7 @@
                 <xctk:CheckComboBox Grid.Column="1" Grid.Row="3" Padding="3" Margin="4"
                                     IsSelectAllActive="True"
                                     SelectedItemsOverride="{Binding Path=SelectedAccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.AccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                    ItemsSource="{Binding Path=AccountingSources, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMemberPath="Name"
                                     ValueMemberPath="Id"
                                     TabIndex="5"
@@ -191,7 +191,7 @@
                     <Button Grid.Row="0" 
                                 Grid.Column="1"
                                 TabIndex="7"
-                                x:Name="SearchForAccountingEntityMatch">
+                                x:Name="SearchForAccountingEntityMatchAsync">
                         <Button.Content>
                             <Image Width="16">
                                 <Image.Style>

@@ -16,19 +16,23 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
     {
 
         private AccountPlanMasterViewModel _accountPlanMasterViewModel;
-
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         public AccountPlanMasterViewModel AccountPlanMasterViewModel
         {
             get 
             {
-                if (_accountPlanMasterViewModel is null) _accountPlanMasterViewModel = new AccountPlanMasterViewModel(this);
+                if (_accountPlanMasterViewModel is null) _accountPlanMasterViewModel = new AccountPlanMasterViewModel(this, _notificationService, _accountingAccountService);
                 return _accountPlanMasterViewModel; 
             }
         }
 
 
-        public AccountPlanViewModel()
+        public AccountPlanViewModel(Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
+            this._accountingAccountService = accountingAccountService;
+            this._notificationService = notificationService;
             _ = Task.Run(async () => 
             {
                 try
@@ -64,7 +68,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                AccountPlanDetailViewModel instance = new(this)
+                AccountPlanDetailViewModel instance = new(this, _notificationService, _accountingAccountService)
                 {
                     Code = accountCode
                 };

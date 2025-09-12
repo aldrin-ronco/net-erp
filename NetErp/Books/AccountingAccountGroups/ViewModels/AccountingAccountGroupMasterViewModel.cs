@@ -297,7 +297,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task DeleteAccountingAccount()
+        public async Task DeleteAccountingAccountAsync()
         {
            
                 MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedGroupAccountingAccountToDeleted.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
@@ -313,6 +313,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         }
         public void DeleteAccountingAccounts()
         {
+            MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar los registros seleccionados?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
             foreach (var accountingAccount in SelectedGroupAccountingAccounts)
             {
                 if (accountingAccount.IsChecked is true) 
@@ -402,6 +404,14 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 //Initialized = true;
                 IsBusy = false;
             }
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

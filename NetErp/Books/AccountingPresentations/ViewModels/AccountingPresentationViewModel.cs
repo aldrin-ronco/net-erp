@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm.Native;
 using Models.Books;
 using NetErp.Billing.Zones.ViewModels;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,13 +19,16 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
+        private readonly Helpers.Services.INotificationService _notificationService;
+
+        private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
 
         private AccountingPresentationMasterViewModel _accountingPresentationsMasterViewModel;
         public AccountingPresentationMasterViewModel AccountingPresentationsMasterViewModel
         {
             get
             {
-                if (_accountingPresentationsMasterViewModel is null) _accountingPresentationsMasterViewModel = new AccountingPresentationMasterViewModel(this);
+                if (_accountingPresentationsMasterViewModel is null) _accountingPresentationsMasterViewModel = new AccountingPresentationMasterViewModel(this, _notificationService, _accountingPresentationService);
                 return _accountingPresentationsMasterViewModel;
             }
         }
@@ -45,7 +49,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             try
             {
-                AccountingPresentationDetailViewModel instance = new(this)
+                AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
                 {
                     AccountingBooks = accountingBooks,
                     AccountingBookClosure = accountingBooks.FirstOrDefault()
@@ -67,7 +71,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                     accountingBook.IsChecked = checkedIds.Contains(accountingBook.Id);
                 }
 
-                AccountingPresentationDetailViewModel instance = new(this)
+                AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
                 {
                     AccountingPresentationId = accountingPresentation.Id,
                     AccountingPresentationName = accountingPresentation.Name,
@@ -83,11 +87,14 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 throw;
             }       
         }
-        public AccountingPresentationViewModel(IEventAggregator eventAggregator, IMapper mapper)
+        public AccountingPresentationViewModel(IEventAggregator eventAggregator, IMapper mapper, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _accountingPresentationsMasterViewModel = new AccountingPresentationMasterViewModel(this); 
+            _notificationService = notificationService;
+            _accountingPresentationService = accountingPresentationService;
+            _accountingPresentationsMasterViewModel = new AccountingPresentationMasterViewModel(this, _notificationService, _accountingPresentationService); 
             _ = Task.Run(() => ActivateMasterViewAsync());
         }
     }

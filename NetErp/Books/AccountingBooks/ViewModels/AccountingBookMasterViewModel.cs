@@ -27,12 +27,17 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         IHandle<AccountingBookUpdateMessage>,
         IHandle<AccountingBookCreateMessage>
     {
-        public IGenericDataAccess<AccountingBookGraphQLModel> AccountingBookService { get; set; } = IoC.Get<IGenericDataAccess<AccountingBookGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-        public AccountingBookMasterViewModel(AccountingBookViewModel context)
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService;
+
+        public AccountingBookMasterViewModel(AccountingBookViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingBookGraphQLModel> accountingBookService)
         {
             Context = context;
-            Context.EventAggregator.SubscribeOnPublishedThread(this);               
+            Context.EventAggregator.SubscribeOnPublishedThread(this);
+            _accountingBookService = accountingBookService;
+            _notificationService = notificationService;
             this.SetFocus(() => FilterSearch);
         }
   
@@ -128,7 +133,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         }
         public async Task CreateAccountingBookAsync()
         {
-            await Context.ActivateDetailViewForNew();
+            await Context.ActivateDetailViewForNewAsync();
         }
         public async Task LoadAccountingBooksAsync()
         {
@@ -149,7 +154,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 variables.filter.name = new ExpandoObject();
                 variables.filter.name.@operator = "like";
                 variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                var result = await AccountingBookService.GetList(query, variables);
+                var result = await _accountingBookService.GetListAsync(query, variables);
                 AccountingBooks = new ObservableCollection<AccountingBookGraphQLModel>(result);
                 IsBusy = false;     
             }
@@ -175,7 +180,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                     }
                 }";                
                 object variables = new { Id = id };
-                var validation = await this.AccountingBookService.CanDelete(query, variables);
+                var validation = await this._accountingBookService.CanDeleteAsync(query, variables);
                 if (validation.CanDelete)
                 {
                     IsBusy = false; 
@@ -221,7 +226,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         }        
         public async Task EditAccountingBook()
         {
-            await Context.ActivateDetailViewForEdit(SelectedItem ?? new ());
+            await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new ());
 
         }
         public async Task<AccountingBookGraphQLModel> ExecuteDeleteAccountingBookAsync(int id)
@@ -236,7 +241,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
-                var result = await AccountingBookService.Delete(query, variables);
+                var result = await _accountingBookService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception)

@@ -8,135 +8,106 @@ using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntries.DTO;
+using Ninject.Activation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
 {
     public class AccountingEntriesViewModel : Conductor<Screen>.Collection.OneActive
+       
+        
+
+
     {
 
 
-        public readonly IGenericDataAccess<AccountingEntityGraphQLModel> AccountingEntityService = IoC.Get<IGenericDataAccess<AccountingEntityGraphQLModel>>();
+        private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
 
-        public readonly IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
 
-        public  readonly IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel> AccountingEntryDraftDetailService = IoC.Get<IGenericDataAccess<AccountingEntryDraftDetailGraphQLModel>>();
 
-        public readonly IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel> AccountingEntryDraftMasterService = IoC.Get<IGenericDataAccess<AccountingEntryDraftMasterGraphQLModel>>();
+        private readonly Helpers.Services.INotificationService _notificationService;
 
-        public readonly IGenericDataAccess<AccountingEntryMasterGraphQLModel> AccountingEntryMasterService = IoC.Get<IGenericDataAccess<AccountingEntryMasterGraphQLModel>>();
-
-        public readonly IGenericDataAccess<AccountingEntryDetailGraphQLModel> AccountingEntryDetailService = IoC.Get<IGenericDataAccess<AccountingEntryDetailGraphQLModel>>();
         public IMapper Mapper { get; private set; }
 
         public IEventAggregator EventAggregator;
 
-        // Libros contables
-        private ObservableCollection<AccountingBookGraphQLModel> _accountingBooks;
-        public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks
-        {
-            get { return _accountingBooks; }
-            set
-            {
-                if (_accountingBooks != value)
-                {
-                    _accountingBooks = value;
-                    NotifyOfPropertyChange(nameof(AccountingBooks));
-                }
-            }
-        }
+       
 
-        //CostCenters
-        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters
-        {
-            get { return _costCenters; }
-            set
-            {
-                if (_costCenters != value)
-                {
-                    _costCenters = value;
-                    NotifyOfPropertyChange(nameof(CostCenters));
-                }
-            }
-        }
-
-        // AccountingSources
-        private ObservableCollection<AccountingSourceGraphQLModel> _accountingSources;
-        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources
-        {
-            get { return _accountingSources; }
-            set
-            {
-                if (_accountingSources != value)
-                {
-                    _accountingSources = value;
-                    NotifyOfPropertyChange(nameof(AccountingSources));
-                }
-            }
-        }
-
-        // Cuentas Contables
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
-        {
-            get { return _accountingAccounts; }
-            set
-            {
-                if (_accountingAccounts != value)
-                {
-                    _accountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccounts));
-                }
-            }
-        }
+      
 
         private AccountingEntriesMasterViewModel _accountingEntriesMasterViewModel;
         public AccountingEntriesMasterViewModel AccountingEntriesMasterViewModel
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService);
                 return _accountingEntriesMasterViewModel;
             }
         }
 
         public AccountingEntriesViewModel(IMapper mapper,
-                                          IEventAggregator eventAggregator)
+                                          IEventAggregator eventAggregator,
+                                          Helpers.Services.INotificationService notificationService,
+                                          IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+                                          IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+                                          IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
+                                          IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+                                          IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
+                                          IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService
+                                          )
         {
             this.EventAggregator = eventAggregator;
             this.Mapper = mapper;
-            Task.Run(() => this.ActivateMasterView());
+            this._accountingEntityService = accountingEntityService;
+            this._accountingAccountService = accountingAccountService;
+            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
+            this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
+            this._accountingEntryMasterService = accountingEntryMasterService;
+            this._notificationService = notificationService;
+            _ = this.ActivateMasterViewAsync();
+            
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             await ActivateItemAsync(this.AccountingEntriesMasterViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDocumentPreviewView(AccountingEntryMasterDTO selectedAccountingEntry)
+        public async Task ActivateDocumentPreviewViewAsync(AccountingEntryMasterDTO selectedAccountingEntry)
         {
-            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry);
+            AccountingEntriesDocumentPreviewViewModel instance = new(this, selectedAccountingEntry, this._accountingEntryMasterService, this._accountingEntryDraftMasterService);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync(ObservableCollection<AccountingBookGraphQLModel> accountingBooks,
+            ObservableCollection<CostCenterGraphQLModel> costCenters,
+            ObservableCollection<AccountingSourceGraphQLModel> accountingSources)
         {
-            AccountingEntriesDetailViewModel instance = new(this);
+            AccountingEntriesDetailViewModel instance = new(this,
+                this._accountingEntryMasterService,
+                this._accountingEntityService,
+                this._accountingEntryDraftMasterService,
+                this._accountingEntryDraftDetailService,
+                this._accountingAccountService, accountingBooks, costCenters, accountingSources);
             // Header
             instance.SelectedAccountingEntryDraftMaster = null;
             instance.DraftMasterId = 0;
-            instance.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
-            instance.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
-            instance.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
-            instance.SelectedCostCenterOnEntryId = this.CostCenters.FirstOrDefault().Id;
+            instance.SelectedAccountingBookId = accountingBooks.FirstOrDefault().Id;
+            instance.SelectedCostCenterId = costCenters.FirstOrDefault().Id;
+            instance.SelectedAccountingSourceId = accountingSources.FirstOrDefault().Id;
+            instance.SelectedCostCenterOnEntryId = costCenters.FirstOrDefault().Id;
             instance.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>();
             instance.EntriesPageIndex = 1;
             instance.EntriesPageSize = 50;
@@ -161,12 +132,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEdit(AccountingEntryDraftMasterGraphQLModel model)
+        public async Task ActivateDetailViewForEditAsync(AccountingEntryDraftMasterGraphQLModel model)
         {
             try
             {
                 object variables;
-                AccountingEntriesDetailViewModel instance = new(this);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, AccountingEntriesMasterViewModel.AccountingBooks, AccountingEntriesMasterViewModel.CostCenters, AccountingEntriesMasterViewModel.AccountingSources);
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
@@ -203,7 +174,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 stopwatch.Start();
 
                 // Get Entries
-                var entries = await this.AccountingEntryDraftDetailService.GetList(query, variables);
+                var entries = await this._accountingEntryDraftDetailService.GetListAsync(query, variables);
 
                 // Totals
                 var totals =(
@@ -260,6 +231,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 throw;
             }
+        }
+
+      
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+
+            // Desconectar eventos para evitar memory leaks
+            EventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

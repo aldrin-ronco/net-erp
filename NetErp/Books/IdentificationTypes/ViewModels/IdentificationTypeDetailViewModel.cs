@@ -21,7 +21,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 {
     public class IdentificationTypeDetailViewModel : Screen
     {
-        public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
+        private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         #region Propiedades
         // Context
         private IdentificationTypeViewModel _context;
@@ -178,8 +178,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         #endregion
 
-        public IdentificationTypeDetailViewModel(IdentificationTypeViewModel context)
+        public IdentificationTypeDetailViewModel(IdentificationTypeViewModel context, IRepository<IdentificationTypeGraphQLModel> identificationTypeService)
         {
+            this._identificationTypeService = identificationTypeService;
             Context = context;
             IdentificationType = new IdentificationTypeGraphQLModel();
         }
@@ -195,7 +196,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
+            _ = Task.Run(() => Context.ActivateMasterViewAsync());
         }
 
         public async Task Save()
@@ -204,7 +205,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                IdentificationTypeGraphQLModel result = await ExecuteSave();
+                IdentificationTypeGraphQLModel result = await ExecuteSaveAsync();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeCreateMessage() { CreatedIdentificationType = result });
@@ -213,7 +214,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     await Context.EventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeUpdateMessage() { UpdatedIdentificationType = result });
                 }
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -233,7 +234,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         }
 
-        public async Task<IdentificationTypeGraphQLModel> ExecuteSave()
+        public async Task<IdentificationTypeGraphQLModel> ExecuteSaveAsync()
         {
 
             try
@@ -262,7 +263,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                         }
                     };
 
-                    var identificationTypeCreated = await IdentificationTypeService.Create(query, variables);
+                    var identificationTypeCreated = await _identificationTypeService.CreateAsync(query, variables);
                     return identificationTypeCreated;
                 }
                 else
@@ -290,7 +291,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                         Id
                     };
 
-                    IdentificationTypeGraphQLModel updatedIdentificationType = await IdentificationTypeService.Update(query, variables);
+                    IdentificationTypeGraphQLModel updatedIdentificationType = await _identificationTypeService.UpdateAsync(query, variables);
                     return updatedIdentificationType;
                 }
             }

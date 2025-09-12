@@ -175,7 +175,7 @@
                     IsTextEditable="False"
                     IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                     EditValue="{Binding Path=SelectedAccountingBookId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    ItemsSource="{Binding Path=Context.AccountingBooks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    ItemsSource="{Binding Path=AccountingBooks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
@@ -195,7 +195,7 @@
                     TabIndex="1"
                     IsEnabled="{Binding Path=IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                     EditValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    ItemsSource="{Binding Path=CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
@@ -215,7 +215,7 @@
                     DisplayMember="Name"
                     ValueMember="Id"
                     EditValue="{Binding Path=SelectedAccountingSourceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                        
-                    ItemsSource="{Binding Path=Context.AccountingSources, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    ItemsSource="{Binding Path=AccountingSources, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxe:ComboBoxEdit.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
@@ -297,7 +297,7 @@
                         <ColumnDefinition Width="40"/>
                     </Grid.ColumnDefinitions>
                     <!--Cuenta Contable-->
-                    <TextBlock Text="Cuenta contable" 
+                    <TextBlock Text="Cuenta contable " 
                     Grid.Row="0" Grid.Column="0" 
                     Margin="4 0 0 0"/>
                     <dxg:LookUpEdit Grid.Row="1" Grid.Column="0" Padding="2"
@@ -319,7 +319,7 @@
                                     ImmediatePopup="True"
                                     ClearSelectionOnBackspace="True"
                                     EditValue="{Binding Path=SelectedAccountingAccountOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    ItemsSource="{Binding Path=Context.AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    ItemsSource="{Binding Path=AccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:LookUpEdit.PopupContentTemplate>
                         <ControlTemplate>
                             <dxg:GridControl Name="PART_GridControl" AutoGenerateColumns="None">
@@ -390,7 +390,7 @@
                         <Button Grid.Row="0" Grid.Column="1"
                             Padding="0 4 0 4"
                             TabIndex="8"
-                            x:Name="SearchForAccountingEntityMatch">
+                            x:Name="SearchForAccountingEntityMatchAsync">
                             <Button.Content>
                                 <Image Width="16" HorizontalAlignment="Center">
                                     <Image.Style>
@@ -427,7 +427,7 @@
                     ValueMember="Id"
                     IsTextEditable="False"
                     EditValue="{Binding Path=SelectedCostCenterOnEntryId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    ItemsSource="{Binding Path=Context.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    ItemsSource="{Binding Path=CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <!--Detalle-->
                     <TextBlock Text="Detalle"
                     Grid.Row="0" Grid.Column="3" 
@@ -468,7 +468,7 @@
                 Margin="0 4 0 4"
                 Click="SetFocusOnAutoCompleteComboBox"
                 TabIndex="14"
-                x:Name="AddRecord">
+                x:Name="AddRecordAsync">
                     <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Width="16">
                             <Image.Style>
                                 <Style TargetType="Image">
@@ -504,7 +504,7 @@
                     MinRowHeight="30"
                     AlternatingRowBackground="Beige"
                     Background="Transparent"
-                    cal:Message.Attach="[Event RowEditEnding] = [Action EndRowEditing]"
+                    cal:Message.Attach="[Event RowEditEnding] = [Action EndRowEditingAsync]"
                     ItemsSource="{Binding Path=AccountingEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     SelectedItem="{Binding Path=SelectedAccountingEntryDraftDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     CanUserDeleteRows="False">
@@ -557,7 +557,7 @@
                                     FilterCondition="Contains"
                                     ImmediatePopup="True"
                                     ClearSelectionOnBackspace="True"
-                                    ItemsSource="{Binding Path=Data.Context.AccountingAccounts, Source={StaticResource DataContextProxy}}"
+                                    ItemsSource="{Binding Path=Data.AccountingAccounts, Source={StaticResource DataContextProxy}}"
                                     ValueMember="Id"
                                     EditValue="{Binding Path=AccountingAccount.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
@@ -615,7 +615,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <dxe:ComboBoxEdit ItemsSource="{Binding Path=Data.Context.CostCenters, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"                                          
+                                    <dxe:ComboBoxEdit ItemsSource="{Binding Path=Data.CostCenters, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"                                          
                                         DisplayMember="Name" IsTextEditable="False" AllowNullInput="False"
                                         ValueMember="Id" ImmediatePopup="True"                                     
                                         EditValue="{Binding Path=CostCenter.Id, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

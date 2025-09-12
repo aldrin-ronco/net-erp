@@ -22,10 +22,10 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
     class AccountingPresentationMasterViewModel : Screen, IHandle<AccountingPresentationCreateMessage>,
         IHandle<AccountingPresentationUpdateMessage>, IHandle<AccountingPresentationDeleteMessage>
     {
-        public IGenericDataAccess<AccountingPresentationGraphQLModel> AccountingPresentationService { get; set; } = IoC.Get<IGenericDataAccess<AccountingPresentationGraphQLModel>>();
 
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly Helpers.Services.INotificationService _notificationService;
 
+        private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
         public new bool IsInitialized { get; set; } = false;
 
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations = [];
@@ -155,7 +155,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
 
-                var validation = await AccountingPresentationService.CanDelete(query, variables);
+                var validation = await _accountingPresentationService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -212,7 +212,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                     }";
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
-                AccountingPresentationGraphQLModel result = await AccountingPresentationService.Delete(query, variables);
+                AccountingPresentationGraphQLModel result = await _accountingPresentationService.DeleteAsync(query, variables);
                 SelectedItem = null;
                 return result;
             }
@@ -252,7 +252,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 variables.filter.name = new ExpandoObject();
                 variables.filter.name.@operator = "like";
                 variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                var results = await AccountingPresentationService.GetList(query, variables);
+                var results = await _accountingPresentationService.GetListAsync(query, variables);
                 AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(results);
             }
             catch (Exception ex)
@@ -298,7 +298,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 variables.filter.name = new ExpandoObject();
                 variables.filter.name.@operator = "like";
                 variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                var results = await AccountingPresentationService.GetDataContext<AccountingPresentationDataContext>(query, variables);
+                var results = await _accountingPresentationService.GetDataContextAsync<AccountingPresentationDataContext>(query, variables);
                 AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(results.AccountingPresentations);
                 AccountingBooks = Context.AutoMapper.Map<ObservableCollection<AccountingBookDTO>>(results.AccountingBooks);
                 IsInitialized = true;
@@ -350,9 +350,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             await base.OnActivateAsync(cancellationToken);
         }
 
-        public AccountingPresentationMasterViewModel(AccountingPresentationViewModel context)
+        public AccountingPresentationMasterViewModel(AccountingPresentationViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService)
         {
             Context = context;
+            _notificationService = notificationService;
+            _accountingPresentationService = accountingPresentationService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
         }
 

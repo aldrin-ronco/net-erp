@@ -26,6 +26,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 {
     public class AuxiliaryBookReportViewModel : Screen, INotifyDataErrorInfo
     {
+        private readonly IRepository<AuxiliaryBookGraphQLModel> _auxiliaryBookService;
 
         #region Command's
 
@@ -65,7 +66,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         private async void ExecutePaginationChangeIndex(object parameter)
         {
-            await Task.Run(() => this.Search());
+            await Task.Run(() => this.SearchAsync());
         }
         private bool CanExecutePaginationChangeIndex(object parameter)
         {
@@ -98,7 +99,79 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 }
             }
         }
+        // Presentaciones
+        private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
+        public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations
+        {
+            get { return _accountingPresentations; }
+            set
+            {
+                if (_accountingPresentations != value)
+                {
+                    _accountingPresentations = value;
+                    NotifyOfPropertyChange(nameof(AccountingPresentations));
+                }
+            }
+        }
 
+        // Centros de costos
+        private ObservableCollection<CostCenterGraphQLModel> _costCenters;
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters
+        {
+            get { return _costCenters; }
+            set
+            {
+                if (_costCenters != value)
+                {
+                    _costCenters = value;
+                    NotifyOfPropertyChange(nameof(CostCenters));
+                }
+            }
+        }
+        // Fuente Contable
+        private ObservableCollection<AccountingSourceGraphQLModel> _accountingSources;
+        public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources
+        {
+            get { return _accountingSources; }
+            set
+            {
+                if (_accountingSources != value)
+                {
+                    _accountingSources = value;
+                    NotifyOfPropertyChange(nameof(AccountingSources));
+                }
+            }
+        }
+
+        // Cuentas Contables
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
+        {
+            get { return _accountingAccounts; }
+            set
+            {
+                if (_accountingAccounts != value)
+                {
+                    _accountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccounts));
+                }
+            }
+        }
+
+        // Cuentas Contables para filtro de cuenta final, por alguna razon no me permite usar una sola fuente al usar el combo de autocompletado
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountsEnd;
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountsEnd
+        {
+            get { return _accountingAccountsEnd; }
+            set
+            {
+                if (_accountingAccountsEnd != value)
+                {
+                    _accountingAccountsEnd = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountsEnd));
+                }
+            }
+        }
         // Auxiliary Book Data
         private ObservableCollection<AuxiliaryBookGraphQLModel> _results;
         public ObservableCollection<AuxiliaryBookGraphQLModel> Results
@@ -149,18 +222,18 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
         }
 
         // Selected AccountingSource Id
-        private int _selectedAccountingSourceId;
-        public int SelectedAccountingSourceId
+        private ObservableCollection<int> _selectedAccountingSourceIds;
+        public ObservableCollection<int> SelectedAccountingSourceIds
         {
-            get { return _selectedAccountingSourceId; }
+            get { return _selectedAccountingSourceIds; }
             set
             {
-                if (_selectedAccountingSourceId != value)
+                if (_selectedAccountingSourceIds != value)
                 {
-                    _selectedAccountingSourceId = value;
+                    _selectedAccountingSourceIds = value;
                     RestartPage = true;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingSourceId));
-                    ValidateProperty(nameof(SelectedAccountingSourceId));
+                    NotifyOfPropertyChange(nameof(SelectedAccountingSourceIds));
+                    ValidateProperty(nameof(SelectedAccountingSourceIds));
                 }
             }
         }
@@ -256,7 +329,8 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 if (_selectedAccountingSources != value)
                 {
                     _selectedAccountingSources = value;
-                    NotifyOfPropertyChange(nameof(AccountingSources));
+                    NotifyOfPropertyChange(nameof(SelectedAccountingSources));
+                    ValidateProperty(nameof(SelectedAccountingSources));
                 }
             }
         }
@@ -277,12 +351,13 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
         #region Constructor
 
-        public AuxiliaryBookReportViewModel(AuxiliaryBookViewModel context)
+        public AuxiliaryBookReportViewModel(AuxiliaryBookViewModel context, IRepository<AuxiliaryBookGraphQLModel> auxiliaryBookService)
         {
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
-
+            this._auxiliaryBookService = auxiliaryBookService;
             this.Context = context;
+            _ = InitializeAsync();
         }
 
         #endregion
@@ -299,7 +374,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
             return true;
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -315,15 +390,15 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await ExecuteSearch();
+                var result = await ExecuteSearchAsync();
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<AuxiliaryBookGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<AuxiliaryBookGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
 
             }
@@ -341,8 +416,60 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 IsBusy = false;
             }
         }
+        private async Task InitializeAsync()
+        {
+            string query = @"
+            query ($accountingAccountFilter: AccountingAccountFilterInput, $accountingSourceFilter:AccountingSourceFilterInput ) {
+              accountingPresentations{
+                id
+                name
+              },
+              costCenters{
+                id
+                name
+              },
+              accountingSources(filter: $accountingSourceFilter) {
+                id
+                reverseId
+                name
+              },
+              accountingAccounts(filter: $accountingAccountFilter) {
+                id
+                code
+                name
+              }
+            }";
+            dynamic variables = new ExpandoObject();
+            variables.AccountingSourceFilter = new ExpandoObject();
+            variables.AccountingSourceFilter.Annulment = new ExpandoObject();
+            variables.AccountingSourceFilter.Annulment.@operator = "=";
+            variables.AccountingSourceFilter.Annulment.value = true;
+            variables.AccountingAccountFilter = new ExpandoObject();
+            variables.AccountingAccountFilter.Code = new ExpandoObject();
+            variables.AccountingAccountFilter.Code.@operator = new List<string>() { "length", ">=" };
+            variables.AccountingAccountFilter.Code.value = 8;
+            var dataContext = await _auxiliaryBookService.GetDataContextAsync<AuxiliaryBookDataContext>(query, variables);
+            if (dataContext != null)
+            {
+                this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);
+                this.AccountingSources = new ObservableCollection<AccountingSourceGraphQLModel>(dataContext.AccountingSources);
+                this.CostCenters = new ObservableCollection<CostCenterGraphQLModel>(dataContext.CostCenters);
+                this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(dataContext.AccountingAccounts);
+                this.AccountingAccountsEnd = new ObservableCollection<AccountingAccountGraphQLModel>(dataContext.AccountingAccounts);
 
-        public async Task<IGenericDataAccess<AuxiliaryBookGraphQLModel>.PageResponseType> ExecuteSearch()
+                // Initial Selected Values
+                if (this.CostCenters != null)
+                    this.SelectedCostCenters = new ObservableCollection<CostCenterGraphQLModel>(this.CostCenters);
+
+                if (this.AccountingPresentations != null)
+                    this.SelectedAccountingPresentationId = this.AccountingPresentations.FirstOrDefault().Id;
+
+                if (this.AccountingSources != null)
+                    this.SelectedAccountingSources = new ObservableCollection<AccountingSourceGraphQLModel>(this.AccountingSources);
+
+            }
+        }
+        public async Task<PageResult<AuxiliaryBookGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -369,10 +496,10 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                   }
                 }";
 
-                string accountingCodeStart = this.Context.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountStartId).FirstOrDefault().Code;
-                string accountingCodeEnd = this.Context.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountEndId).FirstOrDefault().Code;
-                int[] costCentersIds = SelectedCostCenters.Count == this.Context.CostCenters.Count ? [] : (from c in SelectedCostCenters select c.Id).ToArray();
-                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.Context.AccountingSources.Count ? [] : (from s in SelectedAccountingSources select s.Id).ToArray();
+                string accountingCodeStart = this.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountStartId).FirstOrDefault().Code;
+                string accountingCodeEnd = this.AccountingAccounts.Where(x => x.Id == this.SelectedAccountingAccountEndId).FirstOrDefault().Code;
+                int[] costCentersIds = SelectedCostCenters.Count == this.CostCenters.Count ? [] : (from c in SelectedCostCenters select c.Id).ToArray();
+                int[] accountingSourcesIds = SelectedAccountingSources.Count == this.AccountingSources.Count ? [] : (from s in SelectedAccountingSources select s.Id).ToArray();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -386,7 +513,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                 variables.filter.AccountingSourcesIds = accountingSourcesIds;
                 variables.filter.AccountingCodeStart = accountingCodeStart;
                 variables.filter.AccountingCodeEnd = accountingCodeEnd;
-                var auxiliaryBookPage = await this.Context.AuxiliaryBookService.GetPage(query, variables);
+                var auxiliaryBookPage = await this._auxiliaryBookService.GetPageAsync(query, variables);
                 return auxiliaryBookPage;
             }
             catch (Exception)
@@ -460,6 +587,9 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
                     break;
                 case nameof(SelectedAccountingSources):
                     if (this.SelectedAccountingSources is null || this.SelectedAccountingSources.Count == 0) AddError(propertyName, "Debe seleccionar por lo menos una fuente contable");
+                    break;
+                case nameof(SelectedAccountingSourceIds):
+                    if (this.SelectedAccountingSourceIds is null || this.SelectedAccountingSourceIds.Count == 0) AddError(propertyName, "Debe seleccionar por lo menos una fuente contable");
                     break;
                 case nameof(SelectedAccountingAccountStartId):
                     if (this.SelectedAccountingAccountStartId == 0) AddError(propertyName, "Debe seleccionar la cuenta contable inicial");

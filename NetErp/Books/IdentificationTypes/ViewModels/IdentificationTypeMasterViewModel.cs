@@ -26,8 +26,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         IHandle<IdentificationTypeUpdateMessage>,
         IHandle<IdentificationTypeDeleteMessage>
     {
-        public readonly IGenericDataAccess<IdentificationTypeGraphQLModel> IdentificationTypeService = IoC.Get<IGenericDataAccess<IdentificationTypeGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         // Context
         private IdentificationTypeViewModel _context;
         public IdentificationTypeViewModel Context
@@ -58,7 +59,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
-                        _ = Task.Run(this.LoadIdentificationTypes);
+                        _ = Task.Run(this.LoadIdentificationTypesAsync);
                     };
                 }
             }
@@ -83,7 +84,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             get
             {
-                if (_createIdentificationTypeCommand is null) _createIdentificationTypeCommand = new AsyncCommand(CreateIdentificationType, CanCreateIdentificationType);
+                if (_createIdentificationTypeCommand is null) _createIdentificationTypeCommand = new AsyncCommand(CreateIdentificationTypeAsync, CanCreateIdentificationType);
                 return _createIdentificationTypeCommand;
             }
 
@@ -97,7 +98,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             get
             {
-                if (_deleteIdentificationTypeCommand is null) _deleteIdentificationTypeCommand = new AsyncCommand(DeleteIdentificationType, CanDeleteIdentificationType);
+                if (_deleteIdentificationTypeCommand is null) _deleteIdentificationTypeCommand = new AsyncCommand(DeleteIdentificationTypeAsync, CanDeleteIdentificationType);
                 return _deleteIdentificationTypeCommand;
             }
         }
@@ -161,11 +162,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         #endregion
 
-        public IdentificationTypeMasterViewModel(IdentificationTypeViewModel context)
+        public IdentificationTypeMasterViewModel(IdentificationTypeViewModel context, IRepository<IdentificationTypeGraphQLModel> identificationTypeService, Helpers.Services.INotificationService notificationService)
         {
             this.Context = context;
+            this._identificationTypeService = identificationTypeService;
+            this._notificationService = notificationService;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            _ = Task.Run(() => this.LoadIdentificationTypes());
+            _ = Task.Run(() => this.LoadIdentificationTypesAsync());
         }
 
         #region Metodos 
@@ -176,7 +179,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
-        public async Task LoadIdentificationTypes()
+        public async Task LoadIdentificationTypesAsync()
         {
             try
             {
@@ -209,7 +212,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 variables.filter.or[1].name.@operator = "like";
                 variables.filter.or[1].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                var result = await IdentificationTypeService.GetList(query, variables);
+                var result = await _identificationTypeService.GetListAsync(query, variables);
                 ObservableCollection<IdentificationTypeGraphQLModel> source = new(result);
                 this.IdentificationTypes = this.Context.AutoMapper.Map<ObservableCollection<IdentificationTypeDTO>>(source);
             }
@@ -238,13 +241,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteIdentificationType));
         }
 
-        public async Task EditIdentificationType()
+        public async Task EditIdentificationTypeAsync()
         {
             try
             {
                 this.IsBusy = true;
                 this.Refresh();
-                await Task.Run(() => this.ExecuteEditIdentificationType());
+                await Task.Run(() => this.ExecuteEditIdentificationTypeAsync());
                 SelectedIdentificationType = null;
                 this.IsBusy = false;
             }
@@ -254,11 +257,11 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task ExecuteEditIdentificationType()
+        public async Task ExecuteEditIdentificationTypeAsync()
         {
             try
             {
-                await this.Context.ActivateDetailViewForEdit(this.SelectedIdentificationType);
+                await this.Context.ActivateDetailViewForEditAsync(this.SelectedIdentificationType);
             }
             catch (Exception ex)
             {
@@ -266,12 +269,12 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task CreateIdentificationType()
+        public async Task CreateIdentificationTypeAsync()
         {
-            await this.Context.ActivateDetailViewForNew(); // Mostrar la Vista
+            await this.Context.ActivateDetailViewForNewAsync(); // Mostrar la Vista
         }
 
-        public async Task DeleteIdentificationType()
+        public async Task DeleteIdentificationTypeAsync()
         {
             try
             {
@@ -289,7 +292,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
                 object variables = new { SelectedIdentificationType.Id };
 
-                var validation = await IdentificationTypeService.CanDelete(query, variables);
+                var validation = await _identificationTypeService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -305,7 +308,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 }
 
                 IsBusy = true;
-                var deletedIdentificationType = await Task.Run(() => this.ExecuteDeleteIdentificationType(SelectedIdentificationType.Id));
+                var deletedIdentificationType = await Task.Run(() => this.ExecuteDeleteIdentificationTypeAsync(SelectedIdentificationType.Id));
 
                 await Context.EventAggregator.PublishOnUIThreadAsync(new IdentificationTypeDeleteMessage { DeletedIdentificationType = deletedIdentificationType });
 
@@ -326,7 +329,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task<IdentificationTypeGraphQLModel> ExecuteDeleteIdentificationType(int id)
+        public async Task<IdentificationTypeGraphQLModel> ExecuteDeleteIdentificationTypeAsync(int id)
         {
             try
             {
@@ -348,7 +351,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 };
 
                 // Eliminar registros
-                var deletedRecord = await IdentificationTypeService.Delete(query, variables);
+                var deletedRecord = await _identificationTypeService.DeleteAsync(query, variables);
                 return deletedRecord;
             }
             catch (Exception)
@@ -361,7 +364,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             try
             {
-                await LoadIdentificationTypes();
+                await LoadIdentificationTypesAsync();
                 _notificationService.ShowSuccess("Tipo de identificación creado exitosamente");
                 return;
             }
@@ -376,7 +379,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             try
             {
-                await LoadIdentificationTypes();
+                await LoadIdentificationTypesAsync();
                 _notificationService.ShowSuccess("Tipo de identificación actualizado exitosamente");
                 return;
             }
@@ -391,7 +394,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             try
             {
-                await LoadIdentificationTypes();
+                await LoadIdentificationTypesAsync();
                 _notificationService.ShowSuccess("Tipo de identificación eliminado exitosamente");
                 return;
             }

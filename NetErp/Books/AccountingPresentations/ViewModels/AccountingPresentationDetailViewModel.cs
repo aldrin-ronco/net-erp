@@ -26,9 +26,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         Dictionary<string, List<string>> _errors;
 
-        public IGenericDataAccess<AccountingPresentationGraphQLModel> AccountingPresentationService = IoC.Get<IGenericDataAccess<AccountingPresentationGraphQLModel>>();
-
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+       
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
 
         private bool _isBusy = false;
 
@@ -211,7 +211,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 variables.data.allowsAccountingClosure = AccountingPresentationAllowClosure;
                 variables.data.accountingBookClosureId = AccountingPresentationAllowClosure ? AccountingBookClosure?.Id : 0;
                 variables.data.accountingBooksIds = savedBooksIds;
-                var result = IsNewRecord ? await AccountingPresentationService.Create(query, variables) : await AccountingPresentationService.Update(query, variables);
+                var result = IsNewRecord ? await _accountingPresentationService.CreateAsync(query, variables) : await _accountingPresentationService.UpdateAsync(query, variables);
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingPresentationCreateMessage() { CreatedAccountingPresentation = result });
@@ -253,9 +253,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             this.AccountingBooks = [];
         }
 
-        public AccountingPresentationDetailViewModel(AccountingPresentationViewModel context)
+        public AccountingPresentationDetailViewModel(AccountingPresentationViewModel context, Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService)
         {
             Context = context;
+            _notificationService = notificationService;
+            _accountingPresentationService = accountingPresentationService;
             _errors = [];
             AccountingBooks = [];
             AccountingPresentationAccountingBooks = [];
@@ -270,7 +273,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        public IEnumerable GetErrors(string propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
             if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
             return _errors[propertyName];

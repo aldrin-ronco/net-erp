@@ -72,7 +72,12 @@ namespace Models.Books
             }
         }
     }
-
+    public class AccountingEntityDataContext
+    {
+        public IEnumerable<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = [];
+        public IEnumerable<CountryGraphQLModel> Countries { get; set; } = [];
+    }
+    
     public class AccountingEntityCreateMessage
     {
         public AccountingEntityGraphQLModel CreatedAccountingEntity { get; set; } = new();

@@ -85,10 +85,8 @@ namespace NetErp.Global.MainMenu.ViewModels
         {
             try
             {
-                AccountPlanViewModel instance = new()
-                {
-                    DisplayName = "Plan único de cuentas"
-                };
+                AccountPlanViewModel instance = IoC.Get<AccountPlanViewModel>();
+                 instance.DisplayName = "Plan único de cuentas";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;

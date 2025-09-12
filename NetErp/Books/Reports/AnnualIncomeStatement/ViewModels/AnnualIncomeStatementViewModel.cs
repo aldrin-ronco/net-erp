@@ -19,7 +19,8 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
     {
 
         public AnnualIncomeStatementReportViewModel AnnualIncomeStatementReportViewModel { get; set; }
-        public readonly IGenericDataAccess<AnnualIncomeStatementGraphQLModel> AnnualIncomeStatementService = IoC.Get<IGenericDataAccess<AnnualIncomeStatementGraphQLModel>>();
+
+        private readonly IRepository<AnnualIncomeStatementGraphQLModel> _annualIncomeStatementService;
 
         // Presentaciones
         private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations;
@@ -51,21 +52,22 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             }
         }
 
-        public AnnualIncomeStatementViewModel()
+        public AnnualIncomeStatementViewModel(IRepository<AnnualIncomeStatementGraphQLModel> annualIncomeStatementService)
         {
-
-            this.AnnualIncomeStatementReportViewModel = new AnnualIncomeStatementReportViewModel(this);
+            this._annualIncomeStatementService = annualIncomeStatementService;
+            this.AnnualIncomeStatementReportViewModel = new AnnualIncomeStatementReportViewModel(this, this._annualIncomeStatementService);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
-            Task.Run(() => ActivateReportView());
+
+            joinable.Run(async () => await InitializeAsync());
+            _ = ActivateReportViewAsync();
         }
 
-        public async Task ActivateReportView()
+        public async Task ActivateReportViewAsync()
         {
             await ActivateItemAsync(this.AnnualIncomeStatementReportViewModel, new System.Threading.CancellationToken());
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -81,7 +83,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
                     }
                 }";
 
-                var dataContext = await this.AnnualIncomeStatementService.GetDataContext<AnnualIncomeStatementDataContext>(query, new { });
+                var dataContext = await this._annualIncomeStatementService.GetDataContextAsync<AnnualIncomeStatementDataContext>(query, new { });
                 if (dataContext != null)
                 {
                     this.AccountingPresentations = new ObservableCollection<AccountingPresentationGraphQLModel>(dataContext.AccountingPresentations);

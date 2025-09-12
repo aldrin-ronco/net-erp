@@ -24,13 +24,14 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
     public class AnnualIncomeStatementReportViewModel : Screen
     {
         public AnnualIncomeStatementViewModel Context { get; set; }
-
+        private readonly IRepository<AnnualIncomeStatementGraphQLModel> _annualIncomeStatementService;
         #region Command's
 
         public void ExecuteUIChange(object p)
         {
             ValidateProperty(nameof(SelectedCostCenters));
         }
+       
 
         public bool CanExecuteUIChange(object p)
         {
@@ -256,7 +257,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "Esta función aun no está implementada", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
-        public async Task Search()
+        public async Task SearchAsync()
         {
             try
             {
@@ -272,15 +273,15 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await Task.Run(() => ExecuteSearch());
+                var result = await Task.Run(() => ExecuteSearchAsync());
 
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
                 if (result != null)
                 {
-                    this.Results = new ObservableCollection<AnnualIncomeStatementGraphQLModel>(result.PageResponse.Rows);
-                    this.TotalCount = result.PageResponse.Count;
+                    this.Results = new ObservableCollection<AnnualIncomeStatementGraphQLModel>(result.Rows);
+                    this.TotalCount = result.Count;
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -298,7 +299,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             }
         }
 
-        public async Task<IGenericDataAccess<AnnualIncomeStatementGraphQLModel>.PageResponseType> ExecuteSearch()
+        public async Task<PageResult<AnnualIncomeStatementGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
@@ -362,7 +363,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
                 variables.filter.Pagination = new ExpandoObject();
                 variables.filter.Pagination.Page = PageIndex;
                 variables.filter.Pagination.PageSize = PageSize;
-                var annualIncomeStatementPage = await this.Context.AnnualIncomeStatementService.GetPage(query, variables);
+                var annualIncomeStatementPage = await this._annualIncomeStatementService.GetPageAsync(query, variables);
                 return annualIncomeStatementPage;
             }
             catch (Exception)
@@ -375,10 +376,12 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
 
         #region Constructor
 
-        public AnnualIncomeStatementReportViewModel(AnnualIncomeStatementViewModel context)
+        public AnnualIncomeStatementReportViewModel(AnnualIncomeStatementViewModel context, IRepository<AnnualIncomeStatementGraphQLModel> annualIncomeStatementService)
         {
             this._errors = new Dictionary<string, List<string>>();
             this.Context = context;
+            _annualIncomeStatementService = annualIncomeStatementService;
+
         }
 
         #endregion
