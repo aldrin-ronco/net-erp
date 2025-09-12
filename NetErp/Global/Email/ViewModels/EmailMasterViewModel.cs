@@ -1,26 +1,15 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Amazon.S3.Model;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Core;
-using DevExpress.Xpf.Core.Native;
-using DevExpress.Xpo.DB.Helpers;
 using GraphQL.Client.Http;
 using Models.Global;
-using NetErp.Global.Smtp.ViewModels;
 using NetErp.Helpers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Services.Global.DAL.PostgreSQL;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
@@ -28,8 +17,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Xml.Linq;
-using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 using static Models.Global.EmailGraphQLModel;
 
 namespace NetErp.Global.Email.ViewModels
@@ -39,17 +26,21 @@ namespace NetErp.Global.Email.ViewModels
         IHandle<EmailUpdateMessage>,
         IHandle<EmailCreateMessage>
     {
-        public EmailMasterViewModel(EmailViewModel context)
+        private readonly IRepository<EmailGraphQLModel> _emailService;
+        private readonly Helpers.Services.INotificationService _notificationService;
+        
+        public EmailViewModel Context { get; set; }
+        
+        public EmailMasterViewModel(
+            EmailViewModel context,
+            IRepository<EmailGraphQLModel> emailService,
+            Helpers.Services.INotificationService notificationService)
         {
             Context = context;
+            _emailService = emailService;
+            _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
-
-        }
-
-
-        public IGenericDataAccess<EmailGraphQLModel> EmailService { get; set; } = IoC.Get<IGenericDataAccess<EmailGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-        public EmailViewModel Context { get; set; }        
+        }        
 
 
         private ObservableCollection<EmailGraphQLModel> _emails;
@@ -92,7 +83,7 @@ namespace NetErp.Global.Email.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if(string.IsNullOrEmpty(value) || value.Length >=3) _= Task.Run(() => LoadEmailsAsync());
+                    if(string.IsNullOrEmpty(value) || value.Length >=3) _ = LoadEmailsAsync();
                 }
             }
         }      
@@ -137,10 +128,10 @@ namespace NetErp.Global.Email.ViewModels
         }
 
 
-        protected override void OnViewReady(object view)
+        protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadEmailsAsync());
+            await LoadEmailsAsync();
             this.SetFocus(() => FilterSearch);
         }
         public async Task LoadEmailsAsync()
@@ -193,7 +184,7 @@ namespace NetErp.Global.Email.ViewModels
                 variables.filter.and[1].or[1].description.@operator = "like";
                 variables.filter.and[1].or[1].description.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                var result = await EmailService.GetList(query, variables);
+                var result = await _emailService.GetListAsync(query, variables);
                 Emails = new ObservableCollection<EmailGraphQLModel>(result);       
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -248,7 +239,7 @@ namespace NetErp.Global.Email.ViewModels
                 {
                     Id = id
                 };
-                var validation = await this.EmailService.CanDelete(query, variables);
+                var validation = await _emailService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -330,7 +321,7 @@ namespace NetErp.Global.Email.ViewModels
                 }";
 
                 object variables = new { Id = id };
-                var result = await EmailService.Delete(query, variables);
+                var result = await _emailService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -381,6 +372,15 @@ namespace NetErp.Global.Email.ViewModels
 
                 throw;
             }
+        }
+        
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
     }
 }

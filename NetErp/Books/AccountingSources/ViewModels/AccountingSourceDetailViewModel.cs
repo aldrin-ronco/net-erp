@@ -24,6 +24,7 @@ using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
+    //TODO revisión general de funcionamiento
     public class AccountingSourceDetailViewModel : Screen
     {
         #region Propiedades

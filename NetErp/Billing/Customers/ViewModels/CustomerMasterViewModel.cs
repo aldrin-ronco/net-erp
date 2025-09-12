@@ -193,7 +193,6 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"=== LoadCustomers STARTED at {DateTime.Now:HH:mm:ss.fff} ===");
                 IsBusy = true;
                 Refresh();
 
@@ -311,7 +310,6 @@ namespace NetErp.Billing.Customers.ViewModels
             finally
             {
                 IsBusy = false;
-                System.Diagnostics.Debug.WriteLine($"=== LoadCustomers FINISHED at {DateTime.Now:HH:mm:ss.fff} ===");
             }
         }
 

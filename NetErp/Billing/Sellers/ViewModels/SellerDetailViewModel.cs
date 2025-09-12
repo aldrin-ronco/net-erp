@@ -34,7 +34,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 {
     public class SellerDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public IGenericDataAccess<ZoneGraphQLModel> ZoneService { get; set; } = IoC.Get<IGenericDataAccess<ZoneGraphQLModel>>();
+        private readonly IRepository<ZoneGraphQLModel> _zoneService;
         #region Commands
 
         private ICommand _deleteMailCommand;
@@ -70,7 +70,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Properties
 
-        public readonly IGenericDataAccess<SellerGraphQLModel> SellerService = IoC.Get<IGenericDataAccess<SellerGraphQLModel>>();
+        private readonly IRepository<SellerGraphQLModel> _sellerService;
 
         Dictionary<string, List<string>> _errors;
 
@@ -580,7 +580,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                _ = Task.Run(() => Context.ActivateMasterViewAsync());
+                _ = Context.ActivateMasterViewAsync();
             }
             catch (AsyncException ex)
             {
@@ -934,7 +934,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         }
                     }";
 
-                dynamic result = IsNewRecord ? await SellerService.Create(query, variables) : await SellerService.Update(query, variables);
+                dynamic result = IsNewRecord ? await _sellerService.CreateAsync(query, variables) : await _sellerService.UpdateAsync(query, variables);
                 return (SellerGraphQLModel)result;
             }
             catch (Exception ex)
@@ -984,10 +984,15 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public SellerDetailViewModel(SellerViewModel context)
+        public SellerDetailViewModel(
+            SellerViewModel context,
+            IRepository<SellerGraphQLModel> sellerService,
+            IRepository<ZoneGraphQLModel> zoneService)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+            _sellerService = sellerService;
+            _zoneService = zoneService;
         }
 
         public async Task Initialize()

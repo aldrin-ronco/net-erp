@@ -19,12 +19,15 @@ namespace NetErp.Billing.Zones.ViewModels
 {
     public class ZoneDetailViewModel : Screen
     {
-        public IGenericDataAccess<ZoneGraphQLModel> ZoneService = IoC.Get<IGenericDataAccess<ZoneGraphQLModel>>();
+        private readonly IRepository<ZoneGraphQLModel> _zoneService;
         public ZoneViewModel Context { get; set; }
         
-        public ZoneDetailViewModel(ZoneViewModel context) 
+        public ZoneDetailViewModel(
+            ZoneViewModel context,
+            IRepository<ZoneGraphQLModel> zoneService) 
         {
             Context = context;
+            _zoneService = zoneService;
         }
         private bool _CanSave;
         public bool CanSave
@@ -161,7 +164,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 if (!IsNewZone) variables.id = ZoneId;
                 variables.data.name = ZoneName;
                 variables.data.isActive = ZoneIsActive;
-                var result = IsNewZone ? await ZoneService.Create(query, variables) : await ZoneService.Update(query, variables);
+                var result = IsNewZone ? await _zoneService.CreateAsync(query, variables) : await _zoneService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception ex)

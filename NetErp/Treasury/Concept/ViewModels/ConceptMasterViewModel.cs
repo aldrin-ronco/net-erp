@@ -28,14 +28,22 @@ namespace NetErp.Treasury.Concept.ViewModels
         IHandle<TreasuryConceptUpdateMessage>,
         IHandle<TreasuryConceptCreateMessage>
     {
-        public IGenericDataAccess<ConceptGraphQLModel> ConceptService { get; set; } = IoC.Get<IGenericDataAccess<ConceptGraphQLModel>>();
+        private readonly IRepository<ConceptGraphQLModel> _conceptService;
         public ConceptViewModel Context { get; set; }
-        public ConceptMasterViewModel(ConceptViewModel context)
+        public ConceptMasterViewModel(
+            ConceptViewModel context,
+            IRepository<ConceptGraphQLModel> conceptService)
         {
             Context = context;
+            _conceptService = conceptService;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
             SelectTypeCommand = new DelegateCommand<string>(type => SelectedType = type);
+        }
 
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            Context.EventAggregator.Unsubscribe(this);
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
         
         private string _selectedType = string.Empty;
@@ -295,7 +303,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                     variables.filter.type.Value = SelectedType;
                 }
 
-                var result = await ConceptService.GetPage(query, variables);
+                var result = await _conceptService.GetPageAsync(query, variables);
                 TotalCount = result.PageResponse.Count;
                 Concepts = new ObservableCollection<ConceptGraphQLModel>(result.PageResponse.Rows ?? new List<ConceptGraphQLModel>());
                 stopwatch.Stop();
@@ -331,7 +339,7 @@ namespace NetErp.Treasury.Concept.ViewModels
 
                 object variables = new { Id = id };
 
-                var validation = await this.ConceptService.CanDelete(query, variables);
+                var validation = await this._conceptService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -398,7 +406,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.id = id;
-                var result = await ConceptService.Delete(query, variables);
+                var result = await _conceptService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception ex)

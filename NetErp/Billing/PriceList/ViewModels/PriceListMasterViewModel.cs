@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using Common.Services;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
@@ -29,6 +30,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using System.Xml.Linq;
+using static Models.Global.GraphQLResponseTypes;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -748,7 +750,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.filter.filterSearch.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
                 variables.filter.filterSearch.exclude = true;
 
-                PageResult<PriceListDetailGraphQLModel> result = await _priceListDetailService.GetPageAsync(query, variables);
+                PageType<PriceListDetailGraphQLModel> result = await _priceListDetailService.GetPageAsync(query, variables);
                 TotalCount = result.Count;
                 PriceListDetail = [.. Context.AutoMapper.Map<ObservableCollection<PriceListDetailDTO>>(result.Rows)];
 

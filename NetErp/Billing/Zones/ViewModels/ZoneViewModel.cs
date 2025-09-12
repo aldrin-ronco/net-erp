@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Helpers;
+using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using NetErp.Billing.Sellers.ViewModels;
@@ -15,13 +16,15 @@ namespace NetErp.Billing.Zones.ViewModels
     public class ZoneViewModel : Conductor<Screen>.Collection.OneActive
     {
         public IEventAggregator EventAggregator { get; set; }
+        private readonly IRepository<ZoneGraphQLModel> _zoneService;
+        private readonly Helpers.Services.INotificationService _notificationService;
 
         private ZoneMasterViewModel _zoneMasterViewModel;
         public ZoneMasterViewModel ZoneMasterViewModel
         {
             get
             {
-                if (_zoneMasterViewModel is null) _zoneMasterViewModel = new ZoneMasterViewModel(this);
+                if (_zoneMasterViewModel is null) _zoneMasterViewModel = new ZoneMasterViewModel(this, _zoneService, _notificationService);
                 return _zoneMasterViewModel;
             }
         }
@@ -30,7 +33,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             get
             {
-                if (_zoneDetailViewModel is null) _zoneDetailViewModel = new ZoneDetailViewModel(this);
+                if (_zoneDetailViewModel is null) _zoneDetailViewModel = new ZoneDetailViewModel(this, _zoneService);
                 return _zoneDetailViewModel;
             }
         }
@@ -63,7 +66,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                ZoneDetailViewModel instance = new(this) {
+                ZoneDetailViewModel instance = new(this, _zoneService) {
                     ZoneId = zone.Id,
                     ZoneName = zone.Name,
                     ZoneIsActive = zone.IsActive
@@ -76,11 +79,15 @@ namespace NetErp.Billing.Zones.ViewModels
                 throw new AsyncException(innerException: ex);
             }
         }
-        public ZoneViewModel(IEventAggregator eventAggregator)
+        public ZoneViewModel(
+            IEventAggregator eventAggregator,
+            IRepository<ZoneGraphQLModel> zoneService,
+            Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
-            _zoneMasterViewModel = new ZoneMasterViewModel(this);
-            _ = Task.Run(async () =>
+            _zoneService = zoneService;
+            _notificationService = notificationService;
+            _ = Task.Run(async () => 
             {
                 try
                 {
@@ -91,6 +98,14 @@ namespace NetErp.Billing.Zones.ViewModels
                     await Execute.OnUIThreadAsync(() =>
                     {
                         ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al activar vista de zonas: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                         return Task.CompletedTask;
                     });
                 }

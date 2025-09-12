@@ -20,6 +20,7 @@ using DevExpress.Xpf.Core;
 using System.Dynamic;
 using Models.Billing;
 using Models.Books;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
@@ -34,8 +35,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         #region Properties
 
-        public readonly IGenericDataAccess<SupplierGraphQLModel> SupplierService = IoC.Get<IGenericDataAccess<SupplierGraphQLModel>>();
-        private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
+        private readonly IRepository<SupplierGraphQLModel> _supplierService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         public SupplierViewModel Context { get; private set; }
 
         private ICommand checkRowCommand;
@@ -181,7 +182,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
                 object variables = new { id };
 
-                var validation = await SupplierService.CanDelete(query, variables);
+                var validation = await _supplierService.CanDeleteAsync(query, variables);
                 if (validation.CanDelete) 
                 {
                     IsBusy = false;
@@ -236,7 +237,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                                   }
                                 }";
                 object variables = new { Id = id };
-                SupplierGraphQLModel result = await SupplierService.Delete(query, variables);
+                SupplierGraphQLModel result = await _supplierService.DeleteAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -375,11 +376,11 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                IGenericDataAccess<SupplierGraphQLModel>.PageResponseType result = await SupplierService.GetPage(query, variables);
+                PageType<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
 
 
-                TotalCount = result.PageResponse.Count;
-                Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.PageResponse.Rows));
+                TotalCount = result.Count;
+                Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Rows));
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -406,10 +407,21 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             await LoadSuppliers();
         }
 
-        public SupplierMasterViewModel(SupplierViewModel context)
+        public SupplierMasterViewModel(
+            SupplierViewModel context,
+            IRepository<SupplierGraphQLModel> supplierService,
+            Helpers.Services.INotificationService notificationService)
         {
             Context = context;
+            _supplierService = supplierService;
+            _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnUIThread(this);
+        }
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            Context.EventAggregator.Unsubscribe(this);
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
 
         public async Task ExecuteEditSupplier()

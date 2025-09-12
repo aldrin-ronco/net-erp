@@ -32,17 +32,21 @@ namespace NetErp.Treasury.Concept.ViewModels
 {
     public class ConceptDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public IGenericDataAccess<ConceptGraphQLModel> ConceptService = IoC.Get<IGenericDataAccess<ConceptGraphQLModel>>();
-        public IGenericDataAccess<AccountingAccountGraphQLModel> AccountingAccountService = IoC.Get<IGenericDataAccess<AccountingAccountGraphQLModel>>();
+        private readonly IRepository<ConceptGraphQLModel> _conceptService;
+        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
         public ConceptViewModel Context { get; set; }
-        public ConceptDetailViewModel(ConceptViewModel context)
+        public ConceptDetailViewModel(
+            ConceptViewModel context,
+            IRepository<ConceptGraphQLModel> conceptService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             Context = context;
+            _conceptService = conceptService;
+            _accountingAccountService = accountingAccountService;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await LoadNamesAccountingAccounts());
             _errors = new Dictionary<string, List<string>>();
-
         }
 
         private string _nameConcept;
@@ -306,7 +310,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
 
-                var result = (await AccountingAccountService.GetList(query, new { }))
+                var result = (await _accountingAccountService.GetListAsync(query, new { }))
                 .OfType<AccountingAccountGraphQLModel>()
                 .Where(x => !string.IsNullOrWhiteSpace(x.Code) && x.Code.Trim().Length >= 8)
                 .ToList();
@@ -396,7 +400,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                     accountingAccountId
                     }
                 }";
-                var result = IsNewRecord ? await ConceptService.Create(query, variables) : await ConceptService.Update(query, variables);
+                var result = IsNewRecord ? await _conceptService.CreateAsync(query, variables) : await _conceptService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception ex)

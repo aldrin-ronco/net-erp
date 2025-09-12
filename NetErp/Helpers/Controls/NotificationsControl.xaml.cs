@@ -34,5 +34,33 @@ namespace NetErp.Helpers.Controls
                 NotificationService.RemoveNotification(notification);
             }
         }
+
+        private async void ActionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is NotificationAction action)
+            {
+                await ExecuteActionAsync(action);
+            }
+        }
+
+        public async Task ExecuteActionAsync(NotificationAction action)
+        {
+            try
+            {
+                if (action.AsyncAction != null)
+                {
+                    await action.AsyncAction();
+                }
+                else if (action.Action != null)
+                {
+                    action.Action();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the app
+                System.Diagnostics.Debug.WriteLine($"Error executing notification action: {ex.Message}");
+            }
+        }
     }
 }

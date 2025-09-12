@@ -1399,7 +1399,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 if (this.AccountingEntriesMaster is null) return Task.CompletedTask;
                 AccountingEntryMasterDTO entry = this.AccountingEntriesMaster.Where(x => x.Id == message.Id).FirstOrDefault();
-                if (entry != null) AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message));
+                if (entry != null) Application.Current.Dispatcher.Invoke(() => AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message)));
                 this.AccountingEntriesMaster = new ObservableCollection<AccountingEntryMasterDTO>(this.AccountingEntriesMaster);
                 _notificationService.ShowSuccess("Comprobante contable guardado correctamente");
             }
@@ -1422,7 +1422,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 }
                 else
                 {
-                    this.AccountingEntriesDraftMaster.Replace(this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(message));
+                    Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(message)));
                 }
 
                 // Actualiza listado de comprobantes
@@ -1471,7 +1471,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 AccountingEntryMasterDTO entry = this.AccountingEntriesMaster.Where(x => x.Id == message.CancelledAccountingEntry.Id).FirstOrDefault();
-                if (entry != null) this.AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message.CancelledAccountingEntry));
+                if (entry != null) Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesMaster.Replace(this.Context.Mapper.Map<AccountingEntryMasterDTO>(message.CancelledAccountingEntry)));
                 _notificationService.ShowSuccess("Comprobante contable anulado exitosamente");
             }
             catch (Exception ex)
@@ -1504,7 +1504,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 CostCenterGraphQLModel updatedCostCenter = this.CostCenters.Where(x => x.Id == message.UpdatedCostCenter.Id).FirstOrDefault();
                 if (updatedCostCenter != null) this.CostCenters.Replace(message.UpdatedCostCenter);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-
             }
             catch (Exception ex)
             {
@@ -1552,7 +1551,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 AccountingSourceGraphQLModel updatedAccountingSource = this.AccountingSources.Where(x => x.Id == message.UpdatedAccountingSource.Id).FirstOrDefault();
                 if (updatedAccountingSource != null) this.AccountingSources.Replace(message.UpdatedAccountingSource);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
             }
             catch (Exception ex)
             {
@@ -1582,7 +1580,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 AccountingEntryDraftMasterDTO updatedAccountigEntryDraftMaster = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.UpdatedAccountingEntryDraftMaster.Id).FirstOrDefault();
-                if (updatedAccountigEntryDraftMaster != null) this.AccountingEntriesDraftMaster.Replace(message.UpdatedAccountingEntryDraftMaster);
+                if (updatedAccountigEntryDraftMaster != null) Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(message.UpdatedAccountingEntryDraftMaster));
                 _notificationService.ShowSuccess("Actualización exitosa");
             }
             catch (Exception ex)

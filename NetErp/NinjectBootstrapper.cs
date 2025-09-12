@@ -128,6 +128,16 @@ namespace NetErp
             _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
+            
+            // Inventory module repositories
+            _ = kernel.Bind<IRepository<CatalogGraphQLModel>>().To<GraphQLRepository<CatalogGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemTypeGraphQLModel>>().To<GraphQLRepository<ItemTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemCategoryGraphQLModel>>().To<GraphQLRepository<ItemCategoryGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemSubCategoryGraphQLModel>>().To<GraphQLRepository<ItemSubCategoryGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemSizeMasterGraphQLModel>>().To<GraphQLRepository<ItemSizeMasterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemSizeDetailGraphQLModel>>().To<GraphQLRepository<ItemSizeDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AwsS3ConfigGraphQLModel>>().To<GraphQLRepository<AwsS3ConfigGraphQLModel>>().InSingletonScope();
+
             // Books
             _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TaxTypeGraphQLModel>>().To<GraphQLRepository<TaxTypeGraphQLModel>>().InSingletonScope();
@@ -161,7 +171,35 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
 
             
-
+            // Treasury module repositories
+            _ = kernel.Bind<IRepository<CompanyLocationGraphQLModel>>().To<GraphQLRepository<CompanyLocationGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CostCenterGraphQLModel>>().To<GraphQLRepository<CostCenterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ConceptGraphQLModel>>().To<GraphQLRepository<ConceptGraphQLModel>>().InSingletonScope();
+            
+            // Global module repositories
+            _ = kernel.Bind<IRepository<CompanyGraphQLModel>>().To<GraphQLRepository<CompanyGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CountryGraphQLModel>>().To<GraphQLRepository<CountryGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<CashDrawerGraphQLModel>>().To<GraphQLRepository<CashDrawerGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<BankGraphQLModel>>().To<GraphQLRepository<BankGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<BankAccountGraphQLModel>>().To<GraphQLRepository<BankAccountGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<FranchiseGraphQLModel>>().To<GraphQLRepository<FranchiseGraphQLModel>>().InSingletonScope();
+            
+            // Billing module repositories
+            _ = kernel.Bind<IRepository<SellerGraphQLModel>>().To<GraphQLRepository<SellerGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ZoneGraphQLModel>>().To<GraphQLRepository<ZoneGraphQLModel>>().InSingletonScope();
+            
+            // Suppliers module repositories
+            _ = kernel.Bind<IRepository<SupplierGraphQLModel>>().To<GraphQLRepository<SupplierGraphQLModel>>().InSingletonScope();
+            
+            // Email module repositories
+            _ = kernel.Bind<IRepository<EmailGraphQLModel>>().To<GraphQLRepository<EmailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<SmtpGraphQLModel>>().To<GraphQLRepository<SmtpGraphQLModel>>().InSingletonScope();
+            
+            // Login service
+            _ = kernel.Bind<ILoginService>().To<LoginService>().InSingletonScope();
+            //Servicio SQLite usado para almacenar los correos electrónicos guardados localmente para autocompletar en el inicio de sesión
+            _ = kernel.Bind<ISQLiteEmailStorageService>().To<SQLiteEmailStorageService>().InSingletonScope();
+            
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
             _ = kernel.Bind<INotificationService>().To<NotificationService>().InSingletonScope();

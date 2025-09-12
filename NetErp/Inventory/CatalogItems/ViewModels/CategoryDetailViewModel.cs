@@ -23,8 +23,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 {
     public class CategoryDetailViewModel: Screen, INotifyDataErrorInfo
     {
-
-        public readonly IGenericDataAccess<ItemCategoryGraphQLModel> ItemCategoryService = IoC.Get<IGenericDataAccess<ItemCategoryGraphQLModel>>();
+        private readonly IRepository<ItemCategoryGraphQLModel> _itemCategoryService;
 
         private CatalogViewModel _context;
 
@@ -209,7 +208,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                                 }
                             }
                         }";
-                var result = IsNewRecord ? await ItemCategoryService.Create(query, variables) : await ItemCategoryService.Update(query, variables);
+                var result = IsNewRecord ? await _itemCategoryService.CreateAsync(query, variables) : await _itemCategoryService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -221,9 +220,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public bool CanSave => _errors.Count <= 0;
 
 
-        public CategoryDetailViewModel(CatalogViewModel context) 
+        public CategoryDetailViewModel(
+            CatalogViewModel context,
+            IRepository<ItemCategoryGraphQLModel> itemCategoryService) 
         {
             Context = context;
+            _itemCategoryService = itemCategoryService;
             _errors = [];
             ValidateProperty(nameof(Name), Name);
         }

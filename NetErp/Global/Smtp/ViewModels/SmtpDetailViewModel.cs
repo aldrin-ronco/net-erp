@@ -19,14 +19,19 @@ namespace NetErp.Global.Smtp.ViewModels
 {
     public class SmtpDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        IGenericDataAccess<SmtpGraphQLModel> SmtpService = IoC.Get<IGenericDataAccess<SmtpGraphQLModel>>();
+        private readonly IRepository<SmtpGraphQLModel> _smtpService;
+        
         public SmtpViewModel Context { get; set; }
         public bool IsNewRecord => SmtpId == 0;
 
         Dictionary<string, List<string>> _errors;
-        public SmtpDetailViewModel(SmtpViewModel context)
+        
+        public SmtpDetailViewModel(
+            SmtpViewModel context,
+            IRepository<SmtpGraphQLModel> smtpService)
         {
             Context = context;
+            _smtpService = smtpService;
             _errors = new Dictionary<string, List<string>>();
         }
 
@@ -211,7 +216,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 port
                 }
             }";
-            var result = IsNewRecord ? await SmtpService.Create(query, variables) : await SmtpService.Update(query, variables);
+            var result = IsNewRecord ? await _smtpService.CreateAsync(query, variables) : await _smtpService.UpdateAsync(query, variables);
             return result;
         }
 

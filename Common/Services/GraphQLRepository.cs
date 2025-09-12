@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Common.Services
 {
@@ -59,24 +60,16 @@ namespace Common.Services
             return response.ListResponse;
         }
 
-        public async Task<PageResult<TModel>> GetPageAsync(string query, object variables, CancellationToken cancellationToken = default)
+        public async Task<PageType<TModel>> GetPageAsync(string query, object variables, CancellationToken cancellationToken = default)
         {
             var response = await _client.ExecuteQueryAsync<PageResponseType<TModel>>(query, variables, cancellationToken);
-            return new PageResult<TModel>
-            {
-                Count = response.PageResponse.Count,
-                Rows = response.PageResponse.Rows
-            };
+            return response.PageResponse;
         }
 
-        public async Task<CanDeleteResult> CanDeleteAsync(string query, object variables, CancellationToken cancellationToken = default)
+        public async Task<CanDeleteType> CanDeleteAsync(string query, object variables, CancellationToken cancellationToken = default)
         {
             var response = await _client.ExecuteQueryAsync<CanDeleteResponseType>(query, variables, cancellationToken);
-            return new CanDeleteResult
-            {
-                CanDelete = response.CanDeleteModel.CanDelete,
-                Message = response.CanDeleteModel.Message
-            };
+            return response.CanDeleteResponse;
         }
 
         public async Task<TResponse> GetDataContextAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
