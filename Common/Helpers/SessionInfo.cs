@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Login;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,6 +13,9 @@ namespace Common.Helpers
         public static string UserEmail { get; set; } = "Prueba@emaildummy.com";
 
         public static string ComputerName { get; set; } = string.Empty;
+
+        public static string SessionId { get; set; } = string.Empty;
+        public static LoginCompanyInfoGraphQLModel? CurrentCompany { get; set; }
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool GetSystemMetrics(int nIndex);

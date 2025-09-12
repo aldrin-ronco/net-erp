@@ -11,5 +11,6 @@ namespace Models.Login
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public LoginLicenseGraphQLModel License { get; set; } = new();
+        public string Reference { get; set; } = string.Empty;
     }
 }

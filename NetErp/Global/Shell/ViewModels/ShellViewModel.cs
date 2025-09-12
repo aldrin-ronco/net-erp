@@ -27,6 +27,7 @@ namespace NetErp.Global.Shell.ViewModels
         private MainMenuViewModel? _mainMenuViewModel;
         private LoginAccountGraphQLModel? _currentAccount;
         private List<LoginCompanyGraphQLModel>? _availableCompanies;
+        private LoginTicketGraphQLModel? _accessTicket;
 
         public MainMenuViewModel MainMenuViewModel
         {
@@ -82,7 +83,7 @@ namespace NetErp.Global.Shell.ViewModels
             //    await ActivateItemAsync(MainMenuViewModel, new CancellationToken());
             //    return;
             //}
-            
+
             // Crear LoginViewModel con Constructor Injection
             LoginViewModel loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, new CancellationToken());
@@ -111,10 +112,10 @@ namespace NetErp.Global.Shell.ViewModels
             // Almacenar los datos para poder volver a CompanySelection más tarde
             _currentAccount = message.Account;
             _availableCompanies = message.Companies;
-            
+
             // Login exitoso - navegar a CompanySelection
-            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator);
-            companySelectionViewModel.Initialize(message.Account, message.Companies);
+            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService);
+            companySelectionViewModel.Initialize(message.Account, message.Companies, message.AccessTicket);
             await ActivateItemAsync(companySelectionViewModel, cancellationToken);
         }
 
@@ -136,8 +137,8 @@ namespace NetErp.Global.Shell.ViewModels
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
             {
-                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator);
-                companySelectionViewModel.Initialize(_currentAccount, _availableCompanies);
+                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService);
+                companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }
         }
