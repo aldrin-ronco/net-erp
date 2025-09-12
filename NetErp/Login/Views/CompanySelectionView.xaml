@@ -140,7 +140,29 @@
                 <TextBlock Text="Selecciona la empresa con la que deseas trabajar" 
                            FontSize="14" 
                            Foreground="#6c757d"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,15"/>
+                
+                <!-- Search TextEdit with Icon -->
+                <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center">
+                    <dxe:TextEdit Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  NullText="BUSCAR POR ORGANIZACIÓN O EMPRESA..."
+                                  FontSize="14"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#ced4da"
+                                  Background="White"
+                                  CornerRadius="6"
+                                  Padding="35,8,12,8"
+                                  VerticalContentAlignment="Center"/>
+                    
+                    <TextBlock Text="🔍" 
+                               FontSize="16" 
+                               Foreground="#6c757d"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="12,0,0,0"
+                               IsHitTestVisible="False"/>
+                </Grid>
             </StackPanel>
         </Border>
 
@@ -154,7 +176,7 @@
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       Focusable="False">
-            <ItemsControl ItemsSource="{Binding OrganizationGroups}" Focusable="False">
+            <ItemsControl ItemsSource="{Binding FilteredOrganizationGroups}" Focusable="False">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Margin="0,0,0,25"

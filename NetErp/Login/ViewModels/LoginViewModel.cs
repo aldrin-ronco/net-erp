@@ -164,7 +164,7 @@ namespace NetErp.Login.ViewModels
             {
                 IsLoading = true;
 
-                var loginResult = await _loginService.AuthenticateAsync(Email, Password);
+                LoginGraphQLModel loginResult = await _loginService.AuthenticateAsync(Email, Password);
 
                 if (loginResult.Success && loginResult.Account != null)
                 {
@@ -175,9 +175,9 @@ namespace NetErp.Login.ViewModels
                     await _eventAggregator.PublishOnUIThreadAsync(new LoginSuccessMessage
                     {
                         Account = loginResult.Account,
-                        Companies = loginResult.Companies
+                        Companies = loginResult.Companies,
+                        AccessTicket = loginResult.AccessTicket
                     });
-                    // Removido: _notificationService.ShowSuccess - ya no es necesario
                 }
                 else
                 {
@@ -336,5 +336,6 @@ namespace NetErp.Login.ViewModels
     {
         public LoginAccountGraphQLModel Account { get; set; } = new();
         public List<LoginCompanyGraphQLModel> Companies { get; set; } = [];
+        public LoginTicketGraphQLModel AccessTicket { get; set; } = new();
     }
 }

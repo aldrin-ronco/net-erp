@@ -14,12 +14,5 @@ namespace Models.Login
         public string MiddleName { get; set; } = string.Empty;
         public string FirstLastName { get; set; } = string.Empty;
         public string MiddleLastName { get; set; } = string.Empty;
-        public string XApiKey 
-        { 
-            get
-            {
-                return "ak_CABVidOzd7C6v3SLkq1ijAehH56xW8QzhW4t8mrWyc0";
-            }
-        }
     }
 }
