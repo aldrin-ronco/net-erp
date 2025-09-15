@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
 {
@@ -299,7 +300,7 @@ namespace NetErp.Books.Reports.AnnualIncomeStatement.ViewModels
             }
         }
 
-        public async Task<PageResult<AnnualIncomeStatementGraphQLModel>> ExecuteSearchAsync()
+        public async Task<PageType<AnnualIncomeStatementGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {

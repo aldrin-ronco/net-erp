@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.Reports.TestBalance.ViewModels
 {
@@ -361,7 +362,7 @@ namespace NetErp.Books.Reports.TestBalance.ViewModels
             }
         }
 
-        public async Task<PageResult<TestBalanceGraphQLModel>> ExecuteSearchAsync()
+        public async Task<PageType<TestBalanceGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
