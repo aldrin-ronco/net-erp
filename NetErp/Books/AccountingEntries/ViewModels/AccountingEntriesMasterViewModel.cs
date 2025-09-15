@@ -25,6 +25,7 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.VisualStudio.Threading;
 using DevExpress.Mvvm;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
 {
@@ -597,7 +598,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<PageResult<AccountingEntryMasterGraphQLModel>> ExecuteSearchAccountingEntriesAsync()
+        public async Task<PageType<AccountingEntryMasterGraphQLModel>> ExecuteSearchAccountingEntriesAsync()
         {
             try
             {

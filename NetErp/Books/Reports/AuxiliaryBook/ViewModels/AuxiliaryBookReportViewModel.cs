@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 {
@@ -469,7 +470,7 @@ namespace NetErp.Books.Reports.AuxiliaryBook.ViewModels
 
             }
         }
-        public async Task<PageResult<AuxiliaryBookGraphQLModel>> ExecuteSearchAsync()
+        public async Task<PageType<AuxiliaryBookGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {

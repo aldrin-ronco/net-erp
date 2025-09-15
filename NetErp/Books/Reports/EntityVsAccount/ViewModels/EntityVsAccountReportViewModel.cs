@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
 {
@@ -648,7 +649,7 @@ namespace NetErp.Books.Reports.EntityVsAccount.ViewModels
             }
         }
 
-        public async Task<PageResult<EntityVsAccountGraphQLModel>> ExecuteSearchAsync()
+        public async Task<PageType<EntityVsAccountGraphQLModel>> ExecuteSearchAsync()
         {
             try
             {
