@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Login;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -35,6 +36,13 @@ namespace Models.Global
 
         public class PageType<T>
         {
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
+            public int TotalPages { get; set; }
+            public int TotalEntries { get; set; }
+            public ObservableCollection<T> Entries { get; set; } = [];
+
+            //Las siguientes propiedades están deprecadas y se mantienen solo por evitar errores de compilación en queries antiguas
             public int Count { get; set; }
             public ObservableCollection<T> Rows { get; set; } = [];
         }
@@ -43,6 +51,21 @@ namespace Models.Global
         {
             public bool CanDelete { get; set; } = false;
             public string Message { get; set; } = string.Empty;
+        }
+
+        public class UpsertResponseType<T>
+        {
+            public T Entity {get; set;} = default!;
+            public string Message {get; set;} = string.Empty;
+            public bool Success {get; set;} = false;
+            public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
+        }
+
+        public class DeleteResponseType
+        {
+            public int DeletedId { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public bool Success { get; set; }
         }
     }
 }

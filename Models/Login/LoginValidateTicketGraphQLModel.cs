@@ -9,7 +9,7 @@ namespace Models.Login
     public class LoginValidateTicketGraphQLModel
     {
         public LoginAccountGraphQLModel Account { get; set; } = new();
-        public List<LoginErrorGraphQLModel> Errors { get; set; } = [];
+        public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
         public string Message { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;
         public bool Success { get; set; }

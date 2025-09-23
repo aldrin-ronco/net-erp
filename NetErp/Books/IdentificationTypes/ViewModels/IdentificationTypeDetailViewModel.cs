@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Interfaces;
 using Models.Books;
 using NetErp.Helpers;
@@ -16,6 +16,9 @@ using Common.Extensions;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using System.Windows.Threading;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
@@ -175,6 +178,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
+        public bool IsReadOnlyCode => !IsNewRecord;
 
         #endregion
 
@@ -190,7 +194,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             base.OnViewAttached(view, context);
             _ = App.Current.Dispatcher.BeginInvoke(() =>
             {
-                _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(Code))), DispatcherPriority.Render);
+                _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(Name))), DispatcherPriority.Render);
             });
         }
 
@@ -205,15 +209,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                IdentificationTypeGraphQLModel result = await ExecuteSaveAsync();
-                if (IsNewRecord)
+                UpsertResponseType<IdentificationTypeGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeCreateMessage() { CreatedIdentificationType = result });
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeUpdateMessage() { UpdatedIdentificationType = result });
-                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new IdentificationTypeCreateMessage() { CreatedIdentificationType = result }
+                        : new IdentificationTypeUpdateMessage() { UpdatedIdentificationType = result }
+                );
                 await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -234,64 +240,102 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         }
 
-        public async Task<IdentificationTypeGraphQLModel> ExecuteSaveAsync()
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
+                .Create()
+                .Select(selector:f => f.Entity, overrideName: "identificationType", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Code)
+                    .Field(f => f.HasVerificationDigit)
+                    .Field(f => f.MinimumDocumentLength)
+                    .Field(f => f.InsertedAt)
+                    .Field(f => f.UpdatedAt))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateIdentificationTypeInput!");
+
+            var fragment = new GraphQLQueryFragment("createIdentificationType", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, overrideName: "identificationType", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Code)
+                    .Field(f => f.HasVerificationDigit)
+                    .Field(f => f.MinimumDocumentLength)
+                    .Field(f => f.InsertedAt)
+                    .Field(f => f.UpdatedAt))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateIdentificationTypeInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateIdentificationType", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public async Task<UpsertResponseType<IdentificationTypeGraphQLModel>> ExecuteSaveAsync()
         {
 
             try
             {
                 if (IsNewRecord)
                 {
-                    string query = @"
-				mutation ($data: CreateIdentificationTypeInput!) {
-				  CreateResponse: createIdentificationType(data: $data) {
-				    id
-				    code
-				    name
-				    hasVerificationDigit
-				    minimumDocumentLength
-				  }
-				}";
+                    string query = GetCreateQuery();
 
                     object variables = new
                     {
-                        Data = new
+                        createResponseInput = new
                         {
-                            Code,
                             Name,
+                            Code,
                             HasVerificationDigit,
                             MinimumDocumentLength
                         }
                     };
 
-                    var identificationTypeCreated = await _identificationTypeService.CreateAsync(query, variables);
+                    UpsertResponseType<IdentificationTypeGraphQLModel> identificationTypeCreated = await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
                     return identificationTypeCreated;
                 }
                 else
                 {
-                    string query = @"
-					mutation ($data: UpdateIdentificationTypeInput!, $id: Int!) {
-					  UpdateResponse: updateIdentificationType(data: $data, id: $id) {
-						id
-						code
-						name
-						hasVerificationDigit
-						minimumDocumentLength
-					  }
-					}";
+                    string query = GetUpdateQuery();
 
                     object variables = new
                     {
-                        Data = new
+                        updateResponseData = new
                         {
-                            Code,
                             Name,
                             HasVerificationDigit,
                             MinimumDocumentLength
                         },
-                        Id
+                        UpdateResponseId = Id
                     };
 
-                    IdentificationTypeGraphQLModel updatedIdentificationType = await _identificationTypeService.UpdateAsync(query, variables);
+                    UpsertResponseType<IdentificationTypeGraphQLModel> updatedIdentificationType = await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
                     return updatedIdentificationType;
                 }
             }

@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Models.Login;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -22,12 +24,14 @@ namespace Models.Books
         // Longitud minima del documento
         public int MinimumDocumentLength { get; set; } = 7;
 
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
         public override string ToString()
         {
             return $"{Code} - {Name}";
         }
     }
-
     public class IdentificationTypeDTO : IdentificationTypeGraphQLModel
     {
         private bool _isChecked;
@@ -46,16 +50,16 @@ namespace Models.Books
     }
     public class IdentificationTypeCreateMessage
     {
-        public IdentificationTypeGraphQLModel CreatedIdentificationType { get; set; }
+        public UpsertResponseType<IdentificationTypeGraphQLModel> CreatedIdentificationType { get; set; } = new();
     }
 
     public class IdentificationTypeUpdateMessage
     {
-        public IdentificationTypeGraphQLModel UpdatedIdentificationType { get; set; }
+        public UpsertResponseType<IdentificationTypeGraphQLModel> UpdatedIdentificationType { get; set; } = new();
     }
 
     public class IdentificationTypeDeleteMessage
     {
-        public IdentificationTypeGraphQLModel DeletedIdentificationType { get; set; }
+        public DeleteResponseType DeletedIdentificationType { get; set; } = new();
     }
 }

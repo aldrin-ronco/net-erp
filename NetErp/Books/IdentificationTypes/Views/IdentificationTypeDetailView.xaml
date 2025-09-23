@@ -102,7 +102,7 @@
                     <TextBlock Text=" - Númerico ( 2 Dígitos )" Foreground="Gray" VerticalAlignment="Center" FontSize="13"/>
                 </StackPanel>
                 <TextBox
-                      Text="{Binding Path=Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      Text="{Binding Path=Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnlyCode, UpdateSourceTrigger=PropertyChanged}"
                       Grid.Column="1" Grid.Row="1" 
                       VerticalAlignment="Center"
                       HorizontalAlignment="Left"

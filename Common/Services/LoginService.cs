@@ -13,17 +13,23 @@ namespace Common.Services
 {
     public class LoginService : ILoginService
     {
+        private readonly GraphQLHttpClient _client;
+        public LoginService()
+        {
+            //Configuración para el certificado SSL
+            var handler = new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            _client = new GraphQLHttpClient(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
+            //configuración estatica de momento
+            _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde");
+            _client.HttpClient.DefaultRequestHeaders.Add("x-platform", "PC");
+        }
         public async Task<LoginGraphQLModel> AuthenticateAsync(string email, string password)
         {
             try
-            {
-                //Configuración momentanea para evitar la verificación del certificado SSL (en desarrollo)
-                var handler = new HttpClientHandler()
-                {
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-                };
-                GraphQLHttpClient client = new(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-                
+            {    
                 var query = @"
                 mutation ($input: LoginAccountInput!) {
                   loginAccount(input: $input) {
@@ -74,7 +80,7 @@ namespace Common.Services
                     }
                 };
 
-                GraphQLResponse<LoginResponseType> result = await client.SendMutationAsync<LoginResponseType>(new GraphQLRequest()
+                GraphQLResponse<LoginResponseType> result = await _client.SendMutationAsync<LoginResponseType>(new GraphQLRequest()
                 {
                     Query = query,
                     Variables = variables
@@ -103,13 +109,6 @@ namespace Common.Services
         {
             try
             {
-                //Configuración momentanea para evitar la verificación del certificado SSL (en desarrollo)
-                var handler = new HttpClientHandler()
-                {
-                    ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-                };
-                GraphQLHttpClient client = new(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-
                 var query = @"
                     mutation ($input: ValidateTicketInput!) {
                       validateTicket(input: $input) {
@@ -135,7 +134,7 @@ namespace Common.Services
                     }
                 };
 
-                GraphQLResponse<RedeemTicketResponseType> result = await client.SendMutationAsync<RedeemTicketResponseType>(new GraphQLRequest()
+                GraphQLResponse<RedeemTicketResponseType> result = await _client.SendMutationAsync<RedeemTicketResponseType>(new GraphQLRequest()
                 {
                     Query = query,
                     Variables = variables

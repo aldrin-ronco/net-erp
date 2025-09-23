@@ -11,7 +11,7 @@ namespace Models.Login
     {
         public LoginAccountGraphQLModel? Account { get; set; }
         public List<LoginCompanyGraphQLModel> Companies { get; set; } = [];
-        public List<LoginErrorGraphQLModel> Errors { get; set; } = [];
+        public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
         public LoginTicketGraphQLModel AccessTicket { get; set; } = new();
         public string Message { get; set; } = string.Empty;
         public bool Success { get; set; } = false;

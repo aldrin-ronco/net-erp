@@ -81,5 +81,23 @@ namespace Common.Services
         {
             return await _client.ExecuteMutationAsync<TResponse>(query, variables, cancellationToken);
         }
+
+        public async Task<TResponse> CreateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TResponse>>(query, variables, cancellationToken);
+            return response.CreateResponse;
+        }
+
+        public async Task<TResponse> UpdateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TResponse>>(query, variables, cancellationToken);
+            return response.UpdateResponse;
+        }
+
+        public async Task<TResponse> DeleteAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TResponse>>(query, variables, cancellationToken);
+            return response.DeleteResponse;
+        }
     }
 }
