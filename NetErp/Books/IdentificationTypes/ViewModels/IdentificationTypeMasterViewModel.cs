@@ -18,6 +18,10 @@ using System.Windows.Input;
 using System.Threading;
 using Microsoft.Xaml.Behaviors.Core;
 using System.Dynamic;
+using static Models.Global.GraphQLResponseTypes;
+using System.Net.Http;
+using GraphQL.Query.Builder;
+using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
@@ -179,42 +183,44 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
+        public string GetLoadIdentificationTypesQuery()
+        {
+            var identificationTypeFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Code)
+                    .Field(e => e.Name)
+                    .Field(e => e.HasVerificationDigit)
+                    .Field(e => e.MinimumDocumentLength)
+                    .Field(e => e.InsertedAt)
+                    .Field(e => e.UpdatedAt))
+                .Build();
+
+            var identificationTypeParameters = new GraphQLQueryParameter("filters", "IdentificationTypeFilters");
+
+            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypesPage", [identificationTypeParameters], identificationTypeFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([identificationTypeFragment]);
+
+            return builder.GetQuery();
+        }
+
         public async Task LoadIdentificationTypesAsync()
         {
             try
             {
+
                 IsBusy = true;
-                string query = @"
-			    query($filter: IdentificationTypeFilterInput){
-			        ListResponse: identificationTypes(filter: $filter){
-			        id
-			        code
-			        name
-			        hasVerificationDigit
-			        minimumDocumentLength
-			        }
-			    }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
+                string query = GetLoadIdentificationTypesQuery();
 
-                variables.filter.or[0].code = new ExpandoObject();
-                variables.filter.or[0].code.@operator = "like";
-                variables.filter.or[0].code.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.or[1].name = new ExpandoObject();
-                variables.filter.or[1].name.@operator = "like";
-                variables.filter.or[1].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                var result = await _identificationTypeService.GetListAsync(query, variables);
-                ObservableCollection<IdentificationTypeGraphQLModel> source = new(result);
-                this.IdentificationTypes = this.Context.AutoMapper.Map<ObservableCollection<IdentificationTypeDTO>>(source);
+                PageType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.GetPageAsync(query, variables);
+                this.IdentificationTypes = this.Context.AutoMapper.Map<ObservableCollection<IdentificationTypeDTO>>(result.Entries);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -274,6 +280,23 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             await this.Context.ActivateDetailViewForNewAsync(); // Mostrar la Vista
         }
 
+        public string GetCanDeleteIdentificationTypeQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteIdentificationType", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
         public async Task DeleteIdentificationTypeAsync()
         {
             try
@@ -282,15 +305,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
 
-                string query = @"
-                query($id:ID!) {
-                  CanDeleteModel: canDeleteIdentificationType(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
+                string query = GetCanDeleteIdentificationTypeQuery();
 
-                object variables = new { SelectedIdentificationType.Id };
+                object variables = new { canDeleteResponseId = SelectedIdentificationType.Id };
 
                 var validation = await _identificationTypeService.CanDeleteAsync(query, variables);
 
@@ -308,7 +325,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 }
 
                 IsBusy = true;
-                var deletedIdentificationType = await Task.Run(() => this.ExecuteDeleteIdentificationTypeAsync(SelectedIdentificationType.Id));
+                DeleteResponseType deletedIdentificationType = await Task.Run(() => this.ExecuteDeleteIdentificationTypeAsync(SelectedIdentificationType.Id));
+
+                if (!deletedIdentificationType.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedIdentificationType.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
                 await Context.EventAggregator.PublishOnUIThreadAsync(new IdentificationTypeDeleteMessage { DeletedIdentificationType = deletedIdentificationType });
 
@@ -329,29 +352,38 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task<IdentificationTypeGraphQLModel> ExecuteDeleteIdentificationTypeAsync(int id)
+        public string GetDeleteIdentificationTypeQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteIdentificationType", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteIdentificationTypeAsync(int id)
         {
             try
             {
 
-                string query = @"
-                mutation($id:ID){
-                  DeleteResponse: deleteIdentificationType(id:$id) {
-                    id
-                    code
-                    name
-                    hasVerificationDigit
-                    minimumDocumentLength
-                  }
-                }";
+                string query = GetDeleteIdentificationTypeQuery();
 
                 object variables = new
                 {
-                    id
+                    deleteResponseId = id
                 };
 
                 // Eliminar registros
-                var deletedRecord = await _identificationTypeService.DeleteAsync(query, variables);
+                DeleteResponseType deletedRecord = await _identificationTypeService.DeleteAsync<DeleteResponseType>(query, variables);
                 return deletedRecord;
             }
             catch (Exception)
@@ -365,7 +397,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 await LoadIdentificationTypesAsync();
-                _notificationService.ShowSuccess("Tipo de identificación creado exitosamente");
+                _notificationService.ShowSuccess(message.CreatedIdentificationType.Message);
                 return;
             }
             catch (Exception)
@@ -380,7 +412,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 await LoadIdentificationTypesAsync();
-                _notificationService.ShowSuccess("Tipo de identificación actualizado exitosamente");
+                _notificationService.ShowSuccess(message.UpdatedIdentificationType.Message);
                 return;
             }
             catch (Exception)
@@ -395,7 +427,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 await LoadIdentificationTypesAsync();
-                _notificationService.ShowSuccess("Tipo de identificación eliminado exitosamente");
+                _notificationService.ShowSuccess(message.DeletedIdentificationType.Message);
                 return;
             }
             catch (Exception)

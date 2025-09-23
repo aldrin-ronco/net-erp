@@ -15,7 +15,7 @@ namespace Common.Helpers
         public static string ComputerName { get; set; } = string.Empty;
 
         public static string SessionId { get; set; } = string.Empty;
-        public static LoginCompanyInfoGraphQLModel? CurrentCompany { get; set; }
+        public static LoginCompanyInfoGraphQLModel CurrentCompany { get; set; } = new();
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool GetSystemMetrics(int nIndex);

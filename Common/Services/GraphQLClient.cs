@@ -6,6 +6,7 @@ using GraphQL.Client.Serializer.Newtonsoft;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,8 +18,16 @@ namespace Common.Services
 
         public GraphQLClient()
         {
-            _client = new GraphQLHttpClient(ConnectionConfig.GraphQLAPIUrl, new NewtonsoftJsonSerializer());
-            _client.HttpClient.DefaultRequestHeaders.Add("DatabaseId", ConnectionConfig.DatabaseId);
+            //Configuración para el certificado SSL
+            var handler = new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            _client = new GraphQLHttpClient(ConnectionConfig.MainGraphQLAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
+            _client.HttpClient.DefaultRequestHeaders.Add("database-id", SessionInfo.CurrentCompany.Reference);
+            _client.HttpClient.DefaultRequestHeaders.Add("company-id", SessionInfo.CurrentCompany.Id.ToString());
+            _client.HttpClient.DefaultRequestHeaders.Add("x-session-id", SessionInfo.SessionId);
+            _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde"); // This should be replaced with a real device ID
         }
 
         public async Task<TResponse> ExecuteQueryAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)

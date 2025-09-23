@@ -72,20 +72,14 @@ namespace NetErp.Global.Shell.ViewModels
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
             
             _eventAggregator.SubscribeOnPublishedThread(this);
-            Task.Run(() => ActivateMainMenuView());
+            Task.Run(() => ActivateLoginView());
         }
 
-        public async Task ActivateMainMenuView()
+        public async Task ActivateLoginView()
         {
-            //Lógica momentanea para cargar el Login o el menú principal y no hacer log a cada rato
-            //if (Debugger.IsAttached)
-            //{
-            //    await ActivateItemAsync(MainMenuViewModel, new CancellationToken());
-            //    return;
-            //}
 
             // Crear LoginViewModel con Constructor Injection
-            LoginViewModel loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
+            LoginViewModel loginViewModel = new(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, new CancellationToken());
         }
 

@@ -140,5 +140,9 @@ namespace Common.Interfaces
         /// <returns>Strongly-typed response matching TResponse structure</returns>
         /// <exception cref="System.Exception">Thrown when GraphQL mutation fails</exception>
         Task<TResponse> MutationContextAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
+
+        Task<TResponse> CreateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
+        Task<TResponse> UpdateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
+        Task<TResponse> DeleteAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
     }
 }

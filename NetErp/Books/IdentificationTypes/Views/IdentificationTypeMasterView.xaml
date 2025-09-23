@@ -56,7 +56,7 @@
         <!--Toolbar-->
         <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
            AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
-           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center" Margin="0 0 0 5">
 
             <dxr:RibbonPage Caption="General">
 
@@ -90,11 +90,10 @@
 
         <!--Filtros-->
         <!--Text de Busqueda-->
-        <StackPanel Grid.Row="2" Orientation="Vertical">
+        <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0 5 0 5">
             <TextBlock Text="¿Qué desea buscar?" VerticalAlignment="Center" Margin="0 0 0 5" FontSize="15"/>
             <dxe:TextEdit
                     x:Name="FilterSearch"
-                    EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
                     ShowNullTextForEmptyValue="True"
                     ShowNullTextIfFocused="True"
@@ -137,8 +136,11 @@
                 </dxg:GridControl.View>
 
                 <dxg:GridColumn Header="Código" 
-                                Width="auto"
-                                Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                Width="auto" Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings HorizontalContentAlignment="Center"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
 
                     <!--Nombre-->
                 <dxg:GridColumn Header="Nombre" 
