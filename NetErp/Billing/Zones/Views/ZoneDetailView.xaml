@@ -51,9 +51,8 @@
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="30"/>
-                <RowDefinition Height="30"/>
-                <RowDefinition Height="30"/>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -62,9 +61,9 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="Nombre" Margin="0 4 4 2" HorizontalAlignment="Left" VerticalAlignment="Bottom" FontSize="13"/>
-            <dxe:TextEdit Grid.Row="1" Text="{Binding Path=ZoneName, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Grid.Column="1" Margin="0 0 4 0"
+            <dxe:TextEdit Grid.Row="1" Text="{Binding Path=ZoneName, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Grid.Column="1" Margin="0 0 4 0 " 
                           h:FocusBehavior.IsFocused="True" MaxLength="100"
-                          CharacterCasing="Upper" HorizontalAlignment="Stretch" Height="20"/>
+                          CharacterCasing="Upper" HorizontalAlignment="Stretch" Height="30"/>
             <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" Margin="5 0 5 0" VerticalAlignment="Bottom"> 
                 <TextBlock Text="Zona activa" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" Margin="0 0 5 5"/>
                 <CheckBox HorizontalAlignment="Center" Margin=" 5 0 5 5" VerticalAlignment="Bottom" IsChecked="{Binding Path=ZoneIsActive, UpdateSourceTrigger=PropertyChanged,

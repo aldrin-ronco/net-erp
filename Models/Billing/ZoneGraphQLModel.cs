@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Billing
 {
@@ -14,14 +15,15 @@ namespace Models.Billing
     }
     public class ZoneCreateMessage
     {
-        public ZoneGraphQLModel CreatedZone { get; set; } = new ZoneGraphQLModel();
+        public UpsertResponseType<ZoneGraphQLModel> CreatedZone { get; set; } = new();
     }
     public class ZoneUpdateMessage
     {
-        public ZoneGraphQLModel UpdatedZone { get; set; } = new ZoneGraphQLModel();
+        public UpsertResponseType<ZoneGraphQLModel> UpdatedZone { get; set; } = new ();
     }
+
     public class ZoneDeleteMessage
     {
-        public ZoneGraphQLModel DeletedZone { get; set; } = new ZoneGraphQLModel();
+        public DeleteResponseType DeletedZone { get; set; } = new();
     }
 }
