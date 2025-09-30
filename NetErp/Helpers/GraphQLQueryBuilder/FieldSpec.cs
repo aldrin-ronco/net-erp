@@ -21,30 +21,33 @@ namespace NetErp.Helpers.GraphQLQueryBuilder
         public static FieldSpec<T> Create(Func<string, string>? formatter = null) => new(formatter);
 
         // Campo escalar (hoja)
-        public FieldSpec<T> Field<TProp>(Expression<Func<T, TProp>> selector, string? overrideName = null)
+        public FieldSpec<T> Field<TProp>(Expression<Func<T, TProp>> selector, string? overrideName = null, string? alias = null)
         {
             var name = overrideName ?? Format(GetMemberName(selector));
-            _map[name] = Leaf;
+            var key = CombineAlias(alias, name);
+            _map[key] = Leaf;
             return this;
         }
 
         // Campo anidado (objeto)
-        public FieldSpec<T> Select<TProp>(Expression<Func<T, TProp>> selector, Action<FieldSpec<TProp>> nested, string? overrideName = null)
+        public FieldSpec<T> Select<TProp>(Expression<Func<T, TProp>> selector, Action<FieldSpec<TProp>> nested, string? overrideName = null, string? alias = null)
         {
             var name = overrideName ?? Format(GetMemberName(selector));
+            var key = CombineAlias(alias, name);
             var child = FieldSpec<TProp>.Create(_formatter);
             nested(child);
-            _map[name] = child.Build();
+            _map[key] = child.Build();
             return this;
         }
 
         // Campo anidado para colecciones (List/Enumerable)
-        public FieldSpec<T> SelectList<TItem>(Expression<Func<T, IEnumerable<TItem>>> selector, Action<FieldSpec<TItem>> nested, string? overrideName = null)
+        public FieldSpec<T> SelectList<TItem>(Expression<Func<T, IEnumerable<TItem>>> selector, Action<FieldSpec<TItem>> nested, string? overrideName = null, string? alias = null)
         {
             var name = overrideName ?? Format(GetMemberName(selector));
+            var key = CombineAlias(alias, name);
             var child = FieldSpec<TItem>.Create(_formatter);
             nested(child);
-            _map[name] = child.Build();
+            _map[key] = child.Build();
             return this;
         }
 
@@ -53,6 +56,11 @@ namespace NetErp.Helpers.GraphQLQueryBuilder
         private string Format(string name)
         {
             return _formatter != null ? _formatter(name) : name;
+        }
+
+        private static string CombineAlias(string? alias, string name)
+        {
+            return string.IsNullOrWhiteSpace(alias) ? name : $"{alias}:{name}";
         }
 
         // Formateador por defecto: camelCase (baja solo el primer carácter)
