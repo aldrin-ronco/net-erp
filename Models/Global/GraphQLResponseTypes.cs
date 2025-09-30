@@ -42,7 +42,8 @@ namespace Models.Global
             public int TotalEntries { get; set; }
             public ObservableCollection<T> Entries { get; set; } = [];
 
-            //Las siguientes propiedades están deprecadas y se mantienen solo por evitar errores de compilación en queries antiguas
+            //Las siguientes propiedades están deprecadas y se mantienen solo por evitar errores de compilación en queries antiguas, remover cuando se haya 
+            //hecho el cambio a las propiedades adecuadas para evitar errores de compilación
             public int Count { get; set; }
             public ObservableCollection<T> Rows { get; set; } = [];
         }

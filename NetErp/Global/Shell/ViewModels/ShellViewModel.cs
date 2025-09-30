@@ -13,6 +13,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Models.Login;
+using Models.Global;
+using Common.Helpers;
 
 namespace NetErp.Global.Shell.ViewModels
 {
@@ -23,6 +25,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly ILoginService _loginService;
         private readonly ISQLiteEmailStorageService _emailStorageService;
+        private readonly IRepository<CompanyGraphQLModel> _companyService;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private LoginAccountGraphQLModel? _currentAccount;
@@ -63,14 +66,16 @@ namespace NetErp.Global.Shell.ViewModels
             INotificationService notificationService,
             IBackgroundQueueService backgroundService,
             ILoginService loginService,
-            ISQLiteEmailStorageService emailStorageService)
+            ISQLiteEmailStorageService emailStorageService,
+            IRepository<CompanyGraphQLModel> companyService)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _backgroundService = backgroundService ?? throw new ArgumentNullException(nameof(backgroundService));
             _loginService = loginService ?? throw new ArgumentNullException(nameof(loginService));
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
-            
+            _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
+
             _eventAggregator.SubscribeOnPublishedThread(this);
             Task.Run(() => ActivateLoginView());
         }
@@ -108,7 +113,7 @@ namespace NetErp.Global.Shell.ViewModels
             _availableCompanies = message.Companies;
 
             // Login exitoso - navegar a CompanySelection
-            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService);
+            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService);
             companySelectionViewModel.Initialize(message.Account, message.Companies, message.AccessTicket);
             await ActivateItemAsync(companySelectionViewModel, cancellationToken);
         }
@@ -122,6 +127,7 @@ namespace NetErp.Global.Shell.ViewModels
         public async Task HandleAsync(LogoutMessage message, CancellationToken cancellationToken)
         {
             // Logout - volver al login
+            SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
         }
@@ -131,7 +137,7 @@ namespace NetErp.Global.Shell.ViewModels
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
             {
-                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService);
+                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService);
                 companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }

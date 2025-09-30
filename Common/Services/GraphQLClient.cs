@@ -15,7 +15,9 @@ namespace Common.Services
     public class GraphQLClient : IGraphQLClient
     {
         private readonly GraphQLHttpClient _client;
-
+        private string? _lastSessionId;
+        private string? _lastCompanyId;
+        private string? _lastCompanyRef;
         public GraphQLClient()
         {
             //Configuración para el certificado SSL
@@ -24,10 +26,6 @@ namespace Common.Services
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
             _client = new GraphQLHttpClient(ConnectionConfig.MainGraphQLAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-            _client.HttpClient.DefaultRequestHeaders.Add("database-id", SessionInfo.CurrentCompany.Reference);
-            _client.HttpClient.DefaultRequestHeaders.Add("company-id", SessionInfo.CurrentCompany.Id.ToString());
-            _client.HttpClient.DefaultRequestHeaders.Add("x-session-id", SessionInfo.SessionId);
-            _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde"); // This should be replaced with a real device ID
         }
 
         public async Task<TResponse> ExecuteQueryAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
@@ -44,6 +42,7 @@ namespace Common.Services
         {
             try
             {
+                ApplyHeaders();
                 var request = new GraphQLRequest
                 {
                     Query = query,
@@ -76,6 +75,74 @@ namespace Common.Services
         public void Dispose()
         {
             _client?.Dispose();
+        }
+
+        private void ApplyHeaders()
+        {
+            var headers = _client.HttpClient.DefaultRequestHeaders;
+
+            // Función local: actualiza el header solo si hay valor; remueve si existía antes
+            static void SetHeader(System.Net.Http.Headers.HttpRequestHeaders header, string name, string? value)
+            {
+                if (header.Contains(name)) header.Remove(name);
+                if (!string.IsNullOrWhiteSpace(value)) header.Add(name, value);
+            }
+
+            // x-session-id: disponible luego de redimir ticket
+            var currentSessionId = SessionInfo.SessionId;
+            if (_lastSessionId != currentSessionId)
+            {
+                SetHeader(headers, "x-session-id", currentSessionId);
+                _lastSessionId = currentSessionId;
+            }
+
+            // database-id y company-id: solo cuando hay compañía seleccionada
+            // database-id y company-id
+            if (SessionInfo.CurrentCompany != null)
+            {
+                var currentCompanyRef = SessionInfo.CurrentCompany.Reference;
+                var currentCompanyId = SessionInfo.CurrentCompany.Id.ToString();
+
+                if (_lastCompanyRef != currentCompanyRef)
+                {
+                    SetHeader(headers, "database-id", currentCompanyRef);
+                    _lastCompanyRef = currentCompanyRef;
+                }
+
+                if (_lastCompanyId != currentCompanyId)
+                {
+                    SetHeader(headers, "company-id", currentCompanyId);
+                    _lastCompanyId = currentCompanyId;
+                }
+            }
+            else
+            {
+                // Si no hay compañía seleccionada, enviar database-id si existe PendingCompanyReference
+                var pendingRef = SessionInfo.PendingCompanyReference;
+                if (!string.IsNullOrWhiteSpace(pendingRef))
+                {
+                    if (_lastCompanyRef != pendingRef)
+                    {
+                        SetHeader(headers, "database-id", pendingRef);
+                        _lastCompanyRef = pendingRef;
+                    }
+                }
+                else
+                {
+                    if (headers.Contains("database-id")) headers.Remove("database-id");
+                    _lastCompanyRef = null;
+                }
+
+                // Nunca enviar company-id sin CurrentCompany
+                if (headers.Contains("company-id")) headers.Remove("company-id");
+                _lastCompanyId = null;
+            }
+
+            // x-device-id: estático por ahora (puedes reemplazar por un provider real de device ID)
+            if (!headers.Contains("x-device-id"))
+            {
+                headers.Add("x-device-id", "pc12345abcde"); // TODO: reemplazar con un ID de dispositivo real
+            }
         }
     }
 }

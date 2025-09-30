@@ -6,6 +6,7 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:cal="http://caliburnmicro.com"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
@@ -112,40 +113,46 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource BackgroundGradient}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
+    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="{Binding BusyContent}"
+                                    BusyContentMargin="0,20,0,0"
+                                    IsBusyAtStartup="False">
 
-        <!-- Header con información del usuario -->
-        <Border Grid.Row="0" 
+        <Grid Background="{StaticResource BackgroundGradient}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header con información del usuario -->
+            <Border Grid.Row="0" 
                 Background="{StaticResource SelectionPanelGradient}"
                 Padding="30,20"
                 BorderThickness="0,0,0,1"
                 BorderBrush="#dee2e6">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" Opacity="0.05" ShadowDepth="2" BlurRadius="10"/>
-            </Border.Effect>
-            
-            <StackPanel>
-                <TextBlock Text="{Binding WelcomeMessage}" 
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" Opacity="0.05" ShadowDepth="2" BlurRadius="10"/>
+                </Border.Effect>
+
+                <StackPanel>
+                    <TextBlock Text="{Binding WelcomeMessage}" 
                            FontSize="24" 
                            FontWeight="Bold" 
                            Foreground="#2c3e50"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,8"/>
-                
-                <TextBlock Text="Selecciona la empresa con la que deseas trabajar" 
+
+                    <TextBlock Text="Selecciona la empresa con la que deseas trabajar" 
                            FontSize="14" 
                            Foreground="#6c757d"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,15"/>
-                
-                <!-- Search TextEdit with Icon -->
-                <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center">
-                    <dxe:TextEdit Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+
+                    <!-- Search TextEdit with Icon -->
+                    <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center">
+                        <dxe:TextEdit Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                   NullText="BUSCAR POR ORGANIZACIÓN O EMPRESA..."
                                   FontSize="14"
                                   CharacterCasing="Upper"
@@ -154,20 +161,20 @@
                                   CornerRadius="6"
                                   Padding="35,8,12,8"
                                   VerticalContentAlignment="Center"/>
-                    
-                    <TextBlock Text="🔍" 
+
+                        <TextBlock Text="🔍" 
                                FontSize="16" 
                                Foreground="#6c757d"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"
                                Margin="12,0,0,0"
                                IsHitTestVisible="False"/>
-                </Grid>
-            </StackPanel>
-        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-        <!-- Lista de organizaciones y empresas -->
-        <ScrollViewer Grid.Row="1" 
+            <!-- Lista de organizaciones y empresas -->
+            <ScrollViewer Grid.Row="1" 
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="30,20"
@@ -176,123 +183,123 @@
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       Focusable="False">
-            <ItemsControl ItemsSource="{Binding FilteredOrganizationGroups}" Focusable="False">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Margin="0,0,0,25"
+                <ItemsControl ItemsSource="{Binding FilteredOrganizationGroups}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,25"
                                 Background="White"
                                 CornerRadius="8">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#000000" Opacity="0.08" ShadowDepth="4" BlurRadius="15"/>
-                            </Border.Effect>
-                            
-                            <StackPanel>
-                                <!-- Organization Header -->
-                                <Border Style="{StaticResource OrganizationHeaderStyle}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <TextBlock Text="{Binding OrganizationName}" 
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#000000" Opacity="0.08" ShadowDepth="4" BlurRadius="15"/>
+                                </Border.Effect>
+
+                                <StackPanel>
+                                    <!-- Organization Header -->
+                                    <Border Style="{StaticResource OrganizationHeaderStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding OrganizationName}" 
                                                    FontSize="18" 
                                                    FontWeight="Bold" 
                                                    Foreground="White"
                                                    VerticalAlignment="Center"
                                                    Grid.Column="0"/>
-                                        
-                                        <Border Background="#33FFFFFF"
+
+                                            <Border Background="#33FFFFFF"
                                                 CornerRadius="12"
                                                 Padding="8,4"
                                                 Grid.Column="1">
-                                            <TextBlock Text="{Binding CompanyCount, StringFormat='{}{0} empresa(s)'}" 
+                                                <TextBlock Text="{Binding CompanyCount, StringFormat='{}{0} empresa(s)'}" 
                                                        FontSize="12" 
                                                        Foreground="White"
                                                        FontWeight="SemiBold"/>
-                                        </Border>
-                                    </Grid>
-                                </Border>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
 
-                                <!-- Companies List -->
-                                <ItemsControl ItemsSource="{Binding Companies}" Focusable="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource CompanyItemStyle}"
+                                    <!-- Companies List -->
+                                    <ItemsControl ItemsSource="{Binding Companies}" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource CompanyItemStyle}" 
                                                     cal:Message.Attach="[Event MouseLeftButtonDown] = [Action SelectCompany($dataContext)]; [Event MouseDoubleClick] = [Action OnCompanyDoubleClick($dataContext)]">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="auto"/>
-                                                        <ColumnDefinition Width="auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    
-                                                    <!-- Company Info -->
-                                                    <StackPanel Grid.Column="0">
-                                                        <TextBlock Text="{Binding CompanyName}" 
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="auto"/>
+                                                            <ColumnDefinition Width="auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Company Info -->
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding CompanyName}" 
                                                                    FontSize="16" 
                                                                    FontWeight="SemiBold" 
                                                                    Foreground="#2c3e50"/>
-                                                        
-                                                        <TextBlock Text="{Binding RoleDisplay}" 
+
+                                                            <TextBlock Text="{Binding RoleDisplay}" 
                                                                    FontSize="12" 
                                                                    Foreground="#6c757d"
                                                                    Margin="0,2,0,0"/>
-                                                    </StackPanel>
-                                                    
-                                                    <!-- Role Badge -->
-                                                    <Border Grid.Column="1"
+                                                        </StackPanel>
+
+                                                        <!-- Role Badge -->
+                                                        <Border Grid.Column="1"
                                                             Background="#e3f2fd"
                                                             BorderBrush="#2196f3"
                                                             BorderThickness="1"
                                                             CornerRadius="15"
                                                             Padding="10"
                                                             Margin="10,0">
-                                                        <TextBlock Text="{Binding Role}" 
+                                                            <TextBlock Text="{Binding Role}" 
                                                                    FontSize="11" 
                                                                    FontWeight="SemiBold"
                                                                    Foreground="#1976d2"/>
-                                                    </Border>
-                                                    
-                                                    <!-- Selection Indicator -->
-                                                    <RadioButton Grid.Column="2"
+                                                        </Border>
+
+                                                        <!-- Selection Indicator -->
+                                                        <RadioButton Grid.Column="2"
                                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                                                  GroupName="CompanySelection"
                                                                  VerticalAlignment="Center"
                                                                  Margin="15,0,0,0"/>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-        <!-- Footer con botones de acción -->
-        <Border Grid.Row="2" 
+            <!-- Footer con botones de acción -->
+            <Border Grid.Row="2" 
                 Background="{StaticResource SelectionPanelGradient}"
                 Padding="30,25"
                 BorderThickness="0,1,0,0"
                 BorderBrush="#dee2e6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <!-- Botón Logout -->
-                <Button Grid.Column="0"
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Botón Logout -->
+                    <Button Grid.Column="0"
                         Content="Cerrar Sesión"
                         Style="{StaticResource LogoutButtonStyle}"
                         cal:Message.Attach="[Event Click] = [Action LogOutAsync()]" Focusable="False"/>
-                
-                <!-- Información de selección -->
-                <TextBlock Grid.Column="1" 
+
+                    <!-- Información de selección -->
+                    <TextBlock Grid.Column="1" 
                            Text="{Binding SelectedCompany.CompanyInfo, TargetNullValue='Selecciona una empresa para continuar'}"
                            FontSize="15"
                            FontWeight="Medium"
@@ -301,14 +308,15 @@
                            Foreground="#495057"
                            TextAlignment="Center"
                            TextWrapping="Wrap"/>
-                
-                <!-- Botón Continuar -->
-                <Button Grid.Column="2"
+
+                    <!-- Botón Continuar -->
+                    <Button Grid.Column="2"
                         Content="Continuar"
                         Style="{StaticResource ContinueButtonStyle}"
                         IsEnabled="{Binding CanContinue}"
                         cal:Message.Attach="[Event Click] = [Action ContinueAsync()]" Focusable="False"/>
-            </Grid>
-        </Border>
-    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </busyIndicator:BusyMask>
 </UserControl>
