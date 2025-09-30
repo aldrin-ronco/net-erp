@@ -3,10 +3,13 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using DevExpress.XtraEditors.Filtering;
 using Models.Billing;
+using Models.Books;
 using Models.Global;
 using Ninject.Activation;
 using Services.Billing.DAL.PostgreSQL;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -14,6 +17,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
+using System.Xml.Linq;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Common.Extensions;
+using GraphQL.Client.Http;
+using Extensions.Global;
 
 namespace NetErp.Billing.Zones.ViewModels
 {
@@ -28,6 +37,21 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             Context = context;
             _zoneService = zoneService;
+        }
+
+        // Is Busy
+        private bool _isBusy = false;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
         }
         private bool _CanSave;
         public bool CanSave
@@ -110,68 +134,142 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                ZoneGraphQLModel result = await ExecuteSaveAsync();
-                if (IsNewZone)
+                IsBusy = true;
+                Refresh();
+                UpsertResponseType<ZoneGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneCreateMessage() { CreatedZone = result });
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneUpdateMessage() { UpdatedZone = result });
-                }
-                this.ZoneName = string.Empty;
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewZone
+                        ? new ZoneCreateMessage() { CreatedZone = result }
+                        : new ZoneUpdateMessage() { UpdatedZone = result }
+                );
                 await Context.ActivateMasterViewAsync();
             }
-            catch (AsyncException ex)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
+            finally
+            {
+                IsBusy = false;
+            }
+
+           
         }
 
         public void CheckSave()
         {
             CanSave = !string.IsNullOrEmpty(ZoneName);
         }
-        public async Task<ZoneGraphQLModel> ExecuteSaveAsync()
+        public async Task<UpsertResponseType<ZoneGraphQLModel>> ExecuteSaveAsync()
         {
+          
+
             try
             {
-                string query = IsNewZone ? @"mutation($data: CreateZoneInput!){
-                    CreateResponse: createZone(data:  $data){
-                        name
-                        isActive
-                    }
-                }" : @"mutation($id: Int!, $data: UpdateZoneInput!){
-                    UpdateResponse: updateZone(id: $id, data: $data){
-                        name
-                        isActive
-                    }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                if (!IsNewZone) variables.id = ZoneId;
-                variables.data.name = ZoneName;
-                variables.data.isActive = ZoneIsActive;
-                var result = IsNewZone ? await _zoneService.CreateAsync(query, variables) : await _zoneService.UpdateAsync(query, variables);
-                return result;
+                if (IsNewZone)
+                {
+                    string query = GetCreateQuery();
+
+                    object variables = new
+                    {
+                        createResponseInput = new
+                        {
+                            Name = ZoneName,
+                            IsActive = ZoneIsActive
+                           
+                        }
+
+                    };
+                   
+                    UpsertResponseType<ZoneGraphQLModel> zoneCreated = await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                    return zoneCreated;
+                }
+                else
+                {
+                    string query = GetUpdateQuery();
+
+                    object variables = new
+                    {
+                        updateResponseData = new
+                        {
+                            Name = ZoneName,
+                            IsActive = ZoneIsActive
+                        },
+                        UpdateResponseId = ZoneId
+                    };
+
+                    UpsertResponseType<ZoneGraphQLModel> updatedZone = await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                    return updatedZone;
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new AsyncException(innerException: ex);
+                throw;
             }
         }
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, overrideName: "billingZone", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.IsActive)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateBillingZoneInput!");
+
+            var fragment = new GraphQLQueryFragment("createBillingZone", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, overrideName: "billingZone", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.IsActive)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateBillingZoneInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateBillingZone", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
         public async Task GoBackAsync()
         {
             this.ZoneName = string.Empty;

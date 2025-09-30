@@ -4,8 +4,12 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Models.Billing;
+using Models.Books;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 
 namespace NetErp.Billing.Zones.ViewModels
@@ -226,82 +231,114 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public async Task DeleteZoneAsync()
         {
+         
+
             try
             {
-                // Si no hay item seleccionado, no continuar
                 if (SelectedItem is null) return;
                 int id = SelectedItem.Id;
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
+                this.IsBusy = true;
+                this.Refresh();
 
+                string query = GetCanDeleteZoneQuery();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteZone(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
+                object variables = new { canDeleteResponseId = SelectedItem.Id };
 
                 var validation = await _zoneService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                ZoneGraphQLModel deletedZone = await ExecuteDeleteAsync(id);
+                IsBusy = true;
+                DeleteResponseType deletedZone = await Task.Run(() => this.ExecuteDeleteAsync(id));
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneDeleteMessage() { DeletedZone = deletedZone });
+                if (!deletedZone.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedZone.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ZoneDeleteMessage { DeletedZone = deletedZone });
 
                 NotifyOfPropertyChange(nameof(CanDeleteZone));
             }
-            catch (AsyncException ex)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
-
-        public async Task<ZoneGraphQLModel> ExecuteDeleteAsync(int id)
+        public string GetDeleteZoneQuery()
         {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteBillingZone", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public string GetCanDeleteZoneQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteBillingZone", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+           
             try
             {
-                string query = @"mutation($id: Int!){
-                    DeleteResponse: deleteZone(id: $id){
-                        id
-                        name
-                        isActive
-                    }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
-                var result = await _zoneService.DeleteAsync(query, variables);
-                return result;
+
+                string query = GetDeleteZoneQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _zoneService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new AsyncException(innerException: ex);
+                throw;
             }
         }
 
@@ -322,58 +359,52 @@ namespace NetErp.Billing.Zones.ViewModels
         }
         public async Task LoadZonesAsync()
         {
+         
             try
             {
+
                 IsBusy = true;
-                string query = @"
-                query($filter: ZoneFilterInput){
-                     PageResponse :zonePage(filter: $filter) {
-                        count
-                        rows{
-                            id
-                            name
-                            isActive
-                        }
-                    }
-                }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                string query = GetLoadZonesQuery();
 
-                if (ShowActiveZonesOnly) 
-                {
-                    variables.filter.isActive = new ExpandoObject();
-                    variables.filter.isActive.@operator = "=";
-                    variables.filter.isActive.value = ShowActiveZonesOnly;
-                } 
-
-                //Pagination
-                variables.filter.pagination = new ExpandoObject();
-                variables.filter.pagination.page = PageIndex;
-                variables.filter.pagination.pageSize = PageSize;
-                Stopwatch stopwatch= new();
-                stopwatch.Start();
-                var result = await _zoneService.GetPageAsync(query, variables);
-                TotalCount = result.PageResponse.Count;
-                Zones = new ObservableCollection<ZoneGraphQLModel>(result.PageResponse.Rows);
-                stopwatch.Stop();
-                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                PageType<ZoneGraphQLModel> result = await _zoneService.GetPageAsync(query, variables);
+                this.Zones = result.Entries ;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+        }
+        public string GetLoadZonesQuery()
+        {
+            var zoneFields = FieldSpec<PageType<ZoneGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                   
+                    .Field(e => e.Name)
+                    .Field(e => e.IsActive))
+                .Build();
+
+            var zoneParameters = new GraphQLQueryParameter("filters", "BillingZoneFilters");
+
+            var zoneFragment = new GraphQLQueryFragment("billingZonesPage", [zoneParameters], zoneFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([zoneFragment]);
+
+            return builder.GetQuery();
         }
         public ZoneMasterViewModel(
             ZoneViewModel context,
@@ -391,7 +422,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 await LoadZonesAsync();
-                _notificationService.ShowSuccess("Zona eliminada correctamente");
+                _notificationService.ShowSuccess(message.UpdatedZone.Message);
             }
             catch (Exception)
             {
@@ -404,7 +435,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 await LoadZonesAsync();
-                _notificationService.ShowSuccess("Zona creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedZone.Message);
             }
             catch (Exception)
             {
@@ -417,7 +448,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 await LoadZonesAsync();
-                _notificationService.ShowSuccess("Zona eliminada correctamente");
+                _notificationService.ShowSuccess(message.DeletedZone.Message);
             }
             catch (Exception)
             {
