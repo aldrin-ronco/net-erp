@@ -219,11 +219,12 @@ namespace NetErp.Billing.Zones.ViewModels
                 throw;
             }
         }
+       
         public string GetCreateQuery()
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, overrideName: "billingZone", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "billingZone", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
@@ -248,7 +249,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, overrideName: "billingZone", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "billingZone", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
