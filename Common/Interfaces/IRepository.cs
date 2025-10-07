@@ -62,7 +62,10 @@ namespace Common.Interfaces
         /// <returns>The found entity or default(TModel) if not found</returns>
         /// <exception cref="System.Exception">Thrown when GraphQL query fails</exception>
         Task<TModel> FindByIdAsync(string query, object variables, CancellationToken cancellationToken = default);
-        
+
+        //new method to get single item by any criteria. Then FinByIdAsync should be deprecated
+        Task<TModel> GetSingleItemAsync(string query, object variables, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Retrieves a collection of entities asynchronously based on query criteria.
         /// </summary>

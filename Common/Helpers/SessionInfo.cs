@@ -19,6 +19,7 @@ namespace Common.Helpers
         public static CompanyGraphQLModel? CurrentCompany { get; set; }
         // Cuando aún no se ha establecido CurrentCompany, pero necesitamos enviar database-id
         public static string? PendingCompanyReference { get; set; }
+        public static string ApiKey {  get; set; } = "ak_z3J419SUU9qcv4imiin7JgTa5lSbnbo5tDDpiY4CFHE"; //TODO modificar la lógica de asignación y extracción de este campo
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool GetSystemMetrics(int nIndex);

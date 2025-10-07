@@ -16,60 +16,105 @@ namespace Common.Services
         private readonly GraphQLHttpClient _client;
         public LoginService()
         {
-            //Configuración para el certificado SSL
+            //TODO Configuración para el certificado SSL
             var handler = new HttpClientHandler()
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
             _client = new GraphQLHttpClient(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-            //configuración estatica de momento
+            //TODO configuración estatica de momento
             _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde");
             _client.HttpClient.DefaultRequestHeaders.Add("x-platform", "PC");
+            _client.HttpClient.DefaultRequestHeaders.Add("x-api-key", SessionInfo.ApiKey);
         }
         public async Task<LoginGraphQLModel> AuthenticateAsync(string email, string password)
         {
             try
             {    
                 var query = @"
-                mutation ($input: LoginAccountInput!) {
-                  loginAccount(input: $input) {
-                    accessTicket {
-                      expiresAt
-                      ticket
-                    }
-                    account {
-                      id
-                      email
-                      firstName
-                      middleName
-                      firstLastName
-                      middleLastName
-                      insertedAt
-                      updatedAt
-                    }
-                    companies {
-                      company {
-                        id
-                        name
-                        reference
-                        license {
+                    mutation ($input: LoginAccountInput!) {
+                      loginAccount(input: $input) {
+                        account {
                           id
-                          organization {
+                          email
+                          firstName
+                          middleName
+                          firstLastName
+                          middleLastName
+                          insertedAt
+                          updatedAt
+                        }
+                        accessTicket {
+                          expiresAt
+                          ticket
+                        }
+                        companies {
+                          company {
                             id
-                            name
+                            reference
+                            status
+                            address
+                            businessName
+                            captureType
+                            country {
+                              code
+                            }
+                            department {
+                              code
+                            }
+                            city {
+                              code
+                            }
+                            firstLastName
+                            firstName
+                            fullName
+                            identificationNumber
+                            identificationType {
+                              code
+                            }
+                            middleLastName
+                            middleName
+                            primaryCellPhone
+                            secondaryCellPhone
+                            primaryPhone
+                            secondaryPhone
+                            regime
+                            searchName
+                            tradeName
+                            verificationDigit
+                            telephonicInformation
+                            updatedAt
+                            insertedAt
+                            license {
+                              account {
+                                id
+                                email
+                              }
+                              organization {
+                                insertedAt
+                                name
+                                server {
+                                  id
+                                  host
+                                  username
+                                }
+                              }
+                            }
+                            updatedAt
+                            insertedAt
                           }
+                          role
+                        }
+                        success
+                        message
+                        errors {
+                          field
+                          message
                         }
                       }
-                      role
                     }
-                    success
-                    message
-                    errors {
-                      field
-                      message
-                    }
-                  }
-                }";
+
+                    ";
 
                 var variables = new
                 {

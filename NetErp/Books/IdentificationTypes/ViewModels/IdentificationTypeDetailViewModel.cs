@@ -194,7 +194,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             base.OnViewAttached(view, context);
             _ = App.Current.Dispatcher.BeginInvoke(() =>
             {
-                _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(Name))), DispatcherPriority.Render);
+                _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(IsNewRecord ? nameof(Code) : nameof(Name))), DispatcherPriority.Render);
             });
         }
 
@@ -272,7 +272,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, overrideName: "identificationType", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "identificationType", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.Code)
