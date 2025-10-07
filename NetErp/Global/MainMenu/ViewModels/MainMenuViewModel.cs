@@ -712,6 +712,7 @@ namespace NetErp.Global.MainMenu.ViewModels
         {
             try
             {
+                Items.Clear();
                 _eventAggregator.PublishOnUIThreadAsync(new ReturnToCompanySelectionMessage());
             }
             catch (Exception ex)

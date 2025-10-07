@@ -41,6 +41,11 @@ namespace Common.Services
             var response = await _client.ExecuteQueryAsync<SingleItemResponseType<TModel>>(query, variables, cancellationToken);
             return response.SingleItemResponse;
         }
+        public async Task<TModel> GetSingleItemAsync(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteQueryAsync<SingleItemResponseType<TModel>>(query, variables, cancellationToken);
+            return response.SingleItemResponse;
+        }
 
         public async Task<IEnumerable<TModel>> GetListAsync(string query, object variables, CancellationToken cancellationToken = default)
         {

@@ -27,6 +27,7 @@ namespace NetErp.Login.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly ILoginService _loginService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
+        private readonly IRepository<CountryGraphQLModel> _countryService;
 
         private LoginAccountGraphQLModel _currentAccount = new();
         private ObservableCollection<LoginOrganizationDTO> _organizationGroups = [];
@@ -143,12 +144,14 @@ namespace NetErp.Login.ViewModels
             INotificationService notificationService,
             IEventAggregator eventAggregator,
             ILoginService loginService,
-            IRepository<CompanyGraphQLModel> companyService)
+            IRepository<CompanyGraphQLModel> companyService,
+            IRepository<CountryGraphQLModel> countryService)
         {
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _loginService = loginService ?? throw new ArgumentNullException(nameof(loginService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
+            _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
 
             DisplayName = "Selección de Empresa";
         }
@@ -177,7 +180,7 @@ namespace NetErp.Login.ViewModels
                             var dto = new LoginCompanyInfoDTO
                             {
                                 CompanyId = company.Company.Id,
-                                CompanyName = company.Company.Name,
+                                CompanyName = company.Company.FullName,
                                 Role = company.Role,
                                 OrganizationName = g.Key.Name,
                                 OriginalData = company
@@ -378,22 +381,40 @@ namespace NetErp.Login.ViewModels
         {
             try
             {
-                //TODO modificar la extracción de la información de manera correcta
+                CompanyContextData response = await GetCompanyContextDataAsync(cityCode: company.City.Code, departmentCode: company.Department.Code, countryCode: company.Country.Code, identificationTypeCode: company.IdentificationType.Code);
+
+                //bloque de validación
+                if (response.Country is null) throw new Exception($"No country found with code {company.Country.Code}");
+                if(response.Department is null) throw new Exception($"No department found with code {company.Country.Code} - {company.Department.Code}");
+                if(response.City is null) throw new Exception($"No city found with code {company.Country.Code} - {company.Department.Code} - {company.City.Code}");
+                if(response.IdentificationType is null) throw new Exception($"No identification type found with code {company.IdentificationType.Code}");
+
                 dynamic variables = new ExpandoObject();
                 variables.createResponseInput = new ExpandoObject();
                 variables.createResponseInput.reference = company.Reference;
+                variables.createResponseInput.status = company.Status;
+
                 variables.createResponseInput.accountingEntity = new ExpandoObject();
-                var captureType = PersonType.LegalEntity;
-                variables.createResponseInput.accountingEntity.captureType = captureType.ToApiValue();
-                variables.createResponseInput.accountingEntity.identificationNumber = "123456"; //TODO ver de dónde sacar esto
-                variables.createResponseInput.accountingEntity.businessName = company.Name;
-                variables.createResponseInput.accountingEntity.cityId = 15240; //TODO ver de dónde sacar esto
-                variables.createResponseInput.accountingEntity.countryId = 16906; //TODO ver de dónde sacar esto
-                variables.createResponseInput.accountingEntity.departmentId = 16977; //TODO ver de dónde sacar esto
-                variables.createResponseInput.accountingEntity.identificationTypeId = 16550; //TODO ver de dónde sacar esto
-                var regime = TaxRegime.VatResponsible;
-                variables.createResponseInput.accountingEntity.regime = regime.ToApiValue();
-                variables.createResponseInput.accountingEntity.verificationDigit = "4"; //TODO ver de dónde sacar esto
+                variables.createResponseInput.accountingEntity.address = company.Address;
+                variables.createResponseInput.accountingEntity.businessName = company.BusinessName;
+                variables.createResponseInput.accountingEntity.captureType = company.CaptureType;
+                variables.createResponseInput.accountingEntity.firstLastName = company.FirstLastName;
+                variables.createResponseInput.accountingEntity.firstName = company.FirstName;
+                variables.createResponseInput.accountingEntity.identificationNumber = company.IdentificationNumber;
+                variables.createResponseInput.accountingEntity.middleLastName = company.MiddleLastName;
+                variables.createResponseInput.accountingEntity.middleName = company.MiddleName;
+                variables.createResponseInput.accountingEntity.primaryCellPhone = company.PrimaryCellPhone;
+                variables.createResponseInput.accountingEntity.secondaryCellPhone = company.SecondaryCellPhone;
+                variables.createResponseInput.accountingEntity.primaryPhone = company.PrimaryPhone;
+                variables.createResponseInput.accountingEntity.secondaryPhone = company.SecondaryPhone;
+                variables.createResponseInput.accountingEntity.regime = company.Regime;
+                variables.createResponseInput.accountingEntity.tradeName = company.TradeName;
+                variables.createResponseInput.accountingEntity.verificationDigit = company.VerificationDigit;
+                variables.createResponseInput.accountingEntity.countryId = response.Country.Id;
+                variables.createResponseInput.accountingEntity.departmentId = response.Department.Id;
+                variables.createResponseInput.accountingEntity.cityId = response.City.Id; 
+                variables.createResponseInput.accountingEntity.identificationTypeId = response.IdentificationType.Id;
+
 
                 string query = GetCreateCompanyQuery();
 
@@ -408,6 +429,67 @@ namespace NetErp.Login.ViewModels
             }
         }
 
+        public string GetCompanyContextDataQuery()
+        {
+            var cityFields = FieldSpec<CityGraphQLModel>
+            .Create()
+            .Field(e => e.Id)
+            .Field(e => e.Code).Build();
+
+            var departmentFields = FieldSpec<DepartmentGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Code).Build();
+
+            var countryField = FieldSpec<CountryGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Code).Build();
+
+            var identificationTypeFields = FieldSpec<IdentificationTypeGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Code).Build();
+
+            var cityParameters = new List<GraphQLQueryParameter> { new("cityCode", "String!"), new("departmentCode", "String!"), new("countryCode", "String!") };
+            var departmentParameters = new List<GraphQLQueryParameter> { new("departmentCode", "String!"), new("countryCode", "String!") };
+            var countryParameters = new GraphQLQueryParameter("code", "String!");
+            var identificationTypeParameters = new GraphQLQueryParameter("code", "String!");
+
+            var cityFragment = new GraphQLQueryFragment("cityByCodes", cityParameters, cityFields, "City");
+            var departmentFragment = new GraphQLQueryFragment("departmentByCodes", departmentParameters, departmentFields, "Department");
+            var countryFragment = new GraphQLQueryFragment("countryByCode", [countryParameters], countryField, "Country");
+            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypeByCode", [identificationTypeParameters], identificationTypeFields, "IdentificationType");
+
+            var builder = new GraphQLQueryBuilder([cityFragment, departmentFragment, countryFragment, identificationTypeFragment]);
+
+            return builder.GetQuery();
+        }
+
+        public async Task<CompanyContextData> GetCompanyContextDataAsync(string cityCode, string departmentCode, string countryCode, string identificationTypeCode)
+        {
+            try
+            {
+                dynamic variables = new ExpandoObject();
+                variables.cityCityCode = cityCode;
+                variables.cityDepartmentCode = departmentCode;
+                variables.cityCountryCode = countryCode;
+                variables.departmentDepartmentCode = departmentCode;
+                variables.departmentCountryCode = countryCode;
+                variables.countryCode = countryCode;
+                variables.identificationTypeCode = identificationTypeCode;
+                string query = GetCompanyContextDataQuery();
+
+                CompanyContextData response = await _countryService.GetDataContextAsync<CompanyContextData>(query, variables);
+
+                return response;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         public void SelectCompany(LoginCompanyInfoDTO company)
         {
@@ -441,5 +523,13 @@ namespace NetErp.Login.ViewModels
 
     public class ReturnToCompanySelectionMessage
     {
+    }
+
+    public class CompanyContextData
+    {
+        public CityGraphQLModel City { get; set; } = new();
+        public DepartmentGraphQLModel Department { get; set; } = new();
+        public CountryGraphQLModel Country { get; set; } = new();
+        public IdentificationTypeGraphQLModel IdentificationType { get; set; } = new();
     }
 }

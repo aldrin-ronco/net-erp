@@ -26,6 +26,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly ILoginService _loginService;
         private readonly ISQLiteEmailStorageService _emailStorageService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
+        private readonly IRepository<CountryGraphQLModel> _countryService;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private LoginAccountGraphQLModel? _currentAccount;
@@ -67,7 +68,8 @@ namespace NetErp.Global.Shell.ViewModels
             IBackgroundQueueService backgroundService,
             ILoginService loginService,
             ISQLiteEmailStorageService emailStorageService,
-            IRepository<CompanyGraphQLModel> companyService)
+            IRepository<CompanyGraphQLModel> companyService,
+            IRepository<CountryGraphQLModel> countryService)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -75,9 +77,11 @@ namespace NetErp.Global.Shell.ViewModels
             _loginService = loginService ?? throw new ArgumentNullException(nameof(loginService));
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
+            _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
             Task.Run(() => ActivateLoginView());
+            _countryService = countryService;
         }
 
         public async Task ActivateLoginView()
@@ -113,7 +117,7 @@ namespace NetErp.Global.Shell.ViewModels
             _availableCompanies = message.Companies;
 
             // Login exitoso - navegar a CompanySelection
-            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService);
+            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService, _countryService);
             companySelectionViewModel.Initialize(message.Account, message.Companies, message.AccessTicket);
             await ActivateItemAsync(companySelectionViewModel, cancellationToken);
         }
@@ -137,7 +141,7 @@ namespace NetErp.Global.Shell.ViewModels
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
             {
-                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService);
+                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService, _countryService);
                 companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }
