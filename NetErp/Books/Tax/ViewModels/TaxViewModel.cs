@@ -33,34 +33,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
         
-        public string listquery = @"
-			    query($filter : TaxFilterInput!){
-     
-                   pageResponse : taxPage(filter : $filter){
-        
-                       count,
-                       rows {
-                        id
-                        name
-                        margin
-                        taxType {
-                          id
-                          name
-                        }
-                        generatedTaxAccount {id name},
-                        generatedTaxRefundAccount {id name},
-                        deductibleTaxAccount {id name},
-                        deductibleTaxRefundAccount { id name}
-                        isActive
-                        formula
-                        alternativeFormula
-                       }
-      
-      
-                    }
        
-                }
-                ";
         public TaxViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxGraphQLModel> taxService)
         {
             AutoMapper = mapper;

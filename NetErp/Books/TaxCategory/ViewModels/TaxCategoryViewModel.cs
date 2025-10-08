@@ -13,32 +13,33 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NetErp.Books.TaxType.ViewModels
+namespace NetErp.Books.TaxCategory.ViewModels
 {
-    public class TaxTypeViewModel : Conductor<object>.Collection.OneActive
+    public class TaxCategoryViewModel : Conductor<object>.Collection.OneActive
     {
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly IRepository<TaxTypeGraphQLModel> _taxTypeService;
+        private readonly IRepository<TaxCategoryGraphQLModel> _TaxCategoryService;
 
-        public IEventAggregator EventAggregator { get; private set; }
+        public IEventAggregator EventAggregator { get; set; }
+
         public IMapper AutoMapper { get; private set; }
-        private TaxTypeMasterViewModel _taxTypeMasterViewModel;
+        private TaxCategoryMasterViewModel _TaxCategoryMasterViewModel;
 
-        public TaxTypeMasterViewModel TaxTypeMasterViewModel
+        public TaxCategoryMasterViewModel TaxCategoryMasterViewModel
         {
             get
             {
-                if (_taxTypeMasterViewModel is null) _taxTypeMasterViewModel = new TaxTypeMasterViewModel(this, _notificationService, _taxTypeService);
-                return _taxTypeMasterViewModel;
+                if (_TaxCategoryMasterViewModel is null) _TaxCategoryMasterViewModel = new TaxCategoryMasterViewModel(this, _notificationService, _TaxCategoryService);
+                return _TaxCategoryMasterViewModel;
             }
         }
        
-        public TaxTypeViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxTypeGraphQLModel> taxTypeService)
+        public TaxCategoryViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxCategoryGraphQLModel> TaxCategoryService)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            _taxTypeService = taxTypeService ?? throw new ArgumentNullException(nameof(taxTypeService));
+            _TaxCategoryService = TaxCategoryService ?? throw new ArgumentNullException(nameof(TaxCategoryService));
             _ = Task.Run(async () =>
             {
                 try
@@ -59,16 +60,16 @@ namespace NetErp.Books.TaxType.ViewModels
         {
             try
             {
-                await ActivateItemAsync(TaxTypeMasterViewModel, new CancellationToken());
+                await ActivateItemAsync(TaxCategoryMasterViewModel, new CancellationToken());
             }
             catch (Exception ex)
             {
                 throw new AsyncException(innerException: ex);
             }
         }
-        public async Task ActivateDetailViewForEdit(TaxTypeGraphQLModel? entity)
+        public async Task ActivateDetailViewForEdit(TaxCategoryGraphQLModel? entity)
         {
-            TaxTypeDetailViewModel instance = new(this, entity, _taxTypeService);
+            TaxCategoryDetailViewModel instance = new(this, entity, _TaxCategoryService);
 
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());

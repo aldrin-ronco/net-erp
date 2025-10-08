@@ -96,10 +96,10 @@
                                         <TextBlock Text="Selecciona un tipo de impuesto" Margin="0 0 0 2" />
                                         <dxe:ComboBoxEdit
                          Padding="2"
-                         ItemsSource="{Binding Path=TaxTypes, UpdateSourceTrigger=PropertyChanged}"
+                         ItemsSource="{Binding Path=TaxCategories, UpdateSourceTrigger=PropertyChanged}"
                          IsTextEditable="False"
                          DisplayMember="Name"
-                         EditValue="{Binding SelectedTaxTypeGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         EditValue="{Binding SelectedTaxCategoryGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
                     <Grid Grid.Row="1">

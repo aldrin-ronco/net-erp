@@ -1,9 +1,9 @@
-﻿<UserControl x:Class="NetErp.Books.TaxType.Views.TaxTypeMasterView"
+﻿<UserControl x:Class="NetErp.Books.TaxCategory.Views.TaxCategoryMasterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NetErp.Books.TaxType.Views"
+             xmlns:local="clr-namespace:NetErp.Books.TaxCategory.Views"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:config="clr-namespace:Common.Config;assembly=Common"
@@ -61,10 +61,10 @@
             LargeGlyph="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}"                                             
             Description="Eliminar"
             Hint="Eliminar Tipo de Impuesto"    
-            IsEnabled="{Binding Path=CanDeleteTaxType, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+            IsEnabled="{Binding Path=CanDeleteTaxCategory, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
             RibbonStyle="Large">
                             <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteTaxTypeCommand}" EventName="ItemClick"/>
+                                <dxmvvm:EventToCommand Command="{Binding Path=DeleteTaxCategoryCommand}" EventName="ItemClick"/>
                             </dxmvvm:Interaction.Behaviors>
                         </dxb:BarButtonItem>
 
@@ -95,9 +95,9 @@
             <dxg:GridControl  Margin="0 10 0 0"
                                       
            EnableSmartColumnsGeneration="True"
-           SelectedItem="{Binding Path=SelectedTaxTypeGraphQLModel, 
+           SelectedItem="{Binding Path=SelectedTaxCategoryGraphQLModel, 
            Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-           ItemsSource="{Binding Path=TaxTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+           ItemsSource="{Binding Path=TaxCategories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
         >
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" 
@@ -141,7 +141,7 @@ HorizontalHeaderContentAlignment="Center">
        Padding="3"
        Margin="3"
        Width="auto" Height="auto" 
-       cal:Message.Attach="[Event Click] = [Action EditTaxType]">
+       cal:Message.Attach="[Event Click] = [Action EditTaxCategoryAsync]">
                                 <Button.Content>
                                     <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>

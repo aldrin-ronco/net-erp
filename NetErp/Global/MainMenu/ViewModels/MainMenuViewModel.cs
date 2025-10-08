@@ -46,7 +46,6 @@ using Ninject;
 using Services.Books.DAL.PostgreSQL;
 using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Books.Tax.ViewModels;
-using NetErp.Books.TaxType.ViewModels;
 using NetErp.Global.Parameter.ViewModels;
 using System;
 using System.Collections.ObjectModel;
@@ -54,6 +53,7 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using NetErp.Books.TaxCategory.ViewModels;
 
 
 namespace NetErp.Global.MainMenu.ViewModels
@@ -692,11 +692,11 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
 
         }
-        public async Task OpenTaxType()
+        public async Task OpenTaxCategory()
         {
             try
             {
-                TaxTypeViewModel instance = IoC.Get<TaxTypeViewModel>();
+                TaxCategoryViewModel instance = IoC.Get<TaxCategoryViewModel>();
                 instance.DisplayName = "Administración de Tipos de Impuesto";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);

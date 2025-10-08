@@ -111,8 +111,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             TaxGraphQLModel sellTax1 = priceListDetail.CatalogItem.AccountingGroup.SellTax1;
             TaxGraphQLModel sellTax2 = priceListDetail.CatalogItem.AccountingGroup.SellTax2;
 
-            if(sellTax1 != null && sellTax1.TaxType != null && sellTax1.TaxType.Prefix == "IVA") return sellTax1.Margin;
-            if(sellTax2 != null && sellTax2.TaxType != null && sellTax2.TaxType.Prefix == "IVA") return sellTax2.Margin;
+            if(sellTax1 != null && sellTax1.TaxCategory != null && sellTax1.TaxCategory.Prefix == "IVA") return sellTax1.Margin;
+            if(sellTax2 != null && sellTax2.TaxCategory != null && sellTax2.TaxCategory.Prefix == "IVA") return sellTax2.Margin;
 
             return 0;
         }
@@ -122,8 +122,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             TaxGraphQLModel? sellTax1 = priceListDetail.CatalogItem.AccountingGroup.SellTax1;
             TaxGraphQLModel? sellTax2 = priceListDetail.CatalogItem.AccountingGroup.SellTax2;
 
-            if(sellTax1 != null && sellTax1.TaxType != null && sellTax1.TaxType.Prefix == "IVA") return sellTax1;
-            if(sellTax2 != null && sellTax2.TaxType != null && sellTax2.TaxType.Prefix == "IVA") return sellTax2;
+            if(sellTax1 != null && sellTax1.TaxCategory != null && sellTax1.TaxCategory.Prefix == "IVA") return sellTax1;
+            if(sellTax2 != null && sellTax2.TaxCategory != null && sellTax2.TaxCategory.Prefix == "IVA") return sellTax2;
 
             return null;
         }

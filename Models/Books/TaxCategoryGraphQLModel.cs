@@ -1,14 +1,16 @@
-﻿using Models.Global;
+﻿using Models.Billing;
+using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
-    public class TaxTypeGraphQLModel
+    public class TaxCategoryGraphQLModel
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -20,20 +22,19 @@ namespace Models.Books
     }
 
 
-    public class TaxTypeCreateMessage
+    public class TaxCategoryCreateMessage
     {
-        public TaxTypeGraphQLModel CreatedTaxType { get; set; }
-        public ObservableCollection<TaxTypeGraphQLModel> TaxTypes { get; set; }
+        public UpsertResponseType<TaxCategoryGraphQLModel> CreatedTaxCategory { get; set; } = new();
+       
     }
-    public class TaxTypeDeleteMessage
+    public class TaxCategoryDeleteMessage
     {
-        public TaxTypeGraphQLModel DeletedTaxType { get; set; }
+        public DeleteResponseType DeletedTaxCategory { get; set; }
        
     }
 
-    public class TaxTypeUpdateMessage
+    public class TaxCategoryUpdateMessage
     {
-        public TaxTypeGraphQLModel UpdatedTaxType { get; set; }
-        public ObservableCollection<TaxTypeGraphQLModel> TaxTypes { get; set; }
+        public UpsertResponseType<TaxCategoryGraphQLModel> UpdatedTaxCategory { get; set; }
     }
 }

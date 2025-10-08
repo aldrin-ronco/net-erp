@@ -688,7 +688,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                             margin
                             formula
                             alternativeFormula
-                            taxType {
+                            TaxCategory {
                               prefix
                             }
                           }
@@ -696,7 +696,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                             margin
                             formula
                             alternativeFormula
-                            taxType {
+                            TaxCategory {
                               prefix
                             }
                           }
@@ -787,8 +787,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             if(tax1 is null && tax2 is null) return -1;
 
-            if(tax1 != null && tax1.TaxType.Prefix == "IVA") return tax1.Margin;
-            if(tax2 != null && tax2.TaxType.Prefix == "IVA") return tax2.Margin;
+            if(tax1 != null && tax1.TaxCategory.Prefix == "IVA") return tax1.Margin;
+            if(tax2 != null && tax2.TaxCategory.Prefix == "IVA") return tax2.Margin;
 
             return -1; // No IVA found
         }

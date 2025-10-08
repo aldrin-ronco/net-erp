@@ -140,7 +140,7 @@ namespace NetErp
 
             // Books
             _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<TaxTypeGraphQLModel>>().To<GraphQLRepository<TaxTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<TaxCategoryGraphQLModel>>().To<GraphQLRepository<TaxCategoryGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<WithholdingCertificateConfigGraphQLModel>>().To<GraphQLRepository<WithholdingCertificateConfigGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingAccountGroupGraphQLModel>>().To<GraphQLRepository<AccountingAccountGroupGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingAccountGraphQLModel>>().To<GraphQLRepository<AccountingAccountGraphQLModel>>().InSingletonScope();
