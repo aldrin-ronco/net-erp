@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Services.Books.DAL.PostgreSQL
 {
-    public class TaxTypeService : IGenericDataAccess<TaxTypeGraphQLModel>
+    public class TaxCategoryService : IGenericDataAccess<TaxCategoryGraphQLModel>
     {
     }
 }

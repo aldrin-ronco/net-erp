@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -16,7 +17,7 @@ namespace Models.Books
         public AccountingAccountGraphQLModel GeneratedTaxRefundAccount { get; set; } = new();
         public AccountingAccountGraphQLModel DeductibleTaxAccount { get; set; } = new();
         public AccountingAccountGraphQLModel DeductibleTaxRefundAccount { get; set; } = new();
-        public TaxTypeGraphQLModel TaxType { get; set; } = new();
+        public TaxCategoryGraphQLModel TaxCategory { get; set; } = new();
         public bool IsActive { get; set; }
         public string Formula { get; set; } = string.Empty;
         public string AlternativeFormula { get; set; } = string.Empty;
@@ -24,21 +25,21 @@ namespace Models.Books
 
     public class TaxDataContext
     {
-        public IEnumerable<TaxTypeGraphQLModel> TaxTypes { get; set; } = [];
-        public IEnumerable<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } = [];
+        public PageType<TaxCategoryGraphQLModel> TaxCategories { get; set; } 
+        public PageType<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
     }
     public class TaxCreateMessage
     {
-        public TaxGraphQLModel CreatedTax { get; set; }
-       
+        public UpsertResponseType<TaxGraphQLModel> CreatedTax { get; set; } = new();
+
     }
     public class TaxDeleteMessage
     {
-        public TaxGraphQLModel DeletedTax { get; set; }
+        public DeleteResponseType DeletedTax { get; set; }
     }
 
     public class TaxUpdateMessage
     {
-        public TaxGraphQLModel UpdatedTax { get; set; }
+        public UpsertResponseType<TaxGraphQLModel> UpdatedTax { get; set; }
     }
 }

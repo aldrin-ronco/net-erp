@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace NetErp.Books.TaxType.Views
+namespace NetErp.Books.TaxCategory.Views
 {
     /// <summary>
-    /// Lógica de interacción para TaxTypeDetailView.xaml
+    /// Lógica de interacción para TaxCategoryDetailView.xaml
     /// </summary>
-    public partial class TaxTypeDetailView : UserControl
+    public partial class TaxCategoryDetailView : UserControl
     {
-        public TaxTypeDetailView()
+        public TaxCategoryDetailView()
         {
             InitializeComponent();
         }

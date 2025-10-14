@@ -139,21 +139,9 @@
                 
 
                 <dxg:GridColumn Header="Tipo" Width="auto" HorizontalHeaderContentAlignment="Center"
-                    Binding="{Binding TaxType.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                    Binding="{Binding TaxCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
                
-                <!--<dxg:GridColumn Header="Cuenta de Impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
-                    Binding="{Binding GeneratedTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <dxg:GridColumn Header="Cuenta de reembolso de impuestos generada" Width="auto" HorizontalHeaderContentAlignment="Center"
-      Binding="{Binding GeneratedTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
-
-
-                <dxg:GridColumn Header="Cuenta fiscal deducible" Width="auto" HorizontalHeaderContentAlignment="Center"
-      Binding="{Binding DeductibleTaxAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>
-
-
-                <dxg:GridColumn Header="Cuenta de reembolso de impuestos deducible" Width="auto" HorizontalHeaderContentAlignment="Center"
-      Binding="{Binding DeductibleTaxRefundAccount.Name, UpdateSourceTrigger=PropertyChanged}"/>-->
+               
 
 
                 
@@ -167,7 +155,7 @@
             Padding="3"
             Margin="3"
             Width="auto" Height="auto" 
-            cal:Message.Attach="[Event Click] = [Action EditTax]">
+            cal:Message.Attach="[Event Click] = [Action EditTaxAsync]">
                                 <Button.Content>
                                     <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>
