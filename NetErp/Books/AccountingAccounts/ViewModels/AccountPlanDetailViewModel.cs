@@ -4,8 +4,9 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Core;
-using DevExpress.Xpf.WindowsUI.Navigation;
+using Extensions.Global;
 using Models.Books;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,10 +14,11 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
-    public class AccountPlanDetailViewModel: ViewModelBase
+    public class AccountPlanDetailViewModel : ViewModelBase
     {
         #region "Propiedades"
 
@@ -32,20 +34,20 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public AccountPlanViewModel Context
         {
             get { return _context; }
-            set 
+            set
             {
-                SetValue(ref _context, value); 
+                SetValue(ref _context, value);
             }
         }
 
 
-        private char _selectedAccountNature;
+        private string _selectedAccountNature;
 
-        public char SelectedAccountNature
+        public string SelectedAccountNature
         {
             get
             {
-                return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? 'D' : 'C' : _selectedAccountNature;
+                return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? "D" : "C" : _selectedAccountNature;
             }
             set
             {
@@ -219,32 +221,32 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         protected void OnLv5CodeChanged()
         {
             RaisePropertyChanged(nameof(CanSave));
- 
+
             if (IsNewRecord)
             {
-                if (Lv5Code.Length <= 1) 
-                { 
+                if (Lv5Code.Length <= 1)
+                {
                     PopulateInfoLv1(Lv5Code);
-                    SetReadOnlyState(Lv5Code);                
+                    SetReadOnlyState(Lv5Code);
                 }
 
-                if (Lv5Code.Length <= 2) 
+                if (Lv5Code.Length <= 2)
                 {
                     PopulateInfoLv2(Lv5Code);
                     SetReadOnlyState(Lv5Code);
                 }
 
-                if (Lv5Code.Length <= 4) 
+                if (Lv5Code.Length <= 4)
                 {
                     PopulateInfoLv3(Lv5Code);
-                    SetReadOnlyState(Lv5Code);                    
+                    SetReadOnlyState(Lv5Code);
                 }
 
-                if (Lv5Code.Length <= 6) 
+                if (Lv5Code.Length <= 6)
                 {
                     PopulateInfoLv4(Lv5Code);
-                    SetReadOnlyState(Lv5Code);                    
-                } 
+                    SetReadOnlyState(Lv5Code);
+                }
 
 
                 if (Lv5Code.Length <= 8)
@@ -254,7 +256,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     SetTextBoxSelectionForExistingAccountCode(Lv5Code);
                     SetTextBoxNameStyleForExistingAccountCode(Lv5Code);
                     SetNextFocus(Lv5Code);
-                } 
+                }
             }
         }
 
@@ -331,7 +333,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public bool Lv5NameIsFocused
         {
             get { return _lv5NameIsFocused; }
-            set 
+            set
             {
                 SetValue(ref _lv5NameIsFocused, value);
             }
@@ -510,6 +512,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             this.Context = context;
             this.Parent = context.AccountPlanMasterViewModel;
             this._accountingAccountService = accountingAccountService;
+            RaisePropertyChanged(nameof(CanSave));
         }
 
         #endregion
@@ -523,7 +526,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public void SetNextFocus(string accountCode)
         {
             if (accountCode.Length < 8) return;
- 
+
             if (AccountCodeExist(accountCode)) return;
 
             if (string.IsNullOrEmpty(this.Lv1Name))
@@ -558,7 +561,37 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         }
 
-        public async Task<AccountingAccountGraphQLModel> UpdateAsync()
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingAccountGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingAccount", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Code)
+                    .Field(f => f.Nature)
+                    .Field(f => f.Margin)
+                    .Field(f => f.MarginBasis)
+                    .Field(f => f.InsertedAt)
+                    .Field(f => f.UpdatedAt))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateAccountingAccountInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAccountingAccount", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public async Task<UpsertResponseType<AccountingAccountGraphQLModel>> UpdateAsync()
         {
             try
             {
@@ -633,23 +666,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         }
                     }
                 }
+                if (model is null) throw new Exception("model no puede ser null");
 
-                string query = @"
-			    mutation ($id: Int!, $data: UpdateAccountingAccountInput!) {
-			    UpdateResponse: updateAccountingAccount (id: $id, data: $data) {
-			        id
-			        code
-			        name
-			        margin
-			        marginBasis
-				    nature
-			      }
-			    }";
+                string query = GetUpdateQuery();
 
                 object variables = new
-                {                    
-                    model.Id,
-                    Data = new
+                {
+                    updateResponseId = model.Id,
+                    updateResponseData = new
                     {
 
                         model.Name,
@@ -658,8 +682,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                 };
 
-                if (model is null) throw new Exception("model no puede ser null");
-                AccountingAccountGraphQLModel updatedAccount = await _accountingAccountService.UpdateAsync(query, variables);
+                UpsertResponseType<AccountingAccountGraphQLModel> updatedAccount = await _accountingAccountService.UpdateAsync<UpsertResponseType<AccountingAccountGraphQLModel>>(query, variables);
                 return updatedAccount;
             }
             catch (Exception)
@@ -668,10 +691,39 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
+
+        public string GetInsertQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<List<AccountingAccountGraphQLModel>>>
+                .Create()
+                .SelectList(selector: list => list.Entity, alias: "Entity", overrideName: "accountingAccounts", nested: account => account
+                    .Field(f => f.Id)
+                    .Field(f => f.Code)
+                    .Field(f => f.Name)
+                    .Field(f => f.Nature)
+                    .Field(f => f.Margin)
+                    .Field(f => f.MarginBasis)
+                    .Field(f => f.InsertedAt)
+                    .Field(f => f.UpdatedAt))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "[CreateAccountingAccountInput!]!");
+
+            var fragment = new GraphQLQueryFragment("createAccountingAccounts", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
         /// <summary>
         /// Guarda la nueva cuenta contable o actualiza los cambios
         /// </summary>
-        public async Task<List<AccountingAccountGraphQLModel>> InsertAsync()
+        public async Task<UpsertResponseType<List<AccountingAccountGraphQLModel>>> InsertAsync()
         {
             try
             {
@@ -679,7 +731,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Crear el nivel 1 en caso de que no exista
                 if (!this.IsReadOnlyLv1Name)
                 {
-                    AccountingAccountGraphQLModel model = new ()
+                    AccountingAccountGraphQLModel model = new()
                     {
                         Code = this.Lv1Code.RemoveExtraSpaces().Trim(),
                         Name = this.Lv1Name.RemoveExtraSpaces().Trim(),
@@ -743,26 +795,16 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 };
                 models.Add(modelLv5);
 
-                string query = @"
-                mutation ($data: CreateAccountingAccountListInput!) {
-                  ListResponse: createAccountinAccountList(data: $data) {
-                    id
-                    code
-                    name
-                    nature
-                    margin
-                    marginBasis
-                  }
-                }";
+                string query = GetInsertQuery();
 
                 var modelsWithOutIds = from model in models
                                        select new { model.Code, model.Name, model.Nature, model.Margin, model.MarginBasis };
 
                 dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.accountingAccounts = modelsWithOutIds;
-                ObservableCollection<AccountingAccountGraphQLModel> createdAccounts = await _accountingAccountService.CreateListAsync(query, variables);
-                return [.. createdAccounts];
+                variables.createResponseInput = new ExpandoObject();
+                variables.createResponseInput = modelsWithOutIds;
+                UpsertResponseType<List<AccountingAccountGraphQLModel>> response = await _accountingAccountService.CreateAsync<UpsertResponseType<List<AccountingAccountGraphQLModel>>>(query, variables);
+                return response;
             }
             catch (Exception ex)
             {
@@ -770,7 +812,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
-        
+
 
         /// <summary>
         /// Obtiene la informacion del primer nivel (Clase) y asigna la cuenta y el nombre
@@ -1148,7 +1190,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         this.SetFocus(() => Lv5Name);
                     }
                     return;
-                }                
+                }
 
                 // Level4
                 if (accountCode.Length == 6)
@@ -1319,10 +1361,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                //    await Task.Run(() =>
-                // PopulateInfo(this.Code))
-                //.ContinueWith(antecedent => SetReadOnlyState(this.Code))
-                //.ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SetLevelFocus(this.Code)));
                 PopulateInfo(this.Code);
                 SetReadOnlyState(this.Code);
                 SetLevelFocus(this.Code);
@@ -1339,7 +1377,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// Retorna a la vista padre
         /// </summary>
         [Command]
-        public async Task ReturnToAccountingAccountPlanMasterAsync()
+        public async Task ReturnToAccountingAccountPlanMaster()
         {
             this.Code = "";
             this.Lv5CodeIsFocused = false;
@@ -1362,15 +1400,26 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 this.IsBusy = true;
                 if (this.IsNewRecord)
                 {
-                    List<AccountingAccountGraphQLModel> result = await Task.Run(() => this.InsertAsync());
-                    Messenger.Default.Send(new AccountingAccountCreateListMessage() { CreatedAccountingAccountList = result });
+                    UpsertResponseType<List<AccountingAccountGraphQLModel>> result = await Task.Run(() => this.InsertAsync());
+                    if (!result.Success)
+                    {
+                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                        return;
+                    }
+                    Messenger.Default.Send(new AccountingAccountCreateListMessage() { UpsertList = result });
                 }
                 else
                 {
                     if (Context.AccountPlanMasterViewModel.SelectedItem is null) throw new ArgumentException(nameof(Parent.SelectedItem));
-                    AccountingAccountGraphQLModel result = await Task.Run(() => this.UpdateAsync());
-                    Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpdatedAccountingAccount = result });
+                    UpsertResponseType<AccountingAccountGraphQLModel> result = await Task.Run(() => this.UpdateAsync());
+                    if (!result.Success)
+                    {
+                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                        return;
+                    }
+                    Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpsertAccount = result });
                 }
+                await ReturnToAccountingAccountPlanMaster();
             }
             catch (Exception ex)
             {
@@ -1379,9 +1428,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             finally
             {
-                //await Task.Delay(3000);
                 this.IsBusy = false;
-                ReturnToAccountingAccountPlanMasterAsync();
             }
         }
         public bool CanSave
@@ -1434,6 +1481,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
             }
         }
+
+
 
         #endregion
     }
