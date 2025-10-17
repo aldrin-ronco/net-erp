@@ -18,6 +18,8 @@ using NetErp.Books.AccountingAccounts.DTO;
 using Common.Helpers;
 using Common.Validators;
 using Models.Billing;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
@@ -377,20 +379,9 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 if (code.Length == 1)
                 {
-                    await App.Current.Dispatcher.Invoke(async () =>
+                    App.Current.Dispatcher.Invoke(() =>
                     {
-                        string query = @"
-                    mutation ($id: Int!) {
-                      DeleteResponse: deleteAccountingAccount (id: $id) {
-                        id
-                        code
-                        name
-                        margin
-                        marginBasis
-                        nature
-                      }
-                    }";
-                        await this._accountingAccountService.DeleteAsync(query, new { Lv1.Id });
+                        this.AccountingAccounts.Remove(Lv1);
                     });
                 }
                 else
@@ -437,36 +428,87 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountFromAccountsDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
-        public async Task<AccountingAccountGraphQLModel> ExecuteDeleteAsync(int id)
+
+        public string GetDeleteAccountingAccountQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+            .Create()
+            .Field(f => f.DeletedId)
+            .Field(f => f.Message)
+            .Field(f => f.Success)
+            .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteAccountingAccount", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteAccountingAccount (id: $id) {
-                    id
-                    code
-                    name
-                    margin
-                    marginBasis
-                    nature
-                  }
-                }";
+                string query = GetDeleteAccountingAccountQuery();
 
                 object variables = new
                 {
-                    Id = (int)id
+                    deleteResponseId = (int)id
                 };
 
-                var deletedAccountingAccount = await _accountingAccountService.DeleteAsync(query, variables);
-                RemoveAccountInMemory(accounts, (int)id);
+                DeleteResponseType deleteResponse = await _accountingAccountService.DeleteAsync<DeleteResponseType>(query, variables);
 
-                return deletedAccountingAccount;
+                return deleteResponse;
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+
+        public string GetInitilizeQuery()
+        {
+            var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
+                .Create()
+                .SelectList(list => list.Entries, entries => entries
+                    .Field(f => f.Id)
+                    .Field(f => f.Code)
+                    .Field(f => f.Name)
+                    .Field(f => f.Margin)
+                    .Field(f => f.MarginBasis)
+                    .Field(f => f.Nature)
+                    .Field(f => f.InsertedAt)
+                    .Field(f => f.UpdatedAt)
+                    .Select(f => f.Company, company => company
+                        .Field(f => f.Id)))
+                .Build();
+
+            var parameters = new GraphQLQueryParameter("pagination", "Pagination");
+
+            var fragment = new GraphQLQueryFragment("accountingAccountsPage", [parameters], fields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+
+        }
+
+        public string GetCanDeleteAccountingAccountQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingAccount", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
         }
 
         #endregion
@@ -480,21 +522,15 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 this.IsBusy = true;
-                string query = @"
-                query{
-                  ListResponse : accountingAccounts{
-                    id
-                    code
-                    name
-                    nature
-                    margin
-                    marginBasis
-                  }
-                }"
+                string query = GetInitilizeQuery();
 ;
                 // Loading Data 
-                var result = await this._accountingAccountService.GetListAsync(query, new object());
-                accounts = new List<AccountingAccountGraphQLModel>(result);
+
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+                PageType<AccountingAccountGraphQLModel> result = await this._accountingAccountService.GetPageAsync(query, variables);
+                accounts = [.. result.Entries];
                 this.AccountingAccounts = PopulateAccountingAccountDTO(accounts);
 
             }
@@ -518,7 +554,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             finally
             {
-                //await Task.Delay(1000);
                 this.IsBusy = false;
             }
         }
@@ -555,21 +590,15 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
         [Command]
-        public async Task DeleteAsync(object id)
+        public async Task DeleteAsync(AccountingAccountDTO account)
         {
             try
             {
 
                 this.IsBusy = true;
-                string query = @"
-                query($id: Int!){
-                  CanDeleteModel: canDeleteAccountingAccount(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
+                string query = GetCanDeleteAccountingAccountQuery();
 
-                object variables = new {  Id = (int)id };
+                object variables = new { canDeleteResponseId = account.Id };
 
                 var validation = await this._accountingAccountService.CanDeleteAsync(query, variables);
 
@@ -588,8 +617,19 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
 
                 this.IsBusy = true;
-                var deletedAccountingAccount = await Task.Run(() => this.ExecuteDeleteAsync((int)id));
-                Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = deletedAccountingAccount });    
+                DeleteResponseType deleteResponse = await Task.Run(() => this.ExecuteDeleteAsync(account.Id));
+                RemoveAccountInMemory(accounts, account.Id);
+                if (deleteResponse.Success is false) 
+                {
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "No fue posible eliminar la cuenta contable" +
+                        (char)13 + (char)13 + deleteResponse.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    return;
+                }
+                Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = new() 
+                { 
+                    Id = account.Id,
+                    Code = account.Code
+                }, DeletedResponseType = deleteResponse});    
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -628,10 +668,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 IsBusy = true;
                 if (this.accounts.Count == 0) { return; }
-                _ = Task.Run(() => accounts.AddRange(message.CreatedAccountingAccountList))
-                  .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
-                  .ContinueWith(antecedent => SearchAccount(message.CreatedAccountingAccountList[message.CreatedAccountingAccountList.Count - 1].Code));
-                _notificationService.ShowSuccess("Cuenta(s) contable(s) creada(s) exitosamente");
+                _ = Task.Run(() => accounts.AddRange(message.UpsertList.Entity))
+                  .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => AccountingAccounts = PopulateAccountingAccountDTO(accounts)))
+                  .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SearchAccount(message.UpsertList.Entity[message.UpsertList.Entity.Count - 1].Code)));
+                _notificationService.ShowSuccess(message.UpsertList.Message);
             }
             catch (AsyncException ex)
             {
@@ -661,17 +701,17 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// <returns></returns>
         /// 
 
-        void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message) 
+        void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message)
         {
             try
             {
                 IsBusy = true;
                 if (this.accounts.Count == 0) { return; }
-                _ = Task.Run(() => accounts.Replace(message.UpdatedAccountingAccount))
-                    .ContinueWith(antecedent => AccountingAccounts = PopulateAccountingAccountDTO(accounts))
-                    .ContinueWith(antecedent => SearchAccount(message.UpdatedAccountingAccount.Code));
+                _ = Task.Run(() => accounts.Replace(message.UpsertAccount.Entity))
+                    .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => AccountingAccounts = PopulateAccountingAccountDTO(accounts)))
+                    .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SearchAccount(message.UpsertAccount.Entity.Code)));
 
-                _notificationService.ShowSuccess("Cuenta contable actualizada exitosamente");
+                _notificationService.ShowSuccess(message.UpsertAccount.Message);
             }
             catch (AsyncException ex)
             {
@@ -699,7 +739,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 IsBusy = true;
                 await DeleteAccountFromAccountsDTOAsync(message.DeletedAccountingAccount.Code);
-                _notificationService.ShowSuccess("Cuenta contable eliminada exitosamente");
+                _notificationService.ShowSuccess(message.DeletedResponseType.Message);
             }
             catch (AsyncException ex)
             {

@@ -35,7 +35,7 @@ namespace Models.Login
         public string TradeName { get; set; } = string.Empty;
         public string VerificationDigit { get; set; } = string.Empty;
         public string TelephonicInformation { get; set; } = string.Empty;
-        public LoginLicenseGraphQLModel License { get; set; } = new();
+        public LoginOrganizationGraphQLModel Organization { get; set; } = new();
         public DateTime UpdatedAt { get; set; } 
         public DateTime InsertedAt { get; set; }
     }

@@ -11,7 +11,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1200"
              FontFamily="Century Gothic">
-    
     <UserControl.Resources>
         <!-- Gradientes corporativos -->
         <LinearGradientBrush x:Key="BackgroundGradient" StartPoint="0,0" EndPoint="1,1">
@@ -225,8 +224,13 @@
                                     <ItemsControl ItemsSource="{Binding Companies}" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource CompanyItemStyle}" 
-                                                    cal:Message.Attach="[Event MouseLeftButtonDown] = [Action SelectCompany($dataContext)]; [Event MouseDoubleClick] = [Action OnCompanyDoubleClick($dataContext)]">
+                                                <Border Style="{StaticResource CompanyItemStyle}"
+                                                    cal:Message.Attach="[Event MouseLeftButtonDown] = [Action SelectCompany($dataContext)]">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftDoubleClick"
+                                                                      Command="{Binding DataContext.OnCompanyDoubleClickCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
