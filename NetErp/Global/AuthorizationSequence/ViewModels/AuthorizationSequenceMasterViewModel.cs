@@ -1,10 +1,12 @@
-﻿using Caliburn.Micro;
+﻿using Amazon.S3.Model;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using Common.Validators;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
+using DevExpress.Pdf.Drawing.DirectX;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Billing;
@@ -13,6 +15,7 @@ using Models.Global;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -28,7 +31,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Amazon.S3.Util.S3EventNotification;
+using static Chilkat.Http;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
@@ -46,8 +52,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             Context = context;
             _notificationService = notificationService;
             _authorizationSequenceService = authorizationSequenceService;
-
             Context.EventAggregator.SubscribeOnUIThread(this);
+
             _ = InitializeAsync();
         }
 
@@ -189,6 +195,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
                 Refresh();
+                SelectedAuthorizationSequenceGraphQLModel = null;
                 await Task.Run(() => ExecuteActivateDetailViewForEditAsync());
             }
             catch (Exception ex)
@@ -341,7 +348,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         public async Task ExecuteActivateDetailViewForEditAsync()
         {
-            await Context.ActivateDetailViewForEdit(SelectedAuthorizationSequenceGraphQLModel);
+            await Context.ActivateDetailViewForEdit(SelectedAuthorizationSequenceGraphQLModel, Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(CostCenters));
         }
 
         public async Task InitializeAsync()
@@ -354,104 +361,44 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private async Task LoadListAsync()
         {
 
-           // this.Refresh();
+            this.Refresh();
 
             // Iniciar cronometro
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             IsBusy = true;
-            string query = @"
-                            query($filter: AuthorizationSequenceFilterInput!){
-                              authorizationSequencePage(filter: $filter){
-                                    count
-                                    rows {
-                                      id
-                                        description
-                                        number
-                                        costCenter  {
-                                         id
-                                         name
-                                       }
-                                       authorizationSequenceType {
-                                         id
-                                         name
-                                       }
-,
-                                       AuthorizationSequenceByCostCenter {
-                                            id
-                                            name
-            
-                                       },
-                                       startRange
-                                       endRange
-                                       endDate
-                                       startDate
-                                       endDate
-                                       isActive
-                                       prefix
-                                       nextAuthorizationSequenceId
-                                       currentInvoiceNumber
-                                       mode
-                                       technicalKey
-                                       reference
-                                    }
-                                  },
-                                  costCenters(){
-                                    id
-                                    name
-                                    address
-                                    city  {
-                                      id
-                                      name
-                                      department {
-                                       id
-                                       name
-                                      } 
-                                    }
-  
-                                  }
-                            }";
+           
+            string query = GetLoadAuthorizationSequenceQuery(true);
+
             dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.Pagination = new ExpandoObject();
-            variables.filter.Pagination.Page = PageIndex;
-            variables.filter.Pagination.PageSize = PageSize;
-            variables.filter.and = new ExpandoObject[]
-              {
-                     new(),
-                     new()
-              };
-            if (IsActive)
-            {
-                variables.filter.and[0].isActive = new ExpandoObject();
-                variables.filter.and[0].isActive.@operator = "=";
-                variables.filter.and[0].isActive.value = true;
+            variables.authorizationSequencesFilters = new ExpandoObject();
+            variables.pageResponsePagination = new ExpandoObject();
+            variables.pageResponsePagination.page = PageIndex;
+            variables.pageResponsePagination.pageSize = PageSize;
 
-            }
-
+           
+            variables.authorizationSequencesFilters.isActive = IsActive;
+            variables.authorizationSequencesFilters.number = FilterSearch?.Length > 0 ? FilterSearch.Trim().RemoveExtraSpaces() : "";
+           
+            
             try
             {
                
-
                 AuthorizationSequenceDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDataContext>(query, variables);
 
-                ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters;
+                ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters.Entries;
                 costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-
                 CostCenters = [.. costCenter];
-               
-               
-                SelectedCostCenter = CostCenters.First(f => f.Id == 0);
-               
+                SelectedCostCenter = CostCenters.First(f => f.Id == 0);        
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequencePage.Rows);
-                TotalCount = source.AuthorizationSequencePage.Count;
+                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequences.Entries);
+                TotalCount = source.AuthorizationSequences.Count;
                 _isLoaded = true;
             }
             catch (Exception e)
             {
-
+                
             }
             finally
             {
@@ -462,6 +409,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public async Task LoadAuthorizationSequenceAsync()
         {
+            
+
             try
             {
                 this.Refresh();
@@ -470,88 +419,28 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 IsBusy = true;
-                string query = @"
-               query( $filter: AuthorizationSequenceFilterInput!){
-                      PageResponse: authorizationSequencePage(filter: $filter){
-                        count
-                        rows {
-                          id
-                            description
-                            number
-                            costCenter  {
-                             id
-                             name
-                           }
-                           authorizationSequenceType {
-                             id
-                             name
-                           },
-                           AuthorizationSequenceByCostCenter {
-                                id
-                                name
-            
-                           },
 
-                           startRange
-                           endRange
-                           endDate
-                           startDate
-                           endDate
-                           isActive
-                           prefix
-                           currentInvoiceNumber
-                           nextAuthorizationSequenceId
-                           mode
-                           technicalKey
-                           reference
-                        }
-                      }
-                    }
-                ";
+                string query = GetLoadAuthorizationSequenceQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = PageIndex;
+                variables.pageResponsePagination.pageSize = PageSize;
 
-
-                variables.filter.and = new ExpandoObject[]
-               {
-                     new(),
-                     new(),
-                     new()
-               };
-                if (IsActive)
+                if (IsActive) { variables.pageResponseFilters.isActive = IsActive; }
+                
+                if (SelectedCostCenter != null && SelectedCostCenter?.Id > 0)
                 {
-                    variables.filter.and[1].isActive = new ExpandoObject();
-                    variables.filter.and[1].isActive.@operator = "=";
-                    variables.filter.and[1].isActive.value = true;
+                    variables.pageResponseFilters.costCenterId = SelectedCostCenter?.Id;
 
                 }
+                variables.pageResponseFilters.matching = FilterSearch?.Length > 0 ? FilterSearch.Trim().RemoveExtraSpaces() : "";
 
-                if (!string.IsNullOrEmpty(FilterSearch))
-                {
-                    variables.filter.and[0].description = new ExpandoObject();
-                    variables.filter.and[0].description.@operator = "like";
-                    variables.filter.and[0].description.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-
-                }
-                if (SelectedCostCenter == null && SelectedCostCenter?.Id > 0)
-                {
-                    variables.filter.and[2].costCenterId = new ExpandoObject();
-                    variables.filter.and[2].costCenterId.@operator = "=";
-                    variables.filter.and[2].costCenterId.value = SelectedCostCenter.Id;
-
-                }
-
-                var result = await _authorizationSequenceService.GetPageAsync(query, variables);
-                stopwatch.Stop();
+                PageType<AuthorizationSequenceGraphQLModel> result = await _authorizationSequenceService.GetPageAsync(query, variables);
+                this.Authorizations = [.. result.Entries ];
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(result.Rows);
                 TotalCount = result.Count;
-
             }
             catch (Exception ex)
             {
@@ -566,106 +455,206 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 //Initialized = true;
                 IsBusy = false;
             }
+            
         }
+        public string GetLoadAuthorizationSequenceQuery(bool withCostCenter = false)
+        {
+              var authorizationFields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
 
+                    .Field(e => e.Description)
+                    .Field(e => e.Number)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Prefix)
+                    .Field(e => e.CurrentInvoiceNumber)
+                    .Field(e => e.Mode)
+                    .Field(e => e.TechnicalKey)
+                    .Field(e => e.Reference)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.StartRange)
+                    .Field(e => e.EndRange)
+                    .Select(e => e.NextAuthorizationSequence, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.Description)
+
+                    )
+                    .Select(e => e.CostCenter, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                    
+                    )
+                    .Select(e => e.AuthorizationSequenceType, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                    )
+                )
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
+                .Build();
+            var costCenterFields = FieldSpec<PageType<CostCenterGraphQLModel>>
+               .Create()
+               .SelectList(it => it.Entries, entries => entries
+                   .Field(e => e.Id)
+                   .Field(e => e.Name)
+                   .Field(e => e.Address)
+                   .Select(e => e.City, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.Department, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Name)
+                            )
+                    )
+               )
+               .Field(o => o.PageNumber)
+               .Field(o => o.PageSize)
+               .Field(o => o.TotalPages)
+               .Field(o => o.TotalEntries)
+               .Build();
+            var authorizationPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var authorizationfilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
+            var authorizationFragment = new GraphQLQueryFragment("authorizationSequencesPage", [authorizationPagParameters, authorizationfilterParameters], authorizationFields, withCostCenter? "AuthorizationSequences" : "PageResponse");
+            var costCenterFragment = new GraphQLQueryFragment("costCentersPage", [], costCenterFields, "CostCenters");
+
+            var builder = withCostCenter ? new GraphQLQueryBuilder([authorizationFragment, costCenterFragment]) :  new GraphQLQueryBuilder([authorizationFragment]);
+            return builder.GetQuery();
+        }
         public async Task DeleteAuthorizationSequenceAsync()
         {
             try
             {
-                IsBusy = true;
+                if (SelectedAuthorizationSequenceGraphQLModel is null) return;
                 int id = SelectedAuthorizationSequenceGraphQLModel.Id;
+                this.IsBusy = true;
+                this.Refresh();
 
-                string query = @"
-                query($id:Int!) {
-                  CanDeleteModel: canDeleteAuthorizationSequence(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
-                object variables = new { Id = id };
+                string query = GetCanDeleteAuthorizationSequence();
 
-                var validation = await this._authorizationSequenceService.CanDeleteAsync(query, variables);
+                object variables = new { canDeleteResponseId = SelectedAuthorizationSequenceGraphQLModel.Id };
+
+                var validation = await _authorizationSequenceService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedAuthorizationSequenceGraphQLModel.Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "La autorizacion no puede ser eliminada" +
-                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
+                IsBusy = true;
+                DeleteResponseType deletedAuthorizationSequence = await Task.Run(() => this.ExecuteDeleteAuthorizationSequenceAsync(id));
 
-                Refresh();
-                var deletedAuthorizationSequence = await ExecuteDeleteAuthorizationSequenceAsync(id);
+                if (!deletedAuthorizationSequence.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedAuthorizationSequence.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceDeleteMessage() { DeletedAuthorizationSequence = deletedAuthorizationSequence });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new AuthorizationSequenceDeleteMessage { DeletedAuthorizationSequence = deletedAuthorizationSequence });
 
-                // Desactivar opcion de eliminar registros
                 NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAuthorizationSequence" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+
+
         }
-        public async Task<AuthorizationSequenceGraphQLModel> ExecuteDeleteAuthorizationSequenceAsync(int id)
+        public string GetDeleteAuthorizationSequenceQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteAuthorizationSequence", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public string GetCanDeleteAuthorizationSequence()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteAuthorizationSequence", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteAuthorizationSequenceAsync(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteAuthorizationSequence(id: $id) {
-                    id
-                  }
-                }";
-                object variables = new { Id = id };
-                var deletedAuthorization = await this._authorizationSequenceService.DeleteAsync(query, variables);
-                this.SelectedAuthorizationSequenceGraphQLModel = null;
-                return deletedAuthorization;
+
+                string query = GetDeleteAuthorizationSequenceQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _authorizationSequenceService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
-           
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
             
+            
         }
-
-        public Task HandleAsync(AuthorizationSequenceCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(AuthorizationSequenceCreateMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess("La autorización fue creada  correctamente");
-            return LoadAuthorizationSequenceAsync();
-          
+            try
+            {
+                await LoadAuthorizationSequenceAsync();
+                _notificationService.ShowSuccess(message.CreatedAuthorizationSequence.Message);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
-
-
+        
         public Task HandleAsync(AuthorizationSequenceUpdateMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess("La autorización fue actualizada  correctamente");
+            _notificationService.ShowSuccess(message.UpdatedAuthorizationSequence.Message);
             return LoadAuthorizationSequenceAsync();
              
         }
@@ -673,8 +662,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             try
             {
-                _notificationService.ShowSuccess("La autorización fue eliminada correctamente");
-                AuthorizationSequenceGraphQLModel authorizationSequenceToDelete = Authorizations.First(c => c.Id == message.DeletedAuthorizationSequence.Id);
+                _notificationService.ShowSuccess(message.DeletedAuthorizationSequence.Message);
+                AuthorizationSequenceGraphQLModel authorizationSequenceToDelete = Authorizations.First(c => c.Id == message.DeletedAuthorizationSequence.DeletedId);
                 if (authorizationSequenceToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Authorizations.Remove(authorizationSequenceToDelete));
                 return LoadAuthorizationSequenceAsync();
             }
@@ -684,15 +673,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-
-
-
         #endregion
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
 
             // Desconectar eventos para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
+            //Context.EventAggregator.Unsubscribe(this);
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 

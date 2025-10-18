@@ -157,6 +157,8 @@
                                 ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
                                 DisplayMember="FullName"
+                                IsEnabled="{Binding Path=EnabledToCreated, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+
                                 EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 IsSynchronizedWithCurrentItem="True" />
                         </StackPanel>

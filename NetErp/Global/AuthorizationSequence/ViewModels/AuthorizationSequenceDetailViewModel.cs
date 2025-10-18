@@ -15,6 +15,7 @@ using Models.Books;
 using Models.Global;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json.Linq;
 using Ninject.Activation;
 using Services.Books.DAL.PostgreSQL;
@@ -34,8 +35,8 @@ using System.Xml.Linq;
 using static Amazon.S3.Util.S3EventNotification;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 using static Dictionaries.BooksDictionaries;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
 namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
     public class AuthorizationSequenceDetailViewModel : Screen, INotifyDataErrorInfo
@@ -45,11 +46,19 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
 
 
-        public AuthorizationSequenceDetailViewModel(AuthorizationSequenceViewModel context, AuthorizationSequenceGraphQLModel? entity, Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService)
+        public AuthorizationSequenceDetailViewModel(
+            AuthorizationSequenceViewModel context,
+            AuthorizationSequenceGraphQLModel? entity,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService,
+            ObservableCollection<CostCenterDTO> costCenters
+            )
         {
 
             _notificationService = notificationService;
             _authorizationSequenceService = authorizationSequenceService;
+            CostCenters = costCenters;
+            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             Context = context;
             _errors = new Dictionary<string, List<string>>();
 
@@ -60,19 +69,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             }
 
-
             Context.EventAggregator.SubscribeOnUIThread(this);
+
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
 
             joinable.Run(async () => await InitializeAsync());
-
-
-
-
-
-
-
-
 
         }
         public async Task InitializeAsync()
@@ -85,7 +86,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 
            
         }
-        public async Task SearchAuthorizationSequences()
+        public  void SearchAuthorizationSequences()
         {
             try
             {
@@ -452,7 +453,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
 
         public bool SequenceD => SelectedSequenceOrigin.Equals(SequenceOriginEnum.D);
-        public bool EnabledAST => (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && string.IsNullOrEmpty(TechnicalKey) ));
+        public bool EnabledAST => (Entity == null && (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && string.IsNullOrEmpty(TechnicalKey)) ));
         private SequenceOriginEnum _selectedSequenceOrigin;
         public SequenceOriginEnum SelectedSequenceOrigin
         {
@@ -591,7 +592,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -645,23 +646,25 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
 
         }
-        public async Task Save()
+        public async Task SaveAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                AuthorizationSequenceGraphQLModel result = await ExecuteSave();
-                
-                if (IsNewRecord)
+                UpsertResponseType<AuthorizationSequenceGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceCreateMessage() { CreatedAuthorizationSequence =result });
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AuthorizationSequenceUpdateMessage() { UpdatedAuthorizationSequence = result});
-                }
-               // Context.EnableOnViewReady = false;
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AuthorizationSequenceCreateMessage() { CreatedAuthorizationSequence = result }
+                        : new AuthorizationSequenceUpdateMessage() { UpdatedAuthorizationSequence = result }
+                );
+
+                // Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewModelAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -678,34 +681,49 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = false;
             }
+                
+
         }
 
-        public async Task<AuthorizationSequenceGraphQLModel> ExecuteSave()
+        public async Task<UpsertResponseType<AuthorizationSequenceGraphQLModel>> ExecuteSaveAsync()
         {
-            dynamic variables = new ExpandoObject();
-            variables.Data = new ExpandoObject();
-            variables.Data.number = Number;
-            variables.Data.description = $"AUTORIZACION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  //Consultar
-            variables.Data.costCenterId = SelectedCostCenter.Id;
-            variables.Data.mode = SelectedMode;
-            variables.Data.technicalKey = TechnicalKey;
-            variables.Data.reference = Reference;
-            variables.Data.isActive = IsActive;
-            variables.Data.startDate = StartDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            //Campos comunes para creacion y edicion
+            dynamic responseInput = new ExpandoObject();
+            responseInput.number = Number;
+            responseInput.description = $"AUTORIZACION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  //Consultar
+          
+            responseInput.mode = SelectedMode;
+            responseInput.technicalKey = TechnicalKey;
+            responseInput.reference = Reference;
+            responseInput.isActive = IsActive;
+            responseInput.startDate = StartDate.Value.ToString("yyyy-MM-dd");
+            responseInput.endDate = EndDate.Value.ToString("yyyy-MM-dd");
+            responseInput.prefix = Prefix;
+            responseInput.startRange = StartRange;
+            responseInput.endRange = EndRange;
+            responseInput.currentInvoiceNumber = CurrentInvoiceNumber;
 
-            variables.Data.endDate = EndDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
-            variables.Data.authorizationSequenceTypeId = SelectedAuthorizationSequenceType.Id;
-            variables.Data.prefix = Prefix;
-            variables.Data.startRange = StartRange;
-            variables.Data.endRange = EndRange;
-            variables.Data.currentInvoiceNumber = CurrentInvoiceNumber;
+            dynamic variables = new ExpandoObject();
+           
+
             if (IsNewRecord)
             {
-                return await CreateAsync(variables);
+                //Campos solo para creacion
+                responseInput.authorizationSequenceTypeId = SelectedAuthorizationSequenceType.Id;
+                responseInput.costCenterId = SelectedCostCenter.Id;
+
+                variables.createResponseInput = responseInput;
+                string query = GetCreateQuery();
+                UpsertResponseType<AuthorizationSequenceGraphQLModel> AuthorizationCreated = await _authorizationSequenceService.CreateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
+                return AuthorizationCreated;
             }
             else
             {
-                return await UpdateAsync(variables);
+                string query = GetUpdateQuery();
+                variables.updateResponseInput = responseInput;
+                variables.UpdateResponseId = Entity.Id;
+                UpsertResponseType<AuthorizationSequenceGraphQLModel> updatedAuthorization = await _authorizationSequenceService.UpdateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
+                return updatedAuthorization;
             }
             
         }
@@ -717,14 +735,22 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             get
             {
-                   
-
                 if (SelectedCostCenter == null || SelectedCostCenter.Id == 0) return false;
                 if (string.IsNullOrEmpty(SelectedMode.ToString())) return false;
                 if (SelectedAuthorizationSequenceType == null || SelectedAuthorizationSequenceType.Id == 0) return false;
                 if (_errors.Count > 0) { return false;  }
 
                 return true;
+            }
+        }
+        public bool EnabledToCreated
+        {
+            get
+            {
+                if (Entity == null ) return true;
+               
+
+                return false;
             }
         }
         public bool HasErrors => _errors.Count > 0;
@@ -861,115 +887,18 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         #endregion
 
         #region ApiMethods
-        private async Task<AuthorizationSequenceGraphQLModel> CreateAsync(dynamic variables)
-        {
-            try
-            {
-                IsBusy = true;
-                var query = @"
-                    mutation($data: CreateAuthorizationSequenceInput!){
-                      CreateResponse: createAuthorizationSequence(data: $data){
-                        id
-                        description
-                        costCenter  {
-                          id
-                          name
-                        }
-                        authorizationSequenceType {
-                          id
-                          name
-                        }
-                        startRange
-                        endDate
-                        startDate
-                        endDate
-                        prefix
-                        currentInvoiceNumber
-                      }
-                    }";
-
-                AuthorizationSequenceGraphQLModel record = await _authorizationSequenceService.CreateAsync(query, variables);
-                return record;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-           
-        }
-        public async Task<AuthorizationSequenceGraphQLModel> UpdateAsync(dynamic variables)
-        {
-            try
-            {
-
-                var query = @"
-                    mutation($data: UpdateAuthorizationSequenceInput!, $id : Int!){
-                     UpdateResponse: updateAuthorizationSequence(data: $data, id: $id){
-                        id
-                        description
-                        costCenter  {
-                          id
-                          name
-                        }
-                        authorizationSequenceType {
-                          id
-                        }
-                        startRange
-                        endDate
-                        startDate
-                        endDate
-                        prefix
-                        currentInvoiceNumber
-                      }
-                    }";
-                variables.id = Id;
-                if (SelectedReliefAuthorizationSequence != null)
-                {
-                    variables.Data.NextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id;
-                }
-               
-                return await _authorizationSequenceService.UpdateAsync(query, variables);
-               
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
+      
+        
         private async Task LoadListAsync()
         {
             
-            string query = @"
-                            query(){
-                               authorizationSequenceTypes(){
-                                   id
-                                   name
-                                   prefix
-                                  },
-                                  costCenters(){
-                                    id
-                                    name
-                                    address
-                                    city  {
-                                      id
-                                      name
-                                      department {
-                                       id
-                                       name
-                                      } 
-                                    }
-  
-                                  }
-                            }";
+            string query = GetLoadQueries();
             dynamic variables = new ExpandoObject();
             try
             {
                 IsBusy = true;
-                if (_entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50)
+                variables.filter = new ExpandoObject();
+                /*if (_entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50)
                 {
                     string queryOrphans = @"
                             query( $filter: OrphanAuthorizationSequenceFilterInput!){
@@ -1045,14 +974,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     SelectedReliefAuthorizationSequence = OrphanAuthorizationSequences.First(f => f.Id == Entity.NextAuthorizationSequenceId);
 
                 }
+              */
                 AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
 
-            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source.CostCenters);
-            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes);
-            AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes);
+            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
+            AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
             AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
 
-            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+           
 
             if (!IsNewRecord)
             {
@@ -1077,9 +1006,113 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
 
         }
+        public string GetLoadQueries()
+        {
+        
+            var authorizationSequenceTypeFields = FieldSpec<PageType<AuthorizationSequenceTypeGraphQLModel>>
+               .Create()
+               .SelectList(it => it.Entries, entries => entries
+                   .Field(e => e.Id)
 
+                   .Field(e => e.Name)
+                   .Field(e => e.IsActive)
+                   .Field(e => e.Prefix)
+                   
+                  
+               )
+               .Field(o => o.PageNumber)
+               .Field(o => o.PageSize)
+               .Field(o => o.TotalPages)
+               .Field(o => o.TotalEntries)
+               .Build();
+            
+            var authorizationSequenceTypefilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceTypeFilters");
+            var authorizationSequenceTypeFragment = new GraphQLQueryFragment("authorizationSequenceTypesPage", [authorizationSequenceTypefilterParameters], authorizationSequenceTypeFields, "AuthorizationSequenceTypes");
 
+            var builder =   new GraphQLQueryBuilder([authorizationSequenceTypeFragment]);
+            return builder.GetQuery();
+        }
+        public string GetCreateQuery()
+        {           
+            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
+                   .Field(e => e.Id)
+                   .Field(e => e.Description)
+                   .Field(e => e.Prefix)
+                    .Field(e => e.CurrentInvoiceNumber)
+                    .Field(e => e.StartRange)
+                    .Field(e => e.EndRange)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.IsActive)
 
+                    .Select(e => e.CostCenter, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
+                    .Select(e => e.AuthorizationSequenceType, type => type
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                    )
+                    
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAuthorizationSequenceInput!");
+
+            var fragment = new GraphQLQueryFragment("createAuthorizationSequence", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
+                    .Field(e => e.Id)
+                   .Field(e => e.Description)
+                   .Field(e => e.Prefix)
+                    .Field(e => e.CurrentInvoiceNumber)
+                    .Field(e => e.StartRange)
+                    .Field(e => e.EndRange)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.IsActive)
+
+                    .Select(e => e.CostCenter, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
+                    .Select(e => e.AuthorizationSequenceType, type => type
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                    )
+
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("input", "UpdateAuthorizationSequenceInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
         #endregion
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {

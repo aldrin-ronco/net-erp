@@ -7,8 +7,10 @@ using Models.Books;
 using Models.Global;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using NetErp.Global.CostCenters.DTO;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -19,8 +21,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
     public class AuthorizationSequenceViewModel : Conductor<object>.Collection.OneActive
     {
-        public IEventAggregator EventAggregator { get; private set; }
         public IMapper AutoMapper { get; private set; }
+        public IEventAggregator EventAggregator { get; private set; }
+
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
         private AuthorizationSequenceMasterViewModel _authorizationSequenceMasterViewModel;
@@ -58,9 +61,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         }
        
-        public async Task ActivateDetailViewForEdit(AuthorizationSequenceGraphQLModel? entity)
+        public async Task ActivateDetailViewForEdit(AuthorizationSequenceGraphQLModel? entity,
+            ObservableCollection<CostCenterDTO> costCenters)
         {
-            AuthorizationSequenceDetailViewModel instance = new(this, entity, _notificationService, _authorizationSequenceService);
+            AuthorizationSequenceDetailViewModel instance = new(this, entity, _notificationService, _authorizationSequenceService, costCenters);
 
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
