@@ -85,20 +85,9 @@ namespace Common.Services
                             telephonicInformation
                             updatedAt
                             insertedAt
-                            license {
-                              account {
-                                id
-                                email
-                              }
-                              organization {
-                                insertedAt
-                                name
-                                server {
-                                  id
-                                  host
-                                  username
-                                }
-                              }
+                            organization {
+                              id
+                              name
                             }
                             updatedAt
                             insertedAt

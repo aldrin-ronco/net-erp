@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -13,15 +14,20 @@ namespace Models.Books
         public int Id { get; set; } = 0;
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public char Nature { get; set; }
+        public string Nature { get; set; } = string.Empty;
         public decimal Margin { get; set; } = 0;
         public int MarginBasis { get; set; } = 0;
+        public DateTime InsertedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
         public string FullName => $"{Code.Trim()} - {Name.Trim()}";
         public override string ToString() => $"{Code} - {Name}";
     }
 
     public class AccountingAccountCreateListMessage
     {
+        public UpsertResponseType<List<AccountingAccountGraphQLModel>> UpsertList { get; set; }
+        //TODO propiedad obsoleta, eliminar despues de migrar
         public List<AccountingAccountGraphQLModel> CreatedAccountingAccountList { get; set; }
     }
 
@@ -32,6 +38,8 @@ namespace Models.Books
 
     public class AccountingAccountUpdateMessage
     {
+        public UpsertResponseType<AccountingAccountGraphQLModel> UpsertAccount { get; set; }
+        //TODO propiedad obsoleta, eliminar despues de migrar
         public AccountingAccountGraphQLModel UpdatedAccountingAccount { get; set; }
 
     }
@@ -59,12 +67,7 @@ namespace Models.Books
     
     public class AccountingAccountDeleteMessage
     {
+        public DeleteResponseType DeletedResponseType { get; set; }
         public AccountingAccountGraphQLModel DeletedAccountingAccount { get; set; }
-    }
-
-    public class CanDeleteAccountingAccount
-    {
-        public bool CanDelete { get; set; } = false;
-        public string Message { get; set; } = string.Empty;
     }
 }

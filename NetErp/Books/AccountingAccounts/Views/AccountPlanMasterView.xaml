@@ -11,19 +11,100 @@
              xmlns:model="clr-namespace:NetErp.Books.AccountingAccounts.DTO"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:dxwuin="http://schemas.devexpress.com/winfx/2008/xaml/windowsui/navigation" 
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             d:DataContext="{d:DesignInstance Type=viewmodels:AccountPlanMasterViewModel}"
              mc:Ignorable="d" 
-             FontFamily="JetBrains Mono" FontSize="10"
              d:DesignHeight="450" d:DesignWidth="800" Background="White">
+             <!--d:DataContext="{d:DesignInstance Type=viewmodels:AccountPlanMasterViewModel}"-->
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
+        
+        <HierarchicalDataTemplate  DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
+                <StackPanel.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Command="{Binding Data.EditAsyncCommand, Source={StaticResource DataContextProxy}}"
+                            CommandParameter="{Binding Row.Code}">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                            </MenuItem.Icon>
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Modificar cuenta : "/>
+                                    <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0"/>
+                                    <TextBlock Text=" - "/>
+                                    <TextBlock Text="{Binding Row.Name}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
+                            CommandParameter="{Binding Row}">
+                            <MenuItem.Icon>
+                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                            </MenuItem.Icon>
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Eliminar cuenta : "/>
+                                    <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0"/>
+                                    <TextBlock Text=" - "/>
+                                    <TextBlock Text="{Binding Row.Name}"/>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </ContextMenu>
+                </StackPanel.ContextMenu>
+                <Image Width="18" Height="18">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <!--Close Folder-->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
+                                        <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <!--PlaceHolderImage-->
+                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
+                                </MultiDataTrigger>
+                                <!--Open Folder-->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
+                                        <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
+                                </MultiDataTrigger>
+                                <!--Cuenta Auxiliar-->
+                                <DataTrigger Binding="{Binding Row.IsAuxiliary}" Value="true">
+                                    <!--PlaceHolderImage-->
+                                    <Setter Property="Source" Value="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+                <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0" 
+               ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
+
+                <TextBlock Text=" - " VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Row.Name}" 
+               ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
+
+            </StackPanel>
+        </HierarchicalDataTemplate>
     </UserControl.Resources>
     <dxmvvm:Interaction.Behaviors>
         <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding InitializeCommand}"/>
@@ -67,151 +148,35 @@
                     </dxr:RibbonPageGroup>
                 </dxr:RibbonPage>
             </dxr:RibbonControl>
-            <TreeView 
-                  ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                  h:TreeViewExtension.SelectItemOnRightClick="True"
-                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"                  
-                  BorderThickness="0"
-                  Grid.Column="0"
-                  Grid.Row="1"
-                  Margin="0 5 0 0">
-
-                  <!--Tag="{Binding DataContext, ElementName=GridLayout}"-->
-                <behavior:Interaction.Behaviors>
-                    <h:BindableSelectedItemBehavior SelectedItem="{Binding SelectedItem, Mode=TwoWay}"/>
-                </behavior:Interaction.Behaviors>
-                <TreeView.ItemContainerStyle>
-                    <Style TargetType="TreeViewItem">
-                        <!--<Setter Property="IsExpanded" Value="True"></Setter>-->
-                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxg:TreeViewControl 
+                    ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                    h:TreeViewExtension.SelectItemOnRightClick="True"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    HighlightSelectedNodeIndent="False"
+                    BorderThickness="0"
+                    ShowExpandButtons="True"
+                    ShowBorder="False" ShowSearchPanel="False" AllowEditing="False"
+                    TreeDerivationMode="HierarchicalDataTemplate"
+                    ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Grid.Row="1" Grid.Column="0">
+                <dxg:TreeViewControl.NodeStyle>
+                    <Style TargetType="dxg:RowControl">
+                        <Setter Property="Foreground" Value="Black"/>
                         <Style.Triggers>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding IsExpanded}" Value="true"/>
-                                    <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
+                                    <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
                                 </MultiDataTrigger.Conditions>
                                 <Setter Property="Foreground" Value="Blue"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
                             </MultiDataTrigger>
                         </Style.Triggers>
                     </Style>
-                </TreeView.ItemContainerStyle>
-                <TreeView.Resources>
-                    <HierarchicalDataTemplate  DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens}">
-                        <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
-                            <Image Width="18" Height="18">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <!--Close Folder-->
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
-                                                    <Condition Binding="{Binding IsExpanded}" Value="false"/>
-                                                </MultiDataTrigger.Conditions>
-                                                <!--PlaceHolderImage-->
-                                                <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
-                                            </MultiDataTrigger>
-                                            <!--Open Folder-->
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding IsAuxiliary}" Value="false"/>
-                                                    <Condition Binding="{Binding IsExpanded}" Value="true"/>
-                                                </MultiDataTrigger.Conditions>
-                                                <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
-                                            </MultiDataTrigger>
-                                            <!--Cuenta Auxiliar-->
-                                            <DataTrigger Binding="{Binding IsAuxiliary}" Value="true">
-                                                <!--PlaceHolderImage-->
-                                                <Setter Property="Source" Value="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="{Binding Code}" Margin="4 0 0 0" 
-                                   ContextMenuService.Placement="MousePoint" VerticalAlignment="Center">
-                                <TextBlock.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}"/>
-                                        <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.EditAsyncCommand, Source={StaticResource DataContextProxy}}"
-                                              CommandParameter="{Binding Code}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Modificar cuenta : "/>
-                                                    <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
-                                                    <TextBlock Text=" - "/>
-                                                    <TextBlock Text="{Binding Name}"/>
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
-                                              CommandParameter="{Binding Id}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Eliminar cuenta : "/>
-                                                    <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
-                                                    <TextBlock Text=" - "/>
-                                                    <TextBlock Text="{Binding Name}"/>
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                    </ContextMenu>
-                                </TextBlock.ContextMenu>
-                        </TextBlock>
-                            <TextBlock Text=" - " VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding Name}" 
-                                   ContextMenuService.Placement="MousePoint" VerticalAlignment="Center">
-                                <TextBlock.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}"/>
-                                        <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.EditCommand, Source={StaticResource DataContextProxy}}"
-                                              CommandParameter="{Binding Code}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Modificar cuenta : "/>
-                                                    <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
-                                                    <TextBlock Text=" - "/>
-                                                    <TextBlock Text="{Binding Name}"/>
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                        <Separator/>
-                                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
-                                              CommandParameter="{Binding Id}">
-                                            <MenuItem.Header>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="Eliminar cuenta : "/>
-                                                    <TextBlock Text="{Binding Code}" Margin="4 0 0 0"/>
-                                                    <TextBlock Text=" - "/>
-                                                    <TextBlock Text="{Binding Name}"/>
-                                                </StackPanel>
-                                            </MenuItem.Header>
-                                        </MenuItem>
-                                    </ContextMenu>
-                                </TextBlock.ContextMenu>
-                        </TextBlock>
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                </TreeView.Resources>
-            </TreeView>
-            <!--<DockPanel HorizontalAlignment="Stretch" Grid.Row="2" Grid.Column="0">
-                <StatusBar DockPanel.Dock="Bottom">
-                    <StatusBarItem>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="SelectedItem_Code"/>
-                            <TextBlock Text=" - " />
-                            <TextBlock x:Name="SelectedItem_Name"/>
-                            <TextBlock Text=" - "/>
-                            <TextBlock x:Name="SelectedItem_Childrens_Count"/>
-                        </StackPanel>
-                    </StatusBarItem>
-                </StatusBar>
-            </DockPanel>-->
+                </dxg:TreeViewControl.NodeStyle>
+            </dxg:TreeViewControl>
         </Grid>
         <!--Fin GridMain-->
     </busyIndicator:BusyMask>

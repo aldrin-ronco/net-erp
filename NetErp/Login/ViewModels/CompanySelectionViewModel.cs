@@ -1,6 +1,7 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
@@ -16,8 +17,10 @@ using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
+using INotificationService = NetErp.Helpers.Services.INotificationService;
 
 namespace NetErp.Login.ViewModels
 {
@@ -167,8 +170,8 @@ namespace NetErp.Login.ViewModels
         {
             var groupedCompanies = companies
                 .GroupBy(c => new { 
-                    c.Company.License.Organization.Id, 
-                    c.Company.License.Organization.Name 
+                    c.Company.Organization.Id, 
+                    c.Company.Organization.Name 
                 })
                 .Select(g => new LoginOrganizationDTO
                 {
@@ -227,8 +230,19 @@ namespace NetErp.Login.ViewModels
             }
 
             FilteredOrganizationGroups = new ObservableCollection<LoginOrganizationDTO>(filteredGroups);
+            SelectedCompany = null;
         }
 
+        private ICommand _continueCommand;
+
+        public ICommand ContinueCommand
+        {
+            get
+            {
+                if (_continueCommand is null) _continueCommand = new AsyncCommand(ContinueAsync);
+                return _continueCommand;
+            }
+        }
 
         public async Task ContinueAsync()
         {
@@ -496,6 +510,18 @@ namespace NetErp.Login.ViewModels
             company.IsSelected = true;
             SelectedCompany = company;
         }
+
+        private ICommand _onCompanyDoubleClickCommand;
+
+        public ICommand OnCompanyDoubleClickCommand
+        {
+            get
+            {
+                if (_onCompanyDoubleClickCommand is null) _onCompanyDoubleClickCommand = new DelegateCommand<LoginCompanyInfoDTO>(OnCompanyDoubleClick);
+                return _onCompanyDoubleClickCommand;
+            }
+        }
+
 
         public void OnCompanyDoubleClick(LoginCompanyInfoDTO company)
         {
