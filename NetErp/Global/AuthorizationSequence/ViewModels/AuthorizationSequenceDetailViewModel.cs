@@ -3,11 +3,9 @@ using Common.Config;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using DevExpress.Internal.WinApi;
-using DevExpress.Internal.WinApi.Windows.UI.Notifications;
+
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using DevExpress.Xpo.DB.Helpers;
 using Dictionaries;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
@@ -16,10 +14,7 @@ using Models.Global;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Newtonsoft.Json.Linq;
-using Ninject.Activation;
-using Services.Books.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,11 +22,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Xml.Linq;
 using static Amazon.S3.Util.S3EventNotification;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 using static Dictionaries.BooksDictionaries;
@@ -435,7 +428,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private Visibility _reliefVisibility;
         public Visibility ReliefVisibility
         {
-            get { return _entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50  ? Visibility.Visible : Visibility.Collapsed; }
+            get { return LoadOrphan  ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
                 _reliefVisibility = value;
@@ -451,7 +444,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 _originVisibility = value;
             }
         }
-
+        public bool LoadOrphan => (_entity != null && (_entity.CostCenter?.FeCashDefaultAuthorizationSequence?.Id == Entity.Id || _entity.CostCenter?.FeCreditDefaultAuthorizationSequence?.Id == Entity.Id) && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50);
         public bool SequenceD => SelectedSequenceOrigin.Equals(SequenceOriginEnum.D);
         public bool EnabledAST => (Entity == null && (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && string.IsNullOrEmpty(TechnicalKey)) ));
         private SequenceOriginEnum _selectedSequenceOrigin;
@@ -719,6 +712,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
             else
             {
+                if (SelectedReliefAuthorizationSequence != null) { responseInput.nextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id; }
+               
                 string query = GetUpdateQuery();
                 variables.updateResponseInput = responseInput;
                 variables.UpdateResponseId = Entity.Id;
@@ -891,110 +886,50 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         
         private async Task LoadListAsync()
         {
-            
             string query = GetLoadQueries();
             dynamic variables = new ExpandoObject();
             try
             {
                 IsBusy = true;
                 variables.filter = new ExpandoObject();
-                /*if (_entity != null && _entity.AuthorizationSequenceByCostCenter != null && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50)
+                if (LoadOrphan)
                 {
-                    string queryOrphans = @"
-                            query( $filter: OrphanAuthorizationSequenceFilterInput!){
-                            ListResponse : orphanAuthorizationSequences(filter: $filter){
-        
-                               id
-                                 description
-                                 number
-                                 costCenter  {
-                                  id
-                                  name
-                                }
-                                authorizationSequenceType {
-                                  id
-                                  name
-                                }
-           
-                               
-                             }
-       
-                         }";
-                    dynamic variablesOrphan = new ExpandoObject();
-                    variablesOrphan.filter  = new ExpandoObject();
-
-                    variablesOrphan.filter.and = new ExpandoObject[]
-                   {
-                         new(),
-                         new(),
-                         new(),
-                         new(),
-                         new(),
-                         new()
-                   };
-                    if (_entity.NextAuthorizationSequenceId > 0)
-                    {
-                        variablesOrphan.filter.or = new ExpandoObject[]
-                       {
-                             new()
-                       };
-
-                        variablesOrphan.filter.or[0].includeId = new ExpandoObject();
-                        variablesOrphan.filter.or[0].includeId.@operator = "=";
-                        variablesOrphan.filter.or[0].includeId.value = _entity.NextAuthorizationSequenceId;
-                    }
-
-
-                    variablesOrphan.filter.and[0].isActive = new ExpandoObject();
-                    variablesOrphan.filter.and[0].isActive.@operator = "=";
-                    variablesOrphan.filter.and[0].isActive.value = true;
-
-                    variablesOrphan.filter.and[1].costCenterId = new ExpandoObject();
-                    variablesOrphan.filter.and[1].costCenterId.@operator = "=";
-                    variablesOrphan.filter.and[1].costCenterId.value = _entity.CostCenter.Id;
-
-                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId = new ExpandoObject();
-                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId.@operator = "is";
-                    variablesOrphan.filter.and[2].nextAuthorizationSequenceId.value = null;
-
-                    variablesOrphan.filter.and[3].excludeId = new ExpandoObject();
-                    variablesOrphan.filter.and[3].excludeId.@operator = "<>";
-                    variablesOrphan.filter.and[3].excludeId.value = _entity.Id;
-
-                    variablesOrphan.filter.and[4].authorizationOccupied = new ExpandoObject();
-                    variablesOrphan.filter.and[4].authorizationOccupied.@operator = "is";
-                    variablesOrphan.filter.and[4].authorizationOccupied.value = null;
-
-                    variablesOrphan.filter.and[5].endDate = new ExpandoObject();
-                    variablesOrphan.filter.and[5].endDate.@operator = ">=";
-                    variablesOrphan.filter.and[5].endDate.value = DateTime.Today.ToUniversalTime();
-
-                   
-                    OrphanAuthorizationSequences = await _authorizationSequenceService.GetListAsync(queryOrphans, variablesOrphan);
-                    SelectedReliefAuthorizationSequence = OrphanAuthorizationSequences.First(f => f.Id == Entity.NextAuthorizationSequenceId);
-
+                    variables.authorizationSequencesFilters = new ExpandoObject();
+                    variables.authorizationSequencesFilters.isActive = true;
+                    variables.authorizationSequencesFilters.CostCenterId = _entity.CostCenter.Id;
+                    //variables.authorizationSequencesFilters.nextAuthorizationSequenceId = null;
+                    variables.authorizationSequencesFilters.endDateFrom = DateTime.Today.ToString("yyyy-MM-dd");
                 }
-              */
+
                 AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
 
-            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
-            AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
-            AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
+                AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
+                AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(source.AuthorizationSequenceTypes.Entries);
+                AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
+                if (LoadOrphan)
+                {
+                        var Orphans = source.AuthorizationSequences?.Entries.Where(f => f.NextAuthorizationSequence == null).Where(f => f.Id != Entity.Id);
+                        var selected = Orphans.FirstOrDefault(f => f.Id == Entity.NextAuthorizationSequence?.Id);
+                        if (Entity.NextAuthorizationSequence != null && Orphans.FirstOrDefault(f => f.Id == Entity.NextAuthorizationSequence?.Id) == null)
+                        {
+                            Orphans.Append(Entity.NextAuthorizationSequence);
+                        }
+                    OrphanAuthorizationSequences = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(Orphans);
 
-           
+                }
 
-            if (!IsNewRecord)
-            {
-                SelectedCostCenter = CostCenters.First(f => f.Id == _entity?.CostCenter.Id);
-                SelectedAuthorizationSequenceType = AvaliableAuthorizationSequenceTypes.First(f => f.Id == _entity?.AuthorizationSequenceType.Id);
+                if (!IsNewRecord)
+                {
+                    SelectedCostCenter = CostCenters.First(f => f.Id == _entity?.CostCenter.Id);
+                    SelectedAuthorizationSequenceType = AvaliableAuthorizationSequenceTypes.First(f => f.Id == _entity?.AuthorizationSequenceType.Id);
 
-            }
-            else
-            {
-                SelectedCostCenter = CostCenters.First(f => f.Id == 0);
-                SelectedAuthorizationSequenceType = AvaliableAuthorizationSequenceTypes.First(f => f.Id == 0);
+                }
+                else
+                {
+                    SelectedCostCenter = CostCenters.First(f => f.Id == 0);
+                    SelectedAuthorizationSequenceType = AvaliableAuthorizationSequenceTypes.First(f => f.Id == 0);
 
-            }
+                }
             }
             catch (Exception ex)
             {
@@ -1006,6 +941,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
 
         }
+        
         public string GetLoadQueries()
         {
         
@@ -1028,8 +964,55 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             
             var authorizationSequenceTypefilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceTypeFilters");
             var authorizationSequenceTypeFragment = new GraphQLQueryFragment("authorizationSequenceTypesPage", [authorizationSequenceTypefilterParameters], authorizationSequenceTypeFields, "AuthorizationSequenceTypes");
+            var authorizationFields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
 
-            var builder =   new GraphQLQueryBuilder([authorizationSequenceTypeFragment]);
+                  .Field(e => e.Description)
+                  .Field(e => e.Number)
+                  .Field(e => e.IsActive)
+                  .Field(e => e.Prefix)
+                  .Field(e => e.CurrentInvoiceNumber)
+                  .Field(e => e.Mode)
+                  .Field(e => e.TechnicalKey)
+                  .Field(e => e.Reference)
+                  .Field(e => e.StartDate)
+                  .Field(e => e.EndDate)
+                  .Field(e => e.StartRange)
+                  .Field(e => e.EndRange)
+                  .Select(e => e.NextAuthorizationSequence, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Description)
+
+                  )
+                  .Select(e => e.CostCenter, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
+                      .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
+                              .Field(d => d.Id)
+                              .Field(d => d.Description)
+                          )
+                      .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
+                              .Field(d => d.Id)
+                              .Field(d => d.Description)
+                          )
+                  )
+                  .Select(e => e.AuthorizationSequenceType, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
+                  )
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+            var authorizationPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var authorizationfilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
+            var authorizationFragment = new GraphQLQueryFragment("authorizationSequencesPage", [authorizationPagParameters, authorizationfilterParameters], authorizationFields,  "AuthorizationSequences");
+            var builder = LoadOrphan ? new GraphQLQueryBuilder([authorizationFragment, authorizationSequenceTypeFragment]) :  new GraphQLQueryBuilder([authorizationSequenceTypeFragment]);
             return builder.GetQuery();
         }
         public string GetCreateQuery()

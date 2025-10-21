@@ -389,7 +389,6 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters.Entries;
                 costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
                 CostCenters = [.. costCenter];
-                SelectedCostCenter = CostCenters.First(f => f.Id == 0);        
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
                 Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequences.Entries);
@@ -398,7 +397,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
             catch (Exception e)
             {
-                
+                var a = 3;
             }
             finally
             {
@@ -484,7 +483,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Select(e => e.CostCenter, cat => cat
                         .Field(c => c.Id)
                         .Field(c => c.Name)
-                    
+                        .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Description)
+                            )
+                        .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Description)
+                            )
                     )
                     .Select(e => e.AuthorizationSequenceType, cat => cat
                         .Field(c => c.Id)
@@ -509,7 +515,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                                 .Field(d => d.Id)
                                 .Field(d => d.Name)
                             )
+                            
                     )
+                   
                )
                .Field(o => o.PageNumber)
                .Field(o => o.PageSize)

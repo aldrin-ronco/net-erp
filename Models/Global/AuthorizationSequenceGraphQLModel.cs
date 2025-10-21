@@ -55,7 +55,7 @@ namespace Models.Global
     {
         
         public PageType<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
-        public PageType<CostCenterGraphQLModel> CostCenters { get; set; }
+        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
     }
     public class AuthorizationSequenceDataContext
     {
