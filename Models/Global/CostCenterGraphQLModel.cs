@@ -37,12 +37,18 @@ namespace Models.Global
         public int InvoiceCopiesToPrint { get; set; } = 0;
         public CountryGraphQLModel Country { get; set; }
         public DepartmentGraphQLModel Department { get; set; }
+
         public CityGraphQLModel City { get; set; }
         public CompanyLocationGraphQLModel Location { get; set; }
         public AccountingEntityGraphQLModel RelatedAccountingEntity { get; set; }
 
         public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
 
+        public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; }
+
+        public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; }
         public override string ToString()
         {
             return Name;

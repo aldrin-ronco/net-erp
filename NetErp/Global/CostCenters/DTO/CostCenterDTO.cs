@@ -401,7 +401,11 @@ namespace NetErp.Global.CostCenters.DTO
                 }
             }
         }
+        public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; }
 
+        public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; }
         private CompanyLocationDTO _location;
         public CompanyLocationDTO Location
         {

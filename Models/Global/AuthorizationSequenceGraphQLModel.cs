@@ -27,7 +27,7 @@ namespace Models.Global
         public int AuthorizationSequenceTypeId { get; set; }
         public int CostCenterId { get; set; }
         public int CurrentInvoiceNumber { get; set; }
-        public int? NextAuthorizationSequenceId { get; set; }
+        public AuthorizationSequenceGraphQLModel? NextAuthorizationSequence { get; set; }
 
         public AuthorizationSequenceTypeGraphQLModel? AuthorizationSequenceType { get; set; }
         public CostCenterGraphQLModel? CostCenter { get; set; }
@@ -39,25 +39,27 @@ namespace Models.Global
 
     public class AuthorizationSequenceCreateMessage
     {
-        public AuthorizationSequenceGraphQLModel CreatedAuthorizationSequence { get; set; }
+        
+        public UpsertResponseType<AuthorizationSequenceGraphQLModel> CreatedAuthorizationSequence { get; set; }
     }
     public class AuthorizationSequenceDeleteMessage
     {
-        public AuthorizationSequenceGraphQLModel DeletedAuthorizationSequence { get; set; }
+        public DeleteResponseType DeletedAuthorizationSequence { get; set; }
     }
 
     public class AuthorizationSequenceUpdateMessage
     {
-        public AuthorizationSequenceGraphQLModel UpdatedAuthorizationSequence { get; set; }
+        public UpsertResponseType<AuthorizationSequenceGraphQLModel> UpdatedAuthorizationSequence { get; set; }
     }
     public class AuthorizationSequenceDetailDataContext
     {
-        public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+        
+        public PageType<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
+        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
     }
     public class AuthorizationSequenceDataContext
     {
-        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequencePage { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
+        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
+        public PageType<CostCenterGraphQLModel> CostCenters { get; set; }
     }
 }

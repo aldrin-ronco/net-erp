@@ -34,6 +34,7 @@ using static Chilkat.Http;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Extensions.Global;
 
 namespace NetErp.Books.TaxCategory.ViewModels
 {
@@ -356,6 +357,11 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 IsBusy = true;
                 Refresh();
                 UpsertResponseType<TaxCategoryGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new TaxCategoryCreateMessage() { CreatedTaxCategory = result }
