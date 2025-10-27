@@ -143,6 +143,10 @@ namespace Common.Services
             {
                 headers.Add("x-device-id", "pc12345abcde"); // TODO: reemplazar con un ID de dispositivo real
             }
+            if (!headers.Contains("x-platform"))
+            {
+                headers.Add("x-platform", "PC"); // TODO: reemplazar con un ID de dispositivo real
+            }
         }
     }
 }

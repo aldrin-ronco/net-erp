@@ -297,7 +297,7 @@ namespace NetErp.Billing.Zones.ViewModels
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
 
-            var fragment = new GraphQLQueryFragment("deleteBillingZone", [parameter], fields, alias: "DeleteResponse");
+            var fragment = new GraphQLQueryFragment("deleteZone", [parameter], fields, alias: "DeleteResponse");
 
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -313,7 +313,7 @@ namespace NetErp.Billing.Zones.ViewModels
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
 
-            var fragment = new GraphQLQueryFragment("canDeleteBillingZone", [parameter], fields, alias: "CanDeleteResponse");
+            var fragment = new GraphQLQueryFragment("canDeleteZone", [parameter], fields, alias: "CanDeleteResponse");
 
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -321,10 +321,8 @@ namespace NetErp.Billing.Zones.ViewModels
         }
         public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-           
             try
             {
-
                 string query = GetDeleteZoneQuery();
 
                 object variables = new
@@ -362,7 +360,6 @@ namespace NetErp.Billing.Zones.ViewModels
          
             try
             {
-
                 IsBusy = true;
 
                 dynamic variables = new ExpandoObject();
@@ -393,14 +390,13 @@ namespace NetErp.Billing.Zones.ViewModels
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
-                   
                     .Field(e => e.Name)
                     .Field(e => e.IsActive))
                 .Build();
 
-            var zoneParameters = new GraphQLQueryParameter("filters", "BillingZoneFilters");
+            var zoneParameters = new GraphQLQueryParameter("filters", "ZoneFilters");
 
-            var zoneFragment = new GraphQLQueryFragment("billingZonesPage", [zoneParameters], zoneFields, "PageResponse");
+            var zoneFragment = new GraphQLQueryFragment("zonesPage", [zoneParameters], zoneFields, "PageResponse");
 
             var builder = new GraphQLQueryBuilder([zoneFragment]);
 
