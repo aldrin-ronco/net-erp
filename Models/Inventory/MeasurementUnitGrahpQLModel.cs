@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
 {
@@ -25,17 +26,18 @@ namespace Models.Inventory
 
     public class MeasurementUnitCreateMessage
     {
-        public MeasurementUnitGraphQLModel CreatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
+
+        public UpsertResponseType<MeasurementUnitGraphQLModel> CreatedMeasurementUnit { get; set; } = new();
 
     }
     public class MeasurementUnitDeleteMessage
     {
-        public MeasurementUnitGraphQLModel DeletedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
+        public DeleteResponseType DeletedMeasurementUnit { get; set; } 
     }
 
     public class MeasurementUnitUpdateMessage
     {
-        public MeasurementUnitGraphQLModel UpdatedMeasurementUnit { get; set; } = new MeasurementUnitGraphQLModel();
+        public UpsertResponseType<MeasurementUnitGraphQLModel> UpdatedMeasurementUnit { get; set; } = new();
     }
 }
 
