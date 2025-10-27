@@ -30,13 +30,14 @@ namespace NetErp.Billing.Zones.ViewModels
     {
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
         public ZoneViewModel Context { get; set; }
-        
+
         public ZoneDetailViewModel(
             ZoneViewModel context,
-            IRepository<ZoneGraphQLModel> zoneService) 
+            IRepository<ZoneGraphQLModel> zoneService)
         {
             Context = context;
             _zoneService = zoneService;
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         // Is Busy
@@ -53,62 +54,62 @@ namespace NetErp.Billing.Zones.ViewModels
                 }
             }
         }
-        private bool _CanSave;
+        private bool _canSave;
         public bool CanSave
         {
-            get { return _CanSave; }
-            set
-            {
-                if (_CanSave != value)
-                {
-                    _CanSave = value;
-                    NotifyOfPropertyChange(nameof(CanSave));
-
-                }
+            get 
+            { 
+                return !string.IsNullOrEmpty(Name) && this.HasChanges(); 
             }
         }
-        public bool IsNewZone => ZoneId == 0;
+        public bool IsNewRecord => Id == 0;
 
-        private int _ZoneId;
-        public int ZoneId
+        private int _id;
+
+        public int Id
         {
-            get { return _ZoneId; }
+            get { return _id; }
             set 
             { 
-                if(_ZoneId != value)
+                if(_id != value)
                 {
-                    _ZoneId = value;
-                    NotifyOfPropertyChange(nameof(ZoneId));
+                    _id = value;
+                    NotifyOfPropertyChange(nameof(Id));
                 } 
             }
         }
-        private string _ZoneName;
-        public string ZoneName
+        private string _name;
+        public string Name
         {
-            get { return _ZoneName; }
+            get { return _name; }
             set
             {
-                if (_ZoneName != value)
+                if (_name != value)
                 {
-                    _ZoneName = value;
-                    NotifyOfPropertyChange(nameof(ZoneName));
-                    CheckSave();
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
-        private bool _ZoneIsActive = true;
-        public bool ZoneIsActive
+
+        private bool _isActive = true;
+        public new bool IsActive
         {
-            get { return _ZoneIsActive; }
+            get { return _isActive; }
             set
             {
-                if (_ZoneIsActive != value)
+                if (_isActive != value)
                 {
-                    _ZoneIsActive = value;
-                    NotifyOfPropertyChange(nameof(ZoneIsActive));
+                    _isActive = value;
+                    NotifyOfPropertyChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+
         private ICommand? _goBackCommand;
 
         public ICommand? GoBackCommand
@@ -136,14 +137,16 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 IsBusy = true;
                 Refresh();
+
                 UpsertResponseType<ZoneGraphQLModel> result = await ExecuteSaveAsync();
                 if (!result.Success)
                 {
                     ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                     return;
                 }
+
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(
-                    IsNewZone
+                    IsNewRecord
                         ? new ZoneCreateMessage() { CreatedZone = result }
                         : new ZoneUpdateMessage() { UpdatedZone = result }
                 );
@@ -165,50 +168,31 @@ namespace NetErp.Billing.Zones.ViewModels
                 IsBusy = false;
             }
 
-           
+
         }
 
-        public void CheckSave()
-        {
-            CanSave = !string.IsNullOrEmpty(ZoneName);
-        }
         public async Task<UpsertResponseType<ZoneGraphQLModel>> ExecuteSaveAsync()
         {
-          
-
             try
             {
-                if (IsNewZone)
+                if (IsNewRecord)
                 {
                     string query = GetCreateQuery();
 
-                    object variables = new
-                    {
-                        createResponseInput = new
-                        {
-                            Name = ZoneName,
-                            IsActive = ZoneIsActive
-                           
-                        }
+                    dynamic variables = new ExpandoObject();
+                    variables.createResponseData = new ExpandoObject();
+                    variables.createResponseData.name = Name.RemoveExtraSpaces().Trim();
+                    variables.createResponseData.isActive = IsActive;
 
-                    };
-                   
                     UpsertResponseType<ZoneGraphQLModel> zoneCreated = await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
                     return zoneCreated;
                 }
                 else
                 {
                     string query = GetUpdateQuery();
-
-                    object variables = new
-                    {
-                        updateResponseData = new
-                        {
-                            Name = ZoneName,
-                            IsActive = ZoneIsActive
-                        },
-                        UpdateResponseId = ZoneId
-                    };
+                    
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
 
                     UpsertResponseType<ZoneGraphQLModel> updatedZone = await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
                     return updatedZone;
@@ -224,7 +208,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "billingZone", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "zone", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
@@ -236,9 +220,9 @@ namespace NetErp.Billing.Zones.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateBillingZoneInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateZoneInput!");
 
-            var fragment = new GraphQLQueryFragment("createBillingZone", [parameter], fields, "CreateResponse");
+            var fragment = new GraphQLQueryFragment("createZone", [parameter], fields, "CreateResponse");
 
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -249,7 +233,7 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "billingZone", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "zone", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.IsActive)
@@ -263,18 +247,25 @@ namespace NetErp.Billing.Zones.ViewModels
 
             var parameters = new List<GraphQLQueryParameter>
             {
-                new("data", "UpdateBillingZoneInput!"),
+                new("data", "UpdateZoneInput!"),
                 new("id", "ID!")
             };
-            var fragment = new GraphQLQueryFragment("updateBillingZone", parameters, fields, "UpdateResponse");
+            var fragment = new GraphQLQueryFragment("updateZone", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
         public async Task GoBackAsync()
         {
-            this.ZoneName = string.Empty;
+            this.Name = string.Empty;
             await Context.ActivateMasterViewAsync();
+        }
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
     }
 }

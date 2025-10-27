@@ -67,10 +67,11 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 ZoneDetailViewModel instance = new(this, _zoneService) {
-                    ZoneId = zone.Id,
-                    ZoneName = zone.Name,
-                    ZoneIsActive = zone.IsActive
+                    Id = zone.Id,
+                    Name = zone.Name,
+                    IsActive = zone.IsActive
                 };
+
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (Exception ex)
