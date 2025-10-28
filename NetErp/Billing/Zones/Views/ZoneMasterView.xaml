@@ -33,7 +33,7 @@
 AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
 RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
-            <dxr:RibbonPage Caption="Zonas">
+            <dxr:RibbonPage Caption="General">
 
                 <dxr:RibbonPageGroup Caption="Acciones">
                     <dxb:BarButtonItem     Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 

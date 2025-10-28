@@ -20,7 +20,7 @@ namespace Common.Services
         private string? _lastCompanyRef;
         public GraphQLClient()
         {
-            //Configuración para el certificado SSL
+            //ConfiguraciÃ³n para el certificado SSL
             var handler = new HttpClientHandler()
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
@@ -81,7 +81,7 @@ namespace Common.Services
         {
             var headers = _client.HttpClient.DefaultRequestHeaders;
 
-            // Función local: actualiza el header solo si hay valor; remueve si existía antes
+            // FunciÃ³n local: actualiza el header solo si hay valor; remueve si existÃ­a antes
             static void SetHeader(System.Net.Http.Headers.HttpRequestHeaders header, string name, string? value)
             {
                 if (header.Contains(name)) header.Remove(name);
@@ -96,7 +96,7 @@ namespace Common.Services
                 _lastSessionId = currentSessionId;
             }
 
-            // database-id y company-id: solo cuando hay compañía seleccionada
+            // database-id y company-id: solo cuando hay compaÃ±Ã­a seleccionada
             // database-id y company-id
             if (SessionInfo.CurrentCompany != null)
             {
@@ -117,7 +117,7 @@ namespace Common.Services
             }
             else
             {
-                // Si no hay compañía seleccionada, enviar database-id si existe PendingCompanyReference
+                // Si no hay compaÃ±Ã­a seleccionada, enviar database-id si existe PendingCompanyReference
                 var pendingRef = SessionInfo.PendingCompanyReference;
                 if (!string.IsNullOrWhiteSpace(pendingRef))
                 {
@@ -138,12 +138,11 @@ namespace Common.Services
                 _lastCompanyId = null;
             }
 
-            // x-device-id: estático por ahora (puedes reemplazar por un provider real de device ID)
+            // x-device-id: estÃ¡tico por ahora (puedes reemplazar por un provider real de device ID)
             if (!headers.Contains("x-device-id"))
             {
                 headers.Add("x-device-id", "pc12345abcde"); // TODO: reemplazar con un ID de dispositivo real
             }
-            // x-platform: estático por ahora 
             if (!headers.Contains("x-platform"))
             {
                 headers.Add("x-platform", "PC"); // TODO: reemplazar con un ID de dispositivo real
