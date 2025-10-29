@@ -101,6 +101,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -120,6 +121,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     _abbreviation = value;
                     NotifyOfPropertyChange(nameof(Abbreviation));
+                    this.TrackChange(nameof(Abbreviation));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -166,6 +169,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
             _ = this.SetFocus(nameof(Name));
         }
 
@@ -236,18 +241,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 else
                 {
                     string query = GetUpdateQuery();
-
-                    object variables = new
-                    {
-                        updateResponseData = new
-                        {
-                            Name,
-                            Abbreviation
-                          
-                        },
-                        UpdateResponseId = Id
-                    };
-
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    
                     UpsertResponseType<MeasurementUnitGraphQLModel> updatedMeasurementUnit = await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
                     return updatedMeasurementUnit;
                 }
@@ -313,10 +309,10 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             get
             {
                 // Debe estar el nombre de la unidad de medida
-                if (string.IsNullOrEmpty(Name.Trim())) return false;
-                // Debe estar la abreviación
-                if (string.IsNullOrEmpty(Abbreviation.Trim())) return false;
-                return true;
+                return    ( (!string.IsNullOrEmpty(Name.Trim()) && !string.IsNullOrEmpty(Abbreviation.Trim())) && this.HasChanges()) ;
+             
+
+                
             }
         }
     }
