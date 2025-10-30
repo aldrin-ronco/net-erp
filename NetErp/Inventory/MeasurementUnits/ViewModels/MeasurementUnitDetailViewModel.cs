@@ -23,6 +23,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Dictionaries.BooksDictionaries;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
+using DevExpress.XtraEditors.Filtering;
+using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
@@ -97,6 +101,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -116,6 +121,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     _abbreviation = value;
                     NotifyOfPropertyChange(nameof(Abbreviation));
+                    this.TrackChange(nameof(Abbreviation));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -144,7 +151,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             get
             {
-                if (_saveMeasurementUnitCommand is null) _saveMeasurementUnitCommand = new AsyncCommand(Save, CanSave);
+                if (_saveMeasurementUnitCommand is null) _saveMeasurementUnitCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveMeasurementUnitCommand;
             }
 
@@ -162,6 +169,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
             _ = this.SetFocus(nameof(Name));
         }
 
@@ -172,97 +181,138 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             Abbreviation = "";
         }
 
-        public async Task Save()
+        public async Task SaveAsync()
         {
-            try
+             try
             {
                 IsBusy = true;
                 Refresh();
-                MeasurementUnitGraphQLModel result = await ExecuteSave();
-                if (IsNewRecord)
+                UpsertResponseType<MeasurementUnitGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitCreateMessage() { CreatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result)});
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = Context.AutoMapper.Map<MeasurementUnitDTO>(result)});
-                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new MeasurementUnitCreateMessage() { CreatedMeasurementUnit = result }
+                        : new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = result }
+                );
                 await Context.ActivateMasterViewAsync();
             }
-            catch (AsyncException ex)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+           
         }
-        public async Task<MeasurementUnitGraphQLModel> ExecuteSave()
+        public async Task<UpsertResponseType<MeasurementUnitGraphQLModel>> ExecuteSaveAsync()
         {
             try
             {
-                string query = "";
-
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Data.Name = Name.Trim().RemoveExtraSpaces();
-                variables.Data.Abbreviation = Abbreviation.Trim().RemoveExtraSpaces();
-                if (!IsNewRecord) variables.Id = Id; // Needed for update only
                 if (IsNewRecord)
                 {
-                    query = @"
-                    mutation($data: CreateMeasurementUnitInput!){
-                      CreateResponse: createMeasurementUnit(data: $data){
-                        id
-                        abbreviation
-                        name
-                      }
-                    }";
+                    string query = GetCreateQuery();
 
-                    var createdMeasurementUnit = await _measurementUnitService.CreateAsync(query, variables);
-                    return createdMeasurementUnit;
+                    object variables = new
+                    {
+                        createResponseInput = new
+                        {
+                            Name,
+                            Abbreviation
+                        }
+                    };
+
+                    UpsertResponseType<MeasurementUnitGraphQLModel> measurementUnitCreated = await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
+                    return measurementUnitCreated;
                 }
                 else
                 {
-                    query = @"
-                    mutation($data: UpdateMeasurementUnitInput!, $id: ID){
-                      updateMeasurementUnit(data: $data, id: $id){
-                        id
-                        abbreviation
-                        name
-                      }
-                    }";
-                    var updatedMeasurementUnit = await _measurementUnitService.UpdateAsync(query, variables);
+                    string query = GetUpdateQuery();
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    
+                    UpsertResponseType<MeasurementUnitGraphQLModel> updatedMeasurementUnit = await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
                     return updatedMeasurementUnit;
                 }
             }
-            catch (AsyncException ex)
+            catch (Exception ex)
             {
-                throw new AsyncException(innerException: ex);
+                throw;
             }
+          
+        }
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "measurementUnit", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Abbreviation)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateMeasurementUnitInput!");
+
+            var fragment = new GraphQLQueryFragment("createMeasurementUnit", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "measurementUnit", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Abbreviation)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Field)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateMeasurementUnitInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateMeasurementUnit", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
         public bool CanSave
         {
             get
             {
                 // Debe estar el nombre de la unidad de medida
-                if (string.IsNullOrEmpty(Name.Trim())) return false;
-                // Debe estar la abreviación
-                if (string.IsNullOrEmpty(Abbreviation.Trim())) return false;
-                return true;
+                return    ( (!string.IsNullOrEmpty(Name.Trim()) && !string.IsNullOrEmpty(Abbreviation.Trim())) && this.HasChanges()) ;
+             
+
+                
             }
         }
     }

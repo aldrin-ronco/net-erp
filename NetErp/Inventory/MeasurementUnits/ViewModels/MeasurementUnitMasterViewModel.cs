@@ -9,6 +9,7 @@ using Models.Books;
 using Models.Inventory;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
@@ -146,7 +148,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             get
             {
-                if (_createMeasurementUnitCommand is null) _createMeasurementUnitCommand = new AsyncCommand(CreateMeasurementUnit, CanCreateMeasurementUnit);
+                if (_createMeasurementUnitCommand is null) _createMeasurementUnitCommand = new AsyncCommand(CreateMeasurementUnitAsync, CanCreateMeasurementUnit);
                 return _createMeasurementUnitCommand;
             }
         }
@@ -157,7 +159,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             get
             {
-                if (_deleteMeasurementUnitCommand is null) _deleteMeasurementUnitCommand = new AsyncCommand(DeleteMeasurementUnit, CanDeleteMeasurementUnit);
+                if (_deleteMeasurementUnitCommand is null) _deleteMeasurementUnitCommand = new AsyncCommand(DeleteMeasurementUnitAsync, CanDeleteMeasurementUnit);
                 return _deleteMeasurementUnitCommand;
             }
         }
@@ -177,7 +179,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            Context.EventAggregator.Unsubscribe(this);
+            //Context.EventAggregator.Unsubscribe(this);
             await base.OnDeactivateAsync(close, cancellationToken);
         }
         protected override void OnViewReady(object view)
@@ -189,67 +191,62 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         public async Task LoadMeasurementUnits()
         {
-
             try
             {
+
                 IsBusy = true;
-                Refresh();
-                string query = @"
-                query($filter: MeasurementUnitFilterInput){
-                    ListResponse: measurementUnits(filter: $filter){
-                    id
-                    abbreviation
-                    name
-                    }
-                }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                // Iniciar cronometro
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                variables.pageResponseFilters = new ExpandoObject();
+                //variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+              
+                string query = GetLoadMeasurementUnitQuery();
 
-                var source = await _measurementUnitService.GetListAsync(query, variables);
-                MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(source);
-                stopwatch.Stop();
-
-                // Detener cronometro
-                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                PageType<MeasurementUnitGraphQLModel> result = await _measurementUnitService.GetPageAsync(query, variables);
+                this.MeasurementUnits = this.Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(result.Entries);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAccountingEntities" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+           
         }
+        public string GetLoadMeasurementUnitQuery()
+        {
+            var measurementUnitFields = FieldSpec<PageType<MeasurementUnitGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Abbreviation)
+                    .Field(e => e.Name)
+                    
+                    )
+                .Build();
 
+            var measurementUnitParameters = new GraphQLQueryParameter("filters", "MeasurementUnitFilters");
+
+            var measurementUnitFragment = new GraphQLQueryFragment("measurementUnitsPage", [measurementUnitParameters], measurementUnitFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([measurementUnitFragment]);
+
+            return builder.GetQuery();
+        }
         public async Task EditMeasurementUnit()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteEditMeasurementUnit());
+                await Task.Run(() => ExecuteEditMeasurementUnitAsync());
                 SelectedMeasurementUnit = null;
             }
             catch (Exception ex)
@@ -263,18 +260,18 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        public async Task ExecuteEditMeasurementUnit()
+        public async Task ExecuteEditMeasurementUnitAsync()
         {
             await Context.ActivateDetailViewForEdit(SelectedMeasurementUnit);
         }
 
-        public async Task CreateMeasurementUnit()
+        public async Task CreateMeasurementUnitAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteCreateMeasurementUnit());
+                await Task.Run(() => ExecuteCreateMeasurementUnitAsync());
                 SelectedMeasurementUnit = null;
             }
             catch (Exception ex)
@@ -288,104 +285,129 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        public async Task ExecuteCreateMeasurementUnit()
+        public async Task ExecuteCreateMeasurementUnitAsync()
         {
             await Context.ActivateDetailViewForNew(); // Mostrar la Vista
         }
 
-        public async Task DeleteMeasurementUnit()
+        public async Task DeleteMeasurementUnitAsync()
         {
             try
             {
-                IsBusy = true;
-                int id = SelectedMeasurementUnit.Id;
 
-                string query = @"
-                query($id:ID) {
-                  CanDeleteModel: canDeleteMeasurementUnit(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
+                this.IsBusy = true;
+                this.Refresh();
 
-                object variables = new { Id = id };
+                string query = GetCanDeleteMeasurementUnitQuery();
+
+                object variables = new { canDeleteResponseId = SelectedMeasurementUnit.Id };
 
                 var validation = await _measurementUnitService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedMeasurementUnit.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "La unidad de medida no puede ser eliminada" +
-                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
+                IsBusy = true;
+                DeleteResponseType deletedMeasurementUnit = await Task.Run(() => this.ExecuteDeleteMeasurementUnit(SelectedMeasurementUnit.Id));
 
-                Refresh();
-
-                var deletedMeasurementUnit = await ExecuteDeleteMeasurementUnit(id);
-
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(new MeasurementUnitDeleteMessage() { DeletedMeasurementUnit = deletedMeasurementUnit });
-
-                // Desactivar opcion de eliminar registros
-                NotifyOfPropertyChange(nameof(CanDeleteMeasurementUnit));
-
-
-            }
-            catch (AsyncException ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
+                if (!deletedMeasurementUnit.Success)
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedMeasurementUnit.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new MeasurementUnitDeleteMessage { DeletedMeasurementUnit = deletedMeasurementUnit });
+
+                NotifyOfPropertyChange(nameof(CanDeleteMeasurementUnit));
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+            
         }
-        public async Task<MeasurementUnitGraphQLModel> ExecuteDeleteMeasurementUnit(int id)
+        public string GetCanDeleteMeasurementUnitQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteMeasurementUnit", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteMeasurementUnit(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: ID) {
-                  DeleteResponse: deleteMeasurementUnit(id: $id) {
-                    id
-                  }
-                }";
-                object variables = new { Id = id };
-                var deletedMeasurementUnit = await _measurementUnitService.DeleteAsync(query, variables);
-                this.SelectedMeasurementUnit = null;
-                return deletedMeasurementUnit;
-            }
-            catch (AsyncException ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-        }
 
+                string query = GetDeleteMeasurementUnitQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _measurementUnitService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+           
+           
+        }
+        public string GetDeleteMeasurementUnitQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteMeasurementUnit", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
         public async Task HandleAsync(MeasurementUnitCreateMessage message, CancellationToken cancellationToken)
         {
             try
             {
+                _notificationService.ShowSuccess(message.CreatedMeasurementUnit.Message);
                 await LoadMeasurementUnits();
-                _notificationService.ShowSuccess("Unidad de medida creada correctamente");
+               
             }
             catch (Exception)
             {
@@ -398,8 +420,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             try
             {
+                _notificationService.ShowSuccess(message.UpdatedMeasurementUnit.Message);
                 await LoadMeasurementUnits();
-                _notificationService.ShowSuccess("Unidad de medida actualizada correctamente");
+               
             }
             catch (Exception)
             {
