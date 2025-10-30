@@ -1,6 +1,9 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
+using Common.Services;
 using Common.Validators;
 using DevExpress.Data.Utils;
 using DevExpress.Entity.Model.Metadata;
@@ -10,12 +13,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Models.Billing;
 using Models.Books;
+using Models.DTO.Billing;
 using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
 using Models.Treasury;
+using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
+using NetErp.Billing.Zones.DTO;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
@@ -37,9 +43,9 @@ using Services.Billing.DAL.PostgreSQL;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using Services.Inventory.DAL.PostgreSQL;
-using Services.Validators;
 using Services.Suppliers.DAL.PostgreSQL;
 using Services.Treasury.DAL.PostgreSQL;
+using Services.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,9 +54,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
-using Models.DTO.Billing;
-using NetErp.Billing.Zones.DTO;
-using Common.Services;
 
 namespace NetErp
 {
@@ -66,7 +69,18 @@ namespace NetErp
                 _ = ConventionManager.AddElementConvention<TextEdit>(TextEdit.EditValueProperty, "Value", "DataContextChanged");
                 _ = ConventionManager.AddElementConvention<MenuItem>(ItemsControl.ItemsSourceProperty, "DataContext", "Click");
 
-                Initialize();
+                // Registrar sanitizadores globales
+                SanitizerRegistry.RegisterType<string>(s =>
+                    string.IsNullOrWhiteSpace(s) ? null : s.Trim().RemoveExtraSpaces()
+                );
+
+            //// Ejemplo específico por propiedad:
+            //SanitizerRegistry.RegisterProperty<string>(
+            //    typeof(CustomerViewModel), nameof(CustomerViewModel.City),
+            //    s => s?.Trim().ToUpperInvariant()
+            //);
+
+            Initialize();
             }
 
             protected override void OnStartup(object sender, StartupEventArgs e)

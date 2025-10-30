@@ -15,6 +15,7 @@ using NetErp.Login.DTO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -199,6 +200,12 @@ namespace NetErp.Login.ViewModels
 
             OrganizationGroups = new ObservableCollection<LoginOrganizationDTO>(groupedCompanies);
             FilteredOrganizationGroups = new ObservableCollection<LoginOrganizationDTO>(groupedCompanies);
+
+            if (Debugger.IsAttached)
+            {
+                FilteredOrganizationGroups.First().Companies.First(f => f.CompanyId == 15).IsSelected = true;
+                _ = ContinueAsync();
+            }
         }
 
         private void ApplyFilter()

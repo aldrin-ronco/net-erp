@@ -25,26 +25,31 @@
 
                 <dxr:RibbonPageGroup Caption="Acciones">
                     <dxb:BarButtonItem
-               Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
-               LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
-               Content="Regresar"
-               RibbonStyle="Large"
-               Hint="Regresa a la lista de smtp"
-               Command="{Binding Path=GoBackCommand}"/>
+                       Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
+                       LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
+                       Content="Regresar"
+                       RibbonStyle="Large"
+                       Hint="Regresa a la lista de smtp"
+                       Command="{Binding Path=GoBackCommand}"/>
                     <dxb:BarItemSeparator/>
 
                     <dxb:BarButtonItem Content="Guardar" 
-                   Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
-                   LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
-                   Description="Creates a new document."
-                   Hint="Guarda los cambios realizados"    
-                   IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                   RibbonStyle="Large">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}" EventName="ItemClick"/>
-                        </dxmvvm:Interaction.Behaviors>
-                    </dxb:BarButtonItem>
+                       Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
+                       LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
+                       Description="Creates a new document."
+                       Hint="Guarda los cambios realizados"    
+                       IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                       RibbonStyle="Large" Command="{Binding Path=SaveCommand}"/>
 
+
+                    <dxb:BarItemSeparator/>
+
+                    <dxb:BarButtonItem Content="Historial de cambios"
+                                       Glyph="{dx:DXImage 'Images/History/HistoryItem_16x16.png'}"
+                                       LargeGlyph="{dx:DXImage 'Images/History/HistoryItem_32x32.png'}"
+                                       Description="Consultar historial de cambios"
+                                       Hint="Consultar historial de cambios"
+                                       RibbonStyle="Large"/>
                 </dxr:RibbonPageGroup>
             </dxr:RibbonPage>
         </dxr:RibbonControl>

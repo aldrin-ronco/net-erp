@@ -1,55 +1,54 @@
-﻿using System;
+﻿using Common.Helpers;
+using System;
 using System.Dynamic;
+using System.Linq;
 using System.Reflection;
 
 namespace Common.Helpers
 {
-    /// <summary>
-    /// Construye un ExpandoObject a partir de las propiedades modificadas en un ViewModel.
-    /// Soporta mapeo por atributo [ExpandoPath] y un prefijo opcional.
-    /// </summary>
     public static class ChangeCollector
     {
-        /// <summary>
-        /// Genera un ExpandoObject con las propiedades modificadas.
-        /// </summary>
-        /// <param name="viewModel">El objeto del cual recolectar los cambios.</param>
-        /// <param name="prefix">
-        /// Prefijo opcional que se antepone a todas las rutas (por ejemplo: "variables" o "variables.customer").
-        /// Si la propiedad tiene [ExpandoPath], el prefijo se ignora para esa propiedad.
-        /// </param>
         public static ExpandoObject CollectChanges(object viewModel, string? prefix = null)
         {
             dynamic root = new ExpandoObject();
+            var tracker = viewModel.GetInternalTracker();
 
-            foreach (var propName in viewModel.GetChangedProperties())
+            if (tracker == null)
+                return root;
+
+            // 1️⃣ Propiedades modificadas
+            foreach (var propName in tracker.ChangedProperties)
             {
                 var propInfo = viewModel.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
                 if (propInfo == null) continue;
 
                 var value = propInfo.GetValue(viewModel);
+                value = SanitizerRegistry.Sanitize(viewModel.GetType(), propName, value);
 
-                // Determinar ruta destino
                 var pathAttr = propInfo.GetCustomAttribute<ExpandoPathAttribute>();
-                string path;
-
-                if (pathAttr != null)
-                {
-                    // Si tiene atributo, se respeta su ruta exacta
-                    path = pathAttr.Path;
-                }
-                else if (!string.IsNullOrEmpty(prefix))
-                {
-                    // Si hay prefijo, se antepone
-                    path = $"{prefix}.{propName}";
-                }
-                else
-                {
-                    // Caso base: sin prefijo ni atributo
-                    path = propName;
-                }
+                string path = pathAttr?.Path ??
+                              (!string.IsNullOrEmpty(prefix) ? $"{prefix}.{propName}" : propName);
 
                 ExpandoHelper.SetNestedProperty(root, path, value);
+            }
+
+            // 2️⃣ Propiedades con seed sin cambios
+            foreach (var kv in tracker.SeedValues)
+            {
+                string propName = kv.Key;
+                if (tracker.ChangedProperties.Contains(propName))
+                    continue;
+
+                var propInfo = viewModel.GetType().GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+                if (propInfo == null) continue;
+
+                object? seedValue = SanitizerRegistry.Sanitize(viewModel.GetType(), propName, kv.Value);
+
+                var pathAttr = propInfo.GetCustomAttribute<ExpandoPathAttribute>();
+                string path = pathAttr?.Path ??
+                              (!string.IsNullOrEmpty(prefix) ? $"{prefix}.{propName}" : propName);
+
+                ExpandoHelper.SetNestedProperty(root, path, seedValue);
             }
 
             return root;
