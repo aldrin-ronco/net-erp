@@ -19,6 +19,7 @@ using System.Windows.Threading;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
 using Extensions.Global;
+using System.Dynamic;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
@@ -100,7 +101,6 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         }
 
         private int _id;
-
         public int Id
         {
             get { return _id; }
@@ -126,6 +126,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _code = value;
                     NotifyOfPropertyChange(nameof(Code));
+                    this.TrackChange(nameof(Code));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -142,6 +143,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -158,6 +160,8 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _hasVerificationDigit = value;
                     NotifyOfPropertyChange(nameof(HasVerificationDigit));
+                    this.TrackChange(nameof(HasVerificationDigit));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -173,6 +177,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _minimumDocumentLength = value;
                     NotifyOfPropertyChange(nameof(MinimumDocumentLength));
+                    this.TrackChange(nameof(MinimumDocumentLength));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -196,6 +201,18 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             {
                 _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(IsNewRecord ? nameof(Code) : nameof(Name))), DispatcherPriority.Render);
             });
+        }
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            if (IsNewRecord)
+            {
+                this.SeedValue(nameof(HasVerificationDigit), HasVerificationDigit);
+                this.SeedValue(nameof(MinimumDocumentLength), MinimumDocumentLength);
+            }
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         public void GoBack(object p)
@@ -306,16 +323,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     string query = GetCreateQuery();
 
-                    object variables = new
-                    {
-                        createResponseInput = new
-                        {
-                            Name,
-                            Code,
-                            HasVerificationDigit,
-                            MinimumDocumentLength
-                        }
-                    };
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
 
                     UpsertResponseType<IdentificationTypeGraphQLModel> identificationTypeCreated = await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
                     return identificationTypeCreated;
@@ -324,16 +332,8 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     string query = GetUpdateQuery();
 
-                    object variables = new
-                    {
-                        updateResponseData = new
-                        {
-                            Name,
-                            HasVerificationDigit,
-                            MinimumDocumentLength
-                        },
-                        UpdateResponseId = Id
-                    };
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
 
                     UpsertResponseType<IdentificationTypeGraphQLModel> updatedIdentificationType = await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
                     return updatedIdentificationType;
@@ -360,6 +360,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 if (string.IsNullOrEmpty(Code) || Code.Length != 2) return false;
                 if (string.IsNullOrEmpty(Name)) return false;
                 if (MinimumDocumentLength == 0) return false;
+                if (!this.HasChanges()) return false;
                 return true;
             }
         }

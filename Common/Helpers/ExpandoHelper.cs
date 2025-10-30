@@ -20,14 +20,12 @@ namespace Common.Helpers
             {
                 string key = parts[i];
 
-                // Último nivel: asigna el valor
                 if (i == parts.Length - 1)
                 {
                     dict[key] = value;
                 }
                 else
                 {
-                    // Si el nivel intermedio no existe, se crea otro ExpandoObject
                     if (!dict.TryGetValue(key, out var next))
                     {
                         next = new ExpandoObject();
@@ -40,3 +38,4 @@ namespace Common.Helpers
         }
     }
 }
+

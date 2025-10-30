@@ -4,40 +4,65 @@ using System.Collections.Generic;
 namespace Common.Helpers
 {
     /// <summary>
-    /// Encapsula el seguimiento de propiedades modificadas en un ViewModel o entidad.
+    /// Gestiona el seguimiento de propiedades modificadas y valores semilla (por defecto).
     /// </summary>
     public class ChangeTracker
     {
         private readonly HashSet<string> _changed = new();
+        private readonly Dictionary<string, object?> _seedValues = new();
 
         /// <summary>
         /// Registra una propiedad como modificada.
         /// </summary>
-        public void RegisterChange(string propertyName)
+        public void RegisterChange(string propertyName, object? currentValue = null)
         {
-            if (!string.IsNullOrWhiteSpace(propertyName))
-                _changed.Add(propertyName);
+            if (string.IsNullOrWhiteSpace(propertyName))
+                return;
+
+            // Si existe un seed y el valor coincide con la semilla, se remueve de cambios
+            if (_seedValues.TryGetValue(propertyName, out var seedValue))
+            {
+                if (Equals(seedValue, currentValue))
+                {
+                    _changed.Remove(propertyName);
+                    return;
+                }
+            }
+
+            _changed.Add(propertyName);
         }
 
         /// <summary>
-        /// Verifica si una propiedad específica ha cambiado.
+        /// Registra un valor semilla (por defecto) para una propiedad.
         /// </summary>
-        public bool IsChanged(string propertyName) => _changed.Contains(propertyName);
+        public void Seed(string propertyName, object? value)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) return;
+            _seedValues[propertyName] = value;
+        }
 
         /// <summary>
-        /// Obtiene todas las propiedades modificadas.
+        /// Limpia los valores semilla.
         /// </summary>
-        public IEnumerable<string> ChangedProperties => _changed;
+        public void ClearSeeds() => _seedValues.Clear();
 
         /// <summary>
-        /// Limpia el registro de propiedades modificadas (acepta los cambios actuales).
+        /// Limpia el registro de cambios.
         /// </summary>
         public void AcceptChanges() => _changed.Clear();
 
         /// <summary>
-        /// Propiedad que indica si hay cambios registrados.
+        /// Propiedades modificadas actualmente.
         /// </summary>
+        public IEnumerable<string> ChangedProperties => _changed;
+
+        /// <summary>
+        /// Valores semilla registrados.
+        /// </summary>
+        public IReadOnlyDictionary<string, object?> SeedValues => _seedValues;
+
         public bool HasChanges => _changed.Count > 0;
     }
 }
+
 

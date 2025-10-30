@@ -1,46 +1,32 @@
-﻿using System;
+﻿using Common.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Common.Helpers
 {
-    /// <summary>
-    /// Métodos de extensión para agregar tracking de cambios a cualquier ViewModel
-    /// sin modificar su jerarquía de herencia.
-    /// </summary>
     public static class ViewModelExtensions
     {
         private static readonly ConditionalWeakTable<object, ChangeTracker> _trackers = new();
+        private static ChangeTracker GetTracker(object vm) => _trackers.GetOrCreateValue(vm);
 
-        /// <summary>
-        /// Registra un cambio de propiedad en el ViewModel.
-        /// </summary>
-        public static void TrackChange(this object viewModel, string propertyName)
+        public static void TrackChange(this object viewModel, string propertyName, object? currentValue = null)
         {
-            var tracker = _trackers.GetOrCreateValue(viewModel);
-            tracker.RegisterChange(propertyName);
+            // 🔹 Sanitizar antes de registrar el cambio
+            currentValue = SanitizerRegistry.Sanitize(viewModel.GetType(), propertyName, currentValue);
+            GetTracker(viewModel).RegisterChange(propertyName, currentValue);
         }
 
-        /// <summary>
-        /// Obtiene la lista de propiedades modificadas para el ViewModel.
-        /// </summary>
-        public static IEnumerable<string> GetChangedProperties(this object viewModel)
+        public static void SeedValue(this object viewModel, string propertyName, object? value)
         {
-            if (_trackers.TryGetValue(viewModel, out var tracker))
-                return tracker.ChangedProperties;
-
-            return Array.Empty<string>();
+            value = SanitizerRegistry.Sanitize(viewModel.GetType(), propertyName, value);
+            GetTracker(viewModel).Seed(propertyName, value);
         }
 
-        /// <summary>
-        /// Limpia el estado de cambios registrados.
-        /// </summary>
-        public static void AcceptChanges(this object viewModel)
-        {
-            if (_trackers.TryGetValue(viewModel, out var tracker))
-                tracker.AcceptChanges();
-        }
-
+        public static void ClearSeeds(this object viewModel) => GetTracker(viewModel).ClearSeeds();
+        public static IEnumerable<string> GetChangedProperties(this object viewModel) => GetTracker(viewModel).ChangedProperties;
+        public static void AcceptChanges(this object viewModel) => GetTracker(viewModel).AcceptChanges();
+        internal static ChangeTracker? GetInternalTracker(this object viewModel) => _trackers.TryGetValue(viewModel, out var tracker) ? tracker : null;
         public static bool HasChanges(this object viewModel)
         {
             if (_trackers.TryGetValue(viewModel, out var tracker))
@@ -49,3 +35,4 @@ namespace Common.Helpers
         }
     }
 }
+

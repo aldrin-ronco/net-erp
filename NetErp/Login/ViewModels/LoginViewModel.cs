@@ -5,6 +5,7 @@ using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,8 +20,8 @@ namespace NetErp.Login.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly ISQLiteEmailStorageService _emailStorageService;
 
-        private string _email = string.Empty;
-        private string _password = string.Empty;
+        private string _email = Debugger.IsAttached ? "cmedrano@qtsolutions.com.co" : string.Empty; //solo para desarrollo
+        private string _password = Debugger.IsAttached ? "Ingenier01#" : string.Empty; // solo para desarrollo
         private bool _isLoading = false;
         private string _loginButtonText = "INICIAR SESIÓN";
         
@@ -112,6 +113,7 @@ namespace NetErp.Login.ViewModels
         {
             base.OnViewLoaded(view);
             await LoadSavedEmailsAsync();
+            if(Debugger.IsAttached) await LoginAsync(); // Intentar login automático al cargar la vista solo para desarrollo
         }
 
         private async Task LoadSavedEmailsAsync()
