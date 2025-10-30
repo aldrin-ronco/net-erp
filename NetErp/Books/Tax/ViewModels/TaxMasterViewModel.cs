@@ -382,13 +382,20 @@ namespace NetErp.Books.Tax.ViewModels
                 IsBusy = true;
 
                 dynamic variables = new ExpandoObject();
-                variables.pagination = new ExpandoObject();
-                variables.pagination.page = 1;
-                variables.pagination.pageSize = 10;
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = 1;
+                variables.pageResponsePagination.pageSize = 10;
 
                 variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.isActive = IsActive;
-                variables.pageResponseFilters.name = FilterSearch?.Length > 0 ? FilterSearch.Trim().RemoveExtraSpaces() : null;
+                if (IsActive)
+                {
+                    variables.pageResponseFilters.isActive = IsActive;
+                }
+                if (FilterSearch?.Length > 0)
+                {
+                    variables.pageResponseFilters.name = FilterSearch.Trim().RemoveExtraSpaces();
+                }
+                    
                 string query = GetLoadTaxesQuery();
 
               
@@ -546,12 +553,14 @@ namespace NetErp.Books.Tax.ViewModels
                 throw;
             }
         }
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-
-            // Desconectar eventos para evitar memory leaks
-            //Context.EventAggregator.Unsubscribe(this);
-            return base.OnDeactivateAsync(close, cancellationToken);
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
+        
     }
 }

@@ -20,6 +20,7 @@
     FontFamily="Century Gothic" d:Background="White">
     <UserControl.Resources>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter" />
+        <h:DateOnlyToDateTimeConverter x:Key="DateOnlyConverter" />
     </UserControl.Resources>
     <busyIndicator:BusyMask x:Name="BusyIndicator"
         IsBusy="{Binding IsBusy}"
@@ -192,9 +193,10 @@
                                 <TextBlock Text="Fecha" Margin="0 0 0 2" />
                                 <dxe:DateEdit Margin="0 0 0 2"
                                     TabIndex="3"
-                                    EditValue="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                    EditValue="{Binding Path=StartDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus, Converter={StaticResource DateOnlyConverter}}"
                                     IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
-                                    Padding="2" />
+                                    Padding="2"
+                                   />
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="10 5 10 5"
                                 Orientation="Vertical">
@@ -202,7 +204,7 @@
                                 <dxe:DateEdit Grid.Column="2" Grid.Row="1" Margin="0 2 0 2"
                                     IsEnabled="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}"
                                     TabIndex="3"
-                                    EditValue="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                    EditValue="{Binding Path=EndDate, Mode=TwoWay, UpdateSourceTrigger=LostFocus, Converter={StaticResource DateOnlyConverter}}"
                                     Padding="2" />
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="3" Margin="10 5 0 5"
@@ -290,7 +292,7 @@
                                     IsTextEditable="False"
                                     DisplayMember="Value"
                                     ValueMember="Key"
-                                    EditValue="{Binding Path=SelectedMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    EditValue="{Binding Path=Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     IsSynchronizedWithCurrentItem="True"
                                 />
 

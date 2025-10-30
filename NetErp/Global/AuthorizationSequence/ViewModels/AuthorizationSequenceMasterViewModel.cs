@@ -682,12 +682,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
 
         #endregion
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-
-            // Desconectar eventos para evitar memory leaks
-            //Context.EventAggregator.Unsubscribe(this);
-            return base.OnDeactivateAsync(close, cancellationToken);
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
         }
 
     }

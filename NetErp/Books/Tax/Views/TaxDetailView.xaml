@@ -142,8 +142,8 @@
                         IsTextEditable="False"
                         DisplayMember="FullName"
                         IsEnabled="{Binding IsEnabledSelectedGeneratedTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-
-                        EditValue="{Binding SelectedGeneratedTaxAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ValueMember="Id"
+                        EditValue="{Binding GeneratedTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
                     <StackPanel Grid.Row="5" Margin="6 5 0 5" Orientation="Vertical" >
@@ -154,8 +154,8 @@
                         IsTextEditable="False"
                         DisplayMember="FullName"
                         IsEnabled="{Binding IsEnabledSelectedGeneratedTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-
-                        EditValue="{Binding SelectedGeneratedTaxRefundAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ValueMember="Id"
+                        EditValue="{Binding GeneratedTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
                     <TextBlock Grid.Row="6" Text="IMPUESTO DESCONTABLE"
@@ -169,8 +169,8 @@
                         IsTextEditable="False"
                         DisplayMember="FullName"
                         IsEnabled="{Binding IsEnabledSelectedDeductibleTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-
-                        EditValue="{Binding SelectedDeductibleTaxAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ValueMember="Id"
+                        EditValue="{Binding DeductibleTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
                     <StackPanel Grid.Row="8" Margin="6 5 0 5" Orientation="Vertical" >
@@ -181,8 +181,8 @@
                         IsTextEditable="False"
                         DisplayMember="FullName"
                         IsEnabled="{Binding IsEnabledSelectedDeductibleTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-
-                        EditValue="{Binding SelectedDeductibleTaxRefundAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ValueMember="Id"
+                        EditValue="{Binding DeductibleTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            IsSynchronizedWithCurrentItem="True" />
                     </StackPanel>
                     <dxe:CheckEdit Content="Impuesto Activo" Grid.Row="9"
