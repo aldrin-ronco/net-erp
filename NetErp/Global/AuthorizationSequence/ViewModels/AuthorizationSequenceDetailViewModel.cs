@@ -51,7 +51,6 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _notificationService = notificationService;
             _authorizationSequenceService = authorizationSequenceService;
             CostCenters = costCenters;
-            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             Context = context;
             _errors = new Dictionary<string, List<string>>();
 
@@ -107,7 +106,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             Reference = entity.Reference;
             Prefix = entity.Prefix;
             TechnicalKey = entity.TechnicalKey;
-            SelectedMode = entity.Mode;
+            Mode = entity.Mode;
             StartDate = entity.StartDate;
             EndDate = entity.EndDate;
             StartRange = entity.StartRange;
@@ -141,8 +140,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private int? _currentInvoiceNumber;
         
 
-        private DateTime? _startDate = DateTime.Now;
-        private DateTime? _endDate = DateTime.Now;
+        private DateOnly? _startDate = DateOnly.FromDateTime(DateTime.Now);
+        private DateOnly? _endDate = DateOnly.FromDateTime(DateTime.Now);
         private bool _isActive = true;
         
 
@@ -167,8 +166,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 if (_startRange != value)
                 {
                     _startRange = value;
-                   NotifyOfPropertyChange(nameof(StartRange));
+                    NotifyOfPropertyChange(nameof(StartRange));
                     ValidateProperty(nameof(StartRange), value);
+                    this.TrackChange(nameof(StartRange));
+                    this.TrackChange(nameof(Description));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -183,6 +185,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _endRange = value;
                     NotifyOfPropertyChange(nameof(EndRange));
                     ValidateProperty(nameof(EndRange), value);
+                    this.TrackChange(nameof(EndRange));
+                    this.TrackChange(nameof(Description));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -199,12 +203,19 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _number = value;
                     NotifyOfPropertyChange(nameof(Number));
+                    this.TrackChange(nameof(Number));
+                    this.TrackChange(nameof(Description));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(Number), value);
                 }
             }
         }
-
+        public string Description
+        {
+            get { return $"AUTORIZACION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  }
+           
+        }
 
         public string Prefix
         {
@@ -215,6 +226,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _prefix = value;
                     NotifyOfPropertyChange(nameof(Prefix));
+                    this.TrackChange(nameof(Prefix));
+                    this.TrackChange(nameof(Description));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(Prefix), value);
                     
@@ -233,6 +247,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _technicalKey = value;
                     NotifyOfPropertyChange(nameof(TechnicalKey));
+                    this.TrackChange(nameof(TechnicalKey));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(TechnicalKey), value);
                 }
@@ -248,6 +263,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _reference = value;
                     NotifyOfPropertyChange(nameof(Reference));
+                    this.TrackChange(nameof(Reference));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(Reference), value);
                 }
@@ -262,6 +278,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _currentInvoiceNumber = value;
                     NotifyOfPropertyChange(nameof(CurrentInvoiceNumber));
+                    this.TrackChange(nameof(CurrentInvoiceNumber));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(CurrentInvoiceNumber), value);
                 }
@@ -269,7 +286,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
 
 
-        public DateTime? StartDate
+        public DateOnly? StartDate
         {
             get { return _startDate; }
             set
@@ -278,12 +295,15 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _startDate = value;
                     NotifyOfPropertyChange(nameof(StartDate));
+                    this.TrackChange(nameof(StartDate));
+                    this.TrackChange(nameof(Description));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
         }
 
-        public DateTime? EndDate
+        public DateOnly? EndDate
         {
             get { return _endDate; }
             set
@@ -292,6 +312,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _endDate = value;
                     NotifyOfPropertyChange(nameof(EndDate));
+                    this.TrackChange(nameof(EndDate));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -306,6 +328,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _isActive = value;
                     NotifyOfPropertyChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -321,6 +345,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     _selectedCostCenter = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenter));
+                    this.TrackChange(nameof(SelectedCostCenter));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(SelectedCostCenter), value?.Id);
                 }
@@ -378,16 +404,18 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
         // Regimen Seleccionado
-        private char _selectedMode = 'A';
-        public char SelectedMode
+        private char _mode = 'A';
+        public char Mode
         {
-            get { return _selectedMode; }
+            get { return _mode; }
             set
             {
-                if (_selectedMode != value)
+                if (_mode != value)
                 {
-                    _selectedMode = value;
-                    NotifyOfPropertyChange(nameof(SelectedMode));
+                    _mode = value;
+                    NotifyOfPropertyChange(nameof(Mode));
+                    this.TrackChange(nameof(Mode));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -685,12 +713,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             responseInput.number = Number;
             responseInput.description = $"AUTORIZACION DIAN No. {Number} de {StartDate}, prefijo: {Prefix} del {StartRange} al {EndRange}";  //Consultar
           
-            responseInput.mode = SelectedMode;
+            responseInput.mode = Mode;
             responseInput.technicalKey = TechnicalKey;
             responseInput.reference = Reference;
             responseInput.isActive = IsActive;
-            responseInput.startDate = StartDate.Value.ToString("yyyy-MM-dd");
-            responseInput.endDate = EndDate.Value.ToString("yyyy-MM-dd");
+            responseInput.startDate = StartDate;
+            responseInput.endDate = EndDate;
             responseInput.prefix = Prefix;
             responseInput.startRange = StartRange;
             responseInput.endRange = EndRange;
@@ -715,8 +743,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 if (SelectedReliefAuthorizationSequence != null) { responseInput.nextAuthorizationSequenceId = SelectedReliefAuthorizationSequence.Id; }
                
                 string query = GetUpdateQuery();
-                variables.updateResponseInput = responseInput;
-                variables.UpdateResponseId = Entity.Id;
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity.Id;
                 UpsertResponseType<AuthorizationSequenceGraphQLModel> updatedAuthorization = await _authorizationSequenceService.UpdateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
                 return updatedAuthorization;
             }
@@ -730,11 +758,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             get
             {
-                if (SelectedCostCenter == null || SelectedCostCenter.Id == 0) return false;
-                if (string.IsNullOrEmpty(SelectedMode.ToString())) return false;
-                if (SelectedAuthorizationSequenceType == null || SelectedAuthorizationSequenceType.Id == 0) return false;
-                if (_errors.Count > 0) { return false;  }
-
+                if (_errors.Count > 0 || (SelectedAuthorizationSequenceType == null || SelectedAuthorizationSequenceType.Id == 0)|| (SelectedCostCenter == null || SelectedCostCenter.Id == 0) || (string.IsNullOrEmpty(Mode.ToString()))  || !this.HasChanges()) { return false; }
                 return true;
             }
         }
@@ -757,6 +781,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             this.SetFocus(() => Number);
            
             ValidateProperties();
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
         public void GoBack(object p)
         {
@@ -1087,9 +1113,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
+            
             var parameters = new List<GraphQLQueryParameter>
             {
-                new("input", "UpdateAuthorizationSequenceInput!"),
+                new("data", "UpdateAuthorizationSequenceInput!"),
                 new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");

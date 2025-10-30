@@ -65,8 +65,8 @@ namespace NetErp.Helpers
                     sec.StartRange =  Int32.Parse(Item.SelectSingleNode("//c:FromNumber", namespaces).InnerText);
                     sec.EndRange = Int32.Parse(Item.SelectSingleNode("//c:ToNumber", namespaces).InnerText);
 
-                    sec.StartDate = GetDateTime(Item.SelectSingleNode("//c:ValidDateFrom", namespaces).InnerText);
-                    sec.EndDate = GetDateTime(Item.SelectSingleNode("//c:ValidDateTo", namespaces).InnerText);
+                    sec.StartDate = GetDateOnly(Item.SelectSingleNode("//c:ValidDateFrom", namespaces).InnerText);
+                    sec.EndDate = GetDateOnly(Item.SelectSingleNode("//c:ValidDateTo", namespaces).InnerText);
                     sec.TechnicalKey = Item.SelectSingleNode("//c:TechnicalKey", namespaces).InnerText;
                     sec.Description =  $"AUTORIZACION DIAN No. {sec.Number} de {sec.StartDate}, prefijo: {sec.Prefix} del {sec.StartDate} al {sec.EndRange}";
                     authorizationSequences.Add(sec);
@@ -76,14 +76,15 @@ namespace NetErp.Helpers
 
             return authorizationSequences;
         }
-        private static DateTime GetDateTime(string str)
+        private static DateOnly GetDateOnly(string str)
         {
             string[] subs = str.Split('-');
             if (subs.Length >= 2)
             {
-                return new DateTime(Int32.Parse(subs[0]), Int32.Parse(subs[1]), Int32.Parse(subs[2]));
+                DateOnly date = new DateOnly(Int32.Parse(subs[0]), Int32.Parse(subs[1]), Int32.Parse(subs[2]));
+                return date;
             }
-            return new DateTime();
+            return new DateOnly();
         }
         private static string GetBody(string Method, string AccountCode, string ContentFile, string SoftwareCode)
         {

@@ -40,31 +40,27 @@ namespace NetErp.Books.TaxCategory.ViewModels
 {
     public class TaxCategoryDetailViewModel :  Screen, INotifyDataErrorInfo
     {
+        #region DependecyProperties
         private readonly IRepository<TaxCategoryGraphQLModel> _TaxCategoryService;
 
+        #endregion
+
+        #region InitializationMethods
         public TaxCategoryDetailViewModel(TaxCategoryViewModel context, TaxCategoryGraphQLModel? entity, IRepository<TaxCategoryGraphQLModel> TaxCategoryService)
         {
 
 
             Context = context;
             _TaxCategoryService = TaxCategoryService ?? throw new ArgumentNullException(nameof(TaxCategoryService));
-
             _errors = new Dictionary<string, List<string>>();
-
-
             if (entity != null)
             {
                 _entity = entity;
 
             }
-
-
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await InitializeAsync());
-
-
-
 
         }
         public async Task InitializeAsync()
@@ -78,10 +74,23 @@ namespace NetErp.Books.TaxCategory.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
             this.SetFocus(() => Name);
-
             ValidateProperties();
         }
+        public void SetUpdateProperties(TaxCategoryGraphQLModel entity)
+        {
+            Name = entity.Name;
+            Prefix = entity.Prefix;
+            GeneratedTaxAccountIsRequired = entity.GeneratedTaxAccountIsRequired;
+            GeneratedTaxRefundAccountIsRequired = entity.GeneratedTaxRefundAccountIsRequired;
+            DeductibleTaxAccountIsRequired = entity.DeductibleTaxAccountIsRequired;
+            DeductibleTaxRefundAccountIsRequired = entity.DeductibleTaxRefundAccountIsRequired;
+        }
+        #endregion
+
+        #region Properties
         private TaxCategoryViewModel _context;
         public TaxCategoryViewModel Context
         {
@@ -109,15 +118,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 }
             }
         }
-        public void SetUpdateProperties(TaxCategoryGraphQLModel entity)
-        {
-            Name = entity.Name;
-            Prefix = entity.Prefix;
-            GeneratedTaxAccountIsRequired = entity.GeneratedTaxAccountIsRequired;
-            GeneratedTaxRefundAccountIsRequired = entity.GeneratedTaxRefundAccountIsRequired;
-            DeductibleTaxAccountIsRequired = entity.DeductibleTaxAccountIsRequired;
-            DeductibleTaxRefundAccountIsRequired = entity.DeductibleTaxRefundAccountIsRequired;
-        }
+     
         private bool _isNewRecord => Entity?.Id > 0 ? false : true;
         public bool IsReadOnlyGeneratedTaxRefundAccountIsRequired => GeneratedTaxAccountIsRequired.Equals(false);
         public bool IsReadOnlyDeductibleTaxRefundAccountIsRequired => DeductibleTaxAccountIsRequired.Equals(false);
@@ -126,6 +127,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             get { return _isNewRecord; }
 
         }
+
         private string _name;
         public string Name
         {
@@ -137,6 +139,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
                     _name = value;
                     ValidateProperty(nameof(Name), Name);
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
 
                 }
@@ -153,8 +156,8 @@ namespace NetErp.Books.TaxCategory.ViewModels
                     _prefix = value;
                     ValidateProperty(nameof(Prefix), Prefix);
                     NotifyOfPropertyChange(nameof(Prefix));
+                    this.TrackChange(nameof(Prefix));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(Prefix), Prefix);
                 }
             }
         }
@@ -167,13 +170,11 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 if (_generatedTaxAccountIsRequired != value)
                 {
                     _generatedTaxAccountIsRequired = value;
-                    
                     NotifyOfPropertyChange(nameof(GeneratedTaxAccountIsRequired));
+                    this.TrackChange(nameof(GeneratedTaxAccountIsRequired));
                     NotifyOfPropertyChange(nameof(CanSave));
                     NotifyOfPropertyChange(nameof(IsReadOnlyGeneratedTaxRefundAccountIsRequired));
                     if (value == false) GeneratedTaxRefundAccountIsRequired = false;
-
-
                 }
             }
         }
@@ -187,6 +188,8 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 {
                     _generatedTaxRefundAccountIsRequired = value;
                     NotifyOfPropertyChange(nameof(GeneratedTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(GeneratedTaxRefundAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
 
                 }
             }
@@ -202,6 +205,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
                     _deductibleTaxAccountIsRequired = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxAccountIsRequired));
                     NotifyOfPropertyChange(nameof(IsReadOnlyDeductibleTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(DeductibleTaxAccountIsRequired));
                     NotifyOfPropertyChange(nameof(CanSave));
                     if (value == false) DeductibleTaxRefundAccountIsRequired = false;
 
@@ -220,10 +224,15 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 {
                     _deductibleTaxRefundAccountIsRequired = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(DeductibleTaxRefundAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
 
                 }
             }
         }
+        #endregion
+
+        #region Validation
         public bool HasErrors => _errors.Count > 0;
 
         Dictionary<string, List<string>> _errors;
@@ -247,6 +256,8 @@ namespace NetErp.Books.TaxCategory.ViewModels
             if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
             return _errors[propertyName];
         }
+
+        #endregion
         #region Commands
         private ICommand _saveCommand;
         public ICommand SaveCommand
@@ -270,17 +281,10 @@ namespace NetErp.Books.TaxCategory.ViewModels
         {
             return !IsBusy;
         }
-        public void GoBack(object p)
-        {
-            CleanUpControls();
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
-
-        }
-        #endregion
         private void ValidateProperties()
         {
             ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Prefix), Prefix); 
+            ValidateProperty(nameof(Prefix), Prefix);
 
         }
         private void ValidateProperty(string propertyName, string value)
@@ -338,15 +342,22 @@ namespace NetErp.Books.TaxCategory.ViewModels
             GeneratedTaxRefundAccountIsRequired = false;
             DeductibleTaxAccountIsRequired = false;
             DeductibleTaxRefundAccountIsRequired = false;
-            
+
 
         }
+        public void GoBack(object p)
+        {
+            CleanUpControls();
+            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
+
+        }
+        #endregion
+       
         public bool CanSave
         {
             get
             {
-                 if (_errors.Count > 0) { return false; }
-                 if (GeneratedTaxAccountIsRequired == false && DeductibleTaxAccountIsRequired == false) { return false; }
+                if (_errors.Count > 0 || (GeneratedTaxAccountIsRequired == false && DeductibleTaxAccountIsRequired == false) || !this.HasChanges()) { return false; }
                 return true;
             }
         }
@@ -414,20 +425,8 @@ namespace NetErp.Books.TaxCategory.ViewModels
             {
                 string query = GetUpdateQuery();
 
-                object variables = new
-                {
-                    updateResponseData = new
-                    {
-
-                        Name = Name,
-                        Prefix = Prefix,
-                        GeneratedTaxAccountIsRequired = GeneratedTaxAccountIsRequired,
-                        GeneratedTaxRefundAccountIsRequired = GeneratedTaxRefundAccountIsRequired,
-                        DeductibleTaxAccountIsRequired = DeductibleTaxAccountIsRequired,
-                        DeductibleTaxRefundAccountIsRequired = DeductibleTaxRefundAccountIsRequired
-                    },
-                    UpdateResponseId = Entity.Id
-                };
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity.Id;
 
                 UpsertResponseType<TaxCategoryGraphQLModel> updatedTaxCategory = await _TaxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
                 return updatedTaxCategory;
