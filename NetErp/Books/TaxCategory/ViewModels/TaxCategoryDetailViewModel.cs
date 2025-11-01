@@ -87,6 +87,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             GeneratedTaxRefundAccountIsRequired = entity.GeneratedTaxRefundAccountIsRequired;
             DeductibleTaxAccountIsRequired = entity.DeductibleTaxAccountIsRequired;
             DeductibleTaxRefundAccountIsRequired = entity.DeductibleTaxRefundAccountIsRequired;
+
         }
         #endregion
 
@@ -403,21 +404,10 @@ namespace NetErp.Books.TaxCategory.ViewModels
             
             if (IsNewRecord)
             {
-                object variables = new
-                {
-                    createResponseInput = new
-                    {
-                        Name = Name,
-                        Prefix = Prefix,
-                        GeneratedTaxAccountIsRequired = GeneratedTaxAccountIsRequired,
-                        GeneratedTaxRefundAccountIsRequired = GeneratedTaxRefundAccountIsRequired,
-                        DeductibleTaxAccountIsRequired = DeductibleTaxAccountIsRequired,
-                        DeductibleTaxRefundAccountIsRequired = DeductibleTaxRefundAccountIsRequired
-                    }
-                };
+              
                 string query = GetCreateQuery();
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
 
-                
                 UpsertResponseType<TaxCategoryGraphQLModel> taxCategoryCreated = await _TaxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
                 return taxCategoryCreated;
             }
