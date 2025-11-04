@@ -226,14 +226,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 {
                     string query = GetCreateQuery();
 
-                    object variables = new
-                    {
-                        createResponseInput = new
-                        {
-                            Name,
-                            Abbreviation
-                        }
-                    };
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
 
                     UpsertResponseType<MeasurementUnitGraphQLModel> measurementUnitCreated = await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
                     return measurementUnitCreated;
