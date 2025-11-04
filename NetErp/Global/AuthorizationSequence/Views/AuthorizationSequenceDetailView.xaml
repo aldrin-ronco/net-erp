@@ -159,8 +159,8 @@
                                 IsTextEditable="False"
                                 DisplayMember="FullName"
                                 IsEnabled="{Binding Path=EnabledToCreated, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-
-                                EditValue="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ValueMember="Id"
+                                EditValue="{Binding CostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 IsSynchronizedWithCurrentItem="True" />
                         </StackPanel>
 
@@ -311,7 +311,8 @@
                                 ItemsSource="{Binding Path=AvaliableAuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
                                 DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAuthorizationSequenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ValueMember="Id"
+                                EditValue="{Binding Path=AuthorizationSequenceTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 IsSynchronizedWithCurrentItem="True"
                                 IsEnabled="{Binding EnabledAST, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
@@ -343,7 +344,8 @@
                                 ItemsSource="{Binding Path=OrphanAuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
                                 DisplayMember="Description"
-                                EditValue="{Binding SelectedReliefAuthorizationSequence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ValueMember="Id"
+                                EditValue="{Binding NextAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 IsSynchronizedWithCurrentItem="True" />
                         </StackPanel>
                         <dxe:CheckEdit Content="Autorización activa" Grid.Row="8"
