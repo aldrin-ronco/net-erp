@@ -85,15 +85,25 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 IsBusy = true;
                
                 Refresh();
-                var authorizationSequences = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
+                var numberingRangeResponse = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
+                if (numberingRangeResponse.Status)
+                {
+                    var authorizationSequences = numberingRangeResponse.AuthorizationSequences;
+                    authorizationSequences.Insert(0, new AuthorizationSequenceGraphQLModel() { Id = 9999999, Description = "SELECCIONE UNA AUTORIZACION" });
+                    AuthorizationSequences = [.. authorizationSequences];
+                    SelectedAuthorizationSequence = AuthorizationSequences.First(f => f.Id == 9999999);
+                }
+                else
+                {
+                    _notificationService.ShowError(numberingRangeResponse.Message);
+                }
+               
 
-                authorizationSequences.Insert(0, new AuthorizationSequenceGraphQLModel() { Id = 9999999, Description = "SELECCIONE UNA AUTORIZACION" });
-                AuthorizationSequences = [.. authorizationSequences];
-                SelectedAuthorizationSequence = AuthorizationSequences.First(f => f.Id == 9999999);
+               
             }
             catch (Exception e)
             {
-                var a = 1;
+                _notificationService.ShowError(e.Message);
             }
             finally
             {

@@ -5,7 +5,6 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using Models.Login;
@@ -363,7 +362,7 @@ namespace NetErp.Login.ViewModels
 
                 return response.Entries.FirstOrDefault();
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 throw;
             }

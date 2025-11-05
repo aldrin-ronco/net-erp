@@ -62,4 +62,11 @@ namespace Models.Global
         public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
         public PageType<CostCenterGraphQLModel> CostCenters { get; set; }
     }
+    public class AuthorizationSequenceResponse
+    {
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
+        public bool Status { get; set; }
+        public string Message { get; set; }
+    }
+
 }

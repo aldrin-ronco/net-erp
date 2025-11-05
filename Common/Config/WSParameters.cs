@@ -13,7 +13,7 @@ namespace Common.Config
         public static string SoftwareId => "6d3e7233-3fcd-482e-9c08-94b6ebfc5e38";
         public static string OutputPath => "C:\\QualityExe\\Temp_Fe\\";
         public static string CertificatePath => "C:\\QualityExe\\Certificado_FE\\Certificado_ELECTRICS\\Certificado.p12";
-        public static string CertificatePassword => "LmZ561x9eCl7l8Xg";
+        public static string CertificatePassword => "GW6n57cofxyrrpaw";
         public static string Url => "http://wcf.dian.colombia/IWcfDianCustomerServices/";
 
         public static string WebService => "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc";

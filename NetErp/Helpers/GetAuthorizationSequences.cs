@@ -15,7 +15,7 @@ namespace NetErp.Helpers
     {
 
 
-        public static ObservableCollection<AuthorizationSequenceGraphQLModel> GetNumberingRange(string Method)
+        public static AuthorizationSequenceResponse GetNumberingRange(string Method)
         {
             try
             {
@@ -41,8 +41,9 @@ namespace NetErp.Helpers
                
 
         }
-        private static ObservableCollection<AuthorizationSequenceGraphQLModel> GetSequencesFromXml(string XmlString)
+        private static AuthorizationSequenceResponse GetSequencesFromXml(string XmlString)
         {
+            AuthorizationSequenceResponse result = new AuthorizationSequenceResponse();
             XmlDocument xDoc = new XmlDocument();
             xDoc.LoadXml(XmlString);
             XmlNamespaceManager namespaces = new XmlNamespaceManager(xDoc.NameTable);
@@ -53,9 +54,10 @@ namespace NetErp.Helpers
             XmlNode ResponseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
 
 
-            ObservableCollection<AuthorizationSequenceGraphQLModel> authorizationSequences = [];
+           
             if(ResponseList != null)
             {
+                ObservableCollection<AuthorizationSequenceGraphQLModel> authorizationSequences = [];
                 foreach (XmlNode Item in ResponseList.ChildNodes)
                 {
                     AuthorizationSequenceGraphQLModel sec = new AuthorizationSequenceGraphQLModel();
@@ -71,10 +73,21 @@ namespace NetErp.Helpers
                     sec.Description =  $"AUTORIZACION DIAN No. {sec.Number} de {sec.StartDate}, prefijo: {sec.Prefix} del {sec.StartDate} al {sec.EndRange}";
                     authorizationSequences.Add(sec);
                 }
+                result.Status = true;
+                result.AuthorizationSequences = authorizationSequences;
+                return result;
             }
-           
+            else
+            {
+                result.Status = false;
+                XmlNode fail = xDoc.SelectSingleNode("//s:Reason", namespaces);
+                result.Message = fail.InnerText;
+                return result;
+               
+            }
 
-            return authorizationSequences;
+
+                
         }
         private static DateOnly GetDateOnly(string str)
         {

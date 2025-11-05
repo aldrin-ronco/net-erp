@@ -20,7 +20,7 @@ namespace NetErp.Login.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly ISQLiteEmailStorageService _emailStorageService;
 
-        private string _email = Debugger.IsAttached ? "cmedrano@qtsolutions.com.co" : string.Empty; //solo para desarrollo
+         private string _email = Debugger.IsAttached ? "cmedrano@qtsolutions.com.co" : string.Empty; //solo para desarrollo
         private string _password = Debugger.IsAttached ? "Ingenier01#" : string.Empty; // solo para desarrollo
         private bool _isLoading = false;
         private string _loginButtonText = "INICIAR SESIÓN";
