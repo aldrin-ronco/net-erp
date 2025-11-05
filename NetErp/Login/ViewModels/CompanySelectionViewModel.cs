@@ -5,7 +5,6 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using Models.Login;
@@ -309,7 +308,7 @@ namespace NetErp.Login.ViewModels
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show(text: $"Ha ocurrido un error. \n\n {ex.GetErrorMessage()} \n\n Comunicate con soporte técnico.", title: "Error inexperado", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                ThemedMessageBox.Show(text: $"Ha ocurrido un error. \n\n {ex.Message} \n\n Comunicate con soporte técnico.", title: "Error inexperado", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
             }
             finally
             {
@@ -363,7 +362,7 @@ namespace NetErp.Login.ViewModels
 
                 return response.Entries.FirstOrDefault();
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 throw;
             }
