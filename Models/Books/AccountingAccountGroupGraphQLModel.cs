@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -11,7 +12,7 @@ namespace Models.Books
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Key {  get; set; } = string.Empty;
-        public IEnumerable<AccountingAccountGroupDetailGraphQLModel> AccountingAccounts { get; set; } = [];
+        public IEnumerable<AccountingAccountGroupDetailGraphQLModel> Accounts { get; set; } = [];
     }
 
     public class AccountingAccountGroupDetailGraphQLModel : AccountingAccountGraphQLModel
@@ -21,8 +22,8 @@ namespace Models.Books
 
     public class AccountingAccountGroupDataContext
     {
-        public IEnumerable<AccountingAccountGroupGraphQLModel> AccountingAccountGroups { get; set; } = [];
-        public IEnumerable<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } = [];
+        public PageType<AccountingAccountGroupGraphQLModel> AccountingAccountGroups { get; set; } 
+        public PageType<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } 
     }
 
     public class AccountingAccountGroupUpdateMessage

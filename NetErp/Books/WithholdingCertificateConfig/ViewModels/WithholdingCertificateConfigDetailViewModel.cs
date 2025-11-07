@@ -463,7 +463,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             //Cuentas
             IEnumerable<AccountingAccountGroupGraphQLModel> source = result.AccountingAccountGroups;
-            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().AccountingAccounts);
+            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().Accounts);
             foreach (var accountingAccount in acgd)
             {
                 accountingAccount.Context = this;
