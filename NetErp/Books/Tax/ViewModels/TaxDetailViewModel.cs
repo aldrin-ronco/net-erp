@@ -489,7 +489,7 @@ namespace NetErp.Books.Tax.ViewModels
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Field)
+                    .Field(f => f.Fields)
                     .Field(f => f.Message))
                 .Build();
 
@@ -534,7 +534,7 @@ namespace NetErp.Books.Tax.ViewModels
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Field)
+                    .Field(f => f.Fields)
                     .Field(f => f.Message))
                 .Build();
 

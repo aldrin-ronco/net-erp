@@ -31,6 +31,9 @@ using System.Windows.Input;
 using System.Xml.Linq;
 using Xceed.Wpf.Toolkit.Primitives;
 using static Dictionaries.BooksDictionaries;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
+using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
@@ -92,7 +95,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
-           
+        private List<int> _accountingAccountsIds;
+        public List<int> AccountingAccountIds
+        {
+            get { return _accountingAccountsIds; }
+            set
+            {
+                if (_accountingAccountsIds != value)
+                {
+                    _accountingAccountsIds = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountIds));
+                    this.TrackChange(nameof(AccountingAccountIds));
+
+                }
+            }
+        }
         private string _description;
         public string Description
         {
@@ -103,6 +120,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _description = value;
                     NotifyOfPropertyChange(nameof(Description));
+                    this.TrackChange(nameof(Description));
+
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                     ValidateProperty(nameof(Description), value);
                 }
@@ -119,6 +138,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(Name), value);
                 }
@@ -146,18 +166,20 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             base.OnViewReady(view);
             this.SetFocus(() => Name);
             ValidateProperties();
+            this.AcceptChanges();
         }
         
         public bool CanSave
         {
             get
             {
+                AccountingAccountIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
                 if (string.IsNullOrEmpty(Name)) return false;
 
                 // Debe haber ingresado una descripcion
                 if (string.IsNullOrEmpty(Description)) return false;
 
-                if (SelectedCostCenter == null || SelectedCostCenter.Id == 0) return false;
+                if (CostCenterId == null || CostCenterId == 0) return false;
 
                 if (!AccountingAccounts.Any(x => x.IsChecked == true)) return false;
 
@@ -175,16 +197,17 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private CaptureTypeEnum _selectedCaptureType;
 
 
-        private CostCenterDTO _selectedCostCenter;
-        public CostCenterDTO SelectedCostCenter
+        private int _costCenterId;
+        public int CostCenterId
         {
-            get { return _selectedCostCenter; }
+            get { return _costCenterId; }
             set
             {
-                if (_selectedCostCenter != value)
+                if (_costCenterId != value)
                 {
-                    _selectedCostCenter = value;
-                    NotifyOfPropertyChange(nameof(SelectedCostCenter));
+                    _costCenterId = value;
+                    NotifyOfPropertyChange(nameof(CostCenterId));
+                    this.TrackChange(nameof(CostCenterId));
                     this.NotifyOfPropertyChange(nameof(this.CanSave));
                 }
             }
@@ -221,6 +244,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 if (_accountingAccounts != value)
                 {
                     _accountingAccounts = value;
+                   
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
                    
                 }
@@ -272,7 +296,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             Name = "";
             Description = "";
-            SelectedCostCenter = CostCenters.First(f => f.Id == 0);
+            CostCenterId = 0;
         }
         public bool CanGoBack(object p)
         {
@@ -289,21 +313,22 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task SaveAsync()
         {
-
             try
             {
                 IsBusy = true;
                 Refresh();
-                WithholdingCertificateConfigGraphQLModel result = await ExecuteSave();
+                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new WithholdingCertificateConfigCreateMessage() { CreatedWithholdingCertificateConfig = result }
+                        : new WithholdingCertificateConfigUpdateMessage() { UpdatedWithholdingCertificateConfig = result }
+                );
 
-                if (IsNewRecord)
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new WithholdingCertificateConfigCreateMessage() { CreatedWithholdingCertificateConfig = result });
-                }
-                else
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new WithholdingCertificateConfigUpdateMessage() { UpdatedWithholdingCertificateConfig = result });
-                }
                 // Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewModelAsync();
             }
@@ -321,127 +346,106 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 IsBusy = false;
             }
-            //////////////////
+           
            
         }
-        public async Task<WithholdingCertificateConfigGraphQLModel> ExecuteSave()
+        public async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
         {
-            List<int> accountingAccountsIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
-            dynamic data = new ExpandoObject();
-            data.name = Name;
-            data.description = Description;
-            data.costCenterId = SelectedCostCenter.Id;
-            data.accountingAccountsIds = accountingAccountsIds;
+            dynamic variables = new ExpandoObject();
+          
+
             if (IsNewRecord)
             {
-               return await CreateAsync(data);
+
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                string query = GetCreateQuery();
+                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> WithholdingCertificateCreated = await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                return WithholdingCertificateCreated;
             }
             else
             {
-                return await UpdateAsync(data);
+                string query = GetUpdateQuery();
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity.Id;
+                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> updatedWithholdingCertificate = await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                return updatedWithholdingCertificate;
             }
+           
         }
-        public async Task<WithholdingCertificateConfigGraphQLModel> UpdateAsync(dynamic data)
+        public string GetCreateQuery()
         {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                 mutation($data: UpdateWithholdingCertificateConfigInput!, $id: Int!){
-                UpdateResponse: updateWithholdingCertificateConfig(data: $data, id: $id){
-                        name
-                        description,
-                        accountingAccounts  {
-                            name
-                            id
-                        },
-                        costCenter{
-                          id,
-                          name,
-                          department{ name},
-                          city { name}
-                        }
-                    }
-                 }";
+            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
+                   .Field(e => e.Id)
+                   .Field(e => e.Description)
+                   .Field(e => e.Name)
+                    
 
-                dynamic variables = new ExpandoObject();
-                variables.data = data;
-                variables.id = Entity.Id;
-                WithholdingCertificateConfigGraphQLModel result = await _withholdingCertificateConfigService.UpdateAsync(query, variables);
-                return result;
+                    .Select(e => e.CostCenter, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
+                    
 
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateWithholdingCertificateInput!");
+
+            var fragment = new GraphQLQueryFragment("createWithholdingCertificate", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
-        public async Task<WithholdingCertificateConfigGraphQLModel> CreateAsync(dynamic data)
+        public string GetUpdateQuery()
         {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                 mutation($data: CreateWithholdingCertificateConfigInput!){
-                 CreateResponse : createWithholdingCertificateConfig(data: $data){
-                    id
-                    name
-                  }
-                }";
+            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
+                    .Field(e => e.Id)
+                   .Field(e => e.Description)
+                   .Field(e => e.Name)
+                   
 
-                dynamic variables = new ExpandoObject();
-                variables.data = data;
+                    .Select(e => e.CostCenter, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
+                   
 
-                WithholdingCertificateConfigGraphQLModel result = await _withholdingCertificateConfigService.CreateAsync(query, variables);
-                return result;
-            }
-            catch (Exception ex)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+
+            var parameters = new List<GraphQLQueryParameter>
             {
-                throw;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+                new("data", "UpdateWithholdingCertificateInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateWithholdingCertificate", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
+      
        
         private async Task getDataAsync()
         {
             try
             {
-                string query = @"
-                query ($accountingAccountGroupFilterInput: AccountingAccountGroupFilterInput) {
-                 accountingAccountGroups(filter:  $accountingAccountGroupFilterInput){
-                                    name
-                                    key
-                                    accountingAccounts  {
-                                      name,
-                                      code
-                                      id
-                                    }
-   
-  
-                                  }
-                 CostCenters:  costCenters(){
-                                id
-                                name
-                                address
-                                city  {
-                                  id
-                                  name
-                                  department {
-                                    id
-                                    name
-                                  }
-                                }
-  
-                              }
-                }
-                ";
+                
+            string query = GetLoadDataQuery();
 
             dynamic variables = new ExpandoObject();
             variables.accountingAccountGroupFilterInput = new ExpandoObject();
@@ -451,18 +455,18 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             WithholdingCertificateConfigDataContext result = await _withholdingCertificateConfigService.GetDataContextAsync<WithholdingCertificateConfigDataContext>(query, variables);
 
             // CostCenters
-            CostCenters = [.. Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters)];
+            CostCenters = [.. Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters.Entries)];
             CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             if (!IsNewRecord)
             {
-                SelectedCostCenter = CostCenters.First(f => f.Id == Entity?.CostCenter?.Id);
+                CostCenterId = Entity.CostCenter.Id;
             }
             else
             {
-                SelectedCostCenter = CostCenters.First(f => f.Id == 0);
+                CostCenterId = 0;
             }
             //Cuentas
-            IEnumerable<AccountingAccountGroupGraphQLModel> source = result.AccountingAccountGroups;
+            IEnumerable<AccountingAccountGroupGraphQLModel> source = result.AccountingAccountGroups.Entries;
             ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().Accounts);
             foreach (var accountingAccount in acgd)
             {
@@ -481,6 +485,64 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
 
+        }
+        public string GetLoadDataQuery(bool withCostCenter = false)
+        {
+            var accountingAccountGroupFields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
+             .Create()
+             .SelectList(it => it.Entries, entries => entries
+                 .Field(e => e.Id)
+
+                 .Field(e => e.Name)
+                 .Field(e => e.Key)
+
+
+                 .SelectList(e => e.Accounts, cat => cat
+                     .Field(c => c.Id)
+                     .Field(c => c.Name)
+                     .Field(c => c.Code)
+
+                 )
+
+
+             )
+             .Field(o => o.PageNumber)
+             .Field(o => o.PageSize)
+             .Field(o => o.TotalPages)
+             .Field(o => o.TotalEntries)
+             .Build();
+
+            var accountingAccountGroupParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var accountingAccountGroupFilterParameters = new GraphQLQueryParameter("filters", "AccountingAccountGroupFilters");
+            var accountingAccountGroupFragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [accountingAccountGroupParameters, accountingAccountGroupFilterParameters], accountingAccountGroupFields, "AccountingAccountGroups");
+
+            var costCenterFields = FieldSpec<PageType<CostCenterGraphQLModel>>
+               .Create()
+               .SelectList(it => it.Entries, entries => entries
+                   .Field(e => e.Id)
+                   .Field(e => e.Name)
+                   .Field(e => e.Address)
+                   .Select(e => e.City, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.Department, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Name)
+                            )
+
+                    )
+
+               )
+               .Field(o => o.PageNumber)
+               .Field(o => o.PageSize)
+               .Field(o => o.TotalPages)
+               .Field(o => o.TotalEntries)
+               .Build();
+         
+            var costCenterFragment = new GraphQLQueryFragment("costCentersPage", [], costCenterFields, "CostCenters");
+
+            var builder =  new GraphQLQueryBuilder([accountingAccountGroupFragment, costCenterFragment]);
+            return builder.GetQuery();
         }
         private void ClearErrors(string propertyName)
         {
