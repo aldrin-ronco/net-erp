@@ -2,6 +2,7 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.DirectX.Common.DirectWrite;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
@@ -10,8 +11,10 @@ using Models.Global;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccountGroups.ViewModels;
 using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Ninject.Activation;
 using Services.Books.DAL.PostgreSQL;
+using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -23,6 +26,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
@@ -216,33 +220,25 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 IsBusy = true;
                 int id = SelectedWithholdingCertificateConfigGraphQLModel.Id;
+                string query = GetCanDeleteWithholdingCertificateQuery();
 
-                string query = @"
-                query($id:Int!) {
-                  CanDeleteModel: canDeleteWithholdingCertificateConfig(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
-                object variables = new { Id = id };
+                object variables = new { canDeleteResponseId = SelectedWithholdingCertificateConfigGraphQLModel.Id };
 
-                var validation = await this._withholdingCertificateConfigService.CanDeleteAsync(query, variables);
+                var validation = await _withholdingCertificateConfigService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedWithholdingCertificateConfigGraphQLModel.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-
-
+               
                 Refresh();
                 var deletedCertificate = await ExecuteDeleteCertificate(id);
 
@@ -274,26 +270,60 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task<WithholdingCertificateConfigGraphQLModel> ExecuteDeleteCertificate(int id)
+        public string GetCanDeleteWithholdingCertificateQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteWithholdingCertificate", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public string  GetDeleteWithholdingCertificateQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+               .Create()
+               .Field(f => f.DeletedId)
+               .Field(f => f.Message)
+               .Field(f => f.Success)
+               .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteWithholdingCertificate", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteCertificate(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteWithholdingCertificateConfig(id: $id) {
-                    id
-                  }
-                }";
-                object variables = new { Id = id };
-                var deletedCertificate = await this._withholdingCertificateConfigService.DeleteAsync(query, variables);
-                this.SelectedWithholdingCertificateConfigGraphQLModel = null;
-                return deletedCertificate;
-            }
 
-            catch (Exception ex)
+                string query = GetDeleteWithholdingCertificateQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _withholdingCertificateConfigService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
+            }
+            catch (Exception)
             {
                 throw;
             }
+           
 
         }
         public async Task NewAsync()
@@ -354,45 +384,18 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 IsBusy = true;
-                string query = @"
-               query( $filter: WithholdingCertificateConfigFilterInput!){
-                      PageResponse: withholdingCertificateConfigPage(filter: $filter){
-                        count
-                        rows {
-                          id
-                          name,
-                          description,
-                          accountingAccounts  {
-                                    name
-                                    id
-                          },
-                          costCenter {
-                            id
-                            name
-                            address
-                            city { 
-                              name
-                              department {
-                                name
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                ";
-
+                
+                string query = GetLoadWithholdingCertificateConfigQuery();
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-
-                var result = await _withholdingCertificateConfigService.GetPageAsync(query, variables);
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+                PageType<WithholdingCertificateConfigGraphQLModel> result =     await _withholdingCertificateConfigService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Certificates = Context.AutoMapper.Map<ObservableCollection<WithholdingCertificateConfigGraphQLModel>>(result.Rows);
-                TotalCount = result.Count;
+                Certificates =result.Entries;
+                TotalCount = result.TotalEntries;
 
             }
             catch (Exception ex)
@@ -409,7 +412,48 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
+        public string GetLoadWithholdingCertificateConfigQuery()
+        {
+            var withholdingCertificateFields = FieldSpec<PageType<WithholdingCertificateConfigGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Description)
+                  .Field(e => e.Name)
 
+                  
+                  .SelectList(e => e.AccountingAccounts, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
+
+                  )
+                  .Select(e => e.CostCenter, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
+                      .Field(c => c.Address)
+                      .Select(e => e.City, cit => cit
+                              .Field(d => d.Id)
+                              .Field(d => d.Name)
+                              .Select(d => d.Department, dep => dep
+                              .Field(d => d.Id)
+                              .Field(d => d.Name)
+                          )
+                          )
+                      
+                  
+              )
+                  )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+            var withholdingCertificatePagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var withholdingCertificatefilterParameters = new GraphQLQueryParameter("filters", "WithholdingCertificateFilters");
+            var withholdingCertificateFragment = new GraphQLQueryFragment("withholdingCertificatesPage", [withholdingCertificatePagParameters, withholdingCertificatefilterParameters], withholdingCertificateFields, "PageResponse");
+            var builder =  new GraphQLQueryBuilder([withholdingCertificateFragment]);
+            return builder.GetQuery();
+        }
         public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
         {
             _notificationService.ShowSuccess("El Certificado fue eliminado correctamente");
@@ -435,7 +479,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
 
             // Desconectar eventos para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            
             return base.OnDeactivateAsync(close, cancellationToken);
         }
     }

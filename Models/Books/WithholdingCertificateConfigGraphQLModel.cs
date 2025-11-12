@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -20,23 +21,21 @@ namespace Models.Books
 
     public class WithholdingCertificateConfigDataContext
     {
-        public IEnumerable<CostCenterGraphQLModel> CostCenters { get; set; } = [];
-        public IEnumerable<AccountingAccountGroupGraphQLModel> AccountingAccountGroups { get; set; } = [];
+        public PageType<CostCenterGraphQLModel> CostCenters { get; set; } 
+        public PageType<AccountingAccountGroupGraphQLModel> AccountingAccountGroups { get; set; } 
     }   
 
     public class WithholdingCertificateConfigCreateMessage
     {
-        public WithholdingCertificateConfigGraphQLModel CreatedWithholdingCertificateConfig { get; set; }
-        public ObservableCollection<WithholdingCertificateConfigGraphQLModel> Certificates { get; set; }
+        public UpsertResponseType<WithholdingCertificateConfigGraphQLModel> CreatedWithholdingCertificateConfig { get; set; }
     }
     public class WithholdingCertificateConfigDeleteMessage
     {
-        public WithholdingCertificateConfigGraphQLModel DeletedWithholdingCertificateConfig { get; set; }
+        public DeleteResponseType DeletedWithholdingCertificateConfig { get; set; }
     }
 
     public class WithholdingCertificateConfigUpdateMessage
     {
-        public WithholdingCertificateConfigGraphQLModel UpdatedWithholdingCertificateConfig { get; set; }
-        public ObservableCollection<WithholdingCertificateConfigGraphQLModel> Certificates { get; set; }
+        public UpsertResponseType<WithholdingCertificateConfigGraphQLModel> UpdatedWithholdingCertificateConfig { get; set; }
     }
 }

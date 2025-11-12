@@ -37,13 +37,16 @@ namespace Extensions.Global
 
             foreach (var e in list)
             {
-                var field = string.IsNullOrWhiteSpace(e.Field) ? null : e.Field.Trim();
+                //var field = string.IsNullOrWhiteSpace(e.Field) ? null : e.Field.Trim();
                 var message = (e.Message ?? string.Empty).Trim();
-
-                if (!string.IsNullOrEmpty(field))
-                    sb.AppendLine($"- {field}: {message}");
-                else
-                    sb.AppendLine($"- {message}");
+                foreach(string field in e.Fields)
+                {
+                    if (!string.IsNullOrEmpty(field))
+                        sb.AppendLine($"- {field}: {message}");
+                    else
+                        sb.AppendLine($"- {message}");
+                }
+               
             }
 
             return sb.ToString().TrimEnd();
