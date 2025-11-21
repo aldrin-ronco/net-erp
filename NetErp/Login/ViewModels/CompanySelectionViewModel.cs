@@ -385,7 +385,7 @@ namespace NetErp.Login.ViewModels
             .Field(e => e.Success)
             .Field(e => e.Message)
             .SelectList(f => f.Errors, sq => sq
-                .Field(f => f.Field)
+                .Field(f => f.Fields)
                 .Field(f => f.Message))
             .Build();
 

@@ -3,12 +3,15 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Controls;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using Models.Suppliers;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
 
 namespace NetErp.Books.AccountingSources.ViewModels
@@ -309,101 +313,54 @@ namespace NetErp.Books.AccountingSources.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                string query = @"
-                query ($filter:AccountingSourceFilterInput, $accountFilter: AccountingAccountFilterInput) {
-                  modules{
-                    id
-                    code
-                    name
-                    abbreviation
-                }
-                accountingSourcePage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      code
-                      fullCode
-                      annulmentCode
-                      name
-                      isSystemSource
-                      annulmentCharacter
-                      isKardexTransaction
-                      kardexFlow
-                      accountingAccount {
-                        id
-                      }
-                      processType {
-                        id
-                        name
-                        module {
-                          id
-                          name
-                        }
-                      }
-                    }
-                }
-                accountingAccounts(filter: $accountFilter){
-                    id
-                    code
-                    name
-                    margin
-                    marginBasis
-                  }
                 
-                processTypes{
-                    id
-                    name
-                }
-                }";
+                string query = GetLoadAccountingSourceQuery(true);
 
                 //AccountingSource Filter
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.accountingSourcesFilters = new ExpandoObject();
 
-                variables.filter.annulment = new ExpandoObject();
-                variables.filter.annulment.@operator = "=";
-                variables.filter.annulment.value = false;
+                variables.accountingSourcesFilters.annulment =  false;
+               if(!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.accountingSourcesFilters.name =  FilterSearch.Trim().RemoveExtraSpaces();
 
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                }
 
                 if(SelectedModuleId != 0)
                 {
-                    variables.filter.moduleId = new ExpandoObject();
-                    variables.filter.moduleId.@operator = "=";
-                    variables.filter.moduleId.value = SelectedModuleId;
+                 
+                    variables.accountingSourcesFilters.moduleId = SelectedModuleId;
                 }
 
                 // Filtro de cuentas contables
-                variables.accountFilter = new ExpandoObject();
-                variables.accountFilter.code = new ExpandoObject();
-                variables.accountFilter.code.@operator = new List<string>() { "length", ">=" };
-                variables.accountFilter.code.value = 8;
+                variables.accountingAccountsFilters = new ExpandoObject();
+                variables.accountingAccountsFilters.only_auxiliary_accounts = true;
+               
 
                 //Pagination
-                variables.filter.pagination = new ExpandoObject();
-                variables.filter.pagination.page = PageIndex;
-                variables.filter.pagination.pageSize = PageSize;
+                variables.accountingSourcesPagination = new ExpandoObject();
+                variables.accountingSourcesPagination.page = PageIndex;
+                variables.accountingSourcesPagination.pageSize = PageSize;
 
                 // Iniciar cronometro
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                var result = await _accountingSourceService.GetDataContextAsync<AccountingSourceDataContext>(query, variables);
+                AccountingSourceDataContext result = await _accountingSourceService.GetDataContextAsync<AccountingSourceDataContext>(query, variables);
 
                 // Detener cronometro
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(result.ProcessTypes);
+                this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(result.ProcessTypesPage.Entries);
                 App.Current.Dispatcher.Invoke(() =>
                 {
-                    this.Modules = new ObservableCollection<ModuleGraphQLModel>(result.Modules);
+                    this.Modules = result.ModulesPage.Entries;
                     this.Modules.Insert(0, new ModuleGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" });
-                    this.AccountingSources = new ObservableCollection<AccountingSourceDTO>(this.Context.AutoMapper.Map<IEnumerable<AccountingSourceDTO>>(result.AccountingSourcePage.Rows));
-                    this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
+                    this.AccountingSources = new ObservableCollection<AccountingSourceDTO>(this.Context.AutoMapper.Map<IEnumerable<AccountingSourceDTO>>(result.AccountingSourcesPage.Entries));
+                    this.AccountingAccounts = result.AccountingAccountsPage.Entries;
                 });
-                this.TotalCount = result.AccountingSourcePage.Count;
+                this.TotalCount = result.AccountingSourcesPage.TotalEntries;
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -451,65 +408,32 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                string query = @"
-                query ($filter:AccountingSourceFilterInput) {
-                  pageResponse: accountingSourcePage(filter:$filter) {
-                    count
-                    rows {
-                      id
-                      code
-                      fullCode
-                      annulmentCode
-                      name
-                      isSystemSource
-                      annulmentCharacter
-                      isKardexTransaction
-                      kardexFlow
-                      accountingAccount {
-                        id
-                      }
-                      processType {
-                        id
-                        name
-                        module {
-                          id
-                          name
-                        }
-                      }
-                    }
-                  }
-                }";
+                string query = GetLoadAccountingSourceQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
 
-                variables.filter.annulment = new ExpandoObject();
-                variables.filter.annulment.@operator = "=";
-                variables.filter.annulment.value = false;
+                variables.pageResponseFilters.annulment = false;
 
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                variables.pageResponseFilters.name =  string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
                 if (SelectedModuleId != 0)
                 {
-                    variables.filter.moduleId = new ExpandoObject();
-                    variables.filter.moduleId.@operator = "=";
-                    variables.filter.moduleId.value = SelectedModuleId;
+                    variables.pageResponseFilters.moduleId =  SelectedModuleId;
                 }
                 
                 //Pagination
-                variables.filter.pagination = new ExpandoObject();
-                variables.filter.pagination.page = PageIndex;
-                variables.filter.pagination.pageSize = PageSize;
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = PageIndex;
+                variables.pageResponsePagination.pageSize = PageSize;
 
-                var source = await _accountingSourceService.GetPageAsync(query, variables);
+                PageType<AccountingSourceGraphQLModel> source = await _accountingSourceService.GetPageAsync(query, variables);
 
                 // Detener cronometro
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                this.TotalCount = source.Count;
-                this.AccountingSources = this.Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(source.Rows);
+                this.TotalCount = source.TotalEntries;
+                this.AccountingSources = this.Context.AutoMapper.Map<ObservableCollection<AccountingSourceDTO>>(source.Entries);
 
 
                 this.IsBusy = false;
@@ -528,7 +452,95 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 IsBusy = false;
             }
         }
+        public string GetLoadAccountingSourceQuery(bool withDependencies = false)
+        {
+            
+            var moduleFields = FieldSpec<PageType<ModuleGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
 
+                  .Field(e => e.Code)
+                  .Field(e => e.Name)
+                  .Field(e => e.Abbreviation)
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+            
+            var accountingSourceFields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
+               .Create()
+               .SelectList(it => it.Entries, entries => entries
+                   .Field(e => e.Id)
+                   .Field(e => e.AnnulmentCode)
+                   .Field(e => e.Code)
+                   .Field(e => e.Name)
+                   .Field(e => e.IsSystemSource)
+
+                   .Field(e => e.AnnulmentCharacter)
+                   .Field(e => e.IsKardexTransaction)
+                   .Field(e => e.KardexFlow)
+                    .Select(e => e.AccountingAccount, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                   .Select(e => e.ProcessType, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.Module, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Name)
+                            )
+
+                    )
+
+               )
+               .Field(o => o.PageNumber)
+               .Field(o => o.PageSize)
+               .Field(o => o.TotalPages)
+               .Field(o => o.TotalEntries)
+               .Build();
+
+            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Margin)
+                  .Field(e => e.Code)
+                  .Field(e => e.Name)
+                  .Field(e => e.MarginBasis)
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+            var processTypeFields = FieldSpec<PageType<ProcessTypeGraphQLModel>>
+           .Create()
+           .SelectList(it => it.Entries, entries => entries
+               .Field(e => e.Id)
+               .Field(e => e.Name)
+           )
+           .Field(o => o.PageNumber)
+           .Field(o => o.PageSize)
+           .Field(o => o.TotalPages)
+           .Field(o => o.TotalEntries)
+           .Build();
+
+            var accountingSourcePagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var accountingSourceParameters = new GraphQLQueryParameter("filters", "AccountingSourceFilters");
+            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
+
+            var accountingSourceFragment = new GraphQLQueryFragment("accountingSourcesPage", [accountingSourcePagParameters, accountingSourceParameters], accountingSourceFields, withDependencies ? "AccountingSourcesPage" : "PageResponse");
+            var accountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "AccountingAccountsPage");
+            var moduleFragment = new GraphQLQueryFragment("modulesPage", [], moduleFields, "ModulesPage");
+            var processTypeFragment = new GraphQLQueryFragment("processTypesPage", [], processTypeFields, "ProcessTypesPage");
+
+            var builder = withDependencies ? new GraphQLQueryBuilder([accountingSourceFragment, accountingAccountFragment, moduleFragment, processTypeFragment]) : new GraphQLQueryBuilder([accountingSourceFragment]);
+            return builder.GetQuery();
+        }
         public void OnChecked()
         {
             NotifyOfPropertyChange(nameof(CanDeleteSource));
@@ -602,49 +614,46 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                // Checkear si el registro puede ser eliminado
-                this.IsBusy = true;
-                int id = SelectedAccountingSource.Id;
-
-                string query = @"
-                query($id:Int!){
-                  CanDeleteModel: canDeleteAccountingSource(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-
-                var validation = await _accountingSourceService.CanDeleteAsync(query, variables);
-                if (validation.CanDelete)
-                {
-                    this.IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show("Confirme ...", $"¿Confirma que desea eliminar el registro {SelectedAccountingSource.Name}?", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    this.IsBusy = false;
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", "El regisgtro seleccionado no puede ser eliminado" + (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information));
-                    return;
-                }
 
                 this.IsBusy = true;
                 this.Refresh();
 
-                var deletedAccountingSource = await this.ExecuteDeleteSourceAsync(id);
+                string query = GetCanDeleteAccountingSourceQuery();
 
-                await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceDeleteMessage() { DeletedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(deletedAccountingSource) });
+                object variables = new { canDeleteResponseId = SelectedAccountingSource.Id };
 
-                // Desactivar opcion de eliminar registros
+                var validation = await _accountingSourceService.CanDeleteAsync(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                IsBusy = true;
+                DeleteResponseType deletedAccountingSource = await Task.Run(() => this.ExecuteDeleteSourceAsync(SelectedAccountingSource.Id));
+
+                if (!deletedAccountingSource.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedAccountingSource.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceDeleteMessage { DeletedAccountingSource = deletedAccountingSource });
+
                 NotifyOfPropertyChange(nameof(CanDeleteSource));
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -654,53 +663,64 @@ namespace NetErp.Books.AccountingSources.ViewModels
             {
                 IsBusy = false;
             }
-        }
 
-        public async Task<AccountingSourceGraphQLModel> ExecuteDeleteSourceAsync(int id)
+           
+        }
+        public string GetCanDeleteAccountingSourceQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingSource", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteSourceAsync(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  deleteResponse: deleteAccountingSource(id: $id) {
-                    id
-                    reverseId
-                    code
-                    fullCode
-                    annulmentCode
-                    name
-                    annulment
-                    isSystemSource
-                    annulmentCharacter
-                    isKardexTransaction
-                    kardexFlow
-                    processType {
-                      id
-                      name
-                      module {
-                        id
-                        code
-                        name
-                      }
-                    }
-                  }
-                }";
+
+                string query = GetDeleteAccountingSourceQuery();
 
                 object variables = new
                 {
-                    Id = id
+                    deleteResponseId = id
                 };
 
                 // Eliminar registros
-                var accountingSourceDeleted = await _accountingSourceService.DeleteAsync(query, variables);
-                return accountingSourceDeleted;
+                DeleteResponseType deletedRecord = await _accountingSourceService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
             catch (Exception)
             {
                 throw;
             }
         }
+        public string GetDeleteAccountingSourceQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
 
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteAccountingSource", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+       
 
         private async void ExecuteChangeIndex(object parameter)
         {

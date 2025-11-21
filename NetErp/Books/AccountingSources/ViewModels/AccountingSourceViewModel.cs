@@ -89,20 +89,20 @@ namespace NetErp.Books.AccountingSources.ViewModels
             // this.AccountingSourceDetailViewModel.SelectedProcessType = this.AccountingSourceDetailViewModel.ProcessTypes.Where(x => x.Id == selectedItem.ProcessType.Id).FirstOrDefault();
 
             instance.Id = selectedItem.Id; // Necesario para que el Update se ejecute correctaente
-            instance.SelectedProcessTypeId = selectedItem.ProcessType.Id;
-            instance.Code = selectedItem.Code;
+            instance.ProcessTypeId = selectedItem.ProcessType.Id;
+            instance.ShortCode = selectedItem.Code.Substring(selectedItem.Code.Length - 3); 
             instance.Name = selectedItem.Name;
-            instance.SelectedKardexFlow = selectedItem.KardexFlow;
-            instance.SelectedAnnulmentType = selectedItem.AnnulmentCharacter;
+            instance.KardexFlow = selectedItem.KardexFlow;
+            instance.AnnulmentCharacter = selectedItem.AnnulmentCharacter;
             instance.IsKardexTransaction = selectedItem.IsKardexTransaction;
 
             if (selectedItem.AccountingAccount != null)
             {
-                instance.SelectedAccountingAccountId = selectedItem.AccountingAccount.Id;
+                instance.AccountingAccountId = selectedItem.AccountingAccount.Id;
             }
             else
             {
-                instance.SelectedAccountingAccountId = 0;
+                instance.AccountingAccountId = 0;
             }
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());

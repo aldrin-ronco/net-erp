@@ -1531,10 +1531,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
         {
+            
             try
             {
-                AccountingSourceGraphQLModel createdAccountingSource = this.AccountingSources.Where(x => x.Id == message.CreatedAccountingSource.Id).FirstOrDefault();
-                if (createdAccountingSource is null) this.AccountingSources.Add(message.CreatedAccountingSource);
+                AccountingSourceGraphQLModel createdAccountingSource = this.AccountingSources.Where(x => x.Id == message.CreatedAccountingSource.Entity.Id).FirstOrDefault();
+                if (createdAccountingSource is null) this.AccountingSources.Add(message.CreatedAccountingSource.Entity);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
 
             }
@@ -1549,8 +1550,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                AccountingSourceGraphQLModel updatedAccountingSource = this.AccountingSources.Where(x => x.Id == message.UpdatedAccountingSource.Id).FirstOrDefault();
-                if (updatedAccountingSource != null) this.AccountingSources.Replace(message.UpdatedAccountingSource);
+                AccountingSourceGraphQLModel updatedAccountingSource = this.AccountingSources.Where(x => x.Id == message.UpdatedAccountingSource.Entity.Id).FirstOrDefault();
+                if (updatedAccountingSource != null) this.AccountingSources.Replace(message.UpdatedAccountingSource.Entity);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
             }
             catch (Exception ex)
@@ -1564,7 +1565,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                AccountingSourceGraphQLModel deletedAccountingSource = this.AccountingSources.Where(x => x.Id == message.DeletedAccountingSource.Id).FirstOrDefault();
+                AccountingSourceGraphQLModel deletedAccountingSource = this.AccountingSources.Where(x => x.Id == message.DeletedAccountingSource.DeletedId).FirstOrDefault();
                 if (deletedAccountingSource != null) this.AccountingSources.Remove(deletedAccountingSource);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
 
