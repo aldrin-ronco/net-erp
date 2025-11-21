@@ -106,7 +106,7 @@
                       ItemsSource="{Binding ProcessTypes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       DisplayMemberPath="Name"
                       SelectedValuePath="Id"
-                      SelectedValue="{Binding Path=SelectedProcessTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                      SelectedValue="{Binding Path=ProcessTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <ComboBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel/>
@@ -114,7 +114,9 @@
                     </ComboBox.ItemsPanel>
                 </xctk:WatermarkComboBox>
                 <!--Codigo Corto-->
-                <TextBlock Grid.Column="0" Grid.Row="2" Text="Código Corto" VerticalAlignment="Center" Margin="5" Padding="3"/>
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="Código Corto" VerticalAlignment="Center" Margin="5" Padding="3"
+                 Visibility="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                
                 <TextBox x:Name="txtCode"
                      Grid.Column="1" 
                      Grid.Row="2" 
@@ -124,7 +126,8 @@
                      Padding="3"
                      CharacterCasing="Upper"
                      MaxLength="3"
-                     Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     Text="{Binding ShortCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Visibility="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                      PreviewTextInput="txtCode_PreviewTextInput" />
                 <!--Nombre de la fuente contable-->
                 <TextBlock Grid.Column="0" Grid.Row="3" Text="Nombre" VerticalAlignment="Center" Margin="5" Padding="3"/>
@@ -145,7 +148,7 @@
                        Padding="3"
                        IsReadOnly="True"
                        Focusable="False"
-                       Text="{Binding FullCode, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                       Text="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!--Tipo de anulacion que debe ser aplicada -->
                 <TextBlock Grid.Column="0" Grid.Row="5" Text="Tipo de anulación" VerticalAlignment="Center" Margin="5" Padding="3"/>
@@ -155,25 +158,10 @@
                       ItemsSource="{Binding AnnulmentTypeDictionary, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                       DisplayMemberPath="Value"
                       SelectedValuePath="Key"
-                      SelectedValue="{Binding SelectedAnnulmentType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                      SelectedValue="{Binding AnnulmentCharacter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!--Codigo de Anulacion-->
-                <TextBlock Grid.Column="0" Grid.Row="6" 
-                       Text="Código de anulación" 
-                       VerticalAlignment="Center" 
-                       Margin="5" Padding="3"
-                       Visibility="{Binding IsAnnulledWithAdditionalDocument, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                <TextBox  Width="auto" 
-                      VerticalAlignment="Center"
-                      Padding="3"
-                      Grid.Column="1" 
-                      Grid.Row="6" 
-                      Margin="5"
-                      IsReadOnly="True"
-                      Focusable="False"
-                      Visibility="{Binding IsAnnulledWithAdditionalDocument, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
-                      Text="{Binding AnnulmentCode, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+               
 
                 <!--Grupo de parametros para inventario-->
                 <GroupBox Grid.Row="7" Grid.ColumnSpan="2" Margin="0 10 0 0">
@@ -205,7 +193,7 @@
                               ItemsSource="{Binding KardexFlowDictionary, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="Value"
                               SelectedValuePath="Key"
-                              SelectedValue="{Binding SelectedKardexFlow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValue="{Binding KardexFlow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Visibility="{Binding IsKardexTransaction, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                         <!--Cuenta Contable para el concepto-->
@@ -222,7 +210,7 @@
                               ItemsSource="{Binding AuxiliaryAccountingAccounts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="FullName"
                               SelectedValuePath="Id"     
-                              SelectedValue="{Binding Path=SelectedAccountingAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedValue="{Binding Path=AccountingAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Visibility="{Binding IsKardexTransaction, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <ComboBox.ItemsPanel>
                                 <ItemsPanelTemplate>

@@ -4,12 +4,14 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using DevExpress.XtraEditors.Filtering;
 using Dictionaries;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
@@ -20,7 +22,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Xml.Linq;
+using static Amazon.S3.Util.S3EventNotification;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
@@ -64,37 +69,31 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
 
         // Codigo corto
-        private string _code;
-        public string Code
+        private string _shortCode;
+        public string ShortCode
         {
-            get { return _code; }
+            get { return _shortCode; }
             set
             {
-                _code = value;
+                _shortCode = value;
+                NotifyOfPropertyChange(nameof(ShortCode));
                 NotifyOfPropertyChange(nameof(Code));
-                NotifyOfPropertyChange(nameof(FullCode));
-                NotifyOfPropertyChange(nameof(AnnulmentCode));
+                this.TrackChange(nameof(Code));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
         // Codigo Largo
-        public string FullCode
+        public string Code
         {
             get
             {
-                return $"_{(this.IsSystemSource ? "S" : "U")}_{this.Code}";
+                return $"_{(this.IsSystemSource ? "S" : "U")}_{this.ShortCode}";
             }
         }
 
-        // Codigo de Anulacion
-        public string AnnulmentCode
-        {
-            get
-            {
-                return $"{this.SelectedAnnulmentType}{(this.IsSystemSource ? "S" : "U")}_{this.Code}";
-            }
-        }
+      
+
 
         // Nombre de la fuente contable
         private string _name;
@@ -107,6 +106,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -123,12 +124,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _isSystemSource = value;
                     NotifyOfPropertyChange(nameof(IsSystemSource));
+                    this.TrackChange(nameof(IsSystemSource));
+
                 }
             }
         }
 
         // IsKardexTransaction
-        private bool _isKardexTransaction;
+        private bool _isKardexTransaction = false;
         public bool IsKardexTransaction
         {
             get { return _isKardexTransaction; }
@@ -138,13 +141,15 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 {
                     _isKardexTransaction = value;
                     NotifyOfPropertyChange(nameof(IsKardexTransaction));
+                    this.TrackChange(nameof(IsKardexTransaction));
+                    this.TrackChange(nameof(KardexFlow));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         // is annulled with additional document
-        public bool IsAnnulledWithAdditionalDocument { get { return this.SelectedAnnulmentType == 'A'; } }
+        public bool IsAnnulledWithAdditionalDocument { get { return this.AnnulmentCharacter == 'A'; } }
 
         // Si es un nuevo registro
         public bool IsNewRecord
@@ -159,18 +164,19 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
 
         // SelectedAnnulmentType { Valor por defecto : X, Sin documento adicional }
-        private char _selectedAnnulmentType = 'X';
-        public char SelectedAnnulmentType
+        private char _annulmentCharacter = 'X';
+        public char AnnulmentCharacter
         {
-            get { return _selectedAnnulmentType; }
+            get { return _annulmentCharacter; }
             set
             {
-                if (_selectedAnnulmentType != value)
+                if (_annulmentCharacter != value)
                 {
-                    _selectedAnnulmentType = value;
-                    NotifyOfPropertyChange(nameof(SelectedAnnulmentType));
+                    _annulmentCharacter = value;
+                    NotifyOfPropertyChange(nameof(AnnulmentCharacter));
                     NotifyOfPropertyChange(nameof(IsAnnulledWithAdditionalDocument));
-                    NotifyOfPropertyChange(nameof(AnnulmentCode));
+                    this.TrackChange(nameof(AnnulmentCharacter));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -183,48 +189,52 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
 
         // SelectedKardexFlow
-        private char _selectedKardexFlow = Dictionaries.InventoriesDictionaries.KardexFlowDictionary.FirstOrDefault().Key;
-        public char SelectedKardexFlow
+        private char? _kardexFlow = Dictionaries.InventoriesDictionaries.KardexFlowDictionary.FirstOrDefault().Key;
+        public char? KardexFlow
         {
-            get { return _selectedKardexFlow; }
+            get { return _kardexFlow; }
             set
             {
-                if (_selectedKardexFlow != value)
+                if (_kardexFlow != value)
                 {
-                    _selectedKardexFlow = value;
-                    NotifyOfPropertyChange(nameof(SelectedKardexFlow));
+                    _kardexFlow = value;
+                    NotifyOfPropertyChange(nameof(KardexFlow));
+                    this.TrackChange(nameof(KardexFlow));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         // Id Seleccionado en ComboBox Cuentas Contables
-        private int _selectedAccountingAccountId = -1;
-        public int SelectedAccountingAccountId
+        private int _accountingAccountId = -1;
+        public int AccountingAccountId
         {
-            get { return _selectedAccountingAccountId; }
+            get { return _accountingAccountId; }
             set
             {
-                if (_selectedAccountingAccountId != value)
+                if (_accountingAccountId != value)
                 {
-                    _selectedAccountingAccountId = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountId));
+                    _accountingAccountId = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountId));
+                    this.TrackChange(nameof(AccountingAccountId));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         // SelectedProcessTypeId combobox tipos de procesos
-        private int _selectedProcessTypeId = -1;
-        public int SelectedProcessTypeId
+        private int _processTypeId = -1;
+        public int ProcessTypeId
         {
-            get { return _selectedProcessTypeId; }
+            get { return _processTypeId; }
             set
             {
-                if (_selectedProcessTypeId != value)
+                if (_processTypeId != value)
                 {
-                    _selectedProcessTypeId = value;
-                    NotifyOfPropertyChange(nameof(SelectedProcessTypeId));
+                    _processTypeId = value;
+                    NotifyOfPropertyChange(nameof(ProcessTypeId));
+                    this.TrackChange(nameof(ProcessTypeId));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -336,210 +346,186 @@ namespace NetErp.Books.AccountingSources.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.SetFocus(() => Code);
+            this.SetFocus(() => ShortCode);
+            this.AcceptChanges();
+            if (IsNewRecord)
+            {
+                this.TrackChange(nameof(IsKardexTransaction));
+                this.TrackChange(nameof(AnnulmentCharacter));
+
+            }
+            this.NotifyOfPropertyChange(nameof(CanSave));
         }
 
-        //public async Task<IGenericDataAccess<AccountingSourceGraphQLModel>.PageResponseType> LoadPage()
-        //{
-        //    try
-        //    {
-        //        string queryPage;
-        //        queryPage = @"query($filter: AccountingSourceFilterInput) {
-        //            PageResponse: accountingSourcePage(filter:$filter) {
-        //                count
-        //                rows {
-        //                    id
-        //                    code
-        //                  fullCode
-        //                  annulmentCode
-        //                  name
-        //                  isSystemSource
-        //                  annulmentCharacter
-        //                  isKardexTransaction
-        //                  kardexFlow
-        //                  accountingAccount {
-        //                        id
-        //                  }
-        //                    processType {
-        //                        id
-        //                        name
-        //                      module {
-        //                            id
-        //                            name
-        //                    }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        ";
-        //        dynamic variables = new ExpandoObject();
-        //        variables.filter = new ExpandoObject();
-        //        variables.filter.Annulment = false;
-        //        return await AccountingSourceService.GetPage(queryPage, variables);
-        //    }
-        //    catch (Exception)
-        //    {
-
-        //        throw;
-        //    }
-        //}
+       
 
         public async Task SaveAsync()
         {
             try
             {
-                this.IsBusy = true;
-                this.Refresh();
-                var result = await ExecuteSaveAsync();
-                if (IsNewRecord)
+                IsBusy = true;
+                Refresh();
+                UpsertResponseType<AccountingSourceGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceCreateMessage() { CreatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceUpdateMessage() { UpdatedAccountingSource = Context.AutoMapper.Map<AccountingSourceDTO>(result)});
-                }
-                Context.EnableOnViewReady = false;
-                await this.Context.ActivateMasterViewAsync();
-                
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AccountingSourceCreateMessage() { CreatedAccountingSource = result }
+                        : new AccountingSourceUpdateMessage() { UpdatedAccountingSource = result }
+                );
+                await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{exGraphQL.Message}.\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+
+            
         }
 
         public void CleanUpControls()
         {
             Id = 0;
-            SelectedProcessTypeId = -1;
-            SelectedAccountingAccountId = -1;
-            SelectedAnnulmentType = 'X';
-            SelectedKardexFlow = 'E';
-            Code = "";
+            ProcessTypeId = -1;
+            AccountingAccountId = -1;
+            AnnulmentCharacter = 'X';
+            KardexFlow = 'I';
+            ShortCode = "";
             Name = "";
             IsKardexTransaction = false;
-            
+            this.AcceptChanges();
+
         }
-
-        public async Task<AccountingSourceGraphQLModel> ExecuteSaveAsync()
+        public string GetCreateQuery()
         {
-            // Guardar datos
-            try
-            {
-                if (this.Id == 0)
-                {
-                    string query = @"
-				mutation ($data: CreateAccountingSourceInput!) {
-				  CreateResponse: createAccountingSource(data: $data) {
-					id
-					code
-					fullCode
-					annulmentCode
-					name
-					isSystemSource
-					annulmentCharacter
-					isKardexTransaction
-					kardexFlow
-					accountingAccount {
-					  id
-					}
-					processType {
-					  id
-					  name
-					  module {
-						id
-						name
-					  }
-					}
-				  }
-				}";
+            var fields = FieldSpec<UpsertResponseType<AccountingSourceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingSource", nested: sq => sq
+                   .Field(e => e.Id)
+                   .Field(e => e.Code)
+                   .Field(e => e.Name)
+                   .Field(e => e.AnnulmentCharacter)
+                   .Field(e => e.AnnulmentCode)
+                   .Field(e => e.IsKardexTransaction)
+                   .Field(e => e.AnnulmentCharacter)
+                   .Field(e => e.KardexFlow)
+                  
+             
+                    .Select(e => e.AccountingAccount, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
 
-                    dynamic variables = new ExpandoObject();
-                    variables.Data = new ExpandoObject();
-                    variables.Data.Code = Code;
-                    variables.Data.FullCode = FullCode;
-                    variables.Data.Name = Name;
-                    variables.Data.AnnulmentCode = AnnulmentCode;
-                    variables.Data.IsSystemSource = IsSystemSource;
-                    variables.Data.AnnulmentCharacter = SelectedAnnulmentType;
-                    variables.Data.IsKardexTransaction = IsKardexTransaction;
-                    variables.Data.KardexFlow = SelectedKardexFlow;
-                    variables.Data.AccountingAccountId = SelectedAccountingAccountId;
-                    variables.Data.ProcessTypeId = SelectedProcessTypeId;
-                    variables.Data.CreatedBy = SessionInfo.UserEmail;
-                    var result = await _accountingSourceService.CreateAsync(query, variables);
-                    return result;
-                }
-                else
-                {
-                    string query = @"
-				mutation ($data: UpdateAccountingSourceInput!, $id: Int!) {
-				  UpdateResponse: updateAccountingSource(data: $data, id: $id) {
-					id
-					code
-					fullCode
-					annulmentCode
-					name
-					isSystemSource
-					annulmentCharacter
-					isKardexTransaction
-					kardexFlow
-					accountingAccount {
-					  id
-					  code
-					}
-					processType {
-					   id
-					   name
-					   module {
-						 id
-						 name
-					  }
-					}
-				  }
-				}";
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Id = Id;
-                variables.Data.Code = Code;
-                variables.Data.AnnulmentCode = AnnulmentCode;
-                variables.Data.Name = Name;
-                variables.Data.FullCode = FullCode;
-                variables.Data.AnnulmentCharacter = SelectedAnnulmentType;
-                variables.Data.AccountingAccountId = SelectedAccountingAccountId;
-                var result = await _accountingSourceService.UpdateAsync(query, variables);
-                return result;
-                }
-            }
-            catch (Exception)
+
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAccountingSourceInput!");
+
+            var fragment = new GraphQLQueryFragment("createAccountingSource", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingSourceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingSource", nested: sq => sq
+                   .Field(e => e.Id)
+                   .Field(e => e.Code)
+                   .Field(e => e.Name)
+                   .Field(e => e.AnnulmentCharacter)
+                   .Field(e => e.AnnulmentCode)
+                   .Field(e => e.IsKardexTransaction)
+                   .Field(e => e.KardexFlow)
+
+
+                    .Select(e => e.AccountingAccount, cos => cos
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                     )
+
+
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+
+            var parameters = new List<GraphQLQueryParameter>
             {
-                throw;
+                new("data", "UpdateAccountingSourceInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAccountingSource", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public async Task<UpsertResponseType<AccountingSourceGraphQLModel>> ExecuteSaveAsync()
+        {
+
+            dynamic variables = new ExpandoObject();
+         
+           
+
+            if (IsNewRecord)
+            {
+
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                string query = GetCreateQuery();
+                UpsertResponseType<AccountingSourceGraphQLModel> AccountingSourceCreated = await _accountingSourceService.CreateAsync<UpsertResponseType<AccountingSourceGraphQLModel>>(query, variables);
+                return AccountingSourceCreated;
             }
+            else
+            {
+                var a = CanSave;
+                string query = GetUpdateQuery();
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
+                UpsertResponseType<AccountingSourceGraphQLModel> updatedAccountingSource = await _accountingSourceService.UpdateAsync<UpsertResponseType<AccountingSourceGraphQLModel>>(query, variables);
+                return updatedAccountingSource;
+            }
+           
         }
 
         public bool CanSave
         {
             get
             {
-                if (this.IsBusy) return false;
-                if (this.SelectedProcessTypeId == -1) return false;
-                if (string.IsNullOrEmpty(this.Code) || string.IsNullOrEmpty(this.Name)) return false;
-                if (this.Code.Trim().Length != 3) return false;
+                if (this.IsBusy || !this.HasChanges()) return false;
+                if (this.ProcessTypeId == -1) return false;
+                if (string.IsNullOrEmpty(this.ShortCode) || string.IsNullOrEmpty(this.Name)) return false;
+                if (this.ShortCode.Trim().Length != 3) return false;
                 if (this.IsKardexTransaction)
                 {
-                    if (this.SelectedAccountingAccountId == -1) return false;
+                    if (this.AccountingAccountId == -1) return false;
                 }
+                
                 return true;
             }
         }

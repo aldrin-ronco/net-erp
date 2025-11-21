@@ -121,24 +121,15 @@
                 </dxg:GridControl.View>
 
                 <!--Codigo Corto-->
-                <dxg:GridColumn 
-                    Header="Código Corto" 
-                    Width="auto"
-                    Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-
+                
 
                 <!--Codigo Largo-->
                 <dxg:GridColumn 
-                    Header="Código Largo" 
+                    Header="Código" 
                     Width="auto"
-                    Binding="{Binding FullCode, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    Binding="{Binding Code, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <!--Codigo de anulacion-->
-                <dxg:GridColumn 
-                    Header="Código Anulación" 
-                    Width="auto"
-                    Binding="{Binding AnnulmentCode, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-
+               
 
                 <!--Nombre de la fuente contable-->
                 <dxg:GridColumn 

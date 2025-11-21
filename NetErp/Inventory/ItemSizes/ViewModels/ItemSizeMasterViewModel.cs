@@ -649,6 +649,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 if (_TextBoxName != value)
                 {
                     _TextBoxName = value;
+                    this.TrackChange(nameof(TextBoxName));
+
                     NotifyOfPropertyChange(nameof(TextBoxName));
                 }
             }
