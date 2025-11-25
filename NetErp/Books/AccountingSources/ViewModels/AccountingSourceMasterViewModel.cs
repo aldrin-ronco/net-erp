@@ -27,7 +27,10 @@ using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailVie
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
-    public class AccountingSourceMasterViewModel : Screen, IHandle<AccountingSourceCreateMessage>, IHandle<AccountingSourceUpdateMessage>, IHandle<AccountingSourceDeleteMessage>
+    public class AccountingSourceMasterViewModel : Screen,
+        IHandle<AccountingSourceCreateMessage>,
+        IHandle<AccountingSourceUpdateMessage>,
+        IHandle<AccountingSourceDeleteMessage>
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -615,6 +618,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
 
+                if (SelectedAccountingSource is null) return;
+                int id = SelectedAccountingSource.Id;
                 this.IsBusy = true;
                 this.Refresh();
 
@@ -638,7 +643,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedAccountingSource = await Task.Run(() => this.ExecuteDeleteSourceAsync(SelectedAccountingSource.Id));
+                DeleteResponseType deletedAccountingSource = await Task.Run(() => this.ExecuteDeleteSourceAsync(id));
 
                 if (!deletedAccountingSource.Success)
                 {
@@ -649,6 +654,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingSourceDeleteMessage { DeletedAccountingSource = deletedAccountingSource });
 
                 NotifyOfPropertyChange(nameof(CanDeleteSource));
+               
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -737,7 +743,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 await LoadAccountingSourcesAsync();
-                _notificationService.ShowSuccess("Fuente contable creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedAccountingSource.Message);
                 return;
             }
             catch (Exception)
@@ -752,7 +758,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 await LoadAccountingSourcesAsync();
-                _notificationService.ShowSuccess("Fuente contable actualizada correctamente");
+                _notificationService.ShowSuccess(message.UpdatedAccountingSource.Message);
                 return;
             }
             catch (Exception)
@@ -767,7 +773,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 await LoadAccountingSourcesAsync();
-                _notificationService.ShowSuccess("Fuente contable eliminada correctamente");
+                _notificationService.ShowSuccess(message.DeletedAccountingSource.Message);
                 return;
             }
             catch (Exception)
