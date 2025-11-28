@@ -18,6 +18,7 @@ namespace Models.Books
 
     public class AccountingBookDTO: AccountingBookGraphQLModel
     {
+        public int? Id { get; set; } = 0;
         public bool IsChecked { get; set; } = false;
     }
 
