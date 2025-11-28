@@ -89,7 +89,7 @@ RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVi
                 </dxg:GridControl.View>
                 <dxg:GridColumn Header="Nombre de la presentación" Width="*" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                 HorizontalHeaderContentAlignment="Center"/>
-                <dxg:GridColumn Header="Libro para cierre contable" Width="*" Binding="{Binding AccountingBookClosure.Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+                <dxg:GridColumn Header="Libro para cierre contable" Width="*" Binding="{Binding ClosureAccountingBook.Name, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
                 <dxg:GridColumn Width="30">
                     <dxg:GridColumn.CellTemplate>
                         <DataTemplate>

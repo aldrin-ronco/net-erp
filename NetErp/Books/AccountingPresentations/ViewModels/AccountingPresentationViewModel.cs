@@ -3,6 +3,7 @@ using Caliburn.Micro;
 using Common.Interfaces;
 using DevExpress.Mvvm.Native;
 using Models.Books;
+using Models.Global;
 using NetErp.Billing.Zones.ViewModels;
 using Services.Books.DAL.PostgreSQL;
 using System;
@@ -49,10 +50,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             try
             {
+                ObservableCollection<AccountingBookDTO> AccountingBooksToClosure = [.. accountingBooks];
+                AccountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR UN LIBRO" });
                 AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
                 {
                     AccountingBooks = accountingBooks,
-                    AccountingBookClosure = accountingBooks.FirstOrDefault()
+                    AccountingBooksToClosure = AccountingBooksToClosure,
                 };
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
@@ -68,17 +71,20 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 var checkedIds = accountingPresentation.AccountingBooks.Select(p => p.Id).ToHashSet();
                 foreach (var accountingBook in accountingBooks)
                 {
-                    accountingBook.IsChecked = checkedIds.Contains(accountingBook.Id);
+                    accountingBook.IsChecked = checkedIds.Contains(accountingBook.Id.Value);
                 }
-
+                ObservableCollection<AccountingBookDTO> AccountingBooksToClosure = [.. accountingBooks];
+                AccountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR lIBRO" });
                 AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
                 {
-                    AccountingPresentationId = accountingPresentation.Id,
-                    AccountingPresentationName = accountingPresentation.Name,
-                    AccountingPresentationAllowClosure = accountingPresentation.AllowsAccountingClosure,
+                    Id = accountingPresentation.Id,
+                    Name = accountingPresentation.Name,
+                    AllowsClosure = accountingPresentation.AllowsClosure,
                     AccountingBooks = accountingBooks,
-                    AccountingBookClosure = accountingPresentation.AccountingBookClosure is null ? accountingBooks.FirstOrDefault() : accountingBooks.FirstOrDefault(accountingBook => accountingPresentation.AccountingBookClosure.Id == accountingBook.Id),
+                    AccountingBooksToClosure = AccountingBooksToClosure,
+                    ClosureAccountingBookId = accountingPresentation.ClosureAccountingBook is null ? 0 : accountingPresentation.ClosureAccountingBook.Id,
                     AccountingPresentationAccountingBooks = accountingPresentation.AccountingBooks,
+                    AccountingBookIds = checkedIds.ToList()
                 };
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

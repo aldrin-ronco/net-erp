@@ -4,6 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Models.Billing;
 using Models.Books;
 using Services.Books.DAL.PostgreSQL;
@@ -17,6 +18,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Amazon.S3.Util.S3EventNotification;
+using System.Windows.Documents;
+using Xceed.Wpf.Toolkit.Primitives;
+
 
 namespace NetErp.Books.AccountingPresentations.ViewModels
 {
@@ -45,63 +53,84 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
-        public bool IsNewRecord => AccountingPresentationId == 0;
+        public bool IsNewRecord => Id == 0;
 
-        private int _accountingPresentationId;
-        public int AccountingPresentationId
+        private int _id;
+        public int Id
         {
-            get { return _accountingPresentationId; }
+            get { return _id; }
             set
             {
-                if (_accountingPresentationId != value)
+                if (_id != value)
                 {
-                    _accountingPresentationId = value;
-                    NotifyOfPropertyChange(nameof(AccountingPresentationId));
+                    _id = value;
+                    NotifyOfPropertyChange(nameof(Id));
                 }
             }
         }
 
-        private string _accountingPresentationName;
-        public string AccountingPresentationName
+        private string _name;
+        public string Name
         {
-            get { return _accountingPresentationName; }
+            get { return _name; }
             set
             {
-                if (_accountingPresentationName != value)
+                if (_name != value)
                 {
-                    _accountingPresentationName = value;
-                    NotifyOfPropertyChange(nameof(AccountingPresentationName));
-                    ValidateProperty(nameof(AccountingPresentationName), _accountingPresentationName);
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), _name);
+                    this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+        private List<int> _accountingBookIds = [];
+        public List<int> AccountingBookIds
+        {
+            get { return _accountingBookIds; }
+            set
+            {
+                if (_accountingBookIds != value)
+                {
+                    _accountingBookIds = value;
+                    NotifyOfPropertyChange(nameof(AccountingBookIds));
+                    this.TrackChange(nameof(AccountingBookIds));
+                    
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+        private bool _allowsClosure;
+        public bool AllowsClosure
+        {
+            get { return _allowsClosure; }
+            set
+            {
+                if (_allowsClosure != value)
+                {
+                    _allowsClosure = value;
+                   
+                        ClosureAccountingBookId = null ; 
+                    
+                    NotifyOfPropertyChange(nameof(AllowsClosure));
+                    this.TrackChange(nameof(AllowsClosure));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private bool _accountingPresentationAllowClosure;
-        public bool AccountingPresentationAllowClosure
+        private int? _closureAccountingBookId;
+        public int? ClosureAccountingBookId
         {
-            get { return _accountingPresentationAllowClosure; }
+            get { return _closureAccountingBookId; }
             set
             {
-                if (_accountingPresentationAllowClosure != value)
+                if(_closureAccountingBookId != value)
                 {
-                    _accountingPresentationAllowClosure = value;
-                    NotifyOfPropertyChange(nameof(AccountingPresentationAllowClosure));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private AccountingBookGraphQLModel? _accountingBookClosure;
-        public AccountingBookGraphQLModel? AccountingBookClosure
-        {
-            get { return _accountingBookClosure; }
-            set
-            {
-                if(_accountingBookClosure != value)
-                {
-                    _accountingBookClosure = value;
-                    NotifyOfPropertyChange(nameof(AccountingBookClosure));
+                    _closureAccountingBookId = value;
+                    NotifyOfPropertyChange(nameof(ClosureAccountingBookId));
+                    this.TrackChange(nameof(ClosureAccountingBookId));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -136,7 +165,22 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 }
             }
         }
+        private ObservableCollection<AccountingBookDTO> _accountingBooksToClosure;
+        public ObservableCollection<AccountingBookDTO> AccountingBooksToClosure
+        {
+            get { return _accountingBooksToClosure; }
+            set
+            {
+                if (_accountingBooksToClosure != value)
+                {
+                    _accountingBooksToClosure = value;
+                    NotifyOfPropertyChange(nameof(AccountingBooksToClosure));
 
+
+                }
+            }
+        }
+      
         private ICommand _goBackCommand;
         public ICommand? GoBackCommand
         {
@@ -146,16 +190,23 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 return _goBackCommand;
             }
         }
-
+        
         public bool CanSave
         {
             get
             {
-                return !string.IsNullOrEmpty(AccountingPresentationName) &&
-                    ((!AccountingPresentationAllowClosure || AccountingBookClosure != null) && _errors.Count <= 0);
+                return !string.IsNullOrEmpty(Name) &&
+                    ((!AllowsClosure || ClosureAccountingBookId > 0) && _errors.Count <= 0 && AccountingBookIds.Count > 0 && this.HasChanges());
             }
         }
-
+        public void ToggleActive(RoutedEventArgs args)
+        {
+            List<int> selectedIds = AccountingBooks.Where(accountingBook => accountingBook.IsChecked == true).Select(x => x.Id.Value).ToList();
+            if (!selectedIds.SequenceEqual(AccountingBookIds))
+            {
+                AccountingBookIds = [.. selectedIds];
+            }
+        }
         private ICommand _saveCommand;
 
         public ICommand? SaveCommand
@@ -171,85 +222,148 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-                if (!AccountingBooks.Any(accountingBook => accountingBook.IsChecked))
+                Refresh();
+                UpsertResponseType<AccountingPresentationGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    _notificationService.ShowInfo("Por favor seleccione como mínimo un libro contable.");
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                     return;
                 }
-                List<int> savedBooksIds = [.. AccountingBooks.Where(accountingBook => accountingBook.IsChecked == true).Select(x => x.Id)];
-                string query = IsNewRecord ? @"mutation($data : CreateAccountingPresentationInput!){
-                    CreateResponse: createAccountingPresentation(data: $data){
-                    name
-                    id
-                    accountingBookClosure{
-                        id
-                        name
-                    }
-                    accountingBooks{
-                        name
-                    }
-                    }
-                }" : @"mutation($data: UpdateAccountingPresentationInput!, $id: Int!){
-                    UpdateResponse: updateAccountingPresentation(data: $data, id: $id){
-                    id
-                    name
-                    allowsAccountingClosure
-                    accountingBookClosure{
-                        id
-                        name
-                    }
-                    accountingBooks{
-                        id
-                        name
-                    }
-                    }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                if (!IsNewRecord) variables.id = AccountingPresentationId;
-                variables.data.name = AccountingPresentationName.Trim().RemoveExtraSpaces();
-                variables.data.allowsAccountingClosure = AccountingPresentationAllowClosure;
-                variables.data.accountingBookClosureId = AccountingPresentationAllowClosure ? AccountingBookClosure?.Id : 0;
-                variables.data.accountingBooksIds = savedBooksIds;
-                var result = IsNewRecord ? await _accountingPresentationService.CreateAsync(query, variables) : await _accountingPresentationService.UpdateAsync(query, variables);
-                if (IsNewRecord)
-                {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingPresentationCreateMessage() { CreatedAccountingPresentation = result });
-                }
-                else
-                {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingPresentationUpdateMessage() { UpdatedAccountingPresentation = result });
-                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AccountingPresentationCreateMessage() { CreatedAccountingPresentation = result }
+                        : new AccountingPresentationUpdateMessage() { UpdatedAccountingPresentation = result }
+                );
+
+
                 await GoBackAsync();
+
+               }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+            
+        }
+        public async Task<UpsertResponseType<AccountingPresentationGraphQLModel>> ExecuteSaveAsync()
+        {
+
+
+            if (IsNewRecord)
+            {
+
+                string query = GetCreateQuery();
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+
+                UpsertResponseType<AccountingPresentationGraphQLModel> taxCategoryCreated = await _accountingPresentationService.CreateAsync<UpsertResponseType<AccountingPresentationGraphQLModel>>(query, variables);
+                return taxCategoryCreated;
+            }
+            else
+            {
+                string query = GetUpdateQuery();
+
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
+
+                UpsertResponseType<AccountingPresentationGraphQLModel> updatedTaxCategory = await _accountingPresentationService.UpdateAsync<UpsertResponseType<AccountingPresentationGraphQLModel>>(query, variables);
+                return updatedTaxCategory;
+
+            }
+
+        }
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingPresentationGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingPresentation", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .SelectList(e => e.AccountingBooks, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                  .Select(e => e.ClosureAccountingBook, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+            
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateAccountingPresentationInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAccountingPresentation", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingPresentationGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingPresentation", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .SelectList(e => e.AccountingBooks, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                  .Select(e => e.ClosureAccountingBook, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAccountingPresentationInput!");
+
+            var fragment = new GraphQLQueryFragment("createAccountingPresentation", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            ValidateProperty(nameof(AccountingPresentationName), AccountingPresentationName);
+            ValidateProperty(nameof(Name), Name);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+
         }
 
         public async Task GoBackAsync()
         {
             
             await Context.ActivateMasterViewAsync();
-            this.AccountingPresentationName = "";
-            this.AccountingPresentationAllowClosure = false;
+            this.Name = "";
+            this.AllowsClosure = false;
             this.AccountingPresentationAccountingBooks = [];
-            this.AccountingBookClosure = null;
+            this.ClosureAccountingBookId = null;
             this.AccountingBooks = [];
         }
 
@@ -299,7 +413,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-
+       
         private void ValidateProperty(string propertyName, string value)
         {
             if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
@@ -308,7 +422,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 ClearErrors(propertyName);
                 switch (propertyName)
                 {
-                    case nameof(AccountingPresentationName):
+                    case nameof(Name):
                         if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
                         break;
 
