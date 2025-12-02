@@ -1,10 +1,15 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
+using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +19,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Xml.Linq;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
 
 namespace NetErp.Global.Smtp.ViewModels
 {
@@ -38,8 +46,9 @@ namespace NetErp.Global.Smtp.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.SetFocus(() => SmtpName);
+            this.SetFocus(() => Name);
             ValidateProperties();
+            this.AcceptChanges();
         }
 
         private bool _isBusy;
@@ -75,51 +84,57 @@ namespace NetErp.Global.Smtp.ViewModels
         }
 
 
-        private string _smtpName = string.Empty;
+        private string _name = string.Empty;
 
-        public string SmtpName
+        public string Name
         {
-            get { return _smtpName; }
+            get { return _name; }
             set
             {
-                if (_smtpName != value)
+                if (_name != value)
                 {
-                    _smtpName = value;
-                    NotifyOfPropertyChange(nameof(SmtpName));
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(SmtpName), value);
+
                 }
             }
         }
 
-        private string _smtpHost = string.Empty;
+        private string _host = string.Empty;
 
-        public string SmtpHost
+        public string Host
         {
-            get { return _smtpHost; }
+            get { return _host; }
             set
             {
-                if (_smtpHost != value)
+                if (_host != value)
                 {
-                    _smtpHost = value;
-                    NotifyOfPropertyChange(nameof(SmtpHost));
+                    _host = value;
+                    NotifyOfPropertyChange(nameof(Host));
+                    ValidateProperty(nameof(Host), value);
+                    this.TrackChange(nameof(Host));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(SmtpHost), value);
+
+
                 }
             }
         }
 
-        private int _smtpPort;
+        private int _port;
 
-        public int SmtpPort
+        public int Port
         {
-            get { return _smtpPort; }
+            get { return _port; }
             set
             {
-                if (_smtpPort != value)
+                if (_port != value)
                 {
-                    _smtpPort = value;
-                    NotifyOfPropertyChange(nameof(SmtpPort));
+                    _port = value;
+                    NotifyOfPropertyChange(nameof(Port));
+                    this.TrackChange(nameof(Port));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -127,7 +142,6 @@ namespace NetErp.Global.Smtp.ViewModels
 
 
         private ICommand? _goBackCommand;
-
         public ICommand? GoBackCommand
         {
             get
@@ -146,7 +160,7 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             get
             {
-                if (string.IsNullOrEmpty(SmtpName) || string.IsNullOrEmpty(SmtpHost) || SmtpPort == 0) return false;
+                if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Host) || Port == 0 || (!this.HasChanges())) return false;
                 return true;
             }
         }
@@ -162,70 +176,130 @@ namespace NetErp.Global.Smtp.ViewModels
             }
         }
 
-        public async Task SaveAsync()
+       public async Task SaveAsync()
         {
             try
             {
                 IsBusy = true;
-                SmtpGraphQLModel result = await ExecuteSaveAsync();
-                if (IsNewRecord)
+                Refresh();
+                UpsertResponseType<SmtpGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SmtpCreateMessage() { CreatedSmtp = result });
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SmtpUpdateMessage() { UpdatedSmtp = result });
-                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new SmtpCreateMessage() { CreatedSmtp = result }
+                        : new SmtpUpdateMessage() { UpdatedSmtp = result }
+                );
                 await Context.ActivateMasterView();
             }
-            catch (Exception)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-
-                throw;
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
-            finally 
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
             {
                 IsBusy = false;
             }
+
         }
 
-        public async Task<SmtpGraphQLModel> ExecuteSaveAsync()
+        public string GetCreateQuery()
         {
-            dynamic variables = new ExpandoObject();
-            variables.data = new ExpandoObject();
-            if (!IsNewRecord) variables.id = SmtpId;
-            variables.data.name = SmtpName;
-            variables.data.host = SmtpHost;
-            variables.data.port = SmtpPort;            
+            var fields = FieldSpec<UpsertResponseType<SmtpGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "Smtp", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Host)
+                    .Field(f => f.Port)
+                   )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
 
-            string query = IsNewRecord ? @"
-            mutation($data: CreateSmtpInput!){
-                CreateResponse: createSmtp(data: $data){
-                id
-                name
-                host
-                port
-                }
-            }" :
-            @"
-            mutation($id: Int!, $data: UpdateSmtpInput! ){
-                UpdateResponse: updateSmtp(id: $id, data: $data){
-                id
-                name
-                host
-                port
-                }
-            }";
-            var result = IsNewRecord ? await _smtpService.CreateAsync(query, variables) : await _smtpService.UpdateAsync(query, variables);
-            return result;
+            var parameter = new GraphQLQueryParameter("input", "CreateSmtpInput!");
+
+            var fragment = new GraphQLQueryFragment("createSmtp", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<SmtpGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "smtp", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Host)
+                    .Field(f => f.Port)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateSmtpInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateSmtp", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public async Task<UpsertResponseType<SmtpGraphQLModel>> ExecuteSaveAsync()
+        {
+
+            try
+            {
+                if (IsNewRecord)
+                {
+                    string query = GetCreateQuery();
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+
+                    UpsertResponseType<SmtpGraphQLModel> smtpCreated = await _smtpService.CreateAsync<UpsertResponseType<SmtpGraphQLModel>>(query, variables);
+                    return smtpCreated;
+                }
+                else
+                {
+                    string query = GetUpdateQuery();
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = SmtpId;
+
+                    UpsertResponseType<SmtpGraphQLModel> smtpUpdate = await _smtpService.UpdateAsync<UpsertResponseType<SmtpGraphQLModel>>(query, variables);
+                    return smtpUpdate;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         public void CleanUpControls()
         {
             SmtpId = 0;
-            SmtpName = string.Empty;
-            SmtpHost = string.Empty;
-            SmtpPort = 0;
+            Name = string.Empty;
+            Host = string.Empty;
+            Port = 0;
         }
 
         public bool HasErrors => _errors.Count > 0;
@@ -272,11 +346,11 @@ namespace NetErp.Global.Smtp.ViewModels
                 ClearErrors(propertyName);
                 switch (propertyName)
                 {
-                    case nameof(SmtpName):
-                        if (string.IsNullOrEmpty(SmtpName)) AddError(propertyName, "El nombre no puede estar vacío");
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
                         break;
-                    case nameof(SmtpHost):
-                        if (string.IsNullOrEmpty(SmtpHost)) AddError(propertyName, "El host no puede estar vacío");
+                    case nameof(Host):
+                        if (string.IsNullOrEmpty(Host)) AddError(propertyName, "El host no puede estar vacío");
                         break;
                     default:
                         break;
@@ -290,8 +364,8 @@ namespace NetErp.Global.Smtp.ViewModels
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(SmtpName), SmtpName);
-            ValidateProperty(nameof(SmtpHost), SmtpHost);
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Host), Host);
         }
     }
 }
