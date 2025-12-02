@@ -332,53 +332,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             {
                 IsBusy = false;
             }
-            /********************
-            {
-                IsBusy = true;
-                string query = @"query ($filter: AccountingPresentationFilters) {
-                  AccountingPresentations : accountingPresentationsPage(filters: $filter) {
-                    entries {
-                                id
-                                name
-                                allowsClosure
-                                closureAccountingBook {
-                                  id
-                                  name
-                                }
-                                accountingBooks {
-                                  id
-                                  name
-                                }
-                              }
-                            
-                            }
-                          AccountingBooks : accountingBooksPage {
-                                entries {
-
-                                id
-                                name
-                                }
-                              }
-                    
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.name = 
-                variables.filter.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                AccountingPresentationDataContext results = await _accountingPresentationService.GetDataContextAsync<AccountingPresentationDataContext>(query, variables);
-                AccountingPresentations =results.AccountingPresentations.Entries;
-                AccountingBooks = Context.AutoMapper.Map<ObservableCollection<AccountingBookDTO>>(results.AccountingBooks.Entries);
-                IsInitialized = true;
-            }
-            catch (AsyncException ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-            */
+           
         }
         public string GetLoadAccountingPresentationsQuery(bool withDependencies = false)
         {

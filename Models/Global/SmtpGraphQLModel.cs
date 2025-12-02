@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -22,16 +23,16 @@ namespace Models.Global
 
     public class SmtpCreateMessage
     {
-        public SmtpGraphQLModel CreatedSmtp { get; set; } = new SmtpGraphQLModel();
+        public UpsertResponseType<SmtpGraphQLModel> CreatedSmtp { get; set; } 
     }
 
     public class SmtpUpdateMessage
     {
-        public SmtpGraphQLModel UpdatedSmtp { get; set; } = new SmtpGraphQLModel();
+        public UpsertResponseType<SmtpGraphQLModel> UpdatedSmtp { get; set; } 
     }
 
     public class SmtpDeleteMessage
     {
-        public SmtpGraphQLModel DeletedSmtp { get; set; } = new SmtpGraphQLModel();
+        public DeleteResponseType DeletedSmtp { get; set; } 
     }
 }

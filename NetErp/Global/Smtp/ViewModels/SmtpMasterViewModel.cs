@@ -4,9 +4,13 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Models.Billing;
+using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,6 +21,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
     using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Smtp.ViewModels
 {
@@ -198,86 +203,121 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             get
             {
-                if (_deleteSmtpCommand is null) _deleteSmtpCommand = new AsyncCommand(DeleteSmtp);
+                if (_deleteSmtpCommand is null) _deleteSmtpCommand = new AsyncCommand(DeleteSmtpAsync);
                 return _deleteSmtpCommand;
             }
         }
-
-        public async Task DeleteSmtp()
+        public async Task DeleteSmtpAsync()
         {
             try
             {
-                IsBusy = true;
-                int id = SelectedItem!.Id;
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteSmtp(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
+                this.IsBusy = true;
+                this.Refresh();
 
-                object variables = new { Id = id };
+                string query = GetCanDeleteSmtpQuery();
+
+                object variables = new { canDeleteResponseId = SelectedItem.Id };
 
                 var validation = await _smtpService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-                this.IsBusy = true;
 
-                Refresh();
+                IsBusy = true;
+                DeleteResponseType deletedSmtp = await Task.Run(() => this.ExecuteDeleteSmtpAsync(SelectedItem.Id));
 
-                SmtpGraphQLModel deletedSmtp = await ExecuteDeleteSmtpAsync(id);
+                if (!deletedSmtp.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedSmtp.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new SmtpDeleteMessage() { DeletedSmtp = deletedSmtp});
+                await Context.EventAggregator.PublishOnUIThreadAsync(new SmtpDeleteMessage { DeletedSmtp = deletedSmtp });
 
                 NotifyOfPropertyChange(nameof(CanDeleteSmtp));
             }
-            catch (Exception)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-
-                throw;
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
         }
+        public string GetCanDeleteSmtpQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
 
-        public async Task<SmtpGraphQLModel> ExecuteDeleteSmtpAsync(int id)
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteSmtp", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        
+      
+        public async Task<DeleteResponseType> ExecuteDeleteSmtpAsync(int id)
         {
             try
             {
-                string query = @"mutation($id:Int!){
-                  DeleteResponse: deleteSmtp(id: $id){
-                    id
-                    name
-                    host
-                    port
-                  }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
-                var result = await _smtpService.DeleteAsync(query, variables);
-                return result;
+
+                string query = GetDeleteSmtpQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _smtpService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
             catch (Exception)
             {
                 throw;
             }
         }
+       
+        public string GetDeleteSmtpQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
 
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteSmtp", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
         public SmtpMasterViewModel(
             SmtpViewModel context,
             IRepository<SmtpGraphQLModel> smtpService,
@@ -300,58 +340,59 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             await Context.ActivateDetailViewForEdit(SelectedItem ?? new());
         }
-
         public async Task LoadSmtpsAsync()
         {
             try
             {
-                IsBusy = true;
-                string query;
-                query = @"
-                query($filter: SmtpFilterInput!){
-                  PageResponse: smtpPage(filter: $filter){
-                    count
-                    rows{
-                      id
-                      name
-                      host
-                      port
-                    }
-                  }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                //Pagination
-                variables.filter.pagination = new ExpandoObject();
-                variables.filter.pagination.page = PageIndex;
-                variables.filter.pagination.pageSize = PageSize;
-                // Iniciar cronometro
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
-                var result = await _smtpService.GetPageAsync(query, variables);
-                TotalCount = result.PageResponse.Count;
-                Smtps = new ObservableCollection<SmtpGraphQLModel>(result.PageResponse.Rows);
-                // Detener cronometro
-                stopwatch.Stop();
-                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                IsBusy = true;
+
+                dynamic variables = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+                string query = GetLoadSmtpsQuery();
+
+                PageType<SmtpGraphQLModel> result = await _smtpService.GetPageAsync(query, variables);
+                this.Smtps = [.. result.Entries];
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
         }
+        public string GetLoadSmtpsQuery()
+        {
+            var smtpsFields = FieldSpec<PageType<SmtpGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Host)
+                    .Field(e => e.Name)
+                    .Field(e => e.Port)
+                   )
+                .Build();
+
+            var smtpsParameters = new GraphQLQueryParameter("filters", "SmtpFilters");
+            var smtpsPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var smtpsFragment = new GraphQLQueryFragment("smtpsPage", [smtpsParameters, smtpsPagParameters], smtpsFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([smtpsFragment]);
+
+            return builder.GetQuery();
+        }
+       
 
         private ICommand _createSmtpCommand;
 
@@ -375,7 +416,7 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 await LoadSmtpsAsync();
-                _notificationService.ShowSuccess("SMTP eliminado correctamente");
+                _notificationService.ShowSuccess(message.DeletedSmtp.Message);
                 return;
             }
             catch (Exception)
@@ -390,7 +431,7 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 await LoadSmtpsAsync();
-                _notificationService.ShowSuccess("SMTP actualizado correctamente");
+                _notificationService.ShowSuccess(message.UpdatedSmtp.Message);
                 return;
             }
             catch (Exception)
@@ -405,7 +446,7 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 await LoadSmtpsAsync();
-                _notificationService.ShowSuccess("SMTP creado correctamente");
+                _notificationService.ShowSuccess(message.CreatedSmtp.Message);
                 return;
             }
             catch (Exception)

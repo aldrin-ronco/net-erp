@@ -83,17 +83,17 @@
 
                     <!--Name-->
                     <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="0" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="left" VerticalAlignment="Bottom"/>
-                    <dxe:TextEdit Grid.Column="1" Grid.Row="1" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                    <dxe:TextEdit Grid.Column="1" Grid.Row="1" Margin="5 0 5 10" Width="250" Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
                                   CharacterCasing="Upper" x:Name="SmtpName" HorizontalAlignment="Left"/>
 
                     <!--Host-->
                     <TextBlock Text="Host" Grid.Column="1" Grid.Row="2" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="Left"/>
-                    <dxe:TextEdit Grid.Column="1" Grid.Row="3" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpHost, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <dxe:TextEdit Grid.Column="1" Grid.Row="3" Margin="5 0 5 10" Width="250" Text="{Binding Path=Host, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   HorizontalAlignment="Left"/>
 
                     <!--Port-->
                     <TextBlock Text="Puerto" Grid.Column="1" Grid.Row="4" FontSize="13" Margin="5 10 5 0" HorizontalAlignment="Left"/>
-                    <dxe:TextEdit Grid.Column="1" Grid.Row="5" Margin="5 0 5 10" Width="250" Text="{Binding Path=SmtpPort, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <dxe:TextEdit Grid.Column="1" Grid.Row="5" Margin="5 0 5 10" Width="250" Text="{Binding Path=Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   HorizontalAlignment="Left"/>
                 </Grid>
             </Grid>

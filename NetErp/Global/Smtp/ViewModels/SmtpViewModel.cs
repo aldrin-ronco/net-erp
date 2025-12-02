@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Global;
@@ -93,9 +94,10 @@ namespace NetErp.Global.Smtp.ViewModels
             {
                 SmtpDetailViewModel instance = new(this, _smtpService);
                 instance.SmtpId = smtp.Id;
-                instance.SmtpName = smtp.Name;
-                instance.SmtpHost = smtp.Host;
-                instance.SmtpPort = smtp.Port;
+                instance.Name = smtp.Name;
+                instance.Host = smtp.Host;
+                instance.Port = smtp.Port;
+                instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (Exception)
