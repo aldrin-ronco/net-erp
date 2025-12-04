@@ -365,6 +365,10 @@ namespace NetErp.Billing.Zones.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.pageResponseFilters = new ExpandoObject();
                 variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                if (ShowActiveZonesOnly)
+                {
+                    variables.pageResponseFilters.IsActive = true;
+                }
                 string query = GetLoadZonesQuery();
 
                 PageType<ZoneGraphQLModel> result = await _zoneService.GetPageAsync(query, variables);
