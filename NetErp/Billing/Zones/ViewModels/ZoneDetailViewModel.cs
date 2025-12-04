@@ -150,6 +150,8 @@ namespace NetErp.Billing.Zones.ViewModels
                         ? new ZoneCreateMessage() { CreatedZone = result }
                         : new ZoneUpdateMessage() { UpdatedZone = result }
                 );
+                this.Name = string.Empty;
+                this.IsActive = true;
                 await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -179,11 +181,9 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     string query = GetCreateQuery();
 
-                    dynamic variables = new ExpandoObject();
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                     variables.createResponseData = new ExpandoObject();
-                    variables.createResponseData.name = Name.RemoveExtraSpaces().Trim();
-                    variables.createResponseData.isActive = IsActive;
-
+                  
                     UpsertResponseType<ZoneGraphQLModel> zoneCreated = await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
                     return zoneCreated;
                 }
