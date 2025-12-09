@@ -3,6 +3,7 @@ using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
@@ -17,6 +18,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
+using Common.Helpers;
+using Services.Books.DAL.PostgreSQL;
+using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Books.AccountingBooks.ViewModels
 {
@@ -63,19 +69,21 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             }
         }
 
-        private string _accountingBookName;
+        private string _name;
 
-        public string AccountingBookName
+        public string Name
         {
-            get { return _accountingBookName; }
+            get { return _name; }
             set
             {
-                if (_accountingBookName != value)
+                if (_name != value)
                 {
-                    _accountingBookName = value;
-                    NotifyOfPropertyChange(nameof(AccountingBookName));
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(AccountingBookName), value);
+
                 }
             }
         }
@@ -86,7 +94,8 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             get
             {
-                if (string.IsNullOrEmpty(AccountingBookName)) return false;
+                if (string.IsNullOrEmpty(Name)) return false;
+                if (!this.HasChanges()) return false;
                 return true;
             }
         }
@@ -123,92 +132,133 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-                AccountingBookGraphQLModel result = await ExecuteSaveAsync();
-                if (IsNewRecord)
+                Refresh();
+                UpsertResponseType<AccountingBookGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingBookCreateMessage() { CreatedAccountingBook = result });
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    //Pasamos el mensaje a un escuchador.
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingBookUpdateMessage() { UpdatedAccountingBook = result });
-                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AccountingBookCreateMessage() { CreatedAccountingBook = result }
+                        : new AccountingBookUpdateMessage() { UpdatedAccountingBook = result }
+                );
                 await Context.ActivateMasterViewAsync();
             }
-            catch (Exception)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                throw;
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+           
             
             
         }
 
-        public async Task<AccountingBookGraphQLModel> ExecuteSaveAsync()
+        public async Task<UpsertResponseType<AccountingBookGraphQLModel>> ExecuteSaveAsync()
         {
-            dynamic variables = new ExpandoObject();
-            variables.data = new ExpandoObject();
-            if (!IsNewRecord)
-            {
-                variables.id = AccountingBookId; // Sigue enviando el id fuera de data                
-            }
-            variables.data.name = AccountingBookName; // Asegurar que name esté dentro de data
-
-            string query = IsNewRecord ? @"
-                mutation($data:CreateAccountingBookInput!){
-                  CreateResponse: createAccountingBook(data: $data){
-                    id
-                    name
-                  }
-                }" :
-                @"
-                mutation($id: Int!, $data: UpdateAccountingBookInput!) {
-                  UpdateResponse: updateAccountingBook(id: $id, data: $data) {
-                    id
-                    name
-                  }
-                }";
-
-            LogToFile("⏳ Ejecutando Mutación...");
-            LogToFile($"Query: {query}");
-            LogToFile($"Variables: {Newtonsoft.Json.JsonConvert.SerializeObject(variables)}");
-
-            AccountingBookGraphQLModel result = null;
             try
             {
-                result = IsNewRecord
-                    ? await _accountingBookService.CreateAsync(query, variables)
-                    : await _accountingBookService.UpdateAsync(query, variables);
+                if (IsNewRecord)
+                {
+                    string query = GetCreateQuery();
+
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+
+                    UpsertResponseType<AccountingBookGraphQLModel> accountingBookCreated = await _accountingBookService.CreateAsync<UpsertResponseType<AccountingBookGraphQLModel>>(query, variables);
+                    return accountingBookCreated;
+                }
+                else
+                {
+                    string query = GetUpdateQuery();
+
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = AccountingBookId;
+
+                    UpsertResponseType<AccountingBookGraphQLModel> updatedAccountingBook = await _accountingBookService.UpdateAsync<UpsertResponseType<AccountingBookGraphQLModel>>(query, variables);
+                    return updatedAccountingBook;
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LogToFile($"❌ ERROR en GraphQL Mutation: {ex.Message}");
+                throw;
             }
-
-            LogToFile($"Resultado: {Newtonsoft.Json.JsonConvert.SerializeObject(result)}");
-
-            return result;
+           
         }
-        private void LogToFile(string message)
+        public string GetCreateQuery()
         {
-            string path = "C:\\Temp\\log.txt";  // Asegúrate de que la carpeta existe
-            File.AppendAllText(path, $"{DateTime.Now}: {message}\n");
+            var fields = FieldSpec<UpsertResponseType<AccountingBookGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingBook", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAccountingBookInput!");
+
+            var fragment = new GraphQLQueryFragment("createAccountingBook", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingBookGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingBook", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateAccountingBookInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAccountingBook", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+       
 
         public void CleanUpControls()
         {
             AccountingBookId = 0;
-            AccountingBookName = string.Empty;
+            Name = string.Empty;
         }
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.SetFocus(() => AccountingBookName);
+            this.SetFocus(() => Name);
             ValidateProperties();
+            this.AcceptChanges();
         }
 
 
@@ -257,8 +307,8 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 ClearErrors(propertyName);
                 switch (propertyName)
                 {
-                    case nameof(AccountingBookName):
-                        if (string.IsNullOrEmpty(AccountingBookName)) AddError(propertyName, "El campo 'Nombre del libro contable' no puede estar vacío.");
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El campo 'Nombre del libro contable' no puede estar vacío.");
                         break;                    
                 }
             }
@@ -270,7 +320,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(AccountingBookName), AccountingBookName);
+            ValidateProperty(nameof(Name), Name);
         }
 
     }

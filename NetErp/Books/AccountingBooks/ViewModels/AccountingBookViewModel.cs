@@ -55,7 +55,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             {
                 AccountingBookDetailViewModel instance = new(this, _accountingBookService);
                 instance.AccountingBookId = accountingBook.Id;
-                instance.AccountingBookName = accountingBook.Name;
+                instance.Name = accountingBook.Name;
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch

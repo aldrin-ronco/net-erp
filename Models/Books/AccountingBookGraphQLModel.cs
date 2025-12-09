@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -24,17 +25,18 @@ namespace Models.Books
 
     public class AccountingBookCreateMessage
     {
-        public AccountingBookGraphQLModel CreatedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+        public UpsertResponseType<AccountingBookGraphQLModel>  CreatedAccountingBook { get; set; } 
     }
 
     public class AccountingBookUpdateMessage
     {
-        public AccountingBookGraphQLModel UpdatedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+
+        public UpsertResponseType<AccountingBookGraphQLModel> UpdatedAccountingBook { get; set; } 
     }
 
     public class AccountingBookDeleteMessage
     {
-        public AccountingBookGraphQLModel DeletedAccountingBook { get; set; } = new AccountingBookGraphQLModel();
+        public DeleteResponseType DeletedAccountingBook { get; set; } = new();
     }
 
 
