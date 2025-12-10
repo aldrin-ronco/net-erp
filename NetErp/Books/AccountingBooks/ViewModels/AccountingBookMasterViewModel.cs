@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingBooks.ViewModels
 {
@@ -135,114 +137,167 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             await Context.ActivateDetailViewForNewAsync();
         }
+        public string GetLoadAccountingBooksQuery()
+        {
+            var accountingBookFields = FieldSpec<PageType<AccountingBookGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    )
+                .Build();
+
+            var accountingBookParameters = new GraphQLQueryParameter("filters", "AccountingBookFilters");
+
+            var accountingBookFragment = new GraphQLQueryFragment("accountingBooksPage", [accountingBookParameters], accountingBookFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([accountingBookFragment]);
+
+            return builder.GetQuery();
+        }
         public async Task LoadAccountingBooksAsync()
         {
             try
             {
+
                 IsBusy = true;
-                string query;
-                query = @"
-                query ($filter: AccountingBookFilterInput) {
-                  ListResponse:accountingBooks(filter: $filter) {
-                    id
-                    name
-                  }
-                }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.name = new ExpandoObject();
-                variables.filter.name.@operator = "like";
-                variables.filter.name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                var result = await _accountingBookService.GetListAsync(query, variables);
-                AccountingBooks = new ObservableCollection<AccountingBookGraphQLModel>(result);
-                IsBusy = false;     
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error en LoadAccountingBooksAsync: {ex.Message}"); ;
-            }         
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-        public async Task DeleteAccountingBook()
-        {
-            try
-            {
-                IsBusy = true;
-                int id = SelectedItem.Id;
-                string query = @"query($id:Int!){
-                CanDeleteModel: canDeleteAccountingBook(id: $id){
-                    canDelete
-                    message
-                    }
-                }";                
-                object variables = new { Id = id };
-                var validation = await this._accountingBookService.CanDeleteAsync(query, variables);
-                if (validation.CanDelete)
-                {
-                    IsBusy = false; 
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-                this.IsBusy = true;
-                Refresh();
-                AccountingBookGraphQLModel deletedAccountingBook = await ExecuteDeleteAccountingBookAsync(id);
-                await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingBookDeleteMessage() { DeletedAccountingBook = deletedAccountingBook });
-                NotifyOfPropertyChange(nameof(CanDeleteAccountingBook));
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
+                string query = GetLoadAccountingBooksQuery();
+
+                PageType<AccountingBookGraphQLModel> result = await _accountingBookService.GetPageAsync(query, variables);
+                this.AccountingBooks = [.. result.Entries];
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
-        }        
+           
+        }
+       
         public async Task EditAccountingBook()
         {
             await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new ());
 
         }
-        public async Task<AccountingBookGraphQLModel> ExecuteDeleteAccountingBookAsync(int id)
+        
+        public string GetCanDeleteAccountingBookQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingBook", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        public async Task DeleteAccountingBook()
         {
             try
             {
-                string query = @"mutation($id: Int!){
-                DeleteResponse: deleteAccountingBook(id: $id){
-                    id
-                    name
-                    }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
-                var result = await _accountingBookService.DeleteAsync(query, variables);
-                return result;
+
+                this.IsBusy = true;
+                this.Refresh();
+
+                string query = GetCanDeleteAccountingBookQuery();
+
+                object variables = new { canDeleteResponseId = SelectedItem.Id };
+
+                var validation = await _accountingBookService.CanDeleteAsync(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                IsBusy = true;
+                DeleteResponseType deletedAccountingBook = await Task.Run(() => this.ExecuteDeleteAccountingBookAsync(SelectedItem.Id));
+
+                if (!deletedAccountingBook.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedAccountingBook.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingBookDeleteMessage { DeletedAccountingBook = deletedAccountingBook });
+
+                NotifyOfPropertyChange(nameof(CanDeleteAccountingBook));
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public string GetDeleteAccountingBookQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteAccountingBook", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteAccountingBookAsync(int id)
+        {
+            try
+            {
+
+                string query = GetDeleteAccountingBookQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _accountingBookService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
             catch (Exception)
             {
@@ -250,13 +305,12 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             }
         }
 
-
         public async Task HandleAsync(AccountingBookDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
                 await LoadAccountingBooksAsync();
-                _notificationService.ShowSuccess("Libro contable eliminado correctamente", "Éxito");
+                _notificationService.ShowSuccess(message.DeletedAccountingBook.Message);
             }
             catch (Exception)
             {
@@ -269,7 +323,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 await LoadAccountingBooksAsync();
-                _notificationService.ShowSuccess("Libro contable actualizado correctamente", "Éxito");
+                _notificationService.ShowSuccess(message.UpdatedAccountingBook.Message);
             }
             catch (Exception)
             {
@@ -282,7 +336,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 await LoadAccountingBooksAsync();
-                _notificationService.ShowSuccess("Libro contable creado correctamente", "Éxito");
+                _notificationService.ShowSuccess(message.CreatedAccountingBook.Message);
             }
             catch (Exception)
             {
