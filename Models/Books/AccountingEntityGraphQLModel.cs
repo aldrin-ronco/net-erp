@@ -23,10 +23,10 @@ namespace Models.Books
         public string MiddleName { get; set; } = string.Empty;
         public string FirstLastName { get; set; } = string.Empty;
         public string MiddleLastName { get; set; } = string.Empty;
-        public string Phone1 { get; set; } = string.Empty;
-        public string Phone2 { get; set; } = string.Empty;
-        public string CellPhone1 { get; set; } = string.Empty;
-        public string CellPhone2 { get; set; } = string.Empty;
+        public string PrimaryPhone { get; set; } = string.Empty;
+        public string SecondaryPhone { get; set; } = string.Empty;
+        public string PrimaryCellPhone { get; set; } = string.Empty;
+        public string SecondaryCellPhone { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public char Regime 
         {
@@ -41,16 +41,16 @@ namespace Models.Books
                 return RegimeDictionary[Regime];
             }
         }
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         public string TradeName { get; set; } = string.Empty;
-        public string SearchName { get; set; }
+        public string SearchName { get; set; } = string.Empty;
         public string TelephonicInformation { get; set; } = string.Empty;
         public string CommercialCode { get; set; } = string.Empty;
-        public IdentificationTypeGraphQLModel IdentificationType { get; set; }
-        public CountryGraphQLModel Country { get; set; }
-        public DepartmentGraphQLModel Department { get; set; }
-        public CityGraphQLModel City { get; set; }
-        public ObservableCollection<EmailDTO> Emails { get; set; }
+        public IdentificationTypeGraphQLModel IdentificationType { get; set; } = new();
+        public CountryGraphQLModel Country { get; set; } = new();
+        public DepartmentGraphQLModel Department { get; set; } = new();
+        public CityGraphQLModel City { get; set; } = new();
+        public ObservableCollection<EmailDTO> Emails { get; set; } = [];
 
         public override string ToString()
         {

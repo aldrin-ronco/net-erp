@@ -193,78 +193,78 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private string _phone1 = string.Empty;
-        public string Phone1
+        private string _primaryPhone = string.Empty;
+        public string PrimaryPhone
         {
             get
             {
-                if (_phone1 is null) return string.Empty;
-                return _phone1;
+                if (_primaryPhone is null) return string.Empty;
+                return _primaryPhone;
             }
             set
             {
-                if (_phone1 != value)
+                if (_primaryPhone != value)
                 {
-                    _phone1 = value;
-                    ValidateProperty(nameof(Phone1), value);
-                    NotifyOfPropertyChange(nameof(Phone1));
+                    _primaryPhone = value;
+                    ValidateProperty(nameof(PrimaryPhone), value);
+                    NotifyOfPropertyChange(nameof(PrimaryPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private string _phone2 = string.Empty;
-        public string Phone2
+        private string _secondaryPhone = string.Empty;
+        public string SecondaryPhone
         {
             get
             {
-                if (_phone2 is null) return string.Empty;
-                return _phone2;
+                if (_secondaryPhone is null) return string.Empty;
+                return _secondaryPhone;
             }
             set
             {
-                if (_phone2 != value)
+                if (_secondaryPhone != value)
                 {
-                    _phone2 = value;
-                    ValidateProperty(nameof(Phone2), value);
-                    NotifyOfPropertyChange(nameof(Phone2));
+                    _secondaryPhone = value;
+                    ValidateProperty(nameof(SecondaryPhone), value);
+                    NotifyOfPropertyChange(nameof(SecondaryPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private string _cellPhone1 = string.Empty;
-        public string CellPhone1
+        private string _primaryCellPhone = string.Empty;
+        public string PrimaryCellPhone
         {
             get
             {
-                if (_cellPhone1 is null) return string.Empty;
-                return _cellPhone1;
+                if (_primaryCellPhone is null) return string.Empty;
+                return _primaryCellPhone;
             }
             set
             {
-                _cellPhone1 = value;
-                ValidateProperty(nameof(CellPhone1), value);
-                NotifyOfPropertyChange(nameof(CellPhone1));
+                _primaryCellPhone = value;
+                ValidateProperty(nameof(PrimaryCellPhone), value);
+                NotifyOfPropertyChange(nameof(PrimaryCellPhone));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
-        private string _cellPhone2 = string.Empty;
-        public string CellPhone2
+        private string _secondaryCellPhone = string.Empty;
+        public string SecondaryCellPhone
         {
             get
             {
-                if (_cellPhone2 is null) return string.Empty;
-                return _cellPhone2;
+                if (_secondaryCellPhone is null) return string.Empty;
+                return _secondaryCellPhone;
             }
             set
             {
-                if (_cellPhone2 != value)
+                if (_secondaryCellPhone != value)
                 {
-                    _cellPhone2 = value;
-                    ValidateProperty(nameof(CellPhone2), value);
-                    NotifyOfPropertyChange(nameof(CellPhone2));
+                    _secondaryCellPhone = value;
+                    ValidateProperty(nameof(SecondaryCellPhone), value);
+                    NotifyOfPropertyChange(nameof(SecondaryCellPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -309,16 +309,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ObservableCollection<RetentionTypeDTO> _retentionTypes;
-        public ObservableCollection<RetentionTypeDTO> RetentionTypes
+        private ObservableCollection<WithholdingTypeDTO> _withholdingTypes;
+        public ObservableCollection<WithholdingTypeDTO> WithholdingTypes
         {
-            get => _retentionTypes;
+            get => _withholdingTypes;
             set
             {
-                if (_retentionTypes != value)
+                if (_withholdingTypes != value)
                 {
-                    _retentionTypes = value;
-                    NotifyOfPropertyChange(nameof(RetentionTypes));
+                    _withholdingTypes = value;
+                    NotifyOfPropertyChange(nameof(WithholdingTypes));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -683,17 +683,17 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             switch (element.Name.ToLower())
             {
-                case "phone1":
-                    Phone1 = Phone1.ToPhoneFormat("### ## ##");
+                case "primaryphone":
+                    PrimaryPhone = PrimaryPhone.ToPhoneFormat("### ## ##");
                     break;
-                case "phone2":
-                    Phone2 = Phone2.ToPhoneFormat("### ## ##");
+                case "secondaryphone":
+                    SecondaryPhone = SecondaryPhone.ToPhoneFormat("### ## ##");
                     break;
-                case "cellphone1":
-                    CellPhone1 = CellPhone1.ToPhoneFormat("### ### ## ##");
+                case "primarycellphone":
+                    PrimaryCellPhone = PrimaryCellPhone.ToPhoneFormat("### ### ## ##");
                     break;
-                case "cellphone2":
-                    CellPhone2 = CellPhone2.ToPhoneFormat("### ### ## ##");
+                case "secondarycellphone":
+                    SecondaryCellPhone = SecondaryCellPhone.ToPhoneFormat("### ### ## ##");
                     break;
                 default:
                     break;
@@ -713,7 +713,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public void CleanUpControls()
         {
-            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+            List<WithholdingTypeDTO> retentionList = [];
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
             SelectedRegime = 'R';
             IdentificationNumber = string.Empty;
@@ -725,34 +725,30 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             MiddleName = string.Empty;
             FirstLastName = string.Empty;
             MiddleLastName = string.Empty;
-            Phone1 = string.Empty;
-            Phone2 = string.Empty;
-            CellPhone1 = string.Empty;
-            CellPhone2 = string.Empty;
+            PrimaryPhone = string.Empty;
+            SecondaryPhone = string.Empty;
+            PrimaryCellPhone = string.Empty;
+            SecondaryCellPhone = string.Empty;
             Address = string.Empty;
             Emails = new ObservableCollection<EmailDTO>();
             SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
             SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
             SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
-            foreach (RetentionTypeDTO retention in RetentionTypes)
+            foreach (WithholdingTypeDTO retention in WithholdingTypes)
             {
-                retentionList.Add(new RetentionTypeDTO()
+                retentionList.Add(new WithholdingTypeDTO()
                 {
                     Id = retention.Id,
                     Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
                     IsSelected = false
                 });
             }
-            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
+            WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
         }
 
         public void CleanUpControlsForNew()
         {
-            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+            List<WithholdingTypeDTO> retentionList = [];
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
             SelectedRegime = 'R';
             IdentificationNumber = string.Empty;
@@ -764,29 +760,25 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             MiddleName = string.Empty;
             FirstLastName = string.Empty;
             MiddleLastName = string.Empty;
-            Phone1 = string.Empty;
-            Phone2 = string.Empty;
-            CellPhone1 = string.Empty;
-            CellPhone2 = string.Empty;
+            PrimaryPhone = string.Empty;
+            SecondaryPhone = string.Empty;
+            PrimaryCellPhone = string.Empty;
+            SecondaryCellPhone = string.Empty;
             Address = string.Empty;
             Emails = new ObservableCollection<EmailDTO>();
             SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
             SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
             SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
-            foreach (RetentionTypeDTO retention in RetentionTypes)
+            foreach (WithholdingTypeDTO retention in WithholdingTypes)
             {
-                retentionList.Add(new RetentionTypeDTO()
+                retentionList.Add(new WithholdingTypeDTO()
                 {
                     Id = retention.Id,
                     Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
                     IsSelected = false
                 });
             }
-            RetentionTypes = new ObservableCollection<RetentionTypeDTO>(retentionList);
+            WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
         }
 
         
@@ -834,10 +826,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 List<object> emailList = new List<object>();
                 List<string> phones = new List<string>();
 
-                if (!string.IsNullOrEmpty(Phone1)) phones.Add(Phone1);
-                if (!string.IsNullOrEmpty(Phone2)) phones.Add(Phone2);
-                if (!string.IsNullOrEmpty(CellPhone1)) phones.Add(CellPhone1);
-                if (!string.IsNullOrEmpty(CellPhone2)) phones.Add(CellPhone2);
+                if (!string.IsNullOrEmpty(PrimaryPhone)) phones.Add(PrimaryPhone);
+                if (!string.IsNullOrEmpty(SecondaryPhone)) phones.Add(SecondaryPhone);
+                if (!string.IsNullOrEmpty(PrimaryCellPhone)) phones.Add(PrimaryCellPhone);
+                if (!string.IsNullOrEmpty(SecondaryCellPhone)) phones.Add(SecondaryCellPhone);
 
                 if (Emails != null)
                 {
@@ -846,9 +838,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice });
                     }
                 }
-                if (RetentionTypes != null)
+                if (WithholdingTypes != null)
                 {
-                    foreach (RetentionTypeDTO retention in RetentionTypes)
+                    foreach (WithholdingTypeDTO retention in WithholdingTypes)
                     {
                         if (retention.IsSelected)
                             retentions.Add(retention.Id);
@@ -878,10 +870,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 variables.Data.Entity.MiddleName = CaptureInfoAsPN ? MiddleName : "";
                 variables.Data.Entity.FirstLastName = CaptureInfoAsPN ? FirstLastName : "";
                 variables.Data.Entity.MiddleLastName = CaptureInfoAsPN ? MiddleLastName : "";
-                variables.Data.Entity.Phone1 = Phone1;
-                variables.Data.Entity.Phone2 = Phone2;
-                variables.Data.Entity.CellPhone1 = CellPhone1;
-                variables.Data.Entity.CellPhone2 = CellPhone2;
+                variables.Data.Entity.Phone1 = PrimaryPhone;
+                variables.Data.Entity.Phone2 = SecondaryPhone;
+                variables.Data.Entity.CellPhone1 = PrimaryCellPhone;
+                variables.Data.Entity.CellPhone2 = SecondaryCellPhone;
                 variables.Data.Entity.Address = Address;
                 variables.Data.Entity.Regime = SelectedRegime;
                 variables.Data.Entity.FullName = $"{variables.Data.Entity.FirstName} {variables.Data.Entity.MiddleName} {variables.Data.Entity.FirstLastName} {variables.Data.Entity.MiddleLastName}".Trim().RemoveExtraSpaces();
@@ -1111,7 +1103,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 object variables = new();
                 var result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
                 IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
-                RetentionTypes = new ObservableCollection<RetentionTypeDTO>(Context.AutoMapper.Map<ObservableCollection<RetentionTypeDTO>>(result.RetentionTypes));
+                WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -1221,17 +1213,17 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     case nameof(BusinessName):
                         if (string.IsNullOrEmpty(value) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
                         break;
-                    case nameof(Phone1):
-                        if (value.Length != 7 && !string.IsNullOrEmpty(Phone1)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
+                    case nameof(PrimaryPhone):
+                        if (value.Length != 7 && !string.IsNullOrEmpty(PrimaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
                         break;
-                    case nameof(Phone2):
-                        if (value.Length != 7 && !string.IsNullOrEmpty(Phone2)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
+                    case nameof(SecondaryPhone):
+                        if (value.Length != 7 && !string.IsNullOrEmpty(SecondaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
                         break;
-                    case nameof(CellPhone1):
-                        if (value.Length != 10 && !string.IsNullOrEmpty(CellPhone1)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
+                    case nameof(PrimaryCellPhone):
+                        if (value.Length != 10 && !string.IsNullOrEmpty(PrimaryCellPhone)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
                         break;
-                    case nameof(CellPhone2):
-                        if (value.Length != 10 && !string.IsNullOrEmpty(CellPhone2)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
+                    case nameof(SecondaryCellPhone):
+                        if (value.Length != 10 && !string.IsNullOrEmpty(SecondaryCellPhone)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
                         break;
                     default:
                         break;

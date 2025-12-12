@@ -108,58 +108,58 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-        private string _phone1;
-        public string Phone1
+        private string _primaryPhone;
+        public string PrimaryPhone
         {
-            get { return _phone1; }
+            get { return _primaryPhone; }
             set
             {
-                if (_phone1 != value)
+                if (_primaryPhone != value)
                 {
-                    _phone1 = value;
-                    NotifyOfPropertyChange(nameof(Phone1));
+                    _primaryPhone = value;
+                    NotifyOfPropertyChange(nameof(PrimaryPhone));
                 }
             }
         }
 
-        private string _phone2;
-        public string Phone2
+        private string _secondaryPhone;
+        public string SecondaryPhone
         {
-            get { return _phone2; }
+            get { return _secondaryPhone; }
             set
             {
-                if (_phone2 != value)
+                if (_secondaryPhone != value)
                 {
-                    _phone2 = value;
-                    NotifyOfPropertyChange(nameof(Phone2));
+                    _secondaryPhone = value;
+                    NotifyOfPropertyChange(nameof(SecondaryPhone));
                 }
             }
         }
 
-        private string _cellPhone1;
-        public string CellPhone1
+        private string _primaryCellPhone;
+        public string PrimaryCellPhone
         {
-            get { return _cellPhone1; }
+            get { return _primaryCellPhone; }
             set
             {
-                if (_cellPhone1 != value)
+                if (_primaryCellPhone != value)
                 {
-                    _cellPhone1 = value;
-                    NotifyOfPropertyChange(nameof(CellPhone1));
+                    _primaryCellPhone = value;
+                    NotifyOfPropertyChange(nameof(PrimaryCellPhone));
                 }
             }
         }
 
-        private string _cellPhone2;
-        public string CellPhone2
+        private string _secondaryCellPhone;
+        public string SecondaryCellPhone
         {
-            get { return _cellPhone2; }
+            get { return _secondaryCellPhone; }
             set
             {
-                if (_cellPhone2 != value)
+                if (_secondaryCellPhone != value)
                 {
-                    _cellPhone2 = value;
-                    NotifyOfPropertyChange(nameof(CellPhone2));
+                    _secondaryCellPhone = value;
+                    NotifyOfPropertyChange(nameof(SecondaryCellPhone));
                 }
             }
         }

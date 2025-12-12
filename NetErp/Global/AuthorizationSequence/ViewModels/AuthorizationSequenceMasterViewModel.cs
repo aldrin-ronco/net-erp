@@ -462,7 +462,6 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
-
                     .Field(e => e.Description)
                     .Field(e => e.Number)
                     .Field(e => e.IsActive)

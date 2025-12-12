@@ -299,7 +299,7 @@ namespace NetErp
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
                 _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
-                _ = cfg.CreateMap<RetentionTypeGraphQLModel, RetentionTypeDTO>();
+                _ = cfg.CreateMap<WithholdingTypeGraphQLModel, WithholdingTypeDTO>();
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();
                 _ = cfg.CreateMap<SellerGraphQLModel, SellerDTO>();

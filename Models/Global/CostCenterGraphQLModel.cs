@@ -17,10 +17,10 @@ namespace Models.Global
         public string ShortName { get; set; } = string.Empty;
         public string State { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public string Phone1 { get; set; } = string.Empty;
-        public string Phone2 { get; set; } = string.Empty;
-        public string CellPhone1 { get; set; } = string.Empty;
-        public string CellPhone2 { get; set; } = string.Empty;
+        public string PrimaryPhone { get; set; } = string.Empty;
+        public string SecondaryPhone { get; set; } = string.Empty;
+        public string PrimaryCellPhone { get; set; } = string.Empty;
+        public string SecondaryCellPhone { get; set; } = string.Empty;
         public string DateControlType { get; set; } = string.Empty;
         public bool IsTaxable { get; set; } = false;
         public bool PriceListIncludeTax { get; set; } = false;

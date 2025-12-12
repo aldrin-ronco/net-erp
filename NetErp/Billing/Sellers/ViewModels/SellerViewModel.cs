@@ -191,10 +191,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                 instance.MiddleName = seller.Entity.MiddleName;
                 instance.FirstLastName = seller.Entity.FirstLastName;
                 instance.MiddleLastName = seller.Entity.MiddleLastName;
-                instance.Phone1 = seller.Entity.Phone1;
-                instance.Phone2 = seller.Entity.Phone2;
-                instance.CellPhone1 = seller.Entity.CellPhone1;
-                instance.CellPhone2 = seller.Entity.CellPhone2;
+                instance.PrimaryPhone = seller.Entity.PrimaryPhone;
+                instance.SecondaryPhone = seller.Entity.SecondaryPhone;
+                instance.PrimaryCellPhone = seller.Entity.PrimaryCellPhone;
+                instance.SecondaryCellPhone = seller.Entity.SecondaryCellPhone;
                 instance.Emails = seller.Entity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.Entity.Emails.Select(x => x.Clone()).ToList());
                 instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
                 instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.Entity.Department.Id);

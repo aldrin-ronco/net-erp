@@ -167,8 +167,6 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 IsBusy = false;
             }
-
-
         }
 
         public async Task<UpsertResponseType<ZoneGraphQLModel>> ExecuteSaveAsync()

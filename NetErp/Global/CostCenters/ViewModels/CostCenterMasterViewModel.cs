@@ -310,68 +310,68 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private string _costCenterPhone1;
+        private string _costCenterPrimaryPhone;
 
-        public string CostCenterPhone1
+        public string CostCenterPrimaryPhone
         {
-            get { return _costCenterPhone1; }
+            get { return _costCenterPrimaryPhone; }
             set 
             {
-                if (_costCenterPhone1 != value)
+                if (_costCenterPrimaryPhone != value)
                 {
-                    _costCenterPhone1 = value;
-                    NotifyOfPropertyChange(nameof(CostCenterPhone1));
-                    ValidateProperty(nameof(CostCenterPhone1), value);
+                    _costCenterPrimaryPhone = value;
+                    NotifyOfPropertyChange(nameof(CostCenterPrimaryPhone));
+                    ValidateProperty(nameof(CostCenterPrimaryPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private string _costCenterPhone2;
+        private string _costCenterSecondaryPhone;
 
-        public string CostCenterPhone2
+        public string CostCenterSecondaryPhone
         {
-            get { return _costCenterPhone2; }
+            get { return _costCenterSecondaryPhone; }
             set 
             {
-                if (_costCenterPhone2 != value)
+                if (_costCenterSecondaryPhone != value)
                 {
-                    _costCenterPhone2 = value;
-                    NotifyOfPropertyChange(nameof(CostCenterPhone2));
-                    ValidateProperty(nameof(CostCenterPhone2), value);
+                    _costCenterSecondaryPhone = value;
+                    NotifyOfPropertyChange(nameof(CostCenterSecondaryPhone));
+                    ValidateProperty(nameof(CostCenterSecondaryPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private string _costCenterCellPhone1;
+        private string _costCenterPrimaryCellPhone;
 
-        public string CostCenterCellPhone1
+        public string CostCenterPrimaryCellPhone
         {
-            get { return _costCenterCellPhone1; }
+            get { return _costCenterPrimaryCellPhone; }
             set 
             {
-                if (_costCenterCellPhone1 != value)
+                if (_costCenterPrimaryCellPhone != value)
                 {
-                    _costCenterCellPhone1 = value;
-                    NotifyOfPropertyChange(nameof(CostCenterCellPhone1));
-                    ValidateProperty(nameof(CostCenterCellPhone1), value);
+                    _costCenterPrimaryCellPhone = value;
+                    NotifyOfPropertyChange(nameof(CostCenterPrimaryCellPhone));
+                    ValidateProperty(nameof(CostCenterPrimaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private string _costCenterCellPhone2;
-        public string CostCenterCellPhone2
+        private string _costCenterSecondaryCellPhone;
+        public string CostCenterSecondaryCellPhone
         {
-            get { return _costCenterCellPhone2; }
+            get { return _costCenterSecondaryCellPhone; }
             set
             {
-                if (_costCenterCellPhone2 != value)
+                if (_costCenterSecondaryCellPhone != value)
                 {
-                    _costCenterCellPhone2 = value;
-                    NotifyOfPropertyChange(nameof(CostCenterCellPhone2));
-                    ValidateProperty(nameof(CostCenterCellPhone2), value);
+                    _costCenterSecondaryCellPhone = value;
+                    NotifyOfPropertyChange(nameof(CostCenterSecondaryCellPhone));
+                    ValidateProperty(nameof(CostCenterSecondaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -968,10 +968,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             CostCenterShortName = string.Empty;
             CostCenterState = "A";
             CostCenterAddress = string.Empty;
-            CostCenterPhone1 = string.Empty;
-            CostCenterPhone2 = string.Empty;
-            CostCenterCellPhone1 = string.Empty;
-            CostCenterCellPhone2 = string.Empty;
+            CostCenterPrimaryPhone = string.Empty;
+            CostCenterSecondaryPhone = string.Empty;
+            CostCenterPrimaryCellPhone = string.Empty;
+            CostCenterSecondaryCellPhone = string.Empty;
             CostCenterSelectedCountry = Countries.FirstOrDefault(country => country.Code == "169") ?? throw new Exception(""); //Codigo de Colombia
             CostCenterSelectedDepartment = CostCenterSelectedCountry.Departments.FirstOrDefault(department => department.Country.Id == CostCenterSelectedCountry.Id) ?? throw new Exception("");
             CostCenterSelectedCity = CostCenterSelectedDepartment.Cities.FirstOrDefault(city => city.Department.Id == CostCenterSelectedDepartment.Id) ?? throw new Exception("");
@@ -995,10 +995,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             CostCenterShortName = costCenterDTO.ShortName;
             CostCenterState = costCenterDTO.State;
             CostCenterAddress = costCenterDTO.Address;
-            CostCenterPhone1 = costCenterDTO.Phone1;
-            CostCenterPhone2 = costCenterDTO.Phone2;
-            CostCenterCellPhone1 = costCenterDTO.CellPhone1;
-            CostCenterCellPhone2 = costCenterDTO.CellPhone2;
+            CostCenterPrimaryPhone = costCenterDTO.PrimaryPhone;
+            CostCenterSecondaryPhone = costCenterDTO.SecondaryPhone;
+            CostCenterPrimaryCellPhone = costCenterDTO.PrimaryCellPhone;
+            CostCenterSecondaryCellPhone = costCenterDTO.SecondaryCellPhone;
             CostCenterSelectedCountry = Countries.FirstOrDefault(country => country.Id == costCenterDTO.Country.Id) ?? throw new Exception("");
             CostCenterSelectedDepartment = CostCenterSelectedCountry.Departments.FirstOrDefault(department => department.Id == costCenterDTO.Department.Id) ?? throw new Exception("");
             CostCenterSelectedCity = CostCenterSelectedDepartment.Cities.FirstOrDefault(city => city.Id == costCenterDTO.City.Id) ?? throw new Exception("");
@@ -1849,10 +1849,10 @@ namespace NetErp.Global.CostCenters.ViewModels
                 variables.Data.shortName = CostCenterShortName.Trim().RemoveExtraSpaces();
                 variables.Data.state = CostCenterState;
                 variables.Data.address = CostCenterAddress.Trim().RemoveExtraSpaces();
-                variables.Data.phone1 = CostCenterPhone1;
-                variables.Data.phone2 = CostCenterPhone2;
-                variables.Data.cellPhone1 = CostCenterCellPhone1;
-                variables.Data.cellPhone2 = CostCenterCellPhone2;
+                variables.Data.phone1 = CostCenterPrimaryPhone;
+                variables.Data.phone2 = CostCenterSecondaryPhone;
+                variables.Data.cellPhone1 = CostCenterPrimaryCellPhone;
+                variables.Data.cellPhone2 = CostCenterSecondaryCellPhone;
                 variables.Data.dateControlType = SelectedCostCenterDateControlType;
                 variables.Data.showChangeWindowOnCash = CostCenterShowChangeWindowOnCash;
                 variables.Data.allowBuy = CostCenterAllowBuy;
@@ -2494,10 +2494,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             costCenterToUpdate.ShortName = costCenterDTO.ShortName;
             costCenterToUpdate.State = costCenterDTO.State;
             costCenterToUpdate.Address = costCenterDTO.Address;
-            costCenterToUpdate.Phone1 = costCenterDTO.Phone1;
-            costCenterToUpdate.Phone2 = costCenterDTO.Phone2;
-            costCenterToUpdate.CellPhone1 = costCenterDTO.CellPhone1;
-            costCenterToUpdate.CellPhone2 = costCenterDTO.CellPhone2;
+            costCenterToUpdate.PrimaryPhone = costCenterDTO.PrimaryPhone;
+            costCenterToUpdate.SecondaryPhone = costCenterDTO.SecondaryPhone;
+            costCenterToUpdate.PrimaryCellPhone = costCenterDTO.PrimaryCellPhone;
+            costCenterToUpdate.SecondaryCellPhone = costCenterDTO.SecondaryCellPhone;
             costCenterToUpdate.DateControlType = costCenterDTO.DateControlType;
             costCenterToUpdate.ShowChangeWindowOnCash = costCenterDTO.ShowChangeWindowOnCash;
             costCenterToUpdate.AllowBuy = costCenterDTO.AllowBuy;
@@ -2595,16 +2595,16 @@ namespace NetErp.Global.CostCenters.ViewModels
                     case nameof(CostCenterTradeName):
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre comercial no puede estar vacía");
                         break;
-                    case nameof(CostCenterPhone1):
+                    case nameof(CostCenterPrimaryPhone):
                         if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
                         break;
-                    case nameof(CostCenterPhone2):
+                    case nameof(CostCenterSecondaryPhone):
                         if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
                         break;
-                    case nameof(CostCenterCellPhone1):
+                    case nameof(CostCenterPrimaryCellPhone):
                         if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
                         break;
-                    case nameof(CostCenterCellPhone2):
+                    case nameof(CostCenterSecondaryCellPhone):
                         if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
                         break;
                     case nameof(CostCenterAddress):

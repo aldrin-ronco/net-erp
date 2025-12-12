@@ -429,7 +429,6 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
               .Create()
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
-
                   .Field(e => e.Name)
                   .Field(e => e.Code)
             ).Field(o => o.PageNumber)
@@ -441,19 +440,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
               .Create()
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
-
                   .Field(e => e.Name)
                   .Field(e => e.Key)
-
-                  
                   .SelectList(e => e.Accounts, cat => cat
                       .Field(c => c.Id)
                       .Field(c => c.Name)
                       .Field(c => c.Code)
-
                   )
-                  
-                  
               )
               .Field(o => o.PageNumber)
               .Field(o => o.PageSize)

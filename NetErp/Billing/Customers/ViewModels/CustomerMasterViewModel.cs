@@ -21,6 +21,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media.Converters;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
@@ -189,7 +191,7 @@ namespace NetErp.Billing.Customers.ViewModels
         }
 
 
-        public async Task LoadCustomers()
+        public async Task LoadCustomersAsync()
         {
             try
             {
@@ -200,101 +202,16 @@ namespace NetErp.Billing.Customers.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                string query = @"
-                query ($filter: CustomerFilterInput) {
-                  PageResponse: customerPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      creditTerm
-                      isTaxFree
-                      isActive
-                      blockingReason
-                      retainsAnyBasis
-                      sellerId      
-                      entity {
-                        id
-                        identificationNumber
-                        verificationDigit
-                        captureType
-                        searchName
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        businessName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        telephonicInformation
-                        address
-                        identificationType {
-                            id
-                            name
-                        }
-                        country {
-                          id
-                          name
-                        }
-                        department {
-                          id
-                          name
-                        }
-                        city {
-                          id
-                          name
-                        }
-                        
-                        emails {
-                          id
-                          description
-                          email
-                          isCorporate
-                          sendElectronicInvoice
-                        }
-                      }
-                      retentions {
-                        id
-                        name
-                        margin
-                      }
-                        zones {
-                            id
-                            name
-                        }
-                    }
-                  }
-
-                }";
+                string query = GetLoadCustomersQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-
-                variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
-
-                //filtro searchName
-                variables.filter.or[0].searchName = new ExpandoObject();
-                variables.filter.or[0].searchName.@operator = "like";
-                variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                //filtro identificationNumber
-                variables.filter.or[1].identificationNumber = new ExpandoObject();
-                variables.filter.or[1].identificationNumber.@operator = "like";
-                variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                // Pagination
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
+                variables.PageResponsePagination = new ExpandoObject();
+                variables.PageResponsePagination.Page = PageIndex;
+                variables.PageResponsePagination.PageSize = PageSize;
                 var result = await _customerService.GetPageAsync(query, variables);
 
-                TotalCount = result.Count;
-                Customers = new ObservableCollection<CustomerGraphQLModel>(result.Rows);
+                TotalCount = result.TotalEntries;
+                Customers = new ObservableCollection<CustomerGraphQLModel>(result.Entries);
                 stopwatch.Stop();
 
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -317,57 +234,51 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                IsBusy = true;
+                if (SelectedCustomer is null) return;
                 int id = SelectedCustomer.Id;
+                IsBusy = true;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteCustomer(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
+                string query = GetCanDeleteCustomerQuery();
 
-                object variables = new { Id = id };
+                object variables = new { canDeleteModelId = id };
 
                 var validation = await _customerService.CanDeleteAsync(query, variables);
 
-                if (validation.CanDelete) 
+                if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedCustomer.Entity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención!", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención!", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
-                Refresh();
+                IsBusy = true;
+                DeleteResponseType deletedCustomer = await Task.Run(() => this.ExecuteDeleteCustomer(id));
 
-                CustomerGraphQLModel deletedCustomer = await ExecuteDeleteCustomer(id);
+                if (!deletedCustomer.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedCustomer.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerDeleteMessage() { DeletedCustomer = deletedCustomer });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerDeleteMessage { DeletedCustomer = deletedCustomer });
 
                 NotifyOfPropertyChange(nameof(CanDeleteCustomer));
             }
-            catch (AsyncException ex)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -375,36 +286,26 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public async Task<CustomerGraphQLModel> ExecuteDeleteCustomer(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteCustomer(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteCustomer(id: $id) {
-                    id
-                    creditTerm
-                    isTaxFree
-                    isActive
-                    blockingReason
-                    retainsAnyBasis
-                  }
-                }";
+                string query = GetDeleteCustomerQuery();
 
-                object variables = new { Id = id };
-                CustomerGraphQLModel deletedCustomer = await _customerService.DeleteAsync(query, variables);
-                this.SelectedCustomer = null;
-                return deletedCustomer;
+                object variables = new { deleteResponseId = id };
+
+                DeleteResponseType deletedRecord = await _customerService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new AsyncException(innerException: ex);
+                throw;
             }
         }
 
         private async Task ExecuteChangeIndex()
         {
-            await LoadCustomers();
+            await LoadCustomersAsync();
         }
 
         private bool CanExecuteChangeIndex()
@@ -417,7 +318,7 @@ namespace NetErp.Billing.Customers.ViewModels
             if (Context.EnableOnViewReady is false) return;
             System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady STARTED at {DateTime.Now:HH:mm:ss.fff} ===");
             base.OnViewReady(view);
-            _ = LoadCustomers();
+            _ = LoadCustomersAsync();
             _ = this.SetFocus(nameof(FilterSearch));
             System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady FINISHED at {DateTime.Now:HH:mm:ss.fff} ===");
         }
@@ -426,7 +327,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                await LoadCustomers();
+                await LoadCustomersAsync();
                 _notificationService.ShowSuccess("Cliente eliminado correctamente.");
             }
             catch (Exception)
@@ -439,7 +340,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                await LoadCustomers();
+                await LoadCustomersAsync();
                 _notificationService.ShowSuccess("Cliente creado correctamente.");
             }
             catch (Exception)
@@ -453,7 +354,7 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                await LoadCustomers();
+                await LoadCustomersAsync();
                 _notificationService.ShowSuccess("Cliente actualizado correctamente.");
             }
             catch (Exception)
@@ -465,17 +366,107 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadCustomers();
+            return LoadCustomersAsync();
         }
 
         public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadCustomers();
+            return LoadCustomersAsync();
         }
 
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
-            return LoadCustomers();
+            return LoadCustomersAsync();
+        }
+
+        #endregion
+
+        #region QueryBuilder Methods
+
+        public string GetLoadCustomersQuery()
+        {
+            var fields = FieldSpec<PageType<CustomerGraphQLModel>>
+                .Create()
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.CreditTerm)
+                    .Field(e => e.IsTaxFree)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.BlockingReason)
+                    .Field(e => e.RetainsAnyBasis)
+                    .Select(selector: e => e.AccountingEntity, nested: entity => entity
+                        .Field(en => en.Id)
+                        .Field(en => en.IdentificationNumber)
+                        .Field(en => en.VerificationDigit)
+                        .Field(en => en.CaptureType)
+                        .Field(en => en.SearchName)
+                        .Field(en => en.FirstName)
+                        .Field(en => en.MiddleName)
+                        .Field(en => en.FirstLastName)
+                        .Field(en => en.MiddleLastName)
+                        .Field(en => en.BusinessName)
+                        .Field(en => en.PrimaryPhone)
+                        .Field(en => en.SecondaryPhone)
+                        .Field(en => en.PrimaryCellPhone)
+                        .Field(en => en.SecondaryCellPhone)
+                        .Field(en => en.TelephonicInformation)
+                        .Field(en => en.Address)
+                        .Select(en => en.IdentificationType, it => it
+                            .Field(i => i.Id)
+                            .Field(i => i.Name))
+                        .Select(en => en.Country, c => c
+                            .Field(co => co.Id)
+                            .Field(co => co.Name))
+                        .Select(en => en.Department, d => d
+                            .Field(de => de.Id)
+                            .Field(de => de.Name))
+                        .Select(en => en.City, ci => ci
+                            .Field(cit => cit.Id)
+                            .Field(cit => cit.Name))
+                        .SelectList(en => en.Emails, em => em
+                            .Field(e => e.Id)
+                            .Field(e => e.Description)
+                            .Field(e => e.Email)))
+                    .SelectList(e => e.WithholdingTypes, ret => ret
+                        .Field(r => r.Id)
+                        .Field(r => r.Name))
+                    .Select(e => e.Zone, z => z
+                        .Field(zo => zo.Id)
+                        .Field(zo => zo.Name)))
+                .Build();
+
+            var filterParameter = new GraphQLQueryParameter("filters", "CustomerFilters");
+            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("customersPage", [filterParameter, paginationParameter], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public string GetCanDeleteCustomerQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("canDeleteCustomer", [parameter], fields, "CanDeleteModel");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public string GetDeleteCustomerQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteCustomer", [parameter], fields, "DeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
         #endregion
@@ -580,7 +571,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3) 
                     {
                         PageIndex = 1;
-                        _ = LoadCustomers();
+                        _ = LoadCustomersAsync();
                     }
                 }
             }

@@ -960,12 +960,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                .Create()
                .SelectList(it => it.Entries, entries => entries
                    .Field(e => e.Id)
-
                    .Field(e => e.Name)
                    .Field(e => e.IsActive)
                    .Field(e => e.Prefix)
-                   
-                  
                )
                .Field(o => o.PageNumber)
                .Field(o => o.PageSize)
@@ -979,7 +976,6 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
               .Create()
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
-
                   .Field(e => e.Description)
                   .Field(e => e.Number)
                   .Field(e => e.IsActive)
