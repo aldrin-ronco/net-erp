@@ -462,7 +462,6 @@ namespace NetErp.Books.AccountingSources.ViewModels
               .Create()
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
-
                   .Field(e => e.Code)
                   .Field(e => e.Name)
                   .Field(e => e.Abbreviation)
@@ -481,7 +480,6 @@ namespace NetErp.Books.AccountingSources.ViewModels
                    .Field(e => e.Code)
                    .Field(e => e.Name)
                    .Field(e => e.IsSystemSource)
-
                    .Field(e => e.AnnulmentCharacter)
                    .Field(e => e.IsKardexTransaction)
                    .Field(e => e.KardexFlow)

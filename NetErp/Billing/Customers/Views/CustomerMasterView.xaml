@@ -115,26 +115,26 @@
                 <dxg:GridColumn 
                     Header="NIT" 
                     Width="auto"
-                    Binding="{Binding Entity.IdentificationNumberWithVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    Binding="{Binding AccountingEntity.IdentificationNumberWithVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
 
                 <!--Nombre de busqueda-->
                 <dxg:GridColumn
                     Header="Nombre del tercero" 
                     Width="*"
-                    Binding="{Binding Entity.SearchName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    Binding="{Binding AccountingEntity.SearchName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!--Direccion-->
                 <dxg:GridColumn 
                         Header="Dirección" 
                         Width="auto"
-                        Binding="{Binding Entity.Address, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        Binding="{Binding AccountingEntity.Address, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!--Informacion telefonica-->
                 <dxg:GridColumn 
                         Header="Información telefónica" 
                         Width="auto"
-                        Binding="{Binding Entity.TelephonicInformation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        Binding="{Binding AccountingEntity.TelephonicInformation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <dxg:GridColumn Width="30">
                         <dxg:GridColumn.CellTemplate>

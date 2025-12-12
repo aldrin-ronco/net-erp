@@ -84,10 +84,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             instance.MiddleName = selectedItem.MiddleName;
             instance.FirstLastName = selectedItem.FirstLastName;
             instance.MiddleLastName = selectedItem.MiddleLastName;
-            instance.Phone1 = selectedItem.Phone1;
-            instance.Phone2 = selectedItem.Phone2;
-            instance.CellPhone1 = selectedItem.CellPhone1;
-            instance.CellPhone2 = selectedItem.CellPhone2;
+            instance.PrimaryPhone = selectedItem.PrimaryPhone;
+            instance.SecondaryPhone = selectedItem.SecondaryPhone;
+            instance.PrimaryCellPhone = selectedItem.PrimaryCellPhone;
+            instance.SecondaryCellPhone = selectedItem.SecondaryCellPhone;
             instance.Address = selectedItem.Address;
             instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == selectedItem.Country.Id);
             instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == selectedItem.Department.Id);

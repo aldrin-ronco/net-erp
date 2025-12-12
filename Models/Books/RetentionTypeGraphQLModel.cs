@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Global;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,17 +7,23 @@ using System.Threading.Tasks;
 
 namespace Models.Books
 {
-    public class RetentionTypeGraphQLModel
+    public class WithholdingTypeGraphQLModel
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public decimal InitialBase { get; set; } = 0;
-        public decimal Margin { get; set; } = 0;
-        public AccountingAccountGraphQLModel AccountingAccountPurchase { get; set; }
-        public AccountingAccountGraphQLModel AccountingAccountSale { get; set; }
+        public decimal BaseAmountFrom { get; set; }
+        public int BaseCalculationType { get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
+        public AccountingAccountGraphQLModel PurchaseAccountingAccount { get; set; } = new();
+        public AccountingAccountGraphQLModel SaleAccountingAccount { get; set; } = new();
+        public AccountingAccountGraphQLModel SelfWithholdingSaleAccountingAccount { get; set; } = new();
+        public string WithholdingGroup { get; set; } = string.Empty;
+        public decimal WithholdingRate { get; set; }
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
-    public class RetentionTypeDTO : RetentionTypeGraphQLModel
+    public class WithholdingTypeDTO : WithholdingTypeGraphQLModel
     {
         private bool _isSelected;
         public bool IsSelected

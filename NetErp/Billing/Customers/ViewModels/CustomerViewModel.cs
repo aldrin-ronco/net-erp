@@ -83,56 +83,42 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 CustomerDetailViewModel instance = new(this, _customerService);
-                await instance.Initialize();
-                ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
-                List<RetentionTypeDTO> retentionList = [];
+                await instance.InitializeAsync();
+                ObservableCollection<ZoneDTO> zonesSelection = [];
+                List<WithholdingTypeDTO> withholdingTypes = [];
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.Entity.CaptureType); 
-                    instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.Entity.IdentificationType.Id);
+                    instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.AccountingEntity.CaptureType); 
+                    instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == customer.AccountingEntity.IdentificationType.Id);
                     instance.Id = customer.Id;
-                    instance.FirstName = customer.Entity.FirstName;
-                    instance.MiddleName = customer.Entity.MiddleName;
-                    instance.FirstLastName = customer.Entity.FirstLastName;
-                    instance.MiddleLastName = customer.Entity.MiddleLastName;
-                    instance.Phone1 = customer.Entity.Phone1;
-                    instance.Phone2 = customer.Entity.Phone2;
-                    instance.CellPhone1 = customer.Entity.CellPhone1;
-                    instance.CellPhone2 = customer.Entity.CellPhone2;
-                    instance.BusinessName = customer.Entity.BusinessName;
-                    instance.Address = customer.Entity.Address;
-                    instance.Emails = customer.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(customer.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
-                    instance.IdentificationNumber = customer.Entity.IdentificationNumber;
-                    instance.VerificationDigit = customer.Entity.VerificationDigit;
-                    instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == customer.Entity.Country.Id);
-                    instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == customer.Entity.Department.Id);
-                    instance.SelectedCityId = customer.Entity.City.Id;
-                    foreach (RetentionTypeDTO retention in instance.RetentionTypes)
+                    instance.FirstName = customer.AccountingEntity.FirstName;
+                    instance.MiddleName = customer.AccountingEntity.MiddleName;
+                    instance.FirstLastName = customer.AccountingEntity.FirstLastName;
+                    instance.MiddleLastName = customer.AccountingEntity.MiddleLastName;
+                    instance.PrimaryPhone = customer.AccountingEntity.PrimaryPhone;
+                    instance.SecondaryPhone = customer.AccountingEntity.SecondaryPhone;
+                    instance.PrimaryCellPhone = customer.AccountingEntity.PrimaryCellPhone;
+                    instance.SecondaryCellPhone = customer.AccountingEntity.SecondaryCellPhone;
+                    instance.BusinessName = customer.AccountingEntity.BusinessName;
+                    instance.Address = customer.AccountingEntity.Address;
+                    instance.Emails = customer.AccountingEntity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(customer.AccountingEntity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
+                    instance.IdentificationNumber = customer.AccountingEntity.IdentificationNumber;
+                    instance.VerificationDigit = customer.AccountingEntity.VerificationDigit;
+                    instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == customer.AccountingEntity.Country.Id);
+                    instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == customer.AccountingEntity.Department.Id);
+                    instance.SelectedCityId = customer.AccountingEntity.City.Id;
+                    foreach (WithholdingTypeDTO retention in instance.WithholdingTypes)
                     {
-                        bool exist = customer.Retentions is null ? false : customer.Retentions.Any(x => x.Id == retention.Id);
-                        retentionList.Add(new RetentionTypeDTO()
+                        bool exist = customer.WithholdingTypes is null ? false : customer.WithholdingTypes.Any(x => x.Id == retention.Id);
+                        withholdingTypes.Add(new WithholdingTypeDTO()
                         {
                             Id = retention.Id,
                             Name = retention.Name,
-                            Margin = retention.Margin,
-                            InitialBase = retention.InitialBase,
-                            AccountingAccountSale = retention.AccountingAccountSale,
-                            AccountingAccountPurchase = retention.AccountingAccountPurchase,
                             IsSelected = exist
                         });
                     }
-                    instance.RetentionTypes = new System.Collections.ObjectModel.ObservableCollection<RetentionTypeDTO>(retentionList);
-                    foreach (ZoneGraphQLModel zone in instance.ZoneGraphQLModels)
-                    {
-                        bool exist = !(customer.Zones is null) && customer.Zones.Any(c => c.Id == zone.Id);
-                        zonesSelection.Add(new ZoneDTO()
-                        {
-                            Id = zone.Id,
-                            Name = zone.Name,
-                            IsSelected = exist
-                        });
-                    }
-                    instance.Zones = new ObservableCollection<ZoneDTO>(zonesSelection);
+                    instance.WithholdingTypes = new System.Collections.ObjectModel.ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
+                    instance.SelectedZone = instance.Zones.FirstOrDefault(z => z.Id == customer.Zone.Id);
 
                 });
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -158,7 +144,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 CustomerDetailViewModel instance = new(this, _customerService);
-                await instance.Initialize();
+                await instance.InitializeAsync();
                 instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

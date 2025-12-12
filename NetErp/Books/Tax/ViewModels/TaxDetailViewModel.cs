@@ -735,7 +735,6 @@ namespace NetErp.Books.Tax.ViewModels
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
-
                     .Field(e => e.Name)
                     .Field(e => e.Prefix)
                     .Field(e => e.GeneratedTaxRefundAccountIsRequired)

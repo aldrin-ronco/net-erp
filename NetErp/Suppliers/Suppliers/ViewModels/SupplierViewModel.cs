@@ -79,7 +79,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public async Task ActivateDetailViewForEdit(SupplierGraphQLModel supplier)
         {
             SupplierDetailViewModel instance = new(this, _supplierService);
-            List<RetentionTypeDTO> retentionList = new List<RetentionTypeDTO>();
+            List<WithholdingTypeDTO> withholdingTypes = [];
             instance.Id = supplier.Id;
             instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.Entity.CaptureType);
             instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == supplier.Entity.IdentificationType.Id);
@@ -87,10 +87,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             instance.MiddleName = supplier.Entity.MiddleName;
             instance.FirstLastName = supplier.Entity.FirstLastName;
             instance.MiddleLastName = supplier.Entity.MiddleLastName;
-            instance.Phone1 = supplier.Entity.Phone1;
-            instance.Phone2 = supplier.Entity.Phone2;
-            instance.CellPhone1 = supplier.Entity.CellPhone1;
-            instance.CellPhone2 = supplier.Entity.CellPhone2;
+            instance.PrimaryPhone = supplier.Entity.PrimaryPhone;
+            instance.SecondaryPhone = supplier.Entity.SecondaryPhone;
+            instance.PrimaryCellPhone = supplier.Entity.PrimaryCellPhone;
+            instance.SecondaryCellPhone = supplier.Entity.SecondaryCellPhone;
             instance.BusinessName = supplier.Entity.BusinessName;
             instance.Address = supplier.Entity.Address;
             instance.IdentificationNumber = supplier.Entity.IdentificationNumber;
@@ -100,21 +100,17 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             instance.SelectedCityId = supplier.Entity.City.Id;
             instance.Emails = supplier.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(supplier.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
 
-            foreach (RetentionTypeDTO retention in instance.RetentionTypes)
+            foreach (WithholdingTypeDTO retention in instance.WithholdingTypes)
             {
                 bool exist = !(supplier.Retentions is null) && supplier.Retentions.Any(x => x.Id == retention.Id);
-                retentionList.Add(new RetentionTypeDTO()
+                withholdingTypes.Add(new WithholdingTypeDTO()
                 {
                     Id = retention.Id,
                     Name = retention.Name,
-                    Margin = retention.Margin,
-                    InitialBase = retention.InitialBase,
-                    AccountingAccountSale = retention.AccountingAccountSale,
-                    AccountingAccountPurchase = retention.AccountingAccountPurchase,
                     IsSelected = exist
                 });
             }
-            instance.RetentionTypes = new System.Collections.ObjectModel.ObservableCollection<RetentionTypeDTO>(retentionList);
+            instance.WithholdingTypes = new System.Collections.ObjectModel.ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 

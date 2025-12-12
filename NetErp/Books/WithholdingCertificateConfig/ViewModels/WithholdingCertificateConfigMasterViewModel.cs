@@ -420,8 +420,6 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                   .Field(e => e.Id)
                   .Field(e => e.Description)
                   .Field(e => e.Name)
-
-                  
                   .SelectList(e => e.AccountingAccounts, cat => cat
                       .Field(c => c.Id)
                       .Field(c => c.Name)
@@ -437,12 +435,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                               .Select(d => d.Department, dep => dep
                               .Field(d => d.Id)
                               .Field(d => d.Name)
-                          )
-                          )
+                              )
+                      )
                       
                   
-              )
                   )
+              )
               .Field(o => o.PageNumber)
               .Field(o => o.PageSize)
               .Field(o => o.TotalPages)
