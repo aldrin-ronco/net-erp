@@ -868,7 +868,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new {name = email.ServerName, email.Description, email.Email, email.SendElectronicInvoice });
+                        emailList.Add(new {name = email.ServerName, email.Description, email.Email, email.isElectronicInvoiceRecipient });
                     }
                 }
 
@@ -1316,7 +1316,7 @@ namespace NetErp.Billing.Customers.ViewModels
                             .Field(email => email.Id)
                             .Field(email => email.Description)
                             .Field(email => email.Email)
-                            .Field(email => email.SendElectronicInvoice)
+                            .Field(email => email.isElectronicInvoiceRecipient)
                             .Field(email => email.IsCorporate))))
                 .Field(f => f.Message)
                 .Field(f => f.Success)

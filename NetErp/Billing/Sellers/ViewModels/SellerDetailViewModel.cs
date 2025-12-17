@@ -28,6 +28,11 @@ using NetErp.Global.CostCenters.DTO;
 using NetErp.Billing.Zones.DTO;
 using System.Diagnostics;
 using System.Collections.Specialized;
+using DevExpress.XtraEditors.Filtering;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
+using Services.Books.DAL.PostgreSQL;
+using Extensions.Global;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
@@ -61,7 +66,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -91,6 +96,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _firstName = value;
                     ValidateProperty(nameof(FirstName), value);
                     NotifyOfPropertyChange(nameof(FirstName));
+                    this.TrackChange(nameof(FirstName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -110,6 +116,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _middleName = value;
                     NotifyOfPropertyChange(nameof(MiddleName));
+                    this.TrackChange(nameof(MiddleName));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -130,6 +138,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _firstLastName = value;
                     ValidateProperty(nameof(FirstLastName), value);
                     NotifyOfPropertyChange(nameof(FirstLastName));
+                    this.TrackChange(nameof(FirstLastName));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -149,6 +159,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _middleLastName = value;
                     NotifyOfPropertyChange(nameof(MiddleLastName));
+                    this.TrackChange(nameof(MiddleLastName));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -169,6 +181,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _primaryPhone = value;
                     ValidateProperty(nameof(PrimaryPhone), value);
                     NotifyOfPropertyChange(nameof(PrimaryPhone));
+                    this.TrackChange(nameof(PrimaryPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -189,6 +203,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _secondaryPhone = value;
                     ValidateProperty(nameof(SecondaryPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryPhone));
+                    this.TrackChange(nameof(SecondaryPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -207,6 +223,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 _primaryCellPhone = value;
                 ValidateProperty(nameof(PrimaryCellPhone), value);
                 NotifyOfPropertyChange(nameof(PrimaryCellPhone));
+                this.TrackChange(nameof(PrimaryCellPhone));
+
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
@@ -226,6 +244,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _secondaryCellPhone = value;
                     ValidateProperty(nameof(SecondaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryCellPhone));
+                    this.TrackChange(nameof(SecondaryCellPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -245,6 +265,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _address = value;
                     NotifyOfPropertyChange(nameof(Address));
+                    this.TrackChange(nameof(Address));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -282,6 +304,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _emailDescription = value;
                     NotifyOfPropertyChange(nameof(EmailDescription));
                     NotifyOfPropertyChange(nameof(CanAddEmail));
+                    this.TrackChange(nameof(EmailDescription));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -301,6 +325,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _email = value;
                     NotifyOfPropertyChange(nameof(Email));
+                    this.TrackChange(nameof(Email));
+
                     NotifyOfPropertyChange(nameof(CanAddEmail));
                 }
             }
@@ -361,6 +387,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    this.TrackChange(nameof(SelectedIdentificationType));
+
                     ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
                     if (IsNewRecord)
                     {
@@ -551,11 +579,27 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _identificationNumber = value;
                     ValidateProperty(nameof(IdentificationNumber), value);
                     NotifyOfPropertyChange(nameof(IdentificationNumber));
+                    this.TrackChange(nameof(IdentificationNumber));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
+        private char _regime = 'N';
+        public char Regime
+        {
+            get => _regime;
+            set
+            {
+                if (_regime != value)
+                {
+                    _regime = value;
+                    NotifyOfPropertyChange(nameof(Regime));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
         public bool CanSave
         {
             get
@@ -567,6 +611,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 if (CostCenters.Where(f => f.IsSelected == true).Count() == 0) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
+                // Si no hay cambios
+                if (!this.HasChanges()) return false;
                 // Si el control de errores por propiedades tiene algun error
                 return _errors.Count <= 0;
             }
@@ -628,7 +674,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Address = string.Empty;
                 Emails = new ObservableCollection<EmailDTO>();
                 SelectedCountry = Context.Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
                 SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
                 foreach (CostCenterDTO costCenter in Context.CostCenters)
                 {
@@ -713,46 +759,39 @@ namespace NetErp.Billing.Sellers.ViewModels
 
             NotifyOfPropertyChange(() => CanSave);
         }
-        public async Task Save()
+       
+        public async Task<UpsertResponseType<SellerGraphQLModel>> ExecuteSaveAsync()
         {
+
             try
             {
-                IsBusy = true;
-                Refresh();
-                SellerGraphQLModel result = await ExecuteSave();
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerCreateMessage() { CreatedSeller = Context.AutoMapper.Map<SellerDTO>(result)});
+                    string query = GetCreateQuery();
+                    dynamic variables = new ExpandoObject();
+                    variables.createResponseInput = ChangeCollector.CollectChanges(this, prefix: "accountingEntity");
+                  //  dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+
+                    UpsertResponseType<SellerGraphQLModel> sellerCreated = await _sellerService.CreateAsync<UpsertResponseType<SellerGraphQLModel>>(query, variables);
+                    return sellerCreated;
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SellerUpdateMessage() { UpdatedSeller = Context.AutoMapper.Map<SellerDTO>(result)});
+                    string query = GetUpdateQuery();
+
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+
+                    UpsertResponseType<SellerGraphQLModel> updatedSeller = await _sellerService.UpdateAsync<UpsertResponseType<SellerGraphQLModel>>(query, variables);
+                    return updatedSeller;
                 }
-                Context.EnableOnViewReady = false;
-                await Context.ActivateMasterViewAsync();
             }
-            catch (AsyncException ex)
+            catch (Exception)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false;
+                throw;
             }
         }
-       
+        /*
         public async Task<SellerGraphQLModel> ExecuteSave()
         {
             string action = string.Empty;
@@ -773,7 +812,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice });
+                        emailList.Add(new { email.Description, email.Email, email.isElectronicInvoiceRecipient });
                     }
                 }
 
@@ -801,28 +840,34 @@ namespace NetErp.Billing.Sellers.ViewModels
 
                 // Entity
                 variables.Data.Entity.IdentificationNumber = IdentificationNumber;
-                variables.Data.Entity.VerificationDigit = "";
-                variables.Data.Entity.BusinessName = "";
+                
                 variables.Data.Entity.CaptureType = SelectedCaptureType;
                 variables.Data.Entity.FirstName = FirstName;
                 variables.Data.Entity.MiddleName = MiddleName;
                 variables.Data.Entity.FirstLastName = FirstLastName;
                 variables.Data.Entity.MiddleLastName = MiddleLastName;
-                variables.Data.Entity.FullName = $"{ FirstName} {MiddleName} {FirstLastName} {MiddleLastName}".Trim().RemoveExtraSpaces();
+                
                 variables.Data.Entity.Phone1 = PrimaryPhone;
                 variables.Data.Entity.Phone2 = SecondaryPhone;
                 variables.Data.Entity.CellPhone1 = PrimaryCellPhone;
                 variables.Data.Entity.CellPhone2 = SecondaryCellPhone;
                 variables.Data.Entity.Address = Address;
-                variables.Data.Entity.Regime = "N";
-                variables.Data.Entity.TradeName = "";
-                variables.Data.Entity.CommercialCode = "";
+                
                 variables.Data.Entity.SearchName = $"{FirstName} {MiddleName} {FirstLastName} {MiddleLastName}".Trim().RemoveExtraSpaces();
                 variables.Data.Entity.TelephonicInformation = string.Join(" - ", phones);
                 variables.Data.Entity.IdentificationTypeId = SelectedIdentificationType.Id;
                 variables.Data.Entity.CountryId = SelectedCountry.Id;
                 variables.Data.Entity.DepartmentId = SelectedDepartment.Id;
                 variables.Data.Entity.CityId = SelectedCityId;
+
+                variables.Data.Entity.VerificationDigit = "";
+                variables.Data.Entity.BusinessName = "";
+                variables.Data.Entity.Regime = "N";
+                variables.Data.Entity.TradeName = "";
+                variables.Data.Entity.CommercialCode = "";
+                variables.Data.Entity.FullName = $"{ FirstName} {MiddleName} {FirstLastName} {MiddleLastName}".Trim().RemoveExtraSpaces();
+
+
                 // Seller
                 variables.Data.IsActive = true;
                 variables.Data.CostCenters = costCenterSelection;
@@ -941,6 +986,91 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 throw new AsyncException(innerException: ex);
             }
+        }*/
+        public async Task SaveAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                UpsertResponseType<SellerGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new SellerCreateMessage() { CreatedSeller = result }
+                        : new SellerUpdateMessage() { UpdatedSeller = result }
+                );
+                await Context.ActivateMasterViewAsync();
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<SellerGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "seller", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.IsActive)
+                   )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateSellerInput!");
+
+            var fragment = new GraphQLQueryFragment("createSeller", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<SellerGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "seller", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.IsActive)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateSellerInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateSeller", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
         public void AddEmail()
@@ -998,7 +1128,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         public async Task Initialize()
         {
             Countries = Context.Countries;
-            SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == "13"); // 13 es CC
+            SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == "40"); // 13 es CC
            
         }
 
@@ -1013,6 +1143,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                       ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
                       : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render);
             });
+        }
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+          
+           
+            NotifyOfPropertyChange(nameof(CanSave));
         }
         #endregion
 

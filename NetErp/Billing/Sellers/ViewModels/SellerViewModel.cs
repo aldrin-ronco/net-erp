@@ -159,6 +159,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
                 await instance.Initialize();
                 instance.CleanUpControls();
+                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (AsyncException ex)
@@ -186,20 +187,20 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await instance.Initialize();
                 instance.Id = seller.Id;
                 instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "13");
-                instance.IdentificationNumber = seller.Entity.IdentificationNumber;
-                instance.FirstName = seller.Entity.FirstName;
-                instance.MiddleName = seller.Entity.MiddleName;
-                instance.FirstLastName = seller.Entity.FirstLastName;
-                instance.MiddleLastName = seller.Entity.MiddleLastName;
-                instance.PrimaryPhone = seller.Entity.PrimaryPhone;
-                instance.SecondaryPhone = seller.Entity.SecondaryPhone;
-                instance.PrimaryCellPhone = seller.Entity.PrimaryCellPhone;
-                instance.SecondaryCellPhone = seller.Entity.SecondaryCellPhone;
-                instance.Emails = seller.Entity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.Entity.Emails.Select(x => x.Clone()).ToList());
-                instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
-                instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.Entity.Department.Id);
-                instance.SelectedCityId = seller.Entity.City.Id;
-                instance.Address = seller.Entity.Address;
+                instance.IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
+                instance.FirstName = seller.AccountingEntity.FirstName;
+                instance.MiddleName = seller.AccountingEntity.MiddleName;
+                instance.FirstLastName = seller.AccountingEntity.FirstLastName;
+                instance.MiddleLastName = seller.AccountingEntity.MiddleLastName;
+                instance.PrimaryPhone = seller.AccountingEntity.PrimaryPhone;
+                instance.SecondaryPhone = seller.AccountingEntity.SecondaryPhone;
+                instance.PrimaryCellPhone = seller.AccountingEntity.PrimaryCellPhone;
+                instance.SecondaryCellPhone = seller.AccountingEntity.SecondaryCellPhone;
+                instance.Emails = seller.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.AccountingEntity.Emails.Select(x => x.Clone()).ToList());
+                instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.AccountingEntity.Country.Id);
+                instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.AccountingEntity.Department.Id);
+                instance.SelectedCityId = seller.AccountingEntity.City.Id;
+                instance.Address = seller.AccountingEntity.Address;
                 foreach (CostCenterDTO costCenter in CostCenters)
                 {
                     bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
