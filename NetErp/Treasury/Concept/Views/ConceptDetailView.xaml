@@ -117,17 +117,18 @@
                     <dxe:TextEdit Grid.Row="5" 
                           Width="450" 
                           HorizontalAlignment="Center"
-                          x:Name="NameConcept"
+                          x:Name="Name"
                           CharacterCasing="Upper"
                           Margin="0 0 0 20"
-                          Text="{Binding Path=NameConcept, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                          Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
 
                     </dxe:TextEdit>
 
                     <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Left" Margin="0,0 ,0,5"></TextBlock>
                     <dxg:LookUpEdit Grid.Row="7" Width="450" HorizontalAlignment="Center" 
-                      ItemsSource="{Binding AccoutingAccount}"
-                      SelectedItem="{Binding SelectedAccoutingAccount}"
+                      ItemsSource="{Binding AccountingAccount}"
+                      
+                      EditValue="{Binding AccountingAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"              
                       IsTextEditable="True"
                       AutoComplete="False"
                       DisplayMember="FullName"
@@ -156,7 +157,7 @@
                     <dxe:CheckEdit Grid.Row="8" 
                            Content="¿Aplicar porcentaje?" 
                            HorizontalAlignment="Center" 
-                           IsChecked="{Binding IsApplyPercentage, Mode=TwoWay}"
+                           IsChecked="{Binding AllowMargin, Mode=TwoWay}"
                            Visibility="{Binding IsPercentageSectionVisible}"
                            Margin="0,0,0,20"/>
 
@@ -166,7 +167,7 @@
                         Visibility="{Binding IsPercentageOptionsVisible}">
                         <!-- SpinEdit para ingresar el valor numérico -->
                         <dxe:SpinEdit Width="80"
-                          EditValue="{Binding PercentageValue, Mode=TwoWay}"
+                          EditValue="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           MinValue="0"
                           MaxValue="100"
                           ValidateOnTextInput="True"
