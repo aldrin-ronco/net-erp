@@ -195,7 +195,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 instance.SecondaryPhone = seller.Entity.SecondaryPhone;
                 instance.PrimaryCellPhone = seller.Entity.PrimaryCellPhone;
                 instance.SecondaryCellPhone = seller.Entity.SecondaryCellPhone;
-                instance.Emails = seller.Entity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.Entity.Emails.Select(x => x.Clone()).ToList());
+                instance.Emails = seller.Entity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(seller.Entity.Emails));
                 instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
                 instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.Entity.Department.Id);
                 instance.SelectedCityId = seller.Entity.City.Id;

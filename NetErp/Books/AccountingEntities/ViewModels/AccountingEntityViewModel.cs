@@ -92,7 +92,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == selectedItem.Country.Id);
             instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == selectedItem.Department.Id);
             instance.SelectedCityId = selectedItem.City.Id;
-            instance.Emails = new ObservableCollection<EmailDTO>(selectedItem.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
+            instance.Emails = new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(selectedItem.Emails)); // Este codigo copia la lista sin mantener referencia a la lista original
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 

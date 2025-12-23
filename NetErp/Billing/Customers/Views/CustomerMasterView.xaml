@@ -37,6 +37,8 @@
             <RowDefinition Height="auto"/>
             <!--ToolBarTray-->
             <RowDefinition Height="auto"/>
+            <!--CheckBox Activos-->
+            <RowDefinition Height="auto"/>
             <!--Filtros-->
             <RowDefinition Height="auto"/>
             <!--Buscar-->
@@ -80,8 +82,12 @@
             </dxr:RibbonPage>
         </dxr:RibbonControl>
         <!--Filtros-->
+        <!--Check Mostrar Solo Activos-->
+        <dxe:CheckEdit Grid.Row="2" Content="Mostrar únicamente clientes activos" Margin="0 5 0 5"
+                       IsChecked="{Binding Path=ShowActiveCustomersOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                       Style="{StaticResource BlueCheckedTextStyle}"/>
         <!--Text de Busqueda-->
-        <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0 5 0 0">
+        <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0 0 0 0">
             <TextBlock Text="¿Qué desea buscar?" Margin="0 0 0 5"/>
             <dxe:TextEdit x:Name="FilterSearch"
                               EditValue="{Binding Path=FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}"
@@ -98,7 +104,7 @@
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
-                            Grid.Row="3">
+                            Grid.Row="4">
             <dxg:GridControl 
                 Margin="0 8 0 0"
                 EnableSmartColumnsGeneration="True"
@@ -106,9 +112,21 @@
                 ItemsSource="{Binding Path=Customers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 SelectedItem="{Binding Path=SelectedCustomer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
-                    <dxg:TableView AllowCascadeUpdate="False" 
+                    <dxg:TableView AllowCascadeUpdate="False"
                                    EnableSelectedRowAppearance="True"
-                                   ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                                   ShowGroupPanel="False" AlternateRowBackground="Beige">
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
+                                        <Setter Property="Background" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
                 </dxg:GridControl.View>
 
                 <!--N.I.T-->
@@ -157,7 +175,7 @@
             </dxg:GridControl>
         </busyIndicator:BusyMask>
         <!--Paginacion-->
-        <uc:GridPaging Grid.Row="4" Grid.Column="0" 
+        <uc:GridPaging Grid.Row="5" Grid.Column="0" 
                        HorizontalAlignment="Stretch"
                        VerticalAlignment="Center"
                        Margin="0 0 0 0"

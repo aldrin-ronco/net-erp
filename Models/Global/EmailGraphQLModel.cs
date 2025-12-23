@@ -14,10 +14,8 @@ namespace Models.Global
         public string Email { set; get; } = string.Empty;
         public string Password { set; get; } = string.Empty;
         public bool IsCorporate { set; get; } = true;
-        public bool SendElectronicInvoice { set; get; } = false;
-        public AccountingEntityGraphQLModel AccountingEntity { get; set; }
+        public bool IsElectronicInvoiceRecipient { set; get; } = false;
         public SmtpGraphQLModel Smtp { get; set; }
-        public AwsSesGraphQLModel AwsSes { get; set; }
         public override string ToString()
         {
             return Description;

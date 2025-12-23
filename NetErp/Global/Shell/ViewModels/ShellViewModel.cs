@@ -146,5 +146,12 @@ namespace NetErp.Global.Shell.ViewModels
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }
         }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            // Desuscribirse del EventAggregator para evitar memory leaks
+            _eventAggregator.Unsubscribe(this);
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

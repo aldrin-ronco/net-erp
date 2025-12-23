@@ -96,6 +96,18 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
 - Ribbon interface for main navigation
 - Professional styling with Century Gothic font
 
+**⚠️ CRITICAL: Tab-Based Navigation System**:
+- The application uses **DXTabControl** for multi-document interface (MDI)
+- Modules open in **concurrent tabs**, NOT by replacing views
+- When a user opens a new module, both the previous and new modules remain active in separate tabs
+- Multiple ViewModels can be active simultaneously in memory
+- `OnDeactivateAsync(close: false)` is NOT called when switching between tabs
+- `OnDeactivateAsync(close: true)` is ONLY called when the user explicitly closes a tab
+- This affects decisions about:
+  - CancellationToken usage (not needed for quick operations since tabs stay open)
+  - Memory management (multiple ViewModels active at once)
+  - Event subscriptions (ViewModels stay subscribed while tab is open)
+
 **Key Services**:
 - `INotificationService` - In-app notifications
 - `IBackgroundQueueService` - Async task processing

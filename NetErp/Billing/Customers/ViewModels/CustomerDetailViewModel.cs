@@ -27,6 +27,9 @@ using DevExpress.Mvvm;
 using System.Windows.Threading;
 using static Models.Global.GraphQLResponseTypes;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json;
+using Extensions.Global;
+using static Dictionaries.BooksDictionaries;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
@@ -71,6 +74,7 @@ namespace NetErp.Billing.Customers.ViewModels
         #region Properties
 
         Dictionary<string, List<string>> _errors;
+        private List<string> _seedEmails = new List<string>();
 
         public CustomerViewModel Context { get; set; }
 
@@ -103,9 +107,9 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private ZoneGraphQLModel _selectedZone;
+        private ZoneGraphQLModel? _selectedZone;
         [ExpandoPath("zoneId", SerializeAsId = true)]
-        public ZoneGraphQLModel SelectedZone
+        public ZoneGraphQLModel? SelectedZone
         {
             get => _selectedZone;
             set
@@ -113,7 +117,6 @@ namespace NetErp.Billing.Customers.ViewModels
                 if (_selectedZone != value)
                 {
                     _selectedZone = value;
-                    ValidateProperty(nameof(SelectedZone), _selectedZone);
                     NotifyOfPropertyChange(nameof(SelectedZone));
                     this.TrackChange(nameof(SelectedZone));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -588,39 +591,45 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private ObservableCollection<EmailDTO> _emails;
-        public ObservableCollection<EmailDTO> Emails
+        private ObservableCollection<EmailGraphQLModel> _emails;
+        [ExpandoPath("accountingEntity.emails")]
+        public ObservableCollection<EmailGraphQLModel> Emails
         {
             get => _emails;
             set
             {
                 if (_emails != value)
                 {
+                    // Desuscribirse del anterior si existe
+                    if (_emails != null)
+                    {
+                        _emails.CollectionChanged -= Emails_CollectionChanged;
+                    }
+
                     _emails = value;
+
+                    // Suscribirse al nuevo
+                    if (_emails != null)
+                    {
+                        _emails.CollectionChanged += Emails_CollectionChanged;
+                    }
+
                     NotifyOfPropertyChange(nameof(Emails));
-                    NotifyOfPropertyChange(nameof(FilteredEmails));
+                    this.TrackChange(nameof(Emails));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private ObservableCollection<EmailDTO> _filteredEmails;
-        public ObservableCollection<EmailDTO> FilteredEmails
+        private void Emails_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            get
-            {
-                if (_filteredEmails == null) _filteredEmails = [];
-                _filteredEmails.Clear();
-                if (Emails == null)
-                    return _filteredEmails;
-                foreach (EmailDTO email in Emails)
-                    if (!email.Deleted) _filteredEmails.Add(email);
-                return _filteredEmails;
-            }
+            // Se dispara cuando se añade, elimina o modifica un elemento
+            this.TrackChange(nameof(Emails));
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
-        private EmailDTO _selectedEmail;
-        public EmailDTO SelectedEmail
+        private EmailGraphQLModel _selectedEmail;
+        public EmailGraphQLModel SelectedEmail
         {
             get => _selectedEmail;
             set
@@ -715,7 +724,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private bool _isActive = true;
+        private bool _isActive = false;
         public new bool IsActive
         {
             get => _isActive;
@@ -726,6 +735,19 @@ namespace NetErp.Billing.Customers.ViewModels
                     _isActive = value;
                     NotifyOfPropertyChange(nameof(IsActive));
                     this.TrackChange(nameof(IsActive));
+
+                    // Si el cliente no está bloqueado (IsActive = true), limpiar el motivo de bloqueo
+                    if (_isActive)
+                    {
+                        BlockingReason = string.Empty;
+                        ClearErrors(nameof(BlockingReason));
+                    }
+                    else
+                    {
+                        // Si está bloqueado, validar que tenga motivo de bloqueo
+                        ValidateProperty(nameof(BlockingReason), BlockingReason);
+                    }
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -758,6 +780,13 @@ namespace NetErp.Billing.Customers.ViewModels
                     _blockingReason = value;
                     NotifyOfPropertyChange(nameof(BlockingReason));
                     this.TrackChange(nameof(BlockingReason));
+
+                    // Validar solo si el cliente está bloqueado (IsActive = false)
+                    if (!IsActive)
+                    {
+                        ValidateProperty(nameof(BlockingReason), value);
+                    }
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -779,6 +808,29 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
+        private bool HasEmailChanges()
+        {
+            // Para nuevos registros, los emails no afectan el guardado
+            if (IsNewRecord)
+            {
+                return false;
+            }
+
+            // Para actualizaciones, comparar con la lista seed
+            var currentEmails = Emails.Select(e => e.Email).ToList();
+
+            // Diferente cantidad = hubo cambios
+            if (currentEmails.Count != _seedEmails.Count)
+            {
+                return true;
+            }
+
+            // Misma cantidad, verificar si todos los emails son los mismos
+            // Usar HashSet para comparación eficiente
+            var seedSet = new HashSet<string>(_seedEmails);
+            return !currentEmails.All(email => seedSet.Contains(email));
+        }
+
         public bool CanSave
         {
             get
@@ -797,12 +849,10 @@ namespace NetErp.Billing.Customers.ViewModels
                 if (SelectedCountry == null) return false;
                 if (SelectedDepartment == null) return false;
                 if (SelectedCityId == 0) return false;
-                // Validar zona requerida (excluir nodo dummy con Id = 0)
-                if (SelectedZone == null || SelectedZone.Id == 0) return false;
                 // Si el control de errores por propiedades tiene algun error
                 if (_errors.Count > 0) return false;
-                // Si es actualización y no hay cambios, no permitir guardar
-                if (!IsNewRecord && !this.HasChanges()) return false;
+                // Si es actualización y no hay cambios en propiedades ni en emails, no permitir guardar
+                if (!IsNewRecord && !this.HasChanges() && !HasEmailChanges()) return false;
                 return true;
             }
         }
@@ -820,6 +870,11 @@ namespace NetErp.Billing.Customers.ViewModels
                 IsBusy = true;
                 Refresh();
                 UpsertResponseType<CustomerGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerCreateMessage() { CreatedCustomer = result});
@@ -828,7 +883,6 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new CustomerUpdateMessage() { UpdatedCustomer = result});
                 }
-                Context.EnableOnViewReady = false;
                 await Context.ActivateMasterViewAsync();
             }
             catch (AsyncException ex)
@@ -859,34 +913,38 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 string query;
-                List<int> retentions = [];
-                List<object> emailList = [];
-                List<int> zonesSelection = [];
-
-                // Build email list
-                if (Emails != null)
-                {
-                    foreach (EmailDTO email in Emails)
-                    {
-                        emailList.Add(new {name = email.ServerName, email.Description, email.Email, email.SendElectronicInvoice });
-                    }
-                }
+                List<int> withholdingTypes = [];
 
                 // Build retentions list
                 if (WithholdingTypes != null)
                 {
-                    foreach (WithholdingTypeDTO retention in WithholdingTypes)
+                    foreach (WithholdingTypeDTO withholdingType in WithholdingTypes)
                     {
-                        if (retention.IsSelected)
-                            retentions.Add(retention.Id);
+                        if (withholdingType.IsSelected)
+                            withholdingTypes.Add(withholdingType.Id);
                     }
                 }
 
+                var transformers = new Dictionary<string, Func<object?, object?>>
+                {
+                    [nameof(CustomerDetailViewModel.Emails)] = item =>
+                    {
+                        var email = (EmailGraphQLModel)item!;
+                        return new
+                        {
+                            description = email.Description,
+                            email = email.Email
+                        };
+                    }
+                };
+
                 // Use ChangeCollector to build variables from tracked changes
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData");
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
+
+                string json = JsonConvert.SerializeObject(variables);
 
                 // Add Id for UPDATE operations
-                    if (!IsNewRecord) variables.Id = Id;
+                if (!IsNewRecord) variables.updateResponseId = Id;
 
                 // Query usando QueryBuilder
                 query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();
@@ -925,15 +983,19 @@ namespace NetErp.Billing.Customers.ViewModels
                 // Seed default values for new records
                 this.SeedValue(nameof(SelectedRegime), SelectedRegime);
                 this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+                this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
                 this.SeedValue(nameof(CreditTerm), CreditTerm);
                 this.SeedValue(nameof(IsTaxFree), IsTaxFree);
                 this.SeedValue(nameof(RetainsAnyBasis), RetainsAnyBasis);
                 this.SeedValue(nameof(IsActive), IsActive);
-                this.SeedValue(nameof(BlockingReason), BlockingReason);
                 this.SeedValue(nameof(SelectedCountry), SelectedCountry);
                 this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
                 this.SeedValue(nameof(SelectedCityId), SelectedCityId);
-                this.SeedValue(nameof(SelectedZone), SelectedZone);
+            }
+            else
+            {
+                // Guardar los emails iniciales para comparación en actualizaciones
+                _seedEmails = Emails.Select(e => e.Email).ToList();
             }
             // Accept all changes to reset the tracker
             this.AcceptChanges();
@@ -945,6 +1007,10 @@ namespace NetErp.Billing.Customers.ViewModels
             _errors = new Dictionary<string, List<string>>();
             Context = context ?? throw new ArgumentNullException(nameof(context));
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+
+            // Inicializar la colección para activar la suscripción al CollectionChanged
+            Emails = [];
+
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -952,11 +1018,10 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email, Saved = false, Deleted = false, Edited = true };
+                EmailGraphQLModel email = new() { Description = EmailDescription, Email = Email};
                 Email = string.Empty;
                 EmailDescription = string.Empty;
-                Emails.Add(email);
-                NotifyOfPropertyChange(nameof(FilteredEmails));
+                Emails.Add(email); // CollectionChanged se dispara automáticamente
                 _ = this.SetFocus(nameof(EmailDescription));
             }
             catch (Exception ex)
@@ -975,9 +1040,9 @@ namespace NetErp.Billing.Customers.ViewModels
                 if (ThemedMessageBox.Show("Confirme ...", $"¿ Confirma que desea eliminar el email : {SelectedEmail.Email} ?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 if(SelectedEmail != null)
                 {
-                    EmailDTO? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
+                    EmailGraphQLModel? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
                     if (emailToDelete is null) return;
-                    Emails.Remove(emailToDelete);
+                    Emails.Remove(emailToDelete); // CollectionChanged se dispara automáticamente
                 }
             }
             catch (Exception ex)
@@ -989,13 +1054,14 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public string GetInitializeQuery()
+        public string GetLoadDataForNewQuery()
         {
             var identificationTypeFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
                 .Create()
                 .SelectList(selector: it => it.Entries, nested: entries => entries
                     .Field(it => it.Id)
                     .Field(it => it.Name)
+                    .Field(it => it.Code)
                     .Field(it => it.HasVerificationDigit)
                     .Field(it => it.MinimumDocumentLength)
                 )
@@ -1049,11 +1115,134 @@ namespace NetErp.Billing.Customers.ViewModels
             return builder.GetQuery();
         }
 
-        public async Task InitializeAsync()
+        public string GetLoadDataForEditQuery()
+        {
+            var identificationTypeFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
+                .Create()
+                .SelectList(selector: it => it.Entries, nested: entries => entries
+                    .Field(it => it.Id)
+                    .Field(it => it.Name)
+                    .Field(it => it.Code)
+                    .Field(it => it.HasVerificationDigit)
+                    .Field(it => it.MinimumDocumentLength)
+                )
+                .Build();
+
+            var countryFields = FieldSpec<PageType<CountryGraphQLModel>>
+                .Create()
+                .SelectList(selector: c => c.Entries, nested: cEntry => cEntry
+                    .Field(c => c.Id)
+                    .Field(c => c.Name)
+                    .Field(c => c.Code)
+                    .SelectList(c => c.Departments, deptSpec => deptSpec
+                        .Field(d => d.Id)
+                        .Field(d => d.Name)
+                        .Field(d => d.Code)
+                        .SelectList(d => d.Cities, citySpec => citySpec
+                            .Field(ci => ci.Id)
+                            .Field(ci => ci.Name)
+                            .Field(ci => ci.Code)
+                        )
+                    )
+                )
+                .Build();
+
+            var withholdingTypeFields = FieldSpec<PageType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .SelectList(selector: wtc => wtc.Entries, nested: wtSpec => wtSpec
+                    .Field(wt => wt.Id)
+                    .Field(wt => wt.Name)
+                )
+                .Build();
+
+            var zoneFields = FieldSpec<PageType<ZoneGraphQLModel>>
+                .Create()
+                .SelectList(selector: z => z.Entries, nested: zSpec => zSpec
+                    .Field(z => z.Id)
+                    .Field(z => z.Name)
+                    .Field(z => z.IsActive)
+                )
+                .Build();
+
+            var customerFields = FieldSpec<CustomerGraphQLModel>
+                .Create()
+                .Field(c => c.Id)
+                .Field(c => c.CreditTerm)
+                .Field(c => c.IsTaxFree)
+                .Field(c => c.IsActive)
+                .Field(c => c.BlockingReason)
+                .Field(c => c.RetainsAnyBasis)
+                .Select(c => c.AccountingEntity, entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.CaptureType)
+                    .Field(e => e.BusinessName)
+                    .Field(e => e.FirstName)
+                    .Field(e => e.MiddleName)
+                    .Field(e => e.FirstLastName)
+                    .Field(e => e.MiddleLastName)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.Address)
+                    .Field(e => e.Regime)
+                    .Field(e => e.FullName)
+                    .Field(e => e.TradeName)
+                    .Field(e => e.SearchName)
+                    .Field(e => e.TelephonicInformation)
+                    .Field(e => e.CommercialCode)
+                    .Select(e => e.IdentificationType, it => it
+                        .Field(i => i.Id)
+                        .Field(i => i.Name)
+                        .Field(i => i.Code)
+                        .Field(i => i.HasVerificationDigit)
+                        .Field(i => i.MinimumDocumentLength))
+                    .Select(e => e.Country, co => co
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                        .Field(c => c.Code))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Name)
+                        .Field(d => d.Code))
+                    .Select(e => e.City, city => city
+                        .Field(ci => ci.Id)
+                        .Field(ci => ci.Name)
+                        .Field(ci => ci.Code))
+                    .SelectList(e => e.Emails, email => email
+                        .Field(em => em.Id)
+                        .Field(em => em.Description)
+                        .Field(em => em.Email)))
+                .SelectList(c => c.WithholdingTypes, wt => wt
+                    .Field(w => w.Id)
+                    .Field(w => w.Name))
+                .Select(c => c.Zone, zone => zone
+                    .Field(z => z.Id)
+                    .Field(z => z.Name)
+                    .Field(z => z.IsActive))
+                .Build();
+
+            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var customerIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypesPage", [paginationParameter], identificationTypeFields, "identificationTypes");
+            var countryFragment = new GraphQLQueryFragment("countriesPage", [paginationParameter], countryFields, "countries");
+            var withholdingTypeFragment = new GraphQLQueryFragment("withholdingTypesPage", [paginationParameter], withholdingTypeFields, "withholdingTypes");
+            var zoneFragment = new GraphQLQueryFragment("zonesPage", [paginationParameter], zoneFields, "zones");
+            var customerFragment = new GraphQLQueryFragment("customer", [customerIdParameter], customerFields, "customer");
+
+            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment, withholdingTypeFragment, zoneFragment, customerFragment]);
+
+            return builder.GetQuery();
+        }
+
+        public async Task LoadDataForNewAsync()
         {
             try
             {
-                string query = GetInitializeQuery();
+                string query = GetLoadDataForNewQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.identificationTypesPagePagination = new ExpandoObject();
@@ -1070,8 +1259,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries);
                 WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes.Entries));
                 Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries);
-                Zones = new ObservableCollection<ZoneGraphQLModel>(result.Zones.Entries);
-                Zones.Add(new(){ Id = 0, Name = "<< SELECCIONE UNA ZONA >>", IsActive = false });               
+                Zones = new ObservableCollection<ZoneGraphQLModel>(result.Zones.Entries);             
             }
             catch (Exception ex)
             {
@@ -1079,12 +1267,98 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
+        public async Task<CustomerGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            try
+            {
+                string query = GetLoadDataForEditQuery();
+
+                dynamic variables = new ExpandoObject();
+                variables.identificationTypesPagePagination = new ExpandoObject();
+                variables.countriesPagePagination = new ExpandoObject();
+                variables.withholdingTypesPagePagination = new ExpandoObject();
+                variables.zonesPagePagination = new ExpandoObject();
+
+                variables.customerId = id;
+                variables.identificationTypesPagePagination.pageSize = -1;
+                variables.countriesPagePagination.pageSize = -1;
+                variables.withholdingTypesPagePagination.pageSize = -1;
+                variables.zonesPagePagination.pageSize = -1;
+
+                CustomersDataContext result = await _customerService.GetDataContextAsync<CustomersDataContext>(query, variables);
+                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries);
+                WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes.Entries));
+                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries);
+                Zones = new ObservableCollection<ZoneGraphQLModel>(result.Zones.Entries);
+
+                // Poblar el ViewModel con los datos del customer (sin bloquear UI thread)
+                PopulateFromCustomer(result.Customer);
+
+                return result.Customer;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+
+        public void PopulateFromCustomer(CustomerGraphQLModel customer)
+        {
+            // Propiedades básicas del customer
+            Id = customer.Id;
+            CreditTerm = customer.CreditTerm;
+            IsTaxFree = customer.IsTaxFree;
+            IsActive = customer.IsActive;
+            BlockingReason = customer.BlockingReason;
+            RetainsAnyBasis = customer.RetainsAnyBasis;
+
+            // Propiedades del AccountingEntity
+            SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.AccountingEntity.CaptureType);
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Id == customer.AccountingEntity.IdentificationType.Id);
+            FirstName = customer.AccountingEntity.FirstName;
+            MiddleName = customer.AccountingEntity.MiddleName;
+            FirstLastName = customer.AccountingEntity.FirstLastName;
+            MiddleLastName = customer.AccountingEntity.MiddleLastName;
+            PrimaryPhone = customer.AccountingEntity.PrimaryPhone;
+            SecondaryPhone = customer.AccountingEntity.SecondaryPhone;
+            PrimaryCellPhone = customer.AccountingEntity.PrimaryCellPhone;
+            SecondaryCellPhone = customer.AccountingEntity.SecondaryCellPhone;
+            BusinessName = customer.AccountingEntity.BusinessName;
+            Address = customer.AccountingEntity.Address;
+            IdentificationNumber = customer.AccountingEntity.IdentificationNumber;
+            VerificationDigit = customer.AccountingEntity.VerificationDigit;
+
+            // Emails
+            Emails = customer.AccountingEntity.Emails is null ? [] : new ObservableCollection<EmailGraphQLModel>(customer.AccountingEntity.Emails);
+
+            // Location
+            SelectedCountry = Countries.FirstOrDefault(c => c.Id == customer.AccountingEntity.Country.Id);
+            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == customer.AccountingEntity.Department.Id);
+            SelectedCityId = customer.AccountingEntity.City.Id;
+
+            // WithholdingTypes
+            List<WithholdingTypeDTO> withholdingTypes = [];
+            foreach (WithholdingTypeDTO retention in WithholdingTypes)
+            {
+                bool exist = customer.WithholdingTypes is null ? false : customer.WithholdingTypes.Any(x => x.Id == retention.Id);
+                withholdingTypes.Add(new WithholdingTypeDTO()
+                {
+                    Id = retention.Id,
+                    Name = retention.Name,
+                    IsSelected = exist
+                });
+            }
+            WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
+
+            // Zone
+            SelectedZone = customer.Zone is null ? null : Zones.FirstOrDefault(z => z.Id == customer.Zone.Id);
+        }
+
         public void GoBack(object p)
         {
             try
             {
                 _ = Context.ActivateMasterViewAsync();
-                CleanUpControls();
             }
             catch (AsyncException ex)
             {
@@ -1116,7 +1390,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 PrimaryCellPhone = string.Empty;
                 SecondaryCellPhone = string.Empty;
                 Address = string.Empty;
-                Emails = new ObservableCollection<EmailDTO>();
+                Emails = [];
                 SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
                 SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 01 es el código del atlántico
                 SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
@@ -1171,9 +1445,8 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                foreach (EmailDTO email in Emails)
-                    if (email.UUID == SelectedEmail.UUID) email.Edited = true;
                 NotifyOfPropertyChange(nameof(Emails));
+                NotifyOfPropertyChange(nameof(CanSave));
             }
             catch (Exception ex)
             {
@@ -1316,7 +1589,6 @@ namespace NetErp.Billing.Customers.ViewModels
                             .Field(email => email.Id)
                             .Field(email => email.Description)
                             .Field(email => email.Email)
-                            .Field(email => email.SendElectronicInvoice)
                             .Field(email => email.IsCorporate))))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
@@ -1328,7 +1600,7 @@ namespace NetErp.Billing.Customers.ViewModels
             var parameters = new List<GraphQLQueryParameter>
             {
                 new("data", "UpdateCustomerInput!"),
-                new("id", "Int!")
+                new("id", "ID!")
             };
 
             var fragment = new GraphQLQueryFragment("updateCustomer", parameters, fields, "UpdateResponse");
@@ -1395,6 +1667,8 @@ namespace NetErp.Billing.Customers.ViewModels
                 switch (propertyName)
                 {
                     case nameof(IdentificationNumber):
+                        // Protección: no validar si SelectedIdentificationType es null (durante limpieza/desactivación)
+                        if (SelectedIdentificationType == null) break;
                         if (string.IsNullOrEmpty(value) || value.Trim().Length < SelectedIdentificationType.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
                         break;
                     case nameof(FirstName):
@@ -1405,6 +1679,9 @@ namespace NetErp.Billing.Customers.ViewModels
                         break;
                     case nameof(BusinessName):
                         if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
+                        break;
+                    case nameof(BlockingReason):
+                        if (string.IsNullOrEmpty(value.Trim()) && !IsActive) AddError(propertyName, "Debe especificar un motivo de bloqueo");
                         break;
                     case nameof(PrimaryPhone):
                         if (value.Length != 7 && !string.IsNullOrEmpty(PrimaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
@@ -1447,10 +1724,6 @@ namespace NetErp.Billing.Customers.ViewModels
                     case nameof(SelectedCityId):
                         if (value is int cityId && cityId == 0) AddError(propertyName, "Debe seleccionar un municipio");
                         break;
-                    case nameof(SelectedZone):
-                        if (value == null || (value is ZoneGraphQLModel zone && zone.Id == 0))
-                            AddError(propertyName, "Debe seleccionar una zona");
-                        break;
                     default:
                         break;
                 }
@@ -1483,12 +1756,25 @@ namespace NetErp.Billing.Customers.ViewModels
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            // Desuscribirse del EventAggregator para evitar memory leaks
+            // 1. Desuscribirse del EventAggregator PRIMERO para evitar memory leaks
             Context.EventAggregator.Unsubscribe(this);
-            
-            // Limpiar colecciones
-            Emails.Clear();
-            
+
+            // 2. Desuscribirse del CollectionChanged ANTES de limpiar (evita disparar eventos durante limpieza)
+            if (_emails != null)
+            {
+                _emails.CollectionChanged -= Emails_CollectionChanged;
+            }
+
+            // 3. Limpiar el ChangeTracker para liberar referencias
+            this.AcceptChanges();
+
+            // 4. AHORA sí limpiar las colecciones (ya no dispararán eventos porque nos desuscribimos)
+            Emails?.Clear();
+            Countries?.Clear();
+            Zones?.Clear();
+            WithholdingTypes?.Clear();
+            IdentificationTypes?.Clear();
+
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 
