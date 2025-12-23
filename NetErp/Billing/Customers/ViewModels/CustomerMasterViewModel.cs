@@ -165,7 +165,7 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Context.ActivateDetailViewForEditAsync(SelectedCustomer);
+                await Context.ActivateDetailViewForEditAsync(SelectedCustomer!.Id);
                 SelectedCustomer = null;
             }
             catch (AsyncException ex)
@@ -208,6 +208,19 @@ namespace NetErp.Billing.Customers.ViewModels
                 variables.PageResponsePagination = new ExpandoObject();
                 variables.PageResponsePagination.Page = PageIndex;
                 variables.PageResponsePagination.PageSize = PageSize;
+                variables.PageResponseFilters = new ExpandoObject();
+
+                // Aplicar filtro de clientes activos si está habilitado
+                if (ShowActiveCustomersOnly)
+                {
+                    variables.PageResponseFilters.isActive = true;
+                }
+
+                if(!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.PageResponseFilters.matching = FilterSearch.Trim().RemoveExtraSpaces();
+                }
+
                 var result = await _customerService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -241,9 +254,9 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 string query = GetCanDeleteCustomerQuery();
 
-                object variables = new { canDeleteModelId = id };
+                object variables = new { canDeleteResponseId = id };
 
-                var validation = await _customerService.CanDeleteAsync(query, variables);
+                CanDeleteType validation = await _customerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -315,19 +328,29 @@ namespace NetErp.Billing.Customers.ViewModels
 
         protected override void OnViewReady(object view)
         {
-            if (Context.EnableOnViewReady is false) return;
-            System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady STARTED at {DateTime.Now:HH:mm:ss.fff} ===");
             base.OnViewReady(view);
             _ = LoadCustomersAsync();
             _ = this.SetFocus(nameof(FilterSearch));
-            System.Diagnostics.Debug.WriteLine($"=== CustomerMasterViewModel.OnViewReady FINISHED at {DateTime.Now:HH:mm:ss.fff} ===");
         }
 
         public async Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                await LoadCustomersAsync();
+                // ✅ Optimización: Remover de la lista en lugar de recargar todo
+                // Es seguro porque solo estamos eliminando un item visible
+                var deletedCustomer = Customers.FirstOrDefault(c => c.Id == message.DeletedCustomer.DeletedId);
+                if (deletedCustomer != null)
+                {
+                    Customers.Remove(deletedCustomer);
+                    TotalCount--;
+                }
+                else
+                {
+                    // Si no está en la lista visible, recargar para actualizar el TotalCount
+                    await LoadCustomersAsync();
+                }
+
                 _notificationService.ShowSuccess("Cliente eliminado correctamente.");
             }
             catch (Exception)
@@ -390,50 +413,13 @@ namespace NetErp.Billing.Customers.ViewModels
                 .Field(f => f.TotalEntries)
                 .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
-                    .Field(e => e.CreditTerm)
-                    .Field(e => e.IsTaxFree)
                     .Field(e => e.IsActive)
-                    .Field(e => e.BlockingReason)
-                    .Field(e => e.RetainsAnyBasis)
                     .Select(selector: e => e.AccountingEntity, nested: entity => entity
-                        .Field(en => en.Id)
                         .Field(en => en.IdentificationNumber)
                         .Field(en => en.VerificationDigit)
-                        .Field(en => en.CaptureType)
                         .Field(en => en.SearchName)
-                        .Field(en => en.FirstName)
-                        .Field(en => en.MiddleName)
-                        .Field(en => en.FirstLastName)
-                        .Field(en => en.MiddleLastName)
-                        .Field(en => en.BusinessName)
-                        .Field(en => en.PrimaryPhone)
-                        .Field(en => en.SecondaryPhone)
-                        .Field(en => en.PrimaryCellPhone)
-                        .Field(en => en.SecondaryCellPhone)
                         .Field(en => en.TelephonicInformation)
-                        .Field(en => en.Address)
-                        .Select(en => en.IdentificationType, it => it
-                            .Field(i => i.Id)
-                            .Field(i => i.Name))
-                        .Select(en => en.Country, c => c
-                            .Field(co => co.Id)
-                            .Field(co => co.Name))
-                        .Select(en => en.Department, d => d
-                            .Field(de => de.Id)
-                            .Field(de => de.Name))
-                        .Select(en => en.City, ci => ci
-                            .Field(cit => cit.Id)
-                            .Field(cit => cit.Name))
-                        .SelectList(en => en.Emails, em => em
-                            .Field(e => e.Id)
-                            .Field(e => e.Description)
-                            .Field(e => e.Email)))
-                    .SelectList(e => e.WithholdingTypes, ret => ret
-                        .Field(r => r.Id)
-                        .Field(r => r.Name))
-                    .Select(e => e.Zone, z => z
-                        .Field(zo => zo.Id)
-                        .Field(zo => zo.Name)))
+                        .Field(en => en.Address)))
                 .Build();
 
             var filterParameter = new GraphQLQueryParameter("filters", "CustomerFilters");
@@ -450,8 +436,8 @@ namespace NetErp.Billing.Customers.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "Int!");
-            var fragment = new GraphQLQueryFragment("canDeleteCustomer", [parameter], fields, "CanDeleteModel");
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("canDeleteCustomer", [parameter], fields, "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
@@ -464,7 +450,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteCustomer", [parameter], fields, "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
@@ -568,11 +554,27 @@ namespace NetErp.Billing.Customers.ViewModels
                     _filterSearch = value;
                     NotifyOfPropertyChange(() => FilterSearch);
                     // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) 
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
                         _ = LoadCustomersAsync();
                     }
+                }
+            }
+        }
+
+        // Filtro mostrar solo clientes activos
+        private bool _showActiveCustomersOnly = true;
+        public bool ShowActiveCustomersOnly
+        {
+            get => _showActiveCustomersOnly;
+            set
+            {
+                if (_showActiveCustomersOnly != value)
+                {
+                    _showActiveCustomersOnly = value;
+                    NotifyOfPropertyChange(nameof(ShowActiveCustomersOnly));
+                    _ = LoadCustomersAsync();
                 }
             }
         }

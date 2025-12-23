@@ -435,25 +435,25 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _emails = value;
                     NotifyOfPropertyChange(nameof(Emails));
-                    NotifyOfPropertyChange(nameof(FilteredEmails));
+                    //NotifyOfPropertyChange(nameof(FilteredEmails));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        private ObservableCollection<EmailDTO> _filteredEmails;
-        public ObservableCollection<EmailDTO> FilteredEmails
-        {
-            get
-            {
-                if (_filteredEmails == null) _filteredEmails = new ObservableCollection<EmailDTO>();
-                _filteredEmails.Clear();
-                if (Emails == null) return _filteredEmails;
-                foreach (EmailDTO email in Emails)
-                    if (!email.Deleted) _filteredEmails.Add(email);
-                return _filteredEmails;
-            }
-        }
+        //private ObservableCollection<EmailDTO> _filteredEmails;
+        //public ObservableCollection<EmailDTO> FilteredEmails
+        //{
+        //    get
+        //    {
+        //        if (_filteredEmails == null) _filteredEmails = new ObservableCollection<EmailDTO>();
+        //        _filteredEmails.Clear();
+        //        if (Emails == null) return _filteredEmails;
+        //        foreach (EmailDTO email in Emails)
+        //            if (!email.Deleted) _filteredEmails.Add(email);
+        //        return _filteredEmails;
+        //    }
+        //}
 
         private EmailDTO _selectedEmail;
         public EmailDTO SelectedEmail
@@ -595,8 +595,6 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                foreach (EmailDTO email in Emails)
-                    if (email.UUID == SelectedEmail.UUID) email.Edited = true;
                 NotifyOfPropertyChange(nameof(Emails));
             }
             catch (Exception ex)
@@ -773,7 +771,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Description, email.Email, email.SendElectronicInvoice });
+                        emailList.Add(new { email.Description, email.Email});
                     }
                 }
 
@@ -947,11 +945,10 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email, Saved = false, Deleted = false, Edited = true };
+                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email};
                 Email = string.Empty;
                 EmailDescription = string.Empty;
                 Emails.Add(email);
-                NotifyOfPropertyChange(nameof(FilteredEmails));
                 _ = this.SetFocus(nameof(EmailDescription));
             }
             catch (Exception ex)

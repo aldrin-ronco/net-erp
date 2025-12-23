@@ -305,7 +305,7 @@
                    Grid.Column="0" Grid.Row="4" 
                    Margin="0 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="Phone1" 
+                        <dxe:TextEdit x:Name="PrimaryPhone" 
                   MaxLength="10"
                   MaskType="Simple"
                   Mask="000 00 00"
@@ -320,7 +320,7 @@
                    Grid.Column="1" Grid.Row="4"
                    Margin="4 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="Phone2" 
+                        <dxe:TextEdit x:Name="SecondaryPhone" 
                   MaxLength="10"
                   Grid.Column="1" Grid.Row="5"
                   MaskType="Simple"
@@ -334,7 +334,7 @@
                    Grid.Column="2" Grid.Row="4" 
                    Margin="4 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="CellPhone1" 
+                        <dxe:TextEdit x:Name="PrimaryCellPhone" 
                   MaxLength="14"
                   MaskType="Simple"
                   Mask="000 000 00 00"
@@ -348,7 +348,7 @@
                    Grid.Column="3" Grid.Row="4" 
                    Margin="4 4 0 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="CellPhone2" 
+                        <dxe:TextEdit x:Name="SecondaryCellPhone" 
                   MaxLength="14"
                   MaskType="Simple"
                   Mask="000 000 00 00"
@@ -672,11 +672,8 @@
                     <Grid Margin="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/>
                             <RowDefinition Height="auto"/>
                             <RowDefinition Height="auto"/>
                             <RowDefinition Height="auto"/>
@@ -690,10 +687,10 @@
 
                         <!--Zona-->
                         <TextBlock Text="Zona"
-                                   Grid.Column="0" Grid.Row="0"
+                                   Grid.Row="0"
                                    Margin="0 4 4 2"
                                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1"
+                        <dxg:LookUpEdit Grid.Row="1"
                                         Margin="0 0 0 4" Padding="3"
                                         AllowSpin="True"
                                         AutoPopulateColumns="False"
@@ -704,7 +701,7 @@
                                         FilterCondition="Contains"
                                         ImmediatePopup="True"
                                         ClearSelectionOnBackspace="True"
-                                        NullText="Seleccione una zona..."
+                                        NullText="SELECCIONE UNA ZONA..."
                                         FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                         ItemsSource="{Binding Path=Zones, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMember="Name"
@@ -729,74 +726,67 @@
                             </dxg:LookUpEdit.ItemsPanel>
                         </dxg:LookUpEdit>
 
-                        <!--Plazo de Crédito-->
-                        <TextBlock Text="Plazo de Crédito (Días)"
-                                   Grid.Column="0" Grid.Row="2"
-                                   Margin="0 4 4 2"
-                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:SpinEdit x:Name="CreditTerm"
-                                      Grid.Column="0" Grid.Row="3"
-                                      Margin="0 0 4 4" Padding="3"
-                                      MaskType="Numeric"
-                                      MinValue="0"
-                                      Mask="n0"
-                                      AllowDefaultButton="False"
-                                      dxe:NumericMaskOptions.AlwaysShowDecimalSeparator="False"
-                                      dxe:NumericMaskOptions.HideInsignificantZeros="True"
-                                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <!--Plazo a Crédito-->
 
-                        <!--Estado Activo-->
-                        <TextBlock Text="Estado"
-                                   Grid.Column="1" Grid.Row="2"
-                                   Margin="4 4 0 2"
-                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <StackPanel Orientation="Horizontal"
-                                    Grid.Column="1" Grid.Row="3"
-                                    Margin="4 0 0 4"
-                                    VerticalAlignment="Center">
-                            <dxe:CheckEdit x:Name="IsActive"
-                                           Content="Activo"
-                                           FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 5 0 5">
+                            <TextBlock Text="Plazo a crédito" VerticalAlignment="Center"
+                                       Margin="0 0 2 0"
+                                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            
+                            <dxe:SpinEdit VerticalAlignment="Center" x:Name="CreditTerm"
+                                          Text="{Binding CreditTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                          Margin="2 0 2 0"
+                                          MaskType="Numeric"
+                                          IsFloatValue="False"
+                                          MinValue="0" Increment="1"
+                                          Mask="n0"
+                                          AllowDefaultButton="True"
+                                          dxe:NumericMaskOptions.AlwaysShowDecimalSeparator="False"
+                                          dxe:NumericMaskOptions.HideInsignificantZeros="True"
+                                          FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="(Días)" VerticalAlignment="Center" Margin="2 0 0 0"
+                                       FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
                         </StackPanel>
+
 
                         <!--Exento de Impuestos-->
-                        <TextBlock Text="Beneficios Tributarios"
-                                   Grid.Column="0" Grid.Row="4"
-                                   Margin="0 4 4 2"
-                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <StackPanel Orientation="Horizontal"
-                                    Grid.Column="0" Grid.Row="5"
-                                    Margin="0 0 4 4"
-                                    VerticalAlignment="Center">
-                            <dxe:CheckEdit x:Name="IsTaxFree"
-                                           Content="Exento de Impuestos"
-                                           FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
+
+                        <dxe:CheckEdit  Grid.Row="3" Margin="0 5 0 5"
+                                        IsChecked="{Binding IsTaxFree, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        Content="¿Este cliente está excento de impuestos?"
+                                        Style="{StaticResource BlueCheckedTextStyle}"
+                                        FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                         <!--Retiene sobre cualquier base-->
-                        <TextBlock Text="Política de Retenciones"
-                                   Grid.Column="1" Grid.Row="4"
-                                   Margin="4 4 0 2"
-                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <StackPanel Orientation="Horizontal"
-                                    Grid.Column="1" Grid.Row="5"
-                                    Margin="4 0 0 4"
-                                    VerticalAlignment="Center">
-                            <dxe:CheckEdit x:Name="RetainsAnyBasis"
-                                           Content="Retiene sobre cualquier base"
-                                           FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
 
-                        <!--Motivo de Bloqueo-->
+                        <dxe:CheckEdit  Grid.Row="4" Margin="0 5 0 5"
+                                        IsChecked="{Binding RetainsOnAnyBasis, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        Content="¿Este cliente retiene sobre cualquier base?"
+                                        Style="{StaticResource BlueCheckedTextStyle}"
+                                        FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!--Estado Activo-->
+                        <dxe:CheckEdit  Grid.Row="5" Margin="0 5 0 5"
+                                        IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={dxmvvm:BooleanNegationConverter}}"
+                                        Content="Bloquear las ventas para este cliente"
+                                        Style="{StaticResource BlueCheckedTextStyle}"
+                                        FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <!--Motivo de Bloqueo - Solo visible cuando el cliente está bloqueado (IsActive = false)-->
                         <TextBlock Text="Motivo de Bloqueo"
-                                   Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="2"
+                                   Grid.Row="6"
                                    Margin="0 4 0 2"
-                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                   FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                   Visibility="{Binding Path=IsActive, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter Invert=True}}"/>
+
                         <dxe:TextEdit x:Name="BlockingReason"
-                                      Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="7"
+                                      Grid.Row="7"
                                       Margin="0 0 0 4" Padding="3"
                                       CharacterCasing="Upper"
-                                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Visibility="{Binding Path=IsActive, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter Invert=True}}"/>
                     </Grid>
                 </dx:DXTabItem>
             </dx:DXTabControl>

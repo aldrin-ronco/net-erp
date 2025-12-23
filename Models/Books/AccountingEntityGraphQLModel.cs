@@ -50,7 +50,7 @@ namespace Models.Books
         public CountryGraphQLModel Country { get; set; } = new();
         public DepartmentGraphQLModel Department { get; set; } = new();
         public CityGraphQLModel City { get; set; } = new();
-        public ObservableCollection<EmailDTO> Emails { get; set; } = [];
+        public ObservableCollection<EmailGraphQLModel> Emails { get; set; } = [];
 
         public override string ToString()
         {
