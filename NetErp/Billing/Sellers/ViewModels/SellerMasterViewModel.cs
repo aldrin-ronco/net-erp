@@ -663,7 +663,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 await LoadSellersAsync();
-                _notificationService.ShowSuccess("Vendedor creado correctamente.");
+                _notificationService.ShowSuccess(message.CreatedSeller.Message);
             }
             catch (Exception ex)
             {
@@ -680,7 +680,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 await LoadSellersAsync();
-                _notificationService.ShowSuccess("Vendedor actualizado correctamente.");
+                _notificationService.ShowSuccess(message.UpdatedSeller.Message);
             }
             catch (Exception ex)
             {
@@ -697,7 +697,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 await LoadSellersAsync();
-                _notificationService.ShowSuccess("Vendedor eliminado correctamente.");
+                _notificationService.ShowSuccess(message.DeletedSeller.Message);
             }
             catch (Exception ex)
             {
