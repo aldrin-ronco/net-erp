@@ -538,7 +538,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 if (Emails == null)
                     return _filteredEmails;
                 foreach (EmailDTO email in Emails)
-                    if (!email.Deleted) _filteredEmails.Add(email);
+                    _filteredEmails.Add(email);
                 return _filteredEmails;
             }
         }
@@ -652,8 +652,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                foreach (EmailDTO email in Emails)
-                    if (email.UUID == SelectedEmail.UUID) email.Edited = true;
                 NotifyOfPropertyChange(nameof(Emails));
             }
             catch (Exception ex)
@@ -666,7 +664,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email, Saved = false, Deleted = false, Edited = true };
+                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email};
                 Email = string.Empty;
                 EmailDescription = string.Empty;
                 Emails.Add(email);

@@ -41,8 +41,11 @@ namespace Models.Billing
     {
         public DeleteResponseType DeletedSeller { get; set; }
     }
-
-    public class SellersDataContext
+    public class SellersByIdDataContext
+    {
+        public SellerGraphQLModel Seller { get; set; }
+    }
+        public class SellersDataContext
     {
         public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
         public PageType<CountryGraphQLModel> Countries { get; set; }

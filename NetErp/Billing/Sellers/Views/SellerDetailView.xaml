@@ -111,27 +111,7 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
-                <!--Titulo o Encabezado-->
-                <!--<TextBlock Grid.Row="0" Grid.Column="0" Text="DETALLES DE TERCERO" Grid.ColumnSpan="3" HorizontalAlignment="Center" Padding="10" FontSize="22"/>-->
-
-                <!--Tipo de proceso al que pertenece la fuente contable-->
-                <!--adorners:Watermark.Text="Selecciona el tipo de proceso al cual pertenece esta fuente contable"-->
-
-                <!--Tipo de Documento-->
-                <!--<TextBlock Grid.Column="0" Grid.Row="2" 
-                    Text="Tipo de Documento" 
-                    VerticalAlignment="Center" 
-                    Margin="4" Padding="3"/>
-                <ComboBox Grid.Column="1" Grid.Row="2" 
-                    Width="auto" 
-                    VerticalAlignment="Center" 
-                    Margin="4" Padding="3"
-                    x:Name="IdentificationTypes"
-                    DisplayMemberPath="Name"
-                    SelectedValuePath="Id"
-                    IsEnabled="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
-                    SelectedItem="{Binding Path=SelectedIdentificationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>-->
-
+               
                 <!--Numero de documento-->
                 <TextBlock Grid.Column="0" Grid.Row="3"
                     Text="Número de documento" 
@@ -154,29 +134,7 @@
                        IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"/>
                 </StackPanel>
 
-                <!--Tipo de Captura-->
-                <!--<TextBlock Grid.Column="0" Grid.Row="4"
-                Text="Tipo de captura" 
-                VerticalAlignment="Center" 
-                Margin="4 4 0 2" Padding="3"
-                FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <StackPanel Orientation="Horizontal" 
-                 Grid.Column="1" Grid.Row="4" 
-                 Width="auto"                       
-                 VerticalAlignment="Center" 
-                 Margin="4">
-                    <RadioButton Content="Persona Natural"
-                      GroupName="CaptureType"
-                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                      IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                      Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                    <RadioButton Content="Rason Social"
-                      GroupName="CaptureType"
-                      IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                      Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"
-                      Margin="5 0 0 0"
-                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>-->
+                
 
                 <!--Pages de datos de tercero-->
             </Grid>
@@ -592,25 +550,7 @@
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
-                                <!-- Send Electronic Invoice --><!--
-                                <DataGridTemplateColumn Width="auto">
-                                    <DataGridTemplateColumn.HeaderStyle>
-                                        <Style TargetType="{x:Type DataGridColumnHeader}">
-                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                                        </Style>
-                                    </DataGridTemplateColumn.HeaderStyle>
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="Envíar factura electrónica"/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <CheckBox IsChecked="{Binding Path=SendElectronicInvoice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      cal:Message.Attach="[Event Checked] = [Action EndRowEditing];[Event Unchecked] = [Action EndRowEditing]"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>-->
+                                
 
                                 <!--Delete Button-->
                                 <DataGridTemplateColumn Width="40">

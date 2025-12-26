@@ -335,7 +335,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Context.ActivateDetailViewForEdit(SelectedSeller);
+                await Context.ActivateDetailViewForEdit(SelectedSeller.Id);
                 SelectedSeller = null;
             }
             catch (AsyncException ex)
@@ -471,45 +471,12 @@ namespace NetErp.Billing.Sellers.ViewModels
                             .Field(c => c.Id)
                             .Field(c => c.VerificationDigit)
                             .Field(c => c.IdentificationNumber)
-                            .Field(c => c.FirstName)
-                            .Field(c => c.MiddleName)
-                            .Field(c => c.FirstLastName)
-                            .Field(c => c.MiddleLastName)
+                            .Field(c => c.Address)                           
                             .Field(c => c.SearchName)
-                            .Field(c => c.PrimaryPhone)
-                            .Field(c => c.SecondaryPhone)
-                            .Field(c => c.PrimaryCellPhone)
-                            .Field(c => c.SecondaryCellPhone)
-                            .Field(c => c.Address)
                             .Field(c => c.TelephonicInformation)
-                            .Select(e => e.IdentificationType, co => co
-                                    .Field(x => x.Id)
-                                    .Field(x => x.Code)
-                                )
-                            .Select(e => e.Country, co => co 
-                                    .Field (x => x.Id)
-                                )
-                            .Select(e => e.City, co => co
-                                    .Field(x => x.Id)
-                                )
-                            .Select(e => e.Department, co => co
-                                    .Field(x => x.Id)
-                                    )
-                            .SelectList(e => e.Emails, co => co
-                                    .Field(x => x.Id)
-                                    .Field(x => x.Description)
-                                    .Field(x => x.Email)
-                                    .Field(x => x.isElectronicInvoiceRecipient)
-                                    )
+
                             )
-                   .SelectList(e => e.CostCenters, acc => acc
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)
-                   )
-                   .Select(e => e.Zone, acc => acc
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)
-                   )
+                   
 
 
               )

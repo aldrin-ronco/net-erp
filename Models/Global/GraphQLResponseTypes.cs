@@ -50,8 +50,8 @@ namespace Models.Global
 
         public class CanDeleteType
         {
-            public bool CanDelete { get; set; } = false;
-            public string Message { get; set; } = string.Empty;
+            public bool CanDelete { get; set; }
+            public string? Message { get; set; }
         }
 
         public class UpsertResponseType<T>

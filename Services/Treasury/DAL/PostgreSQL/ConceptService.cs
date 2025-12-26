@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Services.Treasury.DAL.PostgreSQL
 {
-    public class ConceptService: IGenericDataAccess<ConceptGraphQLModel>
+    public class ConceptService: IGenericDataAccess<TreasuryConceptGraphQLModel>
     {
     }
 }

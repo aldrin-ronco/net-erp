@@ -45,6 +45,7 @@ namespace Models.Billing
         public PageType<CountryGraphQLModel> Countries { get; set; } = new();
         public PageType<ZoneGraphQLModel> Zones { get; set; } = new();
         public PageType<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; } = new();
+        public CustomerGraphQLModel Customer { get; set; } = new();
     }
 }
 

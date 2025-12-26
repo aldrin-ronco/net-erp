@@ -17,7 +17,6 @@ namespace Models.Global
         public bool isElectronicInvoiceRecipient { set; get; } = false;
         public AccountingEntityGraphQLModel AccountingEntity { get; set; }
         public SmtpGraphQLModel Smtp { get; set; }
-        public AwsSesGraphQLModel AwsSes { get; set; }
         public override string ToString()
         {
             return Description;

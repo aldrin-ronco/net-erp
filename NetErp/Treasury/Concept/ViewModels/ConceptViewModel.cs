@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using Models.Books;
 using Models.Global;
@@ -18,32 +19,35 @@ namespace NetErp.Treasury.Concept.ViewModels
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
-        
-        private readonly IRepository<ConceptGraphQLModel> _conceptService;
+        private readonly Helpers.Services.INotificationService _notificationService;
+
+        private readonly IRepository<TreasuryConceptGraphQLModel> _conceptService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private ConceptMasterViewModel _conceptMasterViewModel;
         public ConceptMasterViewModel ConceptMasterViewModel
         {
             get
             {
-                if (_conceptMasterViewModel is null) _conceptMasterViewModel = new ConceptMasterViewModel(this, _conceptService);
+                if (_conceptMasterViewModel is null) _conceptMasterViewModel = new ConceptMasterViewModel(this, _notificationService, _conceptService);
                 return _conceptMasterViewModel;
             }
         }
         public ConceptViewModel(
             IMapper mapper, 
             IEventAggregator eventAggregator,
-            IRepository<ConceptGraphQLModel> conceptService,
+            IRepository<TreasuryConceptGraphQLModel> conceptService,
+            Helpers.Services.INotificationService notificationService,
             IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
             _conceptService = conceptService;
+            _notificationService = notificationService;
             _accountingAccountService = accountingAccountService;
-            _ = ActivateMasterView();
+            _ = ActivateMasterViewAsync();
         }
         
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             try
             {
@@ -55,21 +59,21 @@ namespace NetErp.Treasury.Concept.ViewModels
             }
 
         }
-        public async Task ActivateDetailViewForEdit(ConceptGraphQLModel concept)
+        public async Task ActivateDetailViewForEditAsync(TreasuryConceptGraphQLModel concept)
         {
             try
             {
                 ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
 
                 instance.ConceptId = concept.Id;
-                instance.NameConcept = concept.Name;
-                instance.SelectedType = concept.Type;
-                instance.SelectedAccoutingAccount = instance.AccoutingAccount.FirstOrDefault(account => account.Id == concept.AccountingAccountId) ?? throw new Exception(); //TODO
-                instance.IsApplyPercentage = concept.AllowMargin;
+                instance.Name = concept.Name;
+                instance.Type = concept.Type;
+                instance.AccountingAccountId = concept.AccountingAccount.Id;
+                instance.AllowMargin = concept.AllowMargin;
                 instance.PercentageValue = concept.Margin;
                 instance.IsBase100 = concept.MarginBasis == 100;
                 instance.IsBase1000 = concept.MarginBasis == 1000;
-
+                instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
 
             }
@@ -78,14 +82,14 @@ namespace NetErp.Treasury.Concept.ViewModels
                 throw;
             }
         }
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
             try
             {
                 ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
                 instance.CleanUpControls();                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
-                instance.SelectedType = "D";
+                instance.Type = "D";
             }
             catch (Exception)
             {

@@ -7,6 +7,7 @@ using Models.DTO.Global;
 using Models.Suppliers;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using static Dictionaries.BooksDictionaries;
@@ -98,7 +99,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == supplier.Entity.Country.Id);
             instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.Entity.Department.Id);
             instance.SelectedCityId = supplier.Entity.City.Id;
-            instance.Emails = supplier.Entity.Emails is null ? new System.Collections.ObjectModel.ObservableCollection<EmailDTO>() : new System.Collections.ObjectModel.ObservableCollection<EmailDTO>(supplier.Entity.Emails.Select(x => x.Clone()).ToList()); // Este codigo copia la lista sin mantener referencia a la lista original
+            instance.Emails = supplier.Entity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.Entity.Emails)); // Este codigo copia la lista sin mantener referencia a la lista original
 
             foreach (WithholdingTypeDTO retention in instance.WithholdingTypes)
             {

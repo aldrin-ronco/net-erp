@@ -5,10 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Treasury
 {
-    public class ConceptGraphQLModel
+    public class TreasuryConceptGraphQLModel
     {
         public int Id { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
@@ -25,17 +26,17 @@ namespace Models.Treasury
         }
         public class TreasuryConceptCreateMessage
         {
-            public ConceptGraphQLModel CreatedTreasuryConcept { get; set; } = new ConceptGraphQLModel();
+            public UpsertResponseType<TreasuryConceptGraphQLModel> CreatedTreasuryConcept { get; set; } = new ();
         }
 
         public class TreasuryConceptUpdateMessage
         {
-            public ConceptGraphQLModel UpdatedTreasuryConcept { get; set; } = new ConceptGraphQLModel();
+            public UpsertResponseType<TreasuryConceptGraphQLModel> UpdatedTreasuryConcept { get; set; } = new ();
         }
 
         public class TreasuryConceptDeleteMessage
         {
-            public ConceptGraphQLModel DeletedTreasuryConcept { get; set; } = new ConceptGraphQLModel();
+            public DeleteResponseType DeletedTreasuryConcept { get; set; } = new();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Common.Helpers;
 using System;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Reflection;
@@ -9,8 +10,15 @@ namespace Common.Helpers
     public static class ChangeCollector
     {
         /// <summary>
+        /// Versión simple (compatibilidad hacia atrás).
+        /// No aplica transformaciones por colección.
+        /// </summary>
+        public static ExpandoObject CollectChanges(object viewModel, string? prefix = null)
+            => CollectChanges(viewModel, prefix, null);
+
+        /// <summary>
         /// Construye un ExpandoObject con los cambios del ViewModel.
-        /// 
+        ///
         /// - Usa el ChangeTracker interno del ViewModel.
         /// - Incluye:
         ///     - Propiedades modificadas.
@@ -20,14 +28,27 @@ namespace Common.Helpers
         /// - Combina:
         ///     prefix + "." + ExpandoPathAttribute.Path (si existe)
         ///     o, en su defecto, prefix + "." + nombrePropiedad.
-        /// 
-        /// Ejemplos de prefix:
-        ///     "createResponseInput"
-        ///     "updateResponseData"
-        ///     "createResponseInput.Data"
-        ///     "updateResponseData.Data"
+        ///
+        /// Además, permite aplicar una transformación por item en propiedades que son colecciones
+        /// mediante el parámetro collectionItemTransformers.
         /// </summary>
-        public static ExpandoObject CollectChanges(object viewModel, string? prefix = null)
+        /// <param name="viewModel">ViewModel origen de los cambios.</param>
+        /// <param name="prefix">
+        /// Prefijo raíz del payload, por ejemplo:
+        /// - "createResponseInput.Data"
+        /// - "updateResponseData.Data"
+        /// </param>
+        /// <param name="collectionItemTransformers">
+        /// Diccionario opcional:
+        ///  - key: nombre de la propiedad (ej. "Emails")
+        ///  - value: Func<object?, object?> que recibe cada item de la colección
+        ///           y devuelve el item transformado para el payload.
+        /// Sólo se aplica si el valor de la propiedad es una colección (IEnumerable no string).
+        /// </param>
+        public static ExpandoObject CollectChanges(
+            object viewModel,
+            string? prefix,
+            IDictionary<string, Func<object?, object?>>? collectionItemTransformers)
         {
             dynamic root = new ExpandoObject();
             var tracker = viewModel.GetInternalTracker();
@@ -53,6 +74,13 @@ namespace Common.Helpers
 
                 // Normalizar para payload (por ejemplo, si es un tipo complejo con SerializeAsId = true → Id)
                 var normalized = NormalizeForPayload(propInfo, sanitized, pathAttr);
+
+                // Aplicar transformación por colección si corresponde
+                normalized = ApplyCollectionItemTransformIfNeeded(
+                    propName,
+                    normalized,
+                    collectionItemTransformers
+                );
 
                 string path = BuildPath(prefix, propName, pathAttr);
 
@@ -80,6 +108,13 @@ namespace Common.Helpers
                 // Normalizar para payload (mismo criterio que para propiedades modificadas)
                 var normalizedSeed = NormalizeForPayload(propInfo, sanitizedSeed, pathAttr);
 
+                // Aplicar transformación por colección si corresponde
+                normalizedSeed = ApplyCollectionItemTransformIfNeeded(
+                    propName,
+                    normalizedSeed,
+                    collectionItemTransformers
+                );
+
                 string path = BuildPath(prefix, propName, pathAttr);
 
                 ExpandoHelper.SetNestedProperty(root, path, normalizedSeed);
@@ -90,7 +125,7 @@ namespace Common.Helpers
 
         /// <summary>
         /// Construye la ruta final a usar en el ExpandoObject.
-        /// 
+        ///
         /// Reglas:
         /// - Si hay ExpandoPathAttribute:
         ///     path = prefix + "." + attr.Path (si prefix no es null/empty)
@@ -117,7 +152,7 @@ namespace Common.Helpers
 
         /// <summary>
         /// Normaliza el valor antes de enviarlo al payload.
-        /// 
+        ///
         /// - Si el valor es null → null.
         /// - Si el tipo es simple (string, bool, int, DateTime, Guid, enum, etc.) → se deja igual.
         /// - Si el tipo es complejo:
@@ -162,6 +197,42 @@ namespace Common.Helpers
             }
 
             return idProp.GetValue(value);
+        }
+
+        /// <summary>
+        /// Si la propiedad actual corresponde a una colección y existe un transformer
+        /// registrado para esa propiedad en collectionItemTransformers, aplica la función
+        /// a cada item de la colección y devuelve una lista con los items transformados.
+        ///
+        /// Si no hay transformer, o el valor no es colección, devuelve el valor sin cambios.
+        /// </summary>
+        private static object? ApplyCollectionItemTransformIfNeeded(
+            string propertyName,
+            object? value,
+            IDictionary<string, Func<object?, object?>>? collectionItemTransformers)
+        {
+            if (value == null || collectionItemTransformers == null)
+                return value;
+
+            if (!collectionItemTransformers.TryGetValue(propertyName, out var transformer))
+                return value;
+
+            // String implementa IEnumerable, pero no queremos tratarlo como colección de chars
+            if (value is string)
+                return value;
+
+            if (value is System.Collections.IEnumerable enumerable)
+            {
+                var list = new List<object?>();
+                foreach (var item in enumerable)
+                {
+                    list.Add(transformer(item));
+                }
+                return list;
+            }
+
+            // No es colección, devolvemos el valor tal cual
+            return value;
         }
 
         /// <summary>

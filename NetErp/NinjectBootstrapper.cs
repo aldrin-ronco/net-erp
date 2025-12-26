@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Debug;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Billing;
+using Models.DTO.Global;
 using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
@@ -48,6 +49,7 @@ using Services.Treasury.DAL.PostgreSQL;
 using Services.Validators;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -121,7 +123,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<SmtpGraphQLModel>>().To<SmtpService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<TreasuryConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
@@ -188,7 +190,7 @@ namespace NetErp
             // Treasury module repositories
             _ = kernel.Bind<IRepository<CompanyLocationGraphQLModel>>().To<GraphQLRepository<CompanyLocationGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CostCenterGraphQLModel>>().To<GraphQLRepository<CostCenterGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<ConceptGraphQLModel>>().To<GraphQLRepository<ConceptGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<TreasuryConceptGraphQLModel>>().To<GraphQLRepository<TreasuryConceptGraphQLModel>>().InSingletonScope();
             
             // Global module repositories
             _ = kernel.Bind<IRepository<CompanyGraphQLModel>>().To<GraphQLRepository<CompanyGraphQLModel>>().InSingletonScope();
@@ -348,6 +350,8 @@ namespace NetErp
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
                 _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
                 _ = cfg.CreateMap<ZoneGraphQLModel, ZoneDTO>();
+                _ = cfg.CreateMap<EmailGraphQLModel, EmailDTO>();
+
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());

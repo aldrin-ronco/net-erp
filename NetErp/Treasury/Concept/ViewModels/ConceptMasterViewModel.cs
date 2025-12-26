@@ -1,13 +1,18 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using GraphQL.Client.Http;
 using Models.Billing;
+using Models.Books;
 using Models.Global;
 using Models.Treasury;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,7 +24,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
-using static Models.Treasury.ConceptGraphQLModel;
+using static Models.Global.GraphQLResponseTypes;
+using static Models.Treasury.TreasuryConceptGraphQLModel;
 
 namespace NetErp.Treasury.Concept.ViewModels
 {
@@ -28,21 +34,30 @@ namespace NetErp.Treasury.Concept.ViewModels
         IHandle<TreasuryConceptUpdateMessage>,
         IHandle<TreasuryConceptCreateMessage>
     {
-        private readonly IRepository<ConceptGraphQLModel> _conceptService;
+        private readonly IRepository<TreasuryConceptGraphQLModel> _conceptService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         public ConceptViewModel Context { get; set; }
         public ConceptMasterViewModel(
             ConceptViewModel context,
-            IRepository<ConceptGraphQLModel> conceptService)
+             Helpers.Services.INotificationService notificationService,
+            IRepository<TreasuryConceptGraphQLModel> conceptService)
         {
             Context = context;
             _conceptService = conceptService;
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+
             Context.EventAggregator.SubscribeOnPublishedThread(this);
             SelectTypeCommand = new DelegateCommand<string>(type => SelectedType = type);
+            Task.Run(() => LoadConceptsAsync());
         }
 
         protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            Context.EventAggregator.Unsubscribe(this);
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            
             await base.OnDeactivateAsync(close, cancellationToken);
         }
         
@@ -210,7 +225,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             get
             {
-                if (_deleteConceptCommand is null) _deleteConceptCommand = new AsyncCommand(DeleteConcept);
+                if (_deleteConceptCommand is null) _deleteConceptCommand = new AsyncCommand(DeleteConceptAsync);
                 return _deleteConceptCommand;
             }
         }
@@ -219,13 +234,13 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             get
             {
-                if (_paginationCommand == null) this._paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                if (_paginationCommand == null) this._paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
                 return _paginationCommand;
             }
         }
 
-        private ObservableCollection<ConceptGraphQLModel> _concepts;
-        public ObservableCollection<ConceptGraphQLModel> Concepts
+        private ObservableCollection<TreasuryConceptGraphQLModel> _concepts;
+        public ObservableCollection<TreasuryConceptGraphQLModel> Concepts
         {
             get
             {
@@ -240,8 +255,8 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-        private ConceptGraphQLModel _selectedItem = null;
-        public ConceptGraphQLModel SelectedItem
+        private TreasuryConceptGraphQLModel _selectedItem = null;
+        public TreasuryConceptGraphQLModel SelectedItem
         {
             get { return _selectedItem; }
             set
@@ -260,194 +275,218 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             try
             {
-                _cts.Cancel(); // Cancela cualquier petición anterior
-                _cts = new CancellationTokenSource();
-                var token = _cts.Token;
 
                 IsBusy = true;
-                Refresh();
-
-                // Iniciar cronometro
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                string query = @"
-               query($filter: ConceptFilterInput!){
-                    PageResponse: conceptPage(filter: $filter){
-                        count
-                        rows{
-                            id
-                            name
-                            type
-                            margin
-                            allowMargin
-                            marginBasis
-                            accountingAccountId
-                            accountingAccount {
-                                id
-                                code
-                                name                                
-                            }
-                       }
-                   }
-                }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.pagination = new ExpandoObject();
-                variables.filter.pagination.page = PageIndex;
-                variables.filter.pagination.pageSize = PageSize;
+                //Pagination
+                variables.pagination = new ExpandoObject();
+                variables.pagination.pageSize = PageSize;
+                variables.pagination.page = PageIndex;
+                variables.pageResponseFilters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(SelectedType) && SelectedType != "T")
                 {
-                    variables.filter.type = new ExpandoObject();
-                    variables.filter.type.Operator = "=";
-                    variables.filter.type.Value = SelectedType;
+                    variables.filter.type = SelectedType;
                 }
+                string query = GetLoadTreasuryConceptQuery();
 
-                var result = await _conceptService.GetPageAsync(query, variables);
-                TotalCount = result.PageResponse.Count;
-                Concepts = new ObservableCollection<ConceptGraphQLModel>(result.PageResponse.Rows ?? new List<ConceptGraphQLModel>());
-                stopwatch.Stop();
-                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
+                PageType<TreasuryConceptGraphQLModel> result = await _conceptService.GetPageAsync(query, variables);
+                TotalCount = result.TotalEntries;
+                Concepts = result.Entries;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false; 
-            }
-        }             
-        public async Task DeleteConcept()
-        {
-            try
-            {
-                IsBusy = true;
-                int id = SelectedItem!.Id;
-
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteConcept(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-
-                var validation = await this._conceptService.CanDeleteAsync(query, variables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-                this.IsBusy = true;
-
-                Refresh();
-
-                ConceptGraphQLModel deletedConcept = await ExecuteDeleteConceptAsync(id);
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryConceptDeleteMessage() { DeletedTreasuryConcept = deletedConcept });
-
-                NotifyOfPropertyChange(nameof(CanDeleteConcept));
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+            
         }
-        public async Task EditConcept()
+        public string GetLoadTreasuryConceptQuery()
         {
-            await Context.ActivateDetailViewForEdit(SelectedItem ?? new());
+                                     
+            var treasuryConceptFields = FieldSpec<PageType<TreasuryConceptGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Type)
+                    .Field(e => e.Name)
+                    .Field(e => e.Margin)
+                    .Field(e => e.AllowMargin)
+                    .Field(e => e.MarginBasis)
+                    .Select(c => c.AccountingAccount, map => map 
+                        .Field(f => f.Id)
+                        .Field(f => f.Code)
+                        .Field(f => f.Name)
+                    )
+                    )
+                .Build();
+
+            var treasuryConceptParameters = new GraphQLQueryParameter("filters", "TreasuryConceptFilters");
+            var treasuryConceptPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var treasuryConceptFragment = new GraphQLQueryFragment("treasuryConceptsPage", [treasuryConceptParameters, treasuryConceptPagParameters], treasuryConceptFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([treasuryConceptFragment]);
+
+            return builder.GetQuery();
         }
-        public async Task CreateConceptAsync()
+        public string GetCanDeleteTreasuryConceptQuery()
         {
-            await Context.ActivateDetailViewForNew();
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteTreasuryConcept", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
         }
-        private async Task ExecuteChangeIndex()
+        public string GetDeleteTreasuryConceptQuery()
         {
-            await LoadConceptsAsync();
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteTreasuryConcept", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
-        public async Task<ConceptGraphQLModel> ExecuteDeleteConceptAsync(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteTreasuryConceptAsync(int id)
         {
             try
             {
-                string query = @"mutation($id:Int!){
-                  DeleteResponse: deleteConcept(id: $id){
-                    id
-                    name
-                    type
-                    margin
-                    allowMargin
-                    marginBasis
-                    accountingAccountId
-                  }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
-                var result = await _conceptService.DeleteAsync(query, variables);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-        }
 
-        protected override void OnViewReady(object view)
-        {
-            base.OnViewReady(view);
-            Task.Run(() => LoadConceptsAsync());
-        }
-        private bool CanExecuteChangeIndex()
-        {
-            return true;
-        }
-               
-        public Task HandleAsync(TreasuryConceptDeleteMessage message, CancellationToken cancellationToken)
-        {
+                string query = GetDeleteTreasuryConceptQuery();
 
-            try
-            {
-                ConceptGraphQLModel conceptToDelete = Concepts.FirstOrDefault(x => x.Id == message.DeletedTreasuryConcept.Id) ?? new ConceptGraphQLModel();
-                Concepts.Remove(conceptToDelete);
-                SelectedItem = null;
-                return Task.CompletedTask;
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _conceptService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+        public async Task DeleteConceptAsync()
+        {
+            try
+            {
+
+                this.IsBusy = true;
+                this.Refresh();
+
+                string query = GetCanDeleteTreasuryConceptQuery();
+
+                object variables = new { canDeleteResponseId = SelectedItem.Id };
+
+                var validation = await _conceptService.CanDeleteAsync(query, variables);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                IsBusy = true;
+                DeleteResponseType deletedTreasuryConcept = await Task.Run(() => this.ExecuteDeleteTreasuryConceptAsync(SelectedItem.Id));
+
+                if (!deletedTreasuryConcept.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedTreasuryConcept.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryConceptDeleteMessage { DeletedTreasuryConcept = deletedTreasuryConcept });
+
+                NotifyOfPropertyChange(nameof(CanDeleteConcept));
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
             
         }
-        public Task HandleAsync(TreasuryConceptUpdateMessage message, CancellationToken cancellationToken)
+        public async Task EditConcept()
         {
-            return LoadConceptsAsync();
-        }                       
-        public Task HandleAsync(TreasuryConceptCreateMessage message, CancellationToken cancellationToken)
+            await Context.ActivateDetailViewForEditAsync(SelectedItem ?? new());
+        }
+        public async Task CreateConceptAsync()
         {
-            return LoadConceptsAsync();
+            await Context.ActivateDetailViewForNewAsync();
+        }
+        private async Task ExecuteChangeIndexAsync()
+        {
+            await LoadConceptsAsync();
+        }
+       
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            
+        }
+        private bool CanExecuteChangeIndex()
+        {
+            return true;
+        }
+
+        public async Task HandleAsync(TreasuryConceptDeleteMessage message, CancellationToken cancellationToken)
+        {
+
+            await LoadConceptsAsync();
+            _notificationService.ShowSuccess(message.DeletedTreasuryConcept.Message);
+
+        }
+        public async Task HandleAsync(TreasuryConceptUpdateMessage message, CancellationToken cancellationToken)
+        {
+             await LoadConceptsAsync();
+            _notificationService.ShowSuccess(message.UpdatedTreasuryConcept.Message);
+        }
+        public async Task HandleAsync(TreasuryConceptCreateMessage message, CancellationToken cancellationToken)
+        {
+            await LoadConceptsAsync();
+            _notificationService.ShowSuccess(message.CreatedTreasuryConcept.Message);
         }
                 
     }

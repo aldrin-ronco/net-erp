@@ -11,6 +11,7 @@ using Models.Global;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.Zones.DTO;
 using NetErp.Global.CostCenters.DTO;
+using Ninject.Activation;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -157,7 +158,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
-                await instance.Initialize();
+                await instance.InitializeAsync();
                 instance.CleanUpControls();
                 
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -177,30 +178,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForEdit(SellerGraphQLModel seller)
+        public async Task ActivateDetailViewForEdit(int sellerId)
         {
             try
             {
                 ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
-                await instance.Initialize();
-                instance.Id = seller.Id;
-                instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
-                instance.IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
-                instance.FirstName = seller.AccountingEntity.FirstName;
-                instance.MiddleName = seller.AccountingEntity.MiddleName;
-                instance.FirstLastName = seller.AccountingEntity.FirstLastName;
-                instance.MiddleLastName = seller.AccountingEntity.MiddleLastName;
-                instance.PrimaryPhone = seller.AccountingEntity.PrimaryPhone;
-                instance.SecondaryPhone = seller.AccountingEntity.SecondaryPhone;
-                instance.PrimaryCellPhone = seller.AccountingEntity.PrimaryCellPhone;
-                instance.SecondaryCellPhone = seller.AccountingEntity.SecondaryCellPhone;
-                instance.Emails = seller.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : new ObservableCollection<EmailDTO>(seller.AccountingEntity.Emails.Select(x => x.Clone()).ToList());
-                instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.AccountingEntity.Country.Id);
-                instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.AccountingEntity.Department.Id);
-                instance.SelectedCityId = seller.AccountingEntity.City.Id;
-                instance.Address = seller.AccountingEntity.Address;
-                instance.ZoneId = seller.Zone?.Id;
+                await instance.InitializeAsync();
+                SellerGraphQLModel seller =  await instance.LoadDataForEditAsync(sellerId);
                 foreach (CostCenterDTO costCenter in CostCenters)
                 {
                     bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);

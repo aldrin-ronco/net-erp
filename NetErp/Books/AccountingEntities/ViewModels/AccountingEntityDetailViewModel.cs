@@ -358,7 +358,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 _filteredEmails.Clear();
                 if (this.Emails != null)
                     foreach (var email in this.Emails)
-                        if (!email.Deleted) _filteredEmails.Add(email);
+                        _filteredEmails.Add(email);
                 return _filteredEmails;
             }
         }
@@ -933,8 +933,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                foreach (EmailDTO email in Emails)
-                    if (email.UUID == SelectedEmail.UUID) email.Edited = true;
+                //TODO: Implementar si es necesario
             }
             catch (Exception ex)
             {
