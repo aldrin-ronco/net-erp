@@ -17,7 +17,7 @@ namespace Models.Billing
         public  AccountingEntityGraphQLModel AccountingEntity { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
         public ZoneGraphQLModel Zone { get; set; }
-        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
+        
     }
 
     public class SellerDTO : SellerGraphQLModel

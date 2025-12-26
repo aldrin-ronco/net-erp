@@ -182,11 +182,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
-                ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
                 await instance.Initialize();
                 instance.Id = seller.Id;
-                instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "13");
+                instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
                 instance.IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
                 instance.FirstName = seller.AccountingEntity.FirstName;
                 instance.MiddleName = seller.AccountingEntity.MiddleName;
@@ -201,6 +200,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.AccountingEntity.Department.Id);
                 instance.SelectedCityId = seller.AccountingEntity.City.Id;
                 instance.Address = seller.AccountingEntity.Address;
+                instance.ZoneId = seller.Zone?.Id;
                 foreach (CostCenterDTO costCenter in CostCenters)
                 {
                     bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
@@ -211,18 +211,11 @@ namespace NetErp.Billing.Sellers.ViewModels
                         IsSelected = exist
                     });
                 }
-                foreach (ZoneDTO zone in Zones)
-                {
-                    bool exist = !(seller.Zones is null) && seller.Zones.Any(c => c.Id == zone.Id);
-                    zonesSelection.Add(new ZoneDTO()
-                    {
-                        Id = zone.Id,
-                        Name = zone.Name,
-                        IsSelected = exist
-                    });
-                }
-                instance.Zones = new ObservableCollection<ZoneDTO>(zonesSelection);
-                instance.CostCenters = new ObservableCollection<CostCenterDTO>(costCentersSelection);
+               
+                instance.Zones = [.. Zones];
+
+                instance.CostCenters = costCentersSelection;
+                instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (AsyncException ex)

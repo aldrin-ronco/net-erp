@@ -265,7 +265,7 @@
                             Grid.Column="0" Grid.Row="4" 
                             Margin="0 4 4 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="Phone1" 
+                        <dxe:TextEdit x:Name="PrimaryPhone" 
                             MaxLength="10"
                             MaskType="Simple"
                             Mask="000 00 00"
@@ -280,7 +280,7 @@
                             Grid.Column="1" Grid.Row="4"
                             Margin="4 4 4 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="Phone2" 
+                        <dxe:TextEdit x:Name="SecondaryPhone" 
                            MaxLength="10"
                            Grid.Column="1" Grid.Row="5"
                            MaskType="Simple"
@@ -294,7 +294,7 @@
                             Grid.Column="2" Grid.Row="4" 
                             Margin="4 4 4 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="CellPhone1" 
+                        <dxe:TextEdit x:Name="PrimaryCellPhone" 
                             MaxLength="14"
                             MaskType="Simple"
                             Mask="000 000 00 00"
@@ -308,7 +308,7 @@
                             Grid.Column="3" Grid.Row="4" 
                             Margin="4 4 0 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="CellPhone2" 
+                        <dxe:TextEdit x:Name="SecondaryCellPhone" 
                             MaxLength="14"
                             MaskType="Simple"
                             Mask="000 000 00 00"
@@ -635,21 +635,52 @@
                         </DataGrid>
                     </Grid>
                 </dx:DXTabItem>
-                <dx:DXTabItem Header="Zonas">
-                    <ListView Margin="4" ItemsSource="{Binding Path=Zones, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Width="auto">
-                                    <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        </DataTemplate>
-                                    </GridViewColumn.CellTemplate>
-                                </GridViewColumn>
-                                <GridViewColumn Width="auto" Header="Zona" DisplayMemberBinding="{Binding Path=Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
+                <dx:DXTabItem Header="Otros Datos">
+                    <Grid>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <!--zona-->
+                        <TextBlock Text="Zonas" 
+     Grid.Column="0" Grid.Row="0" 
+     Margin="0 4 0 2"
+     FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" 
+     Grid.Row="1"
+     Margin="0" Padding="3"
+     ClearSelectionOnBackspace="True"
+     FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+     ItemsSource="{Binding Path=Zones, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+     FilterCondition="Contains"
+     IsCaseSensitiveFilter="False"
+     AutoPopulateColumns="False"
+     CharacterCasing="Upper"
+     ImmediatePopup="True"
+     DisplayMember="Name"
+     ValueMember="Id"
+     EditValue="{Binding ZoneId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl Name="PART_GridControl">
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView AllowCascadeUpdate="True" ShowSearchPanelMode="Never" AutoWidth="True"/>
+                                        </dxg:GridControl.View>
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Nombre " FieldName="Name"/>
+                                        </dxg:GridControl.Columns>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                            <dxg:LookUpEdit.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel/>
+                                </ItemsPanelTemplate>
+                            </dxg:LookUpEdit.ItemsPanel>
+                        </dxg:LookUpEdit>
+                    </Grid>
+                   
                 </dx:DXTabItem>
             </dx:DXTabControl>
 
