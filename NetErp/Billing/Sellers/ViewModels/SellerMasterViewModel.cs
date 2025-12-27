@@ -35,10 +35,8 @@ namespace NetErp.Billing.Sellers.ViewModels
     public class SellerMasterViewModel : Screen,
         IHandle<SellerCreateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SellerDeleteMessage>,
-        IHandle<AccountingEntityUpdateMessage>,
-        IHandle<CustomerUpdateMessage>,
-        IHandle<SupplierUpdateMessage>
+        IHandle<SellerDeleteMessage>
+       
     {
         private readonly IRepository<SellerGraphQLModel> _sellerService;
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -153,7 +151,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSeller, CanCreateSeller);
+                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSellerAsync, CanCreateSeller);
                 return _createSellerCommand;
             }
 
@@ -164,7 +162,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSeller, CanDeleteSeller);
+                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSellerAsync, CanDeleteSeller);
                 return _deleteSellerCommand;
             }
         }
@@ -178,7 +176,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task CreateSeller()
+        public async Task CreateSellerAsync()
         {
             try
             {
@@ -209,7 +207,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task DeleteSeller()
+        public async Task DeleteSellerAsync()
         {
             try
             {
@@ -237,7 +235,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedSeller = await Task.Run(() => this.ExecuteDeleteSeller(SelectedSeller.Id));
+                DeleteResponseType deletedSeller = await Task.Run(() => this.ExecuteDeleteSellerAsync(SelectedSeller.Id));
 
                 if (!deletedSeller.Success)
                 {
@@ -280,7 +278,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
             return builder.GetQuery();
         }
-        public async Task<DeleteResponseType> ExecuteDeleteSeller(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteSellerAsync(int id)
         {
             try
             {
@@ -319,7 +317,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
-        private async Task ExecuteChangeIndex()
+        private async Task ExecuteChangeIndexAsync()
         {
             await LoadSellersAsync();
         }
@@ -383,7 +381,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 try
                 {
-                    await Initialize();
+                    await InitializeAsync();
                 }
                 catch (AsyncException ex)
                 {
@@ -404,7 +402,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             });
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -417,20 +415,32 @@ namespace NetErp.Billing.Sellers.ViewModels
                 string query = GetLoadSellersDataQuery(true);
                 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
 
-                
+                variables.sellersPageFilters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.sellersPageFilters.Matching = FilterSearch;
+                }
 
-                variables.filter.isActive =  true;
+                if (ShowActiveSellersOnly)
+                {
 
-               /* variables.filter.searchName = "";
+                    variables.sellersPageFilters.isActive = true;
+                }
 
-                variables.filter.identificationNumber = "";*/
+                if (SelectedCostCenterId != 0)
+                {
+
+                    variables.sellersPageFilters.costCenterIds = SelectedCostCenterId;
+                }
+
+
 
                 //Paginación
-                variables.Pagination = new ExpandoObject();
-                variables.Pagination.Page = PageIndex;
-                variables.Pagination.PageSize = PageSize;
+                variables.sellersPagePagination = new ExpandoObject();
+                variables.sellersPagePagination.Page = PageIndex;
+                variables.sellersPagePagination.PageSize = PageSize;
+
 
                 SellersDataContext result = await _sellerService.GetDataContextAsync<SellersDataContext>(query, variables);
                 stopwatch.Stop();
@@ -581,42 +591,34 @@ namespace NetErp.Billing.Sellers.ViewModels
                 string query = GetLoadSellersDataQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.sellersPageFilters = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
 
-
-
-                variables.sellersPageFilters.isActive = true;
-
-                /* variables.filter.searchName = "";
-
-                 variables.filter.identificationNumber = "";*/
-
-                //Paginación
-                variables.sellersPagePagination = new ExpandoObject();
-                variables.sellersPagePagination.Page = PageIndex;
-                variables.sellersPagePagination.PageSize = PageSize;
-
+                
+                if (!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.pageResponseFilters.Matching = FilterSearch;
+                }
+                
                 if (ShowActiveSellersOnly)
                 {
-     
-                    variables.sellersPageFilters.isActive = true;
+
+                    variables.pageResponseFilters.isActive = true;
                 }
 
-                if(SelectedCostCenterId != 0)
+                if (SelectedCostCenterId != 0)
                 {
-                   
-                    variables.filter.costCenterIds = SelectedCostCenterId;
+
+                    variables.pageResponseFilters.costCenterId = SelectedCostCenterId;
                 }
 
-                
-/*
-                variables.searchName = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                variables.identificationNumber = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-*/
+
                 //Paginación
                 
-
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+                
                  PageType<SellerGraphQLModel> result = await _sellerService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
@@ -674,7 +676,6 @@ namespace NetErp.Billing.Sellers.ViewModels
                 });
             }
         }
-
         public async Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
         {
             try
@@ -709,20 +710,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellersAsync();
-        }
+       
+       
 
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellersAsync();
-        }
-
-        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellersAsync();
-        }
+      
 
        
 
@@ -787,7 +778,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
                 return _paginationCommand;
             }
         }
