@@ -1589,6 +1589,7 @@ namespace NetErp.Billing.Customers.ViewModels
                             .Field(email => email.Id)
                             .Field(email => email.Description)
                             .Field(email => email.Email)
+                            .Field(email => email.isElectronicInvoiceRecipient)
                             .Field(email => email.IsCorporate))))
                 .Field(f => f.Message)
                 .Field(f => f.Success)

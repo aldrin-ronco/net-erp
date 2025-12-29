@@ -833,7 +833,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     foreach (EmailDTO email in Emails)
                     {
-                        emailList.Add(new { email.Description, email.Email});
+                        emailList.Add(new { email.Description, email.Email, email.isElectronicInvoiceRecipient });
                     }
                 }
                 if (WithholdingTypes != null)

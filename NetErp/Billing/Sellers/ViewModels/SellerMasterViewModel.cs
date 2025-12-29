@@ -24,16 +24,19 @@ using Models.Suppliers;
 using NetErp.Global.CostCenters.DTO;
 using Ninject.Activation;
 using NetErp.Billing.Zones.DTO;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
+using DevExpress.Mvvm.Native;
+using DevExpress.Data.Utils;
+using Services.Books.DAL.PostgreSQL;
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
     public class SellerMasterViewModel : Screen,
         IHandle<SellerCreateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SellerDeleteMessage>,
-        IHandle<AccountingEntityUpdateMessage>,
-        IHandle<CustomerUpdateMessage>,
-        IHandle<SupplierUpdateMessage>
+        IHandle<SellerDeleteMessage>
+       
     {
         private readonly IRepository<SellerGraphQLModel> _sellerService;
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -64,7 +67,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadSellers();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadSellersAsync();
                 }
             }
         }
@@ -79,7 +82,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _showActiveSellersOnly = value;
                     NotifyOfPropertyChange(nameof(ShowActiveSellersOnly));
-                    _ = LoadSellers();
+                    _ = LoadSellersAsync();
                 }
             }
         }
@@ -94,7 +97,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _selectedCostCenterId = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterId));
-                    _ = LoadSellers();
+                    _ = LoadSellersAsync();
                 }
             }
         }
@@ -148,7 +151,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSeller, CanCreateSeller);
+                if (_createSellerCommand is null) _createSellerCommand = new AsyncCommand(CreateSellerAsync, CanCreateSeller);
                 return _createSellerCommand;
             }
 
@@ -159,7 +162,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSeller, CanDeleteSeller);
+                if (_deleteSellerCommand is null) _deleteSellerCommand = new AsyncCommand(DeleteSellerAsync, CanDeleteSeller);
                 return _deleteSellerCommand;
             }
         }
@@ -173,7 +176,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task CreateSeller()
+        public async Task CreateSellerAsync()
         {
             try
             {
@@ -204,95 +207,119 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task DeleteSeller()
+        public async Task DeleteSellerAsync()
         {
             try
             {
-                IsBusy = true;
-                int id = SelectedSeller.Id;
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteSeller(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
+                this.IsBusy = true;
+                this.Refresh();
 
-                object variables = new { Id = id };
+                string query = GetCanDeleteSellerQuery();
+
+                object variables = new { canDeleteResponseId = SelectedSeller.Id };
 
                 var validation = await _sellerService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedSeller.Entity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-                this.IsBusy = true;
 
-                Refresh();
+                IsBusy = true;
+                DeleteResponseType deletedSeller = await Task.Run(() => this.ExecuteDeleteSellerAsync(SelectedSeller.Id));
 
-                SellerGraphQLModel deletedSeller = await ExecuteDeleteSeller(id);
+                if (!deletedSeller.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedSeller.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new SellerDeleteMessage() { DeletedSeller = Context.AutoMapper.Map<SellerDTO>(deletedSeller) });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new SellerDeleteMessage { DeletedSeller = deletedSeller });
 
                 NotifyOfPropertyChange(nameof(CanDeleteSeller));
             }
-            catch (AsyncException ex)
+            catch (GraphQLHttpRequestException exGraphQL)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+           
         }
+        public string GetCanDeleteSellerQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
 
-        public async Task<SellerGraphQLModel> ExecuteDeleteSeller(int id)
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteSeller", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+        public async Task<DeleteResponseType> ExecuteDeleteSellerAsync(int id)
         {
             try
             {
-                string query = @"
-                mutation ($id: Int!) {
-                  deleteResponse: deleteSeller(id: $id) {
-                    id
-                    isActive
-                  }
-                }
-                ";
-                object variables = new { Id = id };
-                SellerGraphQLModel deletedSeller = await _sellerService.DeleteAsync(query, variables);
-                SelectedSeller = null;
-                return deletedSeller;
+
+                string query = GetDeleteSellerQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _sellerService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new AsyncException(innerException: ex);
+                throw;
             }
         }
-
-        private async Task ExecuteChangeIndex()
+        public string GetDeleteSellerQuery()
         {
-            await LoadSellers();
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteSeller", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        private async Task ExecuteChangeIndexAsync()
+        {
+            await LoadSellersAsync();
         }
 
         private bool CanExecuteChangeIndex()
@@ -306,7 +333,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Context.ActivateDetailViewForEdit(SelectedSeller);
+                await Context.ActivateDetailViewForEdit(SelectedSeller.Id);
                 SelectedSeller = null;
             }
             catch (AsyncException ex)
@@ -354,7 +381,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 try
                 {
-                    await Initialize();
+                    await InitializeAsync();
                 }
                 catch (AsyncException ex)
                 {
@@ -375,7 +402,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             });
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -384,132 +411,50 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                string query = @"
-                query ($filter: SellerFilterInput){
-                  sellerPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      isActive
-                      entity {
-                        id
-                        verificationDigit
-                        identificationNumber
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        searchName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        address
-                        telephonicInformation
-                        country {
-                          id
-                        }
-                        department {
-                          id
-                        }
-                        city {
-                          id
-                        }
-                        emails {
-                          id
-                          description
-                          email
-                          sendElectronicInvoice
-                        }
-                      }
-                      costCenters {
-                        id
-                        name
-                      }
-                        zones {
-                        id
-                        name
-                      }
-                    }
-                  }
-                  identificationTypes {
-                    id
-                    code
-                    name
-                    hasVerificationDigit
-                    minimumDocumentLength
-                  }
-                  countries{
-                    id
-                    code
-                    name
-                    departments {
-                      id
-                      code
-                      name
-                      cities {
-                        id
-                        code
-                        name
-                      }
-                    }
-                  }
-                  costCenters{
-                    id
-                    name
-                  }
-                   zones {
-                        id
-                        name
-                        isActive
-                    }
-                }";
-
+               
+                string query = GetLoadSellersDataQuery(true);
                 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
 
-                variables.filter.and = new ExpandoObject[]
+                variables.sellersPageFilters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch))
                 {
-                    new(),
-                    new()
-                };
+                    variables.sellersPageFilters.Matching = FilterSearch;
+                }
 
-                variables.filter.and[0].isActive = new ExpandoObject();
-                variables.filter.and[0].isActive.@operator = "=";
-                variables.filter.and[0].isActive.value = true;
-
-                variables.filter.and[1].or = new ExpandoObject[]
+                if (ShowActiveSellersOnly)
                 {
-                    new(),
-                    new()
-                };
-                variables.filter.and[1].or[0].searchName = new ExpandoObject();
-                variables.filter.and[1].or[0].searchName.@operator = "like";
-                variables.filter.and[1].or[0].searchName.value = "";
 
-                variables.filter.and[1].or[1].identificationNumber = new ExpandoObject();
-                variables.filter.and[1].or[1].identificationNumber.@operator = "like";
-                variables.filter.and[1].or[1].identificationNumber.value = "";
+                    variables.sellersPageFilters.isActive = true;
+                }
+
+                if (SelectedCostCenterId != 0)
+                {
+
+                    variables.sellersPageFilters.costCenterIds = SelectedCostCenterId;
+                }
+
+
 
                 //Paginación
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;              
+                variables.sellersPagePagination = new ExpandoObject();
+                variables.sellersPagePagination.Page = PageIndex;
+                variables.sellersPagePagination.PageSize = PageSize;
 
-                var result = await _sellerService.GetDataContextAsync<SellersDataContext>(query, variables);
+
+                SellersDataContext result = await _sellerService.GetDataContextAsync<SellersDataContext>(query, variables);
                 stopwatch.Stop();
-                Context.CostCenters = new ObservableCollection<CostCenterDTO>(Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters));
-                Context.IdentificationTypes = new ObservableCollection<Models.Books.IdentificationTypeGraphQLModel>(result.IdentificationTypes);
-                Context.Countries = result.Countries;
-                Context.Zones = new ObservableCollection<ZoneDTO>(Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(result.Zones));
+                Context.CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters.Entries);
+                Context.IdentificationTypes = result.IdentificationTypes.Entries;
+                Context.Countries = result.Countries.Entries;
+                Context.Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(result.Zones.Entries);
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    CostCenters = new ObservableCollection<CostCenterGraphQLModel>(result.CostCenters);
+                    CostCenters = result.CostCenters.Entries;
                     CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS CENTROS DE COSTOS" });
-                    Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.SellerPage.Rows));
+                    Sellers = Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.sellersPage.Entries);
                 });
-                TotalCount = result.SellerPage.Count;
+                TotalCount = result.sellersPage.TotalEntries;
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
             }
@@ -523,8 +468,118 @@ namespace NetErp.Billing.Sellers.ViewModels
                 IsBusy = false;
             }
         }
+        public string GetLoadSellersDataQuery(bool withDependencies = false)
+        {
 
-        public async Task LoadSellers()
+            var sellersFields = FieldSpec<PageType<SellerGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+
+                  .Field(e => e.IsActive)
+                  .Select(e => e.AccountingEntity, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.VerificationDigit)
+                            .Field(c => c.IdentificationNumber)
+                            .Field(c => c.Address)                           
+                            .Field(c => c.SearchName)
+                            .Field(c => c.TelephonicInformation)
+
+                            )
+                   
+
+
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+
+
+            var identificationTypesFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Name)
+                  .Field(e => e.Code)
+                  .Field(e => e.HasVerificationDigit)
+                  .Field(e => e.MinimumDocumentLength)
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+            var countriesFields = FieldSpec<PageType<CountryGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Name)
+                  .Field(e => e.Code)
+                  .SelectList(e => e.Departments, co => co
+                                    .Field(x => x.Id)
+                                    .Field(x => x.Code)
+                                    .Field(x => x.Name)
+                                    .SelectList(e => e.Cities, co => co
+                                        .Field(x => x.Id)
+                                        .Field(x => x.Code)
+                                        .Field(x => x.Name)
+                                )
+                                )
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+
+            var costCentersFields = FieldSpec<PageType<CostCenterGraphQLModel>>
+            .Create()
+            .SelectList(it => it.Entries, entries => entries
+                .Field(e => e.Id)
+                .Field(e => e.Name)
+                
+               
+            )
+            .Field(o => o.PageNumber)
+            .Field(o => o.PageSize)
+            .Field(o => o.TotalPages)
+            .Field(o => o.TotalEntries)
+            .Build();
+
+            var zonesFields = FieldSpec<PageType<ZoneGraphQLModel>>
+            .Create()
+            .SelectList(it => it.Entries, entries => entries
+                .Field(e => e.Id)
+                .Field(e => e.Name)
+
+
+            )
+            .Field(o => o.PageNumber)
+            .Field(o => o.PageSize)
+            .Field(o => o.TotalPages)
+            .Field(o => o.TotalEntries)
+            .Build();
+
+            var sellersPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var sellersParameters = new GraphQLQueryParameter("filters", "SellerFilters");
+            var sellersFragment = new GraphQLQueryFragment("sellersPage", [sellersPagParameters, sellersParameters], sellersFields,withDependencies? "sellersPage" : "pageResponse");
+
+            var identificationTypesFragment = new GraphQLQueryFragment("identificationTypesPage", [], identificationTypesFields, "IdentificationTypes");
+            var countriesFragment = new GraphQLQueryFragment("countriesPage", [], countriesFields, "Countries");
+            var costCentersFragment = new GraphQLQueryFragment("costCentersPage", [], costCentersFields, "costCenters");
+
+            var zonesFragment = new GraphQLQueryFragment("zonesPage", [], zonesFields, "zones");
+
+
+            var builder = withDependencies ? new GraphQLQueryBuilder([sellersFragment, identificationTypesFragment, countriesFragment, costCentersFragment, zonesFragment]) : new GraphQLQueryBuilder([sellersFragment]);
+            return builder.GetQuery();
+        }
+        public async Task LoadSellersAsync()
         {
             try
             {
@@ -533,107 +588,44 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                string query = @"
-                query ($filter: SellerFilterInput) {
-                  pageResponse: sellerPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      isActive
-                      entity {
-                        id
-                        verificationDigit
-                        identificationNumber
-                        firstName
-                        middleName
-                        firstLastName
-                        middleLastName
-                        searchName
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        address
-                        telephonicInformation
-                        country {
-                          id
-                        }
-                        department {
-                          id
-                        }
-                        city {
-                          id
-                        }
-                        emails {
-                          id
-                          description
-                          email
-                          sendElectronicInvoice
-                        }
-                      }
-                    zones {
-                        id
-                        name
-                      }
-                    costCenters {
-                    id
-                    name
-                      }
-                    }
-                  }
-                }";
-
+                string query = GetLoadSellersDataQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
 
-                variables.filter.and = new ExpandoObject[]
+                
+                if (!string.IsNullOrEmpty(FilterSearch))
                 {
-                    new(),
-                    new(),
-                    new()
-                };
-
+                    variables.pageResponseFilters.Matching = FilterSearch;
+                }
+                
                 if (ShowActiveSellersOnly)
                 {
-                    variables.filter.and[0].isActive = new ExpandoObject();
-                    variables.filter.and[0].isActive.@operator = "=";
-                    variables.filter.and[0].isActive.value = true;
+
+                    variables.pageResponseFilters.isActive = true;
                 }
 
-                if(SelectedCostCenterId != 0)
+                if (SelectedCostCenterId != 0)
                 {
-                    variables.filter.and[1].costCenterIds = new ExpandoObject();
-                    variables.filter.and[1].costCenterIds.@operator = "=";
-                    variables.filter.and[1].costCenterIds.value = new int[] {SelectedCostCenterId};
+
+                    variables.pageResponseFilters.costCenterId = SelectedCostCenterId;
                 }
 
-                variables.filter.and[2].or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
 
-                variables.filter.and[2].or[0].searchName = new ExpandoObject();
-                variables.filter.and[2].or[0].searchName.@operator = "like";
-                variables.filter.and[2].or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.and[2].or[1].identificationNumber = new ExpandoObject();
-                variables.filter.and[2].or[1].identificationNumber.@operator = "like";
-                variables.filter.and[2].or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
                 //Paginación
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-
-                var result = await _sellerService.GetPageAsync(query, variables);
+                
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+                
+                 PageType<SellerGraphQLModel> result = await _sellerService.GetPageAsync(query, variables);
                 stopwatch.Stop();
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.PageResponse.Rows));
+                    Sellers = new ObservableCollection<SellerDTO>(Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.Entries));
                 });
-                TotalCount = result.PageResponse.Count;
+                TotalCount = result.TotalEntries;
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
             }
@@ -672,8 +664,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                await LoadSellers();
-                _notificationService.ShowSuccess("Vendedor creado correctamente.");
+                await LoadSellersAsync();
+                _notificationService.ShowSuccess(message.CreatedSeller.Message);
             }
             catch (Exception ex)
             {
@@ -684,13 +676,12 @@ namespace NetErp.Billing.Sellers.ViewModels
                 });
             }
         }
-
         public async Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                await LoadSellers();
-                _notificationService.ShowSuccess("Vendedor actualizado correctamente.");
+                await LoadSellersAsync();
+                _notificationService.ShowSuccess(message.UpdatedSeller.Message);
             }
             catch (Exception ex)
             {
@@ -706,8 +697,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                await LoadSellers();
-                _notificationService.ShowSuccess("Vendedor eliminado correctamente.");
+                await LoadSellersAsync();
+                _notificationService.ShowSuccess(message.DeletedSeller.Message);
             }
             catch (Exception ex)
             {
@@ -719,20 +710,10 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellers();
-        }
+       
+       
 
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellers();
-        }
-
-        public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSellers();
-        }
+      
 
        
 
@@ -797,7 +778,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
                 return _paginationCommand;
             }
         }

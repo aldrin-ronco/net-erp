@@ -11,6 +11,7 @@ using Models.Global;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.Zones.DTO;
 using NetErp.Global.CostCenters.DTO;
+using Ninject.Activation;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -157,8 +158,9 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
-                await instance.Initialize();
+                await instance.InitializeAsync();
                 instance.CleanUpControls();
+                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (AsyncException ex)
@@ -176,30 +178,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForEdit(SellerGraphQLModel seller)
+        public async Task ActivateDetailViewForEdit(int sellerId)
         {
             try
             {
                 ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
-                ObservableCollection<ZoneDTO> zonesSelection = new ObservableCollection<ZoneDTO>();
                 SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
-                await instance.Initialize();
-                instance.Id = seller.Id;
-                instance.SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "13");
-                instance.IdentificationNumber = seller.Entity.IdentificationNumber;
-                instance.FirstName = seller.Entity.FirstName;
-                instance.MiddleName = seller.Entity.MiddleName;
-                instance.FirstLastName = seller.Entity.FirstLastName;
-                instance.MiddleLastName = seller.Entity.MiddleLastName;
-                instance.PrimaryPhone = seller.Entity.PrimaryPhone;
-                instance.SecondaryPhone = seller.Entity.SecondaryPhone;
-                instance.PrimaryCellPhone = seller.Entity.PrimaryCellPhone;
-                instance.SecondaryCellPhone = seller.Entity.SecondaryCellPhone;
-                instance.Emails = seller.Entity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(seller.Entity.Emails));
-                instance.SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.Entity.Country.Id);
-                instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.Entity.Department.Id);
-                instance.SelectedCityId = seller.Entity.City.Id;
-                instance.Address = seller.Entity.Address;
+                await instance.InitializeAsync();
+                SellerGraphQLModel seller =  await instance.LoadDataForEditAsync(sellerId);
                 foreach (CostCenterDTO costCenter in CostCenters)
                 {
                     bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
@@ -210,18 +196,11 @@ namespace NetErp.Billing.Sellers.ViewModels
                         IsSelected = exist
                     });
                 }
-                foreach (ZoneDTO zone in Zones)
-                {
-                    bool exist = !(seller.Zones is null) && seller.Zones.Any(c => c.Id == zone.Id);
-                    zonesSelection.Add(new ZoneDTO()
-                    {
-                        Id = zone.Id,
-                        Name = zone.Name,
-                        IsSelected = exist
-                    });
-                }
-                instance.Zones = new ObservableCollection<ZoneDTO>(zonesSelection);
-                instance.CostCenters = new ObservableCollection<CostCenterDTO>(costCentersSelection);
+               
+                instance.Zones = [.. Zones];
+
+                instance.CostCenters = costCentersSelection;
+                instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (AsyncException ex)

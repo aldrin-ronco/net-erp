@@ -350,6 +350,8 @@ namespace NetErp
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();
                 _ = cfg.CreateMap<AccountingBookGraphQLModel, AccountingBookDTO>();
                 _ = cfg.CreateMap<ZoneGraphQLModel, ZoneDTO>();
+                _ = cfg.CreateMap<EmailGraphQLModel, EmailDTO>();
+
             });
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());
