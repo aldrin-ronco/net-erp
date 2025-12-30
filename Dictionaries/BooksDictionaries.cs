@@ -35,7 +35,7 @@ namespace Dictionaries
         /// <summary>
         /// Enumeracion para el tipo de captura de datos PN = Persona Natural, RS = Razon Social
         /// </summary>
-        public enum CaptureTypeEnum { PN, RS, Undefined }
+        public enum CaptureTypeEnum { PN, PJ, Undefined }
    
         public enum SequenceOriginEnum { M, D, Undefined }
 

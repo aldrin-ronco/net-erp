@@ -29,7 +29,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly IRepository<CustomerGraphQLModel> _customerService;
         
         private CustomerMasterViewModel? _customerMasterViewModel;
-        public CustomerMasterViewModel? CustomerMasterViewModel
+        public CustomerMasterViewModel CustomerMasterViewModel
         {
             get
             {

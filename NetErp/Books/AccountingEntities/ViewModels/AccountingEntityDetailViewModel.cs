@@ -4,18 +4,13 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Core;
 using Dictionaries;
-using Extensions.Books;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
-using Models.DTO.Global;
 using Models.Global;
 using NetErp.Helpers;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,12 +19,15 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reactive.Threading.Tasks;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using static Dictionaries.BooksDictionaries;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
+using Newtonsoft.Json;
+using Extensions.Global;
+using System.Threading;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
@@ -42,6 +40,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
 
         Dictionary<string, List<string>> _errors;
+        private List<string> _seedEmails = new List<string>();
 
         #region Commands
         private ICommand _deleteMailCommand;
@@ -182,12 +181,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         // Control de visibilidad de panels de captura de datos
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(CaptureTypeEnum.PN);
-        public bool CaptureInfoAsRS => SelectedCaptureType.Equals(CaptureTypeEnum.RS);
+        public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(CaptureTypeEnum.PJ);
 
         /// <summary>
         /// Tipo de Captura, Razon Social = RS o Persona Natural = PN
         /// </summary>
         private CaptureTypeEnum _selectedCaptureType;
+        [ExpandoPath("captureType")]
         public CaptureTypeEnum SelectedCaptureType
         {
             get { return _selectedCaptureType; }
@@ -197,16 +197,22 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedCaptureType = value;
                     NotifyOfPropertyChange(nameof(SelectedCaptureType));
+                    this.TrackChange(nameof(SelectedCaptureType));
                     NotifyOfPropertyChange(nameof(CaptureInfoAsPN));
-                    NotifyOfPropertyChange(nameof(CaptureInfoAsRS));
+                    NotifyOfPropertyChange(nameof(CaptureInfoAsPJ));
                     if (CaptureInfoAsPN)
                     {
+                        BusinessName = string.Empty;
                         ClearErrors(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
-                    if (CaptureInfoAsRS)
+                    if (CaptureInfoAsPJ)
                     {
+                        FirstName = string.Empty;
+                        FirstLastName = string.Empty;
+                        MiddleName = string.Empty;
+                        MiddleLastName = string.Empty;
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -263,6 +269,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public Dictionary<char, string> RegimeDictionary { get { return BooksDictionaries.RegimeDictionary; } }
         // Regimen Seleccionado
         private char _selectedRegime = 'R';
+        [ExpandoPath("regime")]
         public char SelectedRegime
         {
             get { return _selectedRegime; }
@@ -272,8 +279,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedRegime = value;
                     NotifyOfPropertyChange(nameof(SelectedRegime));
+                    this.TrackChange(nameof(SelectedRegime));
                     NotifyOfPropertyChange(nameof(CanSave));
-                }             
+                }
             }
         }
 
@@ -297,8 +305,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// <summary>
         /// Selected Email
         /// </summary>
-        private EmailDTO _selectedEmail;
-        public EmailDTO SelectedEmail
+        private EmailGraphQLModel _selectedEmail;
+        public EmailGraphQLModel SelectedEmail
         {
             get { return _selectedEmail; }
             set
@@ -313,6 +321,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         // Tipo de documento seleccionado
         private IdentificationTypeGraphQLModel _selectedIdentificationType;
+        [ExpandoPath("identificationTypeId", SerializeAsId = true)]
         public IdentificationTypeGraphQLModel SelectedIdentificationType
         {
             get { return _selectedIdentificationType; }
@@ -322,6 +331,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
+                    this.TrackChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
                     if (IsNewRecord)
@@ -333,34 +343,40 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         // Emails (Lista de emails del tercero)
-        private ObservableCollection<EmailDTO> _emails;
-        public ObservableCollection<EmailDTO> Emails
+        private ObservableCollection<EmailGraphQLModel> _emails;
+        public ObservableCollection<EmailGraphQLModel> Emails
         {
             get { return _emails; }
             set
             {
                 if (_emails != value)
                 {
+                    // Desuscribirse del anterior si existe
+                    if (_emails != null)
+                    {
+                        _emails.CollectionChanged -= Emails_CollectionChanged;
+                    }
+
                     _emails = value;
+
+                    // Suscribirse al nuevo
+                    if (_emails != null)
+                    {
+                        _emails.CollectionChanged += Emails_CollectionChanged;
+                    }
+
                     NotifyOfPropertyChange(nameof(Emails));
-                    NotifyOfPropertyChange(nameof(FilteredEmails));
+                    this.TrackChange(nameof(Emails));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        // emails filtrados
-        private ObservableCollection<EmailDTO> _filteredEmails;
-        public ObservableCollection<EmailDTO> FilteredEmails
+        private void Emails_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            get
-            {
-                if (_filteredEmails == null) _filteredEmails = new ObservableCollection<EmailDTO>();
-                _filteredEmails.Clear();
-                if (this.Emails != null)
-                    foreach (var email in this.Emails)
-                        _filteredEmails.Add(email);
-                return _filteredEmails;
-            }
+            // Se dispara cuando se añade, elimina o modifica un elemento
+            this.TrackChange(nameof(Emails));
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         /// Descripcion de Email (Para agregar)
@@ -409,7 +425,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _identificationNumber = string.Empty;
         public string IdentificationNumber
         {
-            get 
+            get
             {
                 if (_identificationNumber is null) return string.Empty;
                 return _identificationNumber;
@@ -421,7 +437,18 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     _identificationNumber = value;
                     ValidateProperty(nameof(IdentificationNumber), value);
                     NotifyOfPropertyChange(nameof(IdentificationNumber));
+                    this.TrackChange(nameof(IdentificationNumber));
                     NotifyOfPropertyChange(nameof(VerificationDigit));
+
+                    // Trackear VerificationDigit cuando se auto-calcula (solo en nuevos registros)
+                    if (IsNewRecord && SelectedIdentificationType != null && SelectedIdentificationType.HasVerificationDigit)
+                    {
+                        if (value.Trim().Length >= SelectedIdentificationType.MinimumDocumentLength)
+                        {
+                            this.TrackChange(nameof(VerificationDigit));
+                        }
+                    }
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -456,7 +483,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _businessName = string.Empty;
         public string BusinessName
         {
-            get 
+            get
             {
                 if(_businessName is null) return string.Empty;
                 return _businessName;
@@ -467,9 +494,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _businessName = value;
                     NotifyOfPropertyChange(nameof(BusinessName));
+                    this.TrackChange(nameof(BusinessName));
                     ValidateProperty(nameof(BusinessName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
-                }               
+                }
             }
         }
 
@@ -479,17 +507,18 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _firstName = string.Empty;
         public string FirstName
         {
-            get 
+            get
             {
                 if (_firstName is null) return string.Empty;
                 return _firstName;
-            } 
+            }
             set
             {
                 if (_firstName != value)
                 {
                     _firstName = value;
                     NotifyOfPropertyChange(nameof(FirstName));
+                    this.TrackChange(nameof(FirstName));
                     ValidateProperty(nameof(FirstName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -515,6 +544,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _middleName = value;
                     NotifyOfPropertyChange(nameof(MiddleName));
+                    this.TrackChange(nameof(MiddleName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -526,7 +556,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _firstLastName = string.Empty;
         public string FirstLastName
         {
-            get 
+            get
             {
                 if (_firstLastName is null) return string.Empty;
                 return _firstLastName;
@@ -537,6 +567,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _firstLastName = value;
                     NotifyOfPropertyChange(nameof(FirstLastName));
+                    this.TrackChange(nameof(FirstLastName));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(FirstLastName), value);
                 }
@@ -549,7 +580,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private string _middleLastName = string.Empty;
         public string MiddleLastName
         {
-            get 
+            get
             {
                 if (_middleLastName is null) return string.Empty;
                 return _middleLastName;
@@ -560,6 +591,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _middleLastName = value;
                     NotifyOfPropertyChange(nameof(MiddleLastName));
+                    this.TrackChange(nameof(MiddleLastName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -583,6 +615,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _primaryPhone = value;
                     NotifyOfPropertyChange(nameof(PrimaryPhone));
+                    this.TrackChange(nameof(PrimaryPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(PrimaryPhone), value);
                 }
@@ -606,6 +639,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _secondaryPhone = value;
                     NotifyOfPropertyChange(nameof(SecondaryPhone));
+                    this.TrackChange(nameof(SecondaryPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(SecondaryPhone), value);
                 }
@@ -629,6 +663,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _primaryCellPhone = value;
                     NotifyOfPropertyChange(nameof(PrimaryCellPhone));
+                    this.TrackChange(nameof(PrimaryCellPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(PrimaryCellPhone), value);
                 }
@@ -652,6 +687,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _secondaryCellPhone = value;
                     NotifyOfPropertyChange(nameof(SecondaryCellPhone));
+                    this.TrackChange(nameof(SecondaryCellPhone));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(SecondaryCellPhone), value);
                 }
@@ -675,6 +711,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _address = value;
                     NotifyOfPropertyChange(nameof(Address));
+                    this.TrackChange(nameof(Address));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -716,6 +753,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         // Pais Seleccionado - SelectedItem
         private CountryGraphQLModel _selectedCountry;
+        [ExpandoPath("countryId", SerializeAsId = true)]
         public CountryGraphQLModel SelectedCountry
         {
             get => _selectedCountry;
@@ -725,34 +763,22 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedCountry = value;
                     NotifyOfPropertyChange(nameof(SelectedCountry));
+                    this.TrackChange(nameof(SelectedCountry));
+
+                    // Inicializar cascada País → Departamento → Ciudad
                     if (_selectedCountry != null)
                     {
-                        SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.CountryId == _selectedCountry.Id);
-                        NotifyOfPropertyChange(nameof(SelectedDepartment));
+                        InitializeCountryDependencies();
                     }
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        /// <summary>
-        /// Departamentos
-        /// </summary>
-        private ObservableCollection<DepartmentGraphQLModel> _departments;
-        public ObservableCollection<DepartmentGraphQLModel> Departments
-        {
-            get => _departments;
-            set
-            {
-                if (_departments != value)
-                {
-                    _departments = value;
-                    NotifyOfPropertyChange(nameof(Departments));
-                }
-            }
-        }
-        // departamento Seleccionado
+        // Departamento Seleccionado
         private DepartmentGraphQLModel _selectedDepartment;
+        [ExpandoPath("departmentId", SerializeAsId = true)]
         public DepartmentGraphQLModel SelectedDepartment
         {
             get => _selectedDepartment;
@@ -762,11 +788,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedDepartment = value;
                     NotifyOfPropertyChange(nameof(SelectedDepartment));
+                    this.TrackChange(nameof(SelectedDepartment));
+                    
+                    // Inicializar cascada Departamento → Ciudad
                     if (_selectedDepartment != null)
                     {
-                        SelectedCityId = SelectedDepartment.Cities.FirstOrDefault().Id;
-                        NotifyOfPropertyChange(nameof(SelectedCityId));
+                        InitializeDepartmentDependencies();
                     }
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -776,6 +805,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// Ciudad seleccionada
         /// </summary>
         private int _selectedCityId;
+        [ExpandoPath("cityId")]
         public int SelectedCityId
         {
             get => _selectedCityId;
@@ -785,9 +815,78 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedCityId = value;
                     NotifyOfPropertyChange(nameof(SelectedCityId));
+                    this.TrackChange(nameof(SelectedCityId));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
+        }
+
+        #endregion
+
+        #region Métodos de inicialización de dependencias geográficas
+
+        /// <summary>
+        /// Inicializa la cascada País → Departamento → Ciudad
+        /// </summary>
+        private void InitializeCountryDependencies()
+        {
+            // Validar que el país tenga departamentos
+            if (_selectedCountry.Departments == null || !_selectedCountry.Departments.Any())
+            {
+                _ = ShowCountryDepartmentErrorAsync();
+                return;
+            }
+
+            // Auto-seleccionar el primer departamento (esto a su vez seleccionará la ciudad)
+            SelectedDepartment = _selectedCountry.Departments.First();
+        }
+
+        /// <summary>
+        /// Inicializa la cascada Departamento → Ciudad
+        /// </summary>
+        private void InitializeDepartmentDependencies()
+        {
+            // Validar que el departamento tenga ciudades
+            if (_selectedDepartment.Cities == null || !_selectedDepartment.Cities.Any())
+            {
+                _ = ShowDepartmentCitiesErrorAsync();
+                return;
+            }
+
+            // Auto-seleccionar la primera ciudad
+            SelectedCityId = _selectedDepartment.Cities.First().Id;
+        }
+
+        /// <summary>
+        /// Muestra error cuando un país no tiene departamentos
+        /// </summary>
+        private async Task ShowCountryDepartmentErrorAsync()
+        {
+            await Execute.OnUIThreadAsync(() =>
+            {
+                ThemedMessageBox.Show(
+                    title: "Error de datos",
+                    text: $"El país '{_selectedCountry.Name}' no tiene departamentos asociados. Comuníquese con el área de soporte técnico.",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    icon: MessageBoxImage.Error);
+                return Task.CompletedTask;
+            });
+        }
+
+        /// <summary>
+        /// Muestra error cuando un departamento no tiene ciudades
+        /// </summary>
+        private async Task ShowDepartmentCitiesErrorAsync()
+        {
+            await Execute.OnUIThreadAsync(() =>
+            {
+                ThemedMessageBox.Show(
+                    title: "Error de datos",
+                    text: $"El departamento '{_selectedDepartment.Name}' no tiene ciudades asociadas. Comuníquese con el área de soporte técnico.",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    icon: MessageBoxImage.Error);
+                return Task.CompletedTask;
+            });
         }
 
         #endregion
@@ -796,138 +895,29 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             base.OnViewAttached(view, context);
             ValidateProperties();
+            
             _ = Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                SelectedIndexPage = 0; // Selecciona el primer TAB page
-                _ = IsNewRecord
-                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
-                      : CaptureInfoAsPN
-                          ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
-                          : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
-            });
-        }
-
-        public async Task InitializeAsync()
-        {
-            try
-            {
-                // Validaciones
-                string query = @"
-                query () {
-                    identificationTypes{
-			        id
-			        code
-			        name
-			        hasVerificationDigit
-			        minimumDocumentLength
-			        }
-                  countries{
-                    id
-                    code
-                    name
-                    departments {
-                        id
-                        code
-                        name
-                        cities {
-                        id
-                        code
-                        name
-                        }
-                    }
-                    }
-                }
-                ";
-                var result = await this._accountingEntityService.GetDataContextAsync<AccountingEntityDataContext>(query, new object { });
-
-               // IEnumerable<IdentificationTypeGraphQLModel> result = await IdentificationTypeService.GetList(query, new object { });
-                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
-                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-                
-                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
-
-                //this.Detail.GlobalCountryId = 46;
-                //var dptId = from city in this.Departments where city.Id == this.Detail.GlobalCityId select city.Id;
-                SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id;// 001 es el Codigo de Barranquilla
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
+                SelectedIndexPage = 0;
+                string focusTarget = IsNewRecord ? nameof(IdentificationNumber)
+                    : CaptureInfoAsPN ? nameof(FirstName)
+                    : nameof(BusinessName);
+                this.SetFocus(focusTarget);
+            }, DispatcherPriority.Render);
         }
 
         public AccountingEntityDetailViewModel(AccountingEntityViewModel context, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
-            _errors = new Dictionary<string, List<string>>();
+            _errors = [];
             Context = context;
-
             _accountingEntityService = accountingEntityService;
+
+            // Inicializar la colección para activar la suscripción al CollectionChanged
+            Emails = [];
+
             Context.EventAggregator.SubscribeOnUIThread(this);
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
         }
 
-        public void CleanUpControls()
-        {
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            SelectedRegime = 'R';
-            VerificationDigit = "";
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
-            IdentificationNumber = "";
-            SelectedCaptureType = CaptureTypeEnum.Undefined;
-            BusinessName = "";
-            FirstName = "";
-            MiddleName = "";
-            FirstLastName = "";
-            MiddleLastName = "";
-            PrimaryPhone = "";
-            SecondaryPhone = "";
-            PrimaryCellPhone = "";
-            SecondaryCellPhone = "";
-            Address = "";
-            Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
-        }
-
-        public void CleanUpControlsForNew()
-        {
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            SelectedRegime = 'R';
-            VerificationDigit = "";
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
-            IdentificationNumber = "";
-            SelectedCaptureType = CaptureTypeEnum.PN;
-            BusinessName = "";
-            FirstName = "";
-            MiddleName = "";
-            FirstLastName = "";
-            MiddleLastName = "";
-            PrimaryPhone = "";
-            SecondaryPhone = "";
-            PrimaryCellPhone = "";
-            SecondaryCellPhone = "";
-            Address = "";
-            Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
-        }
-
-
-        //public async Task Cancel()
-        //{
-        //    await Context.ActivateMasterView();
-        //}
 
         public void EndRowEditing()
         {
@@ -949,9 +939,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (ThemedMessageBox.Show(title: "Confirme ...", text: $"¿Confirma que desea eliminar el email: {SelectedEmail.Email}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question) == MessageBoxResult.No) return;
                 if (SelectedEmail != null)
                 {
-                    EmailDTO? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
+                    EmailGraphQLModel? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
                     if (emailToDelete is null) return;
-                    Emails.Remove(emailToDelete);
+                    Emails.Remove(emailToDelete); // CollectionChanged se dispara automáticamente
                 }
             }
             catch (Exception ex)
@@ -967,11 +957,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                EmailDTO email = new EmailDTO() { Description = EmailDescription, Email = Email };
+                EmailGraphQLModel email = new() { Description = EmailDescription, Email = Email };
                 Email = "";
                 EmailDescription = "";
-                Emails.Add(email);
-                NotifyOfPropertyChange(nameof(FilteredEmails));
+                Emails.Add(email); // CollectionChanged se dispara automáticamente
                 _ = this.SetFocus(nameof(EmailDescription));
             }
             catch (Exception ex)
@@ -986,26 +975,30 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
      
         public async Task SaveAsync()
-        { 
+        {
             try
             {
                 IsBusy = true;
                 Refresh();
-                AccountingEntityGraphQLModel result = await ExecuteSaveAsync();
+                UpsertResponseType<AccountingEntityGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
                 if (IsNewRecord)
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityCreateMessage() { CreatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityCreateMessage() { CreatedAccountingEntity = result });
                 }
                 else
                 {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync( new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = Context.AutoMapper.Map<AccountingEntityDTO>(result)});
+                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = result});
                 }
-                Context.EnableOnViewReady = false;
-                await Context.ActivateMasterView();
+                await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                GraphQLError graphQLError = JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -1019,163 +1012,66 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public async Task<AccountingEntityGraphQLModel> ExecuteSaveAsync()
+        public async Task<UpsertResponseType<AccountingEntityGraphQLModel>> ExecuteSaveAsync()
         {
             try
             {
-                string query = "";
+                string query;
 
-                List<object> emailList = new List<object>();
-                List<string> phones = new List<string>();
-
-                if (!string.IsNullOrEmpty(PrimaryPhone)) phones.Add(PrimaryPhone);
-                if (!string.IsNullOrEmpty(SecondaryPhone)) phones.Add(SecondaryPhone);
-                if (!string.IsNullOrEmpty(PrimaryCellPhone)) phones.Add(PrimaryCellPhone);
-                if (!string.IsNullOrEmpty(SecondaryCellPhone)) phones.Add(SecondaryCellPhone);
-
-                if (Emails != null)
-                    foreach (EmailDTO email in Emails)
+                var transformers = new Dictionary<string, Func<object?, object?>>
+                {
+                    [nameof(Emails)] = item =>
                     {
-                        emailList.Add(new { email.Description, email.Email, email.isElectronicInvoiceRecipient});
+                        var email = (EmailGraphQLModel)item!;
+                        return new
+                        {
+                            description = email.Description,
+                            email = email.Email
+                        };
                     }
+                };
 
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Data.IdentificationNumber = IdentificationNumber;
-                variables.Data.VerificationDigit = SelectedIdentificationType.HasVerificationDigit ? VerificationDigit : "";
-                variables.Data.CaptureType = SelectedCaptureType.ToString();
-                variables.Data.BusinessName = CaptureInfoAsRS ? BusinessName : "";
-                variables.Data.TradeName = string.Empty;
-                variables.Data.FirstName = CaptureInfoAsPN ? FirstName : "";
-                variables.Data.MiddleName = CaptureInfoAsPN ? MiddleName : "";
-                variables.Data.FirstLastName = CaptureInfoAsPN ? FirstLastName : "";
-                variables.Data.MiddleLastName = CaptureInfoAsPN ? MiddleLastName : "";
-                variables.Data.FullName = $"{variables.Data.FirstName} {variables.Data.MiddleName} {variables.Data.FirstLastName} {variables.Data.MiddleLastName}".Trim().RemoveExtraSpaces();
-                variables.Data.SearchName = $"{variables.Data.FirstName} {variables.Data.MiddleName} {variables.Data.FirstLastName} {variables.Data.MiddleLastName}".Trim().RemoveExtraSpaces() +
-                (CaptureInfoAsRS ? BusinessName.ToString() : "").Trim().RemoveExtraSpaces(); // esto esta pendiente + {(string.IsNullOrEmpty(this.TradeName.Trim()) ? "" : "-")} {this.TradeName}".RemoveExtraSpaces(),
-                variables.Data.Phone1 = PrimaryPhone;
-                variables.Data.Phone2 = SecondaryPhone;
-                variables.Data.CellPhone1 = PrimaryCellPhone;
-                variables.Data.CellPhone2 = SecondaryCellPhone;
-                variables.Data.TelephonicInformation = string.Join(" - ", phones);
-                variables.Data.CommercialCode = string.Empty;
-                variables.Data.Address = Address;
-                variables.Data.Regime = SelectedRegime;
-                variables.Data.IdentificationTypeId = SelectedIdentificationType.Id;
-                variables.Data.CountryId = SelectedCountry.Id;
-                variables.Data.DepartmentId = SelectedDepartment.Id;
-                variables.Data.CityId = SelectedCityId;
-                if (!IsNewRecord) variables.Id = Id; // Needed for update only
-                if (emailList.Count == 0) variables.Data.Emails = new List<object>();
-                if (emailList.Count > 0) 
-                {
-                    variables.Data.Emails = new List<ExpandoObject>();
-                    variables.Data.Emails = emailList;
-                }; // If no emails registered, don't include the key
+                // Use ChangeCollector to build variables from tracked changes
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
 
-                if (IsNewRecord)
-                {
-                    query = @"
-					mutation ($data: CreateAccountingEntityInput!) {
-					  CreateResponse: createAccountingEntity(data: $data) 
-					  {
-					    id
-						identificationNumber
-						verificationDigit
-						captureType
-						businessName
-						firstName
-						middleName
-						firstLastName
-						middleLastName
-						phone1
-						phone2
-						cellPhone1
-						cellPhone2
-						address
-						regime
-						fullName
-						tradeName
-						searchName
-						telephonicInformation
-						commercialCode
-						identificationType {
-							id
-						}
-						country {
-							id
-						}
-						department {
-							id
-						}
-						city {
-							id
-						}
-						emails {
-						  id
-						  description
-						  email
-						  sendElectronicInvoice
-						}
-					  }
-					}";
-                    
-                    var createdAccountingEntity = await _accountingEntityService.CreateAsync(query, variables);
-                    return createdAccountingEntity;
-                }
-                else
-                {
-                    query = @"
-					mutation ($data: UpdateAccountingEntityInput!, $id: Int!) {
-					  UpdateResponse: updateAccountingEntity(data: $data, id: $id) {
-						id
-						identificationNumber
-						verificationDigit
-						captureType
-						businessName
-						firstName
-						middleName
-						firstLastName
-						middleLastName
-						phone1
-						phone2
-						cellPhone1
-						cellPhone2
-						address
-						regime
-						fullName
-						tradeName
-						searchName
-						telephonicInformation
-						commercialCode
-						identificationType {
-							id
-						}
-						country {
-							id
-						}
-						department {
-							id
-						}
-						city {
-							id
-						}
-						emails {
-						  id
-						  description
-						  email
-						  sendElectronicInvoice 	
-						}
-					  }
-					}";
-                    var updatedAccountingEntity = await _accountingEntityService.UpdateAsync(query, variables);
-                    return updatedAccountingEntity;
-                }
+                // Add Id for UPDATE operations
+                if (!IsNewRecord) variables.updateResponseId = Id;
+
+                // Query usando QueryBuilder
+                query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();
+
+                UpsertResponseType<AccountingEntityGraphQLModel> result = IsNewRecord
+                    ? await _accountingEntityService.CreateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables)
+                    : await _accountingEntityService.UpdateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables);
+                return result;
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+
+        private bool HasEmailChanges()
+        {
+            // Para nuevos registros, los emails no afectan el guardado
+            if (IsNewRecord)
+            {
+                return false;
+            }
+
+            // Para actualizaciones, comparar con la lista seed
+            var currentEmails = Emails.Select(e => e.Email).ToList();
+
+            // Diferente cantidad = hubo cambios
+            if (currentEmails.Count != _seedEmails.Count)
+            {
+                return true;
+            }
+
+            // Misma cantidad, verificar si todos los emails son los mismos
+            // Usar HashSet para comparación eficiente
+            var seedSet = new HashSet<string>(_seedEmails);
+            return !currentEmails.All(email => seedSet.Contains(email));
         }
 
         public bool CanSave
@@ -1189,11 +1085,17 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 // El digito de verificacion debe estar presente en caso de ser requerido
                 if (SelectedIdentificationType.HasVerificationDigit && string.IsNullOrEmpty(VerificationDigit)) return false;
                 // Si la captura de datos es del tipo razon social
-                if (CaptureInfoAsRS && string.IsNullOrEmpty(BusinessName)) return false;
+                if (CaptureInfoAsPJ && string.IsNullOrEmpty(BusinessName)) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
+                // Validar ubicación geográfica requerida
+                if (SelectedCountry == null) return false;
+                if (SelectedDepartment == null) return false;
+                if (SelectedCityId == 0) return false;
                 // Si el control de errores por propiedades tiene algun error
                 if (_errors.Count > 0) return false;
+                // Si es actualización y no hay cambios en propiedades ni en emails, no permitir guardar
+                if (!IsNewRecord && !this.HasChanges() && !HasEmailChanges()) return false;
                 return true;
             }
         }
@@ -1230,8 +1132,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public void GoBack(object p)
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
-            CleanUpControls();
+            _ = Task.Run(() => Context.ActivateMasterViewAsync());
         }
 
         public bool CanGoBack(object p)
@@ -1292,7 +1193,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                         if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
                         break;
                     case nameof(BusinessName):
-                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
+                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPJ) AddError(propertyName, "La razón social no puede estar vacía");
                         break;
                     case nameof(PrimaryPhone):
                         if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
@@ -1319,7 +1220,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         private void ValidateProperties()
         {
-            if (CaptureInfoAsRS) ValidateProperty(nameof(BusinessName), BusinessName);
+            if (CaptureInfoAsPJ) ValidateProperty(nameof(BusinessName), BusinessName);
             if (CaptureInfoAsPN)
             {
                 ValidateProperty(nameof(FirstName), FirstName);
@@ -1328,6 +1229,307 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
         #endregion
+
+        #region Data Loading and QueryBuilder Methods
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            if (IsNewRecord)
+            {
+                // Seed default values for new records
+                this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+                this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+                this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+                this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+                this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+                this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            }
+            else
+            {
+                // Guardar los emails iniciales para comparación en actualizaciones
+                _seedEmails = Emails.Select(e => e.Email).ToList();
+            }
+            // Accept all changes to reset the tracker
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        public string GetAccountingEntityByIdQuery()
+        {
+            var accountingEntityFields = FieldSpec<AccountingEntityGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.IdentificationNumber)
+                .Field(e => e.VerificationDigit)
+                .Field(e => e.CaptureType)
+                .Field(e => e.BusinessName)
+                .Field(e => e.FirstName)
+                .Field(e => e.MiddleName)
+                .Field(e => e.FirstLastName)
+                .Field(e => e.MiddleLastName)
+                .Field(e => e.PrimaryPhone)
+                .Field(e => e.SecondaryPhone)
+                .Field(e => e.PrimaryCellPhone)
+                .Field(e => e.SecondaryCellPhone)
+                .Field(e => e.Address)
+                .Field(e => e.Regime)
+                .Select(e => e.IdentificationType, it => it
+                    .Field(i => i.Id)
+                    .Field(i => i.Name)
+                    .Field(i => i.Code)
+                    .Field(i => i.HasVerificationDigit)
+                    .Field(i => i.MinimumDocumentLength))
+                .Select(e => e.Country, co => co
+                    .Field(c => c.Id)
+                    .Field(c => c.Name)
+                    .Field(c => c.Code))
+                .Select(e => e.Department, dept => dept
+                    .Field(d => d.Id)
+                    .Field(d => d.Name)
+                    .Field(d => d.Code))
+                .Select(e => e.City, city => city
+                    .Field(ci => ci.Id)
+                    .Field(ci => ci.Name)
+                    .Field(ci => ci.Code))
+                .SelectList(e => e.Emails, email => email
+                    .Field(em => em.Id)
+                    .Field(em => em.Description)
+                    .Field(em => em.Email))
+                .Build();
+
+            var accountingEntityIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var accountingEntityFragment = new GraphQLQueryFragment("accountingEntity", [accountingEntityIdParameter], accountingEntityFields, "SingleItemResponse");
+
+            var builder = new GraphQLQueryBuilder([accountingEntityFragment]);
+
+            return builder.GetQuery();
+        }
+
+        public void SetDataForNew()
+        {
+            try
+            {
+                // Cargar datos comunes desde el caché global
+                IdentificationTypes = GlobalDataCache.IdentificationTypes;
+                Countries = GlobalDataCache.Countries;
+
+                Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+                SelectedRegime = 'R';
+                VerificationDigit = "";
+                IdentificationTypes = [];
+                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode) ?? throw new InvalidOperationException($"No se encontró el tipo de identificación por defecto con código '{Constant.DefaultIdentificationTypeCode}'. Contacte al área de soporte técnico."); // 31 es NIT
+                IdentificationNumber = "";
+                SelectedCaptureType = CaptureTypeEnum.PN;
+                BusinessName = "";
+                FirstName = "";
+                MiddleName = "";
+                FirstLastName = "";
+                MiddleLastName = "";
+                PrimaryPhone = "";
+                SecondaryPhone = "";
+                PrimaryCellPhone = "";
+                SecondaryCellPhone = "";
+                Address = "";
+                Emails = [];
+
+                // Validar y asignar datos maestros por defecto
+                SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode) ?? throw new InvalidOperationException($"No se encontró el país por defecto con código '{Constant.DefaultCountryCode}'. Contacte al área de soporte técnico.");
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode) ?? throw new InvalidOperationException($"No se encontró el departamento por defecto con código '{Constant.DefaultDepartmentCode}' en el país '{SelectedCountry.Name}'. Contacte al área de soporte técnico.");
+                CityGraphQLModel selectedCity = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode) ?? throw new InvalidOperationException($"No se encontró la ciudad por defecto con código '{Constant.DefaultCityCode}' en el departamento '{SelectedDepartment.Name}'. Contacte al área de soporte técnico.");
+                SelectedCityId = selectedCity.Id;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+
+        public async Task<AccountingEntityGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            try
+            {
+                // Cargar datos comunes desde el caché global
+                IdentificationTypes = GlobalDataCache.IdentificationTypes;
+                Countries = GlobalDataCache.Countries;
+
+                // Cargar solo el AccountingEntity específico
+                string query = GetAccountingEntityByIdQuery();
+                dynamic variables = new ExpandoObject();
+                variables.singleItemResponseId = id;
+
+                AccountingEntityGraphQLModel entity = await _accountingEntityService.FindByIdAsync(query, variables);
+
+                // Poblar el ViewModel con los datos del accounting entity
+                PopulateFromAccountingEntity(entity);
+
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+
+        public void PopulateFromAccountingEntity(AccountingEntityGraphQLModel entity)
+        {
+            Id = entity.Id;
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Id == entity.IdentificationType.Id);
+            VerificationDigit = entity.VerificationDigit;
+            SelectedRegime = entity.Regime;
+            IdentificationNumber = entity.IdentificationNumber;
+            SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), entity.CaptureType);
+            BusinessName = entity.BusinessName;
+            FirstName = entity.FirstName;
+            MiddleName = entity.MiddleName;
+            FirstLastName = entity.FirstLastName;
+            MiddleLastName = entity.MiddleLastName;
+            PrimaryPhone = entity.PrimaryPhone;
+            SecondaryPhone = entity.SecondaryPhone;
+            PrimaryCellPhone = entity.PrimaryCellPhone;
+            SecondaryCellPhone = entity.SecondaryCellPhone;
+            Address = entity.Address;
+            SelectedCountry = Countries.FirstOrDefault(c => c.Id == entity.Country.Id);
+            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == entity.Department.Id);
+            SelectedCityId = entity.City.Id;
+            Emails = entity.Emails is null ? [] : new ObservableCollection<EmailGraphQLModel>(entity.Emails);
+        }
+
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntityGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingEntity", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.CaptureType)
+                    .Field(e => e.BusinessName)
+                    .Field(e => e.FirstName)
+                    .Field(e => e.MiddleName)
+                    .Field(e => e.FirstLastName)
+                    .Field(e => e.MiddleLastName)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.Address)
+                    .Field(e => e.Regime)
+                    .Select(e => e.IdentificationType, it => it
+                        .Field(i => i.Id)
+                        .Field(i => i.Name)
+                        .Field(i => i.Code))
+                    .Select(e => e.Country, co => co
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                        .Field(c => c.Code))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Name)
+                        .Field(d => d.Code))
+                    .Select(e => e.City, city => city
+                        .Field(ci => ci.Id)
+                        .Field(ci => ci.Name)
+                        .Field(ci => ci.Code))
+                    .SelectList(e => e.Emails, email => email
+                        .Field(em => em.Id)
+                        .Field(em => em.Description)
+                        .Field(em => em.Email)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAccountingEntityInput!");
+
+            var fragment = new GraphQLQueryFragment("createAccountingEntity", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntityGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingEntity", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.CaptureType)
+                    .Field(e => e.BusinessName)
+                    .Field(e => e.FirstName)
+                    .Field(e => e.MiddleName)
+                    .Field(e => e.FirstLastName)
+                    .Field(e => e.MiddleLastName)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.Address)
+                    .Field(e => e.Regime)
+                    .Select(e => e.IdentificationType, it => it
+                        .Field(i => i.Id)
+                        .Field(i => i.Name)
+                        .Field(i => i.Code))
+                    .Select(e => e.Country, co => co
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                        .Field(c => c.Code))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Name)
+                        .Field(d => d.Code))
+                    .Select(e => e.City, city => city
+                        .Field(ci => ci.Id)
+                        .Field(ci => ci.Name)
+                        .Field(ci => ci.Code))
+                    .SelectList(e => e.Emails, email => email
+                        .Field(em => em.Id)
+                        .Field(em => em.Description)
+                        .Field(em => em.Email)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateAccountingEntityInput!"),
+                new("id", "ID!")
+            };
+
+            var fragment = new GraphQLQueryFragment("updateAccountingEntity", parameters, fields, "UpdateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        #endregion
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            // 1. Desuscribirse del EventAggregator PRIMERO para evitar memory leaks
+            Context.EventAggregator.Unsubscribe(this);
+
+            // 2. Desuscribirse del CollectionChanged ANTES de limpiar (evita disparar eventos durante limpieza)
+            if (_emails != null)
+            {
+                _emails.CollectionChanged -= Emails_CollectionChanged;
+            }
+
+            // 3. Limpiar el ChangeTracker para liberar referencias
+            this.AcceptChanges();
+
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
 
     }
 }

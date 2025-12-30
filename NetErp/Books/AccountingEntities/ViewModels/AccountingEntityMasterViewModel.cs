@@ -7,7 +7,6 @@ using Models.Books;
 using NetErp.Helpers;
 using System;
 using Extensions.Books;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -16,16 +15,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Dynamic;
-using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Mvvm.Xpf;
-using DevExpress.Xpf.Data;
-using Services.Books.DAL.PostgreSQL;
 using Common.Helpers;
-using Microsoft.VisualStudio.Threading;
-using Newtonsoft.Json.Linq;
 using Models.Billing;
 using Models.Suppliers;
 using GraphQL.Client.Http;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
@@ -46,7 +41,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
         // Context
-        private AccountingEntityViewModel _context;
+        private AccountingEntityViewModel _context = null!;
         public AccountingEntityViewModel Context
         {
             get { return _context; }
@@ -134,7 +129,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// <summary>
         /// PaginationCommand para controlar evento
         /// </summary>
-        private ICommand _paginationCommand;
+        private ICommand? _paginationCommand;
         public ICommand PaginationCommand
         {
             get
@@ -144,7 +139,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private ICommand _createAccountingEntityCommand;
+        private ICommand? _createAccountingEntityCommand;
         public ICommand CreateAccountingEntityCommand
         {
             get
@@ -155,7 +150,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         }
 
-        private ICommand _deleteAccountingEntityCommand;
+        private ICommand? _deleteAccountingEntityCommand;
         public ICommand DeleteAccountingEntityCommand
         {
             get
@@ -170,7 +165,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         #region Propiedades
 
         // Tiempo de respuesta
-        private string _responseTime;
+        private string _responseTime = string.Empty;
         public string ResponseTime
         {
             get { return _responseTime; }
@@ -252,30 +247,18 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         protected override void OnViewReady(object view)
         {
-            if (Context.EnableOnViewReady is false) return;
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadAccountingEntitiesAsync());
+            _ = LoadAccountingEntitiesAsync();
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
         public AccountingEntityMasterViewModel(AccountingEntityViewModel context, Helpers.Services.INotificationService notificationService,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService)
         {
-            try
-            {
-
-                Context = context;
-                _notificationService = notificationService;
-                _accountingEntityService = accountingEntityService;
-
-                Context.EventAggregator.SubscribeOnUIThread(this);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
+            Context = context ?? throw new ArgumentNullException(nameof(context));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _accountingEntityService = accountingEntityService ?? throw new ArgumentNullException(nameof(accountingEntityService));
+            Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
         private async Task ExecuteChangeIndexAsync()
@@ -293,90 +276,34 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public async Task LoadAccountingEntitiesAsync()
         {
-
             try
             {
                 IsBusy = true;
                 Refresh();
-                string query = @"
-                query ($filter: AccountingEntityFilterInput) {
-                  PageResponse:accountingEntityPage(filter: $filter) {
-		                count
-                        rows {
-                            id
-                            identificationNumber
-                            verificationDigit
-                            captureType
-                            businessName
-                            firstName
-                            middleName
-                            firstLastName
-                            middleLastName
-                            phone1
-                            phone2
-                            cellPhone1
-                            cellPhone2
-                            address
-                            regime
-                            fullName
-                            tradeName
-                            searchName
-                            telephonicInformation
-                            commercialCode
-                            identificationType {
-                               id
-                            }
-                            country {
-                               id 
-                            }
-                            department {
-                               id
-                            }
-                            city {
-                               id 
-                            }
-                            emails {
-                              id
-                              description
-                              email
-                            }
-                        }
-                    }
-                 }";
-
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
-
-                //SearhName
-                variables.filter.or[0].searchName = new ExpandoObject();
-                variables.filter.or[0].searchName.@operator = "like";
-                variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                //IdentificationNumber
-                variables.filter.or[1].identificationNumber = new ExpandoObject();
-                variables.filter.or[1].identificationNumber.@operator = "like";
-                variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                //Paginación
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
 
                 // Iniciar cronometro
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                var source = await _accountingEntityService.GetPageAsync(query, variables);
-                TotalCount = source.Count;
-                AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(source.Rows);
+                string query = GetLoadAccountingEntitiesQuery();
+
+                dynamic variables = new ExpandoObject();
+                variables.PageResponsePagination = new ExpandoObject();
+                variables.PageResponsePagination.Page = PageIndex;
+                variables.PageResponsePagination.PageSize = PageSize;
+                variables.PageResponseFilters = new ExpandoObject();
+
+                if (!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.PageResponseFilters.matching = FilterSearch.Trim().RemoveExtraSpaces();
+                }
+
+                var result = await _accountingEntityService.GetPageAsync(query, variables);
+
+                TotalCount = result.TotalEntries;
+                AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(result.Entries);
                 stopwatch.Stop();
 
-                // Detener cronometro
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -385,7 +312,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 if (graphQLError != null && currentMethod != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    await Execute.OnUIThreadAsync(() =>
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                        return Task.CompletedTask;
+                    });
                 }
                 else
                 {
@@ -395,7 +326,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAccountingEntities" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAccountingEntities" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -409,23 +344,27 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteEditAccountingEntityAsync());
+                await Context.ActivateDetailViewForEditAsync(SelectedAccountingEntity!.Id);
                 SelectedAccountingEntity = null;
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EditAccountingEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{(currentMethod is null ? "EditAccountingEntityAsync" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
                 IsBusy = false;
             }
-        }
-
-        public async Task ExecuteEditAccountingEntityAsync()
-        {
-            await Context.ActivateDetailViewForEdit(SelectedAccountingEntity);
         }
 
         public async Task CreateAccountingEntityAsync()
@@ -440,7 +379,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EditCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
@@ -450,143 +393,143 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public async Task ExecuteCreateAccountingEntityAsync()
         {
-            await Context.ActivateDetailViewForNew(); // Mostrar la Vista
+            try
+            {
+                await Context.ActivateDetailViewForNewAsync();
+            }
+            catch (Exception ex)
+            {
+                // Construir mensaje completo recorriendo la cadena de excepciones
+                StringBuilder fullMessage = new();
+                Exception? currentEx = ex;
+                
+                while (currentEx is not null)
+                {
+                    fullMessage.AppendLine(currentEx.Message);
+                    currentEx = currentEx.InnerException;
+                }
+
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(
+                        title: "Error",
+                        text: fullMessage.ToString().TrimEnd(),
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
+            }
         }
 
         public async Task DeleteAccountingEntityAsync()
         {
             try
             {
-                IsBusy = true;
+                if (SelectedAccountingEntity is null) return;
                 int id = SelectedAccountingEntity.Id;
+                IsBusy = true;
+                Refresh();
 
-                string query = @"
-                query($id:Int!) {
-                  CanDeleteModel: canDeleteAccountingEntity(id:$id) {
-                    canDelete
-                    message
-                  }
-                }";
+                string query = GetCanDeleteAccountingEntityQuery();
 
-                object variables = new { Id = id };
+                object variables = new { canDeleteResponseId = id };
 
-                var validation = await this._accountingEntityService.CanDeleteAsync(query, variables);
+                CanDeleteType validation = await _accountingEntityService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: $"¿Confirma que desea eliminar el registro {SelectedAccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención!", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El tercero no puede ser eliminado" +
-                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención!", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
+                IsBusy = true;
+                DeleteResponseType deletedAccountingEntity = await Task.Run(() => this.ExecuteDeleteAccountingEntityAsync(id));
 
-                Refresh();
+                if (!deletedAccountingEntity.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedAccountingEntity.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                var deletedAccountingEntity = await ExecuteDeleteAccountingEntityAsync(id);
+                await Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntityDeleteMessage { DeletedAccountingEntity = deletedAccountingEntity });
 
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityDeleteMessage() { DeletedAccountingEntity = deletedAccountingEntity});
-
-                // Desactivar opcion de eliminar registros
                 NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
-
-                
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
+                string contentString = exGraphQL.Content?.ToString() ?? string.Empty;
+                GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(contentString);
+                
+                await Execute.OnUIThreadAsync(() =>
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                    ThemedMessageBox.Show("Atención!",
+                    $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()?.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError?.Errors[0].Message}",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountingEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show("Atención!",
+                    $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()?.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
             finally
             {
                 IsBusy = false;
             }
-
         }
 
-        public async Task<AccountingEntityGraphQLModel> ExecuteDeleteAccountingEntityAsync(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteAccountingEntityAsync(int id)
         {
-            try
-            {
-                string query = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteAccountingEntity(id: $id) {
-                    id
-                  }
-                }";
-                object variables = new { Id = id };
-                var deletedEntity = await this._accountingEntityService.DeleteAsync(query, variables);
-                this.SelectedAccountingEntity = null;
-                return deletedEntity;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            string query = GetDeleteAccountingEntityQuery();
+            object variables = new { deleteResponseId = id };
+            DeleteResponseType deletedRecord = await _accountingEntityService.DeleteAsync<DeleteResponseType>(query, variables);
+            return deletedRecord;
         }
 
         public async Task HandleAsync(AccountingEntityCreateMessage message, CancellationToken cancellationToken)
         {
-            try
-            {
-                await LoadAccountingEntitiesAsync();
-                _notificationService.ShowSuccess("Tercero creado correctamente", "Éxito");
-                return;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            await LoadAccountingEntitiesAsync();
+            _notificationService.ShowSuccess(message.CreatedAccountingEntity.Message);
         }
 
 
         public async Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
         {
-            try
-            {
-                await LoadAccountingEntitiesAsync();
-                _notificationService.ShowSuccess("Tercero actualizado correctamente", "Éxito");
-                return;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            await LoadAccountingEntitiesAsync();
+            _notificationService.ShowSuccess(message.UpdatedAccountingEntity.Message);
         }
-        public Task HandleAsync(AccountingEntityDeleteMessage message, CancellationToken cancellationToken)
+
+        public async Task HandleAsync(AccountingEntityDeleteMessage message, CancellationToken cancellationToken)
         {
-            try
+            // ✅ Optimización: Remover de la lista en lugar de recargar todo
+            var deletedEntity = AccountingEntities.FirstOrDefault(c => c.Id == message.DeletedAccountingEntity.DeletedId);
+            if (deletedEntity != null)
             {
-                AccountingEntityGraphQLModel accountingAccountToDelete = AccountingEntities.First(c => c.Id == message.DeletedAccountingEntity.Id);
-                if (accountingAccountToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => AccountingEntities.Remove(accountingAccountToDelete));
-                _notificationService.ShowSuccess("Tercero eliminado correctamente", "Éxito");
-                return LoadAccountingEntitiesAsync();
+                AccountingEntities.Remove(deletedEntity);
+                TotalCount--;
             }
-            catch (Exception)
+            else
             {
-                throw;
+                // Si no está en la lista visible, recargar para actualizar el TotalCount
+                await LoadAccountingEntitiesAsync();
             }
+
+            _notificationService.ShowSuccess(message.DeletedAccountingEntity.Message);
         }
 
         public Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
@@ -626,6 +569,57 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (SelectedAccountingEntity is null) return false;
                 return true;
             }
+        }
+
+        #endregion
+
+        #region QueryBuilder Methods
+
+        public string GetLoadAccountingEntitiesQuery()
+        {
+            var fields = FieldSpec<PageType<AccountingEntityGraphQLModel>>
+                .Create()
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.SearchName)
+                    .Field(e => e.TelephonicInformation)
+                    .Field(e => e.Address))
+                .Build();
+
+            var filterParameter = new GraphQLQueryParameter("filters", "AccountingEntityFilters");
+            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("accountingEntitiesPage", [filterParameter, paginationParameter], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public string GetCanDeleteAccountingEntityQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingEntity", [parameter], fields, "CanDeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public string GetDeleteAccountingEntityQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("deleteAccountingEntity", [parameter], fields, "DeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
         #endregion

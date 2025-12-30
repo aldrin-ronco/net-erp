@@ -565,14 +565,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _captureType = value;
                     NotifyOfPropertyChange(() => CaptureType);
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
-                    NotifyOfPropertyChange(() => CaptureInfoAsRS);
-                    this.TrackChange(nameof(CaptureType));
+                    NotifyOfPropertyChange(() => CaptureInfoAsPJ);
                     if (CaptureInfoAsPN)
                     {
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
-                    if (CaptureInfoAsRS)
+                    if (CaptureInfoAsPJ)
                     {
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
@@ -592,11 +591,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public bool CaptureInfoAsPN => CaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
-        public bool CaptureInfoAsRS => CaptureType.Equals(BooksDictionaries.CaptureTypeEnum.RS);
-
-        private int _cityId;
-        [ExpandoPath("accountingEntity.cityId")]
+        public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
+        public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
         public int SelectedCityId
         {

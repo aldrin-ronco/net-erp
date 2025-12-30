@@ -203,7 +203,7 @@
                                  GroupName="CaptureType"
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=RS}"
+                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PJ}"
                                  Margin="5 0 0 0"/>
                 </StackPanel>
 
@@ -241,11 +241,11 @@
                         <!--Razon Social-->
                         <TextBlock Text="Razon Social" 
                            Grid.Column="0" Grid.Row="0"
-                           Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                           Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                            Margin="0 4 4 2"/>
                         <dxe:TextEdit x:Name="BusinessName" 
                             CharacterCasing="Upper"
-                            Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
                             Margin="0 0 0 0" Padding="3"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
