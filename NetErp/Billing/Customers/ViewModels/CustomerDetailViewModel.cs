@@ -667,14 +667,14 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(() => SelectedCaptureType);
                     this.TrackChange(nameof(SelectedCaptureType));
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
-                    NotifyOfPropertyChange(() => CaptureInfoAsRS);
+                    NotifyOfPropertyChange(() => CaptureInfoAsPJ);
                     if (CaptureInfoAsPN)
                     {
                         ClearErrors(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
-                    if (CaptureInfoAsRS)
+                    if (CaptureInfoAsPJ)
                     {
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
@@ -703,7 +703,7 @@ namespace NetErp.Billing.Customers.ViewModels
         }
 
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
-        public bool CaptureInfoAsRS => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.RS);
+        public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
         public bool IsNewRecord => Id == 0;
 
@@ -842,7 +842,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 // El digito de verificacion debe estar presente en caso de ser requerido
                 if (SelectedIdentificationType.HasVerificationDigit && string.IsNullOrEmpty(VerificationDigit)) return false;
                 // Si la captura de datos es del tipo razon social
-                if (CaptureInfoAsRS && string.IsNullOrEmpty(BusinessName)) return false;
+                if (CaptureInfoAsPJ && string.IsNullOrEmpty(BusinessName)) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
                 // Validar ubicación geográfica requerida
@@ -927,7 +927,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 var transformers = new Dictionary<string, Func<object?, object?>>
                 {
-                    [nameof(CustomerDetailViewModel.Emails)] = item =>
+                    [nameof(Emails)] = item =>
                     {
                         var email = (EmailGraphQLModel)item!;
                         return new
@@ -940,8 +940,6 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 // Use ChangeCollector to build variables from tracked changes
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
-
-                string json = JsonConvert.SerializeObject(variables);
 
                 // Add Id for UPDATE operations
                 if (!IsNewRecord) variables.updateResponseId = Id;
@@ -1678,7 +1676,7 @@ namespace NetErp.Billing.Customers.ViewModels
                         if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
                         break;
                     case nameof(BusinessName):
-                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
+                        if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPJ) AddError(propertyName, "La razón social no puede estar vacía");
                         break;
                     case nameof(BlockingReason):
                         if (string.IsNullOrEmpty(value.Trim()) && !IsActive) AddError(propertyName, "Debe especificar un motivo de bloqueo");
@@ -1739,7 +1737,7 @@ namespace NetErp.Billing.Customers.ViewModels
 
         private void ValidateProperties()
         {
-            if (CaptureInfoAsRS) ValidateProperty(nameof(BusinessName), BusinessName);
+            if (CaptureInfoAsPJ) ValidateProperty(nameof(BusinessName), BusinessName);
             if (CaptureInfoAsPN)
             {
                 ValidateProperty(nameof(FirstName), FirstName);

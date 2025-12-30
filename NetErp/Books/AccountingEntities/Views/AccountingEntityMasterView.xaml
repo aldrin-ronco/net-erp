@@ -127,7 +127,7 @@
                 <dxg:GridColumn 
                 Header="NIT" 
                 Width="auto"
-                Binding="{Binding IdentificationNumber, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                Binding="{Binding IdentificationNumberWithVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
 
                 <!--Nombre de busqueda-->

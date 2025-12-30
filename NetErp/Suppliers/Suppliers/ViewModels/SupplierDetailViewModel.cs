@@ -583,14 +583,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _selectedCaptureType = value;
                     NotifyOfPropertyChange(() => SelectedCaptureType);
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
-                    NotifyOfPropertyChange(() => CaptureInfoAsRS);
+                    NotifyOfPropertyChange(() => CaptureInfoAsPJ);
                     if (CaptureInfoAsPN)
                     {
                         ClearErrors(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
-                    if (CaptureInfoAsRS)
+                    if (CaptureInfoAsPJ)
                     {
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
@@ -619,7 +619,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
-        public bool CaptureInfoAsRS => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.RS);
+        public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
         public bool IsNewRecord => Id == 0;
 
@@ -636,7 +636,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 // El digito de verificacion debe estar presente en caso de ser requerido
                 if (SelectedIdentificationType.HasVerificationDigit && string.IsNullOrEmpty(VerificationDigit)) return false;
                 // Si la captura de datos es del tipo razon social
-                if (CaptureInfoAsRS && string.IsNullOrEmpty(BusinessName)) return false;
+                if (CaptureInfoAsPJ && string.IsNullOrEmpty(BusinessName)) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
                 // Si el control de errores por propiedades tiene algun error
@@ -863,7 +863,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 variables.Data.Entity.IdentificationNumber = IdentificationNumber;
                 variables.Data.Entity.VerificationDigit = SelectedIdentificationType.HasVerificationDigit ? VerificationDigit : "";
                 variables.Data.Entity.CaptureType = SelectedCaptureType;
-                variables.Data.Entity.BusinessName = CaptureInfoAsRS ? BusinessName : "";
+                variables.Data.Entity.BusinessName = CaptureInfoAsPJ ? BusinessName : "";
                 variables.Data.Entity.FirstName = CaptureInfoAsPN ? FirstName : "";
                 variables.Data.Entity.MiddleName = CaptureInfoAsPN ? MiddleName : "";
                 variables.Data.Entity.FirstLastName = CaptureInfoAsPN ? FirstLastName : "";
@@ -877,7 +877,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 variables.Data.Entity.FullName = $"{variables.Data.Entity.FirstName} {variables.Data.Entity.MiddleName} {variables.Data.Entity.FirstLastName} {variables.Data.Entity.MiddleLastName}".Trim().RemoveExtraSpaces();
                 variables.Data.Entity.TradeName = string.Empty;
                 variables.Data.Entity.SearchName = $"{variables.Data.Entity.FirstName} {variables.Data.Entity.MiddleName} {variables.Data.Entity.FirstLastName} {variables.Data.Entity.MiddleLastName}".Trim().RemoveExtraSpaces() +
-                (CaptureInfoAsRS ? BusinessName.ToString() : "").Trim().RemoveExtraSpaces();
+                (CaptureInfoAsPJ ? BusinessName.ToString() : "").Trim().RemoveExtraSpaces();
                 variables.Data.Entity.TelephonicInformation = string.Join(" - ", phones);
                 variables.Data.Entity.CommercialCode = string.Empty;
                 variables.Data.Entity.IdentificationTypeId = SelectedIdentificationType.Id;
@@ -1209,7 +1209,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         if (string.IsNullOrEmpty(value) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
                         break;
                     case nameof(BusinessName):
-                        if (string.IsNullOrEmpty(value) && CaptureInfoAsRS) AddError(propertyName, "La razón social no puede estar vacía");
+                        if (string.IsNullOrEmpty(value) && CaptureInfoAsPJ) AddError(propertyName, "La razón social no puede estar vacía");
                         break;
                     case nameof(PrimaryPhone):
                         if (value.Length != 7 && !string.IsNullOrEmpty(PrimaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
@@ -1235,7 +1235,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         private void ValidateProperties()
         {
-            if (CaptureInfoAsRS) ValidateProperty(nameof(BusinessName), BusinessName);
+            if (CaptureInfoAsPJ) ValidateProperty(nameof(BusinessName), BusinessName);
             if (CaptureInfoAsPN)
             {
                 ValidateProperty(nameof(FirstName), FirstName);

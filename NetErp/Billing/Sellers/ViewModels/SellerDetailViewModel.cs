@@ -493,13 +493,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                     _selectedCaptureType = value;
                     NotifyOfPropertyChange(() => SelectedCaptureType);
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
-                    NotifyOfPropertyChange(() => CaptureInfoAsRS);
+                    NotifyOfPropertyChange(() => CaptureInfoAsPJ);
                     if (CaptureInfoAsPN)
                     {
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
-                    if (CaptureInfoAsRS)
+                    if (CaptureInfoAsPJ)
                     {
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
@@ -519,7 +519,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
 
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
-        public bool CaptureInfoAsRS => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.RS);
+        public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
         private int _selectedCityId;
         public int SelectedCityId
