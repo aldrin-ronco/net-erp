@@ -14,9 +14,10 @@ namespace Models.Billing
     {
         public int Id { get; set; }
         public bool IsActive { get; set; } = true;
-        public  AccountingEntityGraphQLModel Entity { get; set; }
+        public  AccountingEntityGraphQLModel AccountingEntity { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
+        public ZoneGraphQLModel Zone { get; set; }
+        
     }
 
     public class SellerDTO : SellerGraphQLModel
@@ -26,27 +27,30 @@ namespace Models.Billing
 
     public class SellerCreateMessage
     {
-        public SellerGraphQLModel CreatedSeller { get; set; }
+        public UpsertResponseType<SellerGraphQLModel> CreatedSeller { get; set; }
 
     }
 
     public class SellerUpdateMessage
     {
-        public SellerGraphQLModel UpdatedSeller { get; set; }
+        public UpsertResponseType<SellerGraphQLModel> UpdatedSeller { get; set; }
 
     }
 
     public class SellerDeleteMessage
     {
-        public SellerGraphQLModel DeletedSeller { get; set; }
+        public DeleteResponseType DeletedSeller { get; set; }
     }
-
-    public class SellersDataContext
+    public class SellersByIdDataContext
     {
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
-        public ObservableCollection<CountryGraphQLModel> Countries { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public ObservableCollection<ZoneGraphQLModel> Zones { get; set; }
-        public PageType<SellerGraphQLModel> SellerPage { get; set; }
+        public SellerGraphQLModel Seller { get; set; }
+    }
+        public class SellersDataContext
+    {
+        public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
+        public PageType<CountryGraphQLModel> Countries { get; set; }
+        public PageType<CostCenterGraphQLModel> CostCenters { get; set; }
+        public PageType<ZoneGraphQLModel> Zones { get; set; }
+        public PageType<SellerGraphQLModel> sellersPage { get; set; }
     }
 }
