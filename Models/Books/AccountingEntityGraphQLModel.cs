@@ -1,6 +1,7 @@
 ﻿using Models.DTO.Global;
 using Models.Global;
 using System.Collections.ObjectModel;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -51,7 +52,8 @@ namespace Models.Books
         public DepartmentGraphQLModel Department { get; set; } = new();
         public CityGraphQLModel City { get; set; } = new();
         public ObservableCollection<EmailGraphQLModel> Emails { get; set; } = [];
-
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
         public override string ToString()
         {
             return this.SearchName;
@@ -74,22 +76,23 @@ namespace Models.Books
     }
     public class AccountingEntityDataContext
     {
-        public IEnumerable<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = [];
-        public IEnumerable<CountryGraphQLModel> Countries { get; set; } = [];
+        public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = new();
+        public PageType<CountryGraphQLModel> Countries { get; set; } = new();
+        public AccountingEntityGraphQLModel? AccountingEntity { get; set; }
     }
     
     public class AccountingEntityCreateMessage
     {
-        public AccountingEntityGraphQLModel CreatedAccountingEntity { get; set; } = new();
+        public UpsertResponseType<AccountingEntityGraphQLModel> CreatedAccountingEntity { get; set; } = new();
     }
     public class AccountingEntityDeleteMessage
     {
-        public AccountingEntityGraphQLModel DeletedAccountingEntity { get; set; } = new();
+        public DeleteResponseType DeletedAccountingEntity { get; set; } = new();
     }
 
     public class AccountingEntityUpdateMessage
     {
-        public AccountingEntityGraphQLModel UpdatedAccountingEntity { get; set; } = new();
+        public UpsertResponseType<AccountingEntityGraphQLModel> UpdatedAccountingEntity { get; set; } = new();
     }
 
 }

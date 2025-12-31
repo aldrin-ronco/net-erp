@@ -603,7 +603,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             BankAccountId = 0;
             BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), BankBeforeNewBankAccount.AccountingEntity.CaptureType);
-            BankAccountType = BankAccountBankCaptureInfoAsRS ? "A" : "M";
+            BankAccountType = BankAccountBankCaptureInfoAsPJ ? "A" : "M";
             BankAccountProvider = BankAccountBankCaptureInfoAsPN ? "N" : "";
             BankAccountNumber = "";
             BankAccountIsActive = true;
@@ -2900,7 +2900,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             get 
             {
-                if (BankAccountBankCaptureInfoAsRS)
+                if (BankAccountBankCaptureInfoAsPJ)
                 {
                     return $"{BankAccountBankName} [{(BankAccountType == "A" ? "CTA. DE AHORROS" : "CTA. CORRIENTE")} No. {BankAccountNumber}] {(string.IsNullOrEmpty(BankAccountReference) ? "" : $"- RF. {BankAccountReference}")}".Trim();
                 }
@@ -2909,7 +2909,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         public bool BankAccountBankCaptureInfoAsPN => BankAccountBankCaptureType.Equals(CaptureTypeEnum.PN);
-        public bool BankAccountBankCaptureInfoAsRS => BankAccountBankCaptureType.Equals(CaptureTypeEnum.RS);
+        public bool BankAccountBankCaptureInfoAsPJ => BankAccountBankCaptureType.Equals(CaptureTypeEnum.PJ);
 
         private CaptureTypeEnum _bankAccountBankCaptureType;
 
@@ -2923,7 +2923,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     _bankAccountBankCaptureType = value;
                     NotifyOfPropertyChange(nameof(BankAccountBankCaptureType));
                     NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsPN));
-                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsRS));
+                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsPJ));
                 }
             }
         }
@@ -3035,7 +3035,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             get
             {
-                if (BankAccountBankCaptureInfoAsRS)
+                if (BankAccountBankCaptureInfoAsPJ)
                 {
                     return $"TRANSF/CONSIG EN {BankAccountBankName.Trim()} EN {(BankAccountType == "A" ? "CTA. DE AHORROS" : "CUENTA CORRIENTE")} TERMINADA EN {(BankAccountNumber.Length > 5 ? $"* {BankAccountNumber[^5..]}" : "")}";
                 }
@@ -4810,7 +4810,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del banco no puede estar vacío");
                         break;
                     case nameof(BankAccountNumber):
-                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsRS) AddError(propertyName, "El número de cuenta no puede estar vacío");
+                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPJ) AddError(propertyName, "El número de cuenta no puede estar vacío");
                         if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPN) AddError(propertyName, "El número celular no puede estar vacío");
                         break;
                     case nameof(FranchiseName):

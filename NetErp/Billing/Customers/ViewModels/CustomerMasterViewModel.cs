@@ -351,7 +351,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     await LoadCustomersAsync();
                 }
 
-                _notificationService.ShowSuccess("Cliente eliminado correctamente.");
+                _notificationService.ShowSuccess(message.DeletedCustomer.Message);
             }
             catch (Exception)
             {
@@ -364,7 +364,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 await LoadCustomersAsync();
-                _notificationService.ShowSuccess("Cliente creado correctamente.");
+                _notificationService.ShowSuccess(message.CreatedCustomer.Message);
             }
             catch (Exception)
             {
@@ -378,7 +378,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 await LoadCustomersAsync();
-                _notificationService.ShowSuccess("Cliente actualizado correctamente.");
+                _notificationService.ShowSuccess(message.UpdatedCustomer.Message);
             }
             catch (Exception)
             {

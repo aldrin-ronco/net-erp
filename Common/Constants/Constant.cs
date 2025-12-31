@@ -9,7 +9,7 @@ namespace Common.Constants
     public static class Constant
     {
         public static readonly string DefaultCountryCode = "169";
-        public static readonly string DefaultDepartmentCode = "05";
+        public static readonly string DefaultDepartmentCode = "01";
         public static readonly string DefaultCityCode = "001";
         public static readonly string DefaultIdentificationTypeCode = "31";
 
