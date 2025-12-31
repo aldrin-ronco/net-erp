@@ -553,17 +553,17 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        private BooksDictionaries.CaptureTypeEnum _captureType;
+        private BooksDictionaries.CaptureTypeEnum _selectedcaptureType;
         [ExpandoPath("accountingEntity.captureType")]
-        public BooksDictionaries.CaptureTypeEnum CaptureType
+        public BooksDictionaries.CaptureTypeEnum SelectedCaptureType
         {
-            get => _captureType;
+            get => _selectedcaptureType;
             set
             {
-                if (_captureType != value)
+                if (_selectedcaptureType != value)
                 {
-                    _captureType = value;
-                    NotifyOfPropertyChange(() => CaptureType);
+                    _selectedcaptureType = value;
+                    NotifyOfPropertyChange(() => SelectedCaptureType);
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
                     NotifyOfPropertyChange(() => CaptureInfoAsPJ);
                     if (CaptureInfoAsPN)
@@ -594,14 +594,15 @@ namespace NetErp.Billing.Sellers.ViewModels
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
         public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
+        private int _selectedCityId;
         public int SelectedCityId
         {
-            get => _cityId;
+            get => _selectedCityId;
             set
             {
-                if (_cityId != value)
+                if (_selectedCityId != value)
                 {
-                    _cityId = value;
+                    _selectedCityId = value;
                     NotifyOfPropertyChange(nameof(SelectedCityId));
                     this.TrackChange(nameof(SelectedCityId));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -724,7 +725,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
                 IdentificationNumber = string.Empty;
 
-                CaptureType = BooksDictionaries.CaptureTypeEnum.PN;
+                SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 FirstName = string.Empty;
                 MiddleName = string.Empty;
                 FirstLastName = string.Empty;
@@ -741,7 +742,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
                 SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
                 this.AcceptChanges();
-                this.SeedValue(nameof(CaptureType), CaptureType);
+                this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
                 this.SeedValue(nameof(SelectedCountry), SelectedCountry);
                 this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
                 this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
