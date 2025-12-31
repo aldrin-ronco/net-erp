@@ -82,24 +82,24 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SupplierDetailViewModel instance = new(this, _supplierService);
             List<WithholdingTypeDTO> withholdingTypes = [];
             instance.Id = supplier.Id;
-            instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.Entity.CaptureType);
-            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == supplier.Entity.IdentificationType.Id);
-            instance.FirstName = supplier.Entity.FirstName;
-            instance.MiddleName = supplier.Entity.MiddleName;
-            instance.FirstLastName = supplier.Entity.FirstLastName;
-            instance.MiddleLastName = supplier.Entity.MiddleLastName;
-            instance.PrimaryPhone = supplier.Entity.PrimaryPhone;
-            instance.SecondaryPhone = supplier.Entity.SecondaryPhone;
-            instance.PrimaryCellPhone = supplier.Entity.PrimaryCellPhone;
-            instance.SecondaryCellPhone = supplier.Entity.SecondaryCellPhone;
-            instance.BusinessName = supplier.Entity.BusinessName;
-            instance.Address = supplier.Entity.Address;
-            instance.IdentificationNumber = supplier.Entity.IdentificationNumber;
-            instance.VerificationDigit = supplier.Entity.VerificationDigit;
-            instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == supplier.Entity.Country.Id);
-            instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.Entity.Department.Id);
-            instance.SelectedCityId = supplier.Entity.City.Id;
-            instance.Emails = supplier.Entity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.Entity.Emails)); // Este codigo copia la lista sin mantener referencia a la lista original
+            instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.AccountingEntity.CaptureType);
+            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == supplier.AccountingEntity.IdentificationType.Id);
+            instance.FirstName = supplier.AccountingEntity.FirstName;
+            instance.MiddleName = supplier.AccountingEntity.MiddleName;
+            instance.FirstLastName = supplier.AccountingEntity.FirstLastName;
+            instance.MiddleLastName = supplier.AccountingEntity.MiddleLastName;
+            instance.PrimaryPhone = supplier.AccountingEntity.PrimaryPhone;
+            instance.SecondaryPhone = supplier.AccountingEntity.SecondaryPhone;
+            instance.PrimaryCellPhone = supplier.AccountingEntity.PrimaryCellPhone;
+            instance.SecondaryCellPhone = supplier.AccountingEntity.SecondaryCellPhone;
+            instance.BusinessName = supplier.AccountingEntity.BusinessName;
+            instance.Address = supplier.AccountingEntity.Address;
+            instance.IdentificationNumber = supplier.AccountingEntity.IdentificationNumber;
+            instance.VerificationDigit = supplier.AccountingEntity.VerificationDigit;
+            instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == supplier.AccountingEntity.Country.Id);
+            instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.AccountingEntity.Department.Id);
+            instance.SelectedCityId = supplier.AccountingEntity.City.Id;
+            instance.Emails = supplier.AccountingEntity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.AccountingEntity.Emails)); // Este codigo copia la lista sin mantener referencia a la lista original
 
             foreach (WithholdingTypeDTO retention in instance.WithholdingTypes)
             {

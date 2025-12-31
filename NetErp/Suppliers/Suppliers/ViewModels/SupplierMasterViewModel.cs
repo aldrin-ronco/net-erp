@@ -21,16 +21,20 @@ using System.Dynamic;
 using Models.Billing;
 using Models.Books;
 using static Models.Global.GraphQLResponseTypes;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using DevExpress.Data.Utils;
+using Models.Global;
+using NetErp.Billing.Zones.DTO;
+using NetErp.Global.CostCenters.DTO;
+using Services.Billing.DAL.PostgreSQL;
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
     public class SupplierMasterViewModel : Screen,
         IHandle<SupplierCreateMessage>,
         IHandle<SupplierUpdateMessage>,
-        IHandle<SupplierDeleteMessage>,
-        IHandle<AccountingEntityUpdateMessage>,
-        IHandle<CustomerUpdateMessage>,
-        IHandle<SellerUpdateMessage>
+        IHandle<SupplierDeleteMessage>
+       
     {
 
         #region Properties
@@ -54,7 +58,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_createSupplierCommand is null) _createSupplierCommand = new AsyncCommand(CreateSupplier, CanCreateSupplier);
+                if (_createSupplierCommand is null) _createSupplierCommand = new AsyncCommand(CreateSupplierAsync, CanCreateSupplier);
                 return _createSupplierCommand;
             }
 
@@ -65,7 +69,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_deleteSupplierCommand is null) _deleteSupplierCommand = new AsyncCommand(DeleteSupplier, CanDeleteSupplier);
+                if (_deleteSupplierCommand is null) _deleteSupplierCommand = new AsyncCommand(DeleteSupplierAsync, CanDeleteSupplier);
                 return _deleteSupplierCommand;
             }
         }
@@ -106,7 +110,46 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 NotifyOfPropertyChange(nameof(Suppliers));
             }
         }
+        private ObservableCollection<WithholdingTypeDTO> _withholdingTypes;
+        public ObservableCollection<WithholdingTypeDTO> WithholdingTypes
+        {
+            get => _withholdingTypes;
+            set
+            {
+                if (_withholdingTypes != value)
+                {
+                    _withholdingTypes = value;
+                    NotifyOfPropertyChange(nameof(WithholdingTypes));
+                }
+            }
+        }
 
+        private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
+        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
+        {
+            get => _identificationTypes;
+            set
+            {
+                if (_identificationTypes != value)
+                {
+                    _identificationTypes = value;
+                    NotifyOfPropertyChange(nameof(IdentificationTypes));
+                }
+            }
+        }
+        private ObservableCollection<CountryGraphQLModel> _countries;
+        public ObservableCollection<CountryGraphQLModel> Countries
+        {
+            get => _countries;
+            set
+            {
+                if (_countries != value)
+                {
+                    _countries = value;
+                    NotifyOfPropertyChange(nameof(Countries));
+                }
+            }
+        }
         public bool CanEditSupplier => true;
 
         public bool CanDeleteSupplier
@@ -166,7 +209,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteSupplier));
         }
 
-        public async Task DeleteSupplier()
+        public async Task DeleteSupplierAsync()
         {
             try
             {
@@ -186,7 +229,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 if (validation.CanDelete) 
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show("Confirme ...", $"¿ Confirma que desea eliminar el registro {SelectedSupplier.Entity.SearchName}?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show("Confirme ...", $"¿ Confirma que desea eliminar el registro {SelectedSupplier.AccountingEntity.SearchName}?", MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -200,7 +243,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
                 Refresh();
 
-                SupplierGraphQLModel deletedSupplier = await ExecuteDeleteSupplier(id);
+                SupplierGraphQLModel deletedSupplier = await ExecuteDeleteSupplierAsync(id);
 
                 await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierDeleteMessage() { DeletedSupplier = Context.AutoMapper.Map<SupplierDTO>(deletedSupplier) });
 
@@ -223,7 +266,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public async Task<SupplierGraphQLModel> ExecuteDeleteSupplier(int id)
+        public async Task<SupplierGraphQLModel> ExecuteDeleteSupplierAsync(int id)
         {
             try
             {
@@ -248,13 +291,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public bool CanCreateSupplier() => !IsBusy;
 
-        public async Task CreateSupplier()
+        public async Task CreateSupplierAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteCreateSupplier());
+                await Task.Run(() => ExecuteCreateSupplierAsync());
             }
             catch (Exception)
             {
@@ -266,7 +309,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public async Task ExecuteCreateSupplier()
+        public async Task ExecuteCreateSupplierAsync()
         {
             await Context.ActivateDetailViewForNew();
         }
@@ -275,10 +318,60 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             return true;
         }
-
-        public async Task LoadSuppliers()
+      
+        public async Task LoadSuppliersAsync(bool withDependencies = false)
         {
             try
+            {
+                IsBusy = true;
+                Refresh();
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                string query = GetLoadSuppliersDataQuery(withDependencies);
+
+                dynamic variables = new ExpandoObject();
+
+                variables.pageResponsefilters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch))
+                {
+                    variables.pageResponsefilters.Matching = FilterSearch;
+                }
+
+
+                //Paginación
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+
+                if (withDependencies)
+                {
+                    SupplierDataContext result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
+                    Suppliers = Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Suppliers.Entries);
+
+                }else
+                {
+                    PageType<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
+                    TotalCount = result.TotalEntries;
+                    Suppliers = Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Entries);
+                }
+
+                stopwatch.Stop();
+               
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+
+            }
+            catch (Exception ex)
+            {
+
+                throw new AsyncException(innerException: ex);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            /************************************************////
+            /*try
             {
 
                 IsBusy = true;
@@ -351,16 +444,12 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     }
                   }
                 }";
-
+            string query = GetLoadSuppliersDataQuery();
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.pageResponsefilters = new ExpandoObject();
 
-                variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
-
+                
+                /*
                 variables.filter.or[0].searchName = new ExpandoObject();
                 variables.filter.or[0].searchName.@operator = "like";
                 variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
@@ -379,8 +468,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 PageType<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
 
 
-                TotalCount = result.Count;
-                Suppliers = new ObservableCollection<SupplierDTO>(Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Rows));
+                TotalCount = result.TotalEntries;
+                Suppliers = Context.AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Entries);
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -400,11 +489,131 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             {
                 IsBusy = false;
             }
+                */
         }
-
-        private async Task ExecuteChangeIndex()
+        public string GetLoadSuppliersDataQuery(bool withDependencies = false)
         {
-            await LoadSuppliers();
+            var suppliersFields = FieldSpec<PageType<SupplierGraphQLModel>>
+             .Create()
+             .SelectList(it => it.Entries, entries => entries
+                 .Field(e => e.Id)
+                 .Field(e => e.IsTaxFree)
+                 .Field(e => e.IcaRetentionMargin)
+                 .Field(e => e.IcaRetentionMarginBasis)
+                 .Field(e => e.RetainsAnyBasis)
+                      
+                 .Select(e => e.IcaAccountingAccount, acc => acc
+                           .Field(c => c.Id)
+                           .Field(c => c.Code)
+                           .Field(c => c.Name)
+                 )
+                 .Select(e => e.AccountingEntity, acc => acc
+                           .Field(c => c.Id)
+                           .Field(c => c.IdentificationNumber)
+                           .Field(c => c.VerificationDigit)
+                           .Field(c => c.CaptureType)
+                           .Field(c => c.SearchName)
+                           .Field(c => c.FirstLastName)
+                           .Field(c => c.MiddleLastName)
+                           .Field(c => c.BusinessName)
+                           .Field(c => c.PrimaryPhone)
+                           .Field(c => c.SecondaryPhone)
+                           .Field(c => c.PrimaryCellPhone)
+                           .Field(c => c.SecondaryCellPhone)
+                           .Field(c => c.Address)
+                           .Field(c => c.TelephonicInformation)
+                           .SelectList(e => e.Emails, acc => acc
+                               .Field(c => c.Id)
+                               .Field(c => c.Email)
+                               .Field(c => c.Description)
+                               
+                               .Field(c => c.isElectronicInvoiceRecipient)
+                           
+
+                           )
+                 )
+                 /*.SelectList(e => e.Retentions, acc => acc
+                           .Field(c => c.Id)
+                           
+                           .Field(c => c.Name)
+                 )*/
+
+
+             )
+             .Field(o => o.PageNumber)
+             .Field(o => o.PageSize)
+             .Field(o => o.TotalPages)
+             .Field(o => o.TotalEntries)
+             .Build();
+
+            var identificationTypesFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
+             .Create()
+             .SelectList(it => it.Entries, entries => entries
+                 .Field(e => e.Id)
+                 .Field(e => e.Name)
+                 .Field(e => e.Code)
+                 .Field(e => e.HasVerificationDigit)
+                 .Field(e => e.MinimumDocumentLength)
+             )
+             .Field(o => o.PageNumber)
+             .Field(o => o.PageSize)
+             .Field(o => o.TotalPages)
+             .Field(o => o.TotalEntries)
+             .Build();
+            var withholdingTypeFields = FieldSpec<PageType<WithholdingTypeGraphQLModel>>
+             .Create()
+             .SelectList(it => it.Entries, entries => entries
+                 .Field(e => e.Id)
+                 .Field(e => e.Name)
+                
+             )
+             .Field(o => o.PageNumber)
+             .Field(o => o.PageSize)
+             .Field(o => o.TotalPages)
+             .Field(o => o.TotalEntries)
+             .Build();
+            var countriesFields = FieldSpec<PageType<CountryGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Name)
+                  .Field(e => e.Code)
+                  .SelectList(e => e.Departments, co => co
+                                    .Field(x => x.Id)
+                                    .Field(x => x.Code)
+                                    .Field(x => x.Name)
+                                    .SelectList(e => e.Cities, co => co
+                                        .Field(x => x.Id)
+                                        .Field(x => x.Code)
+                                        .Field(x => x.Name)
+                                )
+                                )
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+            var suppliersPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var suppliersParameters = new GraphQLQueryParameter("filters", "SupplierFilters");
+            var suppliersFragment = new GraphQLQueryFragment("suppliersPage", [suppliersPagParameters, suppliersParameters], suppliersFields, withDependencies ? "suppliers" : "pageResponse");
+
+
+            var identificationTypesFragment = new GraphQLQueryFragment("identificationTypesPage", [], identificationTypesFields, "IdentificationTypes");
+            var countriesFragment = new GraphQLQueryFragment("countriesPage", [], countriesFields, "Countries");
+            var withholdingTypeFragment = new GraphQLQueryFragment("withholdingTypesPage", [], withholdingTypeFields, "withholdingTypes");
+
+
+
+            var builder = withDependencies ? new GraphQLQueryBuilder([suppliersFragment, identificationTypesFragment, countriesFragment, withholdingTypeFragment]) : new GraphQLQueryBuilder([suppliersFragment]);
+            return builder.GetQuery();
+
+           
+        }
+        private async Task ExecuteChangeIndexAsync()
+        {
+            await LoadSuppliersAsync();
         }
 
         public SupplierMasterViewModel(
@@ -433,7 +642,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                await LoadSuppliers();
+                await LoadSuppliersAsync();
                 _notificationService.ShowSuccess("Proveedor creado correctamente", "Éxito");
                 return;
             }
@@ -448,7 +657,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                await LoadSuppliers();
+                await LoadSuppliersAsync();
                 _notificationService.ShowSuccess("Proveedor actualizado correctamente", "Éxito");
                 return;
             }
@@ -466,7 +675,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 SupplierDTO supplierToDelete = Suppliers.First(s => s.Id == message.DeletedSupplier.Id);
                 if (supplierToDelete != null) _ = Application.Current.Dispatcher.Invoke(() => Suppliers.Remove(supplierToDelete));
                 _notificationService.ShowSuccess("Proveedor eliminado correctamente", "Éxito");
-                return LoadSuppliers();
+                return LoadSuppliersAsync();
             }
             catch (Exception)
             {
@@ -479,24 +688,11 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             if (Context.EnableOnViewReady is false) return;
             base.OnViewReady(view);
-            _ = Task.Run(() => LoadSuppliers());
+            _ = Task.Run(() => LoadSuppliersAsync(true));
             _ = this.SetFocus(nameof(FilterSearch));
         }
 
-        public Task HandleAsync(AccountingEntityUpdateMessage message, CancellationToken cancellationToken)
-        {       
-            return LoadSuppliers();
-        }
-
-        public Task HandleAsync(CustomerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSuppliers();
-        }
-
-        public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken)
-        {
-            return LoadSuppliers();
-        }
+       
 
         #endregion
 
@@ -562,7 +758,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndexAsync, CanExecuteChangeIndex);
                 return _paginationCommand;
             }
         }
@@ -605,7 +801,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = Task.Run(() => LoadSuppliers());
+                        _ = Task.Run(() => LoadSuppliersAsync());
                     }
                 }
             }

@@ -56,7 +56,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -338,6 +338,20 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
             }
         }
+        private ObservableCollection<CountryGraphQLModel> _countries;
+        public ObservableCollection<CountryGraphQLModel> Countries
+        {
+            get => _countries;
+            set
+            {
+                if (_countries != value)
+                {
+                    _countries = value;
+                    NotifyOfPropertyChange(nameof(Countries));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
 
         private IdentificationTypeGraphQLModel _selectedIdentificationType;
         public IdentificationTypeGraphQLModel SelectedIdentificationType
@@ -359,20 +373,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ObservableCollection<CountryGraphQLModel> _countries;
-        public ObservableCollection<CountryGraphQLModel> Countries
-        {
-            get => _countries;
-            set
-            {
-                if (_countries != value)
-                {
-                    _countries = value;
-                    NotifyOfPropertyChange(nameof(Countries));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
+        
 
         private CountryGraphQLModel _selectedCountry;
         public CountryGraphQLModel SelectedCountry
@@ -780,13 +781,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         
-        public async Task Save()
+        public async Task SaveAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                SupplierGraphQLModel result = await ExecuteSave();
+                SupplierGraphQLModel result = await ExecuteSaveAsync();
                 if (IsNewRecord)
                 {
                     await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result)});
@@ -814,7 +815,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public async Task<SupplierGraphQLModel> ExecuteSave()
+        public async Task<SupplierGraphQLModel> ExecuteSaveAsync()
         {
             string query;
 
@@ -1061,10 +1062,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             Context = context;
             _supplierService = supplierService;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             try
             {
@@ -1100,9 +1101,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
                 object variables = new();
                 var result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
-                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
-                WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes));
-                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
+                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries);
+                WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes.Entries));
+                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries);
+
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

@@ -1,4 +1,5 @@
-﻿using Models.Books;
+﻿using Models.Billing;
+using Models.Books;
 using Models.Global;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Suppliers
 {
@@ -17,10 +19,17 @@ namespace Models.Suppliers
         public int IcaRetentionMarginBasis { get; set; }
         public bool RetainsAnyBasis { get; set; }
         public AccountingAccountGraphQLModel IcaAccountingAccount { get; set; } = new();
-        public AccountingEntityGraphQLModel Entity { get; set; } = new();
+        public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
         public ObservableCollection<WithholdingTypeGraphQLModel> Retentions { get; set; } = [];
     }
-
+    public class SupplierDataContext
+    {
+        public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
+        public PageType<CountryGraphQLModel> Countries { get; set; }
+        public PageType<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; }
+        
+        public PageType<SupplierGraphQLModel> Suppliers { get; set; }
+    }
     public class SupplierDTO : SupplierGraphQLModel
     {
         private bool _isChecked;
@@ -50,10 +59,5 @@ namespace Models.Suppliers
     {
         public SupplierDTO DeletedSupplier { get; set; } = new();
     }
-    public class SupplierDataContext
-    {
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = [];
-        public ObservableCollection<CountryGraphQLModel> Countries { get; set; } = [];
-        public ObservableCollection<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; } = [];
-    }
+   
 }
