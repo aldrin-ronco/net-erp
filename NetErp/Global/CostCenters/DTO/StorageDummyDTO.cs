@@ -80,7 +80,7 @@ namespace NetErp.Global.CostCenters.DTO
                         {
                             if (_storages[0].IsDummyChild)
                             {
-                                _ = Context.LoadStorages(Location, this);
+                                _ = Context.LoadStoragesAsync(Location, this);
                             }
                         }
                     }

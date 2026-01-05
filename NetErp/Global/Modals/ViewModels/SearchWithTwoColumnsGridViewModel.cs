@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Mvvm.Xpf;
+using DevExpress.Xpf.Controls;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using NetErp.Helpers;
@@ -15,12 +16,13 @@ using System.Dynamic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Modals.ViewModels
 {
     public class SearchWithTwoColumnsGridViewModel<XModel> : Screen
     {
-        public readonly IGenericDataAccess<XModel> DynamicService = IoC.Get<IGenericDataAccess<XModel>>();
+        public readonly IRepository<XModel> DynamicService = IoC.Get<IRepository<XModel>>();
 
         private readonly Helpers.IDialogService _dialogService;
 
@@ -150,16 +152,16 @@ namespace NetErp.Global.Modals.ViewModels
             }
         }
 
-        private int _pageIndex = 1;
-        public int PageIndex
+        private int _pageNumber = 1;
+        public int PageNumber
         {
-            get { return _pageIndex; }
+            get { return _pageNumber; }
             set
             {
-                if (_pageIndex != value)
+                if (_pageNumber != value)
                 {
-                    _pageIndex = value;
-                    NotifyOfPropertyChange(nameof(PageIndex));
+                    _pageNumber = value;
+                    NotifyOfPropertyChange(nameof(PageNumber));
                 }
             }
         }
@@ -178,16 +180,16 @@ namespace NetErp.Global.Modals.ViewModels
             }
         }
 
-        private int _totalCount;
-        public int TotalCount
+        private int _totalEntries;
+        public int TotalEntries
         {
-            get { return _totalCount; }
+            get { return _totalEntries; }
             set
             {
-                if (_totalCount != value)
+                if (_totalEntries != value)
                 {
-                    _totalCount = value;
-                    NotifyOfPropertyChange(nameof(TotalCount));
+                    _totalEntries = value;
+                    NotifyOfPropertyChange(nameof(TotalEntries));
                 }
             }
         }
@@ -252,33 +254,20 @@ namespace NetErp.Global.Modals.ViewModels
                 if (Variables is null)
                 {
                     Variables = new ExpandoObject();
-                    Variables.filter = new ExpandoObject();
+                    Variables.pageResponseFilters = new ExpandoObject();
                 }
-                //TODO
-                Variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
 
-                Variables.filter.or[0].searchName = new ExpandoObject();
-                Variables.filter.or[0].searchName.@operator = "like";
-                Variables.filter.or[0].searchName.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                Variables.filter.or[1].identificationNumber = new ExpandoObject();
-                Variables.filter.or[1].identificationNumber.@operator = "like";
-                Variables.filter.or[1].identificationNumber.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                Variables.pageResponseFilters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
                 //Pagination
-                Variables.filter.Pagination = new ExpandoObject();
-                Variables.filter.Pagination.Page = PageIndex;
-                Variables.filter.Pagination.PageSize = PageSize;
-                var result = await DynamicService.GetPage(Query, Variables);
+                Variables.pageResponsePagination = new ExpandoObject();
+                Variables.pageResponsePagination.Page = PageNumber;
+                Variables.pageResponsePagination.PageSize = PageSize;
+                PageType<XModel> result = await DynamicService.GetPageAsync(Query, Variables);
 
-                TotalCount = result.PageResponse.Count;
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    ItemsSource = new ObservableCollection<XModel>(result.PageResponse.Rows);
+                    ItemsSource = new ObservableCollection<XModel>(result.Entries);
                     this.SetFocus(() => FilterSearch);
                 });
 
@@ -330,12 +319,12 @@ namespace NetErp.Global.Modals.ViewModels
         {
             get
             {
-                if (_rowDoubleClickCommand == null) _rowDoubleClickCommand = new AsyncCommand(RowDoubleClick);
+                if (_rowDoubleClickCommand == null) _rowDoubleClickCommand = new AsyncCommand(RowDoubleClickAsync);
                 return _rowDoubleClickCommand;
             }
         }
 
-        public async Task RowDoubleClick()
+        public async Task RowDoubleClickAsync()
         {
             Messenger.Default.Send(message: new ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);
@@ -348,12 +337,12 @@ namespace NetErp.Global.Modals.ViewModels
         {
             get 
             {
-                if (_enterKeyCommand == null) _enterKeyCommand = new AsyncCommand(EnterKey);
+                if (_enterKeyCommand == null) _enterKeyCommand = new AsyncCommand(EnterKeyAsync);
                 return _enterKeyCommand; 
             }
         }
 
-        public async Task EnterKey()
+        public async Task EnterKeyAsync()
         {
             Messenger.Default.Send(message: new ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);

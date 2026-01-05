@@ -4,6 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Bars;
+using DevExpress.Xpf.Controls;
 using DevExpress.Xpf.Core;
 using DevExpress.Xpo.DB.Helpers;
 using Dictionaries;
@@ -12,8 +13,10 @@ using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Global.CostCenters.PanelEditors;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using Services.Inventory.DAL.PostgreSQL;
@@ -28,6 +31,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CostCenters.ViewModels
 {
@@ -55,134 +59,64 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         Dictionary<string, List<string>> _errors;
 
-        #region "TabControls"
+        #region Panel Editors
 
-        #region "Company"
-
-        private int _companyId;
-
-        public int CompanyId
-        {
-            get { return _companyId; }
-            set 
-            {
-                if (_companyId != value)
-                {
-                    _companyId = value;
-                    NotifyOfPropertyChange(nameof(CompanyId));
-                }
-            }
-        }
-
-
-        private string _companyAccountingEntityCompanySearchName;
-
-        public string CompanyAccountingEntityCompanySearchName
-        {
-            get { return _companyAccountingEntityCompanySearchName; }
-            set 
-            {
-                if (_companyAccountingEntityCompanySearchName != value)
-                {
-                    _companyAccountingEntityCompanySearchName = value;
-                    NotifyOfPropertyChange(nameof(CompanyAccountingEntityCompanySearchName));
-                }
-            }
-        }
-
-        private int _companyAccountingEntityCompanyId;
-
-        public int CompanyAccountingEntityCompanyId
-        {
-            get { return _companyAccountingEntityCompanyId; }
-            set 
-            {
-                if (_companyAccountingEntityCompanyId != value)
-                {
-                    _companyAccountingEntityCompanyId = value;
-                    NotifyOfPropertyChange(nameof(CompanyAccountingEntityCompanyId));
-                }
-            }
-        }
-
-
-        private ICommand _searchCompanyAccountingEntityCompanyCommand;
-        public ICommand SearchCompanyAccountingEntityCompanyCommand
+        private CostCenterPanelEditor? _costCenterEditor;
+        public CostCenterPanelEditor CostCenterEditor
         {
             get
             {
-                if (_searchCompanyAccountingEntityCompanyCommand is null) _searchCompanyAccountingEntityCompanyCommand = new RelayCommand(CanSearchCompanyAccountingEntityCompany, SearchCompanyAccountingEntityCompany);
-                return _searchCompanyAccountingEntityCompanyCommand;
+                if (_costCenterEditor is null)
+                    _costCenterEditor = new CostCenterPanelEditor(this, _costCenterService);
+                return _costCenterEditor;
             }
         }
 
-        public async void SearchCompanyAccountingEntityCompany(object p)
+        private CompanyPanelEditor? _companyEditor;
+        public CompanyPanelEditor CompanyEditor
         {
-            string query = @"query($filter: AccountingEntityFilterInput!){
-                PageResponse: accountingEntityPage(filter: $filter){
-                count
-                rows{
-                    id
-                    searchName
-                    identificationNumber
-                    verificationDigit
-                }
-                }
-            }";
-
-            string fieldHeader1 = "NIT";
-            string fieldHeader2 = "Nombre o razón social";
-            string fieldData1 = "IdentificationNumberWithVerificationDigit";
-            string fieldData2 = "SearchName";
-            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, _dialogService);
-
-            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
+            get
+            {
+                if (_companyEditor is null)
+                    _companyEditor = new CompanyPanelEditor(this, _companyService, _dialogService);
+                return _companyEditor;
+            }
         }
 
-        public bool CanSearchCompanyAccountingEntityCompany(object p) => true;
+        private CompanyLocationPanelEditor? _companyLocationEditor;
+        public CompanyLocationPanelEditor CompanyLocationEditor
+        {
+            get
+            {
+                if (_companyLocationEditor is null)
+                    _companyLocationEditor = new CompanyLocationPanelEditor(this, _companyLocationService);
+                return _companyLocationEditor;
+            }
+        }
+
+        private StoragePanelEditor? _storageEditor;
+        public StoragePanelEditor StorageEditor
+        {
+            get
+            {
+                if (_storageEditor is null)
+                    _storageEditor = new StoragePanelEditor(this, _storageService);
+                return _storageEditor;
+            }
+        }
 
         #endregion
 
+        #region "TabControls"
+
         #region "Location"
-
-        private int _companyLocationId;
-
-        public int CompanyLocationId
-        {
-            get { return _companyLocationId; }
-            set 
-            {
-                if (_companyLocationId != value)
-                {
-                    _companyLocationId = value;
-                    NotifyOfPropertyChange(nameof(CompanyLocationId));
-                }
-            }
-        }
-
-        private string _companyLocationName;
-
-        public string CompanyLocationName
-        {
-            get { return _companyLocationName; }
-            set 
-            {
-                if (_companyLocationName != value)
-                {
-                    _companyLocationName = value;
-                    NotifyOfPropertyChange(nameof(CompanyLocationName));
-                    ValidateProperty(nameof(CompanyLocationName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
 
         private int _companyIdBeforeNewCompanyLocation;
 
         public int CompanyIdBeforeNewCompanyLocation
         {
             get { return _companyIdBeforeNewCompanyLocation; }
-            set 
+            set
             {
                 if(_companyIdBeforeNewCompanyLocation != value)
                 {
@@ -192,190 +126,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private int _companyLocationCompanyId;
-
-        public int CompanyLocationCompanyId
-        {
-            get { return _companyLocationCompanyId; }
-            set 
-            {
-                if (_companyLocationCompanyId != value)
-                {
-                    _companyLocationCompanyId = value;
-                    NotifyOfPropertyChange(nameof(CompanyLocationCompanyId));
-                }
-            }
-        }
-
-
         #endregion
 
         #region "CostCenter"
-
-        private int _costCenterId;
-
-        public int CostCenterId
-        {
-            get { return _costCenterId; }
-            set 
-            {
-                if (_costCenterId != value)
-                {
-                    _costCenterId = value;
-                    NotifyOfPropertyChange(nameof(CostCenterId));
-                }
-            }
-        }
-
-        private string _costCenterName;
-
-        public string CostCenterName
-        {
-            get { return _costCenterName; }
-            set 
-            {
-                if (_costCenterName != value)
-                {
-                    _costCenterName = value;
-                    NotifyOfPropertyChange(nameof(CostCenterName));
-                    ValidateProperty(nameof(CostCenterName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterTradeName;
-
-        public string CostCenterTradeName
-        {
-            get { return _costCenterTradeName; }
-            set 
-            {
-                if (_costCenterTradeName != value)
-                {
-                    _costCenterTradeName = value;
-                    NotifyOfPropertyChange(nameof(CostCenterTradeName));
-                    ValidateProperty(nameof(CostCenterTradeName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterShortName;
-
-        public string CostCenterShortName
-        {
-            get { return _costCenterShortName; }
-            set 
-            {
-                if (_costCenterShortName != value)
-                {
-                    _costCenterShortName = value;
-                    NotifyOfPropertyChange(nameof(CostCenterShortName));
-                    ValidateProperty(nameof(CostCenterShortName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterState;
-
-        public string CostCenterState
-        {
-            get { return _costCenterState; }
-            set 
-            {
-                if (_costCenterState != value)
-                {
-                    _costCenterState = value;
-                    NotifyOfPropertyChange(nameof(CostCenterState));
-                }
-            }
-        }
-
-        private string _costCenterAddress;
-
-        public string CostCenterAddress
-        {
-            get { return _costCenterAddress; }
-            set 
-            {
-                if (_costCenterAddress != value)
-                {
-                    _costCenterAddress = value;
-                    NotifyOfPropertyChange(nameof(CostCenterAddress));
-                    ValidateProperty(nameof(CostCenterAddress), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterPrimaryPhone;
-
-        public string CostCenterPrimaryPhone
-        {
-            get { return _costCenterPrimaryPhone; }
-            set 
-            {
-                if (_costCenterPrimaryPhone != value)
-                {
-                    _costCenterPrimaryPhone = value;
-                    NotifyOfPropertyChange(nameof(CostCenterPrimaryPhone));
-                    ValidateProperty(nameof(CostCenterPrimaryPhone), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterSecondaryPhone;
-
-        public string CostCenterSecondaryPhone
-        {
-            get { return _costCenterSecondaryPhone; }
-            set 
-            {
-                if (_costCenterSecondaryPhone != value)
-                {
-                    _costCenterSecondaryPhone = value;
-                    NotifyOfPropertyChange(nameof(CostCenterSecondaryPhone));
-                    ValidateProperty(nameof(CostCenterSecondaryPhone), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterPrimaryCellPhone;
-
-        public string CostCenterPrimaryCellPhone
-        {
-            get { return _costCenterPrimaryCellPhone; }
-            set 
-            {
-                if (_costCenterPrimaryCellPhone != value)
-                {
-                    _costCenterPrimaryCellPhone = value;
-                    NotifyOfPropertyChange(nameof(CostCenterPrimaryCellPhone));
-                    ValidateProperty(nameof(CostCenterPrimaryCellPhone), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _costCenterSecondaryCellPhone;
-        public string CostCenterSecondaryCellPhone
-        {
-            get { return _costCenterSecondaryCellPhone; }
-            set
-            {
-                if (_costCenterSecondaryCellPhone != value)
-                {
-                    _costCenterSecondaryCellPhone = value;
-                    NotifyOfPropertyChange(nameof(CostCenterSecondaryCellPhone));
-                    ValidateProperty(nameof(CostCenterSecondaryCellPhone), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
 
         private ObservableCollection<CountryGraphQLModel> _countries;
 
@@ -392,428 +145,11 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private CountryGraphQLModel _costCenterSelectedCountry;
-
-        public CountryGraphQLModel CostCenterSelectedCountry
-        {
-            get { return _costCenterSelectedCountry; }
-            set 
-            {
-                if (_costCenterSelectedCountry != value)
-                {
-                    _costCenterSelectedCountry = value;
-                    NotifyOfPropertyChange(nameof(CostCenterSelectedCountry));
-                }
-            }
-        }
-
-        private ObservableCollection<DepartmentGraphQLModel> _departments;
-
-        public ObservableCollection<DepartmentGraphQLModel> Departments
-        {
-            get { return _departments; }
-            set 
-            {
-                if (_departments != value)
-                {
-                    _departments = value;
-                    NotifyOfPropertyChange(nameof(Departments));
-                }
-            }
-        }
-
-        private DepartmentGraphQLModel _costCenterSelectedDepartment;
-
-        public DepartmentGraphQLModel CostCenterSelectedDepartment
-        {
-            get { return _costCenterSelectedDepartment; }
-            set 
-            {
-                if (_costCenterSelectedDepartment != value)
-                {
-                    _costCenterSelectedDepartment = value;
-                    NotifyOfPropertyChange(nameof(CostCenterSelectedDepartment));
-                }
-            }
-        }
-
-        private ObservableCollection<CityGraphQLModel> _cities;
-
-        public ObservableCollection<CityGraphQLModel> Cities
-        {
-            get { return _cities; }
-            set 
-            {
-                if (_cities != value)
-                {
-                    _cities = value;
-                    NotifyOfPropertyChange(nameof(Cities));
-                }
-            }
-        }
-
-        private CityGraphQLModel _costCenterSelectedCity;
-
-        public CityGraphQLModel CostCenterSelectedCity
-        {
-            get { return _costCenterSelectedCity; }
-            set 
-            {
-                if (_costCenterSelectedCity != value)
-                {
-                    _costCenterSelectedCity = value;
-                    NotifyOfPropertyChange(nameof(CostCenterSelectedCity));
-                }
-            }
-        }
-
-        public Dictionary<string, string> CostCenterDateControlTypeDictionary
-        {
-            get { return GlobalDictionaries.DateControlTypeDictionary; }
-        }
-
-        private string _selectedCostCenterDateControlType;
-
-        public string SelectedCostCenterDateControlType
-        {
-            get { return _selectedCostCenterDateControlType; }
-            set
-            {
-                if (_selectedCostCenterDateControlType != value)
-                {
-                    _selectedCostCenterDateControlType = value;
-                    NotifyOfPropertyChange(nameof(SelectedCostCenterDateControlType));
-                }
-            }
-        }
-
-        private bool _costCenterShowChangeWindowOnCash;
-
-        public bool CostCenterShowChangeWindowOnCash
-        {
-            get { return _costCenterShowChangeWindowOnCash; }
-            set 
-            {
-                if (_costCenterShowChangeWindowOnCash != value)
-                {
-                    _costCenterShowChangeWindowOnCash = value;
-                    NotifyOfPropertyChange(nameof(CostCenterShowChangeWindowOnCash));
-                }
-            }
-        }
-
-        private bool _costCenterAllowBuy;
-
-        public bool CostCenterAllowBuy
-        {
-            get { return _costCenterAllowBuy; }
-            set 
-            {
-                if (_costCenterAllowBuy != value) 
-                {
-                    _costCenterAllowBuy = value;
-                    NotifyOfPropertyChange(nameof(CostCenterAllowBuy));
-                }
-            }
-        }
-
-        private bool _costCenterAllowSell;
-
-        public bool CostCenterAllowSell
-        {
-            get { return _costCenterAllowSell; }
-            set 
-            {
-                if (_costCenterAllowSell != value)
-                {
-                    _costCenterAllowSell = value;
-                    NotifyOfPropertyChange(nameof(CostCenterAllowSell));
-                }
-            }
-        }
-
-
-        private bool _costCenterIsTaxable;
-
-        public bool CostCenterIsTaxable
-        {
-            get { return _costCenterIsTaxable; }
-            set 
-            {
-                if (_costCenterIsTaxable != value)
-                {
-                    _costCenterIsTaxable = value;
-                    NotifyOfPropertyChange(nameof(CostCenterIsTaxable));
-                    if(CostCenterIsTaxable is false)
-                    {
-                        CostCenterInvoicePriceIncludeTax = false;
-                        CostCenterPriceListIncludeTax = false;
-                    }
-                }
-            }
-        }
-
-        private bool _costCenterPriceListIncludeTax;
-
-        public bool CostCenterPriceListIncludeTax
-        {
-            get { return _costCenterPriceListIncludeTax; }
-            set 
-            {
-                if (_costCenterPriceListIncludeTax != value)
-                {
-                    _costCenterPriceListIncludeTax = value;
-                    NotifyOfPropertyChange(nameof(CostCenterPriceListIncludeTax));
-                }
-            }
-        }
-
-        private bool _costCenterInvoicePriceIncludeTax;
-
-        public bool CostCenterInvoicePriceIncludeTax
-        {
-            get { return _costCenterInvoicePriceIncludeTax; }
-            set 
-            {
-                if (_costCenterInvoicePriceIncludeTax != value)
-                {
-                    _costCenterInvoicePriceIncludeTax = value;
-                    NotifyOfPropertyChange(nameof(CostCenterInvoicePriceIncludeTax));
-                } 
-            }
-        }
-
-        private int _costCenterInvoiceCopiesToPrint;
-
-        public int CostCenterInvoiceCopiesToPrint
-        {
-            get { return _costCenterInvoiceCopiesToPrint; }
-            set 
-            {
-                if (_costCenterInvoiceCopiesToPrint != value)
-                {
-                    _costCenterInvoiceCopiesToPrint = value;
-                    NotifyOfPropertyChange(nameof(CostCenterInvoiceCopiesToPrint));
-                    if(CostCenterInvoiceCopiesToPrint == 0) CostCenterRequiresConfirmationToPrintCopies = false;
-                    NotifyOfPropertyChange(nameof(CostCenterRequiresConfirmationToPrintCopiesIsEnable));
-                }
-            }
-        }
-
-        public bool CostCenterRequiresConfirmationToPrintCopiesIsEnable => CostCenterInvoiceCopiesToPrint > 0;
-
-        private bool _costCenterRequiresConfirmationToPrintCopies;
-
-        public bool CostCenterRequiresConfirmationToPrintCopies
-        {
-            get { return _costCenterRequiresConfirmationToPrintCopies; }
-            set 
-            {
-                if (_costCenterRequiresConfirmationToPrintCopies != value)
-                {
-                    _costCenterRequiresConfirmationToPrintCopies = value;
-                    NotifyOfPropertyChange(nameof(CostCenterRequiresConfirmationToPrintCopies));
-                }
-            }
-        }
-
-        private int _costCenterCompanyLocationId;
-
-        public int CostCenterCompanyLocationId
-        {
-            get { return _costCenterCompanyLocationId; }
-            set 
-            {
-                if (_costCenterCompanyLocationId != value)
-                {
-                    _costCenterCompanyLocationId = value;
-                    NotifyOfPropertyChange(nameof(CostCenterCompanyLocationId));
-                }
-            }
-        }
-
-        private bool _costCenterAllowRepeatItemsOnSales;
-
-        public bool CostCenterAllowRepeatItemsOnSales
-        {
-            get { return _costCenterAllowRepeatItemsOnSales; }
-            set 
-            {
-                if (_costCenterAllowRepeatItemsOnSales != value)
-                {
-                    _costCenterAllowRepeatItemsOnSales = value;
-                    NotifyOfPropertyChange(nameof(CostCenterAllowRepeatItemsOnSales));
-                }
-            }
-        }
-
-        private bool _costCenterTaxToCost;
-
-        public bool CostCenterTaxToCost
-        {
-            get { return _costCenterTaxToCost; }
-            set 
-            {
-                if (_costCenterTaxToCost != value)
-                {
-                    _costCenterTaxToCost = value;
-                    NotifyOfPropertyChange(nameof(CostCenterTaxToCost));
-                }
-            }
-        }
-
-
         public int CompanyLocationIdBeforeNewCostCenter { get; set; }
 
-        #endregion
-
-        #region "Storage"
-
-        private int _storageId;
-
-        public int StorageId
-        {
-            get { return _storageId; }
-            set 
-            {
-                if (_storageId != value)
-                {
-                    _storageId = value;
-                    NotifyOfPropertyChange(nameof(StorageId));
-                }
-            }
-        }
-
-        private string _storageName;
-
-        public string StorageName
-        {
-            get { return _storageName; }
-            set 
-            {
-                if (_storageName != value)
-                {
-                    _storageName = value;
-                    NotifyOfPropertyChange(nameof(StorageName));
-                    ValidateProperty(nameof(StorageName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _storageAddress;
-
-        public string StorageAddress
-        {
-            get { return _storageAddress; }
-            set 
-            {
-                if (_storageAddress != value)
-                {
-                    _storageAddress = value;
-                    NotifyOfPropertyChange(nameof(StorageAddress));
-                    ValidateProperty(nameof(StorageAddress), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _storageState;
-
-        public string StorageState
-        {
-            get { return _storageState; }
-            set 
-            {
-                if (_storageState != value)
-                {
-                    _storageState = value;
-                    NotifyOfPropertyChange(nameof(StorageState));
-                }
-            }
-        }
-
-
-        private CityGraphQLModel _storageSelectedCity;
-
-        public CityGraphQLModel StorageSelectedCity
-        {
-            get { return _storageSelectedCity; }
-            set 
-            {
-                if (_storageSelectedCity != value)
-                {
-                    _storageSelectedCity = value;
-                    NotifyOfPropertyChange(nameof(StorageSelectedCity));
-                }
-            }
-        }
-
-        private DepartmentGraphQLModel _storageSelectedDepartment;
-
-        public DepartmentGraphQLModel StorageSelectedDepartment
-        {
-            get { return _storageSelectedDepartment; }
-            set 
-            {
-                if (_storageSelectedDepartment != value)
-                {
-                    _storageSelectedDepartment = value;
-                    NotifyOfPropertyChange(nameof(StorageSelectedDepartment));
-                }
-            }
-        }
-
-
-        private CountryGraphQLModel _storageSelectedCountry;
-
-        public CountryGraphQLModel StorageSelectedCountry
-        {
-            get { return _storageSelectedCountry; }
-            set 
-            {
-                if (_storageSelectedCountry != value)
-                {
-                    _storageSelectedCountry = value;
-                    NotifyOfPropertyChange(nameof(StorageSelectedCountry));
-                } 
-            }
-        }
-
-        private int _companyLocationIdBeforeNewStorage;
-
-        public int CompanyLocationIdBeforeNewStorage
-        {
-            get { return _companyLocationIdBeforeNewStorage; }
-            set 
-            {
-                if(_companyLocationIdBeforeNewStorage != value)
-                {
-                    _companyLocationIdBeforeNewStorage = value;
-                    NotifyOfPropertyChange(nameof(CompanyLocationIdBeforeNewStorage));
-                }
-            }
-        }
-
-        private int _storageCompanyLocationId;
-
-        public int StorageCompanyLocationId
-        {
-            get { return _storageCompanyLocationId; }
-            set 
-            {
-                if (_storageCompanyLocationId != value)
-                {
-                    _storageCompanyLocationId = value;
-                    NotifyOfPropertyChange(nameof(StorageCompanyLocationId));
-                }
-            }
-        }
-
+        public int CompanyLocationIdBeforeNewStorage { get; set; }
 
         #endregion
-
-
 
         #endregion
 
@@ -845,12 +181,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                     _selectedItem = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                     NotifyOfPropertyChange(nameof(TabControlVisibility));
-                    _ = HandleSelectedItemChangedAsync();
+                    HandleSelectedItemChanged();
                 }
             }
         }
 
-        public async Task HandleSelectedItemChangedAsync()
+        public void HandleSelectedItemChanged()
         {
             if (_selectedItem != null)
             {
@@ -861,30 +197,22 @@ namespace NetErp.Global.CostCenters.ViewModels
                     CanUndo = false;
                     if (_selectedItem is CostCenterDTO costCenterDTO)
                     {
-                        await SetCostCenterForEdit(costCenterDTO);
-                        ClearAllErrors();
-                        ValidateCostCenterProperties();
+                        CostCenterEditor.SetForEdit(costCenterDTO);
                         return;
                     }
                     if(_selectedItem is StorageDTO storageDTO)
                     {
-                        await SetStorageForEdit(storageDTO);
-                        ClearAllErrors();
-                        ValidateStorageProperties();
+                        StorageEditor.SetForEdit(storageDTO);
                         return;
                     }
                     if(_selectedItem is CompanyLocationDTO companyLocationDTO)
                     {
-                        await SetCompanyLocationForEdit(companyLocationDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
+                        CompanyLocationEditor.SetForEdit(companyLocationDTO);
                         return;
                     }
                     if(_selectedItem is CompanyDTO companyDTO)
                     {
-                        await SetCompanyForEdit(companyDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(CompanyAccountingEntityCompanySearchName), CompanyAccountingEntityCompanySearchName);
+                        CompanyEditor.SetForEdit(companyDTO);
                         return;
                     }
                 }
@@ -896,124 +224,21 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                     if(_selectedItem is CostCenterDTO costCenterDTO)
                     {
-                        await SetCostCenterForNew();
-                        ClearAllErrors();
-                        ValidateCostCenterProperties();
+                        CostCenterEditor.SetForNew(CompanyLocationIdBeforeNewCostCenter);
                         return;
                     }
                     if (_selectedItem is StorageDTO storageDTO)
                     {
-                        await SetStorageForNew();
-                        ClearAllErrors();
-                        ValidateStorageProperties();
+                        StorageEditor.SetForNew(CompanyLocationIdBeforeNewStorage);
                         return;
                     }
                     if(_selectedItem is CompanyLocationDTO companyLocationDTO)
                     {
-                        await SetCompanyLocationForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
+                        CompanyLocationEditor.SetForNew(CompanyIdBeforeNewCompanyLocation);
                         return;
                     }
                 }
             }
-        }
-        public async Task SetCompanyForEdit(CompanyDTO companyDTO)
-        {
-            CompanyId = companyDTO.Id;
-            CompanyAccountingEntityCompanyId = companyDTO.AccountingEntityCompany.Id;
-            CompanyAccountingEntityCompanySearchName = companyDTO.AccountingEntityCompany.SearchName;
-        }
-        public async Task SetCompanyLocationForNew()
-        {
-            CompanyLocationId = 0;
-            CompanyLocationName = string.Empty;
-        }
-
-        public async Task SetCompanyLocationForEdit(CompanyLocationDTO companyLocationDTO)
-        {
-            CompanyLocationId = companyLocationDTO.Id;
-            CompanyLocationName = companyLocationDTO.Name;
-            CompanyLocationCompanyId = companyLocationDTO.Company.Id;
-        }
-
-        public async Task SetStorageForNew()
-        {
-            StorageId = 0;
-            StorageName = string.Empty;
-            StorageAddress = string.Empty;
-            StorageState = "A";
-            StorageSelectedCountry = Countries.FirstOrDefault(country => country.Code == "169") ?? throw new Exception(""); //Codigo de Colombia
-            StorageSelectedDepartment = StorageSelectedCountry.Departments.FirstOrDefault(department => department.Country.Id == StorageSelectedCountry.Id) ?? throw new Exception("");
-            StorageSelectedCity = StorageSelectedDepartment.Cities.FirstOrDefault(city => city.Department.Id == StorageSelectedDepartment.Id) ?? throw new Exception("");
-        }
-
-        public async Task SetStorageForEdit(StorageDTO storageDTO)
-        {
-            StorageId = storageDTO.Id;
-            StorageName = storageDTO.Name;
-            StorageAddress = storageDTO.Address;
-            StorageState = storageDTO.State;
-            StorageSelectedCountry = Countries.FirstOrDefault(country => country.Id == storageDTO.City.Department.Country.Id) ?? throw new Exception("");
-            StorageSelectedDepartment = StorageSelectedCountry.Departments.FirstOrDefault(department => department.Id == storageDTO.City.Department.Id) ?? throw new Exception("");
-            StorageSelectedCity = StorageSelectedDepartment.Cities.FirstOrDefault(city => city.Id == storageDTO.City.Id) ?? throw new Exception("");
-            StorageCompanyLocationId = storageDTO.Location.Id;
-        }
-
-        public async Task SetCostCenterForNew()
-        {
-            CostCenterId = 0;
-            CostCenterName = string.Empty;
-            CostCenterTradeName = string.Empty;
-            CostCenterShortName = string.Empty;
-            CostCenterState = "A";
-            CostCenterAddress = string.Empty;
-            CostCenterPrimaryPhone = string.Empty;
-            CostCenterSecondaryPhone = string.Empty;
-            CostCenterPrimaryCellPhone = string.Empty;
-            CostCenterSecondaryCellPhone = string.Empty;
-            CostCenterSelectedCountry = Countries.FirstOrDefault(country => country.Code == "169") ?? throw new Exception(""); //Codigo de Colombia
-            CostCenterSelectedDepartment = CostCenterSelectedCountry.Departments.FirstOrDefault(department => department.Country.Id == CostCenterSelectedCountry.Id) ?? throw new Exception("");
-            CostCenterSelectedCity = CostCenterSelectedDepartment.Cities.FirstOrDefault(city => city.Department.Id == CostCenterSelectedDepartment.Id) ?? throw new Exception("");
-            SelectedCostCenterDateControlType = "FA";
-            CostCenterShowChangeWindowOnCash = false;
-            CostCenterAllowBuy = false;
-            CostCenterAllowSell = false;
-            CostCenterIsTaxable = false;
-            CostCenterPriceListIncludeTax = false;
-            CostCenterInvoicePriceIncludeTax = false;
-            CostCenterRequiresConfirmationToPrintCopies = false;
-            CostCenterInvoiceCopiesToPrint = 0;
-            CostCenterAllowRepeatItemsOnSales = false;
-            CostCenterTaxToCost = false;
-        }
-        public async Task SetCostCenterForEdit(CostCenterDTO costCenterDTO)
-        {
-            CostCenterId = costCenterDTO.Id;
-            CostCenterName = costCenterDTO.Name;
-            CostCenterTradeName = costCenterDTO.TradeName;
-            CostCenterShortName = costCenterDTO.ShortName;
-            CostCenterState = costCenterDTO.State;
-            CostCenterAddress = costCenterDTO.Address;
-            CostCenterPrimaryPhone = costCenterDTO.PrimaryPhone;
-            CostCenterSecondaryPhone = costCenterDTO.SecondaryPhone;
-            CostCenterPrimaryCellPhone = costCenterDTO.PrimaryCellPhone;
-            CostCenterSecondaryCellPhone = costCenterDTO.SecondaryCellPhone;
-            CostCenterSelectedCountry = Countries.FirstOrDefault(country => country.Id == costCenterDTO.Country.Id) ?? throw new Exception("");
-            CostCenterSelectedDepartment = CostCenterSelectedCountry.Departments.FirstOrDefault(department => department.Id == costCenterDTO.Department.Id) ?? throw new Exception("");
-            CostCenterSelectedCity = CostCenterSelectedDepartment.Cities.FirstOrDefault(city => city.Id == costCenterDTO.City.Id) ?? throw new Exception("");
-            SelectedCostCenterDateControlType = costCenterDTO.DateControlType;
-            CostCenterShowChangeWindowOnCash = costCenterDTO.ShowChangeWindowOnCash;
-            CostCenterAllowBuy = costCenterDTO.AllowBuy;
-            CostCenterAllowSell = costCenterDTO.AllowSell;
-            CostCenterIsTaxable = costCenterDTO.IsTaxable;
-            CostCenterPriceListIncludeTax = costCenterDTO.PriceListIncludeTax;
-            CostCenterInvoicePriceIncludeTax = costCenterDTO.InvoicePriceIncludeTax;
-            CostCenterRequiresConfirmationToPrintCopies = costCenterDTO.RequiresConfirmationToPrintCopies;
-            CostCenterInvoiceCopiesToPrint = costCenterDTO.InvoiceCopiesToPrint;
-            CostCenterCompanyLocationId = costCenterDTO.Location.Id;
-            CostCenterAllowRepeatItemsOnSales = costCenterDTO.AllowRepeatItemsOnSales;
-            CostCenterTaxToCost = costCenterDTO.TaxToCost;
         }
 
         private int _selectedIndex = 0;
@@ -1529,11 +754,10 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = true;
             SelectedItem = new CompanyLocationDTO();
-            ValidateProperty(nameof(CompanyLocationName), CompanyLocationName);
-            NotifyOfPropertyChange(nameof(CanSave));
+
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(CompanyLocationName));
+                this.SetFocus(nameof(CompanyLocationEditor) + "." + nameof(CompanyLocationEditor.Name));
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -1555,7 +779,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(StorageName));
+                this.SetFocus(nameof(StorageEditor) + "." + nameof(StorageEditor.Name));
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -1578,7 +802,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(CostCenterName));
+                this.SetFocus(nameof(CostCenterEditor) + "." + nameof(CostCenterEditor.Name));
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -1605,48 +829,19 @@ namespace NetErp.Global.CostCenters.ViewModels
                 Refresh();
                 if(SelectedItem is CostCenterDTO costCenterDTO)
                 {
-                    CostCenterGraphQLModel result = await ExecuteSaveCostCenter();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new CostCenterCreateMessage() { CreatedCostCenter = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new CostCenterUpdateMessage() { UpdatedCostCenter = result });
-
-                    }
+                    await CostCenterEditor.SaveAsync();
                 }
                 if (SelectedItem is StorageDTO storageDTO)
                 {
-                    StorageGraphQLModel result = await ExecuteSaveStorage();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new StorageCreateMessage() { CreatedStorage = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new StorageUpdateMessage() { UpdatedStorage = result });
-                    }
+                    await StorageEditor.SaveAsync();
                 }
                 if (SelectedItem is CompanyLocationDTO companyLocationDTO)
                 {
-                    CompanyLocationGraphQLModel result = await ExecuteSaveCompanyLocation();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyLocationCreateMessage() { CreatedCompanyLocation = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyLocationUpdateMessage() { UpdatedCompanyLocation = result });
-                    }
+                    await CompanyLocationEditor.SaveAsync();
                 }
                 if(SelectedItem is CompanyDTO companyDTO)
                 {
-                    CompanyGraphQLModel result = await ExecuteSaveCompany();
-                    if (!IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnCurrentThreadAsync(new CompanyUpdateMessage() { UpdatedCompany = result });
-                    }
+                    await CompanyEditor.SaveAsync();
                 }
                 IsEditing = false;
                 CanUndo = false;
@@ -1677,321 +872,23 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        public bool CanSave => IsEditing == true && _errors.Count <= 0;
-
-        public async Task<CompanyGraphQLModel> ExecuteSaveCompany()
+        public bool CanSave
         {
-            try
+            get
             {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Id = CompanyId;
-                variables.Data.accountingEntityCompanyId = CompanyAccountingEntityCompanyId;
-                query = @"
-                    mutation ($data: UpdateCompanyInput!, $id: Int!) {
-                      UpdateResponse: updateCompany(data: $data, id: $id) {
-                        id
-                        accountingEntityCompany {
-                          id
-                          searchName
-                        }
-                      }
-                    }";
-                var result = await _companyService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
+                if (SelectedItem is CostCenterDTO)
+                    return CostCenterEditor.CanSave;
 
-                throw;
-            }
-        }
+                if (SelectedItem is CompanyDTO)
+                    return CompanyEditor.CanSave;
 
-        public async Task<CompanyLocationGraphQLModel> ExecuteSaveCompanyLocation()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = CompanyLocationId;
-                variables.Data.name = CompanyLocationName.Trim().RemoveExtraSpaces();
-                variables.Data.companyId = IsNewRecord ? CompanyIdBeforeNewCompanyLocation : CompanyLocationCompanyId;
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation ($data: CreateCompanyLocationInput!) {
-                          CreateResponse: createCompanyLocation(data: $data) {
-                            id
-                            name
-                            company {
-                              id
-                            }
-                          }
-                        }
-                        ";
-                }
-                else
-                {
-                    query = @"
-                        mutation ($data: UpdateCompanyLocationInput!, $id: Int!) {
-                          UpdateResponse: updateCompanyLocation(data: $data, id: $id) {
-                            id
-                            name
-                            company {
-                              id
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _companyLocationService.CreateAsync(query, variables) : await _companyLocationService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+                if (SelectedItem is CompanyLocationDTO)
+                    return CompanyLocationEditor.CanSave;
 
-        public async Task<StorageGraphQLModel> ExecuteSaveStorage()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = StorageId;
-                variables.Data.name = StorageName.Trim().RemoveExtraSpaces();
-                variables.Data.address = StorageAddress.Trim().RemoveExtraSpaces();
-                variables.Data.state = StorageState;
-                variables.Data.cityId = StorageSelectedCity.Id;
-                variables.Data.companyLocationId = IsNewRecord ? CompanyLocationIdBeforeNewStorage : StorageCompanyLocationId;
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation ($data: CreateStorageInput!) {
-                          CreateResponse: createStorage(data: $data) {
-                            id
-                            name
-                            address
-                            state
-                            city {
-                              id
-                              code
-                              name
-                              department{
-                                id
-                                country{
-                                  id
-                                }
-                              }
-                            }
-                            location{
-                              id
-                              company{
-                                id
-                              }
-                            }
-                          }
-                        }
-                        ";
-                }
-                else
-                {
-                    query = @"
-                        mutation ($data: UpdateStorageInput!, $id: Int!) {
-                          UpdateResponse: updateStorage(data: $data, id: $id) {
-                            id
-                            name
-                            address
-                            state
-                            city {
-                              id
-                              code
-                              name
-                              department{
-                                id
-                                country{
-                                  id
-                                }
-                              }
-                            }
-                            location{
-                              id
-                              company{
-                                id
-                              }
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _storageService.CreateAsync(query, variables) : await _storageService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
+                if (SelectedItem is StorageDTO)
+                    return StorageEditor.CanSave;
 
-                throw;
-            }
-        }
-
-        public async Task<CostCenterGraphQLModel> ExecuteSaveCostCenter()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = CostCenterId;
-                variables.Data.name = CostCenterName.Trim().RemoveExtraSpaces();
-                variables.Data.tradeName = CostCenterTradeName.Trim().RemoveExtraSpaces();
-                variables.Data.shortName = CostCenterShortName.Trim().RemoveExtraSpaces();
-                variables.Data.state = CostCenterState;
-                variables.Data.address = CostCenterAddress.Trim().RemoveExtraSpaces();
-                variables.Data.phone1 = CostCenterPrimaryPhone;
-                variables.Data.phone2 = CostCenterSecondaryPhone;
-                variables.Data.cellPhone1 = CostCenterPrimaryCellPhone;
-                variables.Data.cellPhone2 = CostCenterSecondaryCellPhone;
-                variables.Data.dateControlType = SelectedCostCenterDateControlType;
-                variables.Data.showChangeWindowOnCash = CostCenterShowChangeWindowOnCash;
-                variables.Data.allowBuy = CostCenterAllowBuy;
-                variables.Data.allowSell = CostCenterAllowSell;
-                variables.Data.isTaxable = CostCenterIsTaxable;
-                variables.Data.priceListIncludeTax = CostCenterPriceListIncludeTax;
-                variables.Data.invoicePriceIncludeTax = CostCenterInvoicePriceIncludeTax;
-                variables.Data.countryId = CostCenterSelectedCountry.Id;
-                variables.Data.departmentId = CostCenterSelectedDepartment.Id;
-                variables.Data.cityId = CostCenterSelectedCity.Id;
-                variables.Data.companyLocationId = IsNewRecord ? CompanyLocationIdBeforeNewCostCenter : CostCenterCompanyLocationId;
-                variables.Data.allowRepeatItemsOnSales = CostCenterAllowRepeatItemsOnSales;
-                variables.Data.invoiceCopiesToPrint = CostCenterInvoiceCopiesToPrint;
-                variables.Data.requiresConfirmationToPrintCopies = CostCenterRequiresConfirmationToPrintCopies;
-                variables.Data.taxToCost = CostCenterTaxToCost;
-                variables.Data.defaultInvoiceObservation = string.Empty;
-                variables.Data.invoiceFooter = string.Empty;
-                variables.Data.remissionFooter = string.Empty;
-                variables.Data.relatedAccountingEntityId = 0;
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation ($data: CreateCostCenterInput!) {
-                          CreateResponse: createCostCenter(data: $data) {
-                            id
-                            name
-                            tradeName
-                            shortName
-                            state
-                            address
-                            phone1
-                            phone2
-                            cellPhone1
-                            cellPhone2
-                            dateControlType
-                            showChangeWindowOnCash
-                            allowBuy
-                            allowSell
-                            isTaxable
-                            priceListIncludeTax
-                            invoicePriceIncludeTax
-                            allowRepeatItemsOnSales
-                            invoiceCopiesToPrint
-                            requiresConfirmationToPrintCopies
-                            taxToCost
-                            defaultInvoiceObservation
-                            invoiceFooter
-                            remissionFooter
-                            relatedAccountingEntity{
-                                id
-                            }
-                            country {
-                              id
-                              code
-                              name
-                            }
-                            department {
-                              id
-                              code
-                              name
-                            }
-                            city {
-                              id
-                              code
-                              name
-                            }
-                            location{
-                              id
-                              company{
-                                id
-                              }
-                            }
-                          }
-                        }
-                        ";
-                }
-                else
-                {
-                    query = @"
-                        mutation ($data: UpdateCostCenterInput!, $id: Int!) {
-                          UpdateResponse: updateCostCenter(data: $data, id: $id) {
-                            id
-                            name
-                            tradeName
-                            shortName
-                            state
-                            address
-                            phone1
-                            phone2
-                            cellPhone1
-                            cellPhone2
-                            dateControlType
-                            showChangeWindowOnCash
-                            allowBuy
-                            allowSell
-                            isTaxable
-                            priceListIncludeTax
-                            invoicePriceIncludeTax
-                            allowRepeatItemsOnSales
-                            invoiceCopiesToPrint
-                            requiresConfirmationToPrintCopies
-                            taxToCost
-                            defaultInvoiceObservation
-                            invoiceFooter
-                            remissionFooter
-                            relatedAccountingEntity{
-                                id
-                            }
-                            country {
-                              id
-                              code
-                              name
-                            }
-                            department {
-                              id
-                              code
-                              name
-                            }
-                            city {
-                              id
-                              code
-                              name
-                            }
-                            location{
-                              id
-                              company{
-                                id
-                              }
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _costCenterService.CreateAsync(query, variables) : await _costCenterService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
+                return false;
             }
         }
 
@@ -2007,13 +904,36 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         public async Task Edit()
         {
-            IsEditing = true;
-            CanUndo = true;
+            // Actualizar estado del Ribbon (pertenece a MasterViewModel)
             CanEdit = false;
+            CanUndo = true;
 
-            if (SelectedItem is CostCenterDTO) this.SetFocus(nameof(CostCenterName));
-            if (SelectedItem is StorageDTO) this.SetFocus(nameof(StorageName));
-            if (SelectedItem is CompanyLocationDTO) this.SetFocus(nameof(CompanyLocationName));
+            if (SelectedItem is CostCenterDTO)
+            {
+                CostCenterEditor.IsEditing = true;
+                this.SetFocus(nameof(CostCenterEditor) + "." + nameof(CostCenterEditor.Name));
+                return;
+            }
+
+            if (SelectedItem is CompanyDTO)
+            {
+                CompanyEditor.IsEditing = true;
+                return;
+            }
+
+            if (SelectedItem is CompanyLocationDTO)
+            {
+                CompanyLocationEditor.IsEditing = true;
+                this.SetFocus(nameof(CompanyLocationEditor) + "." + nameof(CompanyLocationEditor.Name));
+                return;
+            }
+
+            if (SelectedItem is StorageDTO)
+            {
+                StorageEditor.IsEditing = true;
+                this.SetFocus(nameof(StorageEditor) + "." + nameof(StorageEditor.Name));
+                return;
+            }
         }
 
         private bool _canEdit = true;
@@ -2037,26 +957,47 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             get
             {
-                if (_undoCommand is null) _undoCommand = new AsyncCommand(Undo, CanUndo);
+                if (_undoCommand is null) _undoCommand = new DelegateCommand(Undo, CanUndo);
                 return _undoCommand;
             }
         }
 
-        public async Task Undo()
+        public void Undo()
         {
-            if (IsNewRecord)
-            {
-                SelectedItem = null;
-            }
-            IsEditing = false;
+            // Restaurar estado del Ribbon
             CanUndo = false;
             CanEdit = true;
-            IsNewRecord = false;
-            SelectedIndex = 0;
-            if(SelectedItem is CostCenterDTO costCenterDTO) await SetCostCenterForEdit(costCenterDTO);
-            if (SelectedItem is StorageDTO storageDTO) await SetStorageForEdit(storageDTO);
-            if (SelectedItem is CompanyLocationDTO companyLocationDTO) await SetCompanyLocationForEdit(companyLocationDTO);
-            if (SelectedItem is CompanyDTO companyDTO) await SetCompanyForEdit(companyDTO);
+
+            if (SelectedItem is CostCenterDTO)
+            {
+                CostCenterEditor.Undo();
+                IsNewRecord = false;
+                SelectedIndex = 0;
+                return;
+            }
+
+            if (SelectedItem is CompanyDTO)
+            {
+                CompanyEditor.Undo();
+                SelectedIndex = 0;
+                return;
+            }
+
+            if (SelectedItem is CompanyLocationDTO)
+            {
+                CompanyLocationEditor.Undo();
+                IsNewRecord = false;
+                SelectedIndex = 0;
+                return;
+            }
+
+            if (SelectedItem is StorageDTO)
+            {
+                StorageEditor.Undo();
+                IsNewRecord = false;
+                SelectedIndex = 0;
+                return;
+            }
         }
 
         private bool _canUndo = false;
@@ -2074,7 +1015,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         }
 
 
-        public async Task LoadStorages(CompanyLocationDTO location, StorageDummyDTO storageDummyDTO)
+        public async Task LoadStoragesAsync(CompanyLocationDTO location, StorageDummyDTO storageDummyDTO)
         {
             try
             {
@@ -2083,39 +1024,15 @@ namespace NetErp.Global.CostCenters.ViewModels
                     storageDummyDTO.Storages.Remove(storageDummyDTO.Storages[0]);
                 });
 
-                List<int> ids = [location.Id];
-                string query = @"
-                    query ($ids: [Int!]!) {
-                      ListResponse: storagesByCompaniesLocationsIds(ids: $ids) {
-                        id
-                        name
-                        address
-                        state
-                        city {
-                          id
-                          name
-                          department{
-                            id
-                            code
-                            name
-                            country{
-                              id
-                              code
-                              name
-                            }
-                          }
-                        }
-                        location{
-                          id
-                        }
-                      }
-                    }
-                    ";
-                dynamic variables = new ExpandoObject();
-                variables.ids = ids;
+                string query = GetLoadStoragesQuery();
 
-                var source = await _storageService.GetListAsync(query, variables);
-                Storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(source);
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+                variables.pageResponseCompanyLocationId = location.Id;
+
+                PageType<StorageGraphQLModel> result = await _storageService.GetPageAsync(query, variables);
+                Storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(result.Entries);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -2145,7 +1062,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        public async Task LoadCostCenters(CompanyLocationDTO location, CostCenterDummyDTO costCenterDummyDTO)
+        public async Task LoadCostCentersAsync(CompanyLocationDTO location, CostCenterDummyDTO costCenterDummyDTO)
         {
             try
             {
@@ -2154,59 +1071,16 @@ namespace NetErp.Global.CostCenters.ViewModels
                     costCenterDummyDTO.CostCenters.Remove(costCenterDummyDTO.CostCenters[0]);
                 });
 
-                List<int> ids = [location.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: costCentersByCompaniesLocationsIds(ids: $ids){
-                        id
-                        name
-                        tradeName
-                        state
-                        shortName
-                        address
-                        phone1
-                        phone2
-                        cellPhone1
-                        cellPhone2
-                        dateControlType
-                        showChangeWindowOnCash
-                        allowBuy
-                        allowSell
-                        isTaxable
-                        priceListIncludeTax
-                        invoicePriceIncludeTax
-                        invoiceCopiesToPrint
-                        requiresConfirmationToPrintCopies
-                        allowRepeatItemsOnSales
-                        taxToCost
-                        relatedAccountingEntity{
-                            id
-                        }
-                        location{
-                            id
-                        }
-                        country {
-                          id
-                          code
-                          name
-                        }
-                        department {
-                          id
-                          code
-                          name
-                        }
-                        city {
-                          id
-                          code
-                          name
-                        }
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.ids = ids;
+                string query = GetLoadCostCentersQuery();
 
-                var source = await _costCenterService.GetListAsync(query, variables);
-                CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(source);
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.companyLocationId = location.Id;
+                variables.pageResponsePagination.pageSize = -1;
+
+                PageType<CostCenterGraphQLModel> result = await _costCenterService.GetPageAsync(query, variables);
+                CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.Entries);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -2235,7 +1109,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCostCenters" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
-        public async Task LoadCompaniesLocations(CompanyDTO company)
+        public async Task LoadCompaniesLocationsAsync(CompanyDTO company)
         {
             try
             {
@@ -2244,22 +1118,14 @@ namespace NetErp.Global.CostCenters.ViewModels
                     company.Locations.Remove(company.Locations[0]);
                 });
 
-                List<int> ids = [company.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: companiesLocationsByCompaniesIds(ids: $ids){
-                        id
-                        name
-                        company{
-                            id
-                        }
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.ids = ids;
+                string query = GetLoadCompaniesLocationsQuery();
 
-                var source = await _companyLocationService.GetListAsync(query, variables);
-                Locations = Context.AutoMapper.Map<ObservableCollection<CompanyLocationDTO>>(source);
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+
+                PageType<CompanyLocationGraphQLModel> source = await _companyLocationService.GetPageAsync(query, variables);
+                Locations = Context.AutoMapper.Map<ObservableCollection<CompanyLocationDTO>>(source.Entries);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -2292,87 +1158,135 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        public async Task Initialize()
+        private string GetLoadCompaniesLocationsQuery()
         {
-            await LoadCompany();
-            await LoadComboBoxes();
+            var fields = FieldSpec<PageType<CompanyLocationGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.Company, company => company
+                        .Field(c => c.Id)))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("companyLocationsPage", [parameter], fields, "PageResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
         }
 
-        public async Task LoadComboBoxes()
+        private string GetLoadStoragesQuery()
         {
-            try
-            {
-                string query = @"
-                    query {
-                      ListResponse: countries {
-                        id
-                        code
-                        name
-                        departments {
-                          id
-                          code
-                          name
-                          country {
-                            id
-                          }
-                          cities {
-                            id
-                            code
-                            name
-                            department {
-                              id
-                              country {
-                                id
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }";
+            var fields = FieldSpec<PageType<StorageGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Address)
+                    .Field(e => e.State)
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                        .Select(c => c.Department, dept => dept
+                            .Field(d => d.Id)
+                            .Field(d => d.Code)
+                            .Field(d => d.Name)
+                            .Select(d => d.Country, country => country
+                                .Field(co => co.Id)
+                                .Field(co => co.Code)
+                                .Field(co => co.Name))))
+                    .Select(e => e.Location, loc => loc
+                        .Field(l => l.Id)))
+                .Build();
 
-                var source = await _countryService.GetListAsync(query, new {  });
-                Countries = new ObservableCollection<CountryGraphQLModel>(source);
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
+            var parameters = new List<GraphQLQueryParameter>
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadComboBoxes" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
+                new("pagination", "Pagination"),
+                new("companyLocationId", "ID")
+            };
+            var fragment = new GraphQLQueryFragment("storagesPage", parameters, fields, "PageResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
         }
 
-        public async Task LoadCompany()
+        private string GetLoadCostCentersQuery()
+        {
+            var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.TradeName)
+                    .Field(e => e.Status)
+                    .Field(e => e.ShortName)
+                    .Field(e => e.Address)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.DateControlType)
+                    .Field(e => e.ShowChangeWindowOnCash)
+                    .Field(e => e.AllowBuy)
+                    .Field(e => e.AllowSell)
+                    .Field(e => e.IsTaxable)
+                    .Field(e => e.PriceListIncludeTax)
+                    .Field(e => e.InvoicePriceIncludeTax)
+                    .Field(e => e.InvoiceCopiesToPrint)
+                    .Field(e => e.RequiresConfirmationToPrintCopies)
+                    .Field(e => e.AllowRepeatItemsOnSales)
+                    .Field(e => e.TaxToCost)
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id))
+                    .Select(e => e.Country, country => country
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Code)
+                        .Field(d => d.Name))
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name)))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination"),
+                new("filters", "CostCenterFilters")
+            };
+            var fragment = new GraphQLQueryFragment("costCentersPage", parameters, fields, "PageResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        public async Task InitializeAsync()
+        {
+            await LoadCompanyAsync();
+            LoadComboBoxes();
+        }
+
+        public void LoadComboBoxes()
+        {
+            Countries = GlobalDataCache.Countries;
+        }
+
+        public async Task LoadCompanyAsync()
         {
             try
             {
                 Refresh();
-                string query = @"
-                query($ids: [Int!]!){
-                  ListResponse: companiesByIds(ids: $ids){
-                    id
-                    accountingEntityCompany{
-                      searchName
-                    }
-                  }
-                }";
+                string query = GetLoadCompanyQuery();
 
-                //TODO: corregir a usar el id de la compañia y no un id quemado
                 dynamic variables = new ExpandoObject();
-                variables.Ids = new List<int>() { 1 };
+                variables.singleItemResponseId = SessionInfo.CurrentCompany!.Id; //A este punto la empresa sí o sí tuvo que ser seleccionada
 
-                IEnumerable<CompanyGraphQLModel> source = await _companyService.GetListAsync(query, variables);
+                CompanyGraphQLModel company = await _companyService.FindByIdAsync(query, variables);
+                ObservableCollection<CompanyGraphQLModel> source = [company]; // Paso necesario porque se recibe un solo elemento y el mapeo se hace a una colección
                 Companies = Context.AutoMapper.Map<ObservableCollection<CompanyDTO>>(source);
                 if (Companies.Count > 0)
                 {
@@ -2406,6 +1320,23 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
+        private string GetLoadCompanyQuery()
+        {
+            var fields = FieldSpec<CompanyGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Select(f => f.CompanyEntity, nested => nested
+                    .Field(n => n.SearchName))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("company", [parameter], fields, "SingleItemResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+
         public CostCenterMasterViewModel(
             CostCenterViewModel context,
             IRepository<CompanyGraphQLModel> companyService,
@@ -2424,38 +1355,30 @@ namespace NetErp.Global.CostCenters.ViewModels
             _countryService = countryService;
             _dialogService = dialogService;
             _notificationService = notificationService;
-            
-            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.CompanyAccountingEntity, false, OnFindCompanyAccountingEntityMessage);
+
             _errors = new Dictionary<string, List<string>>();
             Context.EventAggregator.SubscribeOnUIThread(this);
-        }
-
-        public void OnFindCompanyAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
-        {
-            if (message.ReturnedData is null) return;
-            CompanyAccountingEntityCompanyId = message.ReturnedData.Id;
-            CompanyAccountingEntityCompanySearchName = message.ReturnedData.SearchName;
         }
 
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             await base.OnActivateAsync(cancellationToken);
-            await Initialize();
+            await InitializeAsync();
         }
 
         public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
         {
             IsNewRecord = false;
             CostCenterDTO costCenterDTO = Context.AutoMapper.Map<CostCenterDTO>(message.CreatedCostCenter);
-            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == costCenterDTO.Location.Company.Id) ?? throw new Exception("");
+            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == costCenterDTO.CompanyLocation.Company.Id) ?? throw new Exception("");
             if (companyDTO == null) return;
-            CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == costCenterDTO.Location.Id) ?? throw new Exception("");
+            CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == costCenterDTO.CompanyLocation.Id) ?? throw new Exception("");
             if (companyLocationDTO == null) return;
             CostCenterDummyDTO costCenterDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is CostCenterDummyDTO) as CostCenterDummyDTO ?? throw new Exception("");
             if (costCenterDummyDTO == null) return;
             if(!costCenterDummyDTO.IsExpanded && costCenterDummyDTO.CostCenters[0].IsDummyChild)
             {
-                await LoadCostCenters(companyLocationDTO, costCenterDummyDTO);
+                await LoadCostCentersAsync(companyLocationDTO, costCenterDummyDTO);
                 costCenterDummyDTO.IsExpanded = true;
                 CostCenterDTO? costCenter = costCenterDummyDTO.CostCenters.FirstOrDefault(x => x.Id == costCenterDTO.Id);
                 if (costCenter is null) return;
@@ -2480,9 +1403,9 @@ namespace NetErp.Global.CostCenters.ViewModels
         public Task HandleAsync(CostCenterUpdateMessage message, CancellationToken cancellationToken)
         {
             CostCenterDTO costCenterDTO = Context.AutoMapper.Map<CostCenterDTO>(message.UpdatedCostCenter);
-            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == costCenterDTO.Location.Company.Id);
+            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == costCenterDTO.CompanyLocation.Company.Id);
             if (companyDTO is null) return Task.CompletedTask;
-            CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == costCenterDTO.Location.Id);
+            CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == costCenterDTO.CompanyLocation.Id);
             if (companyLocationDTO is null) return Task.CompletedTask;
             CostCenterDummyDTO? costCenterDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is CostCenterDummyDTO) as CostCenterDummyDTO;
             if (costCenterDummyDTO is null) return Task.CompletedTask;
@@ -2492,7 +1415,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             costCenterToUpdate.Name = costCenterDTO.Name;
             costCenterToUpdate.TradeName = costCenterDTO.TradeName;
             costCenterToUpdate.ShortName = costCenterDTO.ShortName;
-            costCenterToUpdate.State = costCenterDTO.State;
+            costCenterToUpdate.Status = costCenterDTO.Status;
             costCenterToUpdate.Address = costCenterDTO.Address;
             costCenterToUpdate.PrimaryPhone = costCenterDTO.PrimaryPhone;
             costCenterToUpdate.SecondaryPhone = costCenterDTO.SecondaryPhone;
@@ -2512,7 +1435,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             costCenterToUpdate.Country = costCenterDTO.Country;
             costCenterToUpdate.Department = costCenterDTO.Department;
             costCenterToUpdate.City = costCenterDTO.City;
-            costCenterToUpdate.Location = costCenterDTO.Location;
+            costCenterToUpdate.CompanyLocation = costCenterDTO.CompanyLocation;
             _notificationService.ShowSuccess("Centro de costo actualizado correctamente.");
             return Task.CompletedTask;
         }
@@ -2521,9 +1444,9 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == message.DeletedCostCenter.Location.Company.Id) ?? throw new Exception("");
+                CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == message.DeletedCostCenter.CompanyLocation.Company.Id) ?? throw new Exception("");
                 if (companyDTO is null) return;
-                CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == message.DeletedCostCenter.Location.Id) ?? throw new Exception("");
+                CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == message.DeletedCostCenter.CompanyLocation.Id) ?? throw new Exception("");
                 if (companyLocationDTO is null) return;
                 CostCenterDummyDTO costCenterDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is CostCenterDummyDTO) as CostCenterDummyDTO ?? throw new Exception("");
                 if (costCenterDummyDTO is null) return;
@@ -2569,84 +1492,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
-                ClearErrors(propertyName);
-                if (propertyName.Contains("Phone"))
-                {
-                    // Remover espacios a la cadena
-                    value = value.Replace(" ", "").Replace(Convert.ToChar(9).ToString(), "");
-                    // Remover , = 44 y ; = 59
-                    value = value.Replace(Convert.ToChar(44).ToString(), "").Replace(Convert.ToChar(59).ToString(), "");
-                    // Remover - = 45 y _ = 95
-                    value = value.Replace(Convert.ToChar(45).ToString(), "").Replace(Convert.ToChar(95).ToString(), "");
-                }
-                switch (propertyName)
-                {
-                    case nameof(CostCenterName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(CostCenterShortName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre corto no puede estar vacío");
-                        break;
-                    case nameof(CostCenterTradeName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre comercial no puede estar vacía");
-                        break;
-                    case nameof(CostCenterPrimaryPhone):
-                        if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                        break;
-                    case nameof(CostCenterSecondaryPhone):
-                        if (value.Length != 7 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                        break;
-                    case nameof(CostCenterPrimaryCellPhone):
-                        if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                        break;
-                    case nameof(CostCenterSecondaryCellPhone):
-                        if (value.Length != 10 && !string.IsNullOrEmpty(value)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                        break;
-                    case nameof(CostCenterAddress):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La dirección no puede ser vacía");
-                        break;
-                    case nameof(StorageName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(StorageAddress):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La dirección no puede estar vacía");
-                        break;
-                    case nameof(CompanyLocationName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    default:
-                        break;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
-
-        private void ValidateStorageProperties()
-        {
-            ValidateProperty(nameof(StorageName), StorageName);
-            ValidateProperty(nameof(StorageAddress), StorageAddress);
-        }
-
         private void ClearAllErrors()
         {
             _errors.Clear();
-        }
-
-        private void ValidateCostCenterProperties()
-        {
-            ValidateProperty(nameof(CostCenterName), CostCenterName);
-            ValidateProperty(nameof(CostCenterShortName), CostCenterShortName);
-            ValidateProperty(nameof(CostCenterTradeName), CostCenterTradeName);
-            ValidateProperty(nameof(CostCenterAddress), CostCenterAddress);
         }
 
         public async Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
@@ -2661,7 +1509,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (storageDummyDTO == null) return;
             if (!storageDummyDTO.IsExpanded && storageDummyDTO.Storages[0].IsDummyChild)
             {
-                await LoadStorages(companyLocationDTO, storageDummyDTO);
+                await LoadStoragesAsync(companyLocationDTO, storageDummyDTO);
                 storageDummyDTO.IsExpanded = true;
                 StorageDTO? storage = storageDummyDTO.Storages.FirstOrDefault(x => x.Id == storageDTO.Id);
                 if (storage is null) return;
@@ -2729,7 +1577,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (companyDTO is null) return;
             if (!companyDTO.IsExpanded && companyDTO.Locations[0].IsDummyChild)
             {
-                await LoadCompaniesLocations(companyDTO);
+                await LoadCompaniesLocationsAsync(companyDTO);
                 companyDTO.IsExpanded = true;
                 CompanyLocationDTO? companyLocation = companyDTO.Locations.FirstOrDefault(x => x.Id == companyLocationDTO.Id);
                 if (companyLocation is null) return;
@@ -2788,7 +1636,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             CompanyDTO? companyToUpdate = Companies.FirstOrDefault(company => company.Id == companyDTO.Id);
             if (companyToUpdate is null) return Task.CompletedTask;
             companyToUpdate.Id = companyDTO.Id;
-            companyToUpdate.AccountingEntityCompany = companyDTO.AccountingEntityCompany;
+            companyToUpdate.CompanyEntity = companyDTO.CompanyEntity;
             _notificationService.ShowSuccess("Compañía actualizada correctamente.");
             return Task.CompletedTask;
         }

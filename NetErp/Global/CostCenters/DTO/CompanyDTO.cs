@@ -31,17 +31,17 @@ namespace NetErp.Global.CostCenters.DTO
 			}
 		}
 
-		private AccountingEntityDTO _accountingEntityCompany;
+		private AccountingEntityDTO _companyEntity;
 
-		public AccountingEntityDTO AccountingEntityCompany
+		public AccountingEntityDTO CompanyEntity
 		{
-			get { return _accountingEntityCompany; }
+			get { return _companyEntity; }
 			set 
 			{
-				if (_accountingEntityCompany != value) 
+				if (_companyEntity != value) 
 				{
-					_accountingEntityCompany = value;
-					NotifyOfPropertyChange(nameof(AccountingEntityCompany));
+                    _companyEntity = value;
+					NotifyOfPropertyChange(nameof(CompanyEntity));
 				}
 			}
 		}
@@ -93,7 +93,7 @@ namespace NetErp.Global.CostCenters.DTO
 						{
 							if (_locations[0].IsDummyChild)
 							{
-								_ = Context.LoadCompaniesLocations(this);
+								_ = Context.LoadCompaniesLocationsAsync(this);
                             }
 						}
 					}
@@ -124,13 +124,13 @@ namespace NetErp.Global.CostCenters.DTO
         public CompanyDTO(int id, AccountingEntityDTO accountingEntityCompany, ObservableCollection<CompanyLocationDTO> locations, CostCenterMasterViewModel context)
         {
             this._id = id;
-            this._accountingEntityCompany = accountingEntityCompany;
+            this._companyEntity = accountingEntityCompany;
             this._locations = locations;
 			this.Context = context;
         }
         public override string ToString()
         {
-            return $"{_accountingEntityCompany.FullName}";
+            return $"{_companyEntity.FullName}";
         }
     }
 }

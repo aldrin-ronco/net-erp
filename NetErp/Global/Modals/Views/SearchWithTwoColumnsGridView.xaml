@@ -64,8 +64,8 @@
                        HorizontalAlignment="Stretch"
                        VerticalAlignment = "Center"
                        ChangedIndexCommand="{Binding PaginationCommand}" 
-                       PageIndex="{Binding PageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                       PageIndex="{Binding PageNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                        PageSize="{Binding PageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                       TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                       TotalCount="{Binding TotalEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     </Grid>
 </UserControl>

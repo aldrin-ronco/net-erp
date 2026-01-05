@@ -97,7 +97,7 @@ namespace NetErp.Global.CostCenters.DTO
                         {
                             if (_costCenters[0].IsDummyChild)
                             {
-                                _ = Context.LoadCostCenters(Location, this);
+                                _ = Context.LoadCostCentersAsync(Location, this);
                             }
                         }
                     }

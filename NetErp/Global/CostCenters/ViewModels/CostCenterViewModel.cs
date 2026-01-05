@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Global.CostCenters.ViewModels
 {
-    public class CostCenterViewModel : Conductor<object>.Collection.OneActive
+    public class CostCenterViewModel : Conductor<object>
     {
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
@@ -25,7 +25,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
-        private CostCenterMasterViewModel _costCenterMasterViewModel;
+        private CostCenterMasterViewModel? _costCenterMasterViewModel;
         public CostCenterMasterViewModel CostCenterMasterViewModel
         {
             get
@@ -61,7 +61,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             {
                 try
                 {
-                    await ActivateMasterView();
+                    await ActivateMasterViewAsync();
                 }
                 catch (Exception ex)
                 {
@@ -74,7 +74,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             });
         }
 
-        public async Task ActivateMasterView()
+        public async Task ActivateMasterViewAsync()
         {
             try
             {
