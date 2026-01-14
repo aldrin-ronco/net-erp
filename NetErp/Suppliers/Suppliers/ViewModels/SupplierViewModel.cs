@@ -1,10 +1,17 @@
 ﻿using AutoMapper;
 using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Xpf.Core;
+using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
 using Models.Suppliers;
+using NetErp.Billing.Sellers.ViewModels;
+using NetErp.Global.CostCenters.DTO;
+using Ninject.Activation;
+using Services.Billing.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -70,50 +77,42 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync(ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
         {
-            SupplierDetailViewModel instance = new(this, _supplierService);
+            SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts);
+           
             instance.CleanUpControlsForNew();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEdit(SupplierGraphQLModel supplier)
+        public async Task ActivateDetailViewForEditAsync(int supplierId, ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
         {
-            SupplierDetailViewModel instance = new(this, _supplierService);
-            List<WithholdingTypeDTO> withholdingTypes = [];
-            instance.Id = supplier.Id;
-            instance.SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.AccountingEntity.CaptureType);
-            instance.SelectedIdentificationType = instance.IdentificationTypes.FirstOrDefault(x => x.Id == supplier.AccountingEntity.IdentificationType.Id);
-            instance.FirstName = supplier.AccountingEntity.FirstName;
-            instance.MiddleName = supplier.AccountingEntity.MiddleName;
-            instance.FirstLastName = supplier.AccountingEntity.FirstLastName;
-            instance.MiddleLastName = supplier.AccountingEntity.MiddleLastName;
-            instance.PrimaryPhone = supplier.AccountingEntity.PrimaryPhone;
-            instance.SecondaryPhone = supplier.AccountingEntity.SecondaryPhone;
-            instance.PrimaryCellPhone = supplier.AccountingEntity.PrimaryCellPhone;
-            instance.SecondaryCellPhone = supplier.AccountingEntity.SecondaryCellPhone;
-            instance.BusinessName = supplier.AccountingEntity.BusinessName;
-            instance.Address = supplier.AccountingEntity.Address;
-            instance.IdentificationNumber = supplier.AccountingEntity.IdentificationNumber;
-            instance.VerificationDigit = supplier.AccountingEntity.VerificationDigit;
-            instance.SelectedCountry = instance.Countries.FirstOrDefault(c => c.Id == supplier.AccountingEntity.Country.Id);
-            instance.SelectedDepartment = instance.SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.AccountingEntity.Department.Id);
-            instance.SelectedCityId = supplier.AccountingEntity.City.Id;
-            instance.Emails = supplier.AccountingEntity.Emails is null ? [] : new ObservableCollection<EmailDTO>(AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.AccountingEntity.Emails)); // Este codigo copia la lista sin mantener referencia a la lista original
-
-            foreach (WithholdingTypeDTO retention in instance.WithholdingTypes)
+            try
             {
-                bool exist = !(supplier.Retentions is null) && supplier.Retentions.Any(x => x.Id == retention.Id);
-                withholdingTypes.Add(new WithholdingTypeDTO()
+                SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts);
+                await instance.InitializeAsync();
+              
+                SupplierGraphQLModel supplier = await instance.LoadDataForEditAsync(supplierId);
+                
+                instance.AcceptChanges();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            }
+            catch (AsyncException ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
                 {
-                    Id = retention.Id,
-                    Name = retention.Name,
-                    IsSelected = exist
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
                 });
             }
-            instance.WithholdingTypes = new System.Collections.ObjectModel.ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
-            await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+            catch (Exception ex)
+            {
+
+                throw new AsyncException(innerException: ex);
+            }
         }
+       
+    
 
     }
 }

@@ -183,7 +183,8 @@ namespace NetErp.Global.Shell.ViewModels
                 // Inicializar el caché con los datos cargados
                 GlobalDataCache.Initialize(
                     new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries),
-                    new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries)
+                    new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries),
+                    new ObservableCollection<WithholdingTypeGraphQLModel>(result.WithholdingTypes.Entries)
                 );
             }
             catch (Exception ex)
@@ -227,14 +228,24 @@ namespace NetErp.Global.Shell.ViewModels
                     )
                 )
                 .Build();
+            var withholdingTypeFields = FieldSpec<PageType<WithholdingTypeGraphQLModel>>
+             .Create()
+             .SelectList(it => it.Entries, entries => entries
+                 .Field(e => e.Id)
+                 .Field(e => e.Name)
+
+             )
+             .Field(o => o.PageNumber)
+             .Field(o => o.PageSize)
+             .Field(o => o.TotalPages)
+             .Field(o => o.TotalEntries)
+             .Build();
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-
+            var withholdingTypeFragment = new GraphQLQueryFragment("withholdingTypesPage", [parameter], withholdingTypeFields, "withholdingTypes");
             var identificationTypeFragment = new GraphQLQueryFragment("identificationTypesPage", [parameter], identificationTypeFields, "identificationTypes");
             var countryFragment = new GraphQLQueryFragment("countriesPage", [parameter], countryFields, "countries");
-
-            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment]);
-
+            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment, withholdingTypeFragment]);
             return builder.GetQuery();
         }
 

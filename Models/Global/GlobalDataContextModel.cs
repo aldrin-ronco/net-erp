@@ -11,5 +11,6 @@ namespace Models.Global
     {
         public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = new();
         public PageType<CountryGraphQLModel> Countries { get; set; } = new();
+        public PageType<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; } = new();
     }
 }
