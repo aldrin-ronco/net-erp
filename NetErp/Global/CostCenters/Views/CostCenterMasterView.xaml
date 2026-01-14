@@ -1,10 +1,10 @@
 ﻿<UserControl x:Class="NetErp.Global.CostCenters.Views.CostCenterMasterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="clr-namespace:NetErp.Global.CostCenters.DTO"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
@@ -17,11 +17,13 @@
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:local="clr-namespace:NetErp.Global.CostCenters.Views"
-             mc:Ignorable="d" 
+             xmlns:const="clr-namespace:Common.Constants;assembly=Common"
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
+        <h:StringLengthConverter x:Key="StringLengthConverter"/>
         <HierarchicalDataTemplate DataType="{x:Type model:CompanyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
@@ -428,11 +430,15 @@
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!--CostCenterState-->
+                                        <!--CostCenterStatus-->
                                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-                                            <RadioButton Content="Activo" GroupName="State" IsChecked="{Binding Data.CostCenterEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <RadioButton Content="Solo Consultas" GroupName="State" IsChecked="{Binding Data.CostCenterEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=R, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
-                                            <RadioButton Content="Inactivo" GroupName="State" IsChecked="{Binding Data.CostCenterEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=I, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Activo" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusActive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Solo Consultas" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusReadOnly, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Margin="5 0 5 0"/>
+                                            <RadioButton Content="Inactivo" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusInactive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
 
                                         <!--CostCenterName-->
@@ -657,8 +663,6 @@
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
-                                            <RowDefinition Height="auto"/>
-                                            <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
                                         <CheckBox Content="¿Permitir repetir productos en la facturación a clientes?" Grid.Row="0" Grid.Column="0"
                                               IsChecked="{Binding Data.CostCenterEditor.AllowRepeatItemsOnSales, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
@@ -673,6 +677,64 @@
                                         <CheckBox Content="¿Pedir confirmación antes de imprimir copias?" Grid.Row="3" Grid.Column="0"
                                               IsEnabled="{Binding Data.CostCenterEditor.RequiresConfirmationToPrintCopiesIsEnabled, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                               IsChecked="{Binding Data.CostCenterEditor.RequiresConfirmationToPrintCopies, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </Grid>
+                                </dx:DXTabItem>
+                                <dx:DXTabItem Header="Otros">
+                                    <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!--Leyendas de Documentos-->
+                                        <Grid Grid.Row="0" Margin="0 5 5 5">
+                                            <TextBlock Text="Leyenda de factura" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.InvoiceFooter, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="1" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.InvoiceFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+
+                                        <Grid Grid.Row="2" Margin="0 10 5 5">
+                                            <TextBlock Text="Leyenda de remisión" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.RemissionFooter, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="3" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.RemissionFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+
+                                        <Grid Grid.Row="4" Margin="0 10 5 5">
+                                            <TextBlock Text="Observación" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.DefaultInvoiceObservation, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="5" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.DefaultInvoiceObservation, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
@@ -708,11 +770,15 @@
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!--StorageState-->
+                                        <!--StorageStatus-->
                                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-                                            <RadioButton Content="Activo" GroupName="State" IsChecked="{Binding Data.StorageEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <RadioButton Content="Solo Consultas" GroupName="State" IsChecked="{Binding Data.StorageEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=R, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
-                                            <RadioButton Content="Inactivo" GroupName="State" IsChecked="{Binding Data.StorageEditor.State, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=I, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Activo" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusActive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Solo Consultas" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusReadOnly, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Margin="5 0 5 0"/>
+                                            <RadioButton Content="Inactivo" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusInactive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
 
                                         <!--StorageName-->

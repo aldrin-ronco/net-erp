@@ -213,6 +213,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                         FirstLastName = string.Empty;
                         MiddleName = string.Empty;
                         MiddleLastName = string.Empty;
+                        TradeName = string.Empty;
+                        NotifyOfPropertyChange(nameof(FirstName));
+                        NotifyOfPropertyChange(nameof(FirstLastName));
+                        NotifyOfPropertyChange(nameof(MiddleName));
+                        NotifyOfPropertyChange(nameof(MiddleLastName));
+                        NotifyOfPropertyChange(nameof(TradeName));
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -496,6 +502,29 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     NotifyOfPropertyChange(nameof(BusinessName));
                     this.TrackChange(nameof(BusinessName));
                     ValidateProperty(nameof(BusinessName), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Nombre Comercial (solo para persona natural)
+        /// </summary>
+        private string _tradeName = string.Empty;
+        public string TradeName
+        {
+            get
+            {
+                if (_tradeName is null) return string.Empty;
+                return _tradeName;
+            }
+            set
+            {
+                if (_tradeName != value)
+                {
+                    _tradeName = value;
+                    NotifyOfPropertyChange(nameof(TradeName));
+                    this.TrackChange(nameof(TradeName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -1264,6 +1293,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 .Field(e => e.VerificationDigit)
                 .Field(e => e.CaptureType)
                 .Field(e => e.BusinessName)
+                .Field(e => e.TradeName)
                 .Field(e => e.FirstName)
                 .Field(e => e.MiddleName)
                 .Field(e => e.FirstLastName)
@@ -1318,11 +1348,11 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
                 SelectedRegime = 'R';
                 VerificationDigit = "";
-                IdentificationTypes = [];
                 SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode) ?? throw new InvalidOperationException($"No se encontró el tipo de identificación por defecto con código '{Constant.DefaultIdentificationTypeCode}'. Contacte al área de soporte técnico."); // 31 es NIT
                 IdentificationNumber = "";
                 SelectedCaptureType = CaptureTypeEnum.PN;
                 BusinessName = "";
+                TradeName = "";
                 FirstName = "";
                 MiddleName = "";
                 FirstLastName = "";
@@ -1381,6 +1411,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             IdentificationNumber = entity.IdentificationNumber;
             SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), entity.CaptureType);
             BusinessName = entity.BusinessName;
+            TradeName = entity.TradeName;
             FirstName = entity.FirstName;
             MiddleName = entity.MiddleName;
             FirstLastName = entity.FirstLastName;
@@ -1394,6 +1425,20 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == entity.Department.Id);
             SelectedCityId = entity.City.Id;
             Emails = entity.Emails is null ? [] : new ObservableCollection<EmailGraphQLModel>(entity.Emails);
+
+            // Seed values to track changes when fields are cleared
+            this.SeedValue(nameof(BusinessName), BusinessName);
+            this.SeedValue(nameof(TradeName), TradeName);
+            this.SeedValue(nameof(FirstName), FirstName);
+            this.SeedValue(nameof(MiddleName), MiddleName);
+            this.SeedValue(nameof(FirstLastName), FirstLastName);
+            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(Address), Address);
+            this.AcceptChanges();
         }
 
         public string GetCreateQuery()
@@ -1406,6 +1451,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     .Field(e => e.VerificationDigit)
                     .Field(e => e.CaptureType)
                     .Field(e => e.BusinessName)
+                    .Field(e => e.TradeName)
                     .Field(e => e.FirstName)
                     .Field(e => e.MiddleName)
                     .Field(e => e.FirstLastName)
@@ -1462,6 +1508,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     .Field(e => e.VerificationDigit)
                     .Field(e => e.CaptureType)
                     .Field(e => e.BusinessName)
+                    .Field(e => e.TradeName)
                     .Field(e => e.FirstName)
                     .Field(e => e.MiddleName)
                     .Field(e => e.FirstLastName)
