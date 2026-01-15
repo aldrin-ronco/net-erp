@@ -347,3 +347,9 @@ ASALocalRun/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Claude Code local configuration
+.claude/
+
+# WPF temporary project files
+*_wpftmp.csproj
