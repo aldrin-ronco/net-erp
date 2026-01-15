@@ -373,6 +373,27 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
+        private string _tradeName = string.Empty;
+        [ExpandoPath("accountingEntity.tradeName")]
+        public string TradeName
+        {
+            get
+            {
+                if (_tradeName is null) return string.Empty;
+                return _tradeName;
+            }
+            set
+            {
+                if (_tradeName != value)
+                {
+                    _tradeName = value;
+                    NotifyOfPropertyChange(nameof(TradeName));
+                    this.TrackChange(nameof(TradeName));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
         private ObservableCollection<WithholdingTypeDTO> _withholdingTypes;
         public ObservableCollection<WithholdingTypeDTO> WithholdingTypes
         {
@@ -676,6 +697,8 @@ namespace NetErp.Billing.Customers.ViewModels
                     }
                     if (CaptureInfoAsPJ)
                     {
+                        TradeName = string.Empty;
+                        NotifyOfPropertyChange(nameof(TradeName));
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -1322,6 +1345,7 @@ namespace NetErp.Billing.Customers.ViewModels
             PrimaryCellPhone = customer.AccountingEntity.PrimaryCellPhone;
             SecondaryCellPhone = customer.AccountingEntity.SecondaryCellPhone;
             BusinessName = customer.AccountingEntity.BusinessName;
+            TradeName = customer.AccountingEntity.TradeName;
             Address = customer.AccountingEntity.Address;
             IdentificationNumber = customer.AccountingEntity.IdentificationNumber;
             VerificationDigit = customer.AccountingEntity.VerificationDigit;
@@ -1350,6 +1374,20 @@ namespace NetErp.Billing.Customers.ViewModels
 
             // Zone
             SelectedZone = customer.Zone is null ? null : Zones.FirstOrDefault(z => z.Id == customer.Zone.Id);
+
+            // Seed values to track changes when fields are cleared
+            this.SeedValue(nameof(BusinessName), BusinessName);
+            this.SeedValue(nameof(TradeName), TradeName);
+            this.SeedValue(nameof(FirstName), FirstName);
+            this.SeedValue(nameof(MiddleName), MiddleName);
+            this.SeedValue(nameof(FirstLastName), FirstLastName);
+            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(Address), Address);
+            this.AcceptChanges();
         }
 
         public void GoBack(object p)
@@ -1379,6 +1417,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 BusinessName = string.Empty;
+                TradeName = string.Empty;
                 FirstName = string.Empty;
                 MiddleName = string.Empty;
                 FirstLastName = string.Empty;

@@ -70,6 +70,15 @@ namespace Common.Helpers
                 // Sanitizar el valor antes de mandarlo al payload
                 var sanitized = SanitizerRegistry.Sanitize(vmType, propName, rawValue);
 
+                // Si el valor sanitizado es string vacío y el seed también es string vacío, no hubo cambio real
+                if (sanitized is string sanitizedStr && sanitizedStr == string.Empty)
+                {
+                    if (tracker.SeedValues.TryGetValue(propName, out var seedVal) && seedVal is string seedStr && seedStr == string.Empty)
+                    {
+                        continue; // No enviar, no hubo cambio real
+                    }
+                }
+
                 var pathAttr = propInfo.GetCustomAttribute<ExpandoPathAttribute>();
 
                 // Normalizar para payload (por ejemplo, si es un tipo complejo con SerializeAsId = true → Id)
@@ -87,37 +96,47 @@ namespace Common.Helpers
                 ExpandoHelper.SetNestedProperty(root, path, normalized);
             }
 
-            // 2️⃣ Seeds no modificados: se envían sólo si la propiedad no aparece en ChangedProperties
-            foreach (var kv in tracker.SeedValues)
+            // 2️⃣ Seeds no modificados: se envían sólo en operaciones CREATE (no en UPDATE)
+            // Detectamos CREATE por el prefijo que contiene "create"
+            bool isCreateOperation = !string.IsNullOrEmpty(prefix) && prefix.Contains("create", StringComparison.OrdinalIgnoreCase);
+
+            if (isCreateOperation)
             {
-                string propName = kv.Key;
+                foreach (var kv in tracker.SeedValues)
+                {
+                    string propName = kv.Key;
 
-                // Si la propiedad fue cambiada, el valor de ChangedProperties tiene prioridad sobre el seed
-                if (tracker.ChangedProperties.Contains(propName))
-                    continue;
+                    // Si la propiedad fue cambiada, el valor de ChangedProperties tiene prioridad sobre el seed
+                    if (tracker.ChangedProperties.Contains(propName))
+                        continue;
 
-                var propInfo = vmType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
-                if (propInfo == null)
-                    continue;
+                    var propInfo = vmType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+                    if (propInfo == null)
+                        continue;
 
-                var pathAttr = propInfo.GetCustomAttribute<ExpandoPathAttribute>();
+                    var pathAttr = propInfo.GetCustomAttribute<ExpandoPathAttribute>();
 
-                // Sanitizar el seed
-                object? sanitizedSeed = SanitizerRegistry.Sanitize(vmType, propName, kv.Value);
+                    // Sanitizar el seed
+                    object? sanitizedSeed = SanitizerRegistry.Sanitize(vmType, propName, kv.Value);
 
-                // Normalizar para payload (mismo criterio que para propiedades modificadas)
-                var normalizedSeed = NormalizeForPayload(propInfo, sanitizedSeed, pathAttr);
+                    // Si el seed es string vacío y no fue modificado, no enviarlo
+                    if (sanitizedSeed is string seedStr && seedStr == string.Empty)
+                        continue;
 
-                // Aplicar transformación por colección si corresponde
-                normalizedSeed = ApplyCollectionItemTransformIfNeeded(
-                    propName,
-                    normalizedSeed,
-                    collectionItemTransformers
-                );
+                    // Normalizar para payload (mismo criterio que para propiedades modificadas)
+                    var normalizedSeed = NormalizeForPayload(propInfo, sanitizedSeed, pathAttr);
 
-                string path = BuildPath(prefix, propName, pathAttr);
+                    // Aplicar transformación por colección si corresponde
+                    normalizedSeed = ApplyCollectionItemTransformIfNeeded(
+                        propName,
+                        normalizedSeed,
+                        collectionItemTransformers
+                    );
 
-                ExpandoHelper.SetNestedProperty(root, path, normalizedSeed);
+                    string path = BuildPath(prefix, propName, pathAttr);
+
+                    ExpandoHelper.SetNestedProperty(root, path, normalizedSeed);
+                }
             }
 
             return root;

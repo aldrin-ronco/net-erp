@@ -13,5 +13,15 @@ namespace Common.Constants
         public static readonly string DefaultCityCode = "001";
         public static readonly string DefaultIdentificationTypeCode = "31";
 
+        /// <summary>
+        /// Límite máximo de caracteres para campos MemoEdit (leyendas, observaciones, etc.)
+        /// </summary>
+        public const int MemoMaxLength = 600;
+
+        /// <summary>
+        /// Versión string de MemoMaxLength para binding en XAML
+        /// </summary>
+        public const string MemoMaxLengthDisplay = "600";
+
     }
 }

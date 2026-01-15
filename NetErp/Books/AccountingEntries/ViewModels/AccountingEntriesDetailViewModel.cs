@@ -1568,8 +1568,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                var costCenter = this.CostCenters.Where(costCenter => costCenter.Id == message.CreatedCostCenter.Id).FirstOrDefault();
-                if (costCenter is null) this.CostCenters.Add(message.CreatedCostCenter);
+                var costCenter = this.CostCenters.Where(costCenter => costCenter.Id == message.CreatedCostCenter.Entity.Id).FirstOrDefault();
+                if (costCenter is null) this.CostCenters.Add(message.CreatedCostCenter.Entity);
             }
             catch (Exception ex)
             {
