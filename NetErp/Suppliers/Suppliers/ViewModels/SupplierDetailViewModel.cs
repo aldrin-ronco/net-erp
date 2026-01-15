@@ -371,6 +371,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private string _businessName = string.Empty;
+        [ExpandoPath("accountingEntity.businessName")]
         public string BusinessName
         {
             get
@@ -799,12 +800,26 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
                     if (CaptureInfoAsPN)
                     {
+                        BusinessName = string.Empty;
                         ClearErrors(nameof(BusinessName));
+                        this.TrackChange(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
+
                     }
                     if (CaptureInfoAsPJ)
                     {
+                        FirstName = string.Empty;
+                        FirstLastName = string.Empty;
+                        TradeName = string.Empty;
+                        MiddleLastName = string.Empty;
+                        MiddleName = string.Empty;
+                        this.TrackChange(nameof(FirstName));
+                        this.TrackChange(nameof(FirstLastName));
+                        this.TrackChange(nameof(TradeName));
+                        this.TrackChange(nameof(MiddleLastName));
+                        this.TrackChange(nameof(MiddleName));
+
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -1084,7 +1099,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
 
                     UpsertResponseType<SupplierGraphQLModel> supplierCreated = await _supplierService.CreateAsync<UpsertResponseType<SupplierGraphQLModel>>(query, variables);
-                    return supplierCreated;
+                    return supplierCreated; //este
                 }
                 else
                 {

@@ -195,7 +195,7 @@
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
                                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                        <RadioButton Content="Rason Social"
+                        <RadioButton Content="Persona Jurídica"
                                  GroupName="CaptureType"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
                                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PJ}"
@@ -234,7 +234,7 @@
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
                             <!--Razon Social-->
-                            <TextBlock Text="Razon Social" 
+                            <TextBlock Text="Razón social" 
                                    Grid.Column="0" Grid.Row="0"
                                    Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0 4 4 2"/>
