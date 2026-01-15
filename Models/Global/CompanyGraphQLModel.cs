@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -15,21 +16,21 @@ namespace Models.Global
         public DateTime InsertedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public string Reference { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty; 
+        public string Status { get; set; } = string.Empty;
     }
 
     public class CompanyCreateMessage
     {
-        public CompanyGraphQLModel CreatedCompany { get; set; }
+        public UpsertResponseType<CompanyGraphQLModel> CreatedCompany { get; set; } = new();
     }
 
-    public class CompanyUpdateMessage 
+    public class CompanyUpdateMessage
     {
-        public CompanyGraphQLModel UpdatedCompany { get; set; }
+        public UpsertResponseType<CompanyGraphQLModel> UpdatedCompany { get; set; } = new();
     }
 
-    public class CompanyDeleteMessage 
+    public class CompanyDeleteMessage
     {
-        public CompanyGraphQLModel DeletedCompany { get; set; }
+        public DeleteResponseType DeletedCompany { get; set; } = new();
     }
 }

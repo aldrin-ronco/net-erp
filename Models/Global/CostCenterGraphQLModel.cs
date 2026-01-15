@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -15,7 +16,7 @@ namespace Models.Global
         public string Name { get; set; } = string.Empty;
         public string TradeName { get; set; } = string.Empty;
         public string ShortName { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string PrimaryPhone { get; set; } = string.Empty;
         public string SecondaryPhone { get; set; } = string.Empty;
@@ -35,20 +36,16 @@ namespace Models.Global
         public string InvoiceFooter { get; set; } = string.Empty;
         public string RemissionFooter { get; set; } = string.Empty;
         public int InvoiceCopiesToPrint { get; set; } = 0;
-        public CountryGraphQLModel Country { get; set; }
-        public DepartmentGraphQLModel Department { get; set; }
+        public CountryGraphQLModel Country { get; set; } = new();
+        public DepartmentGraphQLModel Department { get; set; } = new();
+        public CityGraphQLModel City { get; set; } = new();
+        public CompanyLocationGraphQLModel CompanyLocation { get; set; } = new();
+        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; } = [];
+        public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; } = new();
+        public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; } = new();
 
-        public CityGraphQLModel City { get; set; }
-        public CompanyLocationGraphQLModel Location { get; set; }
-        public AccountingEntityGraphQLModel RelatedAccountingEntity { get; set; }
-
-        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; }
-
-        public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; }
-        public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; }
-
-        public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; }
-        public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; } = new();
+        public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; } = new();
         public override string ToString()
         {
             return Name;
@@ -57,16 +54,16 @@ namespace Models.Global
 
     public class CostCenterCreateMessage
     {
-        public CostCenterGraphQLModel CreatedCostCenter { get; set; }
+        public UpsertResponseType<CostCenterGraphQLModel> CreatedCostCenter { get; set; } = new();
     }
 
     public class CostCenterUpdateMessage
     {
-        public CostCenterGraphQLModel UpdatedCostCenter { get; set; }
+        public UpsertResponseType<CostCenterGraphQLModel> UpdatedCostCenter { get; set; } = new();
     }
 
     public class CostCenterDeleteMessage
     {
-        public CostCenterGraphQLModel DeletedCostCenter { get; set; }
+        public DeleteResponseType DeletedCostCenter { get; set; } = new();
     }
 }

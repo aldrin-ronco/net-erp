@@ -73,7 +73,7 @@ namespace NetErp
 
                 // Registrar sanitizadores globales
                 SanitizerRegistry.RegisterType<string>(s =>
-                    string.IsNullOrWhiteSpace(s) ? null : s.Trim().RemoveExtraSpaces()
+                    s?.Trim().RemoveExtraSpaces()
                 );
 
             //// Ejemplo específico por propiedad:

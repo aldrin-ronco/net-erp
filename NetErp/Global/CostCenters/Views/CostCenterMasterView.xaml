@@ -1,10 +1,10 @@
 ﻿<UserControl x:Class="NetErp.Global.CostCenters.Views.CostCenterMasterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:model="clr-namespace:NetErp.Global.CostCenters.DTO"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
@@ -17,11 +17,13 @@
              xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:local="clr-namespace:NetErp.Global.CostCenters.Views"
-             mc:Ignorable="d" 
+             xmlns:const="clr-namespace:Common.Constants;assembly=Common"
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
+        <h:StringLengthConverter x:Key="StringLengthConverter"/>
         <HierarchicalDataTemplate DataType="{x:Type model:CompanyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
@@ -62,7 +64,7 @@
                         </Style>
                     </Image.Style>
                 </Image>
-                <TextBlock Text="{Binding Row.AccountingEntityCompany.SearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Row.CompanyEntity.SearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
             </StackPanel>
         </HierarchicalDataTemplate>
 
@@ -323,7 +325,7 @@
                                          Margin="20 0 0 0"
                                          SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
-                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                    <Grid IsEnabled="{Binding Data.CompanyEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -340,9 +342,9 @@
                                                 <ColumnDefinition Width="8.0*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <dxe:TextEdit Text="{Binding Data.CompanyAccountingEntityCompanySearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}" 
+                                            <dxe:TextEdit Text="{Binding Data.CompanyEditor.AccountingEntityCompanySearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
                                   Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
-                                            <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchCompanyAccountingEntityCompanyCommand, Source={StaticResource DataContextProxy}}">
+                                            <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.CompanyEditor.SearchAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
                                                     <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None">
@@ -367,7 +369,7 @@
 
                         <!--TabControl CompanyLocation-->
                         <DataTemplate DataType="{x:Type model:CompanyLocationDTO}">
-                            <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                            <Grid IsEnabled="{Binding Data.CompanyLocationEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="5*"/>
@@ -384,7 +386,7 @@
                                 <TextBlock Text="Lorem Ipsum es simplemente el texto de relleno de las imprentas y archivos de texto. Lorem Ipsum ha sido el texto de relleno estándar de las industrias desde el año 1500, cuando un impresor (N. del T. persona que se dedica a la imprenta) desconocido usó una galería de textos y los mezcló de tal manera que logró hacer un libro de textos especimen. No sólo sobrevivió 500 años, sino que tambien ingresó como texto de relleno en documentos electrónicos, quedando esencialmente igual al original. Fue popularizado en los 60s con la creación de las hojas."
                                        Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Margin="10"/>
                                 <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="2"/>
-                                <dxe:TextEdit Text="{Binding Data.CompanyLocationName, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                <dxe:TextEdit Text="{Binding Data.CompanyLocationEditor.Name, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Grid.Column="1" Grid.Row="3" CharacterCasing="Upper" x:Name="CompanyLocationName"/>
                             </Grid>
                         </DataTemplate>
@@ -397,7 +399,7 @@
                   Margin="20 0 0 0"
                   SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
-                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                    <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -428,46 +430,50 @@
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!--CostCenterState-->
+                                        <!--CostCenterStatus-->
                                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-                                            <RadioButton Content="Activo" GroupName="State" IsChecked="{Binding Data.CostCenterState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <RadioButton Content="Solo Consultas" GroupName="State" IsChecked="{Binding Data.CostCenterState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=R, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
-                                            <RadioButton Content="Inactivo" GroupName="State" IsChecked="{Binding Data.CostCenterState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=I, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Activo" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusActive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Solo Consultas" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusReadOnly, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Margin="5 0 5 0"/>
+                                            <RadioButton Content="Inactivo" GroupName="CostCenterStatus"
+                                                         IsChecked="{Binding Data.CostCenterEditor.IsStatusInactive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
 
                                         <!--CostCenterName-->
                                         <TextBlock Text="Nombre del almacén" Grid.Row="1" Grid.Column="0" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.Name, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                   Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" CharacterCasing="Upper" x:Name="CostCenterName"/>
 
                                         <!--CostCenterTradeName-->
                                         <TextBlock Text="Nombre comercial (aplicado en la factura)" Margin="0 5 0 5" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterTradeName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.TradeName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Row="4" Grid.ColumnSpan="3" Margin="0 0 5 0" CharacterCasing="Upper"/>
 
                                         <TextBlock Text="Nombre corto" Margin="5 5 0 5" Grid.Row="3" Grid.Column="3"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterShortName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.ShortName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Row="4" Grid.Column="4" Margin="5 0 5 0" CharacterCasing="Upper"/>
 
 
                                         <!--CostCenterPhones-->
                                         <!--CostCenterPhone1-->
                                         <TextBlock Text="Telefono fijo No. 1" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterPhone1, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.PrimaryPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Column="0" Grid.Row="6" Margin="0 0 5 0" MaxLength="10" MaskType="Simple" Mask="000 00 00"/>
                                         <!--CostCenterPhone2-->
                                         <TextBlock Text="Telefono fijo No. 2" Grid.Column="1" Grid.Row="5" Margin="5 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterPhone2, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.SecondaryPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Column="1" Grid.Row="6" Margin="5 0 5 0" MaxLength="10" MaskType="Simple" Mask="000 00 00"/>
 
                                         <!--CostCenterCellPhones-->
                                         <!--CostCenterCellPhone1-->
                                         <TextBlock Text="Celular No. 1" Grid.Column="2" Grid.Row="5" Margin="5 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterCellPhone1, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.PrimaryCellPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Row="6" Grid.Column="2" Margin="5 0 5 0" MaxLength="14" MaskType="Simple" Mask="000 000 00 00"/>
                                         <!--CostCenterCellPhone2-->
                                         <TextBlock Text="Celular No. 2" Grid.Column="3" Grid.Row="5" Margin="5 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterCellPhone2, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.SecondaryCellPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Row="6" Grid.Column="3" Margin="5 0 5 0" MaxLength="14" MaskType="Simple" Mask="000 000 00 00"/>
 
                                         <!--CostCenterCountry-->
@@ -475,7 +481,7 @@
                                         <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="8"
                                                     Margin="0 0 5 0" Padding="2"
                                                     AllowSpin="True"
-                                                    AutoPopulateColumns="False"  
+                                                    AutoPopulateColumns="False"
                                                     IsCaseSensitiveSearch="False"
                                                     IncrementalFiltering="True"
                                                     IncrementalSearch="True"
@@ -486,7 +492,7 @@
                                                     ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                     DisplayMember="Name"
                                                     ValueMember="Id"
-                                                    SelectedItem="{Binding Data.CostCenterSelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    SelectedItem="{Binding Data.CostCenterEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -508,10 +514,10 @@
 
                                         <!--CostCenterDepartment-->
                                         <TextBlock Text="Departamento" Grid.Column="0" Grid.Row="9" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="10" 
+                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="10"
              Margin="0 0 5 0" Padding="2"
              AllowSpin="True"
-             AutoPopulateColumns="False"  
+             AutoPopulateColumns="False"
              IsCaseSensitiveSearch="False"
              IncrementalFiltering="True"
              IncrementalSearch="True"
@@ -519,10 +525,10 @@
              FilterCondition="Contains"
              ImmediatePopup="True"
              ClearSelectionOnBackspace="True"
-             ItemsSource="{Binding Data.CostCenterSelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             ItemsSource="{Binding Data.CostCenterEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
              DisplayMember="Name"
              ValueMember="Id"
-             SelectedItem="{Binding Data.CostCenterSelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+             SelectedItem="{Binding Data.CostCenterEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -544,10 +550,10 @@
 
                                         <!--CostCenterCity-->
                                         <TextBlock Text="Ciudad" Grid.Column="0" Grid.Row="11" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12" 
+                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12"
              Margin="0 0 5 0" Padding="2"
              AllowSpin="True"
-             AutoPopulateColumns="False"  
+             AutoPopulateColumns="False"
              IsCaseSensitiveSearch="False"
              IncrementalFiltering="True"
              IncrementalSearch="True"
@@ -555,10 +561,10 @@
              FilterCondition="Contains"
              ImmediatePopup="True"
              ClearSelectionOnBackspace="True"
-             ItemsSource="{Binding Data.CostCenterSelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+             ItemsSource="{Binding Data.CostCenterEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
              DisplayMember="Name"
              ValueMember="Id"
-             SelectedItem="{Binding Data.CostCenterSelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+             SelectedItem="{Binding Data.CostCenterEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -580,18 +586,18 @@
 
                                         <!--CostCenterAddress-->
                                         <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="13" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterAddress, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.Address, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                            Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0"/>
 
                                         <!--CostCenterDateControlType-->
                                         <TextBlock Text="Control de fecha para las transacciones" Grid.Column="0" Grid.Row="15" Margin="0 5 0 5" Grid.ColumnSpan="2"/>
-                                        <dxe:ComboBoxEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="16" 
+                                        <dxe:ComboBoxEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="16"
                                             Margin="0 0 5 0"
                                             IsTextEditable="False"
-                                            ItemsSource="{Binding Data.CostCenterDateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                            ItemsSource="{Binding Data.CostCenterEditor.DateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                             DisplayMember="Value"
                                             ValueMember="Key"
-                                            EditValue="{Binding Data.SelectedCostCenterDateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            EditValue="{Binding Data.CostCenterEditor.DateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                         <Grid Grid.Column="0" Grid.Row="17" Grid.ColumnSpan="4" Margin="0 0 5 0">
                                             <Grid.ColumnDefinitions>
@@ -601,15 +607,15 @@
                                             </Grid.ColumnDefinitions>
                                             <!--CostCenterShowChangeWindowOnCash-->
                                             <CheckBox Content="Mostrar ventana para calculo de cambio en efectivo" Grid.Column="0" Margin="0 5 0 5" HorizontalAlignment="Left"
-                                                  IsChecked="{Binding Data.CostCenterShowChangeWindowOnCash, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                  IsChecked="{Binding Data.CostCenterEditor.ShowChangeWindowOnCash, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                             <!--CostCenterAllowBuy-->
                                             <CheckBox Content="¿Este almacén realiza compras?" Grid.Column="1" Margin="0 5 0 5" HorizontalAlignment="Center"
-                                                  IsChecked="{Binding Data.CostCenterAllowBuy, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                  IsChecked="{Binding Data.CostCenterEditor.AllowBuy, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                             <!--CostCenterAllowSell-->
                                             <CheckBox Content="¿Este almacén realiza ventas?" Grid.Column="2" Margin="0 5 0 5" HorizontalAlignment="Right"
-                                                  IsChecked="{Binding Data.CostCenterAllowSell, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                  IsChecked="{Binding Data.CostCenterEditor.AllowSell, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                         </Grid>
 
@@ -624,30 +630,30 @@
                                             </Grid.RowDefinitions>
                                             <!--CostCenterIsTaxable-->
                                             <CheckBox Content="¿Factura IVA?" Grid.Column="0" Grid.Row="0"
-                                                  IsChecked="{Binding Data.CostCenterIsTaxable, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                  IsChecked="{Binding Data.CostCenterEditor.IsTaxable, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
-                                            <CheckBox Content="¿Los precios en la lista incluyen IVA?" Grid.Column="1" Grid.Row="0" Visibility="{Binding Data.CostCenterIsTaxable, Source={StaticResource DataContextProxy}, Converter={dx:BooleanToVisibilityConverter}}"
-                                                  IsChecked="{Binding Data.CostCenterPriceListIncludeTax, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                            <CheckBox Content="¿Los precios en la lista incluyen IVA?" Grid.Column="1" Grid.Row="0" Visibility="{Binding Data.CostCenterEditor.IsTaxable, Source={StaticResource DataContextProxy}, Converter={dx:BooleanToVisibilityConverter}}"
+                                                  IsChecked="{Binding Data.CostCenterEditor.PriceListIncludeTax, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
-                                            <CheckBox Content="¿Los precios en la factura impresa incluyen IVA?" Grid.Row="1" Grid.Column="1" Visibility="{Binding Data.CostCenterIsTaxable, Source={StaticResource DataContextProxy}, Converter={dx:BooleanToVisibilityConverter}}"
-                                                  IsChecked="{Binding Data.CostCenterInvoicePriceIncludeTax, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                            <CheckBox Content="¿Los precios en la factura impresa incluyen IVA?" Grid.Row="1" Grid.Column="1" Visibility="{Binding Data.CostCenterEditor.IsTaxable, Source={StaticResource DataContextProxy}, Converter={dx:BooleanToVisibilityConverter}}"
+                                                  IsChecked="{Binding Data.CostCenterEditor.InvoicePriceIncludeTax, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
                                         </Grid>
                                     </Grid>
                                 </dx:DXTabItem>
                                 <dx:DXTabItem Header="Inventario">
-                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                    <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
                                         <CheckBox Content="Llevar IVA al costo"
-                                              IsChecked="{Binding Data.CostCenterTaxToCost, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                              IsChecked="{Binding Data.CostCenterEditor.TaxToCost, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
                                         <TextBlock Text="Seleccione esta opción en caso de querer llevar IVA al costo del inventario (no es necesario si el almacén es regimen simplificado)"
                                                Grid.Row="1" IsEnabled="False"/>
                                     </Grid>
                                 </dx:DXTabItem>
                                 <dx:DXTabItem Header="Ventas">
-                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                    <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -657,22 +663,78 @@
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
-                                            <RowDefinition Height="auto"/>
-                                            <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
                                         <CheckBox Content="¿Permitir repetir productos en la facturación a clientes?" Grid.Row="0" Grid.Column="0"
-                                              IsChecked="{Binding Data.CostCenterAllowRepeatItemsOnSales, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                              IsChecked="{Binding Data.CostCenterEditor.AllowRepeatItemsOnSales, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
                                         <TextBlock Text="Impresión de copias de facturas" Grid.Column="0" Grid.Row="1" Margin="0 5 0 5"/>
                                         <StackPanel Grid.Column="0" Grid.Row="2" Orientation="Horizontal" Grid.ColumnSpan="2" Margin="0 5 0 5">
                                             <TextBlock Text="Imprimir" VerticalAlignment="Center" Margin="0 0 5 0"/>
-                                            <dxe:SpinEdit Increment="1" MinValue="0" AllowSpinOnMouseWheel="False" IsFloatValue="False" 
-                                                      EditValueType="{x:Type sys:Int32}" 
-                                                      EditValue="{Binding Data.CostCenterInvoiceCopiesToPrint, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <dxe:SpinEdit Increment="1" MinValue="0" AllowSpinOnMouseWheel="False" IsFloatValue="False"
+                                                      EditValueType="{x:Type sys:Int32}"
+                                                      EditValue="{Binding Data.CostCenterEditor.InvoiceCopiesToPrint, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                             <TextBlock Text="copias(s) de la factura de venta (Deje la casilla en cero para no imprimir copias)" VerticalAlignment="Center" Margin="5 0 0 0"/>
                                         </StackPanel>
                                         <CheckBox Content="¿Pedir confirmación antes de imprimir copias?" Grid.Row="3" Grid.Column="0"
-                                              IsEnabled="{Binding Data.CostCenterRequiresConfirmationToPrintCopiesIsEnable, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
-                                              IsChecked="{Binding Data.CostCenterRequiresConfirmationToPrintCopies, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                              IsEnabled="{Binding Data.CostCenterEditor.RequiresConfirmationToPrintCopiesIsEnabled, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                              IsChecked="{Binding Data.CostCenterEditor.RequiresConfirmationToPrintCopies, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </Grid>
+                                </dx:DXTabItem>
+                                <dx:DXTabItem Header="Otros">
+                                    <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!--Leyendas de Documentos-->
+                                        <Grid Grid.Row="0" Margin="0 5 5 5">
+                                            <TextBlock Text="Leyenda de factura" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.InvoiceFooter, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="1" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.InvoiceFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+
+                                        <Grid Grid.Row="2" Margin="0 10 5 5">
+                                            <TextBlock Text="Leyenda de remisión" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.RemissionFooter, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="3" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.RemissionFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+
+                                        <Grid Grid.Row="4" Margin="0 10 5 5">
+                                            <TextBlock Text="Observación" HorizontalAlignment="Left"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock Foreground="Gray" Text="{Binding Data.CostCenterEditor.DefaultInvoiceObservation, Source={StaticResource DataContextProxy}, Converter={StaticResource StringLengthConverter}, Mode=OneWay}"/>
+                                                <TextBlock Foreground="Gray" Text=" / "/>
+                                                <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <dxe:TextEdit Grid.Row="5" Height="60" Margin="0 0 5 0"
+                                                       Text="{Binding Data.CostCenterEditor.DefaultInvoiceObservation, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       MaxLength="{x:Static const:Constant.MemoMaxLength}"
+                                                       TextWrapping="Wrap" AcceptsReturn="True"
+                                                       VerticalContentAlignment="Top"
+                                                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
@@ -686,7 +748,7 @@
                                          Margin="20 0 0 0"
                                          SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
-                                    <Grid IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                    <Grid IsEnabled="{Binding Data.StorageEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
@@ -708,16 +770,20 @@
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
 
-                                        <!--StorageState-->
+                                        <!--StorageStatus-->
                                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-                                            <RadioButton Content="Activo" GroupName="State" IsChecked="{Binding Data.StorageState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <RadioButton Content="Solo Consultas" GroupName="State" IsChecked="{Binding Data.StorageState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=R, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
-                                            <RadioButton Content="Inactivo" GroupName="State" IsChecked="{Binding Data.StorageState, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=I, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Activo" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusActive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Solo Consultas" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusReadOnly, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Margin="5 0 5 0"/>
+                                            <RadioButton Content="Inactivo" GroupName="StorageStatus"
+                                                         IsChecked="{Binding Data.StorageEditor.IsStatusInactive, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
 
                                         <!--StorageName-->
                                         <TextBlock Text="Nombre de la bodega" Grid.Row="1" Grid.Column="0" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.StorageName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.StorageEditor.Name, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                   Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" x:Name="StorageName" CharacterCasing="Upper"/>
 
                                         <!--StateCountry-->
@@ -736,7 +802,7 @@
                                                     ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                     DisplayMember="Name"
                                                     ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageSelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    SelectedItem="{Binding Data.StorageEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -769,10 +835,10 @@
                                                     FilterCondition="Contains"
                                                     ImmediatePopup="True"
                                                     ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.StorageSelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    ItemsSource="{Binding Data.StorageEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                     DisplayMember="Name"
                                                     ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageSelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    SelectedItem="{Binding Data.StorageEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -805,10 +871,10 @@
                                                     FilterCondition="Contains"
                                                     ImmediatePopup="True"
                                                     ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.StorageSelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    ItemsSource="{Binding Data.StorageEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                     DisplayMember="Name"
                                                     ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageSelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                    SelectedItem="{Binding Data.StorageEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -830,7 +896,7 @@
 
                                         <!--StorageAddress-->
                                         <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="9" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.StorageAddress, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                        <dxe:TextEdit Text="{Binding Data.StorageEditor.Address, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                   Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0"/>
 
                                     </Grid>

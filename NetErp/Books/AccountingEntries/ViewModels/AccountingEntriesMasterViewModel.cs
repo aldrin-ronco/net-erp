@@ -1486,8 +1486,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                CostCenterGraphQLModel costCenter = this.CostCenters.Where(x => x.Id == message.CreatedCostCenter.Id).FirstOrDefault();
-                if (costCenter == null) this.CostCenters.Add(message.CreatedCostCenter);
+                CostCenterGraphQLModel costCenter = this.CostCenters.Where(x => x.Id == message.CreatedCostCenter.Entity.Id).FirstOrDefault();
+                if (costCenter == null) this.CostCenters.Add(message.CreatedCostCenter.Entity);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
 
             }
@@ -1502,8 +1502,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                CostCenterGraphQLModel updatedCostCenter = this.CostCenters.Where(x => x.Id == message.UpdatedCostCenter.Id).FirstOrDefault();
-                if (updatedCostCenter != null) this.CostCenters.Replace(message.UpdatedCostCenter);
+                CostCenterGraphQLModel updatedCostCenter = this.CostCenters.Where(x => x.Id == message.UpdatedCostCenter.Entity.Id).FirstOrDefault();
+                if (updatedCostCenter != null)
+                {
+                    int index = this.CostCenters.IndexOf(updatedCostCenter);
+                    if (index >= 0) this.CostCenters[index] = message.UpdatedCostCenter.Entity;
+                }
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
             }
             catch (Exception ex)
@@ -1517,7 +1521,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                CostCenterGraphQLModel deletedCostCenter = this.CostCenters.Where(x => x.Id == message.DeletedCostCenter.Id).FirstOrDefault();
+                CostCenterGraphQLModel deletedCostCenter = this.CostCenters.Where(x => x.Id == message.DeletedCostCenter.DeletedId).FirstOrDefault();
                 if (deletedCostCenter != null) this.CostCenters.Remove(deletedCostCenter);
                 Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
 

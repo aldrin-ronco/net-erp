@@ -43,17 +43,17 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-        private string _state;
+        private string _status;
 
-        public string State
+        public string Status
         {
-            get { return _state; }
-            set 
+            get { return _status; }
+            set
             {
-                if (_state != value)
+                if (_status != value)
                 {
-                    _state = value;
-                    NotifyOfPropertyChange(nameof(State));
+                    _status = value;
+                    NotifyOfPropertyChange(nameof(Status));
                 }
             }
         }
@@ -120,16 +120,16 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-        private CompanyLocationDTO _location;
-        public CompanyLocationDTO Location
+        private CompanyLocationDTO _companyLocation;
+        public CompanyLocationDTO CompanyLocation
         {
-            get { return _location; }
+            get { return _companyLocation; }
             set
             {
-                if (_location != value)
+                if (_companyLocation != value)
                 {
-                    _location = value;
-                    NotifyOfPropertyChange(nameof(Location));
+                    _companyLocation = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocation));
                 }
             }
         }

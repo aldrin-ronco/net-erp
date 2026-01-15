@@ -80,16 +80,16 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-        private string _state;
-        public string State
+        private string _status;
+        public string Status
         {
-            get { return _state; }
+            get { return _status; }
             set
             {
-                if (_state != value)
+                if (_status != value)
                 {
-                    _state = value;
-                    NotifyOfPropertyChange(nameof(State));
+                    _status = value;
+                    NotifyOfPropertyChange(nameof(Status));
                 }
             }
         }
@@ -406,30 +406,16 @@ namespace NetErp.Global.CostCenters.DTO
 
         public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; }
         public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; }
-        private CompanyLocationDTO _location;
-        public CompanyLocationDTO Location
+        private CompanyLocationDTO _companyLocation;
+        public CompanyLocationDTO CompanyLocation
         {
-            get { return _location; }
+            get { return _companyLocation; }
             set
             {
-                if (_location != value)
+                if (_companyLocation != value)
                 {
-                    _location = value;
-                    NotifyOfPropertyChange(nameof(Location));
-                }
-            }
-        }
-
-        private AccountingEntityDTO _relatedAccountingEntity;
-        public AccountingEntityDTO RelatedAccountingEntity
-        {
-            get { return _relatedAccountingEntity; }
-            set
-            {
-                if (_relatedAccountingEntity != value)
-                {
-                    _relatedAccountingEntity = value;
-                    NotifyOfPropertyChange(nameof(RelatedAccountingEntity));
+                    _companyLocation = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocation));
                 }
             }
         }

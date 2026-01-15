@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -22,16 +23,16 @@ namespace Models.Global
 
     public class CompanyLocationCreateMessage
     {
-        public CompanyLocationGraphQLModel CreatedCompanyLocation { get; set; }
+        public UpsertResponseType<CompanyLocationGraphQLModel> CreatedCompanyLocation { get; set; } = new();
     }
 
     public class CompanyLocationUpdateMessage
     {
-        public CompanyLocationGraphQLModel UpdatedCompanyLocation { get; set; }
+        public UpsertResponseType<CompanyLocationGraphQLModel> UpdatedCompanyLocation { get; set; } = new();
     }
 
     public class CompanyLocationDeleteMessage
     {
-        public CompanyLocationGraphQLModel DeletedCompanyLocation { get; set; }
+        public DeleteResponseType DeletedCompanyLocation { get; set; } = new();
     }
 }
