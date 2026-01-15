@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CostCenters.PanelEditors
 {
@@ -56,7 +57,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
         }
 
         private string _name = string.Empty;
-        [ExpandoPath("Data.name")]
         public string Name
         {
             get => _name;
@@ -68,13 +68,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     ValidateName();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _address = string.Empty;
-        [ExpandoPath("Data.address")]
         public string Address
         {
             get => _address;
@@ -85,47 +84,58 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _address = value;
                     NotifyOfPropertyChange(nameof(Address));
                     this.TrackChange(nameof(Address));
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        private string _state = "A";
-        [ExpandoPath("Data.state")]
-        public string State
+        private string _status = "ACTIVE";
+        public string Status
         {
-            get => _state;
+            get => _status;
             set
             {
-                if (_state != value)
+                if (_status != value)
                 {
-                    _state = value;
-                    NotifyOfPropertyChange(nameof(State));
-                    this.TrackChange(nameof(State));
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    _status = value;
+                    NotifyOfPropertyChange(nameof(Status));
+                    this.TrackChange(nameof(Status));
+                    NotifyOfPropertyChange(nameof(IsStatusActive));
+                    NotifyOfPropertyChange(nameof(IsStatusReadOnly));
+                    NotifyOfPropertyChange(nameof(IsStatusInactive));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        private int _cityId;
-        [ExpandoPath("Data.cityId")]
-        public int CityId
+        public bool IsStatusActive
         {
-            get => _cityId;
+            get => Status == "ACTIVE";
             set
             {
-                if (_cityId != value)
-                {
-                    _cityId = value;
-                    NotifyOfPropertyChange(nameof(CityId));
-                    this.TrackChange(nameof(CityId));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
+                if (value) Status = "ACTIVE";
+            }
+        }
+
+        public bool IsStatusReadOnly
+        {
+            get => Status == "READ_ONLY";
+            set
+            {
+                if (value) Status = "READ_ONLY";
+            }
+        }
+
+        public bool IsStatusInactive
+        {
+            get => Status == "INACTIVE";
+            set
+            {
+                if (value) Status = "INACTIVE";
             }
         }
 
         private int _companyLocationId;
-        [ExpandoPath("Data.companyLocationId")]
         public int CompanyLocationId
         {
             get => _companyLocationId;
@@ -169,7 +179,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 {
                     _selectedCountry = value;
                     NotifyOfPropertyChange(nameof(SelectedCountry));
-                    this.TrackChange(nameof(SelectedCountry));
 
                     // Al cambiar país, resetear departamento y ciudad
                     if (value != null && value.Departments?.Any() == true)
@@ -180,7 +189,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     {
                         SelectedDepartment = null;
                     }
-                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -195,7 +203,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 {
                     _selectedDepartment = value;
                     NotifyOfPropertyChange(nameof(SelectedDepartment));
-                    this.TrackChange(nameof(SelectedDepartment));
 
                     // Al cambiar departamento, resetear ciudad
                     if (value != null && value.Cities?.Any() == true)
@@ -206,7 +213,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     {
                         SelectedCity = null;
                     }
-                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -221,14 +227,15 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 {
                     _selectedCity = value;
                     NotifyOfPropertyChange(nameof(SelectedCity));
-                    this.TrackChange(nameof(SelectedCity));
-
-                    // Actualizar CityId cuando cambia la ciudad
-                    CityId = value?.Id ?? 0;
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(SelectedCityId));
+                    this.TrackChange(nameof(SelectedCityId));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
+
+        [ExpandoPath("cityId")]
+        public int SelectedCityId => SelectedCity?.Id ?? 0;
 
         #endregion
 
@@ -282,7 +289,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             Id = 0;
             Name = string.Empty;
             Address = string.Empty;
-            State = "A";
+            Status = "ACTIVE";
             CompanyLocationId = 0;
 
             // Establecer país por defecto (Colombia - código 169)
@@ -311,8 +318,8 @@ namespace NetErp.Global.CostCenters.PanelEditors
             Id = storageDTO.Id;
             Name = storageDTO.Name;
             Address = storageDTO.Address;
-            State = storageDTO.State;
-            CompanyLocationId = storageDTO.Location?.Id ?? 0;
+            Status = storageDTO.Status;
+            CompanyLocationId = storageDTO.CompanyLocation?.Id ?? 0;
 
             // Establecer país/departamento/ciudad desde el DTO
             SelectedCountry = MasterContext.Countries?.FirstOrDefault(c => c.Id == storageDTO.City?.Department?.Country?.Id);
@@ -325,19 +332,30 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 }
             }
 
-            this.AcceptChanges();
+            SeedCurrentValues();
             ClearAllErrors();
             ValidateAll();
 
             IsEditing = false;
         }
 
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Address), Address);
+            this.SeedValue(nameof(Status), Status);
+            this.SeedValue(nameof(CompanyLocationId), CompanyLocationId);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.AcceptChanges();
+        }
+
         private void SeedDefaultValues()
         {
-            this.SeedValue(nameof(State), State);
+            this.SeedValue(nameof(Status), Status);
             this.SeedValue(nameof(Name), string.Empty);
             this.SeedValue(nameof(Address), string.Empty);
             this.SeedValue(nameof(CompanyLocationId), CompanyLocationIdBeforeNew);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
             this.AcceptChanges();
         }
 
@@ -349,27 +367,33 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<StorageGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<StorageGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Field(f => f.Address)
-                .Field(f => f.State)
-                .Select(f => f.City, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name)
-                    .Select(n => n.Department, deptNested => deptNested
-                        .Field(d => d.Id)
-                        .Select(d => d.Country, countryNested => countryNested
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "storage", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Address)
+                    .Field(e => e.Status)
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name)
+                        .Select(c => c.Department, dept => dept
+                            .Field(d => d.Id)
+                            .Select(d => d.Country, country => country
+                                .Field(co => co.Id))))
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id)
+                        .Select(l => l.Company, company => company
                             .Field(c => c.Id))))
-                .Select(f => f.Location, nested => nested
-                    .Field(n => n.Id)
-                    .Select(n => n.Company, companyNested => companyNested
-                        .Field(c => c.Id)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateStorageInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateStorageInput!");
             var fragment = new GraphQLQueryFragment("createStorage", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -378,30 +402,36 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<StorageGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<StorageGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Field(f => f.Address)
-                .Field(f => f.State)
-                .Select(f => f.City, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name)
-                    .Select(n => n.Department, deptNested => deptNested
-                        .Field(d => d.Id)
-                        .Select(d => d.Country, countryNested => countryNested
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "storage", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Address)
+                    .Field(e => e.Status)
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name)
+                        .Select(c => c.Department, dept => dept
+                            .Field(d => d.Id)
+                            .Select(d => d.Country, country => country
+                                .Field(co => co.Id))))
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id)
+                        .Select(l => l.Company, company => company
                             .Field(c => c.Id))))
-                .Select(f => f.Location, nested => nested
-                    .Field(n => n.Id)
-                    .Select(n => n.Company, companyNested => companyNested
-                        .Field(c => c.Id)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
             {
-                new GraphQLQueryParameter("data", "UpdateStorageInput!"),
-                new GraphQLQueryParameter("id", "Int!")
+                new("data", "UpdateStorageInput!"),
+                new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateStorage", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
@@ -409,7 +439,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
-        protected override async Task<StorageGraphQLModel> ExecuteSaveAsync()
+        protected override async Task<UpsertResponseType<StorageGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
             dynamic variables;
@@ -419,21 +449,21 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 // Asignar el CompanyLocationId del padre antes de recolectar cambios
                 CompanyLocationId = CompanyLocationIdBeforeNew;
                 query = GetCreateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
-                variables.id = Id;
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
 
             return IsNewRecord
-                ? await _storageService.CreateAsync(query, variables)
-                : await _storageService.UpdateAsync(query, variables);
+                ? await _storageService.CreateAsync<UpsertResponseType<StorageGraphQLModel>>(query, variables)
+                : await _storageService.UpdateAsync<UpsertResponseType<StorageGraphQLModel>>(query, variables);
         }
 
-        protected override async Task PublishMessageAsync(StorageGraphQLModel result)
+        protected override async Task PublishMessageAsync(UpsertResponseType<StorageGraphQLModel> result)
         {
             if (IsNewRecord)
             {

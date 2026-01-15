@@ -54,7 +54,8 @@ namespace NetErp.Global.CostCenters.PanelEditors
         /// <summary>
         /// Guarda los cambios (Create o Update según IsNewRecord).
         /// </summary>
-        Task SaveAsync();
+        /// <returns>True si el guardado fue exitoso, False en caso contrario.</returns>
+        Task<bool> SaveAsync();
 
         /// <summary>
         /// Deshace los cambios y sale del modo edición.

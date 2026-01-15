@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CostCenters.PanelEditors
 {
@@ -55,7 +56,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 {
                     _isEditing = value;
                     NotifyOfPropertyChange(nameof(IsEditing));
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
@@ -128,7 +129,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
             NotifyOfPropertyChange(nameof(HasErrors));
-            NotifyOfPropertyChange(nameof(CanSave));
+            MasterContext.RefreshCanSave();
         }
 
         #endregion
@@ -153,12 +154,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
         /// <summary>
         /// Ejecuta la operación de guardado (Create o Update).
         /// </summary>
-        protected abstract Task<TGraphQLModel> ExecuteSaveAsync();
+        protected abstract Task<UpsertResponseType<TGraphQLModel>> ExecuteSaveAsync();
 
         /// <summary>
         /// Publica el mensaje de evento correspondiente después de guardar.
         /// </summary>
-        protected abstract Task PublishMessageAsync(TGraphQLModel result);
+        protected abstract Task PublishMessageAsync(UpsertResponseType<TGraphQLModel> result);
 
         /// <summary>
         /// Configura el editor para un nuevo registro.
@@ -182,26 +183,30 @@ namespace NetErp.Global.CostCenters.PanelEditors
         /// <summary>
         /// Template method para guardar. Maneja errores y notificaciones.
         /// </summary>
-        public async Task SaveAsync()
+        /// <returns>True si el guardado fue exitoso, False en caso contrario.</returns>
+        public async Task<bool> SaveAsync()
         {
             try
             {
                 IsBusy = true;
                 MasterContext.Refresh();
 
-                TGraphQLModel result = await ExecuteSaveAsync();
+                UpsertResponseType<TGraphQLModel> result = await ExecuteSaveAsync();
                 await PublishMessageAsync(result);
 
                 IsEditing = false;
                 this.AcceptChanges();
+                return true;
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 HandleGraphQLError(exGraphQL, nameof(SaveAsync));
+                return false;
             }
             catch (Exception ex)
             {
                 HandleGenericError(ex, nameof(SaveAsync));
+                return false;
             }
             finally
             {
@@ -283,7 +288,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
         /// </summary>
         protected void NotifyCanSaveChanged()
         {
-            NotifyOfPropertyChange(nameof(CanSave));
+            MasterContext.RefreshCanSave();
         }
 
         #endregion

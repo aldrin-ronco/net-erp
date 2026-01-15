@@ -27,17 +27,17 @@ namespace Dictionaries
 
         public static Dictionary<string, string> DateControlTypeDictionary = new Dictionary<string, string>()
         {
-            {"FC","FECHA DE TRANSACCIÓN CONTROLADA POR CUADRE DE CAJA" },
-            {"FS","FECHA DEL SERVIDOR" },
-            {"FL","FECHA DEL EQUIPO LOCAL" },
-            {"FA","FECHA ABIERTA A MANIPULACIÓN" }
+            {"CONTROLLED_BY_CASH_REGISTER", "FECHA DE TRANSACCIÓN CONTROLADA POR CUADRE DE CAJA" },
+            {"SERVER_DATE", "FECHA DEL SERVIDOR" },
+            {"LOCAL_DATE", "FECHA DEL EQUIPO LOCAL" },
+            {"OPEN_DATE", "FECHA ABIERTA A MANIPULACIÓN" }
         };
 
-        public static Dictionary<char, string> CostCenterStateDictionary = new Dictionary<char, string>()
+        public static Dictionary<string, string> CostCenterStatusDictionary = new Dictionary<string, string>()
         {
-            {'A',"ACTIVO" },
-            {'C',"SOLO CONSULTAS" },
-            {'I',"INACTIVO" }
+            {"ACTIVE", "ACTIVO" },
+            {"READ_ONLY", "SOLO LECTURA" },
+            {"INACTIVE", "INACTIVO" }
         };
 
         public static Dictionary<int, string> MonthsDictionary = new Dictionary<int, string>()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -12,23 +13,23 @@ namespace Models.Global
         public string Name { get; set; } = string.Empty;
         public CityGraphQLModel City { get; set; }
         public string Address { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty;
-        public CompanyLocationGraphQLModel Location { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public CompanyLocationGraphQLModel CompanyLocation { get; set; }
     }
 
-    public class  StorageCreateMessage
+    public class StorageCreateMessage
     {
-        public StorageGraphQLModel CreatedStorage { get; set; }
+        public UpsertResponseType<StorageGraphQLModel> CreatedStorage { get; set; } = new();
     }
 
     public class StorageUpdateMessage
     {
-        public StorageGraphQLModel UpdatedStorage { get; set; }
+        public UpsertResponseType<StorageGraphQLModel> UpdatedStorage { get; set; } = new();
     }
 
     public class StorageDeleteMessage
     {
-        public StorageGraphQLModel DeletedStorage { get; set; }
+        public DeleteResponseType DeletedStorage { get; set; } = new();
     }
 
 }

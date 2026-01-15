@@ -13,6 +13,7 @@ using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CostCenters.PanelEditors
 {
@@ -57,7 +58,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
         }
 
         private string _name = string.Empty;
-        [ExpandoPath("Data.name")]
         public string Name
         {
             get => _name;
@@ -69,13 +69,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     ValidateName();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _tradeName = string.Empty;
-        [ExpandoPath("Data.tradeName")]
         public string TradeName
         {
             get => _tradeName;
@@ -86,14 +85,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _tradeName = value;
                     NotifyOfPropertyChange(nameof(TradeName));
                     this.TrackChange(nameof(TradeName));
-                    ValidateTradeName();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _shortName = string.Empty;
-        [ExpandoPath("Data.shortName")]
         public string ShortName
         {
             get => _shortName;
@@ -105,29 +102,58 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(ShortName));
                     this.TrackChange(nameof(ShortName));
                     ValidateShortName();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        private string _state = "A";
-        [ExpandoPath("Data.state")]
-        public string State
+        private string _status = "ACTIVE";
+        public string Status
         {
-            get => _state;
+            get => _status;
             set
             {
-                if (_state != value)
+                if (_status != value)
                 {
-                    _state = value;
-                    NotifyOfPropertyChange(nameof(State));
-                    this.TrackChange(nameof(State));
+                    _status = value;
+                    NotifyOfPropertyChange(nameof(Status));
+                    this.TrackChange(nameof(Status));
+                    NotifyOfPropertyChange(nameof(IsStatusActive));
+                    NotifyOfPropertyChange(nameof(IsStatusReadOnly));
+                    NotifyOfPropertyChange(nameof(IsStatusInactive));
+                    MasterContext.RefreshCanSave();
                 }
+            }
+        }
+
+        public bool IsStatusActive
+        {
+            get => Status == "ACTIVE";
+            set
+            {
+                if (value) Status = "ACTIVE";
+            }
+        }
+
+        public bool IsStatusReadOnly
+        {
+            get => Status == "READ_ONLY";
+            set
+            {
+                if (value) Status = "READ_ONLY";
+            }
+        }
+
+        public bool IsStatusInactive
+        {
+            get => Status == "INACTIVE";
+            set
+            {
+                if (value) Status = "INACTIVE";
             }
         }
 
         private string _address = string.Empty;
-        [ExpandoPath("Data.address")]
         public string Address
         {
             get => _address;
@@ -138,14 +164,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _address = value;
                     NotifyOfPropertyChange(nameof(Address));
                     this.TrackChange(nameof(Address));
-                    ValidateAddress();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _primaryPhone = string.Empty;
-        [ExpandoPath("Data.primaryPhone")]
         public string PrimaryPhone
         {
             get => _primaryPhone;
@@ -157,13 +181,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(PrimaryPhone));
                     this.TrackChange(nameof(PrimaryPhone));
                     ValidatePrimaryPhone();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _secondaryPhone = string.Empty;
-        [ExpandoPath("Data.secondaryPhone")]
         public string SecondaryPhone
         {
             get => _secondaryPhone;
@@ -175,13 +198,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(SecondaryPhone));
                     this.TrackChange(nameof(SecondaryPhone));
                     ValidateSecondaryPhone();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _primaryCellPhone = string.Empty;
-        [ExpandoPath("Data.primaryCellPhone")]
         public string PrimaryCellPhone
         {
             get => _primaryCellPhone;
@@ -193,13 +215,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(PrimaryCellPhone));
                     this.TrackChange(nameof(PrimaryCellPhone));
                     ValidatePrimaryCellPhone();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _secondaryCellPhone = string.Empty;
-        [ExpandoPath("Data.secondaryCellPhone")]
         public string SecondaryCellPhone
         {
             get => _secondaryCellPhone;
@@ -211,13 +232,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(SecondaryCellPhone));
                     this.TrackChange(nameof(SecondaryCellPhone));
                     ValidateSecondaryCellPhone();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        private string _dateControlType = "FA";
-        [ExpandoPath("Data.dateControlType")]
+        private string _dateControlType = "OPEN_DATE";
         public string DateControlType
         {
             get => _dateControlType;
@@ -228,12 +248,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _dateControlType = value;
                     NotifyOfPropertyChange(nameof(DateControlType));
                     this.TrackChange(nameof(DateControlType));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _showChangeWindowOnCash;
-        [ExpandoPath("Data.showChangeWindowOnCash")]
         public bool ShowChangeWindowOnCash
         {
             get => _showChangeWindowOnCash;
@@ -244,12 +264,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _showChangeWindowOnCash = value;
                     NotifyOfPropertyChange(nameof(ShowChangeWindowOnCash));
                     this.TrackChange(nameof(ShowChangeWindowOnCash));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _allowBuy;
-        [ExpandoPath("Data.allowBuy")]
         public bool AllowBuy
         {
             get => _allowBuy;
@@ -260,12 +280,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _allowBuy = value;
                     NotifyOfPropertyChange(nameof(AllowBuy));
                     this.TrackChange(nameof(AllowBuy));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _allowSell;
-        [ExpandoPath("Data.allowSell")]
         public bool AllowSell
         {
             get => _allowSell;
@@ -276,12 +296,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _allowSell = value;
                     NotifyOfPropertyChange(nameof(AllowSell));
                     this.TrackChange(nameof(AllowSell));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _isTaxable;
-        [ExpandoPath("Data.isTaxable")]
         public bool IsTaxable
         {
             get => _isTaxable;
@@ -298,12 +318,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                         InvoicePriceIncludeTax = false;
                         PriceListIncludeTax = false;
                     }
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _priceListIncludeTax;
-        [ExpandoPath("Data.priceListIncludeTax")]
         public bool PriceListIncludeTax
         {
             get => _priceListIncludeTax;
@@ -314,12 +334,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _priceListIncludeTax = value;
                     NotifyOfPropertyChange(nameof(PriceListIncludeTax));
                     this.TrackChange(nameof(PriceListIncludeTax));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _invoicePriceIncludeTax;
-        [ExpandoPath("Data.invoicePriceIncludeTax")]
         public bool InvoicePriceIncludeTax
         {
             get => _invoicePriceIncludeTax;
@@ -330,12 +350,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _invoicePriceIncludeTax = value;
                     NotifyOfPropertyChange(nameof(InvoicePriceIncludeTax));
                     this.TrackChange(nameof(InvoicePriceIncludeTax));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _invoiceCopiesToPrint;
-        [ExpandoPath("Data.invoiceCopiesToPrint")]
         public int InvoiceCopiesToPrint
         {
             get => _invoiceCopiesToPrint;
@@ -352,6 +372,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
                         RequiresConfirmationToPrintCopies = false;
                     }
                     NotifyOfPropertyChange(nameof(RequiresConfirmationToPrintCopiesIsEnabled));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
@@ -359,7 +380,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
         public bool RequiresConfirmationToPrintCopiesIsEnabled => InvoiceCopiesToPrint > 0;
 
         private bool _requiresConfirmationToPrintCopies;
-        [ExpandoPath("Data.requiresConfirmationToPrintCopies")]
         public bool RequiresConfirmationToPrintCopies
         {
             get => _requiresConfirmationToPrintCopies;
@@ -370,12 +390,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _requiresConfirmationToPrintCopies = value;
                     NotifyOfPropertyChange(nameof(RequiresConfirmationToPrintCopies));
                     this.TrackChange(nameof(RequiresConfirmationToPrintCopies));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _allowRepeatItemsOnSales;
-        [ExpandoPath("Data.allowRepeatItemsOnSales")]
         public bool AllowRepeatItemsOnSales
         {
             get => _allowRepeatItemsOnSales;
@@ -386,12 +406,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _allowRepeatItemsOnSales = value;
                     NotifyOfPropertyChange(nameof(AllowRepeatItemsOnSales));
                     this.TrackChange(nameof(AllowRepeatItemsOnSales));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private bool _taxToCost;
-        [ExpandoPath("Data.taxToCost")]
         public bool TaxToCost
         {
             get => _taxToCost;
@@ -402,12 +422,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     _taxToCost = value;
                     NotifyOfPropertyChange(nameof(TaxToCost));
                     this.TrackChange(nameof(TaxToCost));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _companyLocationId;
-        [ExpandoPath("Data.companyLocationId")]
         public int CompanyLocationId
         {
             get => _companyLocationId;
@@ -438,7 +458,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             }
         }
 
-        [ExpandoPath("Data.countryId")]
+        [ExpandoPath("countryId")]
         public int SelectedCountryId => SelectedCountry?.Id ?? 0;
 
         private DepartmentGraphQLModel? _selectedDepartment;
@@ -457,7 +477,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             }
         }
 
-        [ExpandoPath("Data.departmentId")]
+        [ExpandoPath("departmentId")]
         public int SelectedDepartmentId => SelectedDepartment?.Id ?? 0;
 
         private CityGraphQLModel? _selectedCity;
@@ -476,23 +496,60 @@ namespace NetErp.Global.CostCenters.PanelEditors
             }
         }
 
-        [ExpandoPath("Data.cityId")]
+        [ExpandoPath("cityId")]
         public int SelectedCityId => SelectedCity?.Id ?? 0;
 
-        // Properties required by API but with fixed values
-        [ExpandoPath("Data.defaultInvoiceObservation")]
-        public string DefaultInvoiceObservation => string.Empty;
+        private string _defaultInvoiceObservation = string.Empty;
+        public string DefaultInvoiceObservation
+        {
+            get => _defaultInvoiceObservation;
+            set
+            {
+                if (_defaultInvoiceObservation != value)
+                {
+                    _defaultInvoiceObservation = value;
+                    NotifyOfPropertyChange(nameof(DefaultInvoiceObservation));
+                    this.TrackChange(nameof(DefaultInvoiceObservation));
+                    MasterContext.RefreshCanSave();
+                }
+            }
+        }
 
-        [ExpandoPath("Data.invoiceFooter")]
-        public string InvoiceFooter => string.Empty;
+        private string _invoiceFooter = string.Empty;
+        public string InvoiceFooter
+        {
+            get => _invoiceFooter;
+            set
+            {
+                if (_invoiceFooter != value)
+                {
+                    _invoiceFooter = value;
+                    NotifyOfPropertyChange(nameof(InvoiceFooter));
+                    this.TrackChange(nameof(InvoiceFooter));
+                    MasterContext.RefreshCanSave();
+                }
+            }
+        }
 
-        [ExpandoPath("Data.remissionFooter")]
-        public string RemissionFooter => string.Empty;
-
-        [ExpandoPath("Data.relatedAccountingEntityId")]
-        public int RelatedAccountingEntityId => 0;
+        private string _remissionFooter = string.Empty;
+        public string RemissionFooter
+        {
+            get => _remissionFooter;
+            set
+            {
+                if (_remissionFooter != value)
+                {
+                    _remissionFooter = value;
+                    NotifyOfPropertyChange(nameof(RemissionFooter));
+                    this.TrackChange(nameof(RemissionFooter));
+                    MasterContext.RefreshCanSave();
+                }
+            }
+        }
 
         public Dictionary<string, string> DateControlTypeDictionary => GlobalDictionaries.DateControlTypeDictionary;
+
+        public Dictionary<string, string> CostCenterStatusDictionary => GlobalDictionaries.CostCenterStatusDictionary;
 
         public int CompanyLocationIdBeforeNew { get; set; }
 
@@ -524,30 +581,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
             }
         }
 
-        private void ValidateTradeName()
-        {
-            ClearErrors(nameof(TradeName));
-            if (string.IsNullOrWhiteSpace(TradeName))
-            {
-                AddError(nameof(TradeName), "El nombre comercial no puede estar vacío");
-            }
-        }
-
         private void ValidateShortName()
         {
             ClearErrors(nameof(ShortName));
             if (string.IsNullOrWhiteSpace(ShortName))
             {
                 AddError(nameof(ShortName), "El nombre corto no puede estar vacío");
-            }
-        }
-
-        private void ValidateAddress()
-        {
-            ClearErrors(nameof(Address));
-            if (string.IsNullOrWhiteSpace(Address))
-            {
-                AddError(nameof(Address), "La dirección no puede estar vacía");
             }
         }
 
@@ -594,9 +633,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
         public override void ValidateAll()
         {
             ValidateName();
-            ValidateTradeName();
             ValidateShortName();
-            ValidateAddress();
             ValidatePrimaryPhone();
             ValidateSecondaryPhone();
             ValidatePrimaryCellPhone();
@@ -619,13 +656,13 @@ namespace NetErp.Global.CostCenters.PanelEditors
             Name = string.Empty;
             TradeName = string.Empty;
             ShortName = string.Empty;
-            State = "A";
+            Status = "ACTIVE";
             Address = string.Empty;
             PrimaryPhone = string.Empty;
             SecondaryPhone = string.Empty;
             PrimaryCellPhone = string.Empty;
             SecondaryCellPhone = string.Empty;
-            DateControlType = "FA";
+            DateControlType = "OPEN_DATE";
             ShowChangeWindowOnCash = false;
             AllowBuy = false;
             AllowSell = false;
@@ -636,6 +673,9 @@ namespace NetErp.Global.CostCenters.PanelEditors
             InvoiceCopiesToPrint = 0;
             AllowRepeatItemsOnSales = false;
             TaxToCost = false;
+            DefaultInvoiceObservation = string.Empty;
+            InvoiceFooter = string.Empty;
+            RemissionFooter = string.Empty;
 
             // Set default country (Colombia = 169)
             SelectedCountry = MasterContext.Countries?.FirstOrDefault(c => c.Code == "169");
@@ -664,7 +704,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             Name = costCenterDTO.Name;
             TradeName = costCenterDTO.TradeName;
             ShortName = costCenterDTO.ShortName;
-            State = costCenterDTO.Status;
+            Status = costCenterDTO.Status;
             Address = costCenterDTO.Address;
             PrimaryPhone = costCenterDTO.PrimaryPhone;
             SecondaryPhone = costCenterDTO.SecondaryPhone;
@@ -682,6 +722,9 @@ namespace NetErp.Global.CostCenters.PanelEditors
             AllowRepeatItemsOnSales = costCenterDTO.AllowRepeatItemsOnSales;
             TaxToCost = costCenterDTO.TaxToCost;
             CompanyLocationId = costCenterDTO.CompanyLocation?.Id ?? 0;
+            DefaultInvoiceObservation = costCenterDTO.DefaultInvoiceObservation ?? string.Empty;
+            InvoiceFooter = costCenterDTO.InvoiceFooter ?? string.Empty;
+            RemissionFooter = costCenterDTO.RemissionFooter ?? string.Empty;
 
             // Set country/department/city from DTO
             SelectedCountry = MasterContext.Countries?.FirstOrDefault(c => c.Id == costCenterDTO.Country?.Id);
@@ -694,16 +737,48 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 }
             }
 
-            this.AcceptChanges();
+            SeedCurrentValues();
             ClearAllErrors();
             ValidateAll();
 
             IsEditing = false;
         }
 
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(TradeName), TradeName);
+            this.SeedValue(nameof(ShortName), ShortName);
+            this.SeedValue(nameof(Status), Status);
+            this.SeedValue(nameof(Address), Address);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(DateControlType), DateControlType);
+            this.SeedValue(nameof(ShowChangeWindowOnCash), ShowChangeWindowOnCash);
+            this.SeedValue(nameof(AllowBuy), AllowBuy);
+            this.SeedValue(nameof(AllowSell), AllowSell);
+            this.SeedValue(nameof(IsTaxable), IsTaxable);
+            this.SeedValue(nameof(PriceListIncludeTax), PriceListIncludeTax);
+            this.SeedValue(nameof(InvoicePriceIncludeTax), InvoicePriceIncludeTax);
+            this.SeedValue(nameof(RequiresConfirmationToPrintCopies), RequiresConfirmationToPrintCopies);
+            this.SeedValue(nameof(InvoiceCopiesToPrint), InvoiceCopiesToPrint);
+            this.SeedValue(nameof(AllowRepeatItemsOnSales), AllowRepeatItemsOnSales);
+            this.SeedValue(nameof(TaxToCost), TaxToCost);
+            this.SeedValue(nameof(CompanyLocationId), CompanyLocationId);
+            this.SeedValue(nameof(SelectedCountryId), SelectedCountryId);
+            this.SeedValue(nameof(SelectedDepartmentId), SelectedDepartmentId);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.SeedValue(nameof(DefaultInvoiceObservation), DefaultInvoiceObservation);
+            this.SeedValue(nameof(InvoiceFooter), InvoiceFooter);
+            this.SeedValue(nameof(RemissionFooter), RemissionFooter);
+            this.AcceptChanges();
+        }
+
         private void SeedDefaultValues()
         {
-            this.SeedValue(nameof(State), State);
+            this.SeedValue(nameof(Status), Status);
             this.SeedValue(nameof(DateControlType), DateControlType);
             this.SeedValue(nameof(ShowChangeWindowOnCash), ShowChangeWindowOnCash);
             this.SeedValue(nameof(AllowBuy), AllowBuy);
@@ -721,7 +796,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
             this.SeedValue(nameof(DefaultInvoiceObservation), DefaultInvoiceObservation);
             this.SeedValue(nameof(InvoiceFooter), InvoiceFooter);
             this.SeedValue(nameof(RemissionFooter), RemissionFooter);
-            this.SeedValue(nameof(RelatedAccountingEntityId), RelatedAccountingEntityId);
             this.AcceptChanges();
         }
 
@@ -733,51 +807,57 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<CostCenterGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CostCenterGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Field(f => f.TradeName)
-                .Field(f => f.ShortName)
-                .Field(f => f.Status)
-                .Field(f => f.Address)
-                .Field(f => f.PrimaryPhone)
-                .Field(f => f.SecondaryPhone)
-                .Field(f => f.PrimaryCellPhone)
-                .Field(f => f.SecondaryCellPhone)
-                .Field(f => f.DateControlType)
-                .Field(f => f.ShowChangeWindowOnCash)
-                .Field(f => f.AllowBuy)
-                .Field(f => f.AllowSell)
-                .Field(f => f.IsTaxable)
-                .Field(f => f.PriceListIncludeTax)
-                .Field(f => f.InvoicePriceIncludeTax)
-                .Field(f => f.AllowRepeatItemsOnSales)
-                .Field(f => f.InvoiceCopiesToPrint)
-                .Field(f => f.RequiresConfirmationToPrintCopies)
-                .Field(f => f.TaxToCost)
-                .Field(f => f.DefaultInvoiceObservation)
-                .Field(f => f.InvoiceFooter)
-                .Field(f => f.RemissionFooter)
-                .Select(f => f.Country, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.Department, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.City, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.CompanyLocation, nested => nested
-                    .Field(n => n.Id)
-                    .Select(n => n.Company, company => company
-                        .Field(c => c.Id)))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "costCenter", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.TradeName)
+                    .Field(e => e.ShortName)
+                    .Field(e => e.Status)
+                    .Field(e => e.Address)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.DateControlType)
+                    .Field(e => e.ShowChangeWindowOnCash)
+                    .Field(e => e.AllowBuy)
+                    .Field(e => e.AllowSell)
+                    .Field(e => e.IsTaxable)
+                    .Field(e => e.PriceListIncludeTax)
+                    .Field(e => e.InvoicePriceIncludeTax)
+                    .Field(e => e.AllowRepeatItemsOnSales)
+                    .Field(e => e.InvoiceCopiesToPrint)
+                    .Field(e => e.RequiresConfirmationToPrintCopies)
+                    .Field(e => e.TaxToCost)
+                    .Field(e => e.DefaultInvoiceObservation)
+                    .Field(e => e.InvoiceFooter)
+                    .Field(e => e.RemissionFooter)
+                    .Select(e => e.Country, country => country
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Code)
+                        .Field(d => d.Name))
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name))
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id)
+                        .Select(l => l.Company, company => company
+                            .Field(c => c.Id))))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateCostCenterInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateCostCenterInput!");
             var fragment = new GraphQLQueryFragment("createCostCenter", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -786,54 +866,60 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<CostCenterGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CostCenterGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Field(f => f.TradeName)
-                .Field(f => f.ShortName)
-                .Field(f => f.Status)
-                .Field(f => f.Address)
-                .Field(f => f.PrimaryPhone)
-                .Field(f => f.SecondaryPhone)
-                .Field(f => f.PrimaryCellPhone)
-                .Field(f => f.SecondaryCellPhone)
-                .Field(f => f.DateControlType)
-                .Field(f => f.ShowChangeWindowOnCash)
-                .Field(f => f.AllowBuy)
-                .Field(f => f.AllowSell)
-                .Field(f => f.IsTaxable)
-                .Field(f => f.PriceListIncludeTax)
-                .Field(f => f.InvoicePriceIncludeTax)
-                .Field(f => f.AllowRepeatItemsOnSales)
-                .Field(f => f.InvoiceCopiesToPrint)
-                .Field(f => f.RequiresConfirmationToPrintCopies)
-                .Field(f => f.TaxToCost)
-                .Field(f => f.DefaultInvoiceObservation)
-                .Field(f => f.InvoiceFooter)
-                .Field(f => f.RemissionFooter)
-                .Select(f => f.Country, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.Department, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.City, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.Code)
-                    .Field(n => n.Name))
-                .Select(f => f.CompanyLocation, nested => nested
-                    .Field(n => n.Id)
-                    .Select(n => n.Company, company => company
-                        .Field(c => c.Id)))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "costCenter", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.TradeName)
+                    .Field(e => e.ShortName)
+                    .Field(e => e.Status)
+                    .Field(e => e.Address)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.DateControlType)
+                    .Field(e => e.ShowChangeWindowOnCash)
+                    .Field(e => e.AllowBuy)
+                    .Field(e => e.AllowSell)
+                    .Field(e => e.IsTaxable)
+                    .Field(e => e.PriceListIncludeTax)
+                    .Field(e => e.InvoicePriceIncludeTax)
+                    .Field(e => e.AllowRepeatItemsOnSales)
+                    .Field(e => e.InvoiceCopiesToPrint)
+                    .Field(e => e.RequiresConfirmationToPrintCopies)
+                    .Field(e => e.TaxToCost)
+                    .Field(e => e.DefaultInvoiceObservation)
+                    .Field(e => e.InvoiceFooter)
+                    .Field(e => e.RemissionFooter)
+                    .Select(e => e.Country, country => country
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id)
+                        .Field(d => d.Code)
+                        .Field(d => d.Name))
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id)
+                        .Field(c => c.Code)
+                        .Field(c => c.Name))
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id)
+                        .Select(l => l.Company, company => company
+                            .Field(c => c.Id))))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
             {
-                new GraphQLQueryParameter("data", "UpdateCostCenterInput!"),
-                new GraphQLQueryParameter("id", "Int!")
+                new("data", "UpdateCostCenterInput!"),
+                new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateCostCenter", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
@@ -841,7 +927,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
-        protected override async Task<CostCenterGraphQLModel> ExecuteSaveAsync()
+        protected override async Task<UpsertResponseType<CostCenterGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
             dynamic variables;
@@ -852,21 +938,21 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 CompanyLocationId = CompanyLocationIdBeforeNew;
 
                 query = GetCreateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
-                variables.id = Id;
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
 
             return IsNewRecord
-                ? await _costCenterService.CreateAsync(query, variables)
-                : await _costCenterService.UpdateAsync(query, variables);
+                ? await _costCenterService.CreateAsync<UpsertResponseType<CostCenterGraphQLModel>>(query, variables)
+                : await _costCenterService.UpdateAsync<UpsertResponseType<CostCenterGraphQLModel>>(query, variables);
         }
 
-        protected override async Task PublishMessageAsync(CostCenterGraphQLModel result)
+        protected override async Task PublishMessageAsync(UpsertResponseType<CostCenterGraphQLModel> result)
         {
             if (IsNewRecord)
             {

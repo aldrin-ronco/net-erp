@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -53,16 +54,16 @@ namespace Models.Global
 
     public class CostCenterCreateMessage
     {
-        public CostCenterGraphQLModel CreatedCostCenter { get; set; }
+        public UpsertResponseType<CostCenterGraphQLModel> CreatedCostCenter { get; set; } = new();
     }
 
     public class CostCenterUpdateMessage
     {
-        public CostCenterGraphQLModel UpdatedCostCenter { get; set; }
+        public UpsertResponseType<CostCenterGraphQLModel> UpdatedCostCenter { get; set; } = new();
     }
 
     public class CostCenterDeleteMessage
     {
-        public CostCenterGraphQLModel DeletedCostCenter { get; set; }
+        public DeleteResponseType DeletedCostCenter { get; set; } = new();
     }
 }

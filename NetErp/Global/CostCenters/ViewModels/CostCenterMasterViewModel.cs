@@ -266,7 +266,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     return true;
                 }
                 if (_selectedItem is CostCenterDummyDTO costCenterDummyDTO) CompanyLocationIdBeforeNewCostCenter = costCenterDummyDTO.Location.Id;
-                if (_selectedItem is StorageDummyDTO storageDummyDTO) CompanyLocationIdBeforeNewStorage = storageDummyDTO.Location.Id;
+                if (_selectedItem is StorageDummyDTO storageDummyDTO) CompanyLocationIdBeforeNewStorage = storageDummyDTO.CompanyLocation.Id;
                 SelectedItem = null;
                 return false; 
             }
@@ -921,7 +921,9 @@ namespace NetErp.Global.CostCenters.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
                 variables.pageResponsePagination.pageSize = -1;
-                variables.pageResponseCompanyLocationId = location.Id;
+
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.companyLocationId = location.Id;
 
                 PageType<StorageGraphQLModel> result = await _storageService.GetPageAsync(query, variables);
                 Storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(result.Entries);
@@ -1076,7 +1078,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     .Field(e => e.Id)
                     .Field(e => e.Name)
                     .Field(e => e.Address)
-                    .Field(e => e.State)
+                    .Field(e => e.Status)
                     .Select(e => e.City, city => city
                         .Field(c => c.Id)
                         .Field(c => c.Name)
@@ -1088,14 +1090,14 @@ namespace NetErp.Global.CostCenters.ViewModels
                                 .Field(co => co.Id)
                                 .Field(co => co.Code)
                                 .Field(co => co.Name))))
-                    .Select(e => e.Location, loc => loc
+                    .Select(e => e.CompanyLocation, loc => loc
                         .Field(l => l.Id)))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
             {
                 new("pagination", "Pagination"),
-                new("companyLocationId", "ID")
+                new("filters", "StorageFilters")
             };
             var fragment = new GraphQLQueryFragment("storagesPage", parameters, fields, "PageResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
@@ -1129,6 +1131,9 @@ namespace NetErp.Global.CostCenters.ViewModels
                     .Field(e => e.RequiresConfirmationToPrintCopies)
                     .Field(e => e.AllowRepeatItemsOnSales)
                     .Field(e => e.TaxToCost)
+                    .Field(e => e.DefaultInvoiceObservation)
+                    .Field(e => e.InvoiceFooter)
+                    .Field(e => e.RemissionFooter)
                     .Select(e => e.CompanyLocation, loc => loc
                         .Field(l => l.Id))
                     .Select(e => e.Country, country => country
@@ -1485,9 +1490,9 @@ namespace NetErp.Global.CostCenters.ViewModels
         {
             IsNewRecord = false;
             StorageDTO storageDTO = Context.AutoMapper.Map<StorageDTO>(message.CreatedStorage.Entity);
-            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.Location.Company.Id) ?? throw new Exception("");
+            CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.CompanyLocation.Company.Id) ?? throw new Exception("");
             if (companyDTO == null) return;
-            CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.Location.Id) ?? throw new Exception("");
+            CompanyLocationDTO companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.CompanyLocation.Id) ?? throw new Exception("");
             if (companyLocationDTO == null) return;
             StorageDummyDTO storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO ?? throw new Exception("");
             if (storageDummyDTO == null) return;
@@ -1518,9 +1523,9 @@ namespace NetErp.Global.CostCenters.ViewModels
         public Task HandleAsync(StorageUpdateMessage message, CancellationToken cancellationToken)
         {
             StorageDTO storageDTO = Context.AutoMapper.Map<StorageDTO>(message.UpdatedStorage.Entity);
-            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.Location.Company.Id);
+            CompanyDTO? companyDTO = Companies.FirstOrDefault(company => company.Id == storageDTO.CompanyLocation.Company.Id);
             if (companyDTO is null) return Task.CompletedTask;
-            CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.Location.Id);
+            CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(location => location.Id == storageDTO.CompanyLocation.Id);
             if (companyLocationDTO is null) return Task.CompletedTask;
             StorageDummyDTO? storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO;
             if (storageDummyDTO is null) return Task.CompletedTask;
@@ -1529,9 +1534,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             storageToUpdate.Id = storageDTO.Id;
             storageToUpdate.Name = storageDTO.Name;
             storageToUpdate.Address = storageDTO.Address;
-            storageToUpdate.State = storageDTO.State;
+            storageToUpdate.Status = storageDTO.Status;
             storageToUpdate.City = storageDTO.City;
-            storageToUpdate.Location = storageDTO.Location;
+            storageToUpdate.CompanyLocation = storageDTO.CompanyLocation;
             _notificationService.ShowSuccess(message.UpdatedStorage.Message);
             return Task.CompletedTask;
         }

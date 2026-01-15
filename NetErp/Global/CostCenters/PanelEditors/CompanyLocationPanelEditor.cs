@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CostCenters.PanelEditors
 {
@@ -55,7 +56,6 @@ namespace NetErp.Global.CostCenters.PanelEditors
         }
 
         private string _name = string.Empty;
-        [ExpandoPath("Data.name")]
         public string Name
         {
             get => _name;
@@ -67,13 +67,12 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(Name));
                     this.TrackChange(nameof(Name));
                     ValidateName();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _companyId;
-        [ExpandoPath("Data.companyId")]
         public int CompanyId
         {
             get => _companyId;
@@ -160,6 +159,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             this.SeedValue(nameof(CompanyId), CompanyIdBeforeNew);
             this.AcceptChanges();
             ClearAllErrors();
+            ValidateAll();
 
             IsEditing = true;
         }
@@ -187,15 +187,21 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<CompanyLocationGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CompanyLocationGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Select(f => f.Company, nested => nested
-                    .Field(n => n.Id))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "companyLocation", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.Company, company => company
+                        .Field(c => c.Id)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateCompanyLocationInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateCompanyLocationInput!");
             var fragment = new GraphQLQueryFragment("createCompanyLocation", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -204,18 +210,24 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<CompanyLocationGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CompanyLocationGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Select(f => f.Company, nested => nested
-                    .Field(n => n.Id))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "companyLocation", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.Company, company => company
+                        .Field(c => c.Id)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
             {
-                new GraphQLQueryParameter("data", "UpdateCompanyLocationInput!"),
-                new GraphQLQueryParameter("id", "Int!")
+                new("data", "UpdateCompanyLocationInput!"),
+                new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateCompanyLocation", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
@@ -223,7 +235,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
-        protected override async Task<CompanyLocationGraphQLModel> ExecuteSaveAsync()
+        protected override async Task<UpsertResponseType<CompanyLocationGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
             dynamic variables;
@@ -233,21 +245,21 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 // Asignar el CompanyId del padre antes de recolectar cambios
                 CompanyId = CompanyIdBeforeNew;
                 query = GetCreateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "data");
-                variables.id = Id;
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
 
             return IsNewRecord
-                ? await _companyLocationService.CreateAsync(query, variables)
-                : await _companyLocationService.UpdateAsync(query, variables);
+                ? await _companyLocationService.CreateAsync<UpsertResponseType<CompanyLocationGraphQLModel>>(query, variables)
+                : await _companyLocationService.UpdateAsync<UpsertResponseType<CompanyLocationGraphQLModel>>(query, variables);
         }
 
-        protected override async Task PublishMessageAsync(CompanyLocationGraphQLModel result)
+        protected override async Task PublishMessageAsync(UpsertResponseType<CompanyLocationGraphQLModel> result)
         {
             if (IsNewRecord)
             {

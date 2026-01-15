@@ -70,7 +70,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
         }
 
         private int _accountingEntityCompanyId;
-        [ExpandoPath("Data.accountingEntityCompanyId")]
+        [ExpandoPath("accountingEntityCompanyId")]
         public int AccountingEntityCompanyId
         {
             get => _accountingEntityCompanyId;
@@ -82,7 +82,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
                     NotifyOfPropertyChange(nameof(AccountingEntityCompanyId));
                     this.TrackChange(nameof(AccountingEntityCompanyId));
                     ValidateAccountingEntityCompany();
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
@@ -213,6 +213,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
             AccountingEntityCompanyId = companyDTO.CompanyEntity?.Id ?? 0;
             AccountingEntityCompanySearchName = companyDTO.CompanyEntity?.SearchName ?? string.Empty;
 
+            this.SeedValue(nameof(AccountingEntityCompanyId), AccountingEntityCompanyId);
             this.AcceptChanges();
             ClearAllErrors();
 
@@ -233,36 +234,38 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<CompanyGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CompanyGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Select(f => f.CompanyEntity, nested => nested
-                    .Field(n => n.Id)
-                    .Field(n => n.SearchName))
+                .Select(selector: f => f.Entity, overrideName: "company", alias: "entity", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Select(e => e.CompanyEntity, companyEntity => companyEntity
+                        .Field(ce => ce.Id)
+                        .Field(ce => ce.SearchName)))
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new GraphQLQueryParameter("data", "UpdateCompanyInput!"),
-                new GraphQLQueryParameter("id", "Int!")
-            };
-            var fragment = new GraphQLQueryFragment("updateCompany", parameters, fields, "UpdateResponse");
+            var parameters = new GraphQLQueryParameter("accountingEntityId", "ID!");
+            var fragment = new GraphQLQueryFragment("changeCurrentCompanyEntity", [parameters], fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
-        protected override async Task<CompanyGraphQLModel> ExecuteSaveAsync()
+        protected override async Task<UpsertResponseType<CompanyGraphQLModel>> ExecuteSaveAsync()
         {
             // Company solo soporta Update
             string query = GetUpdateQuery();
-            dynamic variables = ChangeCollector.CollectChanges(this, prefix: "data");
-            variables.id = Id;
+            dynamic variables = new ExpandoObject();
+            variables.updateResponseAccountingEntityId = AccountingEntityCompanyId;
 
-            return await _companyService.UpdateAsync(query, variables);
+            return await _companyService.UpdateAsync<UpsertResponseType<CompanyGraphQLModel>>(query, variables);
         }
 
-        protected override async Task PublishMessageAsync(CompanyGraphQLModel result)
+        protected override async Task PublishMessageAsync(UpsertResponseType<CompanyGraphQLModel> result)
         {
             await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
                 new CompanyUpdateMessage { UpdatedCompany = result });

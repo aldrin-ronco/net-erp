@@ -80,7 +80,7 @@ namespace NetErp.Global.CostCenters.DTO
                         {
                             if (_storages[0].IsDummyChild)
                             {
-                                _ = Context.LoadStoragesAsync(Location, this);
+                                _ = Context.LoadStoragesAsync(CompanyLocation, this);
                             }
                         }
                     }
@@ -88,17 +88,17 @@ namespace NetErp.Global.CostCenters.DTO
             }
         }
 
-        private CompanyLocationDTO _location;
+        private CompanyLocationDTO _companyLocation;
 
-        public CompanyLocationDTO Location
+        public CompanyLocationDTO CompanyLocation
         {
-            get { return _location; }
-            set 
+            get { return _companyLocation; }
+            set
             {
-                if (_location != value)
+                if (_companyLocation != value)
                 {
-                    _location = value;
-                    NotifyOfPropertyChange(nameof(Location));
+                    _companyLocation = value;
+                    NotifyOfPropertyChange(nameof(CompanyLocation));
                 }
             }
         }
@@ -107,10 +107,10 @@ namespace NetErp.Global.CostCenters.DTO
 
         public StorageDummyDTO() { }
 
-        public StorageDummyDTO(CostCenterMasterViewModel context, CompanyLocationDTO location)
+        public StorageDummyDTO(CostCenterMasterViewModel context, CompanyLocationDTO companyLocation)
         {
             this.Context = context;
-            this._location = location;
+            this._companyLocation = companyLocation;
             this._storages = [new() { IsDummyChild = true, Name = "Fucking Dummy" }];
         }
 

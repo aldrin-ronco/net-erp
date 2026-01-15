@@ -1,0 +1,503 @@
+<Project>
+  <PropertyGroup>
+    <AssemblyName>NetErp</AssemblyName>
+    <IntermediateOutputPath>obj\Debug\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>obj\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>C:\Users\User\source\repos\net-erp\NetErp\obj\</MSBuildProjectExtensionsPath>
+    <_TargetAssemblyProjectName>NetErp</_TargetAssemblyProjectName>
+    <RootNamespace>NetErp</RootNamespace>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>false</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Helpers\BooleanToStringConverter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Global\Resources\Images\QualityLogo.BMP" />
+    <None Remove="Global\Resources\Images\WithoutResponse.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Billing\Customers\Views\" />
+    <Folder Include="Billing\Sellers\Views\" />
+    <Folder Include="Billing\Sellers\ViewModels\" />
+    <Folder Include="Books\AccountingAccounts\Views\" />
+    <Folder Include="Books\AccountingAccounts\ViewModels\" />
+    <Folder Include="Books\AccountingEntities\Views\" />
+    <Folder Include="Books\AccountingEntries\Views\" />
+    <Folder Include="Books\AccountingEntries\ViewModels\" />
+    <Folder Include="Books\AccountingSources\Views\" />
+    <Folder Include="Books\IdentificationTypes\Views\" />
+    <Folder Include="Books\IdentificationTypes\ViewModels\" />
+    <Folder Include="Books\Reports\AuxiliaryBook\Views\" />
+    <Folder Include="Books\Reports\AuxiliaryBook\ViewModels\" />
+    <Folder Include="Books\Reports\EntityVsAccount\ViewModels\" />
+    <Folder Include="Books\Reports\EntityVsAccount\Views\" />
+    <Folder Include="Books\Reports\TestBalanceByEntity\ViewModels\" />
+    <Folder Include="Books\Reports\TestBalanceByEntity\Views\" />
+    <Folder Include="Books\Reports\TestBalance\Views\" />
+    <Folder Include="Books\Reports\TestBalance\ViewModels\" />
+    <Folder Include="Helpers\GraphQLQueryBuilder\" />
+    <Folder Include="Login\DTO\" />
+    <Folder Include="Suppliers\Suppliers\" />
+    <Folder Include="Suppliers\Suppliers\Views\" />
+    <Folder Include="Suppliers\Suppliers\ViewModels\" />
+    <Folder Include="UserControls\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Include="System.Windows" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="BusyIndicators" Version="2.1.2" />
+    <PackageReference Include="CalcBinding" Version="2.5.2" />
+    <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
+    <PackageReference Include="CurrencyTextBox" Version="2.0.2" />
+    <PackageReference Include="DeepCloner" Version="0.10.4" />
+    <PackageReference Include="devexpress.wpf.accordion" Version="24.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
+    <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
+    <PackageReference Include="devexpress.wpf.layoutcontrol" Version="23.2.3" />
+    <PackageReference Include="devexpress.wpf.ribbon" Version="24.2.3" />
+    <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="1.6.0" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
+    <PackageReference Include="GraphQL.Query.Builder" Version="2.2.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
+    <PackageReference Include="Ninject" Version="3.3.6" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\Dictionaries\Dictionaries.csproj" />
+    <ProjectReference Include="..\Extensions\Extensions.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Services\Services.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\Accessibility.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\automapper\13.0.1\lib\net6.0\AutoMapper.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\awssdk.core\3.7.400.27\lib\net8.0\AWSSDK.Core.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\awssdk.s3\3.7.403.6\lib\net8.0\AWSSDK.S3.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\busyindicators\2.1.2\lib\net6.0-windows7.0\BusyIndicator.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\calcbinding\2.5.2\lib\netcoreapp3.0\CalcBinding.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\caliburn.micro.core\4.0.212\lib\netstandard2.0\Caliburn.Micro.Core.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\caliburn.micro\4.0.212\lib\net6.0-windows7.0\Caliburn.Micro.Platform.Core.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\caliburn.micro\4.0.212\lib\net6.0-windows7.0\Caliburn.Micro.Platform.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\chilkatdncore\10.1.3\lib\net6.0\ChilkatDnCore.dll" />
+    <ReferencePath Include="C:\Users\User\source\repos\net-erp\Common\bin\Debug\net8.0-windows\Common.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\currencytextbox\2.0.2\lib\netcoreapp3.0\CurrencyTextbox.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\deepcloner\0.10.4\lib\netstandard1.3\DeepCloner.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.data.desktop\24.2.3\lib\net8.0-windows\DevExpress.Data.Desktop.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.data\24.2.3\lib\net8.0\DevExpress.Data.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.drawing\24.2.3\lib\net8.0\DevExpress.Drawing.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Images.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.mvvm\24.2.3\lib\net8.0-windows\DevExpress.Mvvm.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.pdf.core\24.2.3\lib\net8.0\DevExpress.Pdf.v24.2.Core.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.pdf.drawing\24.2.3\lib\net8.0\DevExpress.Pdf.v24.2.Drawing.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.printing.core\24.2.3\lib\net8.0\DevExpress.Printing.v24.2.Core.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.accordion\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Accordion.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.controls\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Controls.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.core\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Core.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.grid.core\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Grid.v24.2.Core.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.grid.core\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Grid.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.grid.core\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Grid.v24.2.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.layoutcontrol\24.2.3\lib\net8.0-windows\DevExpress.Xpf.LayoutControl.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.ribbon\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Ribbon.v24.2.dll" />
+    <ReferencePath Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.wpf.themes.office2019colorful\24.2.3\lib\net8.0-windows\DevExpress.Xpf.Themes.Office2019Colorful.v24.2.dll" />
+    <ReferencePath Include="C:\Users\User\source\repos\net-erp\Dictionaries\bin\Debug\net8.0-windows\Dictionaries.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\dotnetkit.wpf.autocompletecombobox\1.6.0\lib\net6.0-windows7.0\DotNetKit.Wpf.AutoCompleteComboBox.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\dynamicexpresso.core\2.3.1\lib\netstandard2.0\DynamicExpresso.Core.dll" />
+    <ReferencePath Include="C:\Users\User\source\repos\net-erp\Extensions\bin\Debug\net8.0-windows\Extensions.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.client.abstractions\6.1.0\lib\net8.0\GraphQL.Client.Abstractions.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.client.abstractions.websocket\6.1.0\lib\netstandard2.0\GraphQL.Client.Abstractions.Websocket.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.client\6.1.0\lib\net8.0\GraphQL.Client.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.client.serializer.newtonsoft\6.1.0\lib\netstandard2.0\GraphQL.Client.Serializer.Newtonsoft.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.primitives\6.1.0\lib\net8.0\GraphQL.Primitives.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\graphql.query.builder\2.2.1\lib\netstandard2.0\GraphQL.Query.Builder.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\Microsoft.CSharp.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.data.sqlite.core\8.0.0\lib\net8.0\Microsoft.Data.Sqlite.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.dependencyinjection.abstractions\9.0.3\lib\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.dependencyinjection\9.0.3\lib\net8.0\Microsoft.Extensions.DependencyInjection.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.logging.abstractions\9.0.3\lib\net8.0\Microsoft.Extensions.Logging.Abstractions.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.logging.debug\9.0.3\lib\net8.0\Microsoft.Extensions.Logging.Debug.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.logging\9.0.3\lib\net8.0\Microsoft.Extensions.Logging.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.objectpool\6.0.16\lib\net6.0\Microsoft.Extensions.ObjectPool.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.options\9.0.3\lib\net8.0\Microsoft.Extensions.Options.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.extensions.primitives\9.0.3\lib\net8.0\Microsoft.Extensions.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\Microsoft.VisualBasic.Core.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\Microsoft.VisualBasic.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\Microsoft.VisualBasic.Forms.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.visualstudio.threading\17.11.20\lib\net6.0-windows7.0\Microsoft.VisualStudio.Threading.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.visualstudio.validation\17.8.8\lib\net6.0\Microsoft.VisualStudio.Validation.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\Microsoft.Win32.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\Microsoft.Win32.Registry.AccessControl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\Microsoft.Win32.Registry.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\Microsoft.Win32.SystemEvents.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\microsoft.xaml.behaviors.wpf\1.1.122\lib\net6.0-windows7.0\Microsoft.Xaml.Behaviors.dll" />
+    <ReferencePath Include="C:\Users\User\source\repos\net-erp\Models\bin\Debug\net8.0-windows\Models.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\mscorlib.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\netstandard.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\newtonsoft.json\13.0.3\lib\net6.0\Newtonsoft.Json.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\ninject\3.3.6\lib\netstandard2.0\Ninject.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationCore.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.Aero.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.Aero2.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.AeroLite.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.Classic.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.Luna.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationFramework.Royale.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\PresentationUI.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\ReachFramework.dll" />
+    <ReferencePath Include="C:\Users\User\source\repos\net-erp\Services\bin\Debug\net8.0-windows\Services.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\sqlitepclraw.bundle_e_sqlite3\2.1.9\lib\netstandard2.0\SQLitePCLRaw.batteries_v2.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\sqlitepclraw.core\2.1.9\lib\netstandard2.0\SQLitePCLRaw.core.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\sqlitepclraw.provider.e_sqlite3\2.1.9\lib\net6.0-windows7.0\SQLitePCLRaw.provider.e_sqlite3.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.AppContext.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Buffers.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.CodeDom.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Collections.Concurrent.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Collections.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Collections.Immutable.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Collections.NonGeneric.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Collections.Specialized.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.Annotations.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.DataAnnotations.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.EventBasedAsync.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ComponentModel.TypeConverter.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Configuration.ConfigurationManager.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Configuration.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Console.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Core.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Data.Common.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Data.DataSetExtensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Data.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\system.data.oledb\8.0.1\lib\net8.0\System.Data.OleDb.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Design.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.Contracts.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.Debug.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\system.diagnostics.diagnosticsource\9.0.3\lib\net8.0\System.Diagnostics.DiagnosticSource.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.EventLog.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.FileVersionInfo.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.PerformanceCounter.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.Process.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.StackTrace.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.TextWriterTraceListener.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.Tools.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.TraceSource.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Diagnostics.Tracing.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.DirectoryServices.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Drawing.Common.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Drawing.Design.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Drawing.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Drawing.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Dynamic.Runtime.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Formats.Asn1.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Formats.Tar.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Globalization.Calendars.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Globalization.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Globalization.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Compression.Brotli.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Compression.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Compression.FileSystem.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Compression.ZipFile.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.FileSystem.AccessControl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.FileSystem.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.FileSystem.DriveInfo.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.FileSystem.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.FileSystem.Watcher.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.IsolatedStorage.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.MemoryMappedFiles.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.IO.Packaging.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Pipes.AccessControl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.Pipes.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.IO.UnmanagedMemoryStream.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Linq.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Linq.Expressions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Linq.Parallel.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Linq.Queryable.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Memory.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Http.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Http.Json.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.HttpListener.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Mail.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.NameResolution.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.NetworkInformation.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Ping.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Quic.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Requests.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Security.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.ServicePoint.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.Sockets.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.WebClient.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.WebHeaderCollection.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.WebProxy.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.WebSockets.Client.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Net.WebSockets.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Numerics.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Numerics.Vectors.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ObjectModel.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Printing.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\system.reactive\6.0.0\lib\net6.0\System.Reactive.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.DispatchProxy.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Emit.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Emit.ILGeneration.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Emit.Lightweight.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Metadata.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Reflection.TypeExtensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Resources.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Resources.Reader.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Resources.ResourceManager.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Resources.Writer.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.CompilerServices.Unsafe.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.CompilerServices.VisualC.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Handles.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.InteropServices.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.InteropServices.JavaScript.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.InteropServices.RuntimeInformation.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Intrinsics.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Loader.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Numerics.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Serialization.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Serialization.Formatters.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Serialization.Json.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Serialization.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Runtime.Serialization.Xml.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.AccessControl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Claims.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Algorithms.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Cng.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Csp.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Encoding.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.OpenSsl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Pkcs.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.ProtectedData.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.X509Certificates.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Security.Cryptography.Xml.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Security.Permissions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Principal.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.Principal.Windows.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Security.SecureString.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\system.servicemodel.http\6.2.0\lib\net6.0\System.ServiceModel.Http.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\system.servicemodel.primitives\6.2.0\ref\net6.0\System.ServiceModel.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ServiceModel.Web.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ServiceProcess.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.Encoding.CodePages.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.Encoding.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.Encoding.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.Encodings.Web.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.Json.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Text.RegularExpressions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Threading.AccessControl.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Channels.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Overlapped.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Tasks.Dataflow.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Tasks.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Tasks.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Tasks.Parallel.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Thread.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.ThreadPool.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Threading.Timer.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Transactions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Transactions.Local.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.ValueTuple.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Web.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Web.HttpUtility.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Controls.Ribbon.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Windows.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Extensions.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Forms.Design.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Forms.Design.Editors.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Forms.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Forms.Primitives.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Input.Manipulations.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Windows.Presentation.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\System.Xaml.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.Linq.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.ReaderWriter.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.Serialization.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.XDocument.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.XmlDocument.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.XmlSerializer.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.XPath.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\ref\net8.0\System.Xml.XPath.XDocument.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\UIAutomationClient.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\UIAutomationClientSideProviders.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\UIAutomationProvider.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\UIAutomationTypes.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\WindowsBase.dll" />
+    <ReferencePath Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\ref\net8.0\WindowsFormsIntegration.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\extended.wpf.toolkit\4.6.1\lib\net5.0\Xceed.Wpf.AvalonDock.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\extended.wpf.toolkit\4.6.1\lib\net5.0\Xceed.Wpf.AvalonDock.Themes.Aero.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\extended.wpf.toolkit\4.6.1\lib\net5.0\Xceed.Wpf.AvalonDock.Themes.Metro.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\extended.wpf.toolkit\4.6.1\lib\net5.0\Xceed.Wpf.AvalonDock.Themes.VS2010.dll" />
+    <ReferencePath Include="C:\Users\User\.nuget\packages\extended.wpf.toolkit\4.6.1\lib\net5.0\Xceed.Wpf.Toolkit.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\CreditLimit\Views\CreditLimitView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Customers\Views\CustomerDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Customers\Views\CustomerMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Customers\Views\CustomerView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\AddPromotionProductsModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\CreatePriceListModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\CreatePromotionModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\PriceListMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\PriceListView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\UpdatePriceListModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\UpdatePromotionModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\PriceList\Views\UpdatePromotionView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Sellers\Views\SellerView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Zones\Views\ZoneDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Zones\Views\ZoneMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Billing\Zones\Views\ZoneView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingAccountGroups\Views\AccountingAccountGroupMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingAccountGroups\Views\AccountingAccountGroupView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingAccounts\Views\AccountPlanDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingAccounts\Views\AccountPlanMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingAccounts\Views\AccountPlanView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingBooks\Views\AccountingBookDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingBooks\Views\AccountingBookMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingBooks\Views\AccountingBookView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntities\Views\AccountingEntityDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntities\Views\AccountingEntityMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntities\Views\AccountingEntityView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesDocumentPreviewView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingEntries\Views\AccountingEntriesView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingPresentations\Views\AccountingPresentationDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingPresentations\Views\AccountingPresentationMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingPresentations\Views\AccountingPresentationView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\AccountingSources\Views\AccountingSourceView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\IdentificationTypes\Views\IdentificationTypeView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AnnualIncomeStatement\Views\AnnualIncomeStatementView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\AuxiliaryBook\Views\AuxiliaryBookView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\DailyBookByEntity\Views\DailyBookByEntityView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\EntityVsAccount\Views\EntityVsAccountView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalanceByEntity\Views\TestBalanceByEntityView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceReportView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Reports\TestBalance\Views\TestBalanceView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\TaxCategory\Views\TaxCategoryDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\TaxCategory\Views\TaxCategoryMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\TaxCategory\Views\TaxCategoryView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Tax\Views\TaxDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Tax\Views\TaxMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\Tax\Views\TaxView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\WithholdingCertificateConfig\Views\WithholdingCertificateConfigDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\WithholdingCertificateConfig\Views\WithholdingCertificateConfigMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Books\WithholdingCertificateConfig\Views\WithholdingCertificateConfigView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\AuthorizationSequence\Views\AuthorizationSequenceDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\AuthorizationSequence\Views\AuthorizationSequenceMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\AuthorizationSequence\Views\AuthorizationSequenceView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\CostCenters\Views\CostCenterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\DynamicControl\Views\DynamicControlView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Email\Views\EmailDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Email\Views\EmailMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Email\Views\EmailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\MainMenu\Views\MainMenuView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Modals\Views\SearchWithTwoColumnsGridView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Parameter\Views\ParameterMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Parameter\Views\ParameterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Shell\Views\ShellView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Global\Smtp\Views\SmtpView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Helpers\Controls\NotificationsControl.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\TabControlPages\Views\BasicView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\TabControlPages\Views\EanCodeView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\TabControlPages\Views\OtherDataView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\TabControlPages\Views\RelatedProducts.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CatalogDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CatalogMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CatalogView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\CategoryDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\ItemTypeDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\SearchItemModalView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\CatalogItems\Views\SubCategoryDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\ItemSizes\Views\ItemSizeView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Inventory\MeasurementUnits\Views\MeasurementUnitView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Login\Views\CompanySelectionView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Login\Views\LoginView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\MainWindow.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\SoloParaProbarLosTabs.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Suppliers\Suppliers\Views\SupplierView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Treasury\Concept\Views\ConceptDetailView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Treasury\Concept\Views\ConceptMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Treasury\Concept\Views\ConceptView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Treasury\Masters\Views\TreasuryRootMasterView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\Treasury\Masters\Views\TreasuryRootView.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\UserControls\GridPaging.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\App.g.cs" />
+    <Compile Include="C:\Users\User\source\repos\net-erp\NetErp\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="C:\Program Files\dotnet\sdk\10.0.101\Sdks\Microsoft.NET.Sdk\targets\..\analyzers\Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\sdk\10.0.101\Sdks\Microsoft.NET.Sdk\targets\..\analyzers\Microsoft.CodeAnalysis.NetAnalyzers.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\awssdk.s3\3.7.403.6\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\awssdk.s3\3.7.403.6\analyzers\dotnet\cs\SharedAnalysisCode.dll" />
+    <Analyzer Include="C:\Program Files\DevExpress 24.2\Components\Offline Packages\devexpress.data\24.2.3\analyzers\dotnet\cs\DevExpress.Generator.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\microsoft.extensions.logging.abstractions\9.0.3\analyzers\dotnet\roslyn4.4\cs\Microsoft.Extensions.Logging.Generators.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\microsoft.extensions.options\9.0.3\analyzers\dotnet\roslyn4.4\cs\Microsoft.Extensions.Options.SourceGeneration.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\microsoft.visualstudio.threading.analyzers\17.11.20\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.CSharp.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\microsoft.visualstudio.threading.analyzers\17.11.20\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="C:\Users\User\.nuget\packages\microsoft.visualstudio.threading.analyzers\17.11.20\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/Microsoft.Interop.ComInterfaceGenerator.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/Microsoft.Interop.JavaScript.JSImportGenerator.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/Microsoft.Interop.LibraryImportGenerator.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/Microsoft.Interop.SourceGeneration.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/System.Text.Json.SourceGeneration.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.22\analyzers/dotnet/cs/System.Text.RegularExpressions.Generator.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\analyzers/dotnet/System.Windows.Forms.Analyzers.dll" />
+    <Analyzer Include="C:\Program Files\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\8.0.22\analyzers/dotnet/cs/System.Windows.Forms.Analyzers.CSharp.dll" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>
