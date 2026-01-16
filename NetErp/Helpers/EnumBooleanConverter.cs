@@ -25,16 +25,11 @@ namespace NetErp.Helpers
             var ParameterString = parameter as string;
             var valueAsBool = (bool)value;
 
+            // Cuando el RadioButton se desmarca (false), no debemos modificar la propiedad
+            // Solo actualizamos cuando se marca (true)
             if (ParameterString == null || !valueAsBool)
             {
-                try
-                {
-                    return Enum.Parse(targetType, "0");
-                }
-                catch (Exception)
-                {
-                    return DependencyProperty.UnsetValue;
-                }
+                return Binding.DoNothing;
             }
             return Enum.Parse(targetType, ParameterString);
         }
