@@ -15,6 +15,7 @@ using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Treasury.Masters.DTO;
+using NetErp.Treasury.Masters.PanelEditors;
 using Services.Billing.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -66,6 +67,31 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+
+        #region Panel Editors
+
+        public MajorCashDrawerPanelEditor MajorCashDrawerEditor { get; private set; }
+        public MinorCashDrawerPanelEditor MinorCashDrawerEditor { get; private set; }
+        public AuxiliaryCashDrawerPanelEditor AuxiliaryCashDrawerEditor { get; private set; }
+        public BankPanelEditor BankEditor { get; private set; }
+        public BankAccountPanelEditor BankAccountEditor { get; private set; }
+        public FranchisePanelEditor FranchiseEditor { get; private set; }
+
+        private ITreasuryMastersPanelEditor? _currentPanelEditor;
+        public ITreasuryMastersPanelEditor? CurrentPanelEditor
+        {
+            get => _currentPanelEditor;
+            private set
+            {
+                if (_currentPanelEditor != value)
+                {
+                    _currentPanelEditor = value;
+                    NotifyOfPropertyChange(nameof(CurrentPanelEditor));
+                }
+            }
+        }
+
+        #endregion
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
@@ -121,6 +147,18 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             if (_selectedItem != null)
             {
+                // Determine which Panel Editor to use based on selected item type
+                CurrentPanelEditor = _selectedItem switch
+                {
+                    MajorCashDrawerMasterTreeDTO => MajorCashDrawerEditor,
+                    MinorCashDrawerMasterTreeDTO => MinorCashDrawerEditor,
+                    TreasuryAuxiliaryCashDrawerMasterTreeDTO => AuxiliaryCashDrawerEditor,
+                    TreasuryBankMasterTreeDTO => BankEditor,
+                    TreasuryBankAccountMasterTreeDTO => BankAccountEditor,
+                    TreasuryFranchiseMasterTreeDTO => FranchiseEditor,
+                    _ => null
+                };
+
                 if (!IsNewRecord)
                 {
                     IsEditing = false;
@@ -129,6 +167,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     SelectedIndex = 0;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                     {
+                        MajorCashDrawerEditor.SetForEdit(majorCashDrawerMasterTreeDTO);
                         SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
@@ -137,6 +176,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                     {
+                        MinorCashDrawerEditor.SetForEdit(minorCashDrawerMasterTreeDTO);
                         SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
@@ -145,6 +185,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
                     {
+                        AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawer);
                         SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
@@ -153,6 +194,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if(_selectedItem is TreasuryBankMasterTreeDTO bank)
                     {
+                        BankEditor.SetForEdit(bank);
                         SetBankForEdit(bank);
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
@@ -162,6 +204,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     if(_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
                     {
                         BankAccountNumber = "";
+                        BankAccountEditor.SetForEdit(bankAccount);
                         SetBankAccountForEdit(bankAccount);
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
@@ -170,6 +213,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if(_selectedItem is TreasuryFranchiseMasterTreeDTO franchsie)
                     {
+                        FranchiseEditor.SetForEdit(franchsie);
                         SetFranchiseForEdit(franchsie);
                         ClearAllErrors();
                         ValidateProperty(nameof(FranchiseName), FranchiseName);
@@ -184,6 +228,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     CanEdit = false;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO)
                     {
+                        MajorCashDrawerEditor.SetForNew(MajorCostCenterBeforeNewCashDrawer);
                         SetMajorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
@@ -192,6 +237,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO)
                     {
+                        MinorCashDrawerEditor.SetForNew(MinorCostCenterBeforeNewCashDrawer);
                         SetMinorCashDrawerForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
@@ -200,6 +246,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                     {
+                        AuxiliaryCashDrawerEditor.SetForNew(MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer);
                         SetAuxiliaryCashDrawerForNew();
                         ClearAllErrors();
                         ValidateAuxiliaryCashDrawerProperties();
@@ -208,6 +255,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryBankMasterTreeDTO)
                     {
+                        BankEditor.SetForNew(null!);
                         SetBankForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
@@ -216,6 +264,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
                     {
+                        BankAccountEditor.SetForNew(BankBeforeNewBankAccount);
                         SetBankAccountForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
@@ -224,6 +273,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                     if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
                     {
+                        FranchiseEditor.SetForNew(null!);
                         SetFranchiseForNew();
                         ClearAllErrors();
                         ValidateProperty(nameof(FranchiseName), FranchiseName);
@@ -231,6 +281,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                         return;
                     }
                 }
+            }
+            else
+            {
+                CurrentPanelEditor = null;
             }
         }
         public bool TreeViewIsEnable => !IsEditing;
@@ -268,6 +322,12 @@ namespace NetErp.Treasury.Masters.ViewModels
             CanUndo = true;
             CanEdit = false;
 
+            // Set Panel Editor's IsEditing property
+            if (CurrentPanelEditor != null)
+            {
+                CurrentPanelEditor.IsEditing = true;
+            }
+
             if (SelectedItem is MajorCashDrawerMasterTreeDTO) this.SetFocus(nameof(MajorCashDrawerName));
             if (SelectedItem is MinorCashDrawerMasterTreeDTO) this.SetFocus(nameof(MinorCashDrawerName));
             if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO) this.SetFocus(nameof(AuxiliaryCashDrawerName));
@@ -301,6 +361,9 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void Undo()
         {
+            // Call Panel Editor's Undo if available
+            CurrentPanelEditor?.Undo();
+
             if (IsNewRecord)
             {
                 SelectedItem = null;
@@ -924,6 +987,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 return false;
             }
         }
+
+        public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
 
         public async Task<CashDrawerGraphQLModel> ExecuteSaveMajorCashDrawer()
         {
@@ -4503,6 +4568,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             Context = context;
             _errors = [];
             Context.EventAggregator.SubscribeOnUIThread(this);
+
+            // Initialize Panel Editors
+            MajorCashDrawerEditor = new MajorCashDrawerPanelEditor(this, _cashDrawerService);
+            MinorCashDrawerEditor = new MinorCashDrawerPanelEditor(this, _cashDrawerService);
+            AuxiliaryCashDrawerEditor = new AuxiliaryCashDrawerPanelEditor(this, _cashDrawerService);
+            BankEditor = new BankPanelEditor(this, _bankService);
+            BankAccountEditor = new BankAccountPanelEditor(this, _bankAccountService);
+            FranchiseEditor = new FranchisePanelEditor(this, _franchiseService);
         }
 
         public async Task Initialize()
