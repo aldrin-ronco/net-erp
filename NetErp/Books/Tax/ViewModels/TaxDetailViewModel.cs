@@ -65,7 +65,7 @@ namespace NetErp.Books.Tax.ViewModels
         public void SetUpdateProperties(TaxGraphQLModel entity)
         {
             Name = entity.Name;
-            Margin = entity.Margin;
+            Rate = entity.Rate;
             Formula = entity.Formula;
             AlternativeFormula = entity.AlternativeFormula;
             IsActive = entity.IsActive;
@@ -185,7 +185,7 @@ namespace NetErp.Books.Tax.ViewModels
 
 
         private string _name;
-        private decimal? _margin;
+        private decimal? _rate;
         private int? _generatedTaxAccountId;
         private int? _generatedTaxRefundAccountId;
         private int? _deductibleTaxAccountId;
@@ -211,17 +211,17 @@ namespace NetErp.Books.Tax.ViewModels
                 }
             }
         }
-        public decimal? Margin
+        public decimal? Rate
         {
-            get { return _margin; }
+            get { return _rate; }
             set
             {
-                if (_margin != value)
+                if (_rate != value)
                 {
-                    _margin = value;
-                    ValidateProperty(nameof(Margin), Margin);
-                    NotifyOfPropertyChange(nameof(Margin));
-                    this.TrackChange(nameof(Margin));
+                    _rate = value;
+                    ValidateProperty(nameof(Rate), Rate);
+                    NotifyOfPropertyChange(nameof(Rate));
+                    this.TrackChange(nameof(Rate));
                     NotifyOfPropertyChange(nameof(CanSave));
 
                 }
@@ -465,7 +465,7 @@ namespace NetErp.Books.Tax.ViewModels
                    .Field(e => e.Id)
 
                     .Field(e => e.Name)
-                    .Field(e => e.Margin)
+                    .Field(e => e.Rate)
                     .Field(e => e.IsActive)
                     .Field(e => e.Formula)
                     .Select(e => e.GeneratedTaxAccount, cat => cat
@@ -511,7 +511,7 @@ namespace NetErp.Books.Tax.ViewModels
                    .Field(e => e.Id)
 
                     .Field(e => e.Name)
-                    .Field(e => e.Margin)
+                    .Field(e => e.Rate)
                     .Field(e => e.IsActive)
                     .Field(e => e.Formula)
                     .Select(e => e.GeneratedTaxAccount, cat => cat
@@ -576,7 +576,7 @@ namespace NetErp.Books.Tax.ViewModels
         private void ValidateProperties()
         {
             ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Margin), Margin);
+            ValidateProperty(nameof(Rate), Rate);
             ValidateProperty(nameof(SelectedTaxCategoryGraphQLModel), SelectedTaxCategoryGraphQLModel?.Id);
             ValidateProperty(nameof(GeneratedTaxAccountId), GeneratedTaxAccountId);
             ValidateProperty(nameof(GeneratedTaxRefundAccountId), GeneratedTaxRefundAccountId);
@@ -628,8 +628,8 @@ namespace NetErp.Books.Tax.ViewModels
                 switch (propertyName)
                 {
 
-                    case nameof(Margin):
-                        if (!value.HasValue || value == 0) AddError(propertyName, "El margen es requerido");
+                    case nameof(Rate):
+                        if (!value.HasValue || value == 0) AddError(propertyName, "La tasa es requerida");
                         break;
                 }
             }

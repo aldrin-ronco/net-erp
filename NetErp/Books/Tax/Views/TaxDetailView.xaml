@@ -117,16 +117,16 @@
                              Margin="0 0 0 2" />
                          </StackPanel>
                         <StackPanel Orientation="Vertical" Margin="10 5 0 5" Grid.Column="1">
-                            <TextBlock Text="Margen"
+                            <TextBlock Text="Tasa"
                             Margin="0 0 0 2" />
                             <dxe:SpinEdit MinValue="0" Increment="1"
                             Padding="2"
-                            Text="{Binding Path=Margin, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                            Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                             CharacterCasing="Upper"
-   
+
                             IsFloatValue="False"
                             MaskType="Numeric"
-                            x:Name="Margin"
+                            x:Name="Rate"
                             Margin="0 0 0 2" />
                         </StackPanel>
                     </Grid>

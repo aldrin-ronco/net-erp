@@ -127,8 +127,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             TaxGraphQLModel sellTax1 = priceListDetail.CatalogItem.AccountingGroup.SellTax1;
             TaxGraphQLModel sellTax2 = priceListDetail.CatalogItem.AccountingGroup.SellTax2;
 
-            if (sellTax1 != null && sellTax1.TaxCategory != null && sellTax1.TaxCategory.Prefix == "IVA") return sellTax1.Margin;
-            if (sellTax2 != null && sellTax2.TaxCategory != null && sellTax2.TaxCategory.Prefix == "IVA") return sellTax2.Margin;
+            if (sellTax1 != null && sellTax1.TaxCategory != null && sellTax1.TaxCategory.Prefix == "IVA") return sellTax1.Rate;
+            if (sellTax2 != null && sellTax2.TaxCategory != null && sellTax2.TaxCategory.Prefix == "IVA") return sellTax2.Rate;
 
             return 0;
         }
@@ -148,7 +148,7 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
         {
             if (ivaTax is null || string.IsNullOrEmpty(ivaTax.Formula)) return 0;
 
-            FormulaVariables["MARGEN_IMPUESTO"] = ivaTax.Margin;
+            FormulaVariables["MARGEN_IMPUESTO"] = ivaTax.Rate;
 
             string formula = Regex.Replace(ivaTax.Formula, pattern, m => FormulaVariables[m.Value].ToString(CultureInfo.InvariantCulture));
 

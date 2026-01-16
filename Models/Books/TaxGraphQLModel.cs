@@ -12,7 +12,7 @@ namespace Models.Books
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public decimal Margin { get; set; }
+        public decimal Rate { get; set; }
         public AccountingAccountGraphQLModel GeneratedTaxAccount { get; set; } = new();
         public AccountingAccountGraphQLModel GeneratedTaxRefundAccount { get; set; } = new();
         public AccountingAccountGraphQLModel DeductibleTaxAccount { get; set; } = new();

@@ -685,7 +685,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         }
                         accountingGroup {
                           sellTax1 {
-                            margin
+                            rate
                             formula
                             alternativeFormula
                             TaxCategory {
@@ -693,7 +693,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                             }
                           }
                           sellTax2 {
-                            margin
+                            rate
                             formula
                             alternativeFormula
                             TaxCategory {
@@ -787,8 +787,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             if(tax1 is null && tax2 is null) return -1;
 
-            if(tax1 != null && tax1.TaxCategory.Prefix == "IVA") return tax1.Margin;
-            if(tax2 != null && tax2.TaxCategory.Prefix == "IVA") return tax2.Margin;
+            if(tax1 != null && tax1.TaxCategory.Prefix == "IVA") return tax1.Rate;
+            if(tax2 != null && tax2.TaxCategory.Prefix == "IVA") return tax2.Rate;
 
             return -1; // No IVA found
         }
