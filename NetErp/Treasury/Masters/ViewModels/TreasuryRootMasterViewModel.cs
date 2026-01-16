@@ -168,56 +168,31 @@ namespace NetErp.Treasury.Masters.ViewModels
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                     {
                         MajorCashDrawerEditor.SetForEdit(majorCashDrawerMasterTreeDTO);
-                        SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                     {
                         MinorCashDrawerEditor.SetForEdit(minorCashDrawerMasterTreeDTO);
-                        SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
                     {
                         AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawer);
-                        SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
-                        ClearAllErrors();
-                        ValidateAuxiliaryCashDrawerProperties();
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
-                    if(_selectedItem is TreasuryBankMasterTreeDTO bank)
+                    if (_selectedItem is TreasuryBankMasterTreeDTO bank)
                     {
                         BankEditor.SetForEdit(bank);
-                        SetBankForEdit(bank);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
-                    if(_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
+                    if (_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
                     {
-                        BankAccountNumber = "";
                         BankAccountEditor.SetForEdit(bankAccount);
-                        SetBankAccountForEdit(bankAccount);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
-                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO franchsie)
+                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO franchise)
                     {
-                        FranchiseEditor.SetForEdit(franchsie);
-                        SetFranchiseForEdit(franchsie);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(FranchiseName), FranchiseName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        FranchiseEditor.SetForEdit(franchise);
                         return;
                     }
                 }
@@ -229,55 +204,31 @@ namespace NetErp.Treasury.Masters.ViewModels
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO)
                     {
                         MajorCashDrawerEditor.SetForNew(MajorCostCenterBeforeNewCashDrawer);
-                        SetMajorCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO)
                     {
                         MinorCashDrawerEditor.SetForNew(MinorCostCenterBeforeNewCashDrawer);
-                        SetMinorCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                     {
                         AuxiliaryCashDrawerEditor.SetForNew(MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer);
-                        SetAuxiliaryCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateAuxiliaryCashDrawerProperties();
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryBankMasterTreeDTO)
                     {
                         BankEditor.SetForNew(null!);
-                        SetBankForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                     if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
                     {
                         BankAccountEditor.SetForNew(BankBeforeNewBankAccount);
-                        SetBankAccountForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
-                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
+                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO)
                     {
                         FranchiseEditor.SetForNew(null!);
-                        SetFranchiseForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(FranchiseName), FranchiseName);
-                        NotifyOfPropertyChange(nameof(CanSave));
                         return;
                     }
                 }
@@ -361,7 +312,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void Undo()
         {
-            // Call Panel Editor's Undo if available
+            // Call Panel Editor's Undo - restores original values
             CurrentPanelEditor?.Undo();
 
             if (IsNewRecord)
@@ -373,12 +324,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             CanEdit = true;
             IsNewRecord = false;
             SelectedIndex = 0;
-            if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawer) SetMajorCashDrawerForEdit(majorCashDrawer);
-            if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) SetMinorCashDrawerForEdit(minorCashDrawer);
-            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
-            if (SelectedItem is TreasuryBankMasterTreeDTO bank) SetBankForEdit(bank);
-            if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount) SetBankAccountForEdit(bankAccount);
-            if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise) SetFranchiseForEdit(franchise);
         }
 
         private bool _canUndo = false;
@@ -534,203 +479,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
-
-        public void SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
-        {
-            MajorCashDrawerId = majorCashDrawerMasterTreeDTO.Id;
-            MajorCashDrawerName = majorCashDrawerMasterTreeDTO.Name;
-            MajorCashDrawerCostCenterId = majorCashDrawerMasterTreeDTO.CostCenter.Id;
-            MajorCashDrawerCostCenterName = majorCashDrawerMasterTreeDTO.CostCenter.Name;
-            MajorCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers.Where(x => x.Id != majorCashDrawerMasterTreeDTO.Id));
-            MajorCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            MajorCashDrawerSelectedAccountingAccountCheck = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCheck.Id) ?? throw new Exception("");
-            MajorCashDrawerSelectedAccountingAccountCard = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCard.Id) ?? throw new Exception("");
-            MajorCashDrawerCashReviewRequired = majorCashDrawerMasterTreeDTO.CashReviewRequired;
-            MajorCashDrawerAutoAdjustBalance = majorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            MajorCashDrawerAutoTransfer = majorCashDrawerMasterTreeDTO.AutoTransfer;
-            SelectedCashDrawerAutoTransfer = MajorCashDrawerAutoTransfer ? MajorCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.CashDrawerAutoTransfer.Id) ?? throw new Exception("") : MajorCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-
-        }
-
-        public void SetMajorCashDrawerForNew()
-        {
-            MajorCashDrawerId = 0;
-            MajorCashDrawerName = $"CAJA GENERAL EN {MajorCostCenterBeforeNewCashDrawer.Name}";
-            MajorCashDrawerCostCenterName = MajorCostCenterBeforeNewCashDrawer.Name;
-            MajorCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers);
-            MajorCashDrawerSelectedAccountingAccountCash = new();
-            MajorCashDrawerSelectedAccountingAccountCheck = new();
-            MajorCashDrawerSelectedAccountingAccountCard = new();
-            MajorCashDrawerCashReviewRequired = false;
-            MajorCashDrawerAutoAdjustBalance = false;
-            MajorCashDrawerAutoTransfer = false;
-            SelectedCashDrawerAutoTransfer = CashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-
-        }
-
-        public void SetMinorCashDrawerForEdit(MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-        {
-            MinorCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
-            MinorCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
-            MinorCashDrawerCostCenterId = minorCashDrawerMasterTreeDTO.CostCenter.Id;
-            MinorCashDrawerCostCenterName = minorCashDrawerMasterTreeDTO.CostCenter.Name;
-            MinorCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            MinorCashDrawerCashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
-            MinorCashDrawerAutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-
-        }
-
-        public void SetMinorCashDrawerForNew()
-        {
-            MinorCashDrawerId = 0;
-            MinorCashDrawerName = $"CAJA MENOR EN {MinorCostCenterBeforeNewCashDrawer.Name}";
-            MinorCashDrawerCostCenterName = MinorCostCenterBeforeNewCashDrawer.Name;
-            MinorCashDrawerSelectedAccountingAccountCash = new();
-            MinorCashDrawerCashReviewRequired = false;
-            MinorCashDrawerAutoAdjustBalance = false;
-        }
-
-        public void SetAuxiliaryCashDrawerForEdit(TreasuryAuxiliaryCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-        {
-            AuxiliaryCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
-            AuxiliaryCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
-            AuxiliaryCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers.Where(x => x.Id != minorCashDrawerMasterTreeDTO.Id));
-            AuxiliaryCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerSelectedAccountingAccountCheck = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCheck.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerSelectedAccountingAccountCard = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCard.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerCashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
-            AuxiliaryCashDrawerAutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            AuxiliaryCashDrawerAutoTransfer = minorCashDrawerMasterTreeDTO.AutoTransfer;
-            SelectedCashDrawerAutoTransfer = AuxiliaryCashDrawerAutoTransfer ? AuxiliaryCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.CashDrawerAutoTransfer.Id) ?? throw new Exception("") : AuxiliaryCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            AuxiliaryCashDrawerComputerName = minorCashDrawerMasterTreeDTO.ComputerName;
-        }
-
-        public void SetAuxiliaryCashDrawerForNew()
-        {
-            AuxiliaryCashDrawerId = 0;
-            AuxiliaryCashDrawerName = $"CAJA AUXILIAR";
-            AuxiliaryCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers);
-            AuxiliaryCashDrawerSelectedAccountingAccountCash = new();
-            AuxiliaryCashDrawerSelectedAccountingAccountCheck = new();
-            AuxiliaryCashDrawerSelectedAccountingAccountCard = new();
-            AuxiliaryCashDrawerCashReviewRequired = false;
-            AuxiliaryCashDrawerAutoAdjustBalance = false;
-            AuxiliaryCashDrawerAutoTransfer = false;
-            SelectedCashDrawerAutoTransfer = CashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            AuxiliaryCashDrawerComputerName = "";
-        }
-
-        public void SetBankForEdit(TreasuryBankMasterTreeDTO bank)
-        {
-            BankId = bank.Id;
-            BankAccountingEntityId = bank.AccountingEntity.Id;
-            BankAccountingEntityName = bank.AccountingEntity.SearchName;
-            BankPaymentMethodPrefix = bank.PaymentMethodPrefix;
-        }
-
-        public void SetBankForNew()
-        {
-            BankId = 0;
-            BankAccountingEntityId = 0;
-            BankAccountingEntityName = "";
-            BankPaymentMethodPrefix = "";
-        }
-
-        public void SetBankAccountForEdit(TreasuryBankAccountMasterTreeDTO bankAccount)
-        {
-            foreach(var costCenter in BankAccountCostCenters)
-            {
-                costCenter.IsChecked = false;
-            }
-            BankAccountId = bankAccount.Id;
-            BankAccountType = bankAccount.Type;
-            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), bankAccount.Bank.AccountingEntity.CaptureType);
-            BankAccountProvider = bankAccount.Provider;
-            BankAccountNumber = bankAccount.Number;
-            BankAccountIsActive = bankAccount.IsActive;
-            BankAccountReference = bankAccount.Reference;
-            BankAccountDisplayOrder = bankAccount.DisplayOrder;
-            BankAccountBankId = bankAccount.Bank.Id;
-            BankAccountBankName = bankAccount.Bank.AccountingEntity.SearchName;
-            BankAccountAccountingAccountAutoCreate = false;
-            BankAccountAccountingAccountSelectExisting = true;
-            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == bankAccount.AccountingAccount.Id) ?? throw new Exception("");
-            BankAccountPaymentMethodAbbreviation = bankAccount.PaymentMethod.Abbreviation;
-            foreach(var costCenter in BankAccountCostCenters)
-            {
-                costCenter.IsChecked = bankAccount.AllowedCostCenters.Any(x => x.Id == costCenter.Id);
-            }
-        }
-
-        public void SetBankAccountForNew()
-        {
-            BankAccountId = 0;
-            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), BankBeforeNewBankAccount.AccountingEntity.CaptureType);
-            BankAccountType = BankAccountBankCaptureInfoAsPJ ? "A" : "M";
-            BankAccountProvider = BankAccountBankCaptureInfoAsPN ? "N" : "";
-            BankAccountNumber = "";
-            BankAccountIsActive = true;
-            BankAccountReference = "";
-            BankAccountDisplayOrder = 0;
-            BankAccountBankId = BankBeforeNewBankAccount.Id;
-            BankAccountBankName = BankBeforeNewBankAccount.AccountingEntity.SearchName;
-            BankAccountAccountingAccountAutoCreate = true;
-            BankAccountAccountingAccountSelectExisting = false;
-            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-        }
-
-        public void SetFranchiseForEdit(TreasuryFranchiseMasterTreeDTO franchise)
-        {
-            FranchiseId = franchise.Id;
-            FranchiseName = franchise.Name;
-            FranchiseType = franchise.Type;
-            FranchiseCommissionMargin = franchise.CommissionMargin;
-            FranchiseReteivaMargin = franchise.ReteivaMargin;
-            FranchiseReteicaMargin = franchise.ReteicaMargin;
-            FranchiseRetefteMargin = franchise.RetefteMargin;
-            FranchiseFormulaCommission = franchise.FormulaCommission;
-            FranchiseFormulaReteica = franchise.FormulaReteica;
-            FranchiseFormulaReteiva = franchise.FormulaReteiva;
-            FranchiseFormulaRetefte = franchise.FormulaRetefte;
-            FranchiseIvaMargin = franchise.IvaMargin;
-            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == franchise.AccountingAccountCommission.Id) ?? throw new Exception("");
-            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == franchise.BankAccount.Id) ?? throw new Exception("");
-            FranchiseSettingsByCostCenter = new List<FranchiseByCostCenterGraphQLModel>(franchise.FranchiseSettingsByCostCenter);
-            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseCardValue = 0;
-            FranchiseSimulatedCommission = 0;
-            FranchiseSimulatedReteiva = 0;
-            FranchiseSimulatedReteica = 0;
-            FranchiseSimulatedRetefte = 0;
-            FranchiseSimulatedIvaValue = 0;
-        }
-
-        public void SetFranchiseForNew()
-        {
-            FranchiseId = 0;
-            FranchiseName = "";
-            FranchiseType = "TC";
-            FranchiseCommissionMargin = 0;
-            FranchiseReteivaMargin = 0;
-            FranchiseReteicaMargin = 0;
-            FranchiseRetefteMargin = 0;
-            FranchiseFormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
-            FranchiseFormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
-            FranchiseFormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
-            FranchiseFormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
-            FranchiseIvaMargin = 0;
-            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception(""); ;
-            FranchiseSettingsByCostCenter = [];
-            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseCardValue = 0;
-            FranchiseSimulatedCommission = 0;
-            FranchiseSimulatedReteiva = 0;
-            FranchiseSimulatedReteica = 0;
-            FranchiseSimulatedRetefte = 0;
-            FranchiseSimulatedIvaValue = 0;
-        }
-
         private ICommand _searchComputerNameCommand;
         public ICommand SearchComputerNameCommand
         {
@@ -743,7 +491,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void SearchComputerName(object p)
         {
-            AuxiliaryCashDrawerComputerName = SessionInfo.GetComputerName();
+            AuxiliaryCashDrawerEditor.ComputerName = SessionInfo.GetComputerName();
         }
 
         public bool CanSearchComputerName(object p) => true;
@@ -823,110 +571,42 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task Save()
         {
+            if (CurrentPanelEditor == null) return;
+
             try
             {
                 IsBusy = true;
                 Refresh();
-                if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
-                {
-                    CashDrawerGraphQLModel result = await ExecuteSaveMajorCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
 
-                    }
-                }
-                if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-                {
-                    CashDrawerGraphQLModel result = await ExecuteSaveMinorCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
+                // Delegate save to the current Panel Editor
+                bool saveSuccessful = await CurrentPanelEditor.SaveAsync();
 
-                    }
-                }
-                if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerMasterTreeDTO)
+                if (saveSuccessful)
                 {
-                    CashDrawerGraphQLModel result = await ExecuteSaveAuxiliaryCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
+                    // Reload combo boxes for cash drawer and bank account entities
+                    if (SelectedItem is MajorCashDrawerMasterTreeDTO or
+                        MinorCashDrawerMasterTreeDTO or
+                        TreasuryAuxiliaryCashDrawerMasterTreeDTO or
+                        TreasuryBankAccountMasterTreeDTO)
                     {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
+                        await LoadComboBoxesAsync();
                     }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
 
-                    }
-                }
-                if (SelectedItem is TreasuryBankMasterTreeDTO bank)
-                {
-                    BankGraphQLModel result = await ExecuteSaveBank();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankCreateMessage() { CreatedBank = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankUpdateMessage() { UpdatedBank = result });
-                    }
-                }
-                if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
-                {
-                    BankAccountGraphQLModel result = await ExecuteSaveBankAccount();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountCreateMessage() { CreatedBankAccount = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountUpdateMessage() { UpdatedBankAccount = result });
-                    }
-                }
-                if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise)
-                {
-                    FranchiseGraphQLModel result = await ExecuteSaveFranchise();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseCreateMessage() { CreatedFranchise = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseUpdateMessage() { UpdatedFranchise = result });
-                    }
-                }
-                IsEditing = false;
-                CanUndo = false;
-                CanEdit = true;
-                SelectedIndex = 0;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.Save \r\n{graphQLError.Errors[0].Message} \r\n {graphQLError.Errors[0].Extensions.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
+                    IsEditing = false;
+                    CanUndo = false;
+                    CanEdit = true;
+                    IsNewRecord = false;
+                    SelectedIndex = 0;
                 }
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.Save \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                // Panel Editor already handles GraphQL errors, this catches any remaining exceptions
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.Save \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -934,632 +614,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public bool CanSave
-        {
-            get
-            {
-                if (_selectedItem is MajorCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (MajorCashDrawerAutoTransfer == true && (SelectedCashDrawerAutoTransfer is null || SelectedCashDrawerAutoTransfer.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if (_selectedItem is MinorCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0) return true;
-                    return false;
-                }
-                if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (AuxiliaryCashDrawerAutoTransfer == true && (SelectedCashDrawerAutoTransfer is null || SelectedCashDrawerAutoTransfer.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if(_selectedItem is TreasuryBankMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0) return true;
-                    return false;
-                }
-                if(_selectedItem is TreasuryBankAccountMasterTreeDTO)
-                {
-                    if(IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (BankAccountAccountingAccountSelectExisting == true && (BankAccountSelectedAccountingAccount is null || BankAccountSelectedAccountingAccount.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if ((FranchiseSelectedAccountingAccountCommission is null || FranchiseSelectedAccountingAccountCommission.Id == 0) || (FranchiseSelectedBankAccount is null || FranchiseSelectedBankAccount.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                return false;
-            }
-        }
+        public bool CanSave => CurrentPanelEditor?.CanSave ?? false;
 
         public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
-
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveMajorCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = MajorCashDrawerId;
-                variables.Data.Name = MajorCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = MajorCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = MajorCashDrawerAutoAdjustBalance;
-                variables.Data.AutoTransfer = MajorCashDrawerAutoTransfer;
-                if (IsNewRecord) variables.Data.IsPettyCash = false;
-                variables.Data.CashDrawerIdAutoTransfer = MajorCashDrawerAutoTransfer ? SelectedCashDrawerAutoTransfer.Id : 0;
-                variables.Data.CostCenterId = IsNewRecord ? MajorCostCenterBeforeNewCashDrawer.Id : MajorCashDrawerCostCenterId;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = MajorCashDrawerSelectedAccountingAccountCash.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCheck = MajorCashDrawerSelectedAccountingAccountCheck.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCard = MajorCashDrawerSelectedAccountingAccountCard.Id;
-                if (IsNewRecord) variables.Data.ParentId = 0;
-                variables.Data.ComputerName = "";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateCashDrawerInput!){
-                            CreateResponse: createCashDrawer(data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                autoTransfer
-                                isPettyCash
-                                cashDrawerAutoTransfer{
-                                    id
-                                    name
-                                }
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                                accountingAccountCheck{
-                                    id
-                                    name
-                                }
-                                accountingAccountCard{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                autoTransfer
-                                isPettyCash
-                                cashDrawerAutoTransfer{
-                                    id
-                                    name
-                                }
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                                accountingAccountCheck{
-                                    id
-                                    name
-                                }
-                                accountingAccountCard{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveMinorCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = MinorCashDrawerId;
-                variables.Data.Name = MinorCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = MinorCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = MinorCashDrawerAutoAdjustBalance;
-                if (IsNewRecord) variables.Data.IsPettyCash = true;
-                variables.Data.AutoTransfer = false;
-                variables.Data.CashDrawerIdAutoTransfer = 0;
-                variables.Data.CostCenterId = IsNewRecord ? MinorCostCenterBeforeNewCashDrawer.Id : MinorCashDrawerCostCenterId;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = MinorCashDrawerSelectedAccountingAccountCash.Id;
-                if (IsNewRecord) variables.Data.ParentId = 0;
-                variables.Data.ComputerName = "";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateCashDrawerInput!){
-                            CreateResponse: createCashDrawer(data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                isPettyCash
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                isPettyCash
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveAuxiliaryCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = AuxiliaryCashDrawerId;
-                variables.Data.Name = AuxiliaryCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = AuxiliaryCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = AuxiliaryCashDrawerAutoAdjustBalance;
-                variables.Data.AutoTransfer = AuxiliaryCashDrawerAutoTransfer;
-                if (IsNewRecord) variables.Data.IsPettyCash = false;
-                variables.Data.CashDrawerIdAutoTransfer = AuxiliaryCashDrawerAutoTransfer ? SelectedCashDrawerAutoTransfer.Id : 0;
-                variables.Data.CostCenterId = 0;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = AuxiliaryCashDrawerSelectedAccountingAccountCash.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCheck = AuxiliaryCashDrawerSelectedAccountingAccountCheck.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCard = AuxiliaryCashDrawerSelectedAccountingAccountCard.Id;
-                if (IsNewRecord) variables.Data.ParentId = MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer;
-                variables.Data.ComputerName = AuxiliaryCashDrawerComputerName.Trim().RemoveExtraSpaces();
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation ($data: CreateCashDrawerInput!) {
-                          CreateResponse: createCashDrawer(data: $data) {
-                            id
-                            name
-                            cashReviewRequired
-                            autoAdjustBalance
-                            autoTransfer
-                            isPettyCash
-                            computerName
-                            cashDrawerAutoTransfer {
-                              id
-                              name
-                            }
-                            accountingAccountCash {
-                              id
-                              name
-                            }
-                            accountingAccountCheck {
-                              id
-                              name
-                            }
-                            accountingAccountCard {
-                              id
-                              name
-                            }
-                            computerName
-                            parent {
-                              id
-                              costCenter {
-                                id
-                                location {
-                                  id
-                                }
-                              }
-                            }
-                          }
-                        }
-                        ";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                            id
-                            name
-                            cashReviewRequired
-                            autoAdjustBalance
-                            autoTransfer
-                            isPettyCash
-                            computerName
-                            cashDrawerAutoTransfer {
-                              id
-                              name
-                            }
-                            accountingAccountCash {
-                              id
-                              name
-                            }
-                            accountingAccountCheck {
-                              id
-                              name
-                            }
-                            accountingAccountCard {
-                              id
-                              name
-                            }
-                            computerName
-                            parent {
-                              id
-                              costCenter {
-                                id
-                                location {
-                                  id
-                                }
-                              }
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<BankGraphQLModel> ExecuteSaveBank()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = BankId;
-                variables.Data.AccountingEntityId = BankAccountingEntityId;
-                variables.Data.PaymentMethodPrefix = "Z";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateBankInput!){
-                            CreateResponse: createBank(data: $data){
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                }
-                                paymentMethodPrefix
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateBankInput!){
-                            UpdateResponse: updateBank(id: $id, data: $data){
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                }
-                                paymentMethodPrefix
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _bankService.CreateAsync(query, variables) : await _bankService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<BankAccountGraphQLModel> ExecuteSaveBankAccount()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = BankAccountId;
-                variables.Data.Type = BankAccountType;
-                variables.Data.Number = BankAccountNumber;
-                variables.Data.IsActive = BankAccountIsActive;
-                variables.Data.Description = BankAccountDescription;
-                variables.Data.Reference = BankAccountReference;
-                variables.Data.DisplayOrder = BankAccountDisplayOrder;
-                variables.Data.AccountingAccountId = BankAccountAccountingAccountSelectExisting ? BankAccountSelectedAccountingAccount.Id : 0;
-                variables.Data.Provider = BankAccountBankCaptureInfoAsPN ? BankAccountProvider : "";
-                variables.Data.BankId = BankAccountBankId;
-                variables.Data.PaymentMethodName = BankAccountPaymentMethodName;
-                variables.Data.AllowedCostCenters = BankAccountCostCenters.Where(x => x.IsChecked).Select(x => x.Id).ToList();
-                if (IsNewRecord)
-                {
-                    query = @"
-                    mutation($data: CreateBankAccountInput!){
-                        CreateResponse: createBankAccount(data: $data){
-                            id
-                            type
-                            number
-                            isActive
-                            description
-                            reference
-                            displayOrder
-                            provider
-                            allowedCostCenters{
-                                id
-                                name
-                                bankAccountId
-                            }
-                            paymentMethod{
-                                id
-                                abbreviation
-                                name
-                            }
-                            accountingAccount{
-                                id
-                                code
-                                name
-                            }
-                            bank{
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                    captureType
-                                }
-                            }
-                        }
-                    }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateBankAccountInput!){
-                            UpdateResponse: updateBankAccount(data: $data, id: $id){
-                                id
-                                type
-                                number
-                                isActive
-                                description
-                                reference
-                                displayOrder
-                                provider
-                                allowedCostCenters{
-                                    id
-                                    name
-                                    bankAccountId
-                                }
-                                paymentMethod{
-                                    id
-                                    abbreviation
-                                    name
-                                }
-                                accountingAccount{
-                                    id
-                                    code
-                                    name
-                                }
-                                bank{
-                                    id
-                                    accountingEntity{
-                                        id
-                                        searchName
-                                        captureType
-                                    }
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _bankAccountService.CreateAsync(query, variables) : await _bankAccountService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<FranchiseGraphQLModel> ExecuteSaveFranchise()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = FranchiseId;
-                variables.Data.Name = FranchiseName.Trim().RemoveExtraSpaces();
-                variables.Data.Type = FranchiseType;
-                variables.Data.CommissionMargin = FranchiseCommissionMargin;
-                variables.Data.ReteivaMargin = FranchiseReteivaMargin;
-                variables.Data.ReteicaMargin = FranchiseReteicaMargin;
-                variables.Data.RetefteMargin = FranchiseRetefteMargin;
-                variables.Data.FormulaCommission = FranchiseFormulaCommission;
-                variables.Data.FormulaReteica = FranchiseFormulaReteica;
-                variables.Data.FormulaReteiva = FranchiseFormulaReteiva;
-                variables.Data.FormulaRetefte = FranchiseFormulaRetefte;
-                variables.Data.IvaMargin = FranchiseIvaMargin;
-                variables.Data.AccountingAccountIdCommission = FranchiseSelectedAccountingAccountCommission.Id;
-                variables.Data.BankAccountId = FranchiseSelectedBankAccount.Id;
-                variables.Data.CompanyId = 1; //TODO: Cambiar por el valor correcto
-                variables.Data.CostCenterId = FranchiseSelectedCostCenter.Id;
-                if (IsNewRecord)
-                {
-                    query = @"
-                    mutation ($data: CreateFranchiseInput!) {
-                      CreateResponse: createFranchise(data: $data) {
-                        id
-                        name
-                        type
-                        commissionMargin
-                        reteivaMargin
-                        reteicaMargin
-                        retefteMargin
-                        ivaMargin
-                        accountingAccountCommission {
-                          id
-                          code
-                          name
-                        }
-                        bankAccount {
-                          id
-                          description
-                        }
-                        formulaCommission
-                        formulaReteiva
-                        formulaReteica
-                        formulaRetefte
-                        franchiseSettingsByCostCenter{
-                          id
-                          costCenterId
-                          commissionMargin
-                          reteivaMargin
-                          reteicaMargin
-                          retefteMargin
-                          ivaMargin
-                          bankAccountId
-                          accountingAccountIdCommmission
-                          formulaCommission
-                          formulaReteiva
-                          formulaReteica
-                          formulaRetefte
-                          franchiseId
-                        }
-                      }
-                    }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateFranchiseInput!){
-                          UpdateResponse: updateFranchise(id: $id, data: $data){
-                            id
-                            name
-                            type
-                            commissionMargin
-                            reteivaMargin
-                            reteicaMargin
-                            retefteMargin
-                            ivaMargin
-                            accountingAccountCommission{
-                              id
-                              code
-                              name
-                            }
-                            bankAccount{
-                              id
-                              description
-                            }
-                            formulaCommission
-                            formulaReteiva
-                            formulaReteica
-                            formulaRetefte
-                            franchiseSettingsByCostCenter{
-                              id
-                              costCenterId
-                              commissionMargin
-                              reteivaMargin
-                              reteicaMargin
-                              retefteMargin
-                              ivaMargin
-                              bankAccountId
-                              accountingAccountIdCommmission
-                              formulaCommission
-                              formulaReteiva
-                              formulaReteica
-                              formulaRetefte
-                              franchiseId
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _franchiseService.CreateAsync(query, variables) : await _franchiseService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
 
         private ICommand _deleteMajorCashDrawerCommand;
         public ICommand DeleteMajorCashDrawerCommand
@@ -4774,7 +3831,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
                 cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
                 cashDrawerToUpdate.CashDrawerAutoTransfer = cashDrawerDTO.CashDrawerAutoTransfer;
-                await Task.Run(() => SetMajorCashDrawerForEdit(cashDrawerToUpdate), cancellationToken);
+                await Task.Run(() => MajorCashDrawerEditor.SetForEdit(cashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja General actualizada correctamente.");
                 return;
             }
@@ -4801,7 +3858,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
                 auxiliaryCashDrawerToUpdate.CashDrawerAutoTransfer = auxiliaryCashDrawer.CashDrawerAutoTransfer;
                 auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
-                await Task.Run(() => SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
+                await Task.Run(() => AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja Auxiliar actualizada correctamente.");
                 return;
             }
@@ -4819,7 +3876,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             minorCashDrawerToUpdate.AccountingAccountCash = minorCashDrawerMasterTreeDTO.AccountingAccountCash;
             minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
             minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            await Task.Run(() => SetMinorCashDrawerForEdit(minorCashDrawerToUpdate), cancellationToken);
+            await Task.Run(() => MinorCashDrawerEditor.SetForEdit(minorCashDrawerToUpdate), cancellationToken);
             _notificationService.ShowSuccess("Caja menor actualizada correctamente.");
             return;
         }
@@ -5049,7 +4106,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             bankAccountToUpdate.Provider = bankAccountDTO.Provider;
             bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
             bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
-            await Task.Run(() => SetBankAccountForEdit(bankAccountToUpdate));
+            await Task.Run(() => BankAccountEditor.SetForEdit(bankAccountToUpdate));
             _notificationService.ShowSuccess("Cuenta bancaria actualizada correctamente.");
             return;
         }
@@ -5117,7 +4174,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
             franchiseToUpdate.AccountingAccountCommission = franchiseDTO.AccountingAccountCommission;
             franchiseToUpdate.FranchiseSettingsByCostCenter = franchiseDTO.FranchiseSettingsByCostCenter;
-            await Task.Run(() => SetFranchiseForEdit(franchiseToUpdate));
+            await Task.Run(() => FranchiseEditor.SetForEdit(franchiseToUpdate));
             _notificationService.ShowSuccess("Franquicia actualizada correctamente.");
             return;
         }

@@ -218,6 +218,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         public bool BankCaptureInfoAsPN => BankCaptureType.Equals(CaptureTypeEnum.PN);
         public bool BankCaptureInfoAsPJ => BankCaptureType.Equals(CaptureTypeEnum.PJ);
+        public bool BankCaptureInfoAsRS => !BankCaptureInfoAsPN; // Traditional bank accounts (Ahorros/Corriente)
 
         /// <summary>
         /// Descripción compuesta de la cuenta bancaria.
