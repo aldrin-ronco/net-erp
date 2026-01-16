@@ -14,6 +14,7 @@ using Models.Treasury;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.PanelEditors;
 using Services.Billing.DAL.PostgreSQL;
@@ -38,6 +39,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xceed.Wpf.Toolkit.Primitives;
 using static Dictionaries.BooksDictionaries;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.ViewModels
 {
@@ -633,7 +635,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((MajorCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (MajorCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -649,7 +652,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((MajorCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -660,12 +663,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteMajorCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteMajorCashDrawer));
 
@@ -695,55 +707,113 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteMajorCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                          location{
-                            id
-                          }
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
+        #region Delete Query Builders
 
-                throw;
-            }
+        private string GetDeleteCashDrawerQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteCashDrawer", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
+
+        private string GetDeleteBankQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteBank", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        private string GetDeleteBankAccountQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteBankAccount", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        private string GetDeleteFranchiseQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteFranchise", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        #endregion
+
+        #region Execute Delete Methods
+
+        private async Task<DeleteResponseType> ExecuteDeleteCashDrawerAsync(int id)
+        {
+            string query = GetDeleteCashDrawerQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _cashDrawerService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteBankAsync(int id)
+        {
+            string query = GetDeleteBankQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _bankService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteBankAccountAsync(int id)
+        {
+            string query = GetDeleteBankAccountQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _bankAccountService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteFranchiseAsync(int id)
+        {
+            string query = GetDeleteFranchiseQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _franchiseService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        #endregion
 
         public bool CanDeleteMajorCashDrawer => true;
 
@@ -762,7 +832,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((MinorCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (MinorCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -778,7 +849,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((MinorCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -789,12 +860,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteMinorCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteMinorCashDrawer));
 
@@ -824,56 +904,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteMinorCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                          location{
-                            id
-                          }
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteMinorCashDrawer => true;
 
         private ICommand _deleteAuxiliaryCashDrawerCommand;
@@ -891,7 +921,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -907,7 +938,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -918,12 +949,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteAuxiliaryCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteAuxiliaryCashDrawer));
 
@@ -953,59 +993,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteAuxiliaryCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                        parent{
-                          id
-                          costCenter{
-                            id
-                            location{
-                              id
-                             }
-                            }
-                        }
-                        computerName
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteAuxiliaryCashDrawer => true;
 
         private ICommand _deleteBankCommand;
@@ -1023,7 +1010,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryBankMasterTreeDTO)SelectedItem).Id;
+                var selectedBank = (TreasuryBankMasterTreeDTO)SelectedItem;
+                int id = selectedBank.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteBank(id: $id){
@@ -1039,7 +1027,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankMasterTreeDTO)SelectedItem).AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBank.AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1053,9 +1041,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                BankGraphQLModel deletedBank = await ExecuteDeleteBank(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteBankAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deletedBank });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteBank));
 
@@ -1085,33 +1079,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<BankGraphQLModel> ExecuteDeleteBank(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation ($id: Int!) {
-                      DeleteResponse: deleteBank(id: $id){
-                        id
-                        paymentMethodPrefix
-                        accountingEntity{
-                          id
-                          searchName
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                BankGraphQLModel deletedBank = await _bankService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedBank;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteBank => true;
 
         private ICommand _deleteBankAccountCommand;
@@ -1129,7 +1096,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryBankAccountMasterTreeDTO)SelectedItem).Id;
+                var selectedBankAccount = (TreasuryBankAccountMasterTreeDTO)SelectedItem;
+                int id = selectedBankAccount.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteBankAccount(id: $id){
@@ -1145,7 +1113,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankAccountMasterTreeDTO)SelectedItem).Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBankAccount.Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1159,9 +1127,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                BankAccountGraphQLModel deletedBankAccount = await ExecuteDeleteBankAccount(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteBankAccountAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deletedBankAccount });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteBankAccount));
 
@@ -1191,42 +1165,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<BankAccountGraphQLModel> ExecuteDeleteBankAccount(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                        DeleteResponse: deleteBankAccount(id: $id){
-                        id
-                        type
-                        number
-                        description
-                        isActive
-                        reference
-                        displayOrder
-                        accountingAccount{
-                            id
-                            code
-                            name
-                        }
-                        bank{
-                            id
-                        }
-                        }
-                    }";
-                object variables = new { Id = id };
-                BankAccountGraphQLModel deletedBankAccount = await _bankAccountService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedBankAccount;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteBankAccount => true;
 
         private ICommand _deleteFranchiseCommand;
@@ -1244,7 +1182,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryFranchiseMasterTreeDTO)SelectedItem).Id;
+                var selectedFranchise = (TreasuryFranchiseMasterTreeDTO)SelectedItem;
+                int id = selectedFranchise.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteFranchise(id: $id){
@@ -1260,7 +1199,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryFranchiseMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedFranchise.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1274,9 +1213,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                FranchiseGraphQLModel deletedFranchise = await ExecuteDeleteFranchise(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteFranchiseAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deletedFranchise });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteFranchise));
 
@@ -1304,48 +1249,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = false;
             }
 
-        }
-
-        public async Task<FranchiseGraphQLModel> ExecuteDeleteFranchise(int id)
-        {
-            try
-            {
-                string query = @"
-                mutation($id: Int!){
-                    DeleteResponse: deleteFranchise(id: $id){
-                    id
-                    name
-                    type
-                    commissionMargin
-                    reteivaMargin
-                    reteicaMargin
-                    retefteMargin
-                    ivaMargin
-                    accountingAccountCommission{
-                        id
-                        code
-                        name
-                    }
-                    bankAccount{
-                        id
-                        description
-                    }
-                    formulaCommission
-                    formulaReteiva
-                    formulaReteica
-                    formulaRetefte
-                    }
-                }";
-                object variables = new { Id = id };
-                FranchiseGraphQLModel deletedFranchise = await _franchiseService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedFranchise;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
         }
 
         public bool CanDeleteFranchise => true;
@@ -2868,9 +2771,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
                 if (bankDummyDTO is null) return;
-                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.Id).First());
+                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.DeletedId).First());
             });
-            _notificationService.ShowSuccess("Banco eliminado correctamente.");
+            _notificationService.ShowSuccess(message.DeletedBank.Message);
             return Task.CompletedTask;
         }
 
@@ -2913,11 +2816,17 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
                 if (bankDummyDTO is null) return;
-                TreasuryBankMasterTreeDTO bankAccountDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.DeletedBankAccount.Bank.Id) ?? throw new Exception("");
-                if (bankAccountDTO is null) return;
-                bankAccountDTO.BankAccounts.Remove(bankAccountDTO.BankAccounts.Where(x => x.Id == message.DeletedBankAccount.Id).First());
+                foreach (var bank in bankDummyDTO.Banks)
+                {
+                    var bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
+                    if (bankAccount != null)
+                    {
+                        bank.BankAccounts.Remove(bankAccount);
+                        break;
+                    }
+                }
             });
-            _notificationService.ShowSuccess("Cuenta bancaria eliminada correctamente.");
+            _notificationService.ShowSuccess(message.DeletedBankAccount.Message);
             return Task.CompletedTask;
         }
 
@@ -2983,9 +2892,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
                 if (franchiseDummyDTO is null) return;
-                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.Id).First());
+                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.DeletedId).First());
             });
-            _notificationService.ShowSuccess("Franquicia eliminada correctamente.");
+            _notificationService.ShowSuccess(message.DeletedFranchise.Message);
             return Task.CompletedTask;
         }
 
