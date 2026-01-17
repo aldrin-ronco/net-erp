@@ -353,3 +353,6 @@ Temporary Items
 
 # WPF temporary project files
 *_wpftmp.csproj
+
+# Backup files
+*.bak

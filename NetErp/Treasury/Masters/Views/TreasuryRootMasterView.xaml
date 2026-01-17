@@ -1373,9 +1373,6 @@
                     <!--franquicias-->
                     <DataTemplate DataType="{x:Type model:TreasuryFranchiseMasterTreeDTO}">
                         <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                            <Grid.ColumnDefinitions>
-
-                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>

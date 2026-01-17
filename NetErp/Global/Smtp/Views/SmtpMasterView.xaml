@@ -117,7 +117,7 @@
                                 Width="auto" Height="auto" 
                                 cal:Message.Attach="[Event Click] = [Action EditSmtp]">
                                 <Button.Content>
-                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>
                             </Button>
                         </DataTemplate>

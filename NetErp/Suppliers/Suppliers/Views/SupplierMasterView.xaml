@@ -107,7 +107,7 @@
                                 <Button Padding="2" Margin="2"
                                     cal:Message.Attach="[Event Click] = [Action EditSupplier]">
                                     <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                     </Button.Content>
                                 </Button>
                             </DataTemplate>

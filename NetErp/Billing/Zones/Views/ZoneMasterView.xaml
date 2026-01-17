@@ -132,7 +132,7 @@ RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVi
                                 Margin="3"
                                 Width="auto" Height="auto" >
                                 <Button.Content>
-                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
+                                    <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/XAF/Action_Edit.svg', Size='16,16'}" Stretch="None" />
                                 </Button.Content>
                             </Button>
                         </DataTemplate>

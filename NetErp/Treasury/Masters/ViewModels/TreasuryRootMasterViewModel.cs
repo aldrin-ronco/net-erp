@@ -815,6 +815,238 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
+        #region Load Query Builders
+
+        private string GetLoadCompanyLocationsQuery()
+        {
+            var fields = FieldSpec<CompanyLocationGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("companiesLocations", [], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadBanksQuery()
+        {
+            var fields = FieldSpec<BankGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.PaymentMethodPrefix)
+                .Select(f => f.AccountingEntity, ae => ae
+                    .Field(a => a.Id)
+                    .Field(a => a.SearchName)
+                    .Field(a => a.CaptureType))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("banks", [], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadBankAccountsQuery()
+        {
+            var fields = FieldSpec<BankAccountGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Type)
+                .Field(f => f.Number)
+                .Field(f => f.IsActive)
+                .Field(f => f.Description)
+                .Field(f => f.Reference)
+                .Field(f => f.DisplayOrder)
+                .Field(f => f.Provider)
+                .Select(f => f.PaymentMethod, pm => pm
+                    .Field(p => p.Id)
+                    .Field(p => p.Abbreviation)
+                    .Field(p => p.Name))
+                .Select(f => f.AccountingAccount, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Name)
+                    .Field(a => a.Code))
+                .Select(f => f.Bank, b => b
+                    .Field(bk => bk.Id)
+                    .Select(bk => bk.AccountingEntity, ae => ae
+                        .Field(a => a.SearchName)
+                        .Field(a => a.CaptureType)))
+                .SelectList(f => f.AllowedCostCenters, ac => ac
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "BankAccountFilterInput!");
+            var fragment = new GraphQLQueryFragment("bankAccounts", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadCostCentersByLocationQuery()
+        {
+            var fields = FieldSpec<CostCenterGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Select(f => f.CompanyLocation, loc => loc
+                    .Field(l => l.Id))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("ids", "[Int!]!");
+            var fragment = new GraphQLQueryFragment("costCentersByCompaniesLocationsIds", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadMajorCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.AutoTransfer)
+                .Field(f => f.IsPettyCash)
+                .Select(f => f.CostCenter, cc => cc
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCheck, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCard, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.CashDrawerAutoTransfer, cd => cd
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadAuxiliaryCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.AutoTransfer)
+                .Field(f => f.IsPettyCash)
+                .Field(f => f.ComputerName)
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCheck, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCard, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.CashDrawerAutoTransfer, cd => cd
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadMinorCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.IsPettyCash)
+                .Select(f => f.CostCenter, cc => cc
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadFranchisesQuery()
+        {
+            var fields = FieldSpec<FranchiseGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.Type)
+                .Field(f => f.CommissionMargin)
+                .Field(f => f.ReteivaMargin)
+                .Field(f => f.ReteicaMargin)
+                .Field(f => f.RetefteMargin)
+                .Field(f => f.IvaMargin)
+                .Field(f => f.FormulaCommission)
+                .Field(f => f.FormulaReteiva)
+                .Field(f => f.FormulaReteica)
+                .Field(f => f.FormulaRetefte)
+                .Select(f => f.BankAccount, ba => ba
+                    .Field(b => b.Id)
+                    .Field(b => b.Description))
+                .Select(f => f.AccountingAccountCommission, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Name))
+                .SelectList(f => f.FranchiseSettingsByCostCenter, fs => fs
+                    .Field(s => s.Id)
+                    .Field(s => s.CostCenterId)
+                    .Field(s => s.CommissionMargin)
+                    .Field(s => s.ReteivaMargin)
+                    .Field(s => s.ReteicaMargin)
+                    .Field(s => s.RetefteMargin)
+                    .Field(s => s.IvaMargin)
+                    .Field(s => s.BankAccountId)
+                    .Field(s => s.FormulaCommission)
+                    .Field(s => s.FormulaReteiva)
+                    .Field(s => s.FormulaReteica)
+                    .Field(s => s.FormulaRetefte)
+                    .Field(s => s.FranchiseId))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "FranchiseFilterInput!");
+            var fragment = new GraphQLQueryFragment("franchises", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        #endregion
+
         public bool CanDeleteMajorCashDrawer => true;
 
         private ICommand _deleteMinorCashDrawerCommand;
@@ -1621,13 +1853,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     majorCashDrawerDummyDTO.Locations.Remove(majorCashDrawerDummyDTO.Locations[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: companiesLocations{
-                            id
-                            name
-                        }
-                    }";
+                string query = GetLoadCompanyLocationsQuery();
 
                 IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO>>(source);
@@ -1675,13 +1901,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     minorCashDrawerDummyDTO.Locations.Remove(minorCashDrawerDummyDTO.Locations[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: companiesLocations{
-                            id
-                            name
-                        }
-                    }";
+                string query = GetLoadCompanyLocationsQuery();
 
                 IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO>>(source);
@@ -1729,18 +1949,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bankDummyDTO.Banks.Remove(bankDummyDTO.Banks[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: banks{
-                            id
-                            paymentMethodPrefix
-                            accountingEntity{
-                                id
-                                searchName
-                                captureType
-                            }
-                        }
-                    }";
+                string query = GetLoadBanksQuery();
 
                 var source = await _bankService.GetListAsync(query, new { });
                 var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(source);
@@ -1787,41 +1996,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bank.BankAccounts.Remove(bank.BankAccounts[0]);
                 });
                 Refresh();
-                string query = @"
-                query($filter: BankAccountFilterInput!){
-                  ListResponse: bankAccounts(filter: $filter){
-                    id
-                    type
-                    number
-                    isActive
-                    description
-                    reference
-                    displayOrder
-                    paymentMethod{
-                        id
-                        abbreviation
-                        name
-                    }
-                    accountingAccount{
-                      id
-                      name
-                      code
-                    }
-                    bank{
-                      id
-                      accountingEntity{
-                        searchName
-                        captureType
-                      }
-                    }
-                    provider
-                    allowedCostCenters{
-                        id
-                        name
-                        bankAccountId
-                    }
-                  }
-                }";
+                string query = GetLoadBankAccountsQuery();
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 variables.filter.BankId = new ExpandoObject();
@@ -1870,16 +2045,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
                 List<int> ids = [location.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: costCentersByCompaniesLocationsIds(ids: $ids){
-                        id
-                        name
-                        location{
-                            id
-                        }
-                      }
-                    }";
+                string query = GetLoadCostCentersByLocationQuery();
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
@@ -1926,16 +2092,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
                 List<int> ids = [location.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: costCentersByCompaniesLocationsIds(ids: $ids){
-                        id
-                        name
-                        location{
-                            id
-                        }
-                      }
-                    }";
+                string query = GetLoadCostCentersByLocationQuery();
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
@@ -1982,40 +2139,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    costCenter{
-                      id
-                      name
-                    }
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCheck{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCard{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    autoTransfer
-                    cashDrawerAutoTransfer{
-                      id
-                      name
-                    }
-                    isPettyCash    
-                  }
-                }";
+                string query = GetLoadMajorCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -2074,37 +2198,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCheck{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCard{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    autoTransfer
-                    cashDrawerAutoTransfer{
-                      id
-                      name
-                    }
-                    isPettyCash
-                    computerName
-                    }
-                }";
+                string query = GetLoadAuxiliaryCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -2157,25 +2251,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    costCenter{
-                      id
-                      name
-                    }
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    isPettyCash    
-                  }
-                }";
+                string query = GetLoadMinorCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -2231,46 +2307,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises[0]);
                 });
                 Refresh();
-                string query = @"
-                query($filter: FranchiseFilterInput!){
-                  ListResponse: franchises(filter: $filter){
-                    id
-                    name
-                    type
-                    commissionMargin
-                    reteivaMargin
-                    reteicaMargin
-                    retefteMargin
-                    ivaMargin
-                    bankAccount{
-                      id
-                      description
-                    }
-                    accountingAccountCommission{
-                      id
-                      name
-                    }
-                    formulaCommission
-                    formulaReteiva
-                    formulaReteica
-                    formulaRetefte
-                    franchiseSettingsByCostCenter{
-                        id
-                        costCenterId
-                        commissionMargin
-                        reteivaMargin
-                        reteicaMargin
-                        retefteMargin
-                        ivaMargin
-                        bankAccountId
-                        formulaCommission
-                        formulaReteiva
-                        formulaReteica
-                        formulaRetefte
-                        franchiseId
-                    }
-                  }
-                }";
+                string query = GetLoadFranchisesQuery();
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 //TODO : Cambiar por el id de la compañía
