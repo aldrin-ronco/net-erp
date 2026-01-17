@@ -297,6 +297,7 @@ namespace NetErp
             .ToList()
             .ForEach(viewModelType => kernel.Bind(viewModelType).ToSelf().InTransientScope());
 
+            var loggerFactory = kernel.Get<ILoggerFactory>();
             var config = new MapperConfiguration(cfg =>
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
@@ -352,7 +353,7 @@ namespace NetErp
                 _ = cfg.CreateMap<ZoneGraphQLModel, ZoneDTO>();
                 _ = cfg.CreateMap<EmailGraphQLModel, EmailDTO>();
 
-            });
+            }, loggerFactory);
 
             _ = kernel.Bind<AutoMapper.IMapper>().ToConstant(config.CreateMapper());
         }

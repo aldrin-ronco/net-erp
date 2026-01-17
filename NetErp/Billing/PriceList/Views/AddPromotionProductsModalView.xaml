@@ -137,7 +137,7 @@
                             Width="auto" Height="auto"
                             cal:Message.Attach="[Event Click] = [Action AddItemAsync]">
                                     <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
                                     </Button.Content>
                                 </Button>
                             </DataTemplate>
@@ -243,7 +243,7 @@
                                     Width="auto" Height="auto"
                                     cal:Message.Attach="[Event Click] = [Action RemoveItemAsync]">
                                     <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v24.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
+                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
                                     </Button.Content>
                                 </Button>
                             </DataTemplate>

@@ -14,7 +14,9 @@ using Models.Treasury;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
+using NetErp.Treasury.Masters.PanelEditors;
 using Services.Billing.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -37,6 +39,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xceed.Wpf.Toolkit.Primitives;
 using static Dictionaries.BooksDictionaries;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.ViewModels
 {
@@ -66,6 +69,31 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+
+        #region Panel Editors
+
+        public MajorCashDrawerPanelEditor MajorCashDrawerEditor { get; private set; }
+        public MinorCashDrawerPanelEditor MinorCashDrawerEditor { get; private set; }
+        public AuxiliaryCashDrawerPanelEditor AuxiliaryCashDrawerEditor { get; private set; }
+        public BankPanelEditor BankEditor { get; private set; }
+        public BankAccountPanelEditor BankAccountEditor { get; private set; }
+        public FranchisePanelEditor FranchiseEditor { get; private set; }
+
+        private ITreasuryMastersPanelEditor? _currentPanelEditor;
+        public ITreasuryMastersPanelEditor? CurrentPanelEditor
+        {
+            get => _currentPanelEditor;
+            private set
+            {
+                if (_currentPanelEditor != value)
+                {
+                    _currentPanelEditor = value;
+                    NotifyOfPropertyChange(nameof(CurrentPanelEditor));
+                }
+            }
+        }
+
+        #endregion
 
         public ObservableCollection<object> DummyItems { get; set; } = [];
 
@@ -121,6 +149,18 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             if (_selectedItem != null)
             {
+                // Determine which Panel Editor to use based on selected item type
+                CurrentPanelEditor = _selectedItem switch
+                {
+                    MajorCashDrawerMasterTreeDTO => MajorCashDrawerEditor,
+                    MinorCashDrawerMasterTreeDTO => MinorCashDrawerEditor,
+                    TreasuryAuxiliaryCashDrawerMasterTreeDTO => AuxiliaryCashDrawerEditor,
+                    TreasuryBankMasterTreeDTO => BankEditor,
+                    TreasuryBankAccountMasterTreeDTO => BankAccountEditor,
+                    TreasuryFranchiseMasterTreeDTO => FranchiseEditor,
+                    _ => null
+                };
+
                 if (!IsNewRecord)
                 {
                     IsEditing = false;
@@ -129,51 +169,32 @@ namespace NetErp.Treasury.Masters.ViewModels
                     SelectedIndex = 0;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
                     {
-                        SetMajorCashDrawerForEdit(majorCashDrawerMasterTreeDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        MajorCashDrawerEditor.SetForEdit(majorCashDrawerMasterTreeDTO);
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
                     {
-                        SetMinorCashDrawerForEdit(minorCashDrawerMasterTreeDTO);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        MinorCashDrawerEditor.SetForEdit(minorCashDrawerMasterTreeDTO);
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer)
                     {
-                        SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
-                        ClearAllErrors();
-                        ValidateAuxiliaryCashDrawerProperties();
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawer);
                         return;
                     }
-                    if(_selectedItem is TreasuryBankMasterTreeDTO bank)
+                    if (_selectedItem is TreasuryBankMasterTreeDTO bank)
                     {
-                        SetBankForEdit(bank);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        BankEditor.SetForEdit(bank);
                         return;
                     }
-                    if(_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
+                    if (_selectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
                     {
-                        BankAccountNumber = "";
-                        SetBankAccountForEdit(bankAccount);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        BankAccountEditor.SetForEdit(bankAccount);
                         return;
                     }
-                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO franchsie)
+                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO franchise)
                     {
-                        SetFranchiseForEdit(franchsie);
-                        ClearAllErrors();
-                        ValidateProperty(nameof(FranchiseName), FranchiseName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        FranchiseEditor.SetForEdit(franchise);
                         return;
                     }
                 }
@@ -184,53 +205,39 @@ namespace NetErp.Treasury.Masters.ViewModels
                     CanEdit = false;
                     if (_selectedItem is MajorCashDrawerMasterTreeDTO)
                     {
-                        SetMajorCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MajorCashDrawerName), MajorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        MajorCashDrawerEditor.SetForNew(MajorCostCenterBeforeNewCashDrawer);
                         return;
                     }
                     if (_selectedItem is MinorCashDrawerMasterTreeDTO)
                     {
-                        SetMinorCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(MinorCashDrawerName), MinorCashDrawerName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        MinorCashDrawerEditor.SetForNew(MinorCostCenterBeforeNewCashDrawer);
                         return;
                     }
                     if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
                     {
-                        SetAuxiliaryCashDrawerForNew();
-                        ClearAllErrors();
-                        ValidateAuxiliaryCashDrawerProperties();
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        AuxiliaryCashDrawerEditor.SetForNew(MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer);
                         return;
                     }
                     if (_selectedItem is TreasuryBankMasterTreeDTO)
                     {
-                        SetBankForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountingEntityName), BankAccountingEntityName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        BankEditor.SetForNew(null!);
                         return;
                     }
                     if (_selectedItem is TreasuryBankAccountMasterTreeDTO)
                     {
-                        SetBankAccountForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(BankAccountNumber), BankAccountNumber);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        BankAccountEditor.SetForNew(BankBeforeNewBankAccount);
                         return;
                     }
-                    if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
+                    if (_selectedItem is TreasuryFranchiseMasterTreeDTO)
                     {
-                        SetFranchiseForNew();
-                        ClearAllErrors();
-                        ValidateProperty(nameof(FranchiseName), FranchiseName);
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        FranchiseEditor.SetForNew(null!);
                         return;
                     }
                 }
+            }
+            else
+            {
+                CurrentPanelEditor = null;
             }
         }
         public bool TreeViewIsEnable => !IsEditing;
@@ -268,9 +275,15 @@ namespace NetErp.Treasury.Masters.ViewModels
             CanUndo = true;
             CanEdit = false;
 
-            if (SelectedItem is MajorCashDrawerMasterTreeDTO) this.SetFocus(nameof(MajorCashDrawerName));
-            if (SelectedItem is MinorCashDrawerMasterTreeDTO) this.SetFocus(nameof(MinorCashDrawerName));
-            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO) this.SetFocus(nameof(AuxiliaryCashDrawerName));
+            // Set Panel Editor's IsEditing property
+            if (CurrentPanelEditor != null)
+            {
+                CurrentPanelEditor.IsEditing = true;
+            }
+
+            if (SelectedItem is MajorCashDrawerMasterTreeDTO) this.SetFocus("MajorCashDrawerName");
+            if (SelectedItem is MinorCashDrawerMasterTreeDTO) this.SetFocus("MinorCashDrawerName");
+            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO) this.SetFocus("AuxiliaryCashDrawerName");
         }
 
         private bool _canEdit = true;
@@ -301,6 +314,9 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void Undo()
         {
+            // Call Panel Editor's Undo - restores original values
+            CurrentPanelEditor?.Undo();
+
             if (IsNewRecord)
             {
                 SelectedItem = null;
@@ -310,12 +326,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             CanEdit = true;
             IsNewRecord = false;
             SelectedIndex = 0;
-            if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawer) SetMajorCashDrawerForEdit(majorCashDrawer);
-            if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawer) SetMinorCashDrawerForEdit(minorCashDrawer);
-            if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer) SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawer);
-            if (SelectedItem is TreasuryBankMasterTreeDTO bank) SetBankForEdit(bank);
-            if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount) SetBankAccountForEdit(bankAccount);
-            if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise) SetFranchiseForEdit(franchise);
         }
 
         private bool _canUndo = false;
@@ -350,7 +360,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(MajorCashDrawerName));
+                this.SetFocus("MajorCashDrawerName");
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -376,7 +386,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(MinorCashDrawerName));
+                this.SetFocus("MinorCashDrawerName");
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -401,7 +411,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(AuxiliaryCashDrawerName));
+                this.SetFocus("AuxiliaryCashDrawerName");
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -444,7 +454,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             await Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                this.SetFocus(nameof(BankAccountNumber));
+                this.SetFocus("BankAccountNumber");
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
@@ -467,205 +477,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             SelectedItem = new TreasuryFranchiseMasterTreeDTO();
             _ = Application.Current.Dispatcher.BeginInvoke(()  =>
                 {
-                this.SetFocus(nameof(FranchiseName));
+                this.SetFocus("FranchiseName");
             }, System.Windows.Threading.DispatcherPriority.Loaded);
-        }
-
-
-        public void SetMajorCashDrawerForEdit(MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
-        {
-            MajorCashDrawerId = majorCashDrawerMasterTreeDTO.Id;
-            MajorCashDrawerName = majorCashDrawerMasterTreeDTO.Name;
-            MajorCashDrawerCostCenterId = majorCashDrawerMasterTreeDTO.CostCenter.Id;
-            MajorCashDrawerCostCenterName = majorCashDrawerMasterTreeDTO.CostCenter.Name;
-            MajorCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers.Where(x => x.Id != majorCashDrawerMasterTreeDTO.Id));
-            MajorCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            MajorCashDrawerSelectedAccountingAccountCheck = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCheck.Id) ?? throw new Exception("");
-            MajorCashDrawerSelectedAccountingAccountCard = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.AccountingAccountCard.Id) ?? throw new Exception("");
-            MajorCashDrawerCashReviewRequired = majorCashDrawerMasterTreeDTO.CashReviewRequired;
-            MajorCashDrawerAutoAdjustBalance = majorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            MajorCashDrawerAutoTransfer = majorCashDrawerMasterTreeDTO.AutoTransfer;
-            SelectedCashDrawerAutoTransfer = MajorCashDrawerAutoTransfer ? MajorCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == majorCashDrawerMasterTreeDTO.CashDrawerAutoTransfer.Id) ?? throw new Exception("") : MajorCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-
-        }
-
-        public void SetMajorCashDrawerForNew()
-        {
-            MajorCashDrawerId = 0;
-            MajorCashDrawerName = $"CAJA GENERAL EN {MajorCostCenterBeforeNewCashDrawer.Name}";
-            MajorCashDrawerCostCenterName = MajorCostCenterBeforeNewCashDrawer.Name;
-            MajorCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers);
-            MajorCashDrawerSelectedAccountingAccountCash = new();
-            MajorCashDrawerSelectedAccountingAccountCheck = new();
-            MajorCashDrawerSelectedAccountingAccountCard = new();
-            MajorCashDrawerCashReviewRequired = false;
-            MajorCashDrawerAutoAdjustBalance = false;
-            MajorCashDrawerAutoTransfer = false;
-            SelectedCashDrawerAutoTransfer = CashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-
-        }
-
-        public void SetMinorCashDrawerForEdit(MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-        {
-            MinorCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
-            MinorCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
-            MinorCashDrawerCostCenterId = minorCashDrawerMasterTreeDTO.CostCenter.Id;
-            MinorCashDrawerCostCenterName = minorCashDrawerMasterTreeDTO.CostCenter.Name;
-            MinorCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            MinorCashDrawerCashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
-            MinorCashDrawerAutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-
-        }
-
-        public void SetMinorCashDrawerForNew()
-        {
-            MinorCashDrawerId = 0;
-            MinorCashDrawerName = $"CAJA MENOR EN {MinorCostCenterBeforeNewCashDrawer.Name}";
-            MinorCashDrawerCostCenterName = MinorCostCenterBeforeNewCashDrawer.Name;
-            MinorCashDrawerSelectedAccountingAccountCash = new();
-            MinorCashDrawerCashReviewRequired = false;
-            MinorCashDrawerAutoAdjustBalance = false;
-        }
-
-        public void SetAuxiliaryCashDrawerForEdit(TreasuryAuxiliaryCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-        {
-            AuxiliaryCashDrawerId = minorCashDrawerMasterTreeDTO.Id;
-            AuxiliaryCashDrawerName = minorCashDrawerMasterTreeDTO.Name;
-            AuxiliaryCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers.Where(x => x.Id != minorCashDrawerMasterTreeDTO.Id));
-            AuxiliaryCashDrawerSelectedAccountingAccountCash = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCash.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerSelectedAccountingAccountCheck = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCheck.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerSelectedAccountingAccountCard = CashDrawerAccountingAccounts.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.AccountingAccountCard.Id) ?? throw new Exception("");
-            AuxiliaryCashDrawerCashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
-            AuxiliaryCashDrawerAutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            AuxiliaryCashDrawerAutoTransfer = minorCashDrawerMasterTreeDTO.AutoTransfer;
-            SelectedCashDrawerAutoTransfer = AuxiliaryCashDrawerAutoTransfer ? AuxiliaryCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == minorCashDrawerMasterTreeDTO.CashDrawerAutoTransfer.Id) ?? throw new Exception("") : AuxiliaryCashDrawerAutoTransferCashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            AuxiliaryCashDrawerComputerName = minorCashDrawerMasterTreeDTO.ComputerName;
-        }
-
-        public void SetAuxiliaryCashDrawerForNew()
-        {
-            AuxiliaryCashDrawerId = 0;
-            AuxiliaryCashDrawerName = $"CAJA AUXILIAR";
-            AuxiliaryCashDrawerAutoTransferCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(CashDrawers);
-            AuxiliaryCashDrawerSelectedAccountingAccountCash = new();
-            AuxiliaryCashDrawerSelectedAccountingAccountCheck = new();
-            AuxiliaryCashDrawerSelectedAccountingAccountCard = new();
-            AuxiliaryCashDrawerCashReviewRequired = false;
-            AuxiliaryCashDrawerAutoAdjustBalance = false;
-            AuxiliaryCashDrawerAutoTransfer = false;
-            SelectedCashDrawerAutoTransfer = CashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            AuxiliaryCashDrawerComputerName = "";
-        }
-
-        public void SetBankForEdit(TreasuryBankMasterTreeDTO bank)
-        {
-            BankId = bank.Id;
-            BankAccountingEntityId = bank.AccountingEntity.Id;
-            BankAccountingEntityName = bank.AccountingEntity.SearchName;
-            BankPaymentMethodPrefix = bank.PaymentMethodPrefix;
-        }
-
-        public void SetBankForNew()
-        {
-            BankId = 0;
-            BankAccountingEntityId = 0;
-            BankAccountingEntityName = "";
-            BankPaymentMethodPrefix = "";
-        }
-
-        public void SetBankAccountForEdit(TreasuryBankAccountMasterTreeDTO bankAccount)
-        {
-            foreach(var costCenter in BankAccountCostCenters)
-            {
-                costCenter.IsChecked = false;
-            }
-            BankAccountId = bankAccount.Id;
-            BankAccountType = bankAccount.Type;
-            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), bankAccount.Bank.AccountingEntity.CaptureType);
-            BankAccountProvider = bankAccount.Provider;
-            BankAccountNumber = bankAccount.Number;
-            BankAccountIsActive = bankAccount.IsActive;
-            BankAccountReference = bankAccount.Reference;
-            BankAccountDisplayOrder = bankAccount.DisplayOrder;
-            BankAccountBankId = bankAccount.Bank.Id;
-            BankAccountBankName = bankAccount.Bank.AccountingEntity.SearchName;
-            BankAccountAccountingAccountAutoCreate = false;
-            BankAccountAccountingAccountSelectExisting = true;
-            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == bankAccount.AccountingAccount.Id) ?? throw new Exception("");
-            BankAccountPaymentMethodAbbreviation = bankAccount.PaymentMethod.Abbreviation;
-            foreach(var costCenter in BankAccountCostCenters)
-            {
-                costCenter.IsChecked = bankAccount.AllowedCostCenters.Any(x => x.Id == costCenter.Id);
-            }
-        }
-
-        public void SetBankAccountForNew()
-        {
-            BankAccountId = 0;
-            BankAccountBankCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), BankBeforeNewBankAccount.AccountingEntity.CaptureType);
-            BankAccountType = BankAccountBankCaptureInfoAsPJ ? "A" : "M";
-            BankAccountProvider = BankAccountBankCaptureInfoAsPN ? "N" : "";
-            BankAccountNumber = "";
-            BankAccountIsActive = true;
-            BankAccountReference = "";
-            BankAccountDisplayOrder = 0;
-            BankAccountBankId = BankBeforeNewBankAccount.Id;
-            BankAccountBankName = BankBeforeNewBankAccount.AccountingEntity.SearchName;
-            BankAccountAccountingAccountAutoCreate = true;
-            BankAccountAccountingAccountSelectExisting = false;
-            BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-        }
-
-        public void SetFranchiseForEdit(TreasuryFranchiseMasterTreeDTO franchise)
-        {
-            FranchiseId = franchise.Id;
-            FranchiseName = franchise.Name;
-            FranchiseType = franchise.Type;
-            FranchiseCommissionMargin = franchise.CommissionMargin;
-            FranchiseReteivaMargin = franchise.ReteivaMargin;
-            FranchiseReteicaMargin = franchise.ReteicaMargin;
-            FranchiseRetefteMargin = franchise.RetefteMargin;
-            FranchiseFormulaCommission = franchise.FormulaCommission;
-            FranchiseFormulaReteica = franchise.FormulaReteica;
-            FranchiseFormulaReteiva = franchise.FormulaReteiva;
-            FranchiseFormulaRetefte = franchise.FormulaRetefte;
-            FranchiseIvaMargin = franchise.IvaMargin;
-            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == franchise.AccountingAccountCommission.Id) ?? throw new Exception("");
-            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == franchise.BankAccount.Id) ?? throw new Exception("");
-            FranchiseSettingsByCostCenter = new List<FranchiseByCostCenterGraphQLModel>(franchise.FranchiseSettingsByCostCenter);
-            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseCardValue = 0;
-            FranchiseSimulatedCommission = 0;
-            FranchiseSimulatedReteiva = 0;
-            FranchiseSimulatedReteica = 0;
-            FranchiseSimulatedRetefte = 0;
-            FranchiseSimulatedIvaValue = 0;
-        }
-
-        public void SetFranchiseForNew()
-        {
-            FranchiseId = 0;
-            FranchiseName = "";
-            FranchiseType = "TC";
-            FranchiseCommissionMargin = 0;
-            FranchiseReteivaMargin = 0;
-            FranchiseReteicaMargin = 0;
-            FranchiseRetefteMargin = 0;
-            FranchiseFormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
-            FranchiseFormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
-            FranchiseFormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
-            FranchiseFormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
-            FranchiseIvaMargin = 0;
-            FranchiseSelectedAccountingAccountCommission = FranchiseAccountingAccountsCommission.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception(""); ;
-            FranchiseSettingsByCostCenter = [];
-            FranchiseSelectedCostCenter = FranchiseCostCenters.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-            FranchiseCardValue = 0;
-            FranchiseSimulatedCommission = 0;
-            FranchiseSimulatedReteiva = 0;
-            FranchiseSimulatedReteica = 0;
-            FranchiseSimulatedRetefte = 0;
-            FranchiseSimulatedIvaValue = 0;
         }
 
         private ICommand _searchComputerNameCommand;
@@ -680,7 +493,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void SearchComputerName(object p)
         {
-            AuxiliaryCashDrawerComputerName = SessionInfo.GetComputerName();
+            AuxiliaryCashDrawerEditor.ComputerName = SessionInfo.GetComputerName();
         }
 
         public bool CanSearchComputerName(object p) => true;
@@ -760,110 +573,42 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task Save()
         {
+            if (CurrentPanelEditor == null) return;
+
             try
             {
                 IsBusy = true;
                 Refresh();
-                if (SelectedItem is MajorCashDrawerMasterTreeDTO majorCashDrawerMasterTreeDTO)
-                {
-                    CashDrawerGraphQLModel result = await ExecuteSaveMajorCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
 
-                    }
-                }
-                if (SelectedItem is MinorCashDrawerMasterTreeDTO minorCashDrawerMasterTreeDTO)
-                {
-                    CashDrawerGraphQLModel result = await ExecuteSaveMinorCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
+                // Delegate save to the current Panel Editor
+                bool saveSuccessful = await CurrentPanelEditor.SaveAsync();
 
-                    }
-                }
-                if (SelectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawerMasterTreeDTO)
+                if (saveSuccessful)
                 {
-                    CashDrawerGraphQLModel result = await ExecuteSaveAuxiliaryCashDrawer();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
+                    // Reload combo boxes for cash drawer and bank account entities
+                    if (SelectedItem is MajorCashDrawerMasterTreeDTO or
+                        MinorCashDrawerMasterTreeDTO or
+                        TreasuryAuxiliaryCashDrawerMasterTreeDTO or
+                        TreasuryBankAccountMasterTreeDTO)
                     {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerCreateMessage() { CreatedCashDrawer = result });
+                        await LoadComboBoxesAsync();
                     }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerUpdateMessage() { UpdatedCashDrawer = result });
 
-                    }
-                }
-                if (SelectedItem is TreasuryBankMasterTreeDTO bank)
-                {
-                    BankGraphQLModel result = await ExecuteSaveBank();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankCreateMessage() { CreatedBank = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankUpdateMessage() { UpdatedBank = result });
-                    }
-                }
-                if (SelectedItem is TreasuryBankAccountMasterTreeDTO bankAccount)
-                {
-                    BankAccountGraphQLModel result = await ExecuteSaveBankAccount();
-                    await LoadComboBoxesAsync();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountCreateMessage() { CreatedBankAccount = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountUpdateMessage() { UpdatedBankAccount = result });
-                    }
-                }
-                if (SelectedItem is TreasuryFranchiseMasterTreeDTO franchise)
-                {
-                    FranchiseGraphQLModel result = await ExecuteSaveFranchise();
-                    if (IsNewRecord)
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseCreateMessage() { CreatedFranchise = result });
-                    }
-                    else
-                    {
-                        await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseUpdateMessage() { UpdatedFranchise = result });
-                    }
-                }
-                IsEditing = false;
-                CanUndo = false;
-                CanEdit = true;
-                SelectedIndex = 0;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.Save \r\n{graphQLError.Errors[0].Message} \r\n {graphQLError.Errors[0].Extensions.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
+                    IsEditing = false;
+                    CanUndo = false;
+                    CanEdit = true;
+                    IsNewRecord = false;
+                    SelectedIndex = 0;
                 }
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.Save \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                // Panel Editor already handles GraphQL errors, this catches any remaining exceptions
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.Save \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -871,630 +616,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        public bool CanSave
-        {
-            get
-            {
-                if (_selectedItem is MajorCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (MajorCashDrawerAutoTransfer == true && (SelectedCashDrawerAutoTransfer is null || SelectedCashDrawerAutoTransfer.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if (_selectedItem is MinorCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0) return true;
-                    return false;
-                }
-                if (_selectedItem is TreasuryAuxiliaryCashDrawerMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (AuxiliaryCashDrawerAutoTransfer == true && (SelectedCashDrawerAutoTransfer is null || SelectedCashDrawerAutoTransfer.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if(_selectedItem is TreasuryBankMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0) return true;
-                    return false;
-                }
-                if(_selectedItem is TreasuryBankAccountMasterTreeDTO)
-                {
-                    if(IsEditing == true && _errors.Count <= 0)
-                    {
-                        if (BankAccountAccountingAccountSelectExisting == true && (BankAccountSelectedAccountingAccount is null || BankAccountSelectedAccountingAccount.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                if(_selectedItem is TreasuryFranchiseMasterTreeDTO)
-                {
-                    if (IsEditing == true && _errors.Count <= 0)
-                    {
-                        if ((FranchiseSelectedAccountingAccountCommission is null || FranchiseSelectedAccountingAccountCommission.Id == 0) || (FranchiseSelectedBankAccount is null || FranchiseSelectedBankAccount.Id == 0)) return false;
-                        return true;
-                    }
-                    return false;
-                }
-                return false;
-            }
-        }
+        public bool CanSave => CurrentPanelEditor?.CanSave ?? false;
 
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveMajorCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = MajorCashDrawerId;
-                variables.Data.Name = MajorCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = MajorCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = MajorCashDrawerAutoAdjustBalance;
-                variables.Data.AutoTransfer = MajorCashDrawerAutoTransfer;
-                if (IsNewRecord) variables.Data.IsPettyCash = false;
-                variables.Data.CashDrawerIdAutoTransfer = MajorCashDrawerAutoTransfer ? SelectedCashDrawerAutoTransfer.Id : 0;
-                variables.Data.CostCenterId = IsNewRecord ? MajorCostCenterBeforeNewCashDrawer.Id : MajorCashDrawerCostCenterId;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = MajorCashDrawerSelectedAccountingAccountCash.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCheck = MajorCashDrawerSelectedAccountingAccountCheck.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCard = MajorCashDrawerSelectedAccountingAccountCard.Id;
-                if (IsNewRecord) variables.Data.ParentId = 0;
-                variables.Data.ComputerName = "";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateCashDrawerInput!){
-                            CreateResponse: createCashDrawer(data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                autoTransfer
-                                isPettyCash
-                                cashDrawerAutoTransfer{
-                                    id
-                                    name
-                                }
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                                accountingAccountCheck{
-                                    id
-                                    name
-                                }
-                                accountingAccountCard{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                autoTransfer
-                                isPettyCash
-                                cashDrawerAutoTransfer{
-                                    id
-                                    name
-                                }
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                                accountingAccountCheck{
-                                    id
-                                    name
-                                }
-                                accountingAccountCard{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveMinorCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = MinorCashDrawerId;
-                variables.Data.Name = MinorCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = MinorCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = MinorCashDrawerAutoAdjustBalance;
-                if (IsNewRecord) variables.Data.IsPettyCash = true;
-                variables.Data.AutoTransfer = false;
-                variables.Data.CashDrawerIdAutoTransfer = 0;
-                variables.Data.CostCenterId = IsNewRecord ? MinorCostCenterBeforeNewCashDrawer.Id : MinorCashDrawerCostCenterId;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = MinorCashDrawerSelectedAccountingAccountCash.Id;
-                if (IsNewRecord) variables.Data.ParentId = 0;
-                variables.Data.ComputerName = "";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateCashDrawerInput!){
-                            CreateResponse: createCashDrawer(data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                isPettyCash
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                                id
-                                name
-                                cashReviewRequired
-                                autoAdjustBalance
-                                isPettyCash
-                                costCenter{
-                                    id
-                                    name
-                                    location{
-                                        id
-                                    }
-                                }
-                                accountingAccountCash{
-                                    id
-                                    name
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<CashDrawerGraphQLModel> ExecuteSaveAuxiliaryCashDrawer()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = AuxiliaryCashDrawerId;
-                variables.Data.Name = AuxiliaryCashDrawerName.Trim().RemoveExtraSpaces();
-                variables.Data.CashReviewRequired = AuxiliaryCashDrawerCashReviewRequired;
-                variables.Data.AutoAdjustBalance = AuxiliaryCashDrawerAutoAdjustBalance;
-                variables.Data.AutoTransfer = AuxiliaryCashDrawerAutoTransfer;
-                if (IsNewRecord) variables.Data.IsPettyCash = false;
-                variables.Data.CashDrawerIdAutoTransfer = AuxiliaryCashDrawerAutoTransfer ? SelectedCashDrawerAutoTransfer.Id : 0;
-                variables.Data.CostCenterId = 0;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCash = AuxiliaryCashDrawerSelectedAccountingAccountCash.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCheck = AuxiliaryCashDrawerSelectedAccountingAccountCheck.Id;
-                if (!IsNewRecord) variables.Data.AccountingAccountIdCard = AuxiliaryCashDrawerSelectedAccountingAccountCard.Id;
-                if (IsNewRecord) variables.Data.ParentId = MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer;
-                variables.Data.ComputerName = AuxiliaryCashDrawerComputerName.Trim().RemoveExtraSpaces();
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation ($data: CreateCashDrawerInput!) {
-                          CreateResponse: createCashDrawer(data: $data) {
-                            id
-                            name
-                            cashReviewRequired
-                            autoAdjustBalance
-                            autoTransfer
-                            isPettyCash
-                            computerName
-                            cashDrawerAutoTransfer {
-                              id
-                              name
-                            }
-                            accountingAccountCash {
-                              id
-                              name
-                            }
-                            accountingAccountCheck {
-                              id
-                              name
-                            }
-                            accountingAccountCard {
-                              id
-                              name
-                            }
-                            computerName
-                            parent {
-                              id
-                              costCenter {
-                                id
-                                location {
-                                  id
-                                }
-                              }
-                            }
-                          }
-                        }
-                        ";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateCashDrawerInput!){
-                            UpdateResponse: updateCashDrawer(id: $id, data: $data){
-                            id
-                            name
-                            cashReviewRequired
-                            autoAdjustBalance
-                            autoTransfer
-                            isPettyCash
-                            computerName
-                            cashDrawerAutoTransfer {
-                              id
-                              name
-                            }
-                            accountingAccountCash {
-                              id
-                              name
-                            }
-                            accountingAccountCheck {
-                              id
-                              name
-                            }
-                            accountingAccountCard {
-                              id
-                              name
-                            }
-                            computerName
-                            parent {
-                              id
-                              costCenter {
-                                id
-                                location {
-                                  id
-                                }
-                              }
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _cashDrawerService.CreateAsync(query, variables) : await _cashDrawerService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<BankGraphQLModel> ExecuteSaveBank()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = BankId;
-                variables.Data.AccountingEntityId = BankAccountingEntityId;
-                variables.Data.PaymentMethodPrefix = "Z";
-                if (IsNewRecord)
-                {
-                    query = @"
-                        mutation($data: CreateBankInput!){
-                            CreateResponse: createBank(data: $data){
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                }
-                                paymentMethodPrefix
-                            }
-                        }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateBankInput!){
-                            UpdateResponse: updateBank(id: $id, data: $data){
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                }
-                                paymentMethodPrefix
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _bankService.CreateAsync(query, variables) : await _bankService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<BankAccountGraphQLModel> ExecuteSaveBankAccount()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = BankAccountId;
-                variables.Data.Type = BankAccountType;
-                variables.Data.Number = BankAccountNumber;
-                variables.Data.IsActive = BankAccountIsActive;
-                variables.Data.Description = BankAccountDescription;
-                variables.Data.Reference = BankAccountReference;
-                variables.Data.DisplayOrder = BankAccountDisplayOrder;
-                variables.Data.AccountingAccountId = BankAccountAccountingAccountSelectExisting ? BankAccountSelectedAccountingAccount.Id : 0;
-                variables.Data.Provider = BankAccountBankCaptureInfoAsPN ? BankAccountProvider : "";
-                variables.Data.BankId = BankAccountBankId;
-                variables.Data.PaymentMethodName = BankAccountPaymentMethodName;
-                variables.Data.AllowedCostCenters = BankAccountCostCenters.Where(x => x.IsChecked).Select(x => x.Id).ToList();
-                if (IsNewRecord)
-                {
-                    query = @"
-                    mutation($data: CreateBankAccountInput!){
-                        CreateResponse: createBankAccount(data: $data){
-                            id
-                            type
-                            number
-                            isActive
-                            description
-                            reference
-                            displayOrder
-                            provider
-                            allowedCostCenters{
-                                id
-                                name
-                                bankAccountId
-                            }
-                            paymentMethod{
-                                id
-                                abbreviation
-                                name
-                            }
-                            accountingAccount{
-                                id
-                                code
-                                name
-                            }
-                            bank{
-                                id
-                                accountingEntity{
-                                    id
-                                    searchName
-                                    captureType
-                                }
-                            }
-                        }
-                    }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateBankAccountInput!){
-                            UpdateResponse: updateBankAccount(data: $data, id: $id){
-                                id
-                                type
-                                number
-                                isActive
-                                description
-                                reference
-                                displayOrder
-                                provider
-                                allowedCostCenters{
-                                    id
-                                    name
-                                    bankAccountId
-                                }
-                                paymentMethod{
-                                    id
-                                    abbreviation
-                                    name
-                                }
-                                accountingAccount{
-                                    id
-                                    code
-                                    name
-                                }
-                                bank{
-                                    id
-                                    accountingEntity{
-                                        id
-                                        searchName
-                                        captureType
-                                    }
-                                }
-                            }
-                        }";
-                }
-                var result = IsNewRecord ? await _bankAccountService.CreateAsync(query, variables) : await _bankAccountService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
-        public async Task<FranchiseGraphQLModel> ExecuteSaveFranchise()
-        {
-            try
-            {
-                string query;
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                if (!IsNewRecord) variables.Id = FranchiseId;
-                variables.Data.Name = FranchiseName.Trim().RemoveExtraSpaces();
-                variables.Data.Type = FranchiseType;
-                variables.Data.CommissionMargin = FranchiseCommissionMargin;
-                variables.Data.ReteivaMargin = FranchiseReteivaMargin;
-                variables.Data.ReteicaMargin = FranchiseReteicaMargin;
-                variables.Data.RetefteMargin = FranchiseRetefteMargin;
-                variables.Data.FormulaCommission = FranchiseFormulaCommission;
-                variables.Data.FormulaReteica = FranchiseFormulaReteica;
-                variables.Data.FormulaReteiva = FranchiseFormulaReteiva;
-                variables.Data.FormulaRetefte = FranchiseFormulaRetefte;
-                variables.Data.IvaMargin = FranchiseIvaMargin;
-                variables.Data.AccountingAccountIdCommission = FranchiseSelectedAccountingAccountCommission.Id;
-                variables.Data.BankAccountId = FranchiseSelectedBankAccount.Id;
-                variables.Data.CompanyId = 1; //TODO: Cambiar por el valor correcto
-                variables.Data.CostCenterId = FranchiseSelectedCostCenter.Id;
-                if (IsNewRecord)
-                {
-                    query = @"
-                    mutation ($data: CreateFranchiseInput!) {
-                      CreateResponse: createFranchise(data: $data) {
-                        id
-                        name
-                        type
-                        commissionMargin
-                        reteivaMargin
-                        reteicaMargin
-                        retefteMargin
-                        ivaMargin
-                        accountingAccountCommission {
-                          id
-                          code
-                          name
-                        }
-                        bankAccount {
-                          id
-                          description
-                        }
-                        formulaCommission
-                        formulaReteiva
-                        formulaReteica
-                        formulaRetefte
-                        franchiseSettingsByCostCenter{
-                          id
-                          costCenterId
-                          commissionMargin
-                          reteivaMargin
-                          reteicaMargin
-                          retefteMargin
-                          ivaMargin
-                          bankAccountId
-                          accountingAccountIdCommmission
-                          formulaCommission
-                          formulaReteiva
-                          formulaReteica
-                          formulaRetefte
-                          franchiseId
-                        }
-                      }
-                    }";
-                }
-                else
-                {
-                    query = @"
-                        mutation($id: Int!, $data: UpdateFranchiseInput!){
-                          UpdateResponse: updateFranchise(id: $id, data: $data){
-                            id
-                            name
-                            type
-                            commissionMargin
-                            reteivaMargin
-                            reteicaMargin
-                            retefteMargin
-                            ivaMargin
-                            accountingAccountCommission{
-                              id
-                              code
-                              name
-                            }
-                            bankAccount{
-                              id
-                              description
-                            }
-                            formulaCommission
-                            formulaReteiva
-                            formulaReteica
-                            formulaRetefte
-                            franchiseSettingsByCostCenter{
-                              id
-                              costCenterId
-                              commissionMargin
-                              reteivaMargin
-                              reteicaMargin
-                              retefteMargin
-                              ivaMargin
-                              bankAccountId
-                              accountingAccountIdCommmission
-                              formulaCommission
-                              formulaReteiva
-                              formulaReteica
-                              formulaRetefte
-                              franchiseId
-                            }
-                          }
-                        }";
-                }
-                var result = IsNewRecord ? await _franchiseService.CreateAsync(query, variables) : await _franchiseService.UpdateAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
+        public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
 
         private ICommand _deleteMajorCashDrawerCommand;
         public ICommand DeleteMajorCashDrawerCommand
@@ -1511,7 +635,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((MajorCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (MajorCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -1527,7 +652,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((MajorCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1538,12 +663,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteMajorCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteMajorCashDrawer));
 
@@ -1573,55 +707,345 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteMajorCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                          location{
-                            id
-                          }
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
+        #region Delete Query Builders
 
-                throw;
-            }
+        private string GetDeleteCashDrawerQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteCashDrawer", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
+
+        private string GetDeleteBankQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteBank", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        private string GetDeleteBankAccountQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteBankAccount", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        private string GetDeleteFranchiseQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "Int!");
+            var fragment = new GraphQLQueryFragment("deleteFranchise", [parameter], fields, "DeleteResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        #endregion
+
+        #region Execute Delete Methods
+
+        private async Task<DeleteResponseType> ExecuteDeleteCashDrawerAsync(int id)
+        {
+            string query = GetDeleteCashDrawerQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _cashDrawerService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteBankAsync(int id)
+        {
+            string query = GetDeleteBankQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _bankService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteBankAccountAsync(int id)
+        {
+            string query = GetDeleteBankAccountQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _bankAccountService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        private async Task<DeleteResponseType> ExecuteDeleteFranchiseAsync(int id)
+        {
+            string query = GetDeleteFranchiseQuery();
+            object variables = new { Id = id };
+            DeleteResponseType result = await _franchiseService.DeleteAsync<DeleteResponseType>(query, variables);
+            this.SelectedItem = null;
+            return result;
+        }
+
+        #endregion
+
+        #region Load Query Builders
+
+        private string GetLoadCompanyLocationsQuery()
+        {
+            var fields = FieldSpec<CompanyLocationGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("companiesLocations", [], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadBanksQuery()
+        {
+            var fields = FieldSpec<BankGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.PaymentMethodPrefix)
+                .Select(f => f.AccountingEntity, ae => ae
+                    .Field(a => a.Id)
+                    .Field(a => a.SearchName)
+                    .Field(a => a.CaptureType))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("banks", [], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadBankAccountsQuery()
+        {
+            var fields = FieldSpec<BankAccountGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Type)
+                .Field(f => f.Number)
+                .Field(f => f.IsActive)
+                .Field(f => f.Description)
+                .Field(f => f.Reference)
+                .Field(f => f.DisplayOrder)
+                .Field(f => f.Provider)
+                .Select(f => f.PaymentMethod, pm => pm
+                    .Field(p => p.Id)
+                    .Field(p => p.Abbreviation)
+                    .Field(p => p.Name))
+                .Select(f => f.AccountingAccount, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Name)
+                    .Field(a => a.Code))
+                .Select(f => f.Bank, b => b
+                    .Field(bk => bk.Id)
+                    .Select(bk => bk.AccountingEntity, ae => ae
+                        .Field(a => a.SearchName)
+                        .Field(a => a.CaptureType)))
+                .SelectList(f => f.AllowedCostCenters, ac => ac
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "BankAccountFilterInput!");
+            var fragment = new GraphQLQueryFragment("bankAccounts", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadCostCentersByLocationQuery()
+        {
+            var fields = FieldSpec<CostCenterGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Select(f => f.CompanyLocation, loc => loc
+                    .Field(l => l.Id))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("ids", "[Int!]!");
+            var fragment = new GraphQLQueryFragment("costCentersByCompaniesLocationsIds", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadMajorCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.AutoTransfer)
+                .Field(f => f.IsPettyCash)
+                .Select(f => f.CostCenter, cc => cc
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCheck, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCard, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.CashDrawerAutoTransfer, cd => cd
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadAuxiliaryCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.AutoTransfer)
+                .Field(f => f.IsPettyCash)
+                .Field(f => f.ComputerName)
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCheck, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.AccountingAccountCard, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Select(f => f.CashDrawerAutoTransfer, cd => cd
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadMinorCashDrawersQuery()
+        {
+            var fields = FieldSpec<CashDrawerGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.CashReviewRequired)
+                .Field(f => f.AutoAdjustBalance)
+                .Field(f => f.IsPettyCash)
+                .Select(f => f.CostCenter, cc => cc
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Select(f => f.AccountingAccountCash, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "CashDrawerFilterInput!");
+            var fragment = new GraphQLQueryFragment("cashDrawers", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        private string GetLoadFranchisesQuery()
+        {
+            var fields = FieldSpec<FranchiseGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Name)
+                .Field(f => f.Type)
+                .Field(f => f.CommissionMargin)
+                .Field(f => f.ReteivaMargin)
+                .Field(f => f.ReteicaMargin)
+                .Field(f => f.RetefteMargin)
+                .Field(f => f.IvaMargin)
+                .Field(f => f.FormulaCommission)
+                .Field(f => f.FormulaReteiva)
+                .Field(f => f.FormulaReteica)
+                .Field(f => f.FormulaRetefte)
+                .Select(f => f.BankAccount, ba => ba
+                    .Field(b => b.Id)
+                    .Field(b => b.Description))
+                .Select(f => f.AccountingAccountCommission, aa => aa
+                    .Field(a => a.Id)
+                    .Field(a => a.Name))
+                .SelectList(f => f.FranchiseSettingsByCostCenter, fs => fs
+                    .Field(s => s.Id)
+                    .Field(s => s.CostCenterId)
+                    .Field(s => s.CommissionMargin)
+                    .Field(s => s.ReteivaMargin)
+                    .Field(s => s.ReteicaMargin)
+                    .Field(s => s.RetefteMargin)
+                    .Field(s => s.IvaMargin)
+                    .Field(s => s.BankAccountId)
+                    .Field(s => s.FormulaCommission)
+                    .Field(s => s.FormulaReteiva)
+                    .Field(s => s.FormulaReteica)
+                    .Field(s => s.FormulaRetefte)
+                    .Field(s => s.FranchiseId))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("filter", "FranchiseFilterInput!");
+            var fragment = new GraphQLQueryFragment("franchises", [parameter], fields, "ListResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        #endregion
 
         public bool CanDeleteMajorCashDrawer => true;
 
@@ -1640,7 +1064,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((MinorCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (MinorCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -1656,7 +1081,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((MinorCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1667,12 +1092,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteMinorCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteMinorCashDrawer));
 
@@ -1702,56 +1136,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteMinorCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                          location{
-                            id
-                          }
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteMinorCashDrawer => true;
 
         private ICommand _deleteAuxiliaryCashDrawerCommand;
@@ -1769,7 +1153,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem).Id;
+                var selectedCashDrawer = (TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem;
+                int id = selectedCashDrawer.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteCashDrawer(id: $id){
@@ -1785,7 +1170,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1796,12 +1181,21 @@ namespace NetErp.Treasury.Masters.ViewModels
                     return;
                 }
 
+                // Map to CashDrawerGraphQLModel BEFORE delete (we already have the data)
+                CashDrawerGraphQLModel cashDrawerModel = Context.AutoMapper.Map<CashDrawerGraphQLModel>(selectedCashDrawer);
+
                 IsBusy = true;
                 Refresh();
 
-                CashDrawerGraphQLModel deletedCashDrawer = await ExecuteDeleteAuxiliaryCashDrawer(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deletedCashDrawer });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = cashDrawerModel });
 
                 NotifyOfPropertyChange(nameof(CanDeleteAuxiliaryCashDrawer));
 
@@ -1831,59 +1225,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<CashDrawerGraphQLModel> ExecuteDeleteAuxiliaryCashDrawer(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deleteCashDrawer(id: $id){
-                        id
-                        name
-                        cashReviewRequired
-                        autoAdjustBalance
-                        autoTransfer
-                        isPettyCash
-                        cashDrawerAutoTransfer {
-                          id
-                          name
-                        }
-                        accountingAccountCash {
-                          id
-                          name
-                        }
-                        accountingAccountCheck {
-                          id
-                          name
-                        }
-                        accountingAccountCard {
-                          id
-                          name
-                        }
-                        parent{
-                          id
-                          costCenter{
-                            id
-                            location{
-                              id
-                             }
-                            }
-                        }
-                        computerName
-                      }
-                    }";
-                object variables = new { Id = id };
-                CashDrawerGraphQLModel deletedCashDrawer = await _cashDrawerService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedCashDrawer;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteAuxiliaryCashDrawer => true;
 
         private ICommand _deleteBankCommand;
@@ -1901,7 +1242,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryBankMasterTreeDTO)SelectedItem).Id;
+                var selectedBank = (TreasuryBankMasterTreeDTO)SelectedItem;
+                int id = selectedBank.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteBank(id: $id){
@@ -1917,7 +1259,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankMasterTreeDTO)SelectedItem).AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBank.AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -1931,9 +1273,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                BankGraphQLModel deletedBank = await ExecuteDeleteBank(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteBankAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deletedBank });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteBank));
 
@@ -1963,33 +1311,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<BankGraphQLModel> ExecuteDeleteBank(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation ($id: Int!) {
-                      DeleteResponse: deleteBank(id: $id){
-                        id
-                        paymentMethodPrefix
-                        accountingEntity{
-                          id
-                          searchName
-                        }
-                      }
-                    }";
-                object variables = new { Id = id };
-                BankGraphQLModel deletedBank = await _bankService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedBank;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteBank => true;
 
         private ICommand _deleteBankAccountCommand;
@@ -2007,7 +1328,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryBankAccountMasterTreeDTO)SelectedItem).Id;
+                var selectedBankAccount = (TreasuryBankAccountMasterTreeDTO)SelectedItem;
+                int id = selectedBankAccount.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteBankAccount(id: $id){
@@ -2023,7 +1345,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryBankAccountMasterTreeDTO)SelectedItem).Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBankAccount.Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -2037,9 +1359,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                BankAccountGraphQLModel deletedBankAccount = await ExecuteDeleteBankAccount(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteBankAccountAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deletedBankAccount });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteBankAccount));
 
@@ -2069,42 +1397,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<BankAccountGraphQLModel> ExecuteDeleteBankAccount(int id)
-        {
-            try
-            {
-                string query = @"
-                    mutation($id: Int!){
-                        DeleteResponse: deleteBankAccount(id: $id){
-                        id
-                        type
-                        number
-                        description
-                        isActive
-                        reference
-                        displayOrder
-                        accountingAccount{
-                            id
-                            code
-                            name
-                        }
-                        bank{
-                            id
-                        }
-                        }
-                    }";
-                object variables = new { Id = id };
-                BankAccountGraphQLModel deletedBankAccount = await _bankAccountService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedBankAccount;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteBankAccount => true;
 
         private ICommand _deleteFranchiseCommand;
@@ -2122,7 +1414,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 IsBusy = true;
-                int id = ((TreasuryFranchiseMasterTreeDTO)SelectedItem).Id;
+                var selectedFranchise = (TreasuryFranchiseMasterTreeDTO)SelectedItem;
+                int id = selectedFranchise.Id;
 
                 string query = @"query($id:Int!){
                   CanDeleteModel: canDeleteFranchise(id: $id){
@@ -2138,7 +1431,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((TreasuryFranchiseMasterTreeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedFranchise.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
@@ -2152,9 +1445,15 @@ namespace NetErp.Treasury.Masters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                FranchiseGraphQLModel deletedFranchise = await ExecuteDeleteFranchise(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteFranchiseAsync(id);
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deletedFranchise });
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deleteResult });
 
                 NotifyOfPropertyChange(nameof(CanDeleteFranchise));
 
@@ -2184,196 +1483,14 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         }
 
-        public async Task<FranchiseGraphQLModel> ExecuteDeleteFranchise(int id)
-        {
-            try
-            {
-                string query = @"
-                mutation($id: Int!){
-                    DeleteResponse: deleteFranchise(id: $id){
-                    id
-                    name
-                    type
-                    commissionMargin
-                    reteivaMargin
-                    reteicaMargin
-                    retefteMargin
-                    ivaMargin
-                    accountingAccountCommission{
-                        id
-                        code
-                        name
-                    }
-                    bankAccount{
-                        id
-                        description
-                    }
-                    formulaCommission
-                    formulaReteiva
-                    formulaReteica
-                    formulaRetefte
-                    }
-                }";
-                object variables = new { Id = id };
-                FranchiseGraphQLModel deletedFranchise = await _franchiseService.DeleteAsync(query, variables);
-                this.SelectedItem = null;
-                return deletedFranchise;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-        }
-
         public bool CanDeleteFranchise => true;
 
-        #region "MajorCashDrawer"
+        #region "MajorCashDrawer Context Properties"
 
-        #region "Properties"
+        public TreasuryMajorCashDrawerCostCenterMasterTreeDTO MajorCostCenterBeforeNewCashDrawer { get; set; } = new();
 
-        public int MajorCashDrawerId { get; set; }
-
-        private string _majorCashDrawerName;
-
-        public string MajorCashDrawerName
-        {
-            get { return _majorCashDrawerName; }
-            set
-            {
-                if (_majorCashDrawerName != value)
-                {
-                    _majorCashDrawerName = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerName));
-                    ValidateProperty(nameof(MajorCashDrawerName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private int _majorCashDrawerCostCenterId;
-
-        public int MajorCashDrawerCostCenterId
-        {
-            get { return _majorCashDrawerCostCenterId; }
-            set
-            {
-                if (_majorCashDrawerCostCenterId != value)
-                {
-                    _majorCashDrawerCostCenterId = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerCostCenterId));
-                }
-            }
-        }
-
-        private string _majorCashDrawerCostCenterName;
-
-        public string MajorCashDrawerCostCenterName
-        {
-            get { return _majorCashDrawerCostCenterName; }
-            set
-            {
-                if (_majorCashDrawerCostCenterName != value)
-                {
-                    _majorCashDrawerCostCenterName = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerCostCenterName));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _majorCashDrawerSelectedAccountingAccountCash;
-
-        public AccountingAccountGraphQLModel MajorCashDrawerSelectedAccountingAccountCash
-        {
-            get { return _majorCashDrawerSelectedAccountingAccountCash; }
-            set
-            {
-                if (_majorCashDrawerSelectedAccountingAccountCash != value)
-                {
-                    _majorCashDrawerSelectedAccountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerSelectedAccountingAccountCash));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _majorCashDrawerSelectedAccountingAccountCheck;
-
-        public AccountingAccountGraphQLModel MajorCashDrawerSelectedAccountingAccountCheck
-        {
-            get { return _majorCashDrawerSelectedAccountingAccountCheck; }
-            set
-            {
-                if (_majorCashDrawerSelectedAccountingAccountCheck != value)
-                {
-                    _majorCashDrawerSelectedAccountingAccountCheck = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerSelectedAccountingAccountCheck));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _majorCashDrawerSelectedAccountingAccountCard;
-
-        public AccountingAccountGraphQLModel MajorCashDrawerSelectedAccountingAccountCard
-        {
-            get { return _majorCashDrawerSelectedAccountingAccountCard; }
-            set
-            {
-                if (_majorCashDrawerSelectedAccountingAccountCard != value)
-                {
-                    _majorCashDrawerSelectedAccountingAccountCard = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerSelectedAccountingAccountCard));
-                }
-            }
-        }
-
-        private bool _majorCashDrawerCashReviewRequired;
-
-        public bool MajorCashDrawerCashReviewRequired
-        {
-            get { return _majorCashDrawerCashReviewRequired; }
-            set
-            {
-                if (_majorCashDrawerCashReviewRequired != value)
-                {
-                    _majorCashDrawerCashReviewRequired = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerCashReviewRequired));
-                }
-            }
-        }
-
-        private bool _majorCashDrawerAutoAdjustBalance;
-
-        public bool MajorCashDrawerAutoAdjustBalance
-        {
-            get { return _majorCashDrawerAutoAdjustBalance; }
-            set
-            {
-                if (_majorCashDrawerAutoAdjustBalance != value)
-                {
-                    _majorCashDrawerAutoAdjustBalance = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerAutoAdjustBalance));
-                }
-            }
-        }
-
-        private bool _majorCashDrawerAutoTransfer;
-
-        public bool MajorCashDrawerAutoTransfer
-        {
-            get { return _majorCashDrawerAutoTransfer; }
-            set
-            {
-                if (_majorCashDrawerAutoTransfer != value)
-                {
-                    _majorCashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerAutoTransfer));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
+        // Collection used by MajorCashDrawerPanelEditor
         private ObservableCollection<CashDrawerGraphQLModel> _majorCashDrawerAutoTransferCashDrawers;
-
         public ObservableCollection<CashDrawerGraphQLModel> MajorCashDrawerAutoTransferCashDrawers
         {
             get { return _majorCashDrawerAutoTransferCashDrawers; }
@@ -2387,206 +1504,20 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private CashDrawerGraphQLModel _selectedCashDrawerAutoTransfer;
-
-        public CashDrawerGraphQLModel SelectedCashDrawerAutoTransfer
-        {
-            get { return _selectedCashDrawerAutoTransfer; }
-            set
-            {
-                if (_selectedCashDrawerAutoTransfer != value)
-                {
-                    _selectedCashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(SelectedCashDrawerAutoTransfer));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        public TreasuryMajorCashDrawerCostCenterMasterTreeDTO MajorCostCenterBeforeNewCashDrawer { get; set; } = new();
-
         #endregion
 
-        #endregion
-
-        #region "MinorCashDrawer"
-
-        #region "Properties"
-
-        public int MinorCashDrawerId { get; set; }
-
-        private string _minorCashDrawerCostCenterName;
-
-        public string MinorCashDrawerCostCenterName
-        {
-            get { return _minorCashDrawerCostCenterName; }
-            set
-            {
-                if (_minorCashDrawerCostCenterName != value)
-                {
-                    _minorCashDrawerCostCenterName = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerCostCenterName));
-                }
-            }
-        }
-
-        private string _minorCashDrawerName;
-
-        public string MinorCashDrawerName
-        {
-            get { return _minorCashDrawerName; }
-            set
-            {
-                if (_minorCashDrawerName != value)
-                {
-                    _minorCashDrawerName = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerName));
-                    ValidateProperty(nameof(MinorCashDrawerName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private int _minorCashDrawerCostCenterId;
-
-        public int MinorCashDrawerCostCenterId
-        {
-            get { return _minorCashDrawerCostCenterId; }
-            set
-            {
-                if (_minorCashDrawerCostCenterId != value)
-                {
-                    _minorCashDrawerCostCenterId = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerCostCenterId));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _minorCashDrawerSelectedAccountingAccountCash;
-
-        public AccountingAccountGraphQLModel MinorCashDrawerSelectedAccountingAccountCash
-        {
-            get { return _minorCashDrawerSelectedAccountingAccountCash; }
-            set
-            {
-                if (_minorCashDrawerSelectedAccountingAccountCash != value)
-                {
-                    _minorCashDrawerSelectedAccountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerSelectedAccountingAccountCash));
-                }
-            }
-        }
+        #region "MinorCashDrawer Context Properties"
 
         public TreasuryMinorCashDrawerCostCenterMasterTreeDTO MinorCostCenterBeforeNewCashDrawer { get; set; } = new();
 
-        private bool _minorCashDrawerCashReviewRequired;
-
-        public bool MinorCashDrawerCashReviewRequired
-        {
-            get { return _minorCashDrawerCashReviewRequired; }
-            set
-            {
-                if (_minorCashDrawerCashReviewRequired != value)
-                {
-                    _minorCashDrawerCashReviewRequired = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerCashReviewRequired));
-                }
-            }
-        }
-
-        private bool _minorCashDrawerAutoAdjustBalance;
-
-        public bool MinorCashDrawerAutoAdjustBalance
-        {
-            get { return _minorCashDrawerAutoAdjustBalance; }
-            set
-            {
-                if (_minorCashDrawerAutoAdjustBalance != value)
-                {
-                    _minorCashDrawerAutoAdjustBalance = value;
-                    NotifyOfPropertyChange(nameof(MinorCashDrawerAutoAdjustBalance));
-                }
-            }
-        }
-
         #endregion
 
-        #endregion
-
-        #region "AuxiliaryCashDrawer"
-
-        #region "Properties"
-
-        public int AuxiliaryCashDrawerId { get; set; }
+        #region "AuxiliaryCashDrawer Context Properties"
 
         public int MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer { get; set; }
 
-        private string _auxiliaryCashDrawerName;
-
-        public string AuxiliaryCashDrawerName
-        {
-            get { return _auxiliaryCashDrawerName; }
-            set
-            {
-                if (_auxiliaryCashDrawerName != value)
-                {
-                    _auxiliaryCashDrawerName = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerName));
-                    ValidateProperty(nameof(AuxiliaryCashDrawerName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private bool _auxiliaryCashDrawerCashReviewRequired;
-
-        public bool AuxiliaryCashDrawerCashReviewRequired
-        {
-            get { return _auxiliaryCashDrawerCashReviewRequired; }
-            set
-            {
-                if (_auxiliaryCashDrawerCashReviewRequired != value)
-                {
-                    _auxiliaryCashDrawerCashReviewRequired = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerCashReviewRequired));
-                }
-            }
-        }
-
-        private bool _auxiliaryCashDrawerAutoAdjustBalance;
-
-        public bool AuxiliaryCashDrawerAutoAdjustBalance
-        {
-            get { return _auxiliaryCashDrawerAutoAdjustBalance; }
-            set
-            {
-                if (_auxiliaryCashDrawerAutoAdjustBalance != value)
-                {
-                    _auxiliaryCashDrawerAutoAdjustBalance = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerAutoAdjustBalance));
-                }
-            }
-        }
-
-        private bool _auxiliaryCashDrawerAutoTransfer;
-
-        public bool AuxiliaryCashDrawerAutoTransfer
-        {
-            get { return _auxiliaryCashDrawerAutoTransfer; }
-            set
-            {
-                if (_auxiliaryCashDrawerAutoTransfer != value)
-                {
-                    _auxiliaryCashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerAutoTransfer));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    if (value is false) SelectedCashDrawerAutoTransfer = CashDrawers.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-                }
-            }
-        }
-
+        // Collection used by AuxiliaryCashDrawerPanelEditor
         private ObservableCollection<CashDrawerGraphQLModel> _auxiliaryCashDrawerAutoTransferCashDrawers = [];
-
         public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryCashDrawerAutoTransferCashDrawers
         {
             get { return _auxiliaryCashDrawerAutoTransferCashDrawers; }
@@ -2600,409 +1531,18 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private CashDrawerGraphQLModel _selectedAuxiliaryCashDrawerAutoTransfer;
-
-        public CashDrawerGraphQLModel SelectedAuxiliaryCashDrawerAutoTransfer
-        {
-            get { return _selectedAuxiliaryCashDrawerAutoTransfer; }
-            set
-            {
-                if (_selectedAuxiliaryCashDrawerAutoTransfer != value)
-                {
-                    _selectedAuxiliaryCashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(SelectedAuxiliaryCashDrawerAutoTransfer));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _auxiliaryCashDrawerSelectedAccountingAccountCash;
-
-        public AccountingAccountGraphQLModel AuxiliaryCashDrawerSelectedAccountingAccountCash
-        {
-            get { return _auxiliaryCashDrawerSelectedAccountingAccountCash; }
-            set
-            {
-                if (_auxiliaryCashDrawerSelectedAccountingAccountCash != value)
-                {
-                    _auxiliaryCashDrawerSelectedAccountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerSelectedAccountingAccountCash));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _auxiliaryCashDrawerSelectedAccountingAccountCheck;
-
-        public AccountingAccountGraphQLModel AuxiliaryCashDrawerSelectedAccountingAccountCheck
-        {
-            get { return _auxiliaryCashDrawerSelectedAccountingAccountCheck; }
-            set
-            {
-                if (_auxiliaryCashDrawerSelectedAccountingAccountCheck != value)
-                {
-                    _auxiliaryCashDrawerSelectedAccountingAccountCheck = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerSelectedAccountingAccountCheck));
-                }
-            }
-        }
-
-        private AccountingAccountGraphQLModel _auxiliaryCashDrawerSelectedAccountingAccountCard;
-
-        public AccountingAccountGraphQLModel AuxiliaryCashDrawerSelectedAccountingAccountCard
-        {
-            get { return _auxiliaryCashDrawerSelectedAccountingAccountCard; }
-            set
-            {
-                if (_auxiliaryCashDrawerSelectedAccountingAccountCard != value)
-                {
-                    _auxiliaryCashDrawerSelectedAccountingAccountCard = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerSelectedAccountingAccountCard));
-                }
-            }
-        }
-
-        private string _auxiliaryCashDrawerComputerName;
-
-        public string AuxiliaryCashDrawerComputerName
-        {
-            get { return _auxiliaryCashDrawerComputerName; }
-            set
-            {
-                if (_auxiliaryCashDrawerComputerName != value)
-                {
-                    _auxiliaryCashDrawerComputerName = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerComputerName));
-                    ValidateProperty(nameof(AuxiliaryCashDrawerComputerName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-
-
         #endregion
 
-        #endregion
-
-        #region "Bank"
-
-        #region "Properties"
-
-        public int BankId { get; set; }
-
-        private int _bankAccountingEntityId;
-
-        public int BankAccountingEntityId
-        {
-            get { return _bankAccountingEntityId; }
-            set
-            {
-                if (_bankAccountingEntityId != value)
-                {
-                    _bankAccountingEntityId = value;
-                    NotifyOfPropertyChange(nameof(BankAccountingEntityId));
-                }
-            }
-        }
-
-        private string _bankAccountingEntityName;
-
-        public string BankAccountingEntityName
-        {
-            get { return _bankAccountingEntityName; }
-            set
-            {
-                if (_bankAccountingEntityName != value)
-                {
-                    _bankAccountingEntityName = value;
-                    NotifyOfPropertyChange(nameof(BankAccountingEntityName));
-                    ValidateProperty(nameof(BankAccountingEntityName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _bankPaymentMethodPrefix;
-
-        public string BankPaymentMethodPrefix
-        {
-            get { return _bankPaymentMethodPrefix; }
-            set 
-            {
-                if (_bankPaymentMethodPrefix != value)
-                {
-                    _bankPaymentMethodPrefix = value;
-                    NotifyOfPropertyChange(nameof(BankPaymentMethodPrefix));
-                }
-            }
-        }
-
-
-
-        #endregion
-
-        #endregion
-
-        #region "BankAccount"
-
-        #region "Properties"
-
-        public int BankAccountId { get; set; }
-
-        private string _bankAccountNumber;
-
-        public string BankAccountNumber
-        {
-            get { return _bankAccountNumber; }
-            set
-            {
-                if (_bankAccountNumber != value)
-                {
-                    _bankAccountNumber = value;
-                    NotifyOfPropertyChange(nameof(BankAccountNumber));
-                    NotifyOfPropertyChange(nameof(BankAccountDescription));
-                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
-                    ValidateProperty(nameof(BankAccountNumber), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _bankAccountType;
-
-        public string BankAccountType
-        {
-            get { return _bankAccountType; }
-            set 
-            {
-                if (_bankAccountType != value)
-                {
-                    _bankAccountType = value;
-                    NotifyOfPropertyChange(nameof(BankAccountType));
-                    NotifyOfPropertyChange(nameof(BankAccountDescription));
-                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
-                }
-            }
-        }
-
-        private string _bankAccountProvider;
-
-        public string BankAccountProvider
-        {
-            get { return _bankAccountProvider; }
-            set 
-            {
-                if (_bankAccountProvider != value)
-                {
-                    _bankAccountProvider = value;
-                    NotifyOfPropertyChange(nameof(BankAccountProvider));
-                    NotifyOfPropertyChange(nameof(BankAccountDescription));
-                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodName));
-                }
-            }
-        }
-
-
-        private bool _bankAccountIsActive;
-
-        public bool BankAccountIsActive
-        {
-            get { return _bankAccountIsActive; }
-            set 
-            {
-                if (_bankAccountIsActive != value)
-                {
-                    _bankAccountIsActive = value;
-                    NotifyOfPropertyChange(nameof(BankAccountIsActive));
-                }
-            }
-        }
-
-        private string _bankAccountReference;
-
-        public string BankAccountReference
-        {
-            get { return _bankAccountReference; }
-            set 
-            {
-                if (_bankAccountReference != value)
-                {
-                    _bankAccountReference = value;
-                    NotifyOfPropertyChange(nameof(BankAccountReference));
-                    NotifyOfPropertyChange(nameof(BankAccountDescription));
-                }
-            }
-        }
-
-        private int _bankAccountDisplayOrder;
-
-        public int BankAccountDisplayOrder
-        {
-            get { return _bankAccountDisplayOrder; }
-            set 
-            {
-                if (_bankAccountDisplayOrder != value)
-                {
-                    _bankAccountDisplayOrder = value;
-                    NotifyOfPropertyChange(nameof(BankAccountDisplayOrder));
-                }
-            }
-        }
-
-        private int _bankAccountAccountingAccountId;
-
-        public int BankAccountAccountingAccountId
-        {
-            get { return _bankAccountAccountingAccountId; }
-            set 
-            {
-                if (_bankAccountAccountingAccountId != value)
-                {
-                    _bankAccountAccountingAccountId = value;
-                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountId));
-                }
-            }
-        }
-
-        private int _bankAccountBankId;
-
-        public int BankAccountBankId
-        {
-            get { return _bankAccountBankId; }
-            set 
-            {
-                if (_bankAccountBankId != value)
-                {
-                    _bankAccountBankId = value;
-                    NotifyOfPropertyChange(nameof(BankAccountBankId));
-                }
-            }
-        }
-
-        private string _bankAccountBankName;
-
-        public string BankAccountBankName
-        {
-            get { return _bankAccountBankName; }
-            set 
-            {
-                if (_bankAccountBankName != value)
-                {
-                    _bankAccountBankName = value;
-                    NotifyOfPropertyChange(nameof(BankAccountBankName));
-                }
-            }
-        }
-
-        private string _bankAccountAccountinAccountNameForNew;
-
-        public string BankAccountDescription
-        {
-            get 
-            {
-                if (BankAccountBankCaptureInfoAsPJ)
-                {
-                    return $"{BankAccountBankName} [{(BankAccountType == "A" ? "CTA. DE AHORROS" : "CTA. CORRIENTE")} No. {BankAccountNumber}] {(string.IsNullOrEmpty(BankAccountReference) ? "" : $"- RF. {BankAccountReference}")}".Trim();
-                }
-                return $"{(BankAccountProvider == "N" ? "NEQUI" : "DAVIPLATA")} - {BankAccountNumber} {(string.IsNullOrEmpty(BankAccountReference) ? "" : $"- RF. {BankAccountReference}")}";
-            }
-        }
-
-        public bool BankAccountBankCaptureInfoAsPN => BankAccountBankCaptureType.Equals(CaptureTypeEnum.PN);
-        public bool BankAccountBankCaptureInfoAsPJ => BankAccountBankCaptureType.Equals(CaptureTypeEnum.PJ);
-
-        private CaptureTypeEnum _bankAccountBankCaptureType;
-
-        public CaptureTypeEnum BankAccountBankCaptureType
-        {
-            get { return _bankAccountBankCaptureType; }
-            set 
-            {
-                if (_bankAccountBankCaptureType != value)
-                {
-                    _bankAccountBankCaptureType = value;
-                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureType));
-                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsPN));
-                    NotifyOfPropertyChange(nameof(BankAccountBankCaptureInfoAsPJ));
-                }
-            }
-        }
-
-
-        private string _bankAccountCurrentBalance = "0";
-
-        public string BankAccountCurrentBalance
-        {
-            get { return _bankAccountCurrentBalance; }
-            set 
-            {
-                if (_bankAccountCurrentBalance != value)
-                {
-                    _bankAccountCurrentBalance = value;
-                    NotifyOfPropertyChange(nameof(BankAccountCurrentBalance));
-                }
-            }
-        }
-
-        private bool _bankAccountAccountingAccountAutoCreate = true;
-
-        public bool BankAccountAccountingAccountAutoCreate
-        {
-            get { return _bankAccountAccountingAccountAutoCreate; }
-            set 
-            {
-                if (_bankAccountAccountingAccountAutoCreate != value)
-                {
-                    _bankAccountAccountingAccountAutoCreate = value;
-                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountAutoCreate));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private bool _bankAccountAccountingAccountSelectExisting = false;
-
-        public bool BankAccountAccountingAccountSelectExisting
-        {
-            get { return _bankAccountAccountingAccountSelectExisting; }
-            set 
-            {
-                if (_bankAccountAccountingAccountSelectExisting != value)
-                {
-                    _bankAccountAccountingAccountSelectExisting = value;
-                    NotifyOfPropertyChange(nameof(BankAccountAccountingAccountSelectExisting));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    if(BankAccountAccountingAccountSelectExisting is false)
-                    {
-                        BankAccountSelectedAccountingAccount = BankAccountAccountingAccounts.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("");
-                    }
-                }
-            }
-        }
+        #region "BankAccount Context Properties"
 
         public TreasuryBankMasterTreeDTO BankBeforeNewBankAccount { get; set; } = new();
 
-        private bool _bankAccountBankIsRS;
-
-        public bool BankAccountBankIsRS
-        {
-            get { return _bankAccountBankIsRS; }
-            set 
-            {
-                if (_bankAccountBankIsRS != value)
-                {
-                    _bankAccountBankIsRS = value;
-                    NotifyOfPropertyChange(nameof(BankAccountBankIsRS));
-                }
-            }
-        }
-
+        // Collections used by BankAccountPanelEditor
         private ObservableCollection<AccountingAccountGraphQLModel> _bankAccountAccountingAccounts;
-
         public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts
         {
             get { return _bankAccountAccountingAccounts; }
-            set 
+            set
             {
                 if (_bankAccountAccountingAccounts != value)
                 {
@@ -3012,58 +1552,11 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel _bankAccountSelectedAccountingAccount;
-
-        public AccountingAccountGraphQLModel BankAccountSelectedAccountingAccount
-        {
-            get { return _bankAccountSelectedAccountingAccount; }
-            set 
-            {
-                if (_bankAccountSelectedAccountingAccount != value)
-                {
-                    _bankAccountSelectedAccountingAccount = value;
-                    NotifyOfPropertyChange(nameof(BankAccountSelectedAccountingAccount));
-                    NotifyOfPropertyChange(nameof(CanSave));
-
-                }
-            }
-        }
-
-        private string _bankAccountPaymentMethodName;
-
-        public string BankAccountPaymentMethodName
-        {
-            get
-            {
-                if (BankAccountBankCaptureInfoAsPJ)
-                {
-                    return $"TRANSF/CONSIG EN {BankAccountBankName.Trim()} EN {(BankAccountType == "A" ? "CTA. DE AHORROS" : "CUENTA CORRIENTE")} TERMINADA EN {(BankAccountNumber.Length > 5 ? $"* {BankAccountNumber[^5..]}" : "")}";
-                }
-                return $"TRANSF/CONSGI EN {(BankAccountProvider == "N" ? "NEQUI" : "DAVIPLATA")} {BankAccountNumber}";
-            }
-        }
-
-        private string _bankAccountPaymentMethodAbbrevation;
-
-        public string BankAccountPaymentMethodAbbreviation
-        {
-            get { return _bankAccountPaymentMethodAbbrevation; }
-            set 
-            {
-                if (_bankAccountPaymentMethodAbbrevation != value)
-                {
-                    _bankAccountPaymentMethodAbbrevation = value;
-                    NotifyOfPropertyChange(nameof(BankAccountPaymentMethodAbbreviation));
-                }
-            }
-        }
-
         private ObservableCollection<TreasuryBankAccountCostCenterDTO> _bankAccountCostCenters;
-
         public ObservableCollection<TreasuryBankAccountCostCenterDTO> BankAccountCostCenters
         {
             get { return _bankAccountCostCenters; }
-            set 
+            set
             {
                 if (_bankAccountCostCenters != value)
                 {
@@ -3073,216 +1566,16 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private TreasuryBankAccountCostCenterDTO _bankAccountSelectedCostCenter;
-
-        public TreasuryBankAccountCostCenterDTO BankAccountSelectedCostCenter
-        {
-            get { return _bankAccountSelectedCostCenter; }
-            set
-            {
-                if (_bankAccountSelectedCostCenter != value)
-                {
-                    _bankAccountSelectedCostCenter = value;
-                    NotifyOfPropertyChange(nameof(BankAccountSelectedCostCenter));
-                }
-            }
-        }
-
         #endregion
 
-        #endregion
+        #region "Franchise Collections"
 
-        #region "Franchise"
-
-        #region "Properties"
-
-        public int FranchiseId { get; set; }
-
-        private string _franchiseName;
-
-        public string FranchiseName
-        {
-            get { return _franchiseName; }
-            set 
-            {
-                if (_franchiseName != value)
-                {
-                    _franchiseName = value;
-                    NotifyOfPropertyChange(nameof(FranchiseName));
-                    ValidateProperty(nameof(FranchiseName), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _franchiseType;
-
-        public string FranchiseType
-        {
-            get { return _franchiseType; }
-            set 
-            {
-                if (_franchiseType != value)
-                {
-                    _franchiseType = value;
-                    NotifyOfPropertyChange(nameof(FranchiseType));
-                }
-            }
-        }
-
-        private decimal _franchiseCommissionMargin;
-
-        public decimal FranchiseCommissionMargin
-        {
-            get { return _franchiseCommissionMargin; }
-            set 
-            {
-                if (_franchiseCommissionMargin != value)
-                {
-                    _franchiseCommissionMargin = value;
-                    NotifyOfPropertyChange(nameof(FranchiseCommissionMargin));
-                }
-            }
-        }
-
-        private decimal _franchiseReteivaMargin;
-
-        public decimal FranchiseReteivaMargin
-        {
-            get { return _franchiseReteivaMargin; }
-            set 
-            {
-                if (_franchiseReteivaMargin != value)
-                {
-                    _franchiseReteivaMargin = value;
-                    NotifyOfPropertyChange(nameof(FranchiseReteivaMargin));
-                }
-            }
-        }
-
-        private decimal _franchiseReteicaMargin;
-
-        public decimal FranchiseReteicaMargin
-        {
-            get { return _franchiseReteicaMargin; }
-            set 
-            {
-                if (_franchiseReteicaMargin != value)
-                {
-                    _franchiseReteicaMargin = value;
-                    NotifyOfPropertyChange(nameof(FranchiseReteicaMargin));
-                }
-            }
-        }
-
-        private decimal _franchiseRetefteMargin;
-
-        public decimal FranchiseRetefteMargin
-        {
-            get { return _franchiseRetefteMargin; }
-            set 
-            {
-                if (_franchiseRetefteMargin != value)
-                {
-                    _franchiseRetefteMargin = value;
-                    NotifyOfPropertyChange(nameof(FranchiseRetefteMargin));
-                }
-            }
-        }
-
-        private decimal _franchiseIvaMargin;
-
-        public decimal FranchiseIvaMargin
-        {
-            get { return _franchiseIvaMargin; }
-            set 
-            {
-                if (_franchiseIvaMargin != value)
-                {
-                    _franchiseIvaMargin = value;
-                    NotifyOfPropertyChange(nameof(FranchiseIvaMargin));
-                }
-            }
-        }
-
-        private string _franchiseFormulaCommission;
-
-        public string FranchiseFormulaCommission
-        {
-            get { return _franchiseFormulaCommission; }
-            set 
-            {
-                if (_franchiseFormulaCommission != value)
-                {
-                    _franchiseFormulaCommission = value;
-                    NotifyOfPropertyChange(nameof(FranchiseFormulaCommission));
-                    CanFranchiseSimulator(new object { });
-                    ValidateProperty(nameof(FranchiseFormulaCommission), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _franchiseFormulaReteiva;
-
-        public string FranchiseFormulaReteiva
-        {
-            get { return _franchiseFormulaReteiva; }
-            set 
-            {
-                if (_franchiseFormulaReteiva != value)
-                {
-                    _franchiseFormulaReteiva = value;
-                    NotifyOfPropertyChange(nameof(FranchiseFormulaReteiva));
-                    CanFranchiseSimulator(new object { });
-                    ValidateProperty(nameof(FranchiseFormulaReteiva), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _franchiseFormulaReteica;
-
-        public string FranchiseFormulaReteica
-        {
-            get { return _franchiseFormulaReteica; }
-            set 
-            {
-                if (_franchiseFormulaReteica != value)
-                {
-                    _franchiseFormulaReteica = value;
-                    NotifyOfPropertyChange(nameof(FranchiseFormulaReteica));
-                    CanFranchiseSimulator(new object { });
-                    ValidateProperty(nameof(FranchiseFormulaReteica), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                } 
-            }
-        }
-
-        private string _franchiseFormulaRetefte;
-
-        public string FranchiseFormulaRetefte
-        {
-            get { return _franchiseFormulaRetefte; }
-            set 
-            {
-                if (_franchiseFormulaRetefte != value)
-                {
-                    _franchiseFormulaRetefte = value;
-                    NotifyOfPropertyChange(nameof(FranchiseFormulaRetefte));
-                    CanFranchiseSimulator(new object { });
-                    ValidateProperty(nameof(FranchiseFormulaRetefte), value);
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
+        // Collections used by FranchisePanelEditor
         private ObservableCollection<AccountingAccountGraphQLModel> _franchiseAccountingAccountsCommission;
-
         public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission
         {
             get { return _franchiseAccountingAccountsCommission; }
-            set 
+            set
             {
                 if (_franchiseAccountingAccountsCommission != value)
                 {
@@ -3293,11 +1586,10 @@ namespace NetErp.Treasury.Masters.ViewModels
         }
 
         private ObservableCollection<BankAccountGraphQLModel> _franchiseBankAccounts;
-
         public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts
         {
             get { return _franchiseBankAccounts; }
-            set 
+            set
             {
                 if (_franchiseBankAccounts != value)
                 {
@@ -3307,175 +1599,23 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private BankAccountGraphQLModel _franchiseSelectedBankAccount;
-
-        public BankAccountGraphQLModel FranchiseSelectedBankAccount
-        {
-            get { return _franchiseSelectedBankAccount; }
-            set 
-            {
-                if (_franchiseSelectedBankAccount != value)
-                {
-                    _franchiseSelectedBankAccount = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSelectedBankAccount));
-                    NotifyOfPropertyChange(nameof(FranchiseSelectedBankAccount));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-
         private ObservableCollection<TreasuryFranchiseCostCenterDTO> _franchiseCostCenters;
-
         public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters
         {
             get { return _franchiseCostCenters; }
-            set 
+            set
             {
                 if (_franchiseCostCenters != value)
                 {
                     _franchiseCostCenters = value;
                     NotifyOfPropertyChange(nameof(FranchiseCostCenters));
-                } 
-            }
-        }
-
-        private TreasuryFranchiseCostCenterDTO _franchiceSelectedCostCenter;
-
-        public TreasuryFranchiseCostCenterDTO FranchiseSelectedCostCenter
-        {
-            get { return _franchiceSelectedCostCenter; }
-            set 
-            {
-                if (_franchiceSelectedCostCenter != value)
-                {
-                    _franchiceSelectedCostCenter = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSelectedCostCenter));
-                    EditFranchiseByCostCenter(FranchiseSelectedCostCenter.Id);
                 }
             }
         }
-
-
-        private AccountingAccountGraphQLModel _franchiseSelectedAccountingAccountCommission;
-
-        public AccountingAccountGraphQLModel FranchiseSelectedAccountingAccountCommission
-        {
-            get { return _franchiseSelectedAccountingAccountCommission; }
-            set 
-            {
-                if (_franchiseSelectedAccountingAccountCommission != value)
-                {
-                    _franchiseSelectedAccountingAccountCommission = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSelectedAccountingAccountCommission));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        public List<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; }
-
-        private decimal _franchiseCardValue;
-
-        public decimal FranchiseCardValue
-        {
-            get { return _franchiseCardValue; }
-            set 
-            {
-                if (_franchiseCardValue != value)
-                {
-                    _franchiseCardValue = value;
-                    NotifyOfPropertyChange(nameof(FranchiseCardValue));
-                    CanFranchiseSimulator(new object { });
-                }
-            }
-        }
-        public string FranchiseDecimalsCount { get; set; } = "n4"; //n concatenado con el número que se quiere mostrar como decimales
-
-        public string FranchiseReplacedFormulaCommission { get; set; } = string.Empty;
-        public string FranchiseReplacedFormulaReteiva { get; set; } = string.Empty;
-        public string FranchiseReplacedFormulaReteica { get; set; } = string.Empty;
-        public string FranchiseReplacedFormulaRetefte { get; set; } = string.Empty;
-
-        private decimal _franchiseSimulatedCommission;
-
-        public decimal FranchiseSimulatedCommission
-        {
-            get { return _franchiseSimulatedCommission; }
-            set 
-            {
-                if (_franchiseSimulatedCommission != value)
-                {
-                    _franchiseSimulatedCommission = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSimulatedCommission));
-                }
-            }
-        }
-
-        private decimal _franchiseSimulatedReteiva;
-
-        public decimal FranchiseSimulatedReteiva
-        {
-            get { return _franchiseSimulatedReteiva; }
-            set 
-            {
-                if (_franchiseSimulatedReteiva != value)
-                {
-                    _franchiseSimulatedReteiva = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSimulatedReteiva));
-                }
-            }
-        }
-
-        private decimal _franchiseSimulatedReteica;
-
-        public decimal FranchiseSimulatedReteica
-        {
-            get { return _franchiseSimulatedReteica; }
-            set 
-            {
-                if (_franchiseSimulatedReteica != value)
-                {
-                    _franchiseSimulatedReteica = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSimulatedReteica));
-                }
-            }
-        }
-
-        private decimal _franchiseSimulatedRetefte;
-
-        public decimal FranchiseSimulatedRetefte
-        {
-            get { return _franchiseSimulatedRetefte; }
-            set 
-            {
-                if (_franchiseSimulatedRetefte != value)
-                {
-                    _franchiseSimulatedRetefte = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSimulatedRetefte));
-                }
-            }
-        }
-
-        private decimal _franchiseSimulatedIvaValue;
-
-        public decimal FranchiseSimulatedIvaValue
-        {
-            get { return _franchiseSimulatedIvaValue; }
-            set 
-            {
-                if (_franchiseSimulatedIvaValue != value)
-                {
-                    _franchiseSimulatedIvaValue = value;
-                    NotifyOfPropertyChange(nameof(FranchiseSimulatedIvaValue));
-                }
-            }
-        }
-
 
         #endregion
 
-        #endregion
+        #region Franchise Simulator Commands
 
         private ICommand _franchiseResetFormulaReteivaCommand;
         public ICommand FranchiseResetFormulaReteivaCommand
@@ -3489,7 +1629,8 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void FranchiseResetFormulaReteiva(object p)
         {
-            FranchiseFormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
+            if (FranchiseEditor != null)
+                FranchiseEditor.FormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
         }
 
         private ICommand _franchiseResetFormulaCommissionCommand;
@@ -3504,11 +1645,11 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void FranchiseResetFormulaCommission(object p)
         {
-            FranchiseFormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
+            if (FranchiseEditor != null)
+                FranchiseEditor.FormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
         }
 
         public bool CanFranchiseResetFormulaCommission(object p) => true;
-
 
         private ICommand _franchiseResetFormulaReteicaCommand;
         public ICommand FranchiseResetFormulaReteicaCommand
@@ -3522,7 +1663,8 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void FranchiseResetFormulaReteica(object p)
         {
-            FranchiseFormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
+            if (FranchiseEditor != null)
+                FranchiseEditor.FormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
         }
 
         public bool CanFranchiseResetFormulaReteica(object p) => true;
@@ -3539,7 +1681,8 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void FranchiseResetFormulaRetefte(object p)
         {
-            FranchiseFormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
+            if (FranchiseEditor != null)
+                FranchiseEditor.FormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
         }
 
         public bool CanFranchiseResetFormulaRetefte(object p) => true;
@@ -3556,42 +1699,45 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void FranchiseSimulator(object p)
         {
+            if (FranchiseEditor == null) return;
+
             try
             {
-                //Igualación para no modificar las formulas en la vista
-                FranchiseReplacedFormulaCommission = FranchiseFormulaCommission;
-                FranchiseReplacedFormulaReteiva = FranchiseFormulaReteiva;
-                FranchiseReplacedFormulaReteica = FranchiseFormulaReteica;
-                FranchiseReplacedFormulaRetefte = FranchiseFormulaRetefte;
+                // Local variables for formula replacement
+                string replacedFormulaCommission = FranchiseEditor.FormulaCommission;
+                string replacedFormulaReteiva = FranchiseEditor.FormulaReteiva;
+                string replacedFormulaReteica = FranchiseEditor.FormulaReteica;
+                string replacedFormulaRetefte = FranchiseEditor.FormulaRetefte;
 
-                //Obtener el valor del IVA
-                FranchiseSimulatedIvaValue = FranchiseCardValue - (FranchiseCardValue / (1 + (FranchiseIvaMargin / 100)));
+                // Calculate IVA value
+                decimal simulatedIvaValue = FranchiseEditor.CardValue - (FranchiseEditor.CardValue / (1 + (FranchiseEditor.IvaMargin / 100)));
+                FranchiseEditor.SimulatedIvaValue = simulatedIvaValue;
 
-                //Settear el diccionario
+                // Set up formula variables dictionary
                 Dictionary<string, decimal> formulaVariables = new()
                 {
-                    { "VALOR_TARJETA", FranchiseCardValue },
-                    { "MARGEN_COMISION", FranchiseCommissionMargin },
-                    { "MARGEN_RETE_IVA", FranchiseReteivaMargin },
-                    { "MARGEN_RETE_ICA", FranchiseReteicaMargin },
-                    { "MARGEN_RETE_FUENTE", FranchiseRetefteMargin },
-                    { "VALOR_IVA", FranchiseSimulatedIvaValue }
+                    { "VALOR_TARJETA", FranchiseEditor.CardValue },
+                    { "MARGEN_COMISION", FranchiseEditor.CommissionMargin },
+                    { "MARGEN_RETE_IVA", FranchiseEditor.ReteivaMargin },
+                    { "MARGEN_RETE_ICA", FranchiseEditor.ReteicaMargin },
+                    { "MARGEN_RETE_FUENTE", FranchiseEditor.RetefteMargin },
+                    { "VALOR_IVA", simulatedIvaValue }
                 };
 
-                //Reemplazar las variables en las formulas
+                // Replace variables in formulas
                 foreach (var item in formulaVariables)
                 {
-                    FranchiseReplacedFormulaCommission = FranchiseReplacedFormulaCommission.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    FranchiseReplacedFormulaReteiva = FranchiseReplacedFormulaReteiva.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    FranchiseReplacedFormulaReteica = FranchiseReplacedFormulaReteica.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    FranchiseReplacedFormulaRetefte = FranchiseReplacedFormulaRetefte.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    replacedFormulaCommission = replacedFormulaCommission.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    replacedFormulaReteiva = replacedFormulaReteiva.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    replacedFormulaReteica = replacedFormulaReteica.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
+                    replacedFormulaRetefte = replacedFormulaRetefte.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
                 }
 
-                //Calcular las formulas
-                FranchiseSimulatedCommission = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaCommission, null), CultureInfo.InvariantCulture);
-                FranchiseSimulatedReteiva = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaReteiva, null), CultureInfo.InvariantCulture);
-                FranchiseSimulatedReteica = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaReteica, null), CultureInfo.InvariantCulture);
-                FranchiseSimulatedRetefte = Convert.ToDecimal(new DataTable().Compute(FranchiseReplacedFormulaRetefte, null), CultureInfo.InvariantCulture);
+                // Calculate formula results
+                FranchiseEditor.SimulatedCommission = Convert.ToDecimal(new DataTable().Compute(replacedFormulaCommission, null), CultureInfo.InvariantCulture);
+                FranchiseEditor.SimulatedReteiva = Convert.ToDecimal(new DataTable().Compute(replacedFormulaReteiva, null), CultureInfo.InvariantCulture);
+                FranchiseEditor.SimulatedReteica = Convert.ToDecimal(new DataTable().Compute(replacedFormulaReteica, null), CultureInfo.InvariantCulture);
+                FranchiseEditor.SimulatedRetefte = Convert.ToDecimal(new DataTable().Compute(replacedFormulaRetefte, null), CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {
@@ -3601,58 +1747,64 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public bool CanFranchiseSimulator(object p)
         {
-            if (FranchiseCardValue != 0 && (!string.IsNullOrEmpty(FranchiseFormulaCommission) && !string.IsNullOrEmpty(FranchiseFormulaReteiva) && !string.IsNullOrEmpty(FranchiseFormulaReteica) && !string.IsNullOrEmpty(FranchiseFormulaRetefte))) return true; 
-            return false;
+            if (FranchiseEditor == null) return false;
+            return FranchiseEditor.CardValue != 0
+                && !string.IsNullOrEmpty(FranchiseEditor.FormulaCommission)
+                && !string.IsNullOrEmpty(FranchiseEditor.FormulaReteiva)
+                && !string.IsNullOrEmpty(FranchiseEditor.FormulaReteica)
+                && !string.IsNullOrEmpty(FranchiseEditor.FormulaRetefte);
         }
 
         public void EditFranchiseByCostCenter(int costCenterId)
         {
-            if (IsNewRecord) return;
+            if (IsNewRecord || FranchiseEditor == null) return;
 
             if (costCenterId == 0)
             {
                 if (SelectedItem is TreasuryFranchiseMasterTreeDTO selectedFranchise)
                 {
-                    FranchiseCommissionMargin = selectedFranchise.CommissionMargin;
-                    FranchiseReteicaMargin = selectedFranchise.ReteivaMargin;
-                    FranchiseReteicaMargin = selectedFranchise.ReteicaMargin;
-                    FranchiseRetefteMargin = selectedFranchise.RetefteMargin;
-                    FranchiseIvaMargin = selectedFranchise.IvaMargin;
-                    FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchise.BankAccount.Id) ?? new BankAccountGraphQLModel();
-                    FranchiseFormulaCommission = selectedFranchise.FormulaCommission;
-                    FranchiseFormulaReteiva = selectedFranchise.FormulaReteiva;
-                    FranchiseFormulaReteica = selectedFranchise.FormulaReteica;
-                    FranchiseFormulaRetefte = selectedFranchise.FormulaRetefte;
-                    FranchiseCardValue = 0;
-                    FranchiseSimulatedCommission = 0;
-                    FranchiseSimulatedReteiva = 0;
-                    FranchiseSimulatedReteica = 0;
-                    FranchiseSimulatedRetefte = 0;
-                    FranchiseSimulatedIvaValue = 0;
+                    FranchiseEditor.CommissionMargin = selectedFranchise.CommissionMargin;
+                    FranchiseEditor.ReteivaMargin = selectedFranchise.ReteivaMargin;
+                    FranchiseEditor.ReteicaMargin = selectedFranchise.ReteicaMargin;
+                    FranchiseEditor.RetefteMargin = selectedFranchise.RetefteMargin;
+                    FranchiseEditor.IvaMargin = selectedFranchise.IvaMargin;
+                    FranchiseEditor.SelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchise.BankAccount.Id);
+                    FranchiseEditor.FormulaCommission = selectedFranchise.FormulaCommission;
+                    FranchiseEditor.FormulaReteiva = selectedFranchise.FormulaReteiva;
+                    FranchiseEditor.FormulaReteica = selectedFranchise.FormulaReteica;
+                    FranchiseEditor.FormulaRetefte = selectedFranchise.FormulaRetefte;
+                    FranchiseEditor.CardValue = 0;
+                    FranchiseEditor.SimulatedCommission = 0;
+                    FranchiseEditor.SimulatedReteiva = 0;
+                    FranchiseEditor.SimulatedReteica = 0;
+                    FranchiseEditor.SimulatedRetefte = 0;
+                    FranchiseEditor.SimulatedIvaValue = 0;
                 }
                 return;
             }
-            var selectedFranchiseSetting = FranchiseSettingsByCostCenter.FirstOrDefault(x => x.CostCenterId == costCenterId);
-            if(selectedFranchiseSetting != null)
+            var selectedFranchiseSetting = FranchiseEditor.SettingsByCostCenter.FirstOrDefault(x => x.CostCenterId == costCenterId);
+            if (selectedFranchiseSetting != null)
             {
-                FranchiseCommissionMargin = selectedFranchiseSetting.CommissionMargin;
-                FranchiseReteicaMargin = selectedFranchiseSetting.ReteivaMargin;
-                FranchiseReteicaMargin = selectedFranchiseSetting.ReteicaMargin;
-                FranchiseRetefteMargin = selectedFranchiseSetting.RetefteMargin;
-                FranchiseIvaMargin = selectedFranchiseSetting.IvaMargin;
-                FranchiseSelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchiseSetting.BankAccountId) ?? new BankAccountGraphQLModel();
-                FranchiseFormulaCommission = selectedFranchiseSetting.FormulaCommission;
-                FranchiseFormulaReteiva = selectedFranchiseSetting.FormulaReteiva;
-                FranchiseFormulaReteica = selectedFranchiseSetting.FormulaReteica;
-                FranchiseFormulaRetefte = selectedFranchiseSetting.FormulaRetefte;
-                FranchiseCardValue = 0;
-                FranchiseSimulatedCommission = 0;
-                FranchiseSimulatedReteiva = 0;
-                FranchiseSimulatedReteica = 0;
-                FranchiseSimulatedRetefte = 0;
-                FranchiseSimulatedIvaValue = 0;
+                FranchiseEditor.CommissionMargin = selectedFranchiseSetting.CommissionMargin;
+                FranchiseEditor.ReteivaMargin = selectedFranchiseSetting.ReteivaMargin;
+                FranchiseEditor.ReteicaMargin = selectedFranchiseSetting.ReteicaMargin;
+                FranchiseEditor.RetefteMargin = selectedFranchiseSetting.RetefteMargin;
+                FranchiseEditor.IvaMargin = selectedFranchiseSetting.IvaMargin;
+                FranchiseEditor.SelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchiseSetting.BankAccountId);
+                FranchiseEditor.FormulaCommission = selectedFranchiseSetting.FormulaCommission;
+                FranchiseEditor.FormulaReteiva = selectedFranchiseSetting.FormulaReteiva;
+                FranchiseEditor.FormulaReteica = selectedFranchiseSetting.FormulaReteica;
+                FranchiseEditor.FormulaRetefte = selectedFranchiseSetting.FormulaRetefte;
+                FranchiseEditor.CardValue = 0;
+                FranchiseEditor.SimulatedCommission = 0;
+                FranchiseEditor.SimulatedReteiva = 0;
+                FranchiseEditor.SimulatedReteica = 0;
+                FranchiseEditor.SimulatedRetefte = 0;
+                FranchiseEditor.SimulatedIvaValue = 0;
             }
         }
+
+        #endregion
 
 
         private ICommand _searchBankAccountingEntityCommand;
@@ -3701,13 +1853,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     majorCashDrawerDummyDTO.Locations.Remove(majorCashDrawerDummyDTO.Locations[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: companiesLocations{
-                            id
-                            name
-                        }
-                    }";
+                string query = GetLoadCompanyLocationsQuery();
 
                 IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO>>(source);
@@ -3755,13 +1901,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     minorCashDrawerDummyDTO.Locations.Remove(minorCashDrawerDummyDTO.Locations[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: companiesLocations{
-                            id
-                            name
-                        }
-                    }";
+                string query = GetLoadCompanyLocationsQuery();
 
                 IEnumerable<CompanyLocationGraphQLModel> source = await _companyLocationService.GetListAsync(query, new { });
                 var locations = Context.AutoMapper.Map<ObservableCollection<TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO>>(source);
@@ -3809,18 +1949,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bankDummyDTO.Banks.Remove(bankDummyDTO.Banks[0]);
                 });
                 Refresh();
-                string query = @"
-                    query{
-                        ListResponse: banks{
-                            id
-                            paymentMethodPrefix
-                            accountingEntity{
-                                id
-                                searchName
-                                captureType
-                            }
-                        }
-                    }";
+                string query = GetLoadBanksQuery();
 
                 var source = await _bankService.GetListAsync(query, new { });
                 var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(source);
@@ -3867,41 +1996,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bank.BankAccounts.Remove(bank.BankAccounts[0]);
                 });
                 Refresh();
-                string query = @"
-                query($filter: BankAccountFilterInput!){
-                  ListResponse: bankAccounts(filter: $filter){
-                    id
-                    type
-                    number
-                    isActive
-                    description
-                    reference
-                    displayOrder
-                    paymentMethod{
-                        id
-                        abbreviation
-                        name
-                    }
-                    accountingAccount{
-                      id
-                      name
-                      code
-                    }
-                    bank{
-                      id
-                      accountingEntity{
-                        searchName
-                        captureType
-                      }
-                    }
-                    provider
-                    allowedCostCenters{
-                        id
-                        name
-                        bankAccountId
-                    }
-                  }
-                }";
+                string query = GetLoadBankAccountsQuery();
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 variables.filter.BankId = new ExpandoObject();
@@ -3950,16 +2045,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
                 List<int> ids = [location.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: costCentersByCompaniesLocationsIds(ids: $ids){
-                        id
-                        name
-                        location{
-                            id
-                        }
-                      }
-                    }";
+                string query = GetLoadCostCentersByLocationQuery();
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
@@ -4006,16 +2092,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
                 List<int> ids = [location.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: costCentersByCompaniesLocationsIds(ids: $ids){
-                        id
-                        name
-                        location{
-                            id
-                        }
-                      }
-                    }";
+                string query = GetLoadCostCentersByLocationQuery();
                 dynamic variables = new ExpandoObject();
                 variables.ids = ids;
 
@@ -4062,40 +2139,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    costCenter{
-                      id
-                      name
-                    }
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCheck{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCard{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    autoTransfer
-                    cashDrawerAutoTransfer{
-                      id
-                      name
-                    }
-                    isPettyCash    
-                  }
-                }";
+                string query = GetLoadMajorCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -4154,37 +2198,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCheck{
-                      id  
-                      code
-                      name
-                    }
-                    accountingAccountCard{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    autoTransfer
-                    cashDrawerAutoTransfer{
-                      id
-                      name
-                    }
-                    isPettyCash
-                    computerName
-                    }
-                }";
+                string query = GetLoadAuxiliaryCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -4237,25 +2251,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
 
-                string query = @"
-                query($filter: CashDrawerFilterInput!){
-                  ListResponse: cashDrawers(filter: $filter){
-                    id
-                    name
-                    costCenter{
-                      id
-                      name
-                    }
-                    accountingAccountCash{
-                      id  
-                      code
-                      name
-                    }
-                    cashReviewRequired
-                    autoAdjustBalance
-                    isPettyCash    
-                  }
-                }";
+                string query = GetLoadMinorCashDrawersQuery();
 
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
@@ -4311,46 +2307,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises[0]);
                 });
                 Refresh();
-                string query = @"
-                query($filter: FranchiseFilterInput!){
-                  ListResponse: franchises(filter: $filter){
-                    id
-                    name
-                    type
-                    commissionMargin
-                    reteivaMargin
-                    reteicaMargin
-                    retefteMargin
-                    ivaMargin
-                    bankAccount{
-                      id
-                      description
-                    }
-                    accountingAccountCommission{
-                      id
-                      name
-                    }
-                    formulaCommission
-                    formulaReteiva
-                    formulaReteica
-                    formulaRetefte
-                    franchiseSettingsByCostCenter{
-                        id
-                        costCenterId
-                        commissionMargin
-                        reteivaMargin
-                        reteicaMargin
-                        retefteMargin
-                        ivaMargin
-                        bankAccountId
-                        formulaCommission
-                        formulaReteiva
-                        formulaReteica
-                        formulaRetefte
-                        franchiseId
-                    }
-                  }
-                }";
+                string query = GetLoadFranchisesQuery();
                 dynamic variables = new ExpandoObject();
                 variables.filter = new ExpandoObject();
                 //TODO : Cambiar por el id de la compañía
@@ -4503,6 +2460,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             Context = context;
             _errors = [];
             Context.EventAggregator.SubscribeOnUIThread(this);
+
+            // Initialize Panel Editors
+            MajorCashDrawerEditor = new MajorCashDrawerPanelEditor(this, _cashDrawerService);
+            MinorCashDrawerEditor = new MinorCashDrawerPanelEditor(this, _cashDrawerService);
+            AuxiliaryCashDrawerEditor = new AuxiliaryCashDrawerPanelEditor(this, _cashDrawerService);
+            BankEditor = new BankPanelEditor(this, _bankService);
+            BankAccountEditor = new BankAccountPanelEditor(this, _bankAccountService);
+            FranchiseEditor = new FranchisePanelEditor(this, _franchiseService);
         }
 
         public async Task Initialize()
@@ -4519,8 +2484,8 @@ namespace NetErp.Treasury.Masters.ViewModels
         public void OnFindBankAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
         {
             if (message.ReturnedData is null) return;
-            BankAccountingEntityId = message.ReturnedData.Id;
-            BankAccountingEntityName = message.ReturnedData.SearchName;
+            BankEditor.AccountingEntityId = message.ReturnedData.Id;
+            BankEditor.AccountingEntityName = message.ReturnedData.SearchName;
         }
 
         public async Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
@@ -4701,7 +2666,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
                 cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
                 cashDrawerToUpdate.CashDrawerAutoTransfer = cashDrawerDTO.CashDrawerAutoTransfer;
-                await Task.Run(() => SetMajorCashDrawerForEdit(cashDrawerToUpdate), cancellationToken);
+                await Task.Run(() => MajorCashDrawerEditor.SetForEdit(cashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja General actualizada correctamente.");
                 return;
             }
@@ -4728,7 +2693,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
                 auxiliaryCashDrawerToUpdate.CashDrawerAutoTransfer = auxiliaryCashDrawer.CashDrawerAutoTransfer;
                 auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
-                await Task.Run(() => SetAuxiliaryCashDrawerForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
+                await Task.Run(() => AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja Auxiliar actualizada correctamente.");
                 return;
             }
@@ -4746,7 +2711,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             minorCashDrawerToUpdate.AccountingAccountCash = minorCashDrawerMasterTreeDTO.AccountingAccountCash;
             minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
             minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
-            await Task.Run(() => SetMinorCashDrawerForEdit(minorCashDrawerToUpdate), cancellationToken);
+            await Task.Run(() => MinorCashDrawerEditor.SetForEdit(minorCashDrawerToUpdate), cancellationToken);
             _notificationService.ShowSuccess("Caja menor actualizada correctamente.");
             return;
         }
@@ -4786,68 +2751,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
         }
 
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(MajorCashDrawerName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(MinorCashDrawerName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(AuxiliaryCashDrawerName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(AuxiliaryCashDrawerComputerName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del equipo no puede estar vacío");
-                        break;
-                    case nameof(BankAccountingEntityName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre del banco no puede estar vacío");
-                        break;
-                    case nameof(BankAccountNumber):
-                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPJ) AddError(propertyName, "El número de cuenta no puede estar vacío");
-                        if (string.IsNullOrEmpty(value.Trim()) && BankAccountBankCaptureInfoAsPN) AddError(propertyName, "El número celular no puede estar vacío");
-                        break;
-                    case nameof(FranchiseName):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre de la franquicia no puede estar vacío");
-                        break;
-                    case nameof(FranchiseFormulaCommission):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de comisión no puede estar vacía");
-                        break;
-                    case nameof(FranchiseFormulaReteiva):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de reteiva no puede estar vacía");
-                        break;
-                    case nameof(FranchiseFormulaReteica):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de reteica no puede estar vacía");
-                        break;
-                    case nameof(FranchiseFormulaRetefte):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "La fórmula de retefte no puede estar vacía");
-                        break;
-                    default:
-                        break;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
-
         private void ClearAllErrors()
         {
             _errors.Clear();
-        }
-
-        private void ValidateAuxiliaryCashDrawerProperties()
-        {
-            ValidateProperty(nameof(AuxiliaryCashDrawerName), AuxiliaryCashDrawerName);
-            ValidateProperty(nameof(AuxiliaryCashDrawerComputerName), AuxiliaryCashDrawerComputerName);
         }
 
         public async Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
@@ -4902,9 +2808,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
                 if (bankDummyDTO is null) return;
-                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.Id).First());
+                bankDummyDTO.Banks.Remove(bankDummyDTO.Banks.Where(x => x.Id == message.DeletedBank.DeletedId).First());
             });
-            _notificationService.ShowSuccess("Banco eliminado correctamente.");
+            _notificationService.ShowSuccess(message.DeletedBank.Message);
             return Task.CompletedTask;
         }
 
@@ -4947,11 +2853,17 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
                 if (bankDummyDTO is null) return;
-                TreasuryBankMasterTreeDTO bankAccountDTO = bankDummyDTO.Banks.FirstOrDefault(x => x.Id == message.DeletedBankAccount.Bank.Id) ?? throw new Exception("");
-                if (bankAccountDTO is null) return;
-                bankAccountDTO.BankAccounts.Remove(bankAccountDTO.BankAccounts.Where(x => x.Id == message.DeletedBankAccount.Id).First());
+                foreach (var bank in bankDummyDTO.Banks)
+                {
+                    var bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
+                    if (bankAccount != null)
+                    {
+                        bank.BankAccounts.Remove(bankAccount);
+                        break;
+                    }
+                }
             });
-            _notificationService.ShowSuccess("Cuenta bancaria eliminada correctamente.");
+            _notificationService.ShowSuccess(message.DeletedBankAccount.Message);
             return Task.CompletedTask;
         }
 
@@ -4976,7 +2888,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             bankAccountToUpdate.Provider = bankAccountDTO.Provider;
             bankAccountToUpdate.PaymentMethod = bankAccountDTO.PaymentMethod;
             bankAccountToUpdate.AllowedCostCenters = bankAccountDTO.AllowedCostCenters;
-            await Task.Run(() => SetBankAccountForEdit(bankAccountToUpdate));
+            await Task.Run(() => BankAccountEditor.SetForEdit(bankAccountToUpdate));
             _notificationService.ShowSuccess("Cuenta bancaria actualizada correctamente.");
             return;
         }
@@ -5017,9 +2929,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             {
                 FranchiseDummyDTO franchiseDummyDTO = DummyItems.FirstOrDefault(x => x is FranchiseDummyDTO) as FranchiseDummyDTO ?? throw new Exception("");
                 if (franchiseDummyDTO is null) return;
-                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.Id).First());
+                franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises.Where(x => x.Id == message.DeletedFranchise.DeletedId).First());
             });
-            _notificationService.ShowSuccess("Franquicia eliminada correctamente.");
+            _notificationService.ShowSuccess(message.DeletedFranchise.Message);
             return Task.CompletedTask;
         }
 
@@ -5044,7 +2956,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
             franchiseToUpdate.AccountingAccountCommission = franchiseDTO.AccountingAccountCommission;
             franchiseToUpdate.FranchiseSettingsByCostCenter = franchiseDTO.FranchiseSettingsByCostCenter;
-            await Task.Run(() => SetFranchiseForEdit(franchiseToUpdate));
+            await Task.Run(() => FranchiseEditor.SetForEdit(franchiseToUpdate));
             _notificationService.ShowSuccess("Franquicia actualizada correctamente.");
             return;
         }

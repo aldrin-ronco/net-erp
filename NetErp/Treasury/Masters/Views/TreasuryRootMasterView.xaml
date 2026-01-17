@@ -614,11 +614,11 @@
                                         <RowDefinition Height="auto"/>
                                     </Grid.RowDefinitions>
                                     <TextBlock Text="Almacén" Margin="0 0 0 5" Grid.Row="0"/>
-                                    <dxe:TextEdit Text="{Binding Data.MajorCashDrawerCostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
+                                    <dxe:TextEdit Text="{Binding Data.MajorCashDrawerEditor.CostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
                                                 Grid.Row="1" Margin="0 5 0 10"/>
 
                                     <TextBlock Text="Nombre de la caja" Grid.Row="2" Margin="0 10 0 5"/>
-                                    <dxe:TextEdit Text="{Binding Data.MajorCashDrawerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                    <dxe:TextEdit Text="{Binding Data.MajorCashDrawerEditor.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                                   Grid.Row="3" Margin="0 5 0 0" CharacterCasing="Upper" x:Name="MajorCashDrawerName"/>
                                 </Grid>
                             </dx:DXTabItem>
@@ -657,7 +657,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -691,7 +691,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -725,7 +725,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerSelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -759,13 +759,13 @@
                                     </Grid.RowDefinitions>
 
                                     <dxe:CheckEdit Grid.Row="0" Content="¿Esta caja requiere cuadre diario?" 
-                               IsChecked="{Binding Data.MajorCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
+                               IsChecked="{Binding Data.MajorCashDrawerEditor.CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
                                                    Style="{StaticResource BlueCheckedTextStyle}"/>
 
 
                                     <TextBlock Text="Ajustar automáticamente saldo al cerrar" Grid.Row="1" Margin="0 10 0 5" FontWeight="Bold"/>
 
-                                    <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.MajorCashDrawerAutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                    <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.MajorCashDrawerEditor.AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                Margin="0 0 0 10" Style="{StaticResource BlueCheckedTextStyle}">
                                         <dxe:CheckEdit.Content>
                                             <TextBlock>
@@ -783,14 +783,14 @@
                                     </TextBlock>
 
                                     <dxe:CheckEdit Grid.Row="5" Content="Habilitar tranferencia automática en cuadre de caja" Style="{StaticResource BlueCheckedTextStyle}"
-                               IsChecked="{Binding Data.MajorCashDrawerAutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 5 0 5"/>
+                               IsChecked="{Binding Data.MajorCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 5 0 5"/>
 
 
                                     <dxe:ComboBoxEdit   Grid.Row="6" Margin="0 5 0 0" IsTextEditable="False"
-                                    Visibility="{Binding Data.MajorCashDrawerAutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                    ItemsSource="{Binding Data.MajorCashDrawerAutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                    Visibility="{Binding Data.MajorCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                    ItemsSource="{Binding Data.MajorCashDrawerEditor.AutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMember="Name"
-                                    EditValue="{Binding Data.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    EditValue="{Binding Data.MajorCashDrawerEditor.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </dx:DXTabItem>
                         </dx:DXTabControl>
@@ -814,11 +814,11 @@
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Text="Almacén" Margin="0 0 0 5" Grid.Row="0"/>
-                                        <dxe:TextEdit Text="{Binding Data.MinorCashDrawerCostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
+                                        <dxe:TextEdit Text="{Binding Data.MinorCashDrawerEditor.CostCenterName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" IsEnabled="False"
                     Grid.Row="1" Margin="0 5 0 10"/>
 
                                         <TextBlock Text="Nombre de la caja" Grid.Row="2" Margin="0 10 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.MinorCashDrawerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                        <dxe:TextEdit Text="{Binding Data.MinorCashDrawerEditor.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                       Grid.Row="3" Margin="0 5 0 0" CharacterCasing="Upper" x:Name="MinorCashDrawerName"/>
                                     </Grid>
                                 </dx:DXTabItem>
@@ -847,7 +847,7 @@
            ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
            DisplayMember="FullName"
            ValueMember="Id"
-           SelectedItem="{Binding Data.MinorCashDrawerSelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+           SelectedItem="{Binding Data.MinorCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -886,13 +886,13 @@
                                         </Grid.RowDefinitions>
 
                                         <dxe:CheckEdit Grid.Row="0" Content="¿Esta caja requiere cuadre diario?" 
-   IsChecked="{Binding Data.MinorCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
+   IsChecked="{Binding Data.MinorCashDrawerEditor.CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
                        Style="{StaticResource BlueCheckedTextStyle}" Grid.ColumnSpan="2"/>
 
 
                                         <TextBlock Text="Ajustar automáticamente saldo al cerrar" Grid.Row="1" Margin="0 10 0 5" FontWeight="Bold" Grid.ColumnSpan="2"/>
 
-                                        <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.MinorCashDrawerAutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                        <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.MinorCashDrawerEditor.AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
    Margin="0 0 0 10" Style="{StaticResource BlueCheckedTextStyle}" Grid.ColumnSpan="2">
                                             <dxe:CheckEdit.Content>
                                                 <TextBlock>
@@ -931,7 +931,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Nombre de la caja" Grid.Row="0" Margin="0 0 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.AuxiliaryCashDrawerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                        <dxe:TextEdit Text="{Binding Data.AuxiliaryCashDrawerEditor.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Row="1" Margin="0 5 0 10" CharacterCasing="Upper" x:Name="MajorCashDrawerName" Grid.ColumnSpan="2"/>
 
                                         <TextBlock Text="Estación de trabajo" Grid.Row="2" Margin="0 10 0 5" Grid.Column="0"/>
@@ -940,7 +940,7 @@
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
-                                            <dxe:TextEdit Text="{Binding Data.AuxiliaryCashDrawerComputerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                            <dxe:TextEdit Text="{Binding Data.AuxiliaryCashDrawerEditor.ComputerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                               Grid.Column="0" Margin="0 5 5 5"/>
 
                                             <Button Margin="5" Grid.Column="1" Width="auto" Command="{Binding Data.SearchComputerNameCommand, Source={StaticResource DataContextProxy}}">
@@ -999,7 +999,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerSelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -1033,7 +1033,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerSelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -1067,7 +1067,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerSelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -1101,13 +1101,13 @@
                                         </Grid.RowDefinitions>
 
                                         <dxe:CheckEdit Grid.Row="0" Content="¿Esta caja requiere cuadre diario?" 
-                           IsChecked="{Binding Data.AuxiliaryCashDrawerCashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
+                           IsChecked="{Binding Data.AuxiliaryCashDrawerEditor.CashReviewRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 0 0 10"
                                                Style="{StaticResource BlueCheckedTextStyle}"/>
 
 
                                         <TextBlock Text="Ajustar automáticamente saldo al cerrar" Grid.Row="1" Margin="0 10 0 5" FontWeight="Bold"/>
 
-                                        <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.AuxiliaryCashDrawerAutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                        <dxe:CheckEdit Grid.Row="2" IsChecked="{Binding Data.AuxiliaryCashDrawerEditor.AutoAdjustBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                            Margin="0 0 0 10" Style="{StaticResource BlueCheckedTextStyle}">
                                             <dxe:CheckEdit.Content>
                                                 <TextBlock>
@@ -1125,14 +1125,14 @@
                                         </TextBlock>
 
                                         <dxe:CheckEdit Grid.Row="5" Content="Habilitar tranferencia automática en cuadre de caja" Style="{StaticResource BlueCheckedTextStyle}"
-                           IsChecked="{Binding Data.AuxiliaryCashDrawerAutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 5 0 5"/>
+                           IsChecked="{Binding Data.AuxiliaryCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" Margin="0 5 0 5"/>
 
 
                                         <dxe:ComboBoxEdit   Grid.Row="6" Margin="0 5 0 0" IsTextEditable="False"
-                                Visibility="{Binding Data.AuxiliaryCashDrawerAutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                ItemsSource="{Binding Data.AuxiliaryCashDrawerAutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                Visibility="{Binding Data.AuxiliaryCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                ItemsSource="{Binding Data.AuxiliaryCashDrawerEditor.AutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                 DisplayMember="Name"
-                                EditValue="{Binding Data.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                EditValue="{Binding Data.AuxiliaryCashDrawerEditor.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
@@ -1152,7 +1152,7 @@
                                     <ColumnDefinition Width="6*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <dxe:TextEdit Text="{Binding Data.BankAccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                <dxe:TextEdit Text="{Binding Data.BankEditor.AccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                           Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
                                 <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchBankAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
                                     <StackPanel Orientation="Horizontal">
@@ -1199,24 +1199,24 @@
                                             <RowDefinition Height="auto"/>
                                             <RowDefinition Height="auto"/>
                                         </Grid.RowDefinitions>
-                                        <dxe:TextEdit Grid.Row="0" Text="{Binding Data.BankAccountBankName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                        <dxe:TextEdit Grid.Row="0" Text="{Binding Data.BankAccountEditor.BankName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                               Margin="0 0 0 10" IsReadOnly="True"/>
 
-                                        <dxe:CheckEdit Grid.Row="1" Content="Cuenta Activa" IsChecked="{Binding Data.BankAccountIsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                        <dxe:CheckEdit Grid.Row="1" Content="Cuenta Activa" IsChecked="{Binding Data.BankAccountEditor.IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                                        Margin="0 10 0 10" Style="{StaticResource BlueCheckedTextStyle}"/>
 
                                         <TextBlock Text="Tipo" Grid.Row="2" Margin="0 10 0 5" FontWeight="Bold"/>
 
                                         <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="0 5 0 10" IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                                            <RadioButton Content="Ahorros" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-                                            <RadioButton Content="Corriente" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=C, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-                                            <RadioButton Content="Basada en número celular" GroupName="Type" IsChecked="{Binding Data.BankAccountType, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=M, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountBankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            <RadioButton Content="Ahorros" GroupName="Type" IsChecked="{Binding Data.BankAccountEditor.Type, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountEditor.BankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            <RadioButton Content="Corriente" GroupName="Type" IsChecked="{Binding Data.BankAccountEditor.Type, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=C, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0" IsEnabled="{Binding Data.BankAccountEditor.BankCaptureInfoAsRS, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            <RadioButton Content="Basada en número celular" GroupName="Type" IsChecked="{Binding Data.BankAccountEditor.Type, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=M, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Data.BankAccountEditor.BankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
                                         </StackPanel>
 
                                         <StackPanel Orientation="Vertical" Grid.Row="4" Margin="0 10 0 10" IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                                                    Visibility="{Binding Data.BankAccountBankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                                            <RadioButton Content="Nequi" GroupName="Provider" IsChecked="{Binding Data.BankAccountProvider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=N, UpdateSourceTrigger=PropertyChanged}"/>
-                                            <RadioButton Content="Daviplata" GroupName="Provider" IsChecked="{Binding Data.BankAccountProvider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    Visibility="{Binding Data.BankAccountEditor.BankCaptureInfoAsPN, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                            <RadioButton Content="Nequi" GroupName="Provider" IsChecked="{Binding Data.BankAccountEditor.Provider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=N, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <RadioButton Content="Daviplata" GroupName="Provider" IsChecked="{Binding Data.BankAccountEditor.Provider, Source={StaticResource DataContextProxy}, Converter={StaticResource CharToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
                                             
                                         <Grid Grid.Row="5" Margin="0 10 0 10">
@@ -1233,27 +1233,27 @@
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
+                                                            <DataTrigger Binding="{Binding Data.BankAccountEditor.BankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
                                                                 <Setter Property="Text" Value="Número de la cuenta bancaria"/>
                                                             </DataTrigger>
 
-                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
+                                                            <DataTrigger Binding="{Binding Data.BankAccountEditor.BankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
                                                                 <Setter Property="Text" Value="Número de teléfono celular"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <dxe:TextEdit Grid.Row="1" Grid.Column="0" Margin="0 5 10 0" Text="{Binding Data.BankAccountNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                            <dxe:TextEdit Grid.Row="1" Grid.Column="0" Margin="0 5 10 0" Text="{Binding Data.BankAccountEditor.Number, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                                           x:Name="BankAccountNumber" MaskType="Simple">
                                                 <dxe:TextEdit.Style>
                                                     <Style TargetType="dxe:TextEdit">
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
+                                                            <DataTrigger Binding="{Binding Data.BankAccountEditor.BankCaptureInfoAsRS, Source={StaticResource DataContextProxy}}" Value="True">
                                                                 <Setter Property="Mask" Value="000-000000-00" />
                                                             </DataTrigger>
                                                             
-                                                            <DataTrigger Binding="{Binding Data.BankAccountBankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
+                                                            <DataTrigger Binding="{Binding Data.BankAccountEditor.BankCaptureInfoAsPN, Source={StaticResource DataContextProxy}}" Value="True">
                                                                 <Setter Property="Mask" Value="000 000 00 00"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
@@ -1263,19 +1263,19 @@
 
                                             <TextBlock Text="Referencia cta bancaria" FontWeight="Bold" Grid.Row="0" Grid.Column="1" Margin="10 0 0 5"/>
                                             <dxe:TextEdit Grid.Row="1" Grid.Column="1" Margin="10 5 0 0" CharacterCasing="Upper"
-                                  Text="{Binding Data.BankAccountReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                  Text="{Binding Data.BankAccountEditor.Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
 
                                         </Grid>
                                         <StackPanel Grid.Row="6" Margin="0 10 0 5" Orientation="Horizontal">
                                             <TextBlock Text="Cuenta Contable" FontWeight="Bold" Margin="0 0 10 0" VerticalAlignment="Center"/>
                                             <StackPanel Orientation="Horizontal" Margin="10 0 0 0" Visibility="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                                                <RadioButton Content="Crear automáticamente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountAccountingAccountAutoCreate, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-                                                <RadioButton Content="Seleccionar existente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountAccountingAccountSelectExisting, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
+                                                <RadioButton Content="Crear automáticamente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountEditor.AccountingAccountAutoCreate, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                                <RadioButton Content="Seleccionar existente" GroupName="AccountingAccount" IsChecked="{Binding Data.BankAccountEditor.AccountingAccountSelectExisting, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}" Margin="5 0 5 0"/>
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <dxe:TextEdit Grid.Row="7" Margin="0 5 0 10" Text="{Binding Data.BankAccountDescription, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
-                                                      IsReadOnly="True" Visibility="{Binding Data.BankAccountAccountingAccountAutoCreate, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}"/>
+                                        <dxe:TextEdit Grid.Row="7" Margin="0 5 0 10" Text="{Binding Data.BankAccountEditor.Description, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                                      IsReadOnly="True" Visibility="{Binding Data.BankAccountEditor.AccountingAccountAutoCreate, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}"/>
 
                                         <dxg:LookUpEdit Grid.Row="7" 
                                           Margin="0 5 0 10" Padding="3"
@@ -1296,8 +1296,8 @@
                                           GotFocus="LookUpEdit_GotFocus"
                                           PreviewMouseUp="LookUpEdit_PreviewMouseUp"
                                           ValueMember="Id"
-                                          SelectedItem="{Binding Path=Data.BankAccountSelectedAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                                          Visibility="{Binding Data.BankAccountAccountingAccountSelectExisting, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}">
+                                          SelectedItem="{Binding Path=Data.BankAccountEditor.SelectedAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                          Visibility="{Binding Data.BankAccountEditor.AccountingAccountSelectExisting, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -1325,13 +1325,13 @@
                                             </Grid.ColumnDefinitions>
 
                                             <dxe:TextEdit Grid.Column="0" IsReadOnly="True" 
-                                            Text="{Binding Data.BankAccountPaymentMethodAbbreviation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                            Text="{Binding Data.BankAccountEditor.PaymentMethodAbbreviation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
                                         </Grid>
                                         
                                         <TextBlock Text="Nombre de la forma de pago" Margin="0 10 0 5" Grid.Row="10" FontWeight="Bold"/>
 
                                         <dxe:TextEdit Margin="0 5 0 0" Grid.Row="11" IsReadOnly="True"
-                                                      Text="{Binding Data.BankAccountPaymentMethodName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                                      Text="{Binding Data.BankAccountEditor.PaymentMethodName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
                                     </Grid>
                                 </dx:DXTabItem>
                                 <dx:DXTabItem Header="Centros de Costo">
@@ -1340,8 +1340,8 @@
                                             Margin="0 8 0 0"
                                             EnableSmartColumnsGeneration="True"
                                             AutoGenerateColumns="None"
-                                            ItemsSource="{Binding Data.BankAccountCostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                                            SelectedItem="{Binding Data.BankAccountSelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                            ItemsSource="{Binding Data.BankAccountEditor.CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                            SelectedItem="{Binding Data.BankAccountEditor.SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:GridControl.View>
                                                 <dxg:TableView AllowCascadeUpdate="False" 
                                                    EnableSelectedRowAppearance="True"
@@ -1373,9 +1373,6 @@
                     <!--franquicias-->
                     <DataTemplate DataType="{x:Type model:TreasuryFranchiseMasterTreeDTO}">
                         <Grid Margin="20 0 0 0" IsEnabled="{Binding Data.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                            <Grid.ColumnDefinitions>
-
-                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="auto"/>
                                 <RowDefinition Height="auto"/>
@@ -1394,31 +1391,31 @@
                             <TextBlock Text="Aplicación" Grid.Column="0" Grid.Row="0" Margin="0 5 0 5" FontWeight="Bold"/>
                             <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="1" Margin="0 5 0 10" 
                                               ItemsSource="{Binding Data.FranchiseCostCenters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
-                                              EditValue="{Binding Data.FranchiseSelectedCostCenter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseEditor.SelectedCostCenter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
                                               DisplayMember="Name" IsTextEditable="False"
                                               IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanNegationConverter}}"/>
 
                             <TextBlock Text="Cuenta Bancaria" Grid.Column="0" Grid.Row="2" Margin="0 10 0 5" FontWeight="Bold"/>
                             <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="3" Margin="0 5 0 10"
                                               ItemsSource="{Binding Data.FranchiseBankAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
-                                              EditValue="{Binding Data.FranchiseSelectedBankAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseEditor.SelectedBankAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
                                               DisplayMember="Description" IsTextEditable="False"/>
 
                             <TextBlock Text="Nombre de la franquicia" Grid.Column="0" Grid.Row="4" Margin="0 10 0 5" FontWeight="Bold"/>
                             <dxe:TextEdit Grid.Column="0" Grid.Row="5" Margin="0 5 0 10" x:Name="FranchiseName" CharacterCasing="Upper"
-                                          Text="{Binding Data.FranchiseName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
+                                          Text="{Binding Data.FranchiseEditor.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
 
                             <TextBlock Text="Tipo de tarjeta" Grid.Column="0" Grid.Row="6" Margin="0 10 0 5" FontWeight="Bold"/>
                             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="7" Margin="0 5 0 10"
                                         IsEnabled="{Binding Data.IsNewRecord, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
-                                <RadioButton Content="Débito" GroupName="Type" Margin="0 0 5 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseType, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TD, UpdateSourceTrigger=PropertyChanged}"/>
-                                <RadioButton Content="Crédito" GroupName="Type" Margin="5 0 0 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseType, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TC, UpdateSourceTrigger=PropertyChanged}"/>
+                                <RadioButton Content="Débito" GroupName="Type" Margin="0 0 5 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseEditor.Type, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TD, UpdateSourceTrigger=PropertyChanged}"/>
+                                <RadioButton Content="Crédito" GroupName="Type" Margin="5 0 0 0" VerticalAlignment="Center" IsChecked="{Binding Data.FranchiseEditor.Type, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TC, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
 
                             <TextBlock Text="Cuenta de comisiones" Grid.Column="0" Grid.Row="8" Margin="0 10 0 5" FontWeight="Bold"/>
                             <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="9" Margin="0 5 0 10"
                                               ItemsSource="{Binding Data.FranchiseAccountingAccountsCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                                              EditValue="{Binding Data.FranchiseSelectedAccountingAccountCommission, Mode=TwoWay,UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                              EditValue="{Binding Data.FranchiseEditor.SelectedAccountingAccountCommission, Mode=TwoWay,UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                               DisplayMember="FullName" IsTextEditable="False"/>
 
                             <TextBlock Text="SIMULADOR" Grid.Column="0" Grid.Row="10" FontWeight="Bold" HorizontalAlignment="Center" FontSize="16"/>
@@ -1447,7 +1444,7 @@
                                 <!--valor tarjetas-->
                                 <TextBlock Text="Valor Tarjetas" Grid.Column="0" Grid.Row="1" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[VALOR_TARJETA]" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0 5 0 5" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseCardValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.CardValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="1" Margin="0 5 5 5" HorizontalContentAlignment="Right"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                               Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
@@ -1455,14 +1452,14 @@
                                 <!--margen iva-->
                                 <TextBlock Text="Margen I.V.A" Grid.Column="0" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[MARGEN_IVA]" Grid.Column="1" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseIvaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.IvaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="2" Margin="0 5 5 5" HorizontalContentAlignment="Right"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                                               Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
                                 <!--valor iva-->
                                 <TextBlock Text="Valor I.V.A" Grid.Column="3" Grid.Row="2" Margin="0 0 5 5" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                 <TextBlock Text="[VALOR_IVA]" Grid.Column="4" Grid.Row="2" VerticalAlignment="Center" Margin="5 0 0 5" FontWeight="Bold" HorizontalAlignment="Left"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedIvaValue, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.SimulatedIvaValue, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="5" Grid.Row="2" Margin="5 5 5 5" IsReadOnly="True"
                                               HorizontalContentAlignment="Right" MaskType="Numeric" MaskCulture="en-US"
                                               Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
@@ -1470,10 +1467,10 @@
                                 <!--margen comision-->
                                 <TextBlock Text="Comisión" Grid.Column="0" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[MARGEN_COMISION]" Grid.Column="1" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseCommissionMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.CommissionMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="3" Margin="0 5 5 5"  HorizontalContentAlignment="Right" MaskCulture="en-US"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.FormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="3" Grid.Row="3" Margin="5 5 5 5" CharacterCasing="Upper"/>
                                 <Button Grid.Column="4" Grid.Row="3" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaCommissionCommand, Source={StaticResource DataContextProxy}}">
                                     <Button.Content>
@@ -1483,17 +1480,17 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedCommission, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.SimulatedCommission, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="5" Grid.Row="3" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
                                               HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
 
                                 <!--rete iva-->
                                 <TextBlock Text="ReteIVA" Grid.Column="0" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[MARGEN_RETE_IVA]" Grid.Column="1" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseReteivaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.ReteivaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="4" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.FormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="3" Grid.Row="4" Margin="5 5 5 5" CharacterCasing="Upper"/>
                                 <Button Grid.Column="4" Grid.Row="4" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaReteivaCommand, Source={StaticResource DataContextProxy}}">
                                     <Button.Content>
@@ -1503,17 +1500,17 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedReteiva, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.SimulatedReteiva, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="5" Grid.Row="4" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
                                               HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
 
                                 <!--rete ica-->
                                 <TextBlock Text="ReteICA" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[MARGEN_RETE_ICA]" Grid.Column="1" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseReteicaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.ReteicaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="5" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.FormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="3" Grid.Row="5" Margin="5 5 5 5" CharacterCasing="Upper"/>
                                 <Button Grid.Column="4" Grid.Row="5" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaReteicaCommand, Source={StaticResource DataContextProxy}}">
                                     <Button.Content>
@@ -1523,17 +1520,17 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedReteica, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.SimulatedReteica, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="5" Grid.Row="5" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
                                               HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
 
                                 <!--rete fuente-->
                                 <TextBlock Text="ReteFuente" Grid.Column="0" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center"/>
                                 <TextBlock Text="[MARGEN_RETE_FUENTE]" Grid.Column="1" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseRetefteMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.RetefteMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="2" Grid.Row="6" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}"/>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseFormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.FormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="3" Grid.Row="6" Margin="5 5 5 5" CharacterCasing="Upper"/>
                                 <Button Grid.Column="4" Grid.Row="6" Margin="5 5 5 5" Command="{Binding Data.FranchiseResetFormulaRetefteCommand, Source={StaticResource DataContextProxy}}">
                                     <Button.Content>
@@ -1543,7 +1540,7 @@
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
-                                <dxe:TextEdit Text="{Binding Data.FranchiseSimulatedRetefte, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
+                                <dxe:TextEdit Text="{Binding Data.FranchiseEditor.SimulatedRetefte, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" 
                                               Grid.Column="5" Grid.Row="6" Margin="5 5 5 5" IsReadOnly="True" MaskCulture="en-US"
                                               HorizontalContentAlignment="Right" MaskType="Numeric" Mask="{Binding Data.FranchiseDecimalsCount, Source={StaticResource DataContextProxy}}" MaskUseAsDisplayFormat="True"/>
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Treasury
 {
@@ -56,6 +57,6 @@ namespace Models.Treasury
 
     public class FranchiseDeleteMessage
     {
-        public FranchiseGraphQLModel DeletedFranchise { get; set; } = new();
+        public DeleteResponseType DeletedFranchise { get; set; } = new();
     }
 }

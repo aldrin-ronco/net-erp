@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Treasury
 {
@@ -31,6 +32,6 @@ namespace Models.Treasury
 
     public class BankDeleteMessage
     {
-        public BankGraphQLModel DeletedBank { get; set; } = new();
+        public DeleteResponseType DeletedBank { get; set; } = new();
     }
 }

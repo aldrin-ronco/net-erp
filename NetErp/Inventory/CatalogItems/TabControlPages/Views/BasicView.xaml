@@ -82,7 +82,7 @@
             <Button.Content>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Agregar imagen" VerticalAlignment="Center"/>
-                    <Image Source="pack://application:,,,/DevExpress.Images.v23.2;component/Images/Actions/Add_32x32.png" VerticalAlignment="Center"/>
+                    <Image Source="pack://application:,,,/DevExpress.Images.v25.2;component/Images/Actions/Add_32x32.png" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button.Content>
         </Button>

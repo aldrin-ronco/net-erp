@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>false</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -51,28 +51,28 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
-    <PackageReference Include="BusyIndicators" Version="2.1.2" />
+    <PackageReference Include="AutoMapper" Version="16.0.0" />
+    <PackageReference Include="BusyIndicators" Version="2.1.3" />
     <PackageReference Include="CalcBinding" Version="2.5.2" />
-    <PackageReference Include="Caliburn.Micro" Version="4.0.212" />
+    <PackageReference Include="Caliburn.Micro" Version="5.0.258" />
     <PackageReference Include="CurrencyTextBox" Version="2.0.2" />
     <PackageReference Include="DeepCloner" Version="0.10.4" />
-    <PackageReference Include="devexpress.wpf.accordion" Version="24.2.3" />
-    <PackageReference Include="DevExpress.Wpf.Controls" Version="23.2.3" />
-    <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.3" />
-    <PackageReference Include="devexpress.wpf.grid.core" Version="23.2.3" />
-    <PackageReference Include="devexpress.wpf.layoutcontrol" Version="23.2.3" />
-    <PackageReference Include="devexpress.wpf.ribbon" Version="24.2.3" />
-    <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="1.6.0" />
-    <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
+    <PackageReference Include="devexpress.wpf.accordion" Version="25.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Controls" Version="25.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Core" Version="25.2.3" />
+    <PackageReference Include="devexpress.wpf.grid.core" Version="25.2.3" />
+    <PackageReference Include="devexpress.wpf.layoutcontrol" Version="25.2.3" />
+    <PackageReference Include="devexpress.wpf.ribbon" Version="25.2.3" />
+    <PackageReference Include="DotNetKit.Wpf.AutoCompleteComboBox" Version="2.0.1" />
+    <PackageReference Include="Extended.Wpf.Toolkit" Version="5.0.0" />
     <PackageReference Include="GraphQL.Query.Builder" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.122" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.2" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.14.15" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="Ninject" Version="3.3.6" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.9" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -84,15 +84,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    
-	  <Reference Include="DevExpress.Images.v24.2">
-		  <HintPath>..\..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Images.v24.2.dll</HintPath>
-	  </Reference>
-    
-    <Reference Include="DevExpress.Xpf.Ribbon.v24.2">
-      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 24.2\Components\Bin\Framework\DevExpress.Xpf.Ribbon.v24.2.dll</HintPath>
+    <Reference Include="DevExpress.Data.v25.2">
+      
     </Reference>
-
+    <Reference Include="DevExpress.Images.v25.2">
+      <HintPath>..\..\..\..\..\..\Program Files\DevExpress 25.2\Components\Bin\Framework\DevExpress.Images.v25.2.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

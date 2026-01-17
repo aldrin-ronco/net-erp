@@ -28,14 +28,20 @@ namespace NetErp
             _ = new DevExpress.Xpf.Grid.GridControl();
             _ = new DevExpress.Xpf.Editors.TextEdit();
             _ = new DevExpress.Xpf.Ribbon.RibbonControl();
-            
+
             // Force load critical assemblies that cause delays
             _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Serializer.Newtonsoft.dll");
             _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Abstractions.dll");
             _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Primitives.dll");
-            _ = System.Reflection.Assembly.LoadFrom(@"DevExpress.Images.v24.2.dll");
             _ = System.Reflection.Assembly.LoadFrom(@"GraphQL.Client.Abstractions.Websocket.dll");
-            
+
+            // Load DevExpress Images assembly dynamically (version-independent)
+            var devExpressImagesDll = System.IO.Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "DevExpress.Images.v*.dll").FirstOrDefault();
+            if (devExpressImagesDll != null)
+            {
+                _ = System.Reflection.Assembly.LoadFrom(devExpressImagesDll);
+            }
+
             // Trigger System.Drawing and Microsoft.CSharp loading
             System.Drawing.Color.FromArgb(255, 0, 0);
             dynamic dummy = new System.Dynamic.ExpandoObject();
