@@ -97,10 +97,10 @@
                     <dxg:GridControl.View>
                         <dxg:TableView EnableSelectedRowAppearance="True" AllowCascadeUpdate="False" ShowGroupPanel="False" AlternateRowBackground="Beige"/>
                     </dxg:GridControl.View>
-                    <dxg:GridColumn Header="NIT" Binding="{Binding Entity.IdentificationNumberWithVerificationDigit, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
-                    <dxg:GridColumn Header="Nombre del tercero" Binding="{Binding Path=Entity.SearchName, Mode=OneWay}" AllowBestFit="true" Width="*"/>
-                    <dxg:GridColumn Header="Dirección" Binding="{Binding Path=Entity.Address, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
-                    <dxg:GridColumn Header="Información telefónica" Binding="{Binding Path=Entity.TelephonicInformation, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Header="NIT" Binding="{Binding AccountingEntity.IdentificationNumberWithVerificationDigit, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Header="Nombre del tercero" Binding="{Binding Path=AccountingEntity.SearchName, Mode=OneWay}" AllowBestFit="true" Width="*"/>
+                    <dxg:GridColumn Header="Dirección" Binding="{Binding Path=AccountingEntity.Address, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
+                    <dxg:GridColumn Header="Información telefónica" Binding="{Binding Path=AccountingEntity.TelephonicInformation, Mode=OneWay}" AllowBestFit="true" Width="auto"/>
                     <dxg:GridColumn Width="30" FixedWidth="True">
                         <dxg:GridColumn.CellTemplate>
                             <DataTemplate>

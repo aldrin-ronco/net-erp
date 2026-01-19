@@ -195,10 +195,10 @@
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize},Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
                                  Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                        <RadioButton Content="Rason Social"
+                        <RadioButton Content="Persona Jurídica"
                                  GroupName="CaptureType"
                                  IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, 
-                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=RS}"
+                                 Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PJ}"
                                  Margin="5 0 0 0"
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
@@ -234,13 +234,13 @@
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
                             <!--Razon Social-->
-                            <TextBlock Text="Razon Social" 
+                            <TextBlock Text="Razón social" 
                                    Grid.Column="0" Grid.Row="0"
-                                   Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                    Margin="0 4 4 2"/>
                             <dxe:TextEdit x:Name="BusinessName" 
                                  CharacterCasing="Upper"
-                                 Visibility="{Binding CaptureInfoAsRS, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                 Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                                  Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
                                  Margin="0 0 0 0" Padding="3"
                                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -299,7 +299,7 @@
                                    Grid.Column="0" Grid.Row="4" 
                                    Margin="0 4 4 2"
                                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit x:Name="Phone1" 
+                        <dxe:TextEdit x:Name="PrimaryPhone" 
                                   MaxLength="10"
                                   MaskType="Simple"
                                   Mask="000 00 00"
@@ -314,7 +314,7 @@
                                    Grid.Column="1" Grid.Row="4"
                                    Margin="4 4 4 2"
                                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit x:Name="Phone2" 
+                                  <dxe:TextEdit x:Name="SecondaryPhone" 
                                   MaxLength="10"
                                   Grid.Column="1" Grid.Row="5"
                                   MaskType="Simple"
@@ -328,7 +328,7 @@
                                    Grid.Column="2" Grid.Row="4" 
                                    Margin="4 4 4 2"
                                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit x:Name="CellPhone1" 
+                                  <dxe:TextEdit x:Name="PrimaryCellPhone" 
                                   MaxLength="14"
                                   MaskType="Simple"
                                   Mask="000 000 00 00"
@@ -342,7 +342,7 @@
                                    Grid.Column="3" Grid.Row="4" 
                                    Margin="4 4 0 2"
                                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <dxe:TextEdit x:Name="CellPhone2" 
+                                 <dxe:TextEdit x:Name="SecondaryCellPhone" 
                                   MaxLength="14"
                                   MaskType="Simple"
                                   Mask="000 000 00 00"
@@ -478,13 +478,23 @@
                     </dx:DXTabItem>
                     <dx:DXTabItem Header="Retenciones"
                               FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <ListView ItemsSource="{Binding Path=RetentionTypes, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                       
+
+                        <ListView  Grid.Column="0" Grid.Row="0"
+                            ItemsSource="{Binding Path=WithholdingTypes, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Width="auto">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <CheckBox IsChecked="{Binding Path=IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    
+          cal:Message.Attach="[Event Checked] = [Action CheckBoxClicked($eventArgs)]; [Event Unchecked] = [Action CheckBoxClicked($eventArgs)]"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -492,7 +502,48 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                    </dx:DXTabItem>
+                        <Grid Grid.Row="1" Margin="0 20 0 20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="Margen ReteICA" Margin="0 0 0 2" />
+                                    <dxe:SpinEdit MinValue="0" Increment="1" 
+                                    Padding="2"
+                                    IsFloatValue="False"
+                                    Text="{Binding Path=IcaWithholdingRate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    
+                                    CharacterCasing="Upper"
+                                    x:Name="IcaWithholdingRate"
+                                    Margin="0 0 0 2" />
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                    Grid.Row="1" Grid.Column="0">
+                                <TextBlock Text="Cuenta" Margin="0 0 0 2" />
+                                <dxe:ComboBoxEdit
+                                Padding="2"
+                                ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="False"
+                                DisplayMember="FullName"
+                                
+                                ValueMember="Id"
+                                EditValue="{Binding IcaAccountingAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   IsSynchronizedWithCurrentItem="True" />
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                            Grid.Row="2" Grid.Column="0">
+                                <dxe:CheckEdit Content="Retiene sobre cualquier base" Grid.Row="9"
+                                  Margin="6 5 0 5"
+                                  Style="{StaticResource BlueCheckedTextStyle}"
+                                  Padding="2"
+                                  IsChecked="{Binding WithholdingAppliesOnAnyAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />       
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </dx:DXTabItem>
 
                     <dx:DXTabItem Header="Emails"
                               FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
@@ -660,7 +711,42 @@
                             </DataGrid>
                         </Grid>
                     </dx:DXTabItem>
-                </dx:DXTabControl>
+                <dx:DXTabItem Header="Otros Datos"
+           FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                    <Grid Grid.Row="1" Margin="0 20 0 20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                    Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+    Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="Nombre Comercial" 
+      Grid.Column="0" Grid.Row="2"
+    
+      Margin="0 4 4 2"
+      FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <dxe:TextEdit x:Name="TradeName"
+CharacterCasing="Upper"
+Grid.Column="0" Grid.Row="3" 
+Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
+Margin="0 0 4 0" Padding="3"
+FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                          Grid.Row="1" Grid.Column="0">
+                            <dxe:CheckEdit Content="Este proveedor esta excento de IVA" Grid.Row="9"
+                                Margin="6 5 0 5"
+                                Style="{StaticResource BlueCheckedTextStyle}"
+                                Padding="2"
+                                IsChecked="{Binding IsTaxFree, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        
+                    </Grid>
+                </dx:DXTabItem>
+            </dx:DXTabControl>
             </Grid>
     </busyIndicator:BusyMask>
 </UserControl >

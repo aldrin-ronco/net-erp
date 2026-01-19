@@ -1,4 +1,5 @@
-﻿using Models.Books;
+﻿using Models.Billing;
+using Models.Books;
 using Models.Global;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Suppliers
 {
@@ -13,14 +15,14 @@ namespace Models.Suppliers
     {
         public int Id { get; set; }
         public bool IsTaxFree { get; set; } = false;
-        public decimal IcaRetentionMargin { get; set; }
-        public int IcaRetentionMarginBasis { get; set; }
-        public bool RetainsAnyBasis { get; set; }
+        public bool WithholdingAppliesOnAnyAmount { get; set; } = false;
+        public decimal IcaWithholdingRate { get; set; }
+        
         public AccountingAccountGraphQLModel IcaAccountingAccount { get; set; } = new();
-        public AccountingEntityGraphQLModel Entity { get; set; } = new();
-        public ObservableCollection<WithholdingTypeGraphQLModel> Retentions { get; set; } = [];
+        public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
+        public ObservableCollection<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; } = [];
     }
-
+    
     public class SupplierDTO : SupplierGraphQLModel
     {
         private bool _isChecked;
@@ -38,22 +40,21 @@ namespace Models.Suppliers
     }
     public class SupplierCreateMessage
     {
-        public SupplierDTO CreatedSupplier { get; set; } = new();
+        public UpsertResponseType<SupplierGraphQLModel> CreatedSupplier { get; set; } = new();
     }
 
     public class SupplierUpdateMessage
     {
-        public SupplierDTO UpdatedSupplier { get; set; } = new();
+        public UpsertResponseType<SupplierGraphQLModel> UpdatedSupplier { get; set; } = new();
     }
 
     public class SupplierDeleteMessage
     {
-        public SupplierDTO DeletedSupplier { get; set; } = new();
+        public DeleteResponseType DeletedSupplier { get; set; } = new();
     }
     public class SupplierDataContext
     {
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; } = [];
-        public ObservableCollection<CountryGraphQLModel> Countries { get; set; } = [];
-        public ObservableCollection<WithholdingTypeGraphQLModel> WithholdingTypes { get; set; } = [];
+        public PageType<SupplierGraphQLModel> Suppliers { get; set; }
+        public PageType<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
     }
 }

@@ -24,7 +24,8 @@ namespace Common.Helpers
         /// Países con sus departamentos y ciudades
         /// </summary>
         public static ObservableCollection<CountryGraphQLModel> Countries { get; private set; } = [];
-
+        public static ObservableCollection<WithholdingTypeGraphQLModel> WithholdingTypes { get; private set; } = [];
+        
         /// <summary>
         /// Indica si el caché ya ha sido inicializado
         /// </summary>
@@ -45,9 +46,11 @@ namespace Common.Helpers
         /// </summary>
         /// <param name="identificationTypes">Lista de tipos de identificación</param>
         /// <param name="countries">Lista de países con departamentos y ciudades</param>
+        /// /// <param name="withholdingTypes">Lista de tipos de retenciones</param>
         public static void Initialize(
             ObservableCollection<IdentificationTypeGraphQLModel> identificationTypes,
-            ObservableCollection<CountryGraphQLModel> countries)
+            ObservableCollection<CountryGraphQLModel> countries,
+            ObservableCollection<WithholdingTypeGraphQLModel> withholdingTypes)
         {
             lock (_lock)
             {
@@ -58,6 +61,7 @@ namespace Common.Helpers
 
                 IdentificationTypes = identificationTypes ?? [];
                 Countries = countries ?? [];
+                WithholdingTypes = withholdingTypes ?? [];
                 _isInitialized = true;
             }
         }
