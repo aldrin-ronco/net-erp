@@ -4,6 +4,8 @@ using Common.Interfaces;
 using Models.Treasury;
 using Models.Global;
 using NetErp.Global.CostCenters.ViewModels;
+using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
@@ -26,13 +28,17 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
         private readonly INotificationService _notificationService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly BankAccountCache _bankAccountCache;
+        private readonly MajorCashDrawerCache _majorCashDrawerCache;
 
         private TreasuryRootMasterViewModel _treasuryRootMasterViewModel;
         public TreasuryRootMasterViewModel TreasuryRootMasterViewModel
         {
             get
             {
-                if (_treasuryRootMasterViewModel is null) 
+                if (_treasuryRootMasterViewModel is null)
                     _treasuryRootMasterViewModel = new TreasuryRootMasterViewModel(
                         this,
                         _companyLocationService,
@@ -42,7 +48,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                         _bankAccountService,
                         _franchiseService,
                         _dialogService,
-                        _notificationService);
+                        _notificationService,
+                        _auxiliaryAccountingAccountCache,
+                        _costCenterCache,
+                        _bankAccountCache,
+                        _majorCashDrawerCache);
                 return _treasuryRootMasterViewModel;
             }
         }
@@ -57,7 +67,11 @@ namespace NetErp.Treasury.Masters.ViewModels
             IRepository<BankAccountGraphQLModel> bankAccountService,
             IRepository<FranchiseGraphQLModel> franchiseService,
             NetErp.Helpers.IDialogService dialogService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            CostCenterCache costCenterCache,
+            BankAccountCache bankAccountCache,
+            MajorCashDrawerCache majorCashDrawerCache)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
@@ -69,6 +83,10 @@ namespace NetErp.Treasury.Masters.ViewModels
             _franchiseService = franchiseService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _costCenterCache = costCenterCache;
+            _bankAccountCache = bankAccountCache;
+            _majorCashDrawerCache = majorCashDrawerCache;
             _ = Task.Run(ActivateMasterView);
         }
 

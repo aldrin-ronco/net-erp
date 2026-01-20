@@ -14,6 +14,7 @@ using Models.Treasury;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.PanelEditors;
@@ -69,6 +70,10 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly BankAccountCache _bankAccountCache;
+        private readonly MajorCashDrawerCache _majorCashDrawerCache;
 
         #region Panel Editors
 
@@ -2351,77 +2356,36 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task LoadComboBoxesAsync()
         {
-            try
-            {
-                string query = @"
-                query($accountingAccountFilter: AccountingAccountFilterInput!, $cashDrawerFilter: CashDrawerFilterInput!, $bankAccountFilter: BankAccountFilterInput!){
-                  accountingAccounts(filter: $accountingAccountFilter){
-                    id
-                    code
-                    name
-                  }
-                  cashDrawers(filter: $cashDrawerFilter){
-                    id
-                    name
-                  }
-                   costCenters{
-                    id
-                    name
-                  }
-                    bankAccounts(filter: $bankAccountFilter){
-                    id
-                    description
-                  }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.accountingAccountFilter = new ExpandoObject();
-                variables.accountingAccountFilter.code = new ExpandoObject();
-                variables.accountingAccountFilter.code.@operator = new List<string>() { "length", ">=" };
-                variables.accountingAccountFilter.code.value = 8;
+            // Ensure all caches are loaded
+            await Task.WhenAll(
+                _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
+                _costCenterCache.EnsureLoadedAsync(),
+                _bankAccountCache.EnsureLoadedAsync(),
+                _majorCashDrawerCache.EnsureLoadedAsync()
+            );
 
-                variables.cashDrawerFilter = new ExpandoObject();
-                variables.cashDrawerFilter.isPettyCash = new ExpandoObject();
-                variables.cashDrawerFilter.isPettyCash.@operator = "=";
-                variables.cashDrawerFilter.isPettyCash.value = false;
+            // Cuentas contables auxiliares
+            CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+            BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+            BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
 
-                variables.bankAccountFilter = new ExpandoObject();
-                variables.bankAccountFilter.allowedTypes = new ExpandoObject();
-                variables.bankAccountFilter.allowedTypes.value = "AC";
-                variables.bankAccountFilter.allowedTypes.exclude = true;
+            FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+            FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
 
-                var result = await _cashDrawerService.GetDataContextAsync<CashDrawerComboBoxesDataContext>(query, variables);
-                CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
-                BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result.AccountingAccounts);
-                BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(result.CostCenters);
-                FranchiseAccountingAccountsCommission = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts);
-                FranchiseBankAccounts = Context.AutoMapper.Map<ObservableCollection<BankAccountGraphQLModel>>(result.BankAccounts);
-                FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(result.CostCenters);
-                FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
-                FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
-                FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
-                BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
-                CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(result.CashDrawers);
-                CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadCompanyLocations" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
+            // Centros de costo
+            BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(_costCenterCache.Items);
+            FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(_costCenterCache.Items);
+            FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
+
+            // Cuentas bancarias
+            FranchiseBankAccounts = new ObservableCollection<BankAccountGraphQLModel>(_bankAccountCache.Items);
+            FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
+
+            // Cajas generales
+            CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
+            CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
         }
+
         public TreasuryRootMasterViewModel(
             TreasuryRootViewModel context,
             IRepository<CompanyLocationGraphQLModel> companyLocationService,
@@ -2431,7 +2395,11 @@ namespace NetErp.Treasury.Masters.ViewModels
             IRepository<BankAccountGraphQLModel> bankAccountService,
             IRepository<FranchiseGraphQLModel> franchiseService,
             Helpers.IDialogService dialogService,
-            Helpers.Services.INotificationService notificationService)
+            Helpers.Services.INotificationService notificationService,
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            CostCenterCache costCenterCache,
+            BankAccountCache bankAccountCache,
+            MajorCashDrawerCache majorCashDrawerCache)
         {
             _companyLocationService = companyLocationService;
             _costCenterService = costCenterService;
@@ -2441,6 +2409,10 @@ namespace NetErp.Treasury.Masters.ViewModels
             _franchiseService = franchiseService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _costCenterCache = costCenterCache;
+            _bankAccountCache = bankAccountCache;
+            _majorCashDrawerCache = majorCashDrawerCache;
             
             Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, false, OnFindBankAccountingEntityMessage);
             DummyItems = [
@@ -2470,15 +2442,10 @@ namespace NetErp.Treasury.Masters.ViewModels
             FranchiseEditor = new FranchisePanelEditor(this, _franchiseService);
         }
 
-        public async Task Initialize()
+        protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
         {
             await LoadComboBoxesAsync();
-        }
-
-        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
-        {
-            await base.OnActivateAsync(cancellationToken);
-            await Initialize();
+            await base.OnActivatedAsync(cancellationToken);
         }
 
         public void OnFindBankAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)

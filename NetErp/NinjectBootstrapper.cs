@@ -34,6 +34,7 @@ using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Shell.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.Services;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
@@ -98,6 +99,16 @@ namespace NetErp
             //kernel = new StandardKernel();
             _ = kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
+            _ = kernel.Bind<GlobalDataCache>().ToSelf().InSingletonScope();
+
+            // Entity Caches (individual caches per entity for better maintainability)
+            _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<CountryCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<BankAccountCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<MajorCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<AuxiliaryAccountingAccountCache>().ToSelf().InSingletonScope();
+
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();

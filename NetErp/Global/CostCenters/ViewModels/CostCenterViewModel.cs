@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,14 +25,15 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly IRepository<CountryGraphQLModel> _countryService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly CountryCache _countryCache;
 
         private CostCenterMasterViewModel? _costCenterMasterViewModel;
         public CostCenterMasterViewModel CostCenterMasterViewModel
         {
             get
             {
-                if (_costCenterMasterViewModel is null) 
-                    _costCenterMasterViewModel = new CostCenterMasterViewModel(this, _companyService, _companyLocationService, _costCenterService, _storageService, _countryService, _dialogService, _notificationService);
+                if (_costCenterMasterViewModel is null)
+                    _costCenterMasterViewModel = new CostCenterMasterViewModel(this, _companyService, _companyLocationService, _costCenterService, _storageService, _countryService, _dialogService, _notificationService, _countryCache);
                 return _costCenterMasterViewModel;
             }
         }
@@ -45,7 +47,8 @@ namespace NetErp.Global.CostCenters.ViewModels
             IRepository<StorageGraphQLModel> storageService,
             IRepository<CountryGraphQLModel> countryService,
             Helpers.IDialogService dialogService,
-            Helpers.Services.INotificationService notificationService)
+            Helpers.Services.INotificationService notificationService,
+            CountryCache countryCache)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
@@ -56,6 +59,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             _countryService = countryService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _countryCache = countryCache;
             
             _ = Task.Run(async () =>
             {
