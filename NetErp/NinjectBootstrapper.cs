@@ -341,11 +341,10 @@ namespace NetErp
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
-                _ = cfg.CreateMap<CompanyLocationGraphQLModel, TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO>();
-                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryMajorCashDrawerCostCenterMasterTreeDTO>();
+                // CashDrawer DTOs
+                _ = cfg.CreateMap<CompanyLocationGraphQLModel, CashDrawerCompanyLocationDTO>();
+                _ = cfg.CreateMap<CostCenterGraphQLModel, CashDrawerCostCenterDTO>();
                 _ = cfg.CreateMap<CashDrawerGraphQLModel, MajorCashDrawerMasterTreeDTO>();
-                _ = cfg.CreateMap<CompanyLocationGraphQLModel, TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO>();
-                _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryMinorCashDrawerCostCenterMasterTreeDTO>();
                 _ = cfg.CreateMap<CashDrawerGraphQLModel, MinorCashDrawerMasterTreeDTO>();
                 _ = cfg.CreateMap<CashDrawerGraphQLModel, TreasuryAuxiliaryCashDrawerMasterTreeDTO>();
                 _ = cfg.CreateMap<BankGraphQLModel, TreasuryBankMasterTreeDTO>();

@@ -160,7 +160,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
         /// <summary>
         /// Contexto guardado antes de crear un nuevo registro.
         /// </summary>
-        public TreasuryMinorCashDrawerCostCenterMasterTreeDTO? CostCenterBeforeNew { get; set; }
+        public CashDrawerCostCenterDTO? CostCenterBeforeNew { get; set; }
 
         #endregion
 
@@ -202,7 +202,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         public override void SetForNew(object context)
         {
-            if (context is TreasuryMinorCashDrawerCostCenterMasterTreeDTO costCenterContext)
+            if (context is CashDrawerCostCenterDTO costCenterContext)
             {
                 CostCenterBeforeNew = costCenterContext;
                 CostCenterId = costCenterContext.Id;

@@ -23,61 +23,22 @@
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
         <h:CharToBooleanConverter x:Key="CharToBooleanConverter"/>
-        <HierarchicalDataTemplate DataType="{x:Type model:MajorCashDrawerDummyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+        <h:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+        <!-- Unified CashDrawerDummyDTO template (replaces MajorCashDrawerDummyDTO and MinorCashDrawerDummyDTO) -->
+        <HierarchicalDataTemplate DataType="{x:Type model:CashDrawerDummyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
                             <Style.Triggers>
-
                                 <!--Close Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
                                     </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
                                     <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
                                 </MultiDataTrigger>
-
                                 <!--Open Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-                <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
-            </StackPanel>
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate DataType="{x:Type model:MinorCashDrawerDummyDTO}" ItemsSource="{Binding Locations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
-                <Image Width="18" Height="18" VerticalAlignment="Center">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Style.Triggers>
-
-                                <!--Close Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
-                                    </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
-                                </MultiDataTrigger>
-
-                                <!--Open Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
@@ -179,61 +140,21 @@
                 <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
             </StackPanel>
         </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate DataType="{x:Type model:TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO}" ItemsSource="{Binding CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+        <!-- Unified CashDrawerCompanyLocationDTO template (replaces TreasuryMajorCashDrawerCompanyLocationMasterTreeDTO and TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO) -->
+        <HierarchicalDataTemplate DataType="{x:Type model:CashDrawerCompanyLocationDTO}" ItemsSource="{Binding CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <Image Width="18" Height="18" VerticalAlignment="Center">
                     <Image.Style>
                         <Style TargetType="Image">
                             <Style.Triggers>
-
                                 <!--Close Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
                                     </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
                                     <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
                                 </MultiDataTrigger>
-
                                 <!--Open Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-                <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
-            </StackPanel>
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate DataType="{x:Type model:TreasuryMinorCashDrawerCompanyLocationMasterTreeDTO}" ItemsSource="{Binding CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
-                <Image Width="18" Height="18" VerticalAlignment="Center">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Style.Triggers>
-
-                                <!--Close Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
-                                    </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
-                                </MultiDataTrigger>
-
-                                <!--Open Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
@@ -302,11 +223,14 @@
                 <TextBlock Text="{Binding Row.AccountingEntity.SearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
             </StackPanel>
         </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate DataType="{x:Type model:TreasuryMajorCashDrawerCostCenterMasterTreeDTO}" ItemsSource="{Binding CashDrawers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+        <!-- Unified CashDrawerCostCenterDTO template (replaces TreasuryMajorCashDrawerCostCenterMasterTreeDTO and TreasuryMinorCashDrawerCostCenterMasterTreeDTO) -->
+        <HierarchicalDataTemplate DataType="{x:Type model:CashDrawerCostCenterDTO}" ItemsSource="{Binding CashDrawers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Command="{Binding Data.CreateMajorCashDrawerCommand, Source={StaticResource DataContextProxy}}">
+                        <!-- Menu item for Major (Caja General) - visible only when Type is Major -->
+                        <MenuItem Command="{Binding Data.CreateMajorCashDrawerCommand, Source={StaticResource DataContextProxy}}"
+                                  Visibility="{Binding Row.Type, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter='Major:Visible;Minor:Collapsed'}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Crear nueva caja general en: "/>
@@ -317,45 +241,9 @@
                                 <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
                             </MenuItem.Icon>
                         </MenuItem>
-                    </ContextMenu>
-                </StackPanel.ContextMenu>
-                <Image Width="18" Height="18" VerticalAlignment="Center">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Style.Triggers>
-
-                                <!--Close Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
-                                    </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
-                                </MultiDataTrigger>
-
-                                <!--Open Folder-->
-
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderOpen.svg'}"/>
-                                </MultiDataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-                <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" VerticalAlignment="Center"/>
-            </StackPanel>
-        </HierarchicalDataTemplate>
-        <HierarchicalDataTemplate DataType="{x:Type model:TreasuryMinorCashDrawerCostCenterMasterTreeDTO}" ItemsSource="{Binding CashDrawers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
-                <StackPanel.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Command="{Binding Data.CreateMinorCashDrawerCommand, Source={StaticResource DataContextProxy}}">
+                        <!-- Menu item for Minor (Caja Menor) - visible only when Type is Minor -->
+                        <MenuItem Command="{Binding Data.CreateMinorCashDrawerCommand, Source={StaticResource DataContextProxy}}"
+                                  Visibility="{Binding Row.Type, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter='Minor:Visible;Major:Collapsed'}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Crear nueva caja menor en: "/>
@@ -372,21 +260,14 @@
                     <Image.Style>
                         <Style TargetType="Image">
                             <Style.Triggers>
-
                                 <!--Close Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
                                     </MultiDataTrigger.Conditions>
-
-                                    <!--PlaceHolderImage-->
-
                                     <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
                                 </MultiDataTrigger>
-
                                 <!--Open Folder-->
-
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
