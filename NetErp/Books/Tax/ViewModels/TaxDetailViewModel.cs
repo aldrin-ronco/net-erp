@@ -4,12 +4,16 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
+using Models.Billing;
 using Models.Books;
+using Models.DTO.Global;
 using Models.Global;
 using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Billing.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,11 +21,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using static Amazon.S3.Util.S3EventNotification;
+using static DevExpress.Data.Utils.SafeProcess;
 using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
 
 namespace NetErp.Books.Tax.ViewModels
 {
@@ -29,7 +35,7 @@ namespace NetErp.Books.Tax.ViewModels
     {
         private readonly IRepository<TaxGraphQLModel> _taxService;
 
-        public TaxDetailViewModel(TaxViewModel context, TaxGraphQLModel? entity, IRepository<TaxGraphQLModel> taxService)
+        public TaxDetailViewModel(TaxViewModel context, IRepository<TaxGraphQLModel> taxService, ObservableCollection<TaxCategoryGraphQLModel> _taxCategories, ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts)
         {
             _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
 
@@ -37,17 +43,17 @@ namespace NetErp.Books.Tax.ViewModels
             _errors = new Dictionary<string, List<string>>();
 
 
-            if (entity != null)
-            {
-                _entity = entity;
-                SelectedTaxCategoryGraphQLModel = entity.TaxCategory;
+            AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_accountingAccounts)];
+            AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_accountingAccounts)];
+            TaxCategories = [.. Context.AutoMapper.Map<ObservableCollection<TaxCategoryGraphQLModel>>(_taxCategories)];
 
-            }
+            AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
+            AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
 
 
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
+          
 
 
 
@@ -55,28 +61,11 @@ namespace NetErp.Books.Tax.ViewModels
         }
         public async Task InitializeAsync()
         {
-            await LoadListAsync();
+            //await LoadListAsync();
             IsActive = true;
-            if (Entity != null)
-            {
-                SetUpdateProperties(Entity);
-            }
+           
         }
-        public void SetUpdateProperties(TaxGraphQLModel entity)
-        {
-            Name = entity.Name;
-            Rate = entity.Rate;
-            Formula = entity.Formula;
-            AlternativeFormula = entity.AlternativeFormula;
-            IsActive = entity.IsActive;
-            SelectedTaxCategoryGraphQLModel = TaxCategories.FirstOrDefault(f => f.Id == entity.TaxCategory.Id);
-            GeneratedTaxAccountId = entity.GeneratedTaxAccount != null ? entity.GeneratedTaxAccount.Id : null;
-            GeneratedTaxRefundAccountId = entity.GeneratedTaxRefundAccount != null ? entity.GeneratedTaxRefundAccount.Id : null;
-            DeductibleTaxAccountId = entity.DeductibleTaxAccount != null ? entity.DeductibleTaxAccount.Id : null;
-            DeductibleTaxRefundAccountId = entity.DeductibleTaxRefundAccount != null ? entity.DeductibleTaxRefundAccount.Id : null;
-            Id = entity.Id;
-            this.AcceptChanges();
-        }
+       
         private TaxViewModel _context;
         public TaxViewModel Context
         {
@@ -90,20 +79,7 @@ namespace NetErp.Books.Tax.ViewModels
                 }
             }
         }
-        private TaxGraphQLModel? _entity;
-        public TaxGraphQLModel Entity
-        {
-            get { return _entity; }
-            set
-            {
-                if (_entity != value)
-                {
-                    _entity = value;
-                    NotifyOfPropertyChange(nameof(Entity));
-
-                }
-            }
-        }
+       
         private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountOperations;
 
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountOperations
@@ -289,7 +265,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
+        private bool _isNewRecord => Id > 0 ? false : true;
         public bool IsEnabledSelectedGeneratedTaxAccount => (SelectedTaxCategoryGraphQLModel != null && SelectedTaxCategoryGraphQLModel?.Id >  0 && SelectedTaxCategoryGraphQLModel.GeneratedTaxAccountIsRequired.Equals(true));
         public bool IsEnabledSelectedGeneratedTaxRefundAccount => (SelectedTaxCategoryGraphQLModel != null && SelectedTaxCategoryGraphQLModel?.Id > 0 && SelectedTaxCategoryGraphQLModel.GeneratedTaxRefundAccountIsRequired.Equals(true) && SelectedTaxCategoryGraphQLModel.GeneratedTaxAccountIsRequired.Equals(true));
         public bool IsEnabledSelectedDeductibleTaxAccount => (SelectedTaxCategoryGraphQLModel != null && SelectedTaxCategoryGraphQLModel?.Id > 0 && SelectedTaxCategoryGraphQLModel.DeductibleTaxAccountIsRequired.Equals(true));
@@ -465,26 +441,7 @@ namespace NetErp.Books.Tax.ViewModels
                    .Field(e => e.Id)
 
                     .Field(e => e.Name)
-                    .Field(e => e.Rate)
-                    .Field(e => e.IsActive)
-                    .Field(e => e.Formula)
-                    .Select(e => e.GeneratedTaxAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                    .Select(e => e.GeneratedTaxRefundAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-                    .Select(e => e.DeductibleTaxRefundAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-                    .Select(e => e.DeductibleTaxAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-
+                   
                     )
                 .Field(f => f.Message)
                 .Field(f => f.Success)
@@ -511,25 +468,8 @@ namespace NetErp.Books.Tax.ViewModels
                    .Field(e => e.Id)
 
                     .Field(e => e.Name)
-                    .Field(e => e.Rate)
-                    .Field(e => e.IsActive)
-                    .Field(e => e.Formula)
-                    .Select(e => e.GeneratedTaxAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                    .Select(e => e.GeneratedTaxRefundAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-                    .Select(e => e.DeductibleTaxRefundAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-                    .Select(e => e.DeductibleTaxAccount, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
+                   
+                    
                     )
                 .Field(f => f.Message)
                 .Field(f => f.Success)
@@ -681,88 +621,99 @@ namespace NetErp.Books.Tax.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-        private async Task LoadListAsync()
+       
+        public async Task<TaxGraphQLModel> LoadDataForEditAsync(int id)
         {
             try
             {
-
-                IsBusy = true;
+                string query = GetLoadSByIdQuery();
 
                 dynamic variables = new ExpandoObject();
-                variables.accountingAccountsFilters = new ExpandoObject();
-                variables.accountingAccountsFilters.only_auxiliary_accounts = true;
 
 
-                variables.taxCategoryFilter = new ExpandoObject();
-               
-                string query = GetQueries();
-                TaxDataContext result = await _taxService.GetDataContextAsync<TaxDataContext>(query, variables);
+                variables.singleItemResponseId = id;
 
-                AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts?.Entries)];
-                AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(result.AccountingAccounts?.Entries)];
-                TaxCategories = [.. Context.AutoMapper.Map<ObservableCollection<TaxCategoryGraphQLModel>>(result.TaxCategories.Entries)];
+                var tax = await _taxService.FindByIdAsync(query, variables);
 
-                AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
-                AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
+                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
+                PopulateFromTax(tax);
 
-                GeneratedTaxAccountId = Entity?.GeneratedTaxAccount != null ? Entity.GeneratedTaxAccount.Id : null;
-                DeductibleTaxAccountId = Entity?.DeductibleTaxAccount != null ? Entity.DeductibleTaxAccount.Id : null;
-
-                GeneratedTaxRefundAccountId = Entity?.GeneratedTaxRefundAccount != null ?  Entity.GeneratedTaxRefundAccount.Id : null;
-                DeductibleTaxRefundAccountId = Entity?.DeductibleTaxRefundAccount != null ? Entity.DeductibleTaxRefundAccount.Id : null;
-
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                return tax;
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                throw new AsyncException(innerException: ex);
             }
-            finally
-            {
-                IsBusy = false;
-            }
-           
         }
-
-        public string GetQueries()
+        public void PopulateFromTax(TaxGraphQLModel tax)
         {
-            var taxCategoriesFields = FieldSpec<PageType<TaxCategoryGraphQLModel>>
-                .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Prefix)
-                    .Field(e => e.GeneratedTaxRefundAccountIsRequired)
-                    .Field(e => e.GeneratedTaxAccountIsRequired)
-                    .Field(e => e.DeductibleTaxRefundAccountIsRequired)
-                    .Field(e => e.DeductibleTaxAccountIsRequired)
-                    )
-                .Build();
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-               .Create()
-               .SelectList(it => it.Entries, entries => entries
-                   .Field(e => e.Id)
-                   .Field(e => e.Name)
-                   .Field(e => e.Code)
-                   )
-               .Build();
+            // Propiedades básicas del tax
+            Name = tax.Name;
+            Rate = tax.Rate;
+            Formula = tax.Formula;
+            AlternativeFormula = tax.AlternativeFormula;
+            IsActive = tax.IsActive;
+            SelectedTaxCategoryGraphQLModel = TaxCategories.FirstOrDefault(f => f.Id == tax.TaxCategory.Id);
+            GeneratedTaxAccountId = tax.GeneratedTaxAccount != null ? tax.GeneratedTaxAccount.Id : null;
+            GeneratedTaxRefundAccountId = tax.GeneratedTaxRefundAccount != null ? tax.GeneratedTaxRefundAccount.Id : null;
+            DeductibleTaxAccountId = tax.DeductibleTaxAccount != null ? tax.DeductibleTaxAccount.Id : null;
+            DeductibleTaxRefundAccountId = tax.DeductibleTaxRefundAccount != null ? tax.DeductibleTaxRefundAccount.Id : null;
 
-            var taxCategoriesParameters = new GraphQLQueryParameter("filters", "TaxCategoryFilters");
-            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
+            Id = tax.Id;
+            this.AcceptChanges();
 
-            var taxCategoriesFragment = new GraphQLQueryFragment("taxCategoriesPage", [taxCategoriesParameters], taxCategoriesFields, "TaxCategories");
-            var AccountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "AccountingAccounts");
+           
 
-            var builder = new GraphQLQueryBuilder(
-            [taxCategoriesFragment, AccountingAccountFragment]
-        );
-            return builder.GetQuery();
         }
+        public string GetLoadSByIdQuery()
+        {
+            var sellersFields = FieldSpec<TaxGraphQLModel>
+             .Create()
+
+                 .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Rate)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Formula)
+                    .Select(e => e.TaxCategory, cat => cat
+                    .Field(c => c.Id)
+                    .Field(c => c.Name)
+                    .Field(c => c.GeneratedTaxRefundAccountIsRequired)
+                    .Field(c => c.GeneratedTaxAccountIsRequired)
+                    .Field(c => c.DeductibleTaxRefundAccountIsRequired)
+                    .Field(c => c.DeductibleTaxAccountIsRequired)
+                    )
+                    .Select(e => e.GeneratedTaxAccount, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                        )
+                    .Select(e => e.GeneratedTaxRefundAccount, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                        )
+                    .Select(e => e.DeductibleTaxRefundAccount, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                        )
+                    .Select(e => e.DeductibleTaxAccount, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                    
+                    
+
+
+
+             ).Build();
+            var sellerIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var sellerFragment = new GraphQLQueryFragment("tax", [sellerIdParameter], sellersFields, "SingleItemResponse");
+
+            var builder = new GraphQLQueryBuilder([sellerFragment]);
+
+            return builder.GetQuery();
+
+        }
+      
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
 
