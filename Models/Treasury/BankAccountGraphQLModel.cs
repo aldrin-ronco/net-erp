@@ -23,7 +23,9 @@ namespace Models.Treasury
         public BankGraphQLModel Bank { get; set; } = new();
         public string Provider {  get; set; } = string.Empty;
         public PaymentMethodGraphQLModel PaymentMethod { get; set; } = new();
-        public IEnumerable<CostCenterGraphQLModel> AllowedCostCenters { get; set; }
+        public IEnumerable<CostCenterGraphQLModel> AllowedCostCenters { get; set; } = [];
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
     public class BankAccountCreateMessage

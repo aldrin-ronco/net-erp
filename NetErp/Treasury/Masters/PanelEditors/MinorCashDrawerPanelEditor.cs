@@ -137,25 +137,25 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountingAccountCash;
-        public AccountingAccountGraphQLModel? SelectedAccountingAccountCash
+        private AccountingAccountGraphQLModel? _selectedCashAccountingAccount;
+        public AccountingAccountGraphQLModel? SelectedCashAccountingAccount
         {
-            get => _selectedAccountingAccountCash;
+            get => _selectedCashAccountingAccount;
             set
             {
-                if (_selectedAccountingAccountCash != value)
+                if (_selectedCashAccountingAccount != value)
                 {
-                    _selectedAccountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountCash));
-                    NotifyOfPropertyChange(nameof(AccountingAccountIdCash));
-                    this.TrackChange(nameof(AccountingAccountIdCash));
+                    _selectedCashAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(SelectedCashAccountingAccount));
+                    NotifyOfPropertyChange(nameof(CashAccountingAccountId));
+                    this.TrackChange(nameof(CashAccountingAccountId));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        [ExpandoPath("accountingAccountIdCash")]
-        public int AccountingAccountIdCash => SelectedAccountingAccountCash?.Id ?? 0;
+        [ExpandoPath("cashAccountingAccountId")]
+        public int CashAccountingAccountId => SelectedCashAccountingAccount?.Id ?? 0;
 
         /// <summary>
         /// Contexto guardado antes de crear un nuevo registro.
@@ -214,7 +214,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
             Name = string.Empty;
             CashReviewRequired = false;
             AutoAdjustBalance = false;
-            SelectedAccountingAccountCash = null;
+            SelectedCashAccountingAccount = null;
 
             SeedDefaultValues();
             ClearAllErrors();
@@ -236,8 +236,8 @@ namespace NetErp.Treasury.Masters.PanelEditors
             AutoAdjustBalance = minorCashDrawerDTO.AutoAdjustBalance;
 
             // Buscar la cuenta contable en la lista del contexto
-            SelectedAccountingAccountCash = MasterContext.CashDrawerAccountingAccounts?
-                .FirstOrDefault(a => a.Id == minorCashDrawerDTO.AccountingAccountCash?.Id);
+            SelectedCashAccountingAccount = MasterContext.CashDrawerAccountingAccounts?
+                .FirstOrDefault(a => a.Id == minorCashDrawerDTO.CashAccountingAccount?.Id);
 
             SeedCurrentValues();
             ClearAllErrors();
@@ -252,7 +252,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
             this.SeedValue(nameof(CostCenterId), CostCenterId);
             this.SeedValue(nameof(CashReviewRequired), CashReviewRequired);
             this.SeedValue(nameof(AutoAdjustBalance), AutoAdjustBalance);
-            this.SeedValue(nameof(AccountingAccountIdCash), AccountingAccountIdCash);
+            this.SeedValue(nameof(CashAccountingAccountId), CashAccountingAccountId);
             this.AcceptChanges();
         }
 
@@ -283,7 +283,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     .Field(c => c.Name)
                     .Select(c => c.CompanyLocation, loc => loc
                         .Field(l => l.Id)))
-                .Select(e => e.AccountingAccountCash, acc => acc
+                .Select(e => e.CashAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Build();
@@ -309,7 +309,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     .Field(c => c.Name)
                     .Select(c => c.CompanyLocation, loc => loc
                         .Field(l => l.Id)))
-                .Select(e => e.AccountingAccountCash, acc => acc
+                .Select(e => e.CashAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Build();
@@ -361,7 +361,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 variables.data.cashReviewRequired = CashReviewRequired;
                 variables.data.autoAdjustBalance = AutoAdjustBalance;
                 variables.data.costCenterId = CostCenterId;
-                variables.data.accountingAccountIdCash = AccountingAccountIdCash;
+                variables.data.accountingAccountIdCash = CashAccountingAccountId;
                 variables.data.computerName = "";
 
                 var updateResult = await _cashDrawerService.UpdateAsync(query, variables);

@@ -1,8 +1,10 @@
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using Models.Treasury;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
@@ -35,23 +37,30 @@ namespace NetErp.Helpers.Cache
         {
             if (IsInitialized) return;
 
-            var query = BuildQuery();
-            dynamic variables = new ExpandoObject();
-            variables.bankAccountsPagePagination = new ExpandoObject();
-            variables.bankAccountsPagePagination.pageSize = -1;
-            variables.bankAccountsPageFilters = new ExpandoObject();
-            variables.bankAccountsPageFilters.types = new[] { "A", "C" };
-
-            var result = await _service.GetPageAsync(query, variables);
-
-            lock (_lock)
+            try
             {
-                Items.Clear();
-                foreach (var item in result.Entries)
+                var query = BuildQuery();
+                dynamic variables = new ExpandoObject();
+                variables.bankAccountsPagePagination = new ExpandoObject();
+                variables.bankAccountsPagePagination.pageSize = -1;
+                variables.bankAccountsPageFilters = new ExpandoObject();
+                variables.bankAccountsPageFilters.types = new[] { "A", "C" };
+
+                var result = await _service.GetPageAsync(query, variables);
+
+                lock (_lock)
                 {
-                    Items.Add(item);
+                    Items.Clear();
+                    foreach (var item in result.Entries)
+                    {
+                        Items.Add(item);
+                    }
+                    IsInitialized = true;
                 }
-                IsInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -140,7 +149,7 @@ namespace NetErp.Helpers.Cache
                 .Build();
 
             var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "BankAccountFilterInput");
+            var filtersParam = new GraphQLQueryParameter("filters", "BankAccountFilters");
             var fragment = new GraphQLQueryFragment("bankAccountsPage", [paginationParam, filtersParam], fields, "PageResponse");
             var builder = new QueryBuilder([fragment]);
 

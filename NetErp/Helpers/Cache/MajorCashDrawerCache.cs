@@ -1,8 +1,10 @@
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using Models.Treasury;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
@@ -39,23 +41,30 @@ namespace NetErp.Helpers.Cache
         {
             if (IsInitialized) return;
 
-            var query = BuildQuery();
-            dynamic variables = new ExpandoObject();
-            variables.majorCashDrawersPagePagination = new ExpandoObject();
-            variables.majorCashDrawersPagePagination.pageSize = -1;
-            variables.majorCashDrawersPageFilters = new ExpandoObject();
-            variables.majorCashDrawersPageFilters.isPettyCash = false;
-
-            var result = await _service.GetPageAsync(query, variables);
-
-            lock (_lock)
+            try
             {
-                Items.Clear();
-                foreach (var item in result.Entries)
+                var query = BuildQuery();
+                dynamic variables = new ExpandoObject();
+                variables.cashDrawersPagePagination = new ExpandoObject();
+                variables.cashDrawersPagePagination.pageSize = -1;
+                variables.cashDrawersPageFilters = new ExpandoObject();
+                variables.cashDrawersPageFilters.isPettyCash = false;
+
+                var result = await _service.GetPageAsync(query, variables);
+
+                lock (_lock)
                 {
-                    Items.Add(item);
+                    Items.Clear();
+                    foreach (var item in result.Entries)
+                    {
+                        Items.Add(item);
+                    }
+                    IsInitialized = true;
                 }
-                IsInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -158,8 +167,8 @@ namespace NetErp.Helpers.Cache
                 .Build();
 
             var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "CashDrawerFilterInput");
-            var fragment = new GraphQLQueryFragment("majorCashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var filtersParam = new GraphQLQueryParameter("filters", "CashDrawerFilters");
+            var fragment = new GraphQLQueryFragment("CashDrawersPage", [paginationParam, filtersParam], fields, "PageResponse");
             var builder = new QueryBuilder([fragment]);
 
             return builder.GetQuery();

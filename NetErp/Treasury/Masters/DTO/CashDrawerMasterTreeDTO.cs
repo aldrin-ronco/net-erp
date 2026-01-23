@@ -120,16 +120,16 @@ namespace NetErp.Treasury.Masters.DTO
         }
 
 
-        private CashDrawerGraphQLModel _cashDrawerAutoTransfer;
-        public CashDrawerGraphQLModel CashDrawerAutoTransfer
+        private CashDrawerGraphQLModel _autoTransferCashDrawer;
+        public CashDrawerGraphQLModel AutoTransferCashDrawer
         {
-            get { return _cashDrawerAutoTransfer; }
+            get { return _autoTransferCashDrawer; }
             set
             {
-                if (_cashDrawerAutoTransfer != value)
+                if (_autoTransferCashDrawer != value)
                 {
-                    _cashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(CashDrawerAutoTransfer));
+                    _autoTransferCashDrawer = value;
+                    NotifyOfPropertyChange(nameof(AutoTransferCashDrawer));
                 }
             }
         }
@@ -148,44 +148,44 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private AccountingAccountGraphQLModel _accountingAccountCash;
-        public AccountingAccountGraphQLModel AccountingAccountCash
+        private AccountingAccountGraphQLModel _cashAccountingAccount;
+        public AccountingAccountGraphQLModel CashAccountingAccount
         {
-            get { return _accountingAccountCash; }
+            get { return _cashAccountingAccount; }
             set
             {
-                if (_accountingAccountCash != value)
+                if (_cashAccountingAccount != value)
                 {
-                    _accountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccountCash));
+                    _cashAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(CashAccountingAccount));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _accountingAccountCheck;
-        public AccountingAccountGraphQLModel AccountingAccountCheck
+        private AccountingAccountGraphQLModel _checkAccountingAccount;
+        public AccountingAccountGraphQLModel CheckAccountingAccount
         {
-            get { return _accountingAccountCheck; }
+            get { return _checkAccountingAccount; }
             set
             {
-                if (_accountingAccountCheck != value)
+                if (_checkAccountingAccount != value)
                 {
-                    _accountingAccountCheck = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccountCheck));
+                    _checkAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(CheckAccountingAccount));
                 }
             }
         }
 
-        private AccountingAccountGraphQLModel _accountingAccountCard;
-        public AccountingAccountGraphQLModel AccountingAccountCard
+        private AccountingAccountGraphQLModel _cardAccountingAccount;
+        public AccountingAccountGraphQLModel CardAccountingAccount
         {
-            get { return _accountingAccountCard; }
+            get { return _cardAccountingAccount; }
             set
             {
-                if (_accountingAccountCard != value)
+                if (_cardAccountingAccount != value)
                 {
-                    _accountingAccountCard = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccountCard));
+                    _cardAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(CardAccountingAccount));
                 }
             }
         }

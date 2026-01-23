@@ -1,8 +1,10 @@
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
@@ -35,21 +37,28 @@ namespace NetErp.Helpers.Cache
         {
             if (IsInitialized) return;
 
-            var query = BuildQuery();
-            dynamic variables = new ExpandoObject();
-            variables.costCentersPagePagination = new ExpandoObject();
-            variables.costCentersPagePagination.pageSize = -1;
-
-            var result = await _service.GetPageAsync(query, variables);
-
-            lock (_lock)
+            try
             {
-                Items.Clear();
-                foreach (var item in result.Entries)
+                var query = BuildQuery();
+                dynamic variables = new ExpandoObject();
+                variables.costCentersPagePagination = new ExpandoObject();
+                variables.costCentersPagePagination.pageSize = -1;
+
+                var result = await _service.GetPageAsync(query, variables);
+
+                lock (_lock)
                 {
-                    Items.Add(item);
+                    Items.Clear();
+                    foreach (var item in result.Entries)
+                    {
+                        Items.Add(item);
+                    }
+                    IsInitialized = true;
                 }
-                IsInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 

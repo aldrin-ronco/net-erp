@@ -538,7 +538,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedCashAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -572,7 +572,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedCheckAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -606,7 +606,7 @@
                                        ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                        DisplayMember="FullName"
                                        ValueMember="Id"
-                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                       SelectedItem="{Binding Data.MajorCashDrawerEditor.SelectedCardAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                         <dxg:LookUpEdit.PopupContentTemplate>
                                             <ControlTemplate>
                                                 <dxg:GridControl Name="PART_GridControl">
@@ -671,7 +671,7 @@
                                     Visibility="{Binding Data.MajorCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                     ItemsSource="{Binding Data.MajorCashDrawerEditor.AutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMember="Name"
-                                    EditValue="{Binding Data.MajorCashDrawerEditor.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    EditValue="{Binding Data.MajorCashDrawerEditor.SelectedAutoTransferCashDrawer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </dx:DXTabItem>
                         </dx:DXTabControl>
@@ -728,7 +728,7 @@
            ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
            DisplayMember="FullName"
            ValueMember="Id"
-           SelectedItem="{Binding Data.MinorCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+           SelectedItem="{Binding Data.MinorCashDrawerEditor.SelectedCashAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -880,7 +880,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCash, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedCashAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -914,7 +914,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCheck, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedCheckAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -948,7 +948,7 @@
                                    ItemsSource="{Binding Data.CashDrawerAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                    DisplayMember="FullName"
                                    ValueMember="Id"
-                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAccountingAccountCard, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
+                                   SelectedItem="{Binding Data.AuxiliaryCashDrawerEditor.SelectedCardAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                             <dxg:LookUpEdit.PopupContentTemplate>
                                                 <ControlTemplate>
                                                     <dxg:GridControl Name="PART_GridControl">
@@ -1013,7 +1013,7 @@
                                 Visibility="{Binding Data.AuxiliaryCashDrawerEditor.AutoTransfer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                 ItemsSource="{Binding Data.AuxiliaryCashDrawerEditor.AutoTransferCashDrawers, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
                                 DisplayMember="Name"
-                                EditValue="{Binding Data.AuxiliaryCashDrawerEditor.SelectedCashDrawerAutoTransfer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                EditValue="{Binding Data.AuxiliaryCashDrawerEditor.SelectedAutoTransferCashDrawer, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     </Grid>
                                 </dx:DXTabItem>
                             </dx:DXTabControl>
@@ -1035,7 +1035,7 @@
                                 </Grid.ColumnDefinitions>
                                 <dxe:TextEdit Text="{Binding Data.BankEditor.AccountingEntityName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                           Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
-                                <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.SearchBankAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
+                                <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.BankEditor.SearchAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
                                         <Image Source="{dx:DXImage 'Images/Find/Find_16x16.png'}" Stretch="None">

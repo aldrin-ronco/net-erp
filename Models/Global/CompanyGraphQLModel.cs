@@ -17,6 +17,7 @@ namespace Models.Global
         public DateTime UpdatedAt { get; set; }
         public string Reference { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+
     }
 
     public class CompanyCreateMessage

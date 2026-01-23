@@ -156,90 +156,90 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountingAccountCash;
-        public AccountingAccountGraphQLModel? SelectedAccountingAccountCash
+        private AccountingAccountGraphQLModel? _selectedCashAccountingAccount;
+        public AccountingAccountGraphQLModel? SelectedCashAccountingAccount
         {
-            get => _selectedAccountingAccountCash;
+            get => _selectedCashAccountingAccount;
             set
             {
-                if (_selectedAccountingAccountCash != value)
+                if (_selectedCashAccountingAccount != value)
                 {
-                    _selectedAccountingAccountCash = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountCash));
-                    NotifyOfPropertyChange(nameof(AccountingAccountIdCash));
-                    this.TrackChange(nameof(AccountingAccountIdCash));
+                    _selectedCashAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(SelectedCashAccountingAccount));
+                    NotifyOfPropertyChange(nameof(CashAccountingAccountId));
+                    this.TrackChange(nameof(CashAccountingAccountId));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        [ExpandoPath("accountingAccountIdCash")]
-        public int AccountingAccountIdCash => SelectedAccountingAccountCash?.Id ?? 0;
+        [ExpandoPath("cashAccountingAccountId")]
+        public int CashAccountingAccountId => SelectedCashAccountingAccount?.Id ?? 0;
 
-        private AccountingAccountGraphQLModel? _selectedAccountingAccountCheck;
-        public AccountingAccountGraphQLModel? SelectedAccountingAccountCheck
+        private AccountingAccountGraphQLModel? _selectedCheckAccountingAccount;
+        public AccountingAccountGraphQLModel? SelectedCheckAccountingAccount
         {
-            get => _selectedAccountingAccountCheck;
+            get => _selectedCheckAccountingAccount;
             set
             {
-                if (_selectedAccountingAccountCheck != value)
+                if (_selectedCheckAccountingAccount != value)
                 {
-                    _selectedAccountingAccountCheck = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountCheck));
-                    NotifyOfPropertyChange(nameof(AccountingAccountIdCheck));
-                    this.TrackChange(nameof(AccountingAccountIdCheck));
+                    _selectedCheckAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(SelectedCheckAccountingAccount));
+                    NotifyOfPropertyChange(nameof(CheckAccountingAccountId));
+                    this.TrackChange(nameof(CheckAccountingAccountId));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        [ExpandoPath("accountingAccountIdCheck")]
-        public int AccountingAccountIdCheck => SelectedAccountingAccountCheck?.Id ?? 0;
+        [ExpandoPath("checkAccountingAccountId")]
+        public int CheckAccountingAccountId => SelectedCheckAccountingAccount?.Id ?? 0;
 
-        private AccountingAccountGraphQLModel? _selectedAccountingAccountCard;
-        public AccountingAccountGraphQLModel? SelectedAccountingAccountCard
+        private AccountingAccountGraphQLModel? _selectedCardAccountingAccount;
+        public AccountingAccountGraphQLModel? SelectedCardAccountingAccount
         {
-            get => _selectedAccountingAccountCard;
+            get => _selectedCardAccountingAccount;
             set
             {
-                if (_selectedAccountingAccountCard != value)
+                if (_selectedCardAccountingAccount != value)
                 {
-                    _selectedAccountingAccountCard = value;
-                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountCard));
-                    NotifyOfPropertyChange(nameof(AccountingAccountIdCard));
-                    this.TrackChange(nameof(AccountingAccountIdCard));
+                    _selectedCardAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(SelectedCardAccountingAccount));
+                    NotifyOfPropertyChange(nameof(CardAccountingAccountId));
+                    this.TrackChange(nameof(CardAccountingAccountId));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
-        [ExpandoPath("accountingAccountIdCard")]
-        public int AccountingAccountIdCard => SelectedAccountingAccountCard?.Id ?? 0;
+        [ExpandoPath("cardAccountingAccountId")]
+        public int CardAccountingAccountId => SelectedCardAccountingAccount?.Id ?? 0;
 
-        private CashDrawerGraphQLModel? _selectedCashDrawerAutoTransfer;
-        public CashDrawerGraphQLModel? SelectedCashDrawerAutoTransfer
+        private CashDrawerGraphQLModel? _selectedAutoTransferCashDrawer;
+        public CashDrawerGraphQLModel? SelectedAutoTransferCashDrawer
         {
-            get => _selectedCashDrawerAutoTransfer;
+            get => _selectedAutoTransferCashDrawer;
             set
             {
-                if (_selectedCashDrawerAutoTransfer != value)
+                if (_selectedAutoTransferCashDrawer != value)
                 {
-                    _selectedCashDrawerAutoTransfer = value;
-                    NotifyOfPropertyChange(nameof(SelectedCashDrawerAutoTransfer));
-                    NotifyOfPropertyChange(nameof(CashDrawerIdAutoTransfer));
-                    this.TrackChange(nameof(CashDrawerIdAutoTransfer));
+                    _selectedAutoTransferCashDrawer = value;
+                    NotifyOfPropertyChange(nameof(SelectedAutoTransferCashDrawer));
+                    NotifyOfPropertyChange(nameof(AutoTransferCashDrawerId));
+                    this.TrackChange(nameof(AutoTransferCashDrawerId));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
         [ExpandoPath("cashDrawerIdAutoTransfer")]
-        public int CashDrawerIdAutoTransfer => AutoTransfer ? (SelectedCashDrawerAutoTransfer?.Id ?? 0) : 0;
+        public int AutoTransferCashDrawerId => AutoTransfer ? (SelectedAutoTransferCashDrawer?.Id ?? 0) : 0;
 
         /// <summary>
         /// Lista de cajas disponibles para auto-transferencia.
         /// </summary>
-        public ObservableCollection<CashDrawerGraphQLModel> AutoTransferCashDrawers => MasterContext.MajorCashDrawerAutoTransferCashDrawers;
+        public ObservableCollection<CashDrawerGraphQLModel> AutoTransferCashDrawers => MasterContext.MajorAutoTransferCashDrawerCashDrawers;
 
         /// <summary>
         /// Contexto guardado antes de crear un nuevo registro.
@@ -259,7 +259,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 if (string.IsNullOrWhiteSpace(Name)) return false;
 
                 // Si AutoTransfer está activo, debe haber una caja seleccionada
-                if (AutoTransfer && (SelectedCashDrawerAutoTransfer == null || SelectedCashDrawerAutoTransfer.Id == 0))
+                if (AutoTransfer && (SelectedAutoTransferCashDrawer == null || SelectedAutoTransferCashDrawer.Id == 0))
                     return false;
 
                 if (!this.HasChanges()) return false;
@@ -304,10 +304,10 @@ namespace NetErp.Treasury.Masters.PanelEditors
             CashReviewRequired = false;
             AutoAdjustBalance = false;
             AutoTransfer = false;
-            SelectedAccountingAccountCash = null;
-            SelectedAccountingAccountCheck = null;
-            SelectedAccountingAccountCard = null;
-            SelectedCashDrawerAutoTransfer = null;
+            SelectedCashAccountingAccount = null;
+            SelectedCheckAccountingAccount = null;
+            SelectedCardAccountingAccount = null;
+            SelectedAutoTransferCashDrawer = null;
 
             SeedDefaultValues();
             ClearAllErrors();
@@ -330,16 +330,16 @@ namespace NetErp.Treasury.Masters.PanelEditors
             AutoTransfer = majorCashDrawerDTO.AutoTransfer;
 
             // Buscar las cuentas contables en la lista del contexto
-            SelectedAccountingAccountCash = MasterContext.CashDrawerAccountingAccounts?
-                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.AccountingAccountCash?.Id);
-            SelectedAccountingAccountCheck = MasterContext.CashDrawerAccountingAccounts?
-                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.AccountingAccountCheck?.Id);
-            SelectedAccountingAccountCard = MasterContext.CashDrawerAccountingAccounts?
-                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.AccountingAccountCard?.Id);
+            SelectedCashAccountingAccount = MasterContext.CashDrawerAccountingAccounts?
+                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.CashAccountingAccount?.Id);
+            SelectedCheckAccountingAccount = MasterContext.CashDrawerAccountingAccounts?
+                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.CheckAccountingAccount?.Id);
+            SelectedCardAccountingAccount = MasterContext.CashDrawerAccountingAccounts?
+                .FirstOrDefault(a => a.Id == majorCashDrawerDTO.CardAccountingAccount?.Id);
 
             // Buscar la caja de auto-transferencia
-            SelectedCashDrawerAutoTransfer = AutoTransferCashDrawers?
-                .FirstOrDefault(c => c.Id == majorCashDrawerDTO.CashDrawerAutoTransfer?.Id);
+            SelectedAutoTransferCashDrawer = AutoTransferCashDrawers?
+                .FirstOrDefault(c => c.Id == majorCashDrawerDTO.AutoTransferCashDrawer?.Id);
 
             SeedCurrentValues();
             ClearAllErrors();
@@ -355,10 +355,10 @@ namespace NetErp.Treasury.Masters.PanelEditors
             this.SeedValue(nameof(CashReviewRequired), CashReviewRequired);
             this.SeedValue(nameof(AutoAdjustBalance), AutoAdjustBalance);
             this.SeedValue(nameof(AutoTransfer), AutoTransfer);
-            this.SeedValue(nameof(AccountingAccountIdCash), AccountingAccountIdCash);
-            this.SeedValue(nameof(AccountingAccountIdCheck), AccountingAccountIdCheck);
-            this.SeedValue(nameof(AccountingAccountIdCard), AccountingAccountIdCard);
-            this.SeedValue(nameof(CashDrawerIdAutoTransfer), CashDrawerIdAutoTransfer);
+            this.SeedValue(nameof(CashAccountingAccountId), CashAccountingAccountId);
+            this.SeedValue(nameof(CheckAccountingAccountId), CheckAccountingAccountId);
+            this.SeedValue(nameof(CardAccountingAccountId), CardAccountingAccountId);
+            this.SeedValue(nameof(AutoTransferCashDrawerId), AutoTransferCashDrawerId);
             this.AcceptChanges();
         }
 
@@ -386,7 +386,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 .Field(e => e.AutoAdjustBalance)
                 .Field(e => e.AutoTransfer)
                 .Field(e => e.IsPettyCash)
-                .Select(e => e.CashDrawerAutoTransfer, at => at
+                .Select(e => e.AutoTransferCashDrawer, at => at
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Select(e => e.CostCenter, cc => cc
@@ -394,13 +394,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     .Field(c => c.Name)
                     .Select(c => c.CompanyLocation, loc => loc
                         .Field(l => l.Id)))
-                .Select(e => e.AccountingAccountCash, acc => acc
+                .Select(e => e.CashAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
-                .Select(e => e.AccountingAccountCheck, acc => acc
+                .Select(e => e.CheckAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
-                .Select(e => e.AccountingAccountCard, acc => acc
+                .Select(e => e.CardAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Build();
@@ -422,7 +422,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 .Field(e => e.AutoAdjustBalance)
                 .Field(e => e.AutoTransfer)
                 .Field(e => e.IsPettyCash)
-                .Select(e => e.CashDrawerAutoTransfer, at => at
+                .Select(e => e.AutoTransferCashDrawer, at => at
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Select(e => e.CostCenter, cc => cc
@@ -430,13 +430,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     .Field(c => c.Name)
                     .Select(c => c.CompanyLocation, loc => loc
                         .Field(l => l.Id)))
-                .Select(e => e.AccountingAccountCash, acc => acc
+                .Select(e => e.CashAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
-                .Select(e => e.AccountingAccountCheck, acc => acc
+                .Select(e => e.CheckAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
-                .Select(e => e.AccountingAccountCard, acc => acc
+                .Select(e => e.CardAccountingAccount, acc => acc
                     .Field(a => a.Id)
                     .Field(a => a.Name))
                 .Build();
@@ -471,7 +471,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 variables.data.autoAdjustBalance = AutoAdjustBalance;
                 variables.data.autoTransfer = AutoTransfer;
                 variables.data.isPettyCash = false;
-                variables.data.cashDrawerIdAutoTransfer = CashDrawerIdAutoTransfer;
+                variables.data.cashDrawerIdAutoTransfer = AutoTransferCashDrawerId;
                 variables.data.costCenterId = CostCenterId;
                 variables.data.parentId = 0;
                 variables.data.computerName = "";
@@ -488,11 +488,11 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 variables.data.cashReviewRequired = CashReviewRequired;
                 variables.data.autoAdjustBalance = AutoAdjustBalance;
                 variables.data.autoTransfer = AutoTransfer;
-                variables.data.cashDrawerIdAutoTransfer = CashDrawerIdAutoTransfer;
+                variables.data.cashDrawerIdAutoTransfer = AutoTransferCashDrawerId;
                 variables.data.costCenterId = CostCenterId;
-                variables.data.accountingAccountIdCash = AccountingAccountIdCash;
-                variables.data.accountingAccountIdCheck = AccountingAccountIdCheck;
-                variables.data.accountingAccountIdCard = AccountingAccountIdCard;
+                variables.data.accountingAccountIdCash = CashAccountingAccountId;
+                variables.data.accountingAccountIdCheck = CheckAccountingAccountId;
+                variables.data.accountingAccountIdCard = CardAccountingAccountId;
                 variables.data.computerName = "";
 
                 var updateResult = await _cashDrawerService.UpdateAsync(query, variables);

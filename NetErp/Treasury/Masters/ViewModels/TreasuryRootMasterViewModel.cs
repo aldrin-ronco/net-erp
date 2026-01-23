@@ -845,17 +845,22 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         private string GetLoadBanksQuery()
         {
-            var fields = FieldSpec<BankGraphQLModel>
+            var fields = FieldSpec<PageType<BankGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.PaymentMethodPrefix)
-                .Select(f => f.AccountingEntity, ae => ae
-                    .Field(a => a.Id)
-                    .Field(a => a.SearchName)
-                    .Field(a => a.CaptureType))
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.PaymentMethodPrefix)
+                    .Select(e => e.AccountingEntity, ae => ae
+                        .Field(a => a.Id)
+                        .Field(a => a.SearchName)
+                        .Field(a => a.CaptureType)))
                 .Build();
 
-            var fragment = new GraphQLQueryFragment("banks", [], fields, "ListResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination")
+            };
+            var fragment = new GraphQLQueryFragment("banksPage", parameters, fields, "PageResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery();
@@ -863,36 +868,41 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         private string GetLoadBankAccountsQuery()
         {
-            var fields = FieldSpec<BankAccountGraphQLModel>
+            var fields = FieldSpec<PageType<BankAccountGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Type)
-                .Field(f => f.Number)
-                .Field(f => f.IsActive)
-                .Field(f => f.Description)
-                .Field(f => f.Reference)
-                .Field(f => f.DisplayOrder)
-                .Field(f => f.Provider)
-                .Select(f => f.PaymentMethod, pm => pm
-                    .Field(p => p.Id)
-                    .Field(p => p.Abbreviation)
-                    .Field(p => p.Name))
-                .Select(f => f.AccountingAccount, aa => aa
-                    .Field(a => a.Id)
-                    .Field(a => a.Name)
-                    .Field(a => a.Code))
-                .Select(f => f.Bank, b => b
-                    .Field(bk => bk.Id)
-                    .Select(bk => bk.AccountingEntity, ae => ae
-                        .Field(a => a.SearchName)
-                        .Field(a => a.CaptureType)))
-                .SelectList(f => f.AllowedCostCenters, ac => ac
-                    .Field(c => c.Id)
-                    .Field(c => c.Name))
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Type)
+                    .Field(e => e.Number)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Description)
+                    .Field(e => e.Reference)
+                    .Field(e => e.DisplayOrder)
+                    .Field(e => e.Provider)
+                    .Select(e => e.PaymentMethod, pm => pm
+                        .Field(p => p.Id)
+                        .Field(p => p.Abbreviation)
+                        .Field(p => p.Name))
+                    .Select(e => e.AccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)
+                        .Field(a => a.Code))
+                    .Select(e => e.Bank, b => b
+                        .Field(bk => bk.Id)
+                        .Select(bk => bk.AccountingEntity, ae => ae
+                            .Field(a => a.SearchName)
+                            .Field(a => a.CaptureType)))
+                    .SelectList(e => e.AllowedCostCenters, ac => ac
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("filter", "BankAccountFilterInput!");
-            var fragment = new GraphQLQueryFragment("bankAccounts", [parameter], fields, "ListResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination"),
+                new("filters", "BankAccountFilters")
+            };
+            var fragment = new GraphQLQueryFragment("bankAccountsPage", parameters, fields, "PageResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery();
@@ -934,19 +944,19 @@ namespace NetErp.Treasury.Masters.ViewModels
                     .Select(e => e.CostCenter, cc => cc
                         .Field(c => c.Id)
                         .Field(c => c.Name))
-                    .Select(e => e.AccountingAccountCash, aa => aa
+                    .Select(e => e.CashAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.AccountingAccountCheck, aa => aa
+                    .Select(e => e.CheckAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.AccountingAccountCard, aa => aa
+                    .Select(e => e.CardAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.CashDrawerAutoTransfer, cd => cd
+                    .Select(e => e.AutoTransferCashDrawer, cd => cd
                         .Field(c => c.Id)
                         .Field(c => c.Name)))
                 .Build();
@@ -974,19 +984,19 @@ namespace NetErp.Treasury.Masters.ViewModels
                     .Field(e => e.AutoTransfer)
                     .Field(e => e.IsPettyCash)
                     .Field(e => e.ComputerName)
-                    .Select(e => e.AccountingAccountCash, aa => aa
+                    .Select(e => e.CashAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.AccountingAccountCheck, aa => aa
+                    .Select(e => e.CheckAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.AccountingAccountCard, aa => aa
+                    .Select(e => e.CardAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name))
-                    .Select(e => e.CashDrawerAutoTransfer, cd => cd
+                    .Select(e => e.AutoTransferCashDrawer, cd => cd
                         .Field(c => c.Id)
                         .Field(c => c.Name)))
                 .Build();
@@ -1015,7 +1025,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     .Select(e => e.CostCenter, cc => cc
                         .Field(c => c.Id)
                         .Field(c => c.Name))
-                    .Select(e => e.AccountingAccountCash, aa => aa
+                    .Select(e => e.CashAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Code)
                         .Field(a => a.Name)))
@@ -1034,44 +1044,48 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         private string GetLoadFranchisesQuery()
         {
-            var fields = FieldSpec<FranchiseGraphQLModel>
+            var fields = FieldSpec<PageType<FranchiseGraphQLModel>>
                 .Create()
-                .Field(f => f.Id)
-                .Field(f => f.Name)
-                .Field(f => f.Type)
-                .Field(f => f.CommissionMargin)
-                .Field(f => f.ReteivaMargin)
-                .Field(f => f.ReteicaMargin)
-                .Field(f => f.RetefteMargin)
-                .Field(f => f.IvaMargin)
-                .Field(f => f.FormulaCommission)
-                .Field(f => f.FormulaReteiva)
-                .Field(f => f.FormulaReteica)
-                .Field(f => f.FormulaRetefte)
-                .Select(f => f.BankAccount, ba => ba
-                    .Field(b => b.Id)
-                    .Field(b => b.Description))
-                .Select(f => f.AccountingAccountCommission, aa => aa
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .SelectList(f => f.FranchiseSettingsByCostCenter, fs => fs
-                    .Field(s => s.Id)
-                    .Field(s => s.CostCenterId)
-                    .Field(s => s.CommissionMargin)
-                    .Field(s => s.ReteivaMargin)
-                    .Field(s => s.ReteicaMargin)
-                    .Field(s => s.RetefteMargin)
-                    .Field(s => s.IvaMargin)
-                    .Field(s => s.BankAccountId)
-                    .Field(s => s.FormulaCommission)
-                    .Field(s => s.FormulaReteiva)
-                    .Field(s => s.FormulaReteica)
-                    .Field(s => s.FormulaRetefte)
-                    .Field(s => s.FranchiseId))
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Type)
+                    .Field(e => e.CommissionMargin)
+                    .Field(e => e.ReteivaMargin)
+                    .Field(e => e.ReteicaMargin)
+                    .Field(e => e.RetefteMargin)
+                    .Field(e => e.IvaMargin)
+                    .Field(e => e.FormulaCommission)
+                    .Field(e => e.FormulaReteiva)
+                    .Field(e => e.FormulaReteica)
+                    .Field(e => e.FormulaRetefte)
+                    .Select(e => e.BankAccount, ba => ba
+                        .Field(b => b.Id)
+                        .Field(b => b.Description))
+                    .Select(e => e.AccountingAccountCommission, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .SelectList(e => e.FranchiseSettingsByCostCenter, fs => fs
+                        .Field(s => s.Id)
+                        .Field(s => s.CostCenterId)
+                        .Field(s => s.CommissionMargin)
+                        .Field(s => s.ReteivaMargin)
+                        .Field(s => s.ReteicaMargin)
+                        .Field(s => s.RetefteMargin)
+                        .Field(s => s.IvaMargin)
+                        .Field(s => s.BankAccountId)
+                        .Field(s => s.FormulaCommission)
+                        .Field(s => s.FormulaReteiva)
+                        .Field(s => s.FormulaReteica)
+                        .Field(s => s.FormulaRetefte)
+                        .Field(s => s.FranchiseId)))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("filter", "FranchiseFilterInput!");
-            var fragment = new GraphQLQueryFragment("franchises", [parameter], fields, "ListResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination")
+            };
+            var fragment = new GraphQLQueryFragment("franchisesPage", parameters, fields, "PageResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery();
@@ -1522,16 +1536,16 @@ namespace NetErp.Treasury.Masters.ViewModels
         public CashDrawerCostCenterDTO MajorCostCenterBeforeNewCashDrawer { get; set; } = new() { Type = CashDrawerType.Major };
 
         // Collection used by MajorCashDrawerPanelEditor
-        private ObservableCollection<CashDrawerGraphQLModel> _majorCashDrawerAutoTransferCashDrawers;
-        public ObservableCollection<CashDrawerGraphQLModel> MajorCashDrawerAutoTransferCashDrawers
+        private ObservableCollection<CashDrawerGraphQLModel> _majorAutoTransferCashDrawerCashDrawers;
+        public ObservableCollection<CashDrawerGraphQLModel> MajorAutoTransferCashDrawerCashDrawers
         {
-            get { return _majorCashDrawerAutoTransferCashDrawers; }
+            get { return _majorAutoTransferCashDrawerCashDrawers; }
             set
             {
-                if (_majorCashDrawerAutoTransferCashDrawers != value)
+                if (_majorAutoTransferCashDrawerCashDrawers != value)
                 {
-                    _majorCashDrawerAutoTransferCashDrawers = value;
-                    NotifyOfPropertyChange(nameof(MajorCashDrawerAutoTransferCashDrawers));
+                    _majorAutoTransferCashDrawerCashDrawers = value;
+                    NotifyOfPropertyChange(nameof(MajorAutoTransferCashDrawerCashDrawers));
                 }
             }
         }
@@ -1549,16 +1563,16 @@ namespace NetErp.Treasury.Masters.ViewModels
         public int MajorCashDrawerIdBeforeNewAuxiliaryCashDrawer { get; set; }
 
         // Collection used by AuxiliaryCashDrawerPanelEditor
-        private ObservableCollection<CashDrawerGraphQLModel> _auxiliaryCashDrawerAutoTransferCashDrawers = [];
-        public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryCashDrawerAutoTransferCashDrawers
+        private ObservableCollection<CashDrawerGraphQLModel> _auxiliaryAutoTransferCashDrawerCashDrawers = [];
+        public ObservableCollection<CashDrawerGraphQLModel> AuxiliaryAutoTransferCashDrawerCashDrawers
         {
-            get { return _auxiliaryCashDrawerAutoTransferCashDrawers; }
+            get { return _auxiliaryAutoTransferCashDrawerCashDrawers; }
             set
             {
-                if (_auxiliaryCashDrawerAutoTransferCashDrawers != value)
+                if (_auxiliaryAutoTransferCashDrawerCashDrawers != value)
                 {
-                    _auxiliaryCashDrawerAutoTransferCashDrawers = value;
-                    NotifyOfPropertyChange(nameof(AuxiliaryCashDrawerAutoTransferCashDrawers));
+                    _auxiliaryAutoTransferCashDrawerCashDrawers = value;
+                    NotifyOfPropertyChange(nameof(AuxiliaryAutoTransferCashDrawerCashDrawers));
                 }
             }
         }
@@ -1654,7 +1668,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             get
             {
-                if (_franchiseResetFormulaReteivaCommand is null) _franchiseResetFormulaReteivaCommand = new RelayCommand(CanSearchBankAccountingEntity, FranchiseResetFormulaReteiva);
+                if (_franchiseResetFormulaReteivaCommand is null) _franchiseResetFormulaReteivaCommand = new RelayCommand(CanFranchiseResetFormulaReteiva, FranchiseResetFormulaReteiva);
                 return _franchiseResetFormulaReteivaCommand;
             }
         }
@@ -1664,6 +1678,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             if (FranchiseEditor != null)
                 FranchiseEditor.FormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
         }
+
+        public bool CanFranchiseResetFormulaReteiva(object p) => true;
 
         private ICommand _franchiseResetFormulaCommissionCommand;
         public ICommand FranchiseResetFormulaCommissionCommand
@@ -1838,42 +1854,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
-
-        private ICommand _searchBankAccountingEntityCommand;
-        public ICommand SearchBankAccountingEntityCommand
-        {
-            get
-            {
-                if (_searchBankAccountingEntityCommand is null) _searchBankAccountingEntityCommand = new RelayCommand(CanSearchBankAccountingEntity, SearchBankAccountingEntity);
-                return _searchBankAccountingEntityCommand;
-            }
-        }
-
-        public async void SearchBankAccountingEntity(object p)
-        {
-            string query = @"query($filter: AccountingEntityFilterInput!){
-                PageResponse: accountingEntityPage(filter: $filter){
-                count
-                rows{
-                    id
-                    searchName
-                    identificationNumber
-                    verificationDigit
-                }
-                }
-            }";
-
-            string fieldHeader1 = "NIT";
-            string fieldHeader2 = "Nombre o razón social";
-            string fieldData1 = "IdentificationNumberWithVerificationDigit";
-            string fieldData2 = "SearchName";
-            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, _dialogService);
-
-            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
-        }
-
-        public bool CanSearchBankAccountingEntity(object p) => true;
-
         /// <summary>
         /// Método unificado para cargar CompanyLocations tanto para Cajas Generales como Cajas Menores.
         /// El Type del dummyDTO determina qué tipo de DTO hijo se crea.
@@ -2011,7 +1991,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.pageResponsePagination.pageSize = -1;
                 variables.pageResponseFilters = new ExpandoObject();
                 variables.pageResponseFilters.costCenterId = costCenterDTO.Id;
-                variables.pageResponseFilters.parentId = 0;
                 variables.pageResponseFilters.isPettyCash = !isMajor; // false para Major, true para Minor
 
                 PageType<CashDrawerGraphQLModel> result = await _cashDrawerService.GetPageAsync(query, variables);
@@ -2073,8 +2052,12 @@ namespace NetErp.Treasury.Masters.ViewModels
                 Refresh();
                 string query = GetLoadBanksQuery();
 
-                var source = await _bankService.GetListAsync(query, new { });
-                var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(source);
+                dynamic variables = new ExpandoObject();
+                variables.banksPagePagination = new ExpandoObject();
+                variables.banksPagePagination.pageSize = -1;
+
+                PageType<BankGraphQLModel> result = await _bankService.GetPageAsync(query, variables);
+                var banks = Context.AutoMapper.Map<ObservableCollection<TreasuryBankMasterTreeDTO>>(result.Entries);
                 if (banks.Count > 0)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
@@ -2120,13 +2103,13 @@ namespace NetErp.Treasury.Masters.ViewModels
                 Refresh();
                 string query = GetLoadBankAccountsQuery();
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.BankId = new ExpandoObject();
-                variables.filter.BankId.@operator = "=";
-                variables.filter.BankId.value = bank.Id;
+                variables.bankAccountsPagePagination = new ExpandoObject();
+                variables.bankAccountsPagePagination.pageSize = -1;
+                variables.bankAccountsPageFilters = new ExpandoObject();
+                variables.bankAccountsPageFilters.bankId = bank.Id;
 
-                var source = await _bankAccountService.GetListAsync(query, variables);
-                var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(source);
+                PageType<BankAccountGraphQLModel> result = await _bankAccountService.GetPageAsync(query, variables);
+                var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(result.Entries);
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -2217,13 +2200,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                 Refresh();
                 string query = GetLoadFranchisesQuery();
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                //TODO : Cambiar por el id de la compañía
-                variables.filter.CompanyId = new ExpandoObject();
-                variables.filter.CompanyId.@operator = "=";
-                variables.filter.CompanyId.value = 1;
-                var source = await _franchiseService.GetListAsync(query, variables);
-                var franchises = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseMasterTreeDTO>>(source);
+                variables.franchisesPagePagination = new ExpandoObject();
+                variables.franchisesPagePagination.pageSize = -1;
+
+                PageType<FranchiseGraphQLModel> result = await _franchiseService.GetPageAsync(query, variables);
+                var franchises = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseMasterTreeDTO>>(result.Entries);
                 if (franchises.Count > 0)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
@@ -2259,34 +2240,53 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task LoadComboBoxesAsync()
         {
-            // Ensure all caches are loaded
-            await Task.WhenAll(
-                _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
-                _costCenterCache.EnsureLoadedAsync(),
-                _bankAccountCache.EnsureLoadedAsync(),
-                _majorCashDrawerCache.EnsureLoadedAsync()
-            );
+            try
+            {
+                // Ensure all caches are loaded
+                await Task.WhenAll(
+                    _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
+                    _costCenterCache.EnsureLoadedAsync(),
+                    _bankAccountCache.EnsureLoadedAsync(),
+                    _majorCashDrawerCache.EnsureLoadedAsync()
+                );
 
-            // Cuentas contables auxiliares
-            CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-            BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-            BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
+                // Cuentas contables auxiliares
+                CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+                BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+                BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
 
-            FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-            FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
+                FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+                FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
 
-            // Centros de costo
-            BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(_costCenterCache.Items);
-            FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(_costCenterCache.Items);
-            FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
+                // Centros de costo
+                BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(_costCenterCache.Items);
+                FranchiseCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryFranchiseCostCenterDTO>>(_costCenterCache.Items);
+                FranchiseCostCenters.Insert(0, new TreasuryFranchiseCostCenterDTO() { Id = 0, Name = "[ APLICACIÓN GENERAL ]" });
 
-            // Cuentas bancarias
-            FranchiseBankAccounts = new ObservableCollection<BankAccountGraphQLModel>(_bankAccountCache.Items);
-            FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
+                // Cuentas bancarias
+                FranchiseBankAccounts = new ObservableCollection<BankAccountGraphQLModel>(_bankAccountCache.Items);
+                FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
 
-            // Cajas generales
-            CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
-            CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
+                // Cajas generales
+                CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
+                CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
+            }
+            catch (AsyncException ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.LoadComboBoxesAsync {ex.Message}\r\n{ex.InnerException?.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.LoadComboBoxesAsync \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+            }
         }
 
         public TreasuryRootMasterViewModel(
@@ -2316,8 +2316,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             _costCenterCache = costCenterCache;
             _bankAccountCache = bankAccountCache;
             _majorCashDrawerCache = majorCashDrawerCache;
-            
-            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(this, SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, false, OnFindBankAccountingEntityMessage);
+
             DummyItems = [
             new CashDrawerDummyDTO() {
                 Id = 1, Name = "CAJA GENERAL", Type = CashDrawerType.Major,
@@ -2344,7 +2343,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             MajorCashDrawerEditor = new MajorCashDrawerPanelEditor(this, _cashDrawerService);
             MinorCashDrawerEditor = new MinorCashDrawerPanelEditor(this, _cashDrawerService);
             AuxiliaryCashDrawerEditor = new AuxiliaryCashDrawerPanelEditor(this, _cashDrawerService);
-            BankEditor = new BankPanelEditor(this, _bankService);
+            BankEditor = new BankPanelEditor(this, _bankService, _dialogService);
             BankAccountEditor = new BankAccountPanelEditor(this, _bankAccountService);
             FranchiseEditor = new FranchisePanelEditor(this, _franchiseService);
         }
@@ -2353,13 +2352,6 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             await LoadComboBoxesAsync();
             await base.OnActivatedAsync(cancellationToken);
-        }
-
-        public void OnFindBankAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
-        {
-            if (message.ReturnedData is null) return;
-            BankEditor.AccountingEntityId = message.ReturnedData.Id;
-            BankEditor.AccountingEntityName = message.ReturnedData.SearchName;
         }
 
         public async Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
@@ -2533,13 +2525,13 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (cashDrawerToUpdate is null) return;
                 cashDrawerToUpdate.Id = cashDrawerDTO.Id;
                 cashDrawerToUpdate.Name = cashDrawerDTO.Name;
-                cashDrawerToUpdate.AccountingAccountCash = cashDrawerDTO.AccountingAccountCash;
-                cashDrawerToUpdate.AccountingAccountCheck = cashDrawerDTO.AccountingAccountCheck;
-                cashDrawerToUpdate.AccountingAccountCard = cashDrawerDTO.AccountingAccountCard;
+                cashDrawerToUpdate.CashAccountingAccount = cashDrawerDTO.CashAccountingAccount;
+                cashDrawerToUpdate.CheckAccountingAccount = cashDrawerDTO.CheckAccountingAccount;
+                cashDrawerToUpdate.CardAccountingAccount = cashDrawerDTO.CardAccountingAccount;
                 cashDrawerToUpdate.CashReviewRequired = cashDrawerDTO.CashReviewRequired;
                 cashDrawerToUpdate.AutoAdjustBalance = cashDrawerDTO.AutoAdjustBalance;
                 cashDrawerToUpdate.AutoTransfer = cashDrawerDTO.AutoTransfer;
-                cashDrawerToUpdate.CashDrawerAutoTransfer = cashDrawerDTO.CashDrawerAutoTransfer;
+                cashDrawerToUpdate.AutoTransferCashDrawer = cashDrawerDTO.AutoTransferCashDrawer;
                 await Task.Run(() => MajorCashDrawerEditor.SetForEdit(cashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja General actualizada correctamente.");
                 return;
@@ -2559,13 +2551,13 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (auxiliaryCashDrawerToUpdate is null) return;
                 auxiliaryCashDrawerToUpdate.Id = auxiliaryCashDrawer.Id;
                 auxiliaryCashDrawerToUpdate.Name = auxiliaryCashDrawer.Name;
-                auxiliaryCashDrawerToUpdate.AccountingAccountCash = auxiliaryCashDrawer.AccountingAccountCash;
-                auxiliaryCashDrawerToUpdate.AccountingAccountCheck = auxiliaryCashDrawer.AccountingAccountCheck;
-                auxiliaryCashDrawerToUpdate.AccountingAccountCard = auxiliaryCashDrawer.AccountingAccountCard;
+                auxiliaryCashDrawerToUpdate.CashAccountingAccount = auxiliaryCashDrawer.CashAccountingAccount;
+                auxiliaryCashDrawerToUpdate.CheckAccountingAccount = auxiliaryCashDrawer.CheckAccountingAccount;
+                auxiliaryCashDrawerToUpdate.CardAccountingAccount = auxiliaryCashDrawer.CardAccountingAccount;
                 auxiliaryCashDrawerToUpdate.CashReviewRequired = auxiliaryCashDrawer.CashReviewRequired;
                 auxiliaryCashDrawerToUpdate.AutoAdjustBalance = auxiliaryCashDrawer.AutoAdjustBalance;
                 auxiliaryCashDrawerToUpdate.AutoTransfer = auxiliaryCashDrawer.AutoTransfer;
-                auxiliaryCashDrawerToUpdate.CashDrawerAutoTransfer = auxiliaryCashDrawer.CashDrawerAutoTransfer;
+                auxiliaryCashDrawerToUpdate.AutoTransferCashDrawer = auxiliaryCashDrawer.AutoTransferCashDrawer;
                 auxiliaryCashDrawerToUpdate.ComputerName = auxiliaryCashDrawer.ComputerName;
                 await Task.Run(() => AuxiliaryCashDrawerEditor.SetForEdit(auxiliaryCashDrawerToUpdate), cancellationToken);
                 _notificationService.ShowSuccess("Caja Auxiliar actualizada correctamente.");
@@ -2582,7 +2574,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             if (minorCashDrawerToUpdate is null) return;
             minorCashDrawerToUpdate.Id = minorCashDrawerMasterTreeDTO.Id;
             minorCashDrawerToUpdate.Name = minorCashDrawerMasterTreeDTO.Name;
-            minorCashDrawerToUpdate.AccountingAccountCash = minorCashDrawerMasterTreeDTO.AccountingAccountCash;
+            minorCashDrawerToUpdate.CashAccountingAccount = minorCashDrawerMasterTreeDTO.CashAccountingAccount;
             minorCashDrawerToUpdate.CashReviewRequired = minorCashDrawerMasterTreeDTO.CashReviewRequired;
             minorCashDrawerToUpdate.AutoAdjustBalance = minorCashDrawerMasterTreeDTO.AutoAdjustBalance;
             await Task.Run(() => MinorCashDrawerEditor.SetForEdit(minorCashDrawerToUpdate), cancellationToken);
