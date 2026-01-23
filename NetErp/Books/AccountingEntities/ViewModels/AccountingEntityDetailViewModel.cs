@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -37,6 +38,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IdentificationTypeCache _identificationTypeCache;
+        private readonly CountryCache _countryCache;
 
 
         Dictionary<string, List<string>> _errors;
@@ -935,11 +938,17 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }, DispatcherPriority.Render);
         }
 
-        public AccountingEntityDetailViewModel(AccountingEntityViewModel context, IRepository<AccountingEntityGraphQLModel> accountingEntityService)
+        public AccountingEntityDetailViewModel(
+            AccountingEntityViewModel context,
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+            IdentificationTypeCache identificationTypeCache,
+            CountryCache countryCache)
         {
             _errors = [];
             Context = context;
             _accountingEntityService = accountingEntityService;
+            _identificationTypeCache = identificationTypeCache;
+            _countryCache = countryCache;
 
             // Inicializar la colección para activar la suscripción al CollectionChanged
             Emails = [];
@@ -1337,13 +1346,17 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             return builder.GetQuery();
         }
 
-        public void SetDataForNew()
+        public async Task SetDataForNewAsync()
         {
             try
             {
-                // Cargar datos comunes desde el caché global
-                IdentificationTypes = GlobalDataCache.IdentificationTypes;
-                Countries = GlobalDataCache.Countries;
+                // Cargar datos comunes desde los caches individuales
+                await Task.WhenAll(
+                    _identificationTypeCache.EnsureLoadedAsync(),
+                    _countryCache.EnsureLoadedAsync()
+                );
+                IdentificationTypes = _identificationTypeCache.Items;
+                Countries = _countryCache.Items;
 
                 Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
                 SelectedRegime = 'R';
@@ -1380,9 +1393,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             try
             {
-                // Cargar datos comunes desde el caché global
-                IdentificationTypes = GlobalDataCache.IdentificationTypes;
-                Countries = GlobalDataCache.Countries;
+                // Cargar datos comunes desde los caches individuales
+                await Task.WhenAll(
+                    _identificationTypeCache.EnsureLoadedAsync(),
+                    _countryCache.EnsureLoadedAsync()
+                );
+                IdentificationTypes = _identificationTypeCache.Items;
+                Countries = _countryCache.Items;
 
                 // Cargar solo el AccountingEntity específico
                 string query = GetAccountingEntityByIdQuery();

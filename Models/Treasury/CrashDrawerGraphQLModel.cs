@@ -16,11 +16,11 @@ namespace Models.Treasury
         public bool AutoAdjustBalance { get; set; }
         public bool AutoTransfer { get; set; }
         public bool IsPettyCash { get; set; }
-        public CashDrawerGraphQLModel CashDrawerAutoTransfer { get; set; }
+        public CashDrawerGraphQLModel AutoTransferCashDrawer { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
-        public AccountingAccountGraphQLModel AccountingAccountCash { get; set; }
-        public AccountingAccountGraphQLModel AccountingAccountCheck { get; set; }
-        public AccountingAccountGraphQLModel AccountingAccountCard { get; set; }
+        public AccountingAccountGraphQLModel CashAccountingAccount { get; set; }
+        public AccountingAccountGraphQLModel CheckAccountingAccount { get; set; }
+        public AccountingAccountGraphQLModel CardAccountingAccount { get; set; }
         public CashDrawerGraphQLModel Parent { get; set; }
         public string ComputerName { get; set; } = string.Empty;
         public override string ToString()

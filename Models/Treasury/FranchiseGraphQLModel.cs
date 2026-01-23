@@ -25,7 +25,9 @@ namespace Models.Treasury
         public string FormulaReteiva { get; set; } = string.Empty;
         public string FormulaReteica { get; set; } = string.Empty;
         public string FormulaRetefte { get; set; } = string.Empty;
-        public IEnumerable<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; }
+        public IEnumerable<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; } = [];
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
     public class FranchiseByCostCenterGraphQLModel

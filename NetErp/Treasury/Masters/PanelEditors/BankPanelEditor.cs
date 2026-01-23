@@ -1,13 +1,20 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
+using Models.Books;
+using Models.Global;
 using Models.Treasury;
+using NetErp.Global.Modals.ViewModels;
+using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.PanelEditors
@@ -22,6 +29,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
         #region Fields
 
         private readonly IRepository<BankGraphQLModel> _bankService;
+        private readonly Helpers.IDialogService _dialogService;
 
         #endregion
 
@@ -29,10 +37,18 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         public BankPanelEditor(
             TreasuryRootMasterViewModel masterContext,
-            IRepository<BankGraphQLModel> bankService)
+            IRepository<BankGraphQLModel> bankService,
+            Helpers.IDialogService dialogService)
             : base(masterContext)
         {
             _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+
+            Messenger.Default.Register<ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel>>(
+                this,
+                SearchWithTwoColumnsGridMessageToken.BankAccountingEntity,
+                false,
+                OnFindBankAccountingEntityMessage);
         }
 
         #endregion
@@ -101,6 +117,67 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     MasterContext.RefreshCanSave();
                 }
             }
+        }
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _searchAccountingEntityCommand;
+        public ICommand SearchAccountingEntityCommand
+        {
+            get
+            {
+                _searchAccountingEntityCommand ??= new AsyncCommand(SearchAccountingEntityAsync, CanSearchAccountingEntity);
+                return _searchAccountingEntityCommand;
+            }
+        }
+
+        public async Task SearchAccountingEntityAsync()
+        {
+            string query = GetSearchAccountingEntityQuery();
+
+            string fieldHeader1 = "NIT";
+            string fieldHeader2 = "Nombre o razón social";
+            string fieldData1 = "IdentificationNumberWithVerificationDigit";
+            string fieldData2 = "SearchName";
+
+            var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(
+                query, fieldHeader1, fieldHeader2, fieldData1, fieldData2, null,
+                SearchWithTwoColumnsGridMessageToken.BankAccountingEntity, _dialogService);
+
+            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de terceros");
+        }
+
+        private string GetSearchAccountingEntityQuery()
+        {
+            var fields = FieldSpec<PageType<AccountingEntityGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.TotalEntries)
+                .Field(f => f.PageSize)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
+                    .Field(e => e.SearchName))
+                .Build();
+
+            var filterParameter = new GraphQLQueryParameter("filters", "AccountingEntityFilters");
+            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("accountingEntitiesPage", [filterParameter, paginationParameter], fields, "PageResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
+
+        public bool CanSearchAccountingEntity() => IsEditing;
+
+        private void OnFindBankAccountingEntityMessage(ReturnedDataFromModalWithTwoColumnsGridViewMessage<AccountingEntityGraphQLModel> message)
+        {
+            if (message.ReturnedData is null) return;
+            AccountingEntityId = message.ReturnedData.Id;
+            AccountingEntityName = message.ReturnedData.SearchName;
         }
 
         #endregion

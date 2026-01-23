@@ -14,6 +14,8 @@ namespace Models.Treasury
         public int Id { get; set; }
         public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
         public string PaymentMethodPrefix { get; set; } = string.Empty;
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
         public override string ToString()
         {
             return AccountingEntity.SearchName;

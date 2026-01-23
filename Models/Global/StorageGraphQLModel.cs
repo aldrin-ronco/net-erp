@@ -11,10 +11,12 @@ namespace Models.Global
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public CityGraphQLModel City { get; set; }
+        public CityGraphQLModel City { get; set; } = new();
         public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public CompanyLocationGraphQLModel CompanyLocation { get; set; }
+        public CompanyLocationGraphQLModel CompanyLocation { get; set; } = new();
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
     public class StorageCreateMessage

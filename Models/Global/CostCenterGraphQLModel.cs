@@ -46,6 +46,8 @@ namespace Models.Global
 
         public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; } = new();
         public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; } = new();
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
         public override string ToString()
         {
             return Name;

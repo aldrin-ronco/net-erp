@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Interfaces;
 using NetErp.Global.MainMenu.ViewModels;
 using NetErp.Helpers.Messages;
@@ -7,19 +7,17 @@ using NetErp.Login.ViewModels;
 using static NetErp.Login.ViewModels.CompanySelectionViewModel;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Models.Login;
 using Models.Global;
 using Common.Helpers;
-using Models.Books;
-using System.Collections.ObjectModel;
 using System.Dynamic;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
+using System.Collections.ObjectModel;
+using NetErp.Helpers;
+using Models.Books;
 
 namespace NetErp.Global.Shell.ViewModels
 {
@@ -32,6 +30,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly ISQLiteEmailStorageService _emailStorageService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
+        private readonly GlobalDataCache _globalDataCache;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private LoginAccountGraphQLModel? _currentAccount;
@@ -40,10 +39,10 @@ namespace NetErp.Global.Shell.ViewModels
 
         public MainMenuViewModel MainMenuViewModel
         {
-            get 
+            get
             {
                 if (_mainMenuViewModel == null) this._mainMenuViewModel = new();
-                return _mainMenuViewModel; 
+                return _mainMenuViewModel;
             }
         }
 
@@ -74,7 +73,8 @@ namespace NetErp.Global.Shell.ViewModels
             ILoginService loginService,
             ISQLiteEmailStorageService emailStorageService,
             IRepository<CompanyGraphQLModel> companyService,
-            IRepository<CountryGraphQLModel> countryService)
+            IRepository<CountryGraphQLModel> countryService,
+            GlobalDataCache globalDataCache)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -83,10 +83,10 @@ namespace NetErp.Global.Shell.ViewModels
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
+            _globalDataCache = globalDataCache ?? throw new ArgumentNullException(nameof(globalDataCache));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
             Task.Run(() => ActivateLoginView());
-            _countryService = countryService;
         }
 
         public async Task ActivateLoginView()
@@ -129,22 +129,15 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(CompanySelectedMessage message, CancellationToken cancellationToken)
         {
-            // Cargar datos comunes en el caché global si no están cargados
-            if (!GlobalDataCache.IsInitialized)
-            {
-                await LoadGlobalDataAsync();
-            }
-
-            // Empresa seleccionada - navegar al MainMenu
+            // Empresa seleccionada - cargar datos globales y navegar al MainMenu
+            await LoadGlobalDataAsync();
             await ActivateItemAsync(MainMenuViewModel, cancellationToken);
         }
 
         public async Task HandleAsync(LogoutMessage message, CancellationToken cancellationToken)
         {
-            // Limpiar caché de datos comunes
-            GlobalDataCache.Clear();
-
             // Logout - volver al login
+            _globalDataCache.Clear();
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -181,10 +174,9 @@ namespace NetErp.Global.Shell.ViewModels
                 GlobalDataContextModel result = await _countryService.GetDataContextAsync<GlobalDataContextModel>(query, variables);
 
                 // Inicializar el caché con los datos cargados
-                GlobalDataCache.Initialize(
+                _globalDataCache.Initialize(
                     new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries),
-                    new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries),
-                    new ObservableCollection<WithholdingTypeGraphQLModel>(result.WithholdingTypes.Entries)
+                    new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries)
                 );
             }
             catch (Exception ex)
@@ -228,24 +220,11 @@ namespace NetErp.Global.Shell.ViewModels
                     )
                 )
                 .Build();
-            var withholdingTypeFields = FieldSpec<PageType<WithholdingTypeGraphQLModel>>
-             .Create()
-             .SelectList(it => it.Entries, entries => entries
-                 .Field(e => e.Id)
-                 .Field(e => e.Name)
-
-             )
-             .Field(o => o.PageNumber)
-             .Field(o => o.PageSize)
-             .Field(o => o.TotalPages)
-             .Field(o => o.TotalEntries)
-             .Build();
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var withholdingTypeFragment = new GraphQLQueryFragment("withholdingTypesPage", [parameter], withholdingTypeFields, "withholdingTypes");
             var identificationTypeFragment = new GraphQLQueryFragment("identificationTypesPage", [parameter], identificationTypeFields, "identificationTypes");
             var countryFragment = new GraphQLQueryFragment("countriesPage", [parameter], countryFields, "countries");
-            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment, withholdingTypeFragment]);
+            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment]);
             return builder.GetQuery();
         }
 

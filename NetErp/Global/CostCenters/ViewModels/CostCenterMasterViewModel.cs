@@ -16,6 +16,7 @@ using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.CostCenters.PanelEditors;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Inventory.CatalogItems.DTO;
 using NetErp.Inventory.CatalogItems.ViewModels;
@@ -56,6 +57,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly IRepository<CountryGraphQLModel> _countryService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly CountryCache _countryCache;
 
         Dictionary<string, List<string>> _errors;
 
@@ -1249,12 +1251,13 @@ namespace NetErp.Global.CostCenters.ViewModels
         public async Task InitializeAsync()
         {
             await LoadCompanyAsync();
-            LoadComboBoxes();
+            await LoadComboBoxesAsync();
         }
 
-        public void LoadComboBoxes()
+        public async Task LoadComboBoxesAsync()
         {
-            Countries = GlobalDataCache.Countries;
+            await _countryCache.EnsureLoadedAsync();
+            Countries = _countryCache.Items;
         }
 
         public async Task LoadCompanyAsync()
@@ -1327,7 +1330,8 @@ namespace NetErp.Global.CostCenters.ViewModels
             IRepository<StorageGraphQLModel> storageService,
             IRepository<CountryGraphQLModel> countryService,
             Helpers.IDialogService dialogService,
-            Helpers.Services.INotificationService notificationService) 
+            Helpers.Services.INotificationService notificationService,
+            CountryCache countryCache)
         {
             Context = context;
             _companyService = companyService;
@@ -1337,6 +1341,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             _countryService = countryService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _countryCache = countryCache;
 
             _errors = new Dictionary<string, List<string>>();
             Context.EventAggregator.SubscribeOnUIThread(this);

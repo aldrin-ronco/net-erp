@@ -12,9 +12,11 @@ namespace Models.Global
     {
         public int Id { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public CompanyGraphQLModel Company { get; set; }
-        public IEnumerable<CostCenterGraphQLModel> CostCenters { get; set; }
-        public IEnumerable<StorageGraphQLModel> Storages { get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
+        public IEnumerable<CostCenterGraphQLModel> CostCenters { get; set; } = [];
+        public IEnumerable<StorageGraphQLModel> Storages { get; set; } = [];
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
         public override string ToString()
         {
             return Name;
