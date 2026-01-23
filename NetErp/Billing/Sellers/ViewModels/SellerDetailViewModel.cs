@@ -364,7 +364,6 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
 
         private ObservableCollection<CostCenterDTO> _costCenters;
-        [ExpandoPath("accountingEntity.identificationTypeId", SerializeAsId = true)]
 
         public ObservableCollection<CostCenterDTO> CostCenters
         {
@@ -843,6 +842,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                             email = email.Email
                         };
                     }
+
                 };
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
                 string query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();

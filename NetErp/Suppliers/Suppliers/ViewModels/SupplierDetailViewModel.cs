@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using Dictionaries;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
+using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
@@ -24,6 +25,16 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static Models.Global.GraphQLResponseTypes;
+using Extensions.Global;
+using NetErp.Billing.Sellers.ViewModels;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Common.Constants;
+using System.Security.Policy;
+using static Dictionaries.BooksDictionaries;
+using DevExpress.Mvvm.Native;
+
+
 
 namespace NetErp.Suppliers.Suppliers.ViewModels
 {
@@ -56,7 +67,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(Save, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
                 return _saveCommand;
             }
         }
@@ -87,6 +98,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public Dictionary<char, string> RegimeDictionary => BooksDictionaries.RegimeDictionary;
 
         private char _selectedRegime = 'R';
+        
+        [ExpandoPath("accountingEntity.regime")]
         public char SelectedRegime
         {
             get => _selectedRegime;
@@ -116,6 +129,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private string _firstName = string.Empty;
+        [ExpandoPath("accountingEntity.firstName")]
+
         public string FirstName
         {
             get
@@ -130,12 +145,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _firstName = value;
                     ValidateProperty(nameof(FirstName), value);
                     NotifyOfPropertyChange(nameof(FirstName));
+                    this.TrackChange(nameof(FirstName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _middleName = string.Empty;
+        [ExpandoPath("accountingEntity.middleName")]
         public string MiddleName
         {
             get
@@ -149,12 +166,54 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _middleName = value;
                     NotifyOfPropertyChange(nameof(MiddleName));
+                    this.TrackChange(nameof(MiddleName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
-
+        
+            private string _tradeName = string.Empty;
+        [ExpandoPath("accountingEntity.tradeName")]
+        public string TradeName
+        {
+            get
+            {
+                if (_tradeName is null) return string.Empty;
+                return _tradeName;
+            }
+            set
+            {
+                if (_tradeName != value)
+                {
+                    _tradeName = value;
+                    NotifyOfPropertyChange(nameof(TradeName));
+                    this.TrackChange(nameof(TradeName));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+        private string _commercialCode = string.Empty;
+        [ExpandoPath("accountingEntity.CommercialCode")]
+        public string CommercialCode
+        {
+            get
+            {
+                if (_commercialCode is null) return string.Empty;
+                return _commercialCode;
+            }
+            set
+            {
+                if (_commercialCode != value)
+                {
+                    _commercialCode = value;
+                    NotifyOfPropertyChange(nameof(CommercialCode));
+                    this.TrackChange(nameof(CommercialCode));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
         private string _firstLastName = string.Empty;
+        [ExpandoPath("accountingEntity.firstLastName")]
         public string FirstLastName
         {
             get
@@ -169,12 +228,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _firstLastName = value;
                     ValidateProperty(nameof(FirstLastName), value);
                     NotifyOfPropertyChange(nameof(FirstLastName));
+                    this.TrackChange(nameof(FirstLastName));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _middleLastName = string.Empty;
+        [ExpandoPath("accountingEntity.middleLastName")]
         public string MiddleLastName
         {
             get
@@ -188,12 +249,15 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _middleLastName = value;
                     NotifyOfPropertyChange(nameof(MiddleLastName));
+                    this.TrackChange(nameof(MiddleLastName));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _primaryPhone = string.Empty;
+        [ExpandoPath("accountingEntity.primaryPhone")]
         public string PrimaryPhone
         {
             get
@@ -208,12 +272,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _primaryPhone = value;
                     ValidateProperty(nameof(PrimaryPhone), value);
                     NotifyOfPropertyChange(nameof(PrimaryPhone));
+                    this.TrackChange(nameof(PrimaryPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _secondaryPhone = string.Empty;
+        [ExpandoPath("accountingEntity.secondaryPhone")]
+
         public string SecondaryPhone
         {
             get
@@ -228,12 +296,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _secondaryPhone = value;
                     ValidateProperty(nameof(SecondaryPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryPhone));
+                    this.TrackChange(nameof(SecondaryPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _primaryCellPhone = string.Empty;
+        [ExpandoPath("accountingEntity.primaryCellPhone")]
+
         public string PrimaryCellPhone
         {
             get
@@ -246,11 +318,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 _primaryCellPhone = value;
                 ValidateProperty(nameof(PrimaryCellPhone), value);
                 NotifyOfPropertyChange(nameof(PrimaryCellPhone));
+                this.TrackChange(nameof(PrimaryCellPhone));
+
                 NotifyOfPropertyChange(nameof(CanSave));
             }
         }
 
         private string _secondaryCellPhone = string.Empty;
+        [ExpandoPath("accountingEntity.secondaryCellPhone")]
         public string SecondaryCellPhone
         {
             get
@@ -265,12 +340,16 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _secondaryCellPhone = value;
                     ValidateProperty(nameof(SecondaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryCellPhone));
+                    this.TrackChange(nameof(SecondaryCellPhone));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _address = string.Empty;
+        [ExpandoPath("accountingEntity.address")]
+
         public string Address
         {
             get
@@ -284,12 +363,15 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _address = value;
                     NotifyOfPropertyChange(nameof(Address));
+                    this.TrackChange(nameof(Address));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _businessName = string.Empty;
+        [ExpandoPath("accountingEntity.businessName")]
         public string BusinessName
         {
             get
@@ -304,12 +386,37 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _businessName = value;
                     ValidateProperty(nameof(BusinessName), value);
                     NotifyOfPropertyChange(nameof(BusinessName));
+                    this.TrackChange(nameof(BusinessName));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+        private decimal _icaWithholdingRate;
 
+        public decimal IcaWithholdingRate
+        {
+            get
+            {
+              
+                return _icaWithholdingRate;
+            }
+            set
+            {
+                if (_icaWithholdingRate != value)
+                {
+                    _icaWithholdingRate = value;
+                    ValidateProperty(nameof(IcaWithholdingRate), value);
+                    NotifyOfPropertyChange(nameof(IcaWithholdingRate));
+                    this.TrackChange(nameof(IcaWithholdingRate));
+
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
         private ObservableCollection<WithholdingTypeDTO> _withholdingTypes;
+
+       // [ExpandoPath("withholdingTypeIds", SerializeAsId = true)]
         public ObservableCollection<WithholdingTypeDTO> WithholdingTypes
         {
             get => _withholdingTypes;
@@ -319,11 +426,23 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _withholdingTypes = value;
                     NotifyOfPropertyChange(nameof(WithholdingTypes));
-                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
-
+        private List<int> _withholdingTypeIds;
+        public List<int> WithholdingTypeIds 
+        {
+            get => _withholdingTypeIds;
+            set
+            {
+                if (_withholdingTypeIds != value)
+                {
+                    _withholdingTypeIds = value;
+                    NotifyOfPropertyChange(nameof(WithholdingTypeIds));
+                    this.TrackChange(nameof(WithholdingTypeIds));
+                }
+            }
+        }
         private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
         {
@@ -338,27 +457,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
             }
         }
-
-        private IdentificationTypeGraphQLModel _selectedIdentificationType;
-        public IdentificationTypeGraphQLModel SelectedIdentificationType
-        {
-            get => _selectedIdentificationType;
-            set
-            {
-                if (_selectedIdentificationType != value)
-                {
-                    _selectedIdentificationType = value;
-                    NotifyOfPropertyChange(nameof(SelectedIdentificationType));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
-                    if (IsNewRecord)
-                    {
-                        _ = this.SetFocus(nameof(IdentificationNumber));
-                    }
-                }
-            }
-        }
-
         private ObservableCollection<CountryGraphQLModel> _countries;
         public ObservableCollection<CountryGraphQLModel> Countries
         {
@@ -374,7 +472,34 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
+        private IdentificationTypeGraphQLModel _selectedIdentificationType;
+        [ExpandoPath("accountingEntity.identificationTypeId", SerializeAsId = true)]
+        public IdentificationTypeGraphQLModel SelectedIdentificationType
+        {
+            get => _selectedIdentificationType;
+            set
+            {
+                if (_selectedIdentificationType != value)
+                {
+                    _selectedIdentificationType = value;
+                    NotifyOfPropertyChange(nameof(SelectedIdentificationType));
+                    this.TrackChange(nameof(SelectedIdentificationType));
+
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
+                    if (IsNewRecord)
+                    {
+                        _ = this.SetFocus(nameof(IdentificationNumber));
+                    }
+                }
+            }
+        }
+
+        
+
         private CountryGraphQLModel _selectedCountry;
+        [ExpandoPath("accountingEntity.countryId", SerializeAsId = true)]
+
         public CountryGraphQLModel SelectedCountry
         {
             get => _selectedCountry;
@@ -384,6 +509,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _selectedCountry = value;
                     NotifyOfPropertyChange(nameof(SelectedCountry));
+                    this.TrackChange(nameof(SelectedCountry));
+
                     if (_selectedCountry != null)
                     {
                         SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.CountryId == _selectedCountry.Id);
@@ -395,6 +522,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private DepartmentGraphQLModel _selectedDepartment;
+        [ExpandoPath("accountingEntity.departmentId", SerializeAsId = true)]
+
         public DepartmentGraphQLModel SelectedDepartment
         {
             get => _selectedDepartment;
@@ -404,6 +533,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _selectedDepartment = value;
                     NotifyOfPropertyChange(nameof(SelectedDepartment));
+                    this.TrackChange(nameof(SelectedDepartment));
+
                     if (_selectedDepartment != null)
                     {
                         SelectedCityId = SelectedDepartment.Cities.FirstOrDefault().Id;
@@ -415,6 +546,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private int _selectedCityId;
+        [ExpandoPath("accountingEntity.cityId")]
+
         public int SelectedCityId
         {
             get => _selectedCityId;
@@ -424,12 +557,32 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 {
                     _selectedCityId = value;
                     NotifyOfPropertyChange(nameof(SelectedCityId));
+                    this.TrackChange(nameof(SelectedCityId));
+
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+        private int? _icaAccountingAccountId;
+        public int? IcaAccountingAccountId
+        {
+            get => _icaAccountingAccountId;
+            set
+            {
+                if (_icaAccountingAccountId != value)
+                {
+                    _icaAccountingAccountId = value;
+                    NotifyOfPropertyChange(nameof(IcaAccountingAccountId));
+                    this.TrackChange(nameof(IcaAccountingAccountId));
+
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
+        
         private string _identificationNumber = string.Empty;
+        [ExpandoPath("accountingEntity.identificationNumber")]
         public string IdentificationNumber
         {
             get
@@ -445,12 +598,15 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     ValidateProperty(nameof(IdentificationNumber), value);
                     NotifyOfPropertyChange(nameof(IdentificationNumber));
                     NotifyOfPropertyChange(nameof(VerificationDigit));
+                    this.TrackChange(nameof(IdentificationNumber));
+                    this.TrackChange(nameof(VerificationDigit));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
         private string _verificationDigit;
+        [ExpandoPath("accountingEntity.VerificationDigit")]
         public string VerificationDigit
         {
             set
@@ -458,7 +614,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 if (_verificationDigit != value)
                 {
                     _verificationDigit = value;
+                  
                     NotifyOfPropertyChange(nameof(VerificationDigit));
+                    this.TrackChange(nameof(VerificationDigit));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
             get => !IsNewRecord
@@ -469,7 +628,42 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     ? IdentificationNumber.GetVerificationDigit()
                     : string.Empty;
         }
+        private bool _withholdingAppliesOnAnyAmount = false;
+        public bool WithholdingAppliesOnAnyAmount
+        {
+            get => _withholdingAppliesOnAnyAmount;
+            set
+            {
+                if (_withholdingAppliesOnAnyAmount != value)
+                {
+                    _withholdingAppliesOnAnyAmount = value;
+                    NotifyOfPropertyChange(nameof(WithholdingAppliesOnAnyAmount));
+                    this.TrackChange(nameof(WithholdingAppliesOnAnyAmount));
 
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+
+        private bool _isTaxFree = false;
+        public bool IsTaxFree
+        {
+            get => _isTaxFree;
+            set
+            {
+                if (_isTaxFree != value)
+                {
+                    _isTaxFree = value;
+                    NotifyOfPropertyChange(nameof(IsTaxFree));
+                    this.TrackChange(nameof(IsTaxFree));
+
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        
         public bool CanRemoveEmail(object p) => true;
         public bool CanAddEmail => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(EmailDescription) && Email.IsValidEmail();
 
@@ -513,6 +707,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private ObservableCollection<EmailDTO> _emails = new ObservableCollection<EmailDTO>();
+        [ExpandoPath("accountingEntity.emails")]
         public ObservableCollection<EmailDTO> Emails
         {
             get => _emails;
@@ -520,27 +715,43 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             {
                 if (_emails != value)
                 {
-                    _emails = value;
-                    NotifyOfPropertyChange(nameof(Emails));
-                    NotifyOfPropertyChange(nameof(FilteredEmails));
-                    NotifyOfPropertyChange(nameof(CanSave));
+                    if (_emails != value)
+                    {
+                        // Desuscribirse del anterior si existe
+                        if (_emails != null)
+                        {
+                            _emails.CollectionChanged -= Emails_CollectionChanged;
+                        }
+
+                        _emails = value;
+
+                        // Suscribirse al nuevo
+                        if (_emails != null)
+                        {
+                            _emails.CollectionChanged += Emails_CollectionChanged;
+                        }
+
+                        NotifyOfPropertyChange(nameof(Emails));
+                        this.TrackChange(nameof(Emails));
+                        NotifyOfPropertyChange(nameof(CanSave));
+                    }
                 }
             }
         }
-
-        private ObservableCollection<EmailDTO> _filteredEmails;
-        public ObservableCollection<EmailDTO> FilteredEmails
+        private void Emails_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            get
-            {
-                if (_filteredEmails == null) _filteredEmails = new ObservableCollection<EmailDTO>();
-                _filteredEmails.Clear();
-                if (Emails == null)
-                    return _filteredEmails;
-                foreach (EmailDTO email in Emails)
-                    _filteredEmails.Add(email);
-                return _filteredEmails;
-            }
+            // Se dispara cuando se añade, elimina o modifica un elemento
+            this.TrackChange(nameof(Emails));
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        public void CheckBoxClicked(System.Windows.RoutedEventArgs eventArgs)
+        {
+            WithholdingTypeIds = [.. WithholdingTypes.Where(f => f.IsSelected == true).Select(s => s.Id).ToList()];
+            this.TrackChange(nameof(WithholdingTypeIds));
+            NotifyOfPropertyChange(nameof(WithholdingTypeIds));
+            NotifyOfPropertyChange(nameof(CanSave));
+
         }
 
         private EmailDTO _selectedEmail;
@@ -573,6 +784,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         private BooksDictionaries.CaptureTypeEnum _selectedCaptureType;
+        [ExpandoPath("accountingEntity.captureType")]
         public BooksDictionaries.CaptureTypeEnum SelectedCaptureType
         {
             get => _selectedCaptureType;
@@ -584,14 +796,30 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     NotifyOfPropertyChange(() => SelectedCaptureType);
                     NotifyOfPropertyChange(() => CaptureInfoAsPN);
                     NotifyOfPropertyChange(() => CaptureInfoAsPJ);
+                    this.TrackChange(nameof(SelectedCaptureType));
+
                     if (CaptureInfoAsPN)
                     {
+                        BusinessName = string.Empty;
                         ClearErrors(nameof(BusinessName));
+                        this.TrackChange(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
+
                     }
                     if (CaptureInfoAsPJ)
                     {
+                        FirstName = string.Empty;
+                        FirstLastName = string.Empty;
+                        TradeName = string.Empty;
+                        MiddleLastName = string.Empty;
+                        MiddleName = string.Empty;
+                        this.TrackChange(nameof(FirstName));
+                        this.TrackChange(nameof(FirstLastName));
+                        this.TrackChange(nameof(TradeName));
+                        this.TrackChange(nameof(MiddleLastName));
+                        this.TrackChange(nameof(MiddleName));
+
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -617,6 +845,21 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
             }
         }
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
+
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
+        {
+            get { return _accountingAccounts; }
+            set
+            {
+                if (_accountingAccounts != value)
+                {
+                    _accountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccounts));
+                }
+            }
+        }
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountDevolutions;
 
         public bool CaptureInfoAsPN => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PN);
         public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
@@ -639,6 +882,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 if (CaptureInfoAsPJ && string.IsNullOrEmpty(BusinessName)) return false;
                 // Si la captura de informacion es del tipo persona natural, los datos obligados son primer nombre y primer apellido
                 if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
+                // Si el control de errores por propiedades tiene algun error
+                if (!this.HasChanges()) return false;
                 // Si el control de errores por propiedades tiene algun error
                 return _errors.Count <= 0;
             }
@@ -668,7 +913,6 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 Email = string.Empty;
                 EmailDescription = string.Empty;
                 Emails.Add(email);
-                NotifyOfPropertyChange(nameof(FilteredEmails));
                 _ = this.SetFocus(nameof(EmailDescription));
             }
             catch (Exception ex)
@@ -730,7 +974,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             Address = string.Empty;
             Emails = new ObservableCollection<EmailDTO>();
             SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
             SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
             foreach (WithholdingTypeDTO retention in WithholdingTypes)
             {
@@ -764,9 +1008,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SecondaryCellPhone = string.Empty;
             Address = string.Empty;
             Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "05"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
             foreach (WithholdingTypeDTO retention in WithholdingTypes)
             {
                 retentionList.Add(new WithholdingTypeDTO()
@@ -777,30 +1021,45 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 });
             }
             WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
+            IdentificationTypes = GlobalDataCache.IdentificationTypes;
+            this.AcceptChanges();
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+            this.SeedValue(nameof(WithholdingAppliesOnAnyAmount), false);
+            this.SeedValue(nameof(IsTaxFree), false);
+
+
         }
 
-        
-        public async Task Save()
+
+        public async Task SaveAsync()
         {
             try
             {
                 IsBusy = true;
                 Refresh();
-                SupplierGraphQLModel result = await ExecuteSave();
-                if (IsNewRecord)
+                UpsertResponseType<SupplierGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
                 {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierCreateMessage() { CreatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result)});
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    await Context.EventAggregator.PublishOnUIThreadAsync(new SupplierUpdateMessage() { UpdatedSupplier = Context.AutoMapper.Map<SupplierDTO>(result)});
-                }
-                Context.EnableOnViewReady = false;
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new SupplierCreateMessage() { CreatedSupplier = result }
+                        : new SupplierUpdateMessage() { UpdatedSupplier = result }
+                );
                 await Context.ActivateMasterView();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -812,227 +1071,97 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             {
                 IsBusy = false;
             }
+           
         }
 
-        public async Task<SupplierGraphQLModel> ExecuteSave()
+        public async Task<UpsertResponseType<SupplierGraphQLModel>> ExecuteSaveAsync()
         {
-            string query;
 
             try
             {
-                List<int> retentions = new List<int>();
-                List<object> emailList = new List<object>();
-                List<string> phones = new List<string>();
 
-                if (!string.IsNullOrEmpty(PrimaryPhone)) phones.Add(PrimaryPhone);
-                if (!string.IsNullOrEmpty(SecondaryPhone)) phones.Add(SecondaryPhone);
-                if (!string.IsNullOrEmpty(PrimaryCellPhone)) phones.Add(PrimaryCellPhone);
-                if (!string.IsNullOrEmpty(SecondaryCellPhone)) phones.Add(SecondaryCellPhone);
-
-                if (Emails != null)
+                var transformers = new Dictionary<string, Func<object?, object?>>
                 {
-                    foreach (EmailDTO email in Emails)
+                    [nameof(SupplierDetailViewModel.Emails)] = item =>
                     {
-                        emailList.Add(new { email.Description, email.Email, email.isElectronicInvoiceRecipient });
+                        var email = (EmailGraphQLModel)item!;
+                        return new
+                        {
+                            description = email.Description,
+                            email = email.Email
+                        };
                     }
-                }
-                if (WithholdingTypes != null)
+                };
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
+                string query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();
+                if (IsNewRecord)
                 {
-                    foreach (WithholdingTypeDTO retention in WithholdingTypes)
-                    {
-                        if (retention.IsSelected)
-                            retentions.Add(retention.Id);
-                    }
+
+
+                    UpsertResponseType<SupplierGraphQLModel> supplierCreated = await _supplierService.CreateAsync<UpsertResponseType<SupplierGraphQLModel>>(query, variables);
+                    return supplierCreated; //este
                 }
-
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Data.Entity = new ExpandoObject();
-
-                // Connection
-                if (!IsNewRecord) variables.Id = Id;
-
-                // Customer Data
-                variables.Data.IsTaxFree = false;
-                variables.Data.IcaRetentionMargin = 9.6;
-                variables.Data.IcaRetentionMarginBasis = 100;
-                variables.Data.RetainsAnyBasis = false;
-                variables.Data.IcaAccountingAccountId = 290;
-
-                // Entity Data
-                variables.Data.Entity.IdentificationNumber = IdentificationNumber;
-                variables.Data.Entity.VerificationDigit = SelectedIdentificationType.HasVerificationDigit ? VerificationDigit : "";
-                variables.Data.Entity.CaptureType = SelectedCaptureType;
-                variables.Data.Entity.BusinessName = CaptureInfoAsPJ ? BusinessName : "";
-                variables.Data.Entity.FirstName = CaptureInfoAsPN ? FirstName : "";
-                variables.Data.Entity.MiddleName = CaptureInfoAsPN ? MiddleName : "";
-                variables.Data.Entity.FirstLastName = CaptureInfoAsPN ? FirstLastName : "";
-                variables.Data.Entity.MiddleLastName = CaptureInfoAsPN ? MiddleLastName : "";
-                variables.Data.Entity.Phone1 = PrimaryPhone;
-                variables.Data.Entity.Phone2 = SecondaryPhone;
-                variables.Data.Entity.CellPhone1 = PrimaryCellPhone;
-                variables.Data.Entity.CellPhone2 = SecondaryCellPhone;
-                variables.Data.Entity.Address = Address;
-                variables.Data.Entity.Regime = SelectedRegime;
-                variables.Data.Entity.FullName = $"{variables.Data.Entity.FirstName} {variables.Data.Entity.MiddleName} {variables.Data.Entity.FirstLastName} {variables.Data.Entity.MiddleLastName}".Trim().RemoveExtraSpaces();
-                variables.Data.Entity.TradeName = string.Empty;
-                variables.Data.Entity.SearchName = $"{variables.Data.Entity.FirstName} {variables.Data.Entity.MiddleName} {variables.Data.Entity.FirstLastName} {variables.Data.Entity.MiddleLastName}".Trim().RemoveExtraSpaces() +
-                (CaptureInfoAsPJ ? BusinessName.ToString() : "").Trim().RemoveExtraSpaces();
-                variables.Data.Entity.TelephonicInformation = string.Join(" - ", phones);
-                variables.Data.Entity.CommercialCode = string.Empty;
-                variables.Data.Entity.IdentificationTypeId = SelectedIdentificationType.Id;
-                variables.Data.Entity.CountryId = SelectedCountry.Id;
-                variables.Data.Entity.DepartmentId = SelectedDepartment.Id;
-                variables.Data.Entity.CityId = SelectedCityId;
-
-                // Emails
-                if(emailList.Count == 0) variables.Data.Entity.Emails = new List<object>();
-                if (emailList.Count > 0) 
+                else
                 {
-                    variables.Data.Entity.Emails = new List<object>();
-                    variables.Data.Entity.Emails = emailList; 
+                    variables.updateResponseId = Id;
+
+                    UpsertResponseType<SupplierGraphQLModel> updatedSupplier = await _supplierService.UpdateAsync<UpsertResponseType<SupplierGraphQLModel>>(query, variables);
+                    return updatedSupplier;
                 }
-
-                // Retentions
-                if(retentions.Count == 0) variables.Data.Retentions = new List<object>();
-                if (retentions.Count > 0) 
-                {
-                    variables.Data.Retentions = variables.Data.Retentions = new List<int>();
-                    variables.Data.Retentions = retentions; 
-                }
-
-                query = IsNewRecord ?
-                        @"mutation ($data: CreateSupplierInput!) {
-                          createResponse: createSupplier(data: $data) {
-                            id
-                            isTaxFree
-                            icaRetentionMargin
-                            icaRetentionMarginBasis
-                            retainsAnyBasis
-                            icaAccountingAccount {
-                              id
-                              code
-                              name
-                            }
-                            retentions {
-                              id
-                              name
-                              initialBase
-                              margin
-                              marginBase
-                              retentionGroup
-                            }
-                            entity {
-                              id
-                              identificationType {
-                                id
-                                code
-                              }
-                              country {
-                                id
-                                code
-                              }
-                              department {
-                                id
-                                code
-                              }
-                              city {
-                                id
-                                code
-                              }
-                              identificationNumber
-                              verificationDigit
-                              captureType
-                              searchName
-                              firstName
-                              middleName
-                              firstLastName
-                              middleLastName
-                              businessName
-                              phone1
-                              phone2
-                              cellPhone1
-                              cellPhone2
-                              address
-                              telephonicInformation
-                              emails {
-                                id
-                                description
-                                password
-                                sendElectronicInvoice
-                              }
-                            }
-                          }
-                        }" : @"mutation($data:UpdateSupplierInput!, $id:Int!) {
-                          updateResponse: updateSupplier(data:$data, id:$id) {
-                            id
-                            isTaxFree
-                            icaRetentionMargin
-                            icaRetentionMarginBasis
-                            retainsAnyBasis
-                            icaAccountingAccount {
-                              id
-                              code
-                              name
-                            }
-                            retentions {
-                              id
-                              name
-                              initialBase
-                              margin
-                              marginBase
-                              retentionGroup
-                            }
-                            entity {
-                              id
-                              identificationType {
-                                id
-                                code
-                              }
-                              country {
-                                id
-                                code
-                              }
-                              department {
-                                id
-                                code
-                              }
-                              city {
-                                id
-                                code
-                              }
-                              identificationNumber
-                              verificationDigit
-                              captureType
-                              searchName
-                              firstName
-                              middleName
-                              firstLastName
-                              middleLastName
-                              businessName
-                              phone1
-                              phone2
-                              cellPhone1
-                              cellPhone2
-                              address
-                              telephonicInformation
-                              emails {
-                                id
-                                description
-                                password
-                                sendElectronicInvoice
-                              }
-                            }
-                          }
-                        }";
-
-                SupplierGraphQLModel result = IsNewRecord ? await _supplierService.CreateAsync(query, variables) : await _supplierService.UpdateAsync(query, variables);
-                return result;
             }
             catch (Exception)
             {
                 throw;
             }
+          
+        }
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<SupplierGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "supplier", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.IsTaxFree)
+                   )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateSupplierInput!");
+
+            var fragment = new GraphQLQueryFragment("createSupplier", [parameter], fields, "CreateResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+
+        public string GetUpdateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<SupplierGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "supplier", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.IsTaxFree)
+                    )
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateSupplierInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateSupplier", parameters, fields, "UpdateResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
         public void RemoveEmail(object p)
@@ -1055,80 +1184,25 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public SupplierDetailViewModel(
             SupplierViewModel context,
-            IRepository<SupplierGraphQLModel> supplierService)
+            IRepository<SupplierGraphQLModel> supplierService,
+            ObservableCollection<AccountingAccountGraphQLModel> accountingAccounts)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+            AccountingAccounts = accountingAccounts;
             _supplierService = supplierService;
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
-            try
-            {
-                string query = @"
-                query{
-                  identificationTypes{
-                    id
-                    code
-                    name
-                    hasVerificationDigit
-                    minimumDocumentLength
-                  }
-                  countries{
-                    id
-                    code
-                    name
-                    departments {
-                      id
-                      code
-                      name
-                      cities {
-                        id
-                        code
-                        name
-                      }
-                    }
-                  }
-                  retentionTypes{
-                    id
-                    name
-                  }
-                }";
-
-                object variables = new();
-                var result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
-                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes);
-                WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(result.WithholdingTypes));
-                Countries = new ObservableCollection<CountryGraphQLModel>(result.Countries);
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
+            IdentificationTypes = GlobalDataCache.IdentificationTypes;
+            Countries = GlobalDataCache.Countries;
+            WithholdingTypes = Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(GlobalDataCache.WithholdingTypes);
         }
 
-        //protected override void OnViewReady(object view)
-        //{
-        //    base.OnViewReady(view);
-        //    //ValidateProperties();
-        //    _ = Application.Current.Dispatcher.BeginInvoke(() =>
-        //      {
-        //          SelectedIndexPage = 0; // Selecciona el primer TAB page
-        //          _ = IsNewRecord
-        //                ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
-        //                : CaptureInfoAsPN
-        //                    ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
-        //                    : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
-        //      });
-        //}
+        
 
         protected override void OnViewAttached(object view, object context)
         {
@@ -1144,7 +1218,141 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                           : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
             });
         }
+        public async Task<SupplierGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            try
+            {
+                string query = GetLoadSupplierByIdQuery();
 
+                dynamic variables = new ExpandoObject();
+
+
+                variables.singleItemResponseId = id;
+
+                var Supplier = await _supplierService.FindByIdAsync(query, variables);
+
+                // Poblar el ViewModel con los datos del supplier (sin bloquear UI thread)
+                PopulateFromSupplier(Supplier);
+
+                return Supplier;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+        public void PopulateFromSupplier(SupplierGraphQLModel supplier)
+        {
+            // Propiedades básicas del supplier
+      
+            Id = supplier.Id;
+            VerificationDigit = supplier.AccountingEntity.VerificationDigit;
+            SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), supplier.AccountingEntity.CaptureType);
+            BusinessName = supplier.AccountingEntity.BusinessName;
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == supplier.AccountingEntity.IdentificationType.Code);
+            IdentificationNumber = supplier.AccountingEntity.IdentificationNumber;
+            FirstName = supplier.AccountingEntity.FirstName;
+            MiddleName = supplier.AccountingEntity.MiddleName;
+            FirstLastName = supplier.AccountingEntity.FirstLastName;
+            MiddleLastName = supplier.AccountingEntity.MiddleLastName;
+            PrimaryPhone = supplier.AccountingEntity.PrimaryPhone;
+            SecondaryPhone = supplier.AccountingEntity.SecondaryPhone;
+            PrimaryCellPhone = supplier.AccountingEntity.PrimaryCellPhone;
+            SecondaryCellPhone = supplier.AccountingEntity.SecondaryCellPhone;
+            Emails = supplier.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : Context.AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.AccountingEntity.Emails);
+            SelectedCountry = Countries.FirstOrDefault(c => c.Id == supplier.AccountingEntity.Country.Id);
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.AccountingEntity.Department.Id);
+            SelectedCityId = supplier.AccountingEntity.City.Id;
+            Address = supplier.AccountingEntity.Address;
+            IsTaxFree = supplier.IsTaxFree;
+            IcaWithholdingRate = supplier.IcaWithholdingRate;
+            IcaAccountingAccountId = supplier.IcaAccountingAccount?.Id;
+            TradeName = supplier.AccountingEntity.TradeName;
+            WithholdingAppliesOnAnyAmount = supplier.WithholdingAppliesOnAnyAmount;
+            List<WithholdingTypeDTO> withholdingTypes = [];
+
+            foreach (WithholdingTypeDTO withholdingType in WithholdingTypes)
+            {
+                bool exist = !(supplier.WithholdingTypes is null) && supplier.WithholdingTypes.Any(x => x.Id == withholdingType.Id);
+                withholdingTypes.Add(new WithholdingTypeDTO()
+                {
+                    Id = withholdingType.Id,
+                    Name = withholdingType.Name,
+                    IsSelected = exist
+                });
+            }
+            WithholdingTypes = new System.Collections.ObjectModel.ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
+        }
+        public string GetLoadSupplierByIdQuery()
+        {
+            var supplierFields = FieldSpec<SupplierGraphQLModel>
+             .Create()
+
+                 .Field(e => e.Id)
+                 .Field(e => e.IsTaxFree)
+                 .Field(e => e.IcaWithholdingRate)
+                 .Field(e => e.WithholdingAppliesOnAnyAmount)
+                 
+                 .Select(e => e.AccountingEntity, acc => acc
+                           .Field(c => c.Id)
+                           .Field(c => c.VerificationDigit)
+                           .Field(c => c.IdentificationNumber)
+                           .Field(c => c.FirstName)
+                           .Field(c => c.MiddleName)
+                           .Field(c => c.FirstLastName)
+                           .Field(c => c.MiddleLastName)
+                           .Field(c => c.SearchName)
+                           .Field(c => c.TradeName)
+                           .Field(c => c.BusinessName)
+                           .Field(c => c.PrimaryPhone)
+                           .Field(c => c.SecondaryPhone)
+                           .Field(c => c.PrimaryCellPhone)
+                           .Field(c => c.SecondaryCellPhone)
+                           .Field(c => c.Address)
+                           .Field(c => c.CaptureType)
+                           .Field(c => c.TelephonicInformation)
+                           .Select(e => e.IdentificationType, co => co
+                                   .Field(x => x.Id)
+                                   .Field(x => x.Code)
+                               )
+                           .Select(e => e.Country, co => co
+                                   .Field(x => x.Id)
+                                   .Field(x => x.Code)
+                               )
+                           .Select(e => e.City, co => co
+                                   .Field(x => x.Id)
+                                   .Field(x => x.Code)
+                               )
+                           .Select(e => e.Department, co => co
+                                   .Field(x => x.Id)
+                                   .Field(x => x.Code)
+                                   )
+                           .SelectList(e => e.Emails, co => co
+                                   .Field(x => x.Id)
+                                   .Field(x => x.Description)
+                                   .Field(x => x.Email)
+                                   .Field(x => x.isElectronicInvoiceRecipient)
+                                   )
+                           )
+                 .Select(e => e.IcaAccountingAccount, acc => acc
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                        .Field(c => c.Code)
+                 )
+                 .SelectList(e => e.WithholdingTypes, acc => acc
+                 .Field (e => e.Id)
+                 .Field(e => e.Name)
+                 )
+                  .Build();
+            var supplierIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var supplierFragment = new GraphQLQueryFragment("supplier", [supplierIdParameter], supplierFields, "SingleItemResponse");
+
+            var builder = new GraphQLQueryBuilder([supplierFragment]);
+
+            return builder.GetQuery();
+
+        }
         #endregion
 
         #region Validaciones
@@ -1182,7 +1390,23 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-
+        private void ValidateProperty(string propertyName, decimal value)
+        {
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(IcaWithholdingRate):
+                        if (value < 0 || value > 100) AddError(propertyName, "El valor debe estar entre 0 y 10");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
         private void ValidateProperty(string propertyName, string value)
         {
             try
@@ -1200,7 +1424,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 switch (propertyName)
                 {
                     case nameof(IdentificationNumber):
-                        if (string.IsNullOrEmpty(value) || value.Length < SelectedIdentificationType.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
+                        if (string.IsNullOrEmpty(value) || value.Length < SelectedIdentificationType?.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
                         break;
                     case nameof(FirstName):
                         if (string.IsNullOrEmpty(value) && CaptureInfoAsPN) AddError(propertyName, "El primer nombre no puede estar vacío");

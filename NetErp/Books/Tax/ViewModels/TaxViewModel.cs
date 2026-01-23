@@ -3,10 +3,12 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Models.Billing;
 using Models.Books;
 using NetErp.Books.Tax.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -67,11 +69,18 @@ namespace NetErp.Books.Tax.ViewModels
                 throw new AsyncException(innerException: ex);
             }
         }
-        public async Task ActivateDetailViewForEdit(TaxGraphQLModel? entity)
+        public async Task ActivateDetailViewForEditAsync(int taxId, ObservableCollection<TaxCategoryGraphQLModel> TaxCategories, ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
         {
-            TaxDetailViewModel instance = new(this, entity, _taxService);
-
-
+            TaxDetailViewModel instance = new(this,  _taxService, TaxCategories, AccountingAccounts );
+            
+            await instance.InitializeAsync();
+            TaxGraphQLModel tax = await instance.LoadDataForEditAsync(taxId);
+            await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+        }
+        public async Task ActivateDetailViewForNewAsync( ObservableCollection<TaxCategoryGraphQLModel> TaxCategories, ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
+        {
+            TaxDetailViewModel instance = new(this, _taxService, TaxCategories, AccountingAccounts);
+            await instance.InitializeAsync();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
     }

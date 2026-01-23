@@ -89,7 +89,7 @@
                 EditValuePostDelay="1000"/>
             </StackPanel>
 
-            <dxe:CheckEdit Grid.Row="2" Content="Mostrar unicamente autorizaciones activas" Style="{StaticResource BlueCheckedTextStyle}"
+            <dxe:CheckEdit Grid.Row="2" Content="Mostrar unicamente impuestos activos" Style="{StaticResource BlueCheckedTextStyle}"
                            IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <busyIndicator:BusyMask x:Name="BusyIndicator"
                                 Grid.Row="3"
