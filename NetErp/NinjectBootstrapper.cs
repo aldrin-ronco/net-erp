@@ -104,6 +104,9 @@ namespace NetErp
             // Entity Caches (individual caches per entity for better maintainability)
             _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<WithholdingTypeCache>().ToSelf().InSingletonScope();
+
+            
             _ = kernel.Bind<CountryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<BankAccountCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<MajorCashDrawerCache>().ToSelf().InSingletonScope();
@@ -190,10 +193,11 @@ namespace NetErp
             _ = kernel.Bind<IRepository<TestBalanceByEntityGraphQLModel>>().To<GraphQLRepository<TestBalanceByEntityGraphQLModel>>().InSingletonScope();
 
 
+            _ = kernel.Bind<IRepository<WithholdingTypeGraphQLModel>>().To<GraphQLRepository<WithholdingTypeGraphQLModel>>().InSingletonScope();
+
             
 
-
-             // Global
+            // Global
             _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
 

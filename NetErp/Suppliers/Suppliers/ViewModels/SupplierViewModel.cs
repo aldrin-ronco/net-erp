@@ -10,6 +10,7 @@ using Models.DTO.Global;
 using Models.Suppliers;
 using NetErp.Billing.Sellers.ViewModels;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers.Cache;
 using Ninject.Activation;
 using Services.Billing.DAL.PostgreSQL;
 using System;
@@ -28,7 +29,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         
         private readonly IRepository<SupplierGraphQLModel> _supplierService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IdentificationTypeCache _identificationTypeCache;
+        private readonly WithholdingTypeCache _withholdingTypeCache;
 
+        private readonly CountryCache _countryCache;
         private SupplierMasterViewModel _supplierMasterViewModel;
 
         public SupplierMasterViewModel SupplierMasterViewModel
@@ -45,12 +49,18 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             IEventAggregator eventAggregator,
             IMapper mapper,
             IRepository<SupplierGraphQLModel> supplierService,
-            Helpers.Services.INotificationService notificationService)
+            Helpers.Services.INotificationService notificationService,
+            IdentificationTypeCache identificationTypeCache,
+            CountryCache countryCache,
+            WithholdingTypeCache withholdingTypeCache)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
             _supplierService = supplierService;
             _notificationService = notificationService;
+            _identificationTypeCache = identificationTypeCache;
+            _countryCache = countryCache;
+            _withholdingTypeCache = withholdingTypeCache;
             _ = ActivateMasterView();
         }
 
@@ -79,7 +89,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public async Task ActivateDetailViewForNewAsync(ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
         {
-            SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts);
+            SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache);
            
             instance.CleanUpControlsForNew();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -89,7 +99,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             try
             {
-                SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts);
+                SupplierDetailViewModel instance = new(this, _supplierService, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache);
                 await instance.InitializeAsync();
               
                 SupplierGraphQLModel supplier = await instance.LoadDataForEditAsync(supplierId);

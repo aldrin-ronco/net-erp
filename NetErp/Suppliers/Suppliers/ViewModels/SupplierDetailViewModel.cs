@@ -33,6 +33,7 @@ using Common.Constants;
 using System.Security.Policy;
 using static Dictionaries.BooksDictionaries;
 using DevExpress.Mvvm.Native;
+using NetErp.Helpers.Cache;
 
 
 
@@ -75,7 +76,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         #endregion
 
         #region Properties
-
+        private readonly IdentificationTypeCache _identificationTypeCache;
+        private readonly WithholdingTypeCache _withholdingTypeCache;
+        
+        private readonly CountryCache _countryCache;
         private readonly IRepository<SupplierGraphQLModel> _supplierService;
         public SupplierViewModel Context { get; private set; }
 
@@ -1021,7 +1025,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 });
             }
             WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
-            IdentificationTypes = GlobalDataCache.IdentificationTypes;
+            IdentificationTypes = _identificationTypeCache.Items;
             this.AcceptChanges();
             this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
             this.SeedValue(nameof(SelectedCountry), SelectedCountry);
@@ -1185,21 +1189,33 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public SupplierDetailViewModel(
             SupplierViewModel context,
             IRepository<SupplierGraphQLModel> supplierService,
-            ObservableCollection<AccountingAccountGraphQLModel> accountingAccounts)
+            ObservableCollection<AccountingAccountGraphQLModel> accountingAccounts,
+            IdentificationTypeCache identificationTypeCache,
+            CountryCache countryCache,
+            WithholdingTypeCache withholdingTypeCache)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             AccountingAccounts = accountingAccounts;
             _supplierService = supplierService;
+            _identificationTypeCache = identificationTypeCache;
+            _countryCache = countryCache;
+            _withholdingTypeCache = withholdingTypeCache;
+
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             joinable.Run(async () => await InitializeAsync());
         }
 
         public async Task InitializeAsync()
         {
-            IdentificationTypes = GlobalDataCache.IdentificationTypes;
-            Countries = GlobalDataCache.Countries;
-            WithholdingTypes = Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(GlobalDataCache.WithholdingTypes);
+            await Task.WhenAll(
+                   _identificationTypeCache.EnsureLoadedAsync(),
+                   _countryCache.EnsureLoadedAsync(),
+                   _withholdingTypeCache.EnsureLoadedAsync()
+               );
+            IdentificationTypes = _identificationTypeCache.Items;
+            Countries = _countryCache.Items;
+            WithholdingTypes = Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(_withholdingTypeCache.Items);
         }
 
         
