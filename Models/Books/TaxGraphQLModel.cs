@@ -27,6 +27,7 @@ namespace Models.Books
     {
         public PageType<TaxCategoryGraphQLModel> TaxCategories { get; set; } 
         public PageType<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
+        public PageType<TaxGraphQLModel> Taxes { get; set; }
     }
     public class TaxCreateMessage
     {
