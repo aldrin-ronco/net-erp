@@ -1998,26 +1998,48 @@ namespace NetErp.Treasury.Masters.ViewModels
                 if (isMajor)
                 {
                     var cashDrawers = Context.AutoMapper.Map<ObservableCollection<MajorCashDrawerMasterTreeDTO>>(result.Entries);
-                    Application.Current.Dispatcher.Invoke(() =>
+                    if (cashDrawers.Count > 0)
                     {
-                        foreach (MajorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            cashDrawerDTO.Context = this;
-                            cashDrawerDTO.AuxiliaryCashDrawers.Add(new TreasuryAuxiliaryCashDrawerMasterTreeDTO() { IsDummyChild = true, Name = "Dummy" });
-                            costCenterDTO.CashDrawers.Add(cashDrawerDTO);
-                        }
-                    });
+                            foreach (MajorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
+                            {
+                                cashDrawerDTO.Context = this;
+                                cashDrawerDTO.AuxiliaryCashDrawers.Add(new TreasuryAuxiliaryCashDrawerMasterTreeDTO() { IsDummyChild = true, Name = "Dummy" });
+                                costCenterDTO.CashDrawers.Add(cashDrawerDTO);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            costCenterDTO.IsExpanded = false;
+                        });
+                        _notificationService.ShowInfo("Este centro de costo no tiene cajas generales registradas");
+                    }
                 }
                 else
                 {
                     var cashDrawers = Context.AutoMapper.Map<ObservableCollection<MinorCashDrawerMasterTreeDTO>>(result.Entries);
-                    Application.Current.Dispatcher.Invoke(() =>
+                    if (cashDrawers.Count > 0)
                     {
-                        foreach (MinorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            costCenterDTO.CashDrawers.Add(cashDrawerDTO);
-                        }
-                    });
+                            foreach (MinorCashDrawerMasterTreeDTO cashDrawerDTO in cashDrawers)
+                            {
+                                costCenterDTO.CashDrawers.Add(cashDrawerDTO);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            costCenterDTO.IsExpanded = false;
+                        });
+                        _notificationService.ShowInfo("Este centro de costo no tiene cajas menores registradas");
+                    }
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -2071,6 +2093,14 @@ namespace NetErp.Treasury.Masters.ViewModels
                         }
                     });
                 }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        bankDummyDTO.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("No hay bancos registrados");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -2111,14 +2141,25 @@ namespace NetErp.Treasury.Masters.ViewModels
                 PageType<BankAccountGraphQLModel> result = await _bankAccountService.GetPageAsync(query, variables);
                 var bankAccounts = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountMasterTreeDTO>>(result.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (bankAccounts.Count > 0)
                 {
-                    foreach (TreasuryBankAccountMasterTreeDTO bankAccount in bankAccounts)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        bankAccount.Context = this;
-                        bank.BankAccounts.Add(bankAccount);
-                    }
-                });
+                        foreach (TreasuryBankAccountMasterTreeDTO bankAccount in bankAccounts)
+                        {
+                            bankAccount.Context = this;
+                            bank.BankAccounts.Add(bankAccount);
+                        }
+                    });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        bank.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Este banco no tiene cuentas bancarias registradas");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -2161,13 +2202,24 @@ namespace NetErp.Treasury.Masters.ViewModels
                 PageType<CashDrawerGraphQLModel> result = await _cashDrawerService.GetPageAsync(query, variables);
                 var cashDrawers = Context.AutoMapper.Map<ObservableCollection<TreasuryAuxiliaryCashDrawerMasterTreeDTO>>(result.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (cashDrawers.Count > 0)
                 {
-                    foreach (TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer in cashDrawers)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        majorCashDrawer.AuxiliaryCashDrawers.Add(auxiliaryCashDrawer);
-                    }
-                });
+                        foreach (TreasuryAuxiliaryCashDrawerMasterTreeDTO auxiliaryCashDrawer in cashDrawers)
+                        {
+                            majorCashDrawer.AuxiliaryCashDrawers.Add(auxiliaryCashDrawer);
+                        }
+                    });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        majorCashDrawer.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta caja general no tiene cajas auxiliares registradas");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -2216,6 +2268,14 @@ namespace NetErp.Treasury.Masters.ViewModels
                             franchiseDummyDTO?.Franchises.Add(franchise);
                         }
                     });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        franchiseDummyDTO.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("No hay franquicias registradas");
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)

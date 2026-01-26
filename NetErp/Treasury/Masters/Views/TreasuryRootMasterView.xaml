@@ -433,6 +433,19 @@
                         <EventSetter Event="Loaded" Handler="TreeViewControlView_Loaded"/>
                     </Style>
                 </dxg:TreeViewControl.Resources>
+                <dxg:TreeViewControl.NodeStyle>
+                    <Style TargetType="dxg:RowControl">
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Foreground" Value="Blue"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </dxg:TreeViewControl.NodeStyle>
             </dxg:TreeViewControl>
         </Grid>
             
