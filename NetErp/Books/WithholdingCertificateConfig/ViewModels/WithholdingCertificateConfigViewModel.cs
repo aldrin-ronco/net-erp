@@ -6,6 +6,7 @@ using DevExpress.Xpf.Core;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.ViewModels;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers.Cache;
 using Ninject.Activation;
 using Services.Books.DAL.PostgreSQL;
 using System;
@@ -22,6 +23,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         public IMapper AutoMapper { get; private set; }
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
+        private readonly CtasRestVtasAccountingAccountGroupCache _ctasRestVtasAccountingAccountGroupCache;
+        private readonly CostCenterCache _costCenterCache;
+
         public IEventAggregator EventAggregator { get; private set; }
 
         private WithholdingCertificateConfigMasterViewModel _withholdingCertificateConfigMasterViewModel;
@@ -35,12 +39,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        public WithholdingCertificateConfigViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
+        public WithholdingCertificateConfigViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService, CtasRestVtasAccountingAccountGroupCache ctasRestVtasAccountingAccountGroupCache, CostCenterCache costCenterCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
+            _ctasRestVtasAccountingAccountGroupCache = ctasRestVtasAccountingAccountGroupCache ?? throw new ArgumentNullException(nameof(ctasRestVtasAccountingAccountGroupCache));
             _ = Task.Run(async () =>
             {
                 try
@@ -57,6 +62,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             });
             EventAggregator = eventAggregator;
+            _costCenterCache = costCenterCache;
         }
 
         public async Task ActivateMasterViewModelAsync()
@@ -70,10 +76,18 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 throw new AsyncException(innerException: ex);
             }
         }
-        public async Task ActivateDetailViewForEdit(WithholdingCertificateConfigGraphQLModel? selectedItem)
+        public async Task ActivateDetailViewForEdit(WithholdingCertificateConfigGraphQLModel selectedItem)
         {
-            WithholdingCertificateConfigDetailViewModel instance = new(this, selectedItem, _withholdingCertificateConfigService);
-           
+            WithholdingCertificateConfigDetailViewModel instance = new(this,  _withholdingCertificateConfigService, _ctasRestVtasAccountingAccountGroupCache, _costCenterCache);
+          
+            WithholdingCertificateConfigGraphQLModel certificate = await instance.LoadDataForEditAsync(selectedItem.Id);
+            await instance.InitializeAsync();
+            await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+        }
+        public async Task ActivateDetailViewForNew()
+        {
+            WithholdingCertificateConfigDetailViewModel instance = new(this,  _withholdingCertificateConfigService, _ctasRestVtasAccountingAccountGroupCache, _costCenterCache);
+            await instance.InitializeAsync();
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }

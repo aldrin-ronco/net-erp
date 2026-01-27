@@ -667,7 +667,7 @@ namespace NetErp.Books.Tax.ViewModels
         }
         public string GetLoadSByIdQuery()
         {
-            var sellersFields = FieldSpec<TaxGraphQLModel>
+            var taxFields = FieldSpec<TaxGraphQLModel>
              .Create()
 
                  .Field(e => e.Id)
@@ -704,11 +704,11 @@ namespace NetErp.Books.Tax.ViewModels
 
 
              ).Build();
-            var sellerIdParameter = new GraphQLQueryParameter("id", "ID!");
+            var taxIdParameter = new GraphQLQueryParameter("id", "ID!");
 
-            var sellerFragment = new GraphQLQueryFragment("tax", [sellerIdParameter], sellersFields, "SingleItemResponse");
+            var taxFragment = new GraphQLQueryFragment("tax", [taxIdParameter], taxFields, "SingleItemResponse");
 
-            var builder = new GraphQLQueryBuilder([sellerFragment]);
+            var builder = new GraphQLQueryBuilder([taxFragment]);
 
             return builder.GetQuery();
 
