@@ -28,6 +28,7 @@ namespace Models.Books
 
     public class AccountingAccountGroupUpdateMessage
     {
+        public UpsertResponseType<AccountingAccountGroupGraphQLModel> UpsertAccountingAccountGroup { get; set; }
         public AccountingAccountGroupGraphQLModel UpdateAccountingAccountGroup { get; set; }
     }
 }

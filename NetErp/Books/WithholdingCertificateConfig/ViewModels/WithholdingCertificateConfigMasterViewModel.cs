@@ -176,7 +176,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
         private async void ExecuteChangeIndex(object parameter)
         {
-            await LoadWithholdingCertificateConfig();
+            await LoadWithholdingCertificateConfigAsync();
         }
 
         private bool CanExecuteChangeIndex(object parameter)
@@ -191,7 +191,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             get
             {
-                if (_deleteCommand is null) _deleteCommand = new AsyncCommand(DeleteCertificate, CanDeleteCertificate);
+                if (_deleteCommand is null) _deleteCommand = new AsyncCommand(DeleteCertificateAsync, CanDeleteCertificate);
                 return _deleteCommand;
             }
         }
@@ -214,7 +214,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 return _newCommand;
             }
         }
-        public async Task DeleteCertificate()
+        public async Task DeleteCertificateAsync()
         {
             try
             {
@@ -240,7 +240,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
                
                 Refresh();
-                var deletedCertificate = await ExecuteDeleteCertificate(id);
+                var deletedCertificate = await ExecuteDeleteCertificateAsync(id);
 
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(new     WithholdingCertificateConfigDeleteMessage { DeletedWithholdingCertificateConfig = deletedCertificate });
 
@@ -303,7 +303,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
-        public async Task<DeleteResponseType> ExecuteDeleteCertificate(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteCertificateAsync(int id)
         {
             try
             {
@@ -333,8 +333,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedWithholdingCertificateConfigGraphQLModel = null;
-                await Task.Run(() => ExecuteActivateWithholdingCertificateConfig());
-                SelectedWithholdingCertificateConfigGraphQLModel = null;
+                await Task.Run(() => ExecuteActivateWithholdingCertificateConfigForNewAsync());
+                
             }
             catch (Exception ex)
             {
@@ -352,7 +352,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Task.Run(() => ExecuteActivateWithholdingCertificateConfig());
+                await Task.Run(() => ExecuteActivateWithholdingCertificateConfigAsync());
                 SelectedWithholdingCertificateConfigGraphQLModel = null;
             }
             catch (Exception ex)
@@ -365,16 +365,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task ExecuteActivateWithholdingCertificateConfig()
+        public async Task ExecuteActivateWithholdingCertificateConfigAsync()
         {
             await Context.ActivateDetailViewForEdit(SelectedWithholdingCertificateConfigGraphQLModel);
         }
-       
+        public async Task ExecuteActivateWithholdingCertificateConfigForNewAsync()
+        {
+            await Context.ActivateDetailViewForNew();
+        }
+        
+        
         public async Task InitializeAsync()
         {
-           await LoadWithholdingCertificateConfig();
+           await LoadWithholdingCertificateConfigAsync();
         }
-        public async Task LoadWithholdingCertificateConfig()
+        public async Task LoadWithholdingCertificateConfigAsync()
         {
             try
             {
@@ -420,26 +425,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                   .Field(e => e.Id)
                   .Field(e => e.Description)
                   .Field(e => e.Name)
-                  .SelectList(e => e.AccountingAccounts, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-
-                  )
-                  .Select(e => e.CostCenter, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-                      .Field(c => c.Address)
-                      .Select(e => e.City, cit => cit
-                              .Field(d => d.Id)
-                              .Field(d => d.Name)
-                              .Select(d => d.Department, dep => dep
-                              .Field(d => d.Id)
-                              .Field(d => d.Name)
-                              )
-                      )
-                      
-                  
-                  )
+ 
               )
               .Field(o => o.PageNumber)
               .Field(o => o.PageSize)
@@ -454,22 +440,22 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
         public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess("El Certificado fue eliminado correctamente");
-            await LoadWithholdingCertificateConfig();
+            _notificationService.ShowSuccess(message.DeletedWithholdingCertificateConfig.Message);
+            await LoadWithholdingCertificateConfigAsync();
            
         }
 
         public async Task HandleAsync(WithholdingCertificateConfigUpdateMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess("El Certificado fue actualizado correctamente");
-            await LoadWithholdingCertificateConfig();
+            _notificationService.ShowSuccess(message.UpdatedWithholdingCertificateConfig.Message);
+            await LoadWithholdingCertificateConfigAsync();
             
         }
 
         public async Task HandleAsync(WithholdingCertificateConfigCreateMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess("El Certificado fue creado correctamente");
-            await LoadWithholdingCertificateConfig();
+            _notificationService.ShowSuccess(message.CreatedWithholdingCertificateConfig.Message);
+            await LoadWithholdingCertificateConfigAsync();
             
         }
 

@@ -5,35 +5,28 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
-using Models.Global;
 using NetErp.Books.AccountingAccountGroups.DTO;
-using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
-using Ninject.Infrastructure.Language;
-using Services.Books.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Xml.Linq;
-using Xceed.Wpf.Toolkit.Primitives;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
-using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
@@ -41,29 +34,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
     {
 
         private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
+        private readonly CtasRestVtasAccountingAccountGroupCache _ctasRestVtasAccountingAccountGroupCache;
+        private readonly CostCenterCache _costCenterCache;
 
-
-        public WithholdingCertificateConfigDetailViewModel(WithholdingCertificateConfigViewModel context, WithholdingCertificateConfigGraphQLModel? entity, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
+        public WithholdingCertificateConfigDetailViewModel(WithholdingCertificateConfigViewModel context,  IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService, CtasRestVtasAccountingAccountGroupCache ctasRestVtasAccountingAccountGroupCache, CostCenterCache costCenterCache)
         {
             _errors = new Dictionary<string, List<string>>();
             Context = context;
+            _ctasRestVtasAccountingAccountGroupCache = ctasRestVtasAccountingAccountGroupCache ?? throw new ArgumentNullException(nameof(ctasRestVtasAccountingAccountGroupCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
             _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
-            if (entity != null)
-            {
-                Entity = entity;
-                Name = entity.Name;
-                Description = entity.Description;
-                IsNewRecord = false;
-            }
-            else
-            {
-                IsNewRecord = true;
-                
-            }
+       
 
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
+           // joinable.Run(async () => await InitializeAsync());
 
         }
         #region Propiedades
@@ -95,21 +80,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
-        private List<int> _accountingAccountsIds;
-        public List<int> AccountingAccountIds
-        {
-            get { return _accountingAccountsIds; }
-            set
-            {
-                if (_accountingAccountsIds != value)
-                {
-                    _accountingAccountsIds = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccountIds));
-                    this.TrackChange(nameof(AccountingAccountIds));
+        [ExpandoPath("AccountingAccountIds")]
+        public List<int> AccountingAccountIds => AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id).ToList();
 
-                }
-            }
-        }
+        
         private string _description;
         public string Description
         {
@@ -147,19 +121,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         Dictionary<string, List<string>> _errors;
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-        private bool _isNewRecord = false;
-
+        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
         public bool IsNewRecord
         {
             get { return _isNewRecord; }
-            set
-            {
-                if (_isNewRecord != value)
-                {
-                    _isNewRecord = value;
-                    NotifyOfPropertyChange(nameof(IsNewRecord));
-                }
-            }
+            
         }
         protected override void OnViewReady(object view)
         {
@@ -173,7 +139,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             get
             {
-                AccountingAccountIds = [.. AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id)];
+              
                 if (string.IsNullOrEmpty(Name)) return false;
 
                 // Debe haber ingresado una descripcion
@@ -182,7 +148,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 if (CostCenterId == null || CostCenterId == 0) return false;
 
                 if (!AccountingAccounts.Any(x => x.IsChecked == true)) return false;
-
+                if (_errors.Count > 0 || !this.HasChanges()) { return false; }
+               
                 // Debe haber ingresado un nombre
                 return true;
             }
@@ -246,10 +213,52 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     _accountingAccounts = value;
                    
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
-                   
+                    ListenAccountingAccountChek();
+
                 }
             }
         }
+        private void ListenAccountingAccountChek()
+        {
+            foreach (var account in AccountingAccounts)
+            {
+                account.PropertyChanged += AccountingAccount_PropertyChanged;
+            }
+
+            // Escuchar cuando se agregan nuevos elementos
+            AccountingAccounts.CollectionChanged += AccountingAccount_CollectionChanged;
+        }
+        private void AccountingAccount_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AccountingAccountGroupDetailDTO.IsChecked))
+            {
+                // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
+                NotifyOfPropertyChange(() => AccountingAccountIds);
+                this.TrackChange(nameof(AccountingAccountIds));
+
+                NotifyOfPropertyChange(() => CanSave);
+               
+            }
+        }
+        private void AccountingAccount_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Escuchar cambios de los nuevos elementos
+            if (e.NewItems != null)
+            {
+                foreach (AccountingAccountGroupDetailDTO p in e.NewItems)
+                    p.PropertyChanged += AccountingAccount_PropertyChanged;
+            }
+
+            // Opcional: dejar de escuchar eliminados
+            if (e.OldItems != null)
+            {
+                foreach (AccountingAccountGroupDetailDTO p in e.OldItems)
+                    p.PropertyChanged -= AccountingAccount_PropertyChanged;
+            }
+
+            NotifyOfPropertyChange(() => CanSave);
+        }
+
         private bool _isBusy;
 
         public bool IsBusy
@@ -306,8 +315,25 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task InitializeAsync()
         {
+            await Task.WhenAll(
+                  _ctasRestVtasAccountingAccountGroupCache.EnsureLoadedAsync(),
+                  _costCenterCache.EnsureLoadedAsync()
+                  );
+            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items);
+            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            CostCenterId = Entity?.CostCenter?.Id ?? 0;
+           
+            //Cuentas
+            IEnumerable<AccountingAccountGroupGraphQLModel> source = _ctasRestVtasAccountingAccountGroupCache.Items; //result.AccountingAccountGroups.Entries;
+            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().Accounts);
+            foreach (var accountingAccount in acgd)
+            {
+                accountingAccount.Context = this;
+                accountingAccount.IsChecked = Entity?.AccountingAccounts?.FirstOrDefault(x => x.Id == accountingAccount.Id) != null ? true : false;
+            }
 
-            await getDataAsync();
+            AccountingAccounts = [.. acgd];
+            this.AcceptChanges();
 
         }
 
@@ -440,104 +466,82 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
       
        
-        private async Task getDataAsync()
+       
+        public async Task<WithholdingCertificateConfigGraphQLModel> LoadDataForEditAsync(int id)
         {
             try
             {
-                
-            string query = GetLoadDataQuery();
+                string query = GetLoadSByIdQuery();
 
-            dynamic variables = new ExpandoObject();
-            variables.accountingAccountGroupFilterInput = new ExpandoObject();
-            variables.accountingAccountGroupFilterInput.key  = "CTAS_RETS_VTAS";
+                dynamic variables = new ExpandoObject();
 
 
-            WithholdingCertificateConfigDataContext result = await _withholdingCertificateConfigService.GetDataContextAsync<WithholdingCertificateConfigDataContext>(query, variables);
+                variables.singleItemResponseId = id;
 
-            // CostCenters
-            CostCenters = [.. Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters.Entries)];
-            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            if (!IsNewRecord)
-            {
-                CostCenterId = Entity.CostCenter.Id;
-            }
-            else
-            {
-                CostCenterId = 0;
-            }
-            //Cuentas
-            IEnumerable<AccountingAccountGroupGraphQLModel> source = result.AccountingAccountGroups.Entries;
-            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().Accounts);
-            foreach (var accountingAccount in acgd)
-            {
-                accountingAccount.Context = this;
-                accountingAccount.IsChecked = Entity?.AccountingAccounts?.FirstOrDefault(x => x.Id == accountingAccount.Id) != null ? true : false;
-            }
+                var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
 
-            AccountingAccounts = [.. acgd];
+                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
+                PopulateFromTax(certificate);
+
+                return certificate;
             }
             catch (Exception ex)
             {
-                throw;
+                throw new AsyncException(innerException: ex);
             }
-            finally
-            {
-                IsBusy = false;
-            }
+        }
+        public void PopulateFromTax(WithholdingCertificateConfigGraphQLModel entity)
+        {
+            // Propiedades básicas del tax
+            Name = entity.Name;
+            Description = entity.Description;
+            CostCenterId = entity.CostCenter.Id;
+            Entity = entity;
+            this.AcceptChanges();
+
+
 
         }
-        public string GetLoadDataQuery(bool withCostCenter = false)
+        public string GetLoadSByIdQuery()
         {
-            var accountingAccountGroupFields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
+            var singleIdFields = FieldSpec<WithholdingCertificateConfigGraphQLModel>
              .Create()
-             .SelectList(it => it.Entries, entries => entries
+
                  .Field(e => e.Id)
-                 .Field(e => e.Name)
-                 .Field(e => e.Key)
-                 .SelectList(e => e.Accounts, cat => cat
-                     .Field(c => c.Id)
-                     .Field(c => c.Name)
-                     .Field(c => c.Code)
+                     
+                  .Field(e => e.Description)
+                  .Field(e => e.Name)
+                  .SelectList(e => e.AccountingAccounts, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
 
-                 )
-             )
-             .Field(o => o.PageNumber)
-             .Field(o => o.PageSize)
-             .Field(o => o.TotalPages)
-             .Field(o => o.TotalEntries)
+                  )
+                  .Select(e => e.CostCenter, cat => cat
+                      .Field(c => c.Id)
+                      .Field(c => c.Name)
+                      .Field(c => c.Address)
+                      .Select(e => e.City, cit => cit
+                              .Field(d => d.Id)
+                              .Field(d => d.Name)
+                              .Select(d => d.Department, dep => dep
+                              .Field(d => d.Id)
+                              .Field(d => d.Name)
+                              )
+                      )
+
+
+                  )
+              
+
              .Build();
+            var singleIdParameter = new GraphQLQueryParameter("id", "ID!");
 
-            var accountingAccountGroupParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var accountingAccountGroupFilterParameters = new GraphQLQueryParameter("filters", "AccountingAccountGroupFilters");
-            var accountingAccountGroupFragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [accountingAccountGroupParameters, accountingAccountGroupFilterParameters], accountingAccountGroupFields, "AccountingAccountGroups");
+            var singleIdFragment = new GraphQLQueryFragment("withholdingCertificate", [singleIdParameter], singleIdFields, "SingleItemResponse");
 
-            var costCenterFields = FieldSpec<PageType<CostCenterGraphQLModel>>
-               .Create()
-               .SelectList(it => it.Entries, entries => entries
-                   .Field(e => e.Id)
-                   .Field(e => e.Name)
-                   .Field(e => e.Address)
-                   .Select(e => e.City, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            .Select(c => c.Department, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Name)
-                            )
+            var builder = new GraphQLQueryBuilder([singleIdFragment]);
 
-                    )
-
-               )
-               .Field(o => o.PageNumber)
-               .Field(o => o.PageSize)
-               .Field(o => o.TotalPages)
-               .Field(o => o.TotalEntries)
-               .Build();
-         
-            var costCenterFragment = new GraphQLQueryFragment("costCentersPage", [], costCenterFields, "CostCenters");
-
-            var builder =  new GraphQLQueryBuilder([accountingAccountGroupFragment, costCenterFragment]);
             return builder.GetQuery();
+
         }
         private void ClearErrors(string propertyName)
         {
