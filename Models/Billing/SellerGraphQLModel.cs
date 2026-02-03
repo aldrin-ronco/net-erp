@@ -45,12 +45,5 @@ namespace Models.Billing
     {
         public SellerGraphQLModel Seller { get; set; }
     }
-        public class SellersDataContext
-    {
-        public PageType<IdentificationTypeGraphQLModel> IdentificationTypes { get; set; }
-        public PageType<CountryGraphQLModel> Countries { get; set; }
-        public PageType<CostCenterGraphQLModel> CostCenters { get; set; }
-        public PageType<ZoneGraphQLModel> Zones { get; set; }
-        public PageType<SellerGraphQLModel> sellersPage { get; set; }
-    }
+      
 }

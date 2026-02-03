@@ -1,34 +1,35 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Data.Utils;
+using DevExpress.Mvvm;
+using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
-using Common.Extensions;
+using Extensions.Sellers;
 using GraphQL.Client.Http;
 using Models.Billing;
+using Models.Books;
 using Models.Global;
+using Models.Suppliers;
+using NetErp.Billing.Customers.ViewModels;
+using NetErp.Billing.Zones.DTO;
+using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Ninject.Activation;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
-using Extensions.Sellers;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using DevExpress.Mvvm;
-using NetErp.Billing.Customers.ViewModels;
-using NetErp.Helpers;
-using Models.Books;
-using Models.Suppliers;
-using NetErp.Global.CostCenters.DTO;
-using Ninject.Activation;
-using NetErp.Billing.Zones.DTO;
-using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
-using DevExpress.Mvvm.Native;
-using DevExpress.Data.Utils;
-using Services.Books.DAL.PostgreSQL;
 
 namespace NetErp.Billing.Sellers.ViewModels
 {
@@ -40,6 +41,7 @@ namespace NetErp.Billing.Sellers.ViewModels
     {
         private readonly IRepository<SellerGraphQLModel> _sellerService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly CostCenterCache _costCenterCache;
         public SellerViewModel Context { get; set; }
 
         private bool _isBusy = false;
@@ -371,14 +373,19 @@ namespace NetErp.Billing.Sellers.ViewModels
         public SellerMasterViewModel(
             SellerViewModel context,
             IRepository<SellerGraphQLModel> sellerService,
+            CostCenterCache costCenterCache,
             Helpers.Services.INotificationService notificationService)
         {
             Context = context;
             _sellerService = sellerService;
             _notificationService = notificationService;
+            _costCenterCache = costCenterCache;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ = Task.Run(async () => 
             {
+                await Task.WhenAll(
+              _costCenterCache.EnsureLoadedAsync()
+              );
                 try
                 {
                     await InitializeAsync();
@@ -404,71 +411,13 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public async Task InitializeAsync()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-               
-                string query = GetLoadSellersDataQuery(true);
-                
-                dynamic variables = new ExpandoObject();
-
-                variables.sellersPageFilters = new ExpandoObject();
-                if (!string.IsNullOrEmpty(FilterSearch))
-                {
-                    variables.sellersPageFilters.Matching = FilterSearch;
-                }
-
-                if (ShowActiveSellersOnly)
-                {
-
-                    variables.sellersPageFilters.isActive = true;
-                }
-
-                if (SelectedCostCenterId != 0)
-                {
-
-                    variables.sellersPageFilters.costCenterIds = SelectedCostCenterId;
-                }
-
-
-
-                //Paginación
-                variables.sellersPagePagination = new ExpandoObject();
-                variables.sellersPagePagination.Page = PageIndex;
-                variables.sellersPagePagination.PageSize = PageSize;
-
-
-                SellersDataContext result = await _sellerService.GetDataContextAsync<SellersDataContext>(query, variables);
-                stopwatch.Stop();
-                Context.CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.CostCenters.Entries);
-                Context.IdentificationTypes = result.IdentificationTypes.Entries;
-                Context.Countries = result.Countries.Entries;
-                Context.Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(result.Zones.Entries);
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    CostCenters = result.CostCenters.Entries;
-                    CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS CENTROS DE COSTOS" });
-                    Sellers = Context.AutoMapper.Map<ObservableCollection<SellerDTO>>(result.sellersPage.Entries);
-                });
-                TotalCount = result.sellersPage.TotalEntries;
-                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-            }
-            catch (Exception ex)
-            {
-
-                throw new AsyncException(innerException: ex);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+           
+            CostCenters = _costCenterCache.Items;
+            CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS CENTROS DE COSTOS" });
+           await LoadSellersAsync();
+            
         }
-        public string GetLoadSellersDataQuery(bool withDependencies = false)
+        public string GetLoadSellersDataQuery()
         {
 
             var sellersFields = FieldSpec<PageType<SellerGraphQLModel>>
@@ -498,85 +447,14 @@ namespace NetErp.Billing.Sellers.ViewModels
 
 
 
-            var identificationTypesFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-                  .Field(e => e.Code)
-                  .Field(e => e.HasVerificationDigit)
-                  .Field(e => e.MinimumDocumentLength)
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-
-            var countriesFields = FieldSpec<PageType<CountryGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-                  .Field(e => e.Code)
-                  .SelectList(e => e.Departments, co => co
-                                    .Field(x => x.Id)
-                                    .Field(x => x.Code)
-                                    .Field(x => x.Name)
-                                    .SelectList(e => e.Cities, co => co
-                                        .Field(x => x.Id)
-                                        .Field(x => x.Code)
-                                        .Field(x => x.Name)
-                                )
-                                )
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-
-
-            var costCentersFields = FieldSpec<PageType<CostCenterGraphQLModel>>
-            .Create()
-            .SelectList(it => it.Entries, entries => entries
-                .Field(e => e.Id)
-                .Field(e => e.Name)
-                
-               
-            )
-            .Field(o => o.PageNumber)
-            .Field(o => o.PageSize)
-            .Field(o => o.TotalPages)
-            .Field(o => o.TotalEntries)
-            .Build();
-
-            var zonesFields = FieldSpec<PageType<ZoneGraphQLModel>>
-            .Create()
-            .SelectList(it => it.Entries, entries => entries
-                .Field(e => e.Id)
-                .Field(e => e.Name)
-
-
-            )
-            .Field(o => o.PageNumber)
-            .Field(o => o.PageSize)
-            .Field(o => o.TotalPages)
-            .Field(o => o.TotalEntries)
-            .Build();
+           
 
             var sellersPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var sellersParameters = new GraphQLQueryParameter("filters", "SellerFilters");
-            var sellersFragment = new GraphQLQueryFragment("sellersPage", [sellersPagParameters, sellersParameters], sellersFields,withDependencies? "sellersPage" : "pageResponse");
+            var sellersFragment = new GraphQLQueryFragment("sellersPage", [sellersPagParameters, sellersParameters], sellersFields, "pageResponse");
 
-            var identificationTypesFragment = new GraphQLQueryFragment("identificationTypesPage", [], identificationTypesFields, "IdentificationTypes");
-            var countriesFragment = new GraphQLQueryFragment("countriesPage", [], countriesFields, "Countries");
-            var costCentersFragment = new GraphQLQueryFragment("costCentersPage", [], costCentersFields, "costCenters");
-
-            var zonesFragment = new GraphQLQueryFragment("zonesPage", [], zonesFields, "zones");
-
-
-            var builder = withDependencies ? new GraphQLQueryBuilder([sellersFragment, identificationTypesFragment, countriesFragment, costCentersFragment, zonesFragment]) : new GraphQLQueryBuilder([sellersFragment]);
+           
+            var builder =  new GraphQLQueryBuilder([sellersFragment]);
             return builder.GetQuery();
         }
         public async Task LoadSellersAsync()
