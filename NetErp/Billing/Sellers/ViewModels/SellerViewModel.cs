@@ -11,6 +11,7 @@ using Models.Global;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.Zones.DTO;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers.Cache;
 using Ninject.Activation;
 using System;
 using System.Collections.ObjectModel;
@@ -25,68 +26,20 @@ namespace NetErp.Billing.Sellers.ViewModels
         public IEventAggregator EventAggregator { get; private set; }
         private readonly IRepository<SellerGraphQLModel> _sellerService;
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
-        private readonly Helpers.Services.INotificationService _notificationService;     
+        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly IdentificationTypeCache _identificationTypeCache;
+        private readonly CountryCache _countryCache;
+        private readonly ZoneCache _zoneCache;
 
-        private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
-        {
-            get => _identificationTypes;
-            set
-            {
-                if (_identificationTypes != value)
-                {
-                    _identificationTypes = value;
-                    NotifyOfPropertyChange(nameof(IdentificationTypes));
-                }
-            }
-        }
-        private ObservableCollection<ZoneDTO> _zones;
-        public ObservableCollection<ZoneDTO> Zones
-        {
-            get => _zones;
-            set
-            {
-                if (_zones != value)
-                {
-                    _zones = value;
-                    NotifyOfPropertyChange(nameof(Zones));
-                }
-            }
-        }
-        private ObservableCollection<CostCenterDTO> _costCenters;
-        public ObservableCollection<CostCenterDTO> CostCenters
-        {
-            get => _costCenters;
-            set
-            {
-                if (_costCenters != value)
-                {
-                    _costCenters = value;
-                    NotifyOfPropertyChange(nameof(CostCenters));
-                }
-            }
-        }
-
-        private ObservableCollection<CountryGraphQLModel> _countries;
-        public ObservableCollection<CountryGraphQLModel> Countries
-        {
-            get => _countries;
-            set
-            {
-                if (_countries != value)
-                {
-                    _countries = value;
-                    NotifyOfPropertyChange(nameof(Countries));
-                }
-            }
-        }
+      
 
         private SellerMasterViewModel _sellerMasterViewModel;
         public SellerMasterViewModel SellerMasterViewModel 
         { 
             get 
             {
-                if (_sellerMasterViewModel is null) _sellerMasterViewModel = new SellerMasterViewModel(this, _sellerService, _notificationService);
+                if (_sellerMasterViewModel is null) _sellerMasterViewModel = new SellerMasterViewModel(this, _sellerService, _costCenterCache, _notificationService );
                 return _sellerMasterViewModel;
             } 
         }
@@ -107,13 +60,21 @@ namespace NetErp.Billing.Sellers.ViewModels
             IEventAggregator eventAggregator,
             IRepository<SellerGraphQLModel> sellerService,
             IRepository<ZoneGraphQLModel> zoneService,
-            Helpers.Services.INotificationService notificationService)
+            Helpers.Services.INotificationService notificationService,
+            CostCenterCache costCenterCache,
+            IdentificationTypeCache identificationTypeCache,
+            CountryCache countryCache,
+            ZoneCache zoneCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _sellerService = sellerService;
             _zoneService = zoneService;
             _notificationService = notificationService;
+            _costCenterCache = costCenterCache;
+            _countryCache = countryCache;
+            _identificationTypeCache = identificationTypeCache;
+            _zoneCache = zoneCache;
             _ = Task.Run(async () => 
             {
                 try
@@ -157,7 +118,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
                 await instance.InitializeAsync();
                 instance.CleanUpControls();
                 
@@ -182,24 +143,10 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService);
+               
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
                 await instance.InitializeAsync();
                 SellerGraphQLModel seller =  await instance.LoadDataForEditAsync(sellerId);
-                foreach (CostCenterDTO costCenter in CostCenters)
-                {
-                    bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
-                    costCentersSelection.Add(new CostCenterDTO()
-                    {
-                        Id = costCenter.Id,
-                        Name = costCenter.Name,
-                        IsSelected = exist
-                    });
-                }
-               
-                instance.Zones = [.. Zones];
-
-                instance.CostCenters = costCentersSelection;
                 instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
