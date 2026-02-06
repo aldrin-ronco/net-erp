@@ -1,40 +1,26 @@
-﻿using Amazon.S3.Model;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using Common.Validators;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
-using DevExpress.Pdf.Drawing.DirectX;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
-using Models.Billing;
-using Models.Books;
 using Models.Global;
-using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Services.Books.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
-using System.Net;
-using System.Reactive.Concurrency;
-using System.Text;
+
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static Amazon.S3.Util.S3EventNotification;
-using static Chilkat.Http;
-using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+
 using static Models.Global.GraphQLResponseTypes;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
@@ -47,13 +33,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         public AuthorizationSequenceViewModel Context { get; set; }
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
-        public AuthorizationSequenceMasterViewModel(AuthorizationSequenceViewModel context, Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService)
+        private readonly CostCenterCache _costCenterCache;
+        public AuthorizationSequenceMasterViewModel(AuthorizationSequenceViewModel context, Helpers.Services.INotificationService notificationService, IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService, CostCenterCache costCenterCache)
         {
             Context = context;
             _notificationService = notificationService;
             _authorizationSequenceService = authorizationSequenceService;
             Context.EventAggregator.SubscribeOnUIThread(this);
-
+            _costCenterCache = costCenterCache;
             _ = InitializeAsync();
         }
 
@@ -196,7 +183,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedAuthorizationSequenceGraphQLModel = null;
-                await Task.Run(() => ExecuteActivateDetailViewForEditAsync());
+                await Task.Run(() => ExecuteActivateDetailViewForNewAsync());
             }
             catch (Exception ex)
             {
@@ -348,13 +335,21 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         }
         public async Task ExecuteActivateDetailViewForEditAsync()
         {
-            await Context.ActivateDetailViewForEdit(SelectedAuthorizationSequenceGraphQLModel, Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(CostCenters));
+            await Context.ActivateDetailViewForEditAsync(SelectedAuthorizationSequenceGraphQLModel.Id);
         }
-
+        public async Task ExecuteActivateDetailViewForNewAsync()
+        {
+            await Context.ActivateDetailViewForNewAsync();
+        }
         public async Task InitializeAsync()
         {
-           
-            await LoadListAsync();
+            await Task.WhenAll(
+                  _costCenterCache.EnsureLoadedAsync()
+                  );
+            ObservableCollection<CostCenterGraphQLModel> costCenter = _costCenterCache.Items;
+            costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            CostCenters = [.. costCenter];
+            await LoadAuthorizationSequenceAsync();
             this.SetFocus(() => FilterSearch);
         }
 
@@ -368,7 +363,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             stopwatch.Start();
             IsBusy = true;
            
-            string query = GetLoadAuthorizationSequenceQuery(true);
+            string query = GetLoadAuthorizationSequenceQuery();
 
             dynamic variables = new ExpandoObject();
             variables.authorizationSequencesFilters = new ExpandoObject();
@@ -386,9 +381,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                
                 AuthorizationSequenceDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDataContext>(query, variables);
 
-                ObservableCollection<CostCenterGraphQLModel> costCenter = source.CostCenters.Entries;
-                costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-                CostCenters = [.. costCenter];
+               
+               
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
                 Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequences.Entries);
@@ -397,7 +391,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
             catch (Exception e)
             {
-                var a = 3;
+               
             }
             finally
             {
@@ -456,40 +450,20 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
             
         }
-        public string GetLoadAuthorizationSequenceQuery(bool withCostCenter = false)
+        public string GetLoadAuthorizationSequenceQuery()
         {
               var authorizationFields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Description)
-                    .Field(e => e.Number)
-                    .Field(e => e.IsActive)
-                    .Field(e => e.Prefix)
+                    
                     .Field(e => e.CurrentInvoiceNumber)
-                    .Field(e => e.Mode)
-                    .Field(e => e.TechnicalKey)
-                    .Field(e => e.Reference)
-                    .Field(e => e.StartDate)
-                    .Field(e => e.EndDate)
-                    .Field(e => e.StartRange)
-                    .Field(e => e.EndRange)
-                    .Select(e => e.NextAuthorizationSequence, cat => cat
-                        .Field(c => c.Id)
-                        .Field(c => c.Description)
-
-                    )
+                   
                     .Select(e => e.CostCenter, cat => cat
                         .Field(c => c.Id)
                         .Field(c => c.Name)
-                        .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Description)
-                            )
-                        .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Description)
-                            )
+                        
                     )
                     .Select(e => e.AuthorizationSequenceType, cat => cat
                         .Field(c => c.Id)
@@ -501,34 +475,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(o => o.TotalPages)
                 .Field(o => o.TotalEntries)
                 .Build();
-            var costCenterFields = FieldSpec<PageType<CostCenterGraphQLModel>>
-               .Create()
-               .SelectList(it => it.Entries, entries => entries
-                   .Field(e => e.Id)
-                   .Field(e => e.Name)
-                   .Field(e => e.Address)
-                   .Select(e => e.City, cat => cat
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            .Select(c => c.Department, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Name)
-                            )
-                            
-                    )
-                   
-               )
-               .Field(o => o.PageNumber)
-               .Field(o => o.PageSize)
-               .Field(o => o.TotalPages)
-               .Field(o => o.TotalEntries)
-               .Build();
+         
             var authorizationPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var authorizationfilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
-            var authorizationFragment = new GraphQLQueryFragment("authorizationSequencesPage", [authorizationPagParameters, authorizationfilterParameters], authorizationFields, withCostCenter? "AuthorizationSequences" : "PageResponse");
-            var costCenterFragment = new GraphQLQueryFragment("costCentersPage", [], costCenterFields, "CostCenters");
+            var authorizationFragment = new GraphQLQueryFragment("authorizationSequencesPage", [authorizationPagParameters, authorizationfilterParameters], authorizationFields,  "PageResponse");
 
-            var builder = withCostCenter ? new GraphQLQueryBuilder([authorizationFragment, costCenterFragment]) :  new GraphQLQueryBuilder([authorizationFragment]);
+            var builder =  new GraphQLQueryBuilder([authorizationFragment]);
             return builder.GetQuery();
         }
         public async Task DeleteAuthorizationSequenceAsync()
