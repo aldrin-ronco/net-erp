@@ -2,12 +2,17 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using Extensions.Books;
+using Extensions.Global;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,12 +24,8 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Extensions.Books;
-using Extensions.Global;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.VisualStudio.Threading;
-using DevExpress.Mvvm;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
@@ -36,12 +37,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         IHandle<AccountingEntryDraftMasterDeleteMessage>,
         IHandle<AccountingEntryMasterDeleteMessage>,
         IHandle<AccountingEntryMasterCancellationMessage>,
-        IHandle<CostCenterCreateMessage>,
-        IHandle<CostCenterUpdateMessage>,
-        IHandle<CostCenterDeleteMessage>,
-        IHandle<AccountingSourceCreateMessage>,
-        IHandle<AccountingSourceUpdateMessage>,
-        IHandle<AccountingSourceDeleteMessage>,
+      
+      
         IHandle<AccountingEntryDraftMasterUpdateMessage>
     {
         #region Popiedades
@@ -50,7 +47,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
-
+        private readonly CostCenterCache _costCenterCache;
+        private readonly AccountingBookCache _accountingBookCache;
+        private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
         // Context
         public AccountingEntriesViewModel Context { get; set; }
         // Libros contables
@@ -837,14 +836,19 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             Helpers.Services.INotificationService notificationService,
             IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
             IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
-            IRepository<AccountingEntityGraphQLModel> accountingEntityService)
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+             CostCenterCache costCenterCache,
+             AccountingBookCache accountingBookCache,
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache)
         {
             this.Context = context;
             _notificationService = notificationService;
             _accountingEntryMasterService = accountingEntryMasterService;
             _accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             _accountingEntityService = accountingEntityService;
-          
+            _costCenterCache = costCenterCache;
+            _accountingBookCache = accountingBookCache;
+            _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
 
@@ -852,29 +856,32 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.Context.EventAggregator.SubscribeOnUIThread(this);
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
+            
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
+            await Task.WhenAll(
+               _costCenterCache.EnsureLoadedAsync(),
+               _accountingBookCache.EnsureLoadedAsync(),
+                _notAnnulledAccountingSourceCache.EnsureLoadedAsync()
+               );
+            CostCenters = _costCenterCache.Items;
+            this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
+            this.AccountingBooks = _accountingBookCache.Items;
+            this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
+            this.AccountingSources = _notAnnulledAccountingSourceCache.Items;
+            this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
+            this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
+
             try
             {
 
                 string query = @"
                 query ($accountingSourceFilter: AccountingSourceFilterInput) {
-                accountingBooks{
-                    id
-                    name
-                },
-                costCenters{
-                    id
-                    name
-                    tradeName
-                },
-                accountingSources(filter: $accountingSourceFilter){
-                    id
-                    name
-                },
+               
                 accountingEntryDraftMasterPage{
                     count
                     rows {
@@ -904,11 +911,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (this.AccountingBooks == null)
                 {
                     dynamic variables = new ExpandoObject();
-                    variables.accountingSourceFilter = new ExpandoObject();
-                    variables.accountingSourceFilter.annulment = new ExpandoObject();
-                    variables.accountingSourceFilter.annulment.@operator = "=";
-                    variables.accountingSourceFilter.annulment.value = false;
-
+                   
                     this.IsBusy = true;
                     this.Refresh();
 
@@ -924,24 +927,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     // Inserto los placeholders
                     this.AccountingEntriesDraftMaster = new ObservableCollection<AccountingEntryDraftMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryDraftMasterDTO>>(data.AccountingEntryDraftMasterPage.Rows));
                     this.DraftTotalCount = data.AccountingEntryDraftMasterPage.Count;
-                    this.CostCenters = data.CostCenters;
-                    this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-
-                    this.AccountingSources = data.AccountingSources;
-                    this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-                    
-                    this.AccountingBooks = data.AccountingBooks;
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingBookUpdateMasterListMessage() { AccountingBooks = [.. this.AccountingBooks.ToList()] });
-
-                    
-                    // Filters
-                    this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
-                    this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
-                    this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
+               
                     this.Refresh();
                 }
             }
@@ -1482,104 +1468,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel costCenter = this.CostCenters.Where(x => x.Id == message.CreatedCostCenter.Entity.Id).FirstOrDefault();
-                if (costCenter == null) this.CostCenters.Add(message.CreatedCostCenter.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
+       
 
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+      
 
-        public Task HandleAsync(CostCenterUpdateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel updatedCostCenter = this.CostCenters.Where(x => x.Id == message.UpdatedCostCenter.Entity.Id).FirstOrDefault();
-                if (updatedCostCenter != null)
-                {
-                    int index = this.CostCenters.IndexOf(updatedCostCenter);
-                    if (index >= 0) this.CostCenters[index] = message.UpdatedCostCenter.Entity;
-                }
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+       
 
-        public Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel deletedCostCenter = this.CostCenters.Where(x => x.Id == message.DeletedCostCenter.DeletedId).FirstOrDefault();
-                if (deletedCostCenter != null) this.CostCenters.Remove(deletedCostCenter);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
-        {
-            
-            try
-            {
-                AccountingSourceGraphQLModel createdAccountingSource = this.AccountingSources.Where(x => x.Id == message.CreatedAccountingSource.Entity.Id).FirstOrDefault();
-                if (createdAccountingSource is null) this.AccountingSources.Add(message.CreatedAccountingSource.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceUpdateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                AccountingSourceGraphQLModel updatedAccountingSource = this.AccountingSources.Where(x => x.Id == message.UpdatedAccountingSource.Entity.Id).FirstOrDefault();
-                if (updatedAccountingSource != null) this.AccountingSources.Replace(message.UpdatedAccountingSource.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceDeleteMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                AccountingSourceGraphQLModel deletedAccountingSource = this.AccountingSources.Where(x => x.Id == message.DeletedAccountingSource.DeletedId).FirstOrDefault();
-                if (deletedAccountingSource != null) this.AccountingSources.Remove(deletedAccountingSource);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+       
+       
+       
 
         public Task HandleAsync(AccountingEntryDraftMasterUpdateMessage message, CancellationToken cancellationToken)
         {

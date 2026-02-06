@@ -8,6 +8,7 @@ using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntries.DTO;
+using NetErp.Helpers.Cache;
 using Ninject.Activation;
 using System;
 using System.Collections.Generic;
@@ -34,8 +35,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
         private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
 
-
+        private readonly CostCenterCache _costCenterCache;
+        private readonly AccountingBookCache _accountingBookCache;
 
         private readonly Helpers.Services.INotificationService _notificationService;
 
@@ -52,7 +55,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache);
                 return _accountingEntriesMasterViewModel;
             }
         }
@@ -65,7 +68,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
                                           IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
                                           IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
-                                          IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService
+                                          IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService,
+             CostCenterCache costCenterCache,
+             AccountingBookCache accountingBookCache,
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache
                                           )
         {
             this.EventAggregator = eventAggregator;
@@ -76,6 +82,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._notificationService = notificationService;
+            _costCenterCache = costCenterCache;
+            _accountingBookCache = accountingBookCache;
+            _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             _ = this.ActivateMasterViewAsync();
             
         }

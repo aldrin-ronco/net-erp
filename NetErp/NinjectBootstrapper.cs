@@ -114,6 +114,7 @@ namespace NetErp
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
