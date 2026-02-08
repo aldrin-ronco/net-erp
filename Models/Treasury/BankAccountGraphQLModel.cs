@@ -30,12 +30,12 @@ namespace Models.Treasury
 
     public class BankAccountCreateMessage
     {
-        public BankAccountGraphQLModel CreatedBankAccount { get; set; } = new();
+        public UpsertResponseType<BankAccountGraphQLModel> CreatedBankAccount { get; set; } = new();
     }
 
     public class BankAccountUpdateMessage
     {
-        public BankAccountGraphQLModel UpdatedBankAccount { get; set; } = new();
+        public UpsertResponseType<BankAccountGraphQLModel> UpdatedBankAccount { get; set; } = new();
     }
 
     public class BankAccountDeleteMessage

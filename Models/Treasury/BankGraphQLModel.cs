@@ -12,6 +12,7 @@ namespace Models.Treasury
     public class BankGraphQLModel
     {
         public int Id { get; set; }
+        public string Code { get; set; } = string.Empty;
         public AccountingEntityGraphQLModel AccountingEntity { get; set; } = new();
         public string PaymentMethodPrefix { get; set; } = string.Empty;
         public DateTime InsertedAt { get; set; } = DateTime.Now;
@@ -24,12 +25,12 @@ namespace Models.Treasury
 
     public class BankCreateMessage
     {
-        public BankGraphQLModel CreatedBank { get; set; } = new();
+        public UpsertResponseType<BankGraphQLModel> CreatedBank { get; set; } = new();
     }
 
     public class BankUpdateMessage
     {
-        public BankGraphQLModel UpdatedBank { get; set; } = new();
+        public UpsertResponseType<BankGraphQLModel> UpdatedBank { get; set; } = new();
     }
 
     public class BankDeleteMessage

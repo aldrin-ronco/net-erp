@@ -49,12 +49,12 @@ namespace Models.Treasury
 
     public class FranchiseCreateMessage
     {
-        public FranchiseGraphQLModel CreatedFranchise { get; set; } = new();
+        public UpsertResponseType<FranchiseGraphQLModel> CreatedFranchise { get; set; } = new();
     }
 
     public class FranchiseUpdateMessage
     {
-        public FranchiseGraphQLModel UpdatedFranchise { get; set; } = new();
+        public UpsertResponseType<FranchiseGraphQLModel> UpdatedFranchise { get; set; } = new();
     }
 
     public class FranchiseDeleteMessage

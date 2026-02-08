@@ -113,31 +113,33 @@ namespace NetErp.Helpers.Cache
 
         public Task HandleAsync(TreasuryCashDrawerCreateMessage message, CancellationToken cancellationToken)
         {
+            var createdCashDrawer = message.CreatedCashDrawer?.Entity;
             // Solo agregar si es caja general (no caja menor)
-            if (message.CreatedCashDrawer != null && !message.CreatedCashDrawer.IsPettyCash)
+            if (createdCashDrawer != null && !createdCashDrawer.IsPettyCash)
             {
-                Add(message.CreatedCashDrawer);
+                Add(createdCashDrawer);
             }
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(TreasuryCashDrawerUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.UpdatedCashDrawer != null)
+            var updatedCashDrawer = message.UpdatedCashDrawer?.Entity;
+            if (updatedCashDrawer != null)
             {
-                if (!message.UpdatedCashDrawer.IsPettyCash)
+                if (!updatedCashDrawer.IsPettyCash)
                 {
                     // Si es caja general, actualizar o agregar
-                    var existing = Items.FirstOrDefault(x => x.Id == message.UpdatedCashDrawer.Id);
+                    var existing = Items.FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
                     if (existing != null)
-                        Update(message.UpdatedCashDrawer);
+                        Update(updatedCashDrawer);
                     else
-                        Add(message.UpdatedCashDrawer);
+                        Add(updatedCashDrawer);
                 }
                 else
                 {
                     // Si cambió a caja menor, remover de la lista de cajas generales
-                    Remove(message.UpdatedCashDrawer.Id);
+                    Remove(updatedCashDrawer.Id);
                 }
             }
             return Task.CompletedTask;
@@ -147,7 +149,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedCashDrawer != null)
             {
-                Remove(message.DeletedCashDrawer.Id);
+                Remove(message.DeletedCashDrawer.DeletedId);
             }
             return Task.CompletedTask;
         }

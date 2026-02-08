@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.PanelEditors
@@ -40,6 +41,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
         protected TreasuryMastersBasePanelEditor(TreasuryRootMasterViewModel masterContext)
         {
             MasterContext = masterContext ?? throw new ArgumentNullException(nameof(masterContext));
+            SubscribeToMasterPropertyChanged();
         }
 
         #endregion
@@ -192,6 +194,22 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 MasterContext.Refresh();
 
                 UpsertResponseType<TGraphQLModel> result = await ExecuteSaveAsync();
+
+                if (!result.Success)
+                {
+                    var errorMessages = result.Errors != null && result.Errors.Count > 0
+                        ? string.Join("\r\n", result.Errors.Select(e => e.Message))
+                        : result.Message;
+
+                    Application.Current.Dispatcher.Invoke(() =>
+                        ThemedMessageBox.Show(
+                            title: "Atención!",
+                            text: errorMessages,
+                            messageBoxButtons: MessageBoxButton.OK,
+                            image: MessageBoxImage.Error));
+                    return false;
+                }
+
                 await PublishMessageAsync(result);
 
                 IsEditing = false;
@@ -278,6 +296,64 @@ namespace NetErp.Treasury.Masters.PanelEditors
         protected void NotifyCanSaveChanged()
         {
             MasterContext.RefreshCanSave();
+        }
+
+        #endregion
+
+        #region Master Delegation Properties
+
+        /// <summary>
+        /// Delegación de comandos y estado del MasterViewModel para uso directo en las vistas de editor.
+        /// </summary>
+        public ICommand EditCommand => MasterContext.EditCommand;
+        public ICommand UndoCommand => MasterContext.UndoCommand;
+        public ICommand SaveCommand => MasterContext.SaveCommand;
+        public bool MasterCanEdit => MasterContext.CanEdit;
+        public bool MasterCanUndo => MasterContext.CanUndo;
+        public bool MasterCanSave => MasterContext.CanSave;
+
+        public int MasterSelectedIndex
+        {
+            get => MasterContext.SelectedIndex;
+            set => MasterContext.SelectedIndex = value;
+        }
+
+        private bool _masterPropertyChangedSubscribed;
+
+        /// <summary>
+        /// Suscribe al PropertyChanged del MasterContext para reenviar notificaciones relevantes.
+        /// Debe llamarse después de la construcción si se necesita.
+        /// </summary>
+        protected void SubscribeToMasterPropertyChanged()
+        {
+            if (_masterPropertyChangedSubscribed) return;
+            MasterContext.PropertyChanged += OnMasterPropertyChanged;
+            _masterPropertyChangedSubscribed = true;
+        }
+
+        private void OnMasterPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(MasterContext.CanEdit):
+                    NotifyOfPropertyChange(nameof(MasterCanEdit));
+                    break;
+                case nameof(MasterContext.CanUndo):
+                    NotifyOfPropertyChange(nameof(MasterCanUndo));
+                    break;
+                case nameof(MasterContext.CanSave):
+                    NotifyOfPropertyChange(nameof(MasterCanSave));
+                    break;
+                case nameof(MasterContext.SelectedIndex):
+                    NotifyOfPropertyChange(nameof(MasterSelectedIndex));
+                    break;
+                case nameof(MasterContext.IsEditing):
+                    NotifyOfPropertyChange(nameof(IsEditing));
+                    break;
+                case nameof(MasterContext.CashDrawerAccountingAccounts):
+                    NotifyOfPropertyChange("CashDrawerAccountingAccounts");
+                    break;
+            }
         }
 
         #endregion

@@ -109,18 +109,20 @@ namespace NetErp.Helpers.Cache
 
         public Task HandleAsync(BankAccountCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedBankAccount != null)
+            var createdBankAccount = message.CreatedBankAccount?.Entity;
+            if (createdBankAccount != null)
             {
-                Add(message.CreatedBankAccount);
+                Add(createdBankAccount);
             }
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.UpdatedBankAccount != null)
+            var updatedBankAccount = message.UpdatedBankAccount?.Entity;
+            if (updatedBankAccount != null)
             {
-                Update(message.UpdatedBankAccount);
+                Update(updatedBankAccount);
             }
             return Task.CompletedTask;
         }

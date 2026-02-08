@@ -17,6 +17,20 @@ namespace NetErp.Treasury.Masters.DTO
 
         //Propiedad creada para no tener errores de binding en la vista
         public string Name { get; set; } = string.Empty;
+
+        private string _code = string.Empty;
+        public string Code
+        {
+            get { return _code; }
+            set
+            {
+                if (_code != value)
+                {
+                    _code = value;
+                    NotifyOfPropertyChange(nameof(Code));
+                }
+            }
+        }
         public TreasuryRootMasterViewModel Context { get; set; }
 
         private AccountingEntityDTO _accountingEntity = new();
@@ -34,7 +48,7 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private string _paymentMethodPrefix =string.Empty;
+        private string _paymentMethodPrefix = string.Empty;
 
         public string PaymentMethodPrefix
         {

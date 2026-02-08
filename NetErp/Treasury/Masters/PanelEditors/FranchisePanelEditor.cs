@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.PanelEditors
@@ -55,12 +56,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
         private string _name = string.Empty;
-        [ExpandoPath("name")]
         public string Name
         {
             get => _name;
@@ -78,7 +79,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _type = "TC";
-        [ExpandoPath("type")]
         public string Type
         {
             get => _type;
@@ -95,7 +95,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private decimal _commissionMargin;
-        [ExpandoPath("commissionMargin")]
         public decimal CommissionMargin
         {
             get => _commissionMargin;
@@ -112,7 +111,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private decimal _reteivaMargin;
-        [ExpandoPath("reteivaMargin")]
         public decimal ReteivaMargin
         {
             get => _reteivaMargin;
@@ -129,7 +127,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private decimal _reteicaMargin;
-        [ExpandoPath("reteicaMargin")]
         public decimal ReteicaMargin
         {
             get => _reteicaMargin;
@@ -146,7 +143,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private decimal _retefteMargin;
-        [ExpandoPath("retefteMargin")]
         public decimal RetefteMargin
         {
             get => _retefteMargin;
@@ -163,7 +159,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private decimal _ivaMargin;
-        [ExpandoPath("ivaMargin")]
         public decimal IvaMargin
         {
             get => _ivaMargin;
@@ -180,7 +175,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _formulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
-        [ExpandoPath("formulaCommission")]
         public string FormulaCommission
         {
             get => _formulaCommission;
@@ -197,7 +191,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _formulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
-        [ExpandoPath("formulaReteiva")]
         public string FormulaReteiva
         {
             get => _formulaReteiva;
@@ -214,7 +207,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _formulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
-        [ExpandoPath("formulaReteica")]
         public string FormulaReteica
         {
             get => _formulaReteica;
@@ -231,7 +223,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _formulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
-        [ExpandoPath("formulaRetefte")]
         public string FormulaRetefte
         {
             get => _formulaRetefte;
@@ -320,6 +311,22 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 }
             }
         }
+
+        #region Master Delegations
+
+        public ObservableCollection<AccountingAccountGraphQLModel> FranchiseAccountingAccountsCommission => MasterContext.FranchiseAccountingAccountsCommission;
+        public ObservableCollection<BankAccountGraphQLModel> FranchiseBankAccounts => MasterContext.FranchiseBankAccounts;
+        public ObservableCollection<TreasuryFranchiseCostCenterDTO> FranchiseCostCenters => MasterContext.FranchiseCostCenters;
+
+        public string FranchiseDecimalsCount => "n2";
+
+        public ICommand FranchiseResetFormulaCommissionCommand => MasterContext.FranchiseResetFormulaCommissionCommand;
+        public ICommand FranchiseResetFormulaReteivaCommand => MasterContext.FranchiseResetFormulaReteivaCommand;
+        public ICommand FranchiseResetFormulaReteicaCommand => MasterContext.FranchiseResetFormulaReteicaCommand;
+        public ICommand FranchiseResetFormulaRetefteCommand => MasterContext.FranchiseResetFormulaRetefteCommand;
+        public ICommand FranchiseSimulatorCommand => MasterContext.FranchiseSimulatorCommand;
+
+        #endregion
 
         // Simulation properties for UI
         private decimal _cardValue;
@@ -538,6 +545,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         private void SeedDefaultValues()
         {
+            this.ClearSeeds();
             this.SeedValue(nameof(Type), Type);
             this.SeedValue(nameof(CommissionMargin), CommissionMargin);
             this.SeedValue(nameof(ReteivaMargin), ReteivaMargin);
@@ -710,12 +718,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new FranchiseCreateMessage { CreatedFranchise = result.Entity });
+                    new FranchiseCreateMessage { CreatedFranchise = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new FranchiseUpdateMessage { UpdatedFranchise = result.Entity });
+                    new FranchiseUpdateMessage { UpdatedFranchise = result });
             }
         }
 

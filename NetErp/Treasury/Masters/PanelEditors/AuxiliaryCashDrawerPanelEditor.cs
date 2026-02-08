@@ -8,10 +8,11 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.PanelEditors
@@ -53,12 +54,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
         private string _name = string.Empty;
-        [ExpandoPath("name")]
         public string Name
         {
             get => _name;
@@ -75,8 +76,22 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private int _costCenterId;
+        public int CostCenterId
+        {
+            get => _costCenterId;
+            set
+            {
+                if (_costCenterId != value)
+                {
+                    _costCenterId = value;
+                    NotifyOfPropertyChange(nameof(CostCenterId));
+                    this.TrackChange(nameof(CostCenterId));
+                }
+            }
+        }
+
         private bool _cashReviewRequired;
-        [ExpandoPath("cashReviewRequired")]
         public bool CashReviewRequired
         {
             get => _cashReviewRequired;
@@ -93,7 +108,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private bool _autoAdjustBalance;
-        [ExpandoPath("autoAdjustBalance")]
         public bool AutoAdjustBalance
         {
             get => _autoAdjustBalance;
@@ -110,7 +124,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private bool _autoTransfer;
-        [ExpandoPath("autoTransfer")]
         public bool AutoTransfer
         {
             get => _autoTransfer;
@@ -126,8 +139,37 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private bool _isPettyCash;
+        public bool IsPettyCash
+        {
+            get => _isPettyCash;
+            set
+            {
+                if (_isPettyCash != value)
+                {
+                    _isPettyCash = value;
+                    NotifyOfPropertyChange(nameof(IsPettyCash));
+                    this.TrackChange(nameof(IsPettyCash));
+                }
+            }
+        }
+
+        private int _parentId;
+        public int ParentId
+        {
+            get => _parentId;
+            set
+            {
+                if (_parentId != value)
+                {
+                    _parentId = value;
+                    NotifyOfPropertyChange(nameof(ParentId));
+                    this.TrackChange(nameof(ParentId));
+                }
+            }
+        }
+
         private string _computerName = string.Empty;
-        [ExpandoPath("computerName")]
         public string ComputerName
         {
             get => _computerName;
@@ -161,7 +203,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        [ExpandoPath("cashAccountingAccountId")]
         public int CashAccountingAccountId => SelectedCashAccountingAccount?.Id ?? 0;
 
         private AccountingAccountGraphQLModel? _selectedCheckAccountingAccount;
@@ -181,7 +222,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        [ExpandoPath("checkAccountingAccountId")]
         public int CheckAccountingAccountId => SelectedCheckAccountingAccount?.Id ?? 0;
 
         private AccountingAccountGraphQLModel? _selectedCardAccountingAccount;
@@ -201,7 +241,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        [ExpandoPath("cardAccountingAccountId")]
         public int CardAccountingAccountId => SelectedCardAccountingAccount?.Id ?? 0;
 
         private CashDrawerGraphQLModel? _selectedAutoTransferCashDrawer;
@@ -221,7 +260,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
-        [ExpandoPath("cashDrawerIdAutoTransfer")]
         public int AutoTransferCashDrawerId => AutoTransfer ? (SelectedAutoTransferCashDrawer?.Id ?? 0) : 0;
 
         /// <summary>
@@ -230,9 +268,14 @@ namespace NetErp.Treasury.Masters.PanelEditors
         public ObservableCollection<CashDrawerGraphQLModel> AutoTransferCashDrawers => MasterContext.AuxiliaryAutoTransferCashDrawerCashDrawers;
 
         /// <summary>
-        /// ID de la caja mayor padre (para nuevos registros).
+        /// Delegación de cuentas contables para cash drawers.
         /// </summary>
-        public int MajorCashDrawerIdBeforeNew { get; set; }
+        public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts => MasterContext.CashDrawerAccountingAccounts;
+
+        /// <summary>
+        /// Delegación del comando de búsqueda de nombre de equipo.
+        /// </summary>
+        public ICommand SearchComputerNameCommand => MasterContext.SearchComputerNameCommand;
 
         #endregion
 
@@ -290,14 +333,10 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         public override void SetForNew(object context)
         {
-            // El contexto es el ID de la caja mayor padre
-            if (context is int majorCashDrawerId)
+            if (context is MajorCashDrawerMasterTreeDTO majorCashDrawer)
             {
-                MajorCashDrawerIdBeforeNew = majorCashDrawerId;
-            }
-            else if (context is MajorCashDrawerMasterTreeDTO majorCashDrawer)
-            {
-                MajorCashDrawerIdBeforeNew = majorCashDrawer.Id;
+                ParentId = majorCashDrawer.Id;
+                CostCenterId = majorCashDrawer.CostCenter?.Id ?? 0;
             }
 
             OriginalDto = null;
@@ -306,6 +345,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
             CashReviewRequired = false;
             AutoAdjustBalance = false;
             AutoTransfer = false;
+            IsPettyCash = false;
             ComputerName = SessionInfo.GetComputerName();
             SelectedCashAccountingAccount = null;
             SelectedCheckAccountingAccount = null;
@@ -366,9 +406,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         private void SeedDefaultValues()
         {
+            this.ClearSeeds();
+            this.SeedValue(nameof(CostCenterId), CostCenterId);
+            this.SeedValue(nameof(ParentId), ParentId);
             this.SeedValue(nameof(CashReviewRequired), CashReviewRequired);
             this.SeedValue(nameof(AutoAdjustBalance), AutoAdjustBalance);
             this.SeedValue(nameof(AutoTransfer), AutoTransfer);
+            this.SeedValue(nameof(ComputerName), ComputerName);
             this.AcceptChanges();
         }
 
@@ -380,31 +424,43 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<CashDrawerGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CashDrawerGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Name)
-                .Field(e => e.CashReviewRequired)
-                .Field(e => e.AutoAdjustBalance)
-                .Field(e => e.AutoTransfer)
-                .Field(e => e.ComputerName)
-                .Select(e => e.AutoTransferCashDrawer, at => at
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.Parent, p => p
-                    .Field(a => a.Id))
-                .Select(e => e.CashAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.CheckAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.CardAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "cashDrawer", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.CashReviewRequired)
+                    .Field(e => e.AutoAdjustBalance)
+                    .Field(e => e.AutoTransfer)
+                    .Field(e => e.IsPettyCash)
+                    .Field(e => e.ComputerName)
+                    .Select(e => e.AutoTransferCashDrawer, at => at
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.Parent, p => p
+                        .Field(a => a.Id)
+                        .Select(a => a.CostCenter, cc => cc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.CompanyLocation, loc => loc
+                                .Field(l => l.Id))))
+                    .Select(e => e.CashAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.CheckAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.CardAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateCashDrawerInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateCashDrawerInput!");
             var fragment = new GraphQLQueryFragment("createCashDrawer", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -413,38 +469,48 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<CashDrawerGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<CashDrawerGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Name)
-                .Field(e => e.CashReviewRequired)
-                .Field(e => e.AutoAdjustBalance)
-                .Field(e => e.AutoTransfer)
-                .Field(e => e.ComputerName)
-                .Select(e => e.AutoTransferCashDrawer, at => at
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.Parent, p => p
-                    .Field(a => a.Id))
-                .Select(e => e.CashAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.CheckAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.CardAccountingAccount, acc => acc
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "cashDrawer", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.CashReviewRequired)
+                    .Field(e => e.AutoAdjustBalance)
+                    .Field(e => e.AutoTransfer)
+                    .Field(e => e.IsPettyCash)
+                    .Field(e => e.ComputerName)
+                    .Select(e => e.AutoTransferCashDrawer, at => at
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.Parent, p => p
+                        .Field(a => a.Id)
+                        .Select(a => a.CostCenter, cc => cc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.CompanyLocation, loc => loc
+                                .Field(l => l.Id))))
+                    .Select(e => e.CashAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.CheckAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name))
+                    .Select(e => e.CardAccountingAccount, acc => acc
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var fragment = new GraphQLQueryFragment(
-                "updateCashDrawer",
-                [
-                    new GraphQLQueryParameter("id", "Int!"),
-                    new GraphQLQueryParameter("data", "UpdateCashDrawerInput!")
-                ],
-                fields,
-                "UpdateResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateCashDrawerInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateCashDrawer", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
@@ -453,43 +519,23 @@ namespace NetErp.Treasury.Masters.PanelEditors
         protected override async Task<UpsertResponseType<CashDrawerGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
-            dynamic variables = new ExpandoObject();
+            dynamic variables;
 
             if (IsNewRecord)
             {
                 query = GetCreateQuery();
-                variables.data = new ExpandoObject();
-                variables.data.name = Name.Trim().RemoveExtraSpaces();
-                variables.data.cashReviewRequired = CashReviewRequired;
-                variables.data.autoAdjustBalance = AutoAdjustBalance;
-                variables.data.autoTransfer = AutoTransfer;
-                variables.data.isPettyCash = false;
-                variables.data.cashDrawerIdAutoTransfer = AutoTransferCashDrawerId;
-                variables.data.costCenterId = 0; // Las cajas auxiliares no tienen CostCenter propio
-                variables.data.parentId = MajorCashDrawerIdBeforeNew;
-                variables.data.computerName = ComputerName.Trim().RemoveExtraSpaces();
-
-                var createResult = await _cashDrawerService.CreateAsync(query, variables);
-                return new UpsertResponseType<CashDrawerGraphQLModel> { Entity = createResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables.id = Id;
-                variables.data = new ExpandoObject();
-                variables.data.name = Name.Trim().RemoveExtraSpaces();
-                variables.data.cashReviewRequired = CashReviewRequired;
-                variables.data.autoAdjustBalance = AutoAdjustBalance;
-                variables.data.autoTransfer = AutoTransfer;
-                variables.data.cashDrawerIdAutoTransfer = AutoTransferCashDrawerId;
-                variables.data.accountingAccountIdCash = CashAccountingAccountId;
-                variables.data.accountingAccountIdCheck = CheckAccountingAccountId;
-                variables.data.accountingAccountIdCard = CardAccountingAccountId;
-                variables.data.computerName = ComputerName.Trim().RemoveExtraSpaces();
-
-                var updateResult = await _cashDrawerService.UpdateAsync(query, variables);
-                return new UpsertResponseType<CashDrawerGraphQLModel> { Entity = updateResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
+
+            return IsNewRecord
+                ? await _cashDrawerService.CreateAsync<UpsertResponseType<CashDrawerGraphQLModel>>(query, variables)
+                : await _cashDrawerService.UpdateAsync<UpsertResponseType<CashDrawerGraphQLModel>>(query, variables);
         }
 
         protected override async Task PublishMessageAsync(UpsertResponseType<CashDrawerGraphQLModel> result)
@@ -497,12 +543,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new TreasuryCashDrawerCreateMessage { CreatedCashDrawer = result.Entity });
+                    new TreasuryCashDrawerCreateMessage { CreatedCashDrawer = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new TreasuryCashDrawerUpdateMessage { UpdatedCashDrawer = result.Entity });
+                    new TreasuryCashDrawerUpdateMessage { UpdatedCashDrawer = result });
             }
         }
 

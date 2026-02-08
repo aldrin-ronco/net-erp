@@ -54,6 +54,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
@@ -324,6 +325,11 @@ namespace NetErp.Treasury.Masters.PanelEditors
         public TreasuryBankMasterTreeDTO? BankBeforeNew { get; set; }
 
         /// <summary>
+        /// Delegación de cuentas contables para cuentas bancarias.
+        /// </summary>
+        public ObservableCollection<AccountingAccountGraphQLModel> BankAccountAccountingAccounts => MasterContext.BankAccountAccountingAccounts;
+
+        /// <summary>
         /// Lista de cost centers permitidos para la cuenta bancaria.
         /// </summary>
         public ObservableCollection<TreasuryBankAccountCostCenterDTO> CostCenters => MasterContext.BankAccountCostCenters;
@@ -461,6 +467,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         private void SeedDefaultValues()
         {
+            this.ClearSeeds();
             this.SeedValue(nameof(IsActive), IsActive);
             this.AcceptChanges();
         }
@@ -604,12 +611,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new BankAccountCreateMessage { CreatedBankAccount = result.Entity });
+                    new BankAccountCreateMessage { CreatedBankAccount = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new BankAccountUpdateMessage { UpdatedBankAccount = result.Entity });
+                    new BankAccountUpdateMessage { UpdatedBankAccount = result });
             }
         }
 
