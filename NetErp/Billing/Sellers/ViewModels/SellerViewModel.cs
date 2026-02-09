@@ -114,7 +114,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
 
 
-        public async Task ActivateDetailViewForNew()
+        public async Task ActivateDetailViewForNewAsync()
         {
             try
             {
@@ -139,7 +139,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForEdit(int sellerId)
+        public async Task ActivateDetailViewForEditAsync(int sellerId)
         {
             try
             {
