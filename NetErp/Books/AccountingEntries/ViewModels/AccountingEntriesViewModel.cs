@@ -33,7 +33,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
 
@@ -66,7 +66,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IRepository<AccountingEntityGraphQLModel> accountingEntityService,
                                           IRepository<AccountingAccountGraphQLModel> accountingAccountService,
                                           IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
-                                          IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+                                          IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
                                           IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
                                           IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService,
              CostCenterCache costCenterCache,
@@ -141,7 +141,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEditAsync(AccountingEntryDraftMasterGraphQLModel model)
+        public async Task ActivateDetailViewForEditAsync(AccountingEntryDraftGraphQLModel model)
         {
             try
             {

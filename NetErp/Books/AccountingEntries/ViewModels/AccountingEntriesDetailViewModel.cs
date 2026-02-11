@@ -41,7 +41,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
         private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService; 
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
@@ -54,7 +54,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         public AccountingEntriesViewModel Context { get; set; }
 
         // Parent record reference
-        public AccountingEntryDraftMasterGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
+        public AccountingEntryDraftGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
 
         // Accounting Entries
         private ObservableCollection<AccountingEntryDraftDetailDTO> _accountingEntries;
@@ -934,7 +934,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context, 
             IRepository<AccountingEntryMasterGraphQLModel>accountingEntryMasterService, 
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
             IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
             IRepository<AccountingAccountGraphQLModel> accountingAccountService,
             ObservableCollection<AccountingBookGraphQLModel> accountingBooks,
@@ -1003,7 +1003,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryDraftMasterGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
+        public async Task<AccountingEntryDraftGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
         {
             try
             {
@@ -1175,7 +1175,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     // Iniciar cronometro
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    AccountingEntryDraftMasterGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
+                    AccountingEntryDraftGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
                     stopwatch.Stop();
 
                     // Message

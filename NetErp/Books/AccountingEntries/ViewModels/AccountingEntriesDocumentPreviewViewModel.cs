@@ -23,7 +23,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     {
         private IEventAggregator _eventAggregator;
         private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
 
 
         private ObservableCollection<AccountingEntryDetailGraphQLModel> _accountingEntries;
@@ -229,7 +229,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService)
+        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService)
         {
             this.Context = context;
             this._accountingEntryMasterService = accountingEntryMasterService;
@@ -478,7 +478,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryDraftMasterGraphQLModel> ExecuteEditAccountingEntryAsync()
+        public async Task<AccountingEntryDraftGraphQLModel> ExecuteEditAccountingEntryAsync()
         {
             string query = "";
             object variables;

@@ -68,7 +68,7 @@ namespace Models.Books
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks { get; set; }
         public ObservableCollection<AccountingSourceGraphQLModel> AccountingSources { get; set; }
         public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public PageType<AccountingEntryDraftMasterGraphQLModel>  AccountingEntryDraftMasterPage { get; set; }
+        public PageType<AccountingEntryDraftGraphQLModel>  AccountingEntryDraftMasterPage { get; set; }
     }
 
     public class AccountingEntriesDraftDetailDataContext

@@ -13,6 +13,8 @@ using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,7 +35,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesMasterViewModel : Screen,
         INotifyDataErrorInfo,
         IHandle<AccountingEntryMasterGraphQLModel>,
-        IHandle<AccountingEntryDraftMasterGraphQLModel>,
+        IHandle<AccountingEntryDraftGraphQLModel>,
         IHandle<AccountingEntryDraftMasterDeleteMessage>,
         IHandle<AccountingEntryMasterDeleteMessage>,
         IHandle<AccountingEntryMasterCancellationMessage>,
@@ -44,7 +46,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         #region Popiedades
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
         private readonly CostCenterCache _costCenterCache;
@@ -835,7 +837,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         public AccountingEntriesMasterViewModel(AccountingEntriesViewModel context,
             Helpers.Services.INotificationService notificationService,
             IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
-            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
@@ -882,34 +884,33 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 string query = @"
                 query ($accountingSourceFilter: AccountingSourceFilterInput) {
                
-                accountingEntryDraftMasterPage{
-                    count
-                    rows {
-                    id
-                    masterId  
-                    accountingBook {
+                accountingEntryDraftsPage(pagination: $pagination) {
+                    totalEntries
+                    entries {
+                      id
+      
+                      accountingBook {
                         id
                         name
-                    }
-                    costCenter {
+                      }
+                      costCenter {
                         id
                         name
-                    }
-                    accountingSource {
+                      }
+                      accountingSource {
                         id
                         name
+                      }
+                      documentNumber
+                      documentDate
+      
+                      description
+      
                     }
-                    documentNumber
-                    documentDate
-                    createdAt
-                    description
-                    createdBy
-                    }
-                }
+                  }
                 }";
 
-                if (this.AccountingBooks == null)
-                {
+               
                     dynamic variables = new ExpandoObject();
                    
                     this.IsBusy = true;
@@ -919,7 +920,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     Stopwatch stopwatch = new();
                     stopwatch.Start();
 
-                    var data = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDataContext>(query, variables);
+                    var data = await this._accountingEntryMasterService.GetPageAsync(query, variables);
 
                     stopwatch.Stop();
                     this.DraftResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -929,7 +930,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     this.DraftTotalCount = data.AccountingEntryDraftMasterPage.Count;
                
                     this.Refresh();
-                }
+                
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -945,8 +946,71 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 IsBusy = false;
             }
         }
-        
 
+        public async Task LoadAccountingEntriesDraftAsync()
+        {
+            try
+            {
+
+                IsBusy = true;
+
+                dynamic variables = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+
+                string query = GetLoadAccountingEntriesDraftQuery();
+
+                PageType<AccountingEntryDraftGraphQLModel> result = await _accountingEntryMasterService.GetPageAsync(query, variables);
+                this.AccountingEntriesDraftMaster = this.Context.Mapper.Map<ObservableCollection<AccountingEntryDraftMasterDTO>>( result.Entries);
+                this.DraftTotalCount = result.TotalEntries;
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+        public string GetLoadAccountingEntriesDraftQuery()
+        {
+            var accountingEntryDraftFields = FieldSpec<PageType<AccountingEntryDraftGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Field(e => e.Description)
+                    .Field(e => e.InsertedAt)
+                    .Select(e => e.AccountingBook, ab => ab
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)
+                    )
+                    .Select(e => e.CostCenter, cc => cc
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                    )
+                    .Select(e => e.AccountingSource, acs => acs
+                        .Field(a => a.Id)
+                        .Field(a => a.Name)
+                    )
+                )
+                .Build();
+
+            var accountingEntryDraftParameters = new GraphQLQueryParameter("filters", "AccountingEntryDraftFilters");
+
+            var accountingEntryDraftFragment = new GraphQLQueryFragment("accountingEntryDraftsPage", [accountingEntryDraftParameters], accountingEntryDraftFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([accountingEntryDraftFragment]);
+
+            return builder.GetQuery();
+        }
         public bool CanSearchForAccountingEntityMatch
         {
             get
@@ -1073,7 +1137,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                await this.Context.ActivateDetailViewForEditAsync(p as AccountingEntryDraftMasterGraphQLModel);
+                await this.Context.ActivateDetailViewForEditAsync(p as AccountingEntryDraftGraphQLModel);
             }
             catch (Exception)
             {
@@ -1397,7 +1461,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingEntryDraftMasterGraphQLModel message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryDraftGraphQLModel message, CancellationToken cancellationToken)
         {
             try
             {

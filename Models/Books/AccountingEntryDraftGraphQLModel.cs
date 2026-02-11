@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 
 namespace Models.Books
 {
-    public class AccountingEntryDraftMasterGraphQLModel
+    public class AccountingEntryDraftGraphQLModel
     {
         public BigInteger Id { get; set; } = 0;
         public BigInteger? MasterId { get; set; } = null;
         public DateTime DocumentDate { get; set; } = DateTime.Now.Date;
 
-        private DateTime _createdAt = DateTime.Now;
-        public DateTime CreatedAt
+        private DateTime _insertedAt = DateTime.Now;
+        public DateTime InsertedAt
         {
-            get { return TimeZoneInfo.ConvertTimeFromUtc(this._createdAt.ToUniversalTime(), TimeZoneInfo.Local); }
-            set { _createdAt = value; }
+            get { return TimeZoneInfo.ConvertTimeFromUtc(this._insertedAt.ToUniversalTime(), TimeZoneInfo.Local); }
+            set { _insertedAt = value; }
         }
         private string _documentNumber = string.Empty;
         public string DocumentNumber
@@ -38,7 +38,7 @@ namespace Models.Books
         public AccountingEntryTotals Totals { get; set; }
     }
 
-    public class AccountingEntryDraftMasterDTO : AccountingEntryDraftMasterGraphQLModel
+    public class AccountingEntryDraftMasterDTO : AccountingEntryDraftGraphQLModel
     {
         public bool IsChecked { get; set; } = false;
     }
