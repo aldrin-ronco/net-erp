@@ -185,7 +185,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 IsBusy = true;
                 Refresh();
                 SelectedSeller = null;
-                await Context.ActivateDetailViewForNew();
+                await Context.ActivateDetailViewForNewAsync();
             }
             catch (AsyncException ex)
             {
@@ -335,7 +335,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 IsBusy = true;
                 Refresh();
-                await Context.ActivateDetailViewForEdit(SelectedSeller.Id);
+                await Context.ActivateDetailViewForEditAsync(SelectedSeller.Id);
                 SelectedSeller = null;
             }
             catch (AsyncException ex)

@@ -116,6 +116,8 @@ namespace NetErp
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
 
+            _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
+
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
@@ -204,6 +206,7 @@ namespace NetErp
             // Global
             _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AuthorizationSequenceTypeGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceTypeGraphQLModel>>().InSingletonScope();
 
             
             // Treasury module repositories
