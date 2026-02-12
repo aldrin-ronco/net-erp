@@ -924,10 +924,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         .Field(bk => bk.Id)
                         .Select(bk => bk.AccountingEntity, ae => ae
                             .Field(a => a.SearchName)
-                            .Field(a => a.CaptureType)))
-                    .SelectList(e => e.AllowedCostCenters, ac => ac
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                            .Field(a => a.CaptureType))))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
@@ -2315,7 +2312,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 // Cuentas contables auxiliares
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
                 BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-                BankAccountAccountingAccounts.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >> " });
 
                 FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
                 FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });

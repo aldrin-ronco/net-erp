@@ -130,6 +130,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _paymentMethodPrefix = value;
                     NotifyOfPropertyChange(nameof(PaymentMethodPrefix));
                     this.TrackChange(nameof(PaymentMethodPrefix));
+                    ValidatePaymentMethodPrefix();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -223,9 +224,9 @@ namespace NetErp.Treasury.Masters.PanelEditors
             {
                 AddError(nameof(Code), "El código es obligatorio");
             }
-            else if (Code.Length != 2)
+            else if (Code.Length != 3)
             {
-                AddError(nameof(Code), "El código debe tener exactamente 2 dígitos");
+                AddError(nameof(Code), "El código debe tener exactamente 3 dígitos");
             }
         }
 
@@ -238,10 +239,24 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private void ValidatePaymentMethodPrefix()
+        {
+            ClearErrors(nameof(PaymentMethodPrefix));
+            if (string.IsNullOrWhiteSpace(PaymentMethodPrefix))
+            {
+                AddError(nameof(PaymentMethodPrefix), "El prefijo de método de pago es obligatorio");
+            }
+            else if (PaymentMethodPrefix.Length != 1)
+            {
+                AddError(nameof(PaymentMethodPrefix), "El prefijo debe ser exactamente una letra");
+            }
+        }
+
         public override void ValidateAll()
         {
             ValidateCode();
             ValidateAccountingEntityName();
+            ValidatePaymentMethodPrefix();
         }
 
         #endregion

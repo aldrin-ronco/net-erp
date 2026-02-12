@@ -127,6 +127,7 @@
                                     ImmediatePopup="True"
                                     CharacterCasing="Upper"
                                     ClearSelectionOnBackspace="True"
+                                    NullText="&lt;&lt; SELECCIONE UNA CUENTA CONTABLE &gt;&gt;"
                                     IsEnabled="{Binding IsNewRecord, UpdateSourceTrigger=PropertyChanged}"
                                     ItemsSource="{Binding BankAccountAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMember="FullName"
@@ -165,19 +166,22 @@
                                       Text="{Binding PaymentMethodAbbreviation, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
 
-                    <TextBlock Text="Nombre de la forma de pago" Margin="0 10 0 5" Grid.Row="10" FontWeight="Bold"/>
+                    <dxe:CheckEdit Grid.Row="10" Content="¿Desea habilitar esta cuenta bancaria como método de pago en venta?"
+                                   IsChecked="{Binding EnablePaymentMethod, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   Margin="0 10 0 10" Style="{StaticResource BlueCheckedTextStyle}"/>
 
                     <dxe:TextEdit Margin="0 5 0 0" Grid.Row="11" IsReadOnly="True"
-                                  Text="{Binding PaymentMethodName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                  Text="{Binding PaymentMethodName, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Visibility="{Binding EnablePaymentMethod, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
                 </Grid>
             </dx:DXTabItem>
-            <dx:DXTabItem Header="Centros de Costo">
+            <!--<dx:DXTabItem Header="Centros de Costo">
                 <Grid IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl
                         Margin="0 8 0 0"
                         EnableSmartColumnsGeneration="True"
                         AutoGenerateColumns="None"
-                        ItemsSource="{Binding CostCenters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        ItemsSource="{Binding CostCenters, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                         SelectedItem="{Binding SelectedCostCenter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <dxg:GridControl.View>
                             <dxg:TableView AllowCascadeUpdate="False"
@@ -200,7 +204,7 @@
                         </dxg:GridColumn>
                     </dxg:GridControl>
                 </Grid>
-            </dx:DXTabItem>
+            </dx:DXTabItem>-->
         </dx:DXTabControl>
 
         <!-- Row 1: Action buttons -->

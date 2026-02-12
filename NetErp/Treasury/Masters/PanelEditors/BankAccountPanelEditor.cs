@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using Models.Books;
@@ -9,8 +8,8 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using static Dictionaries.BooksDictionaries;
@@ -60,7 +59,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _type = string.Empty;
-        [ExpandoPath("type")]
         public string Type
         {
             get => _type;
@@ -73,13 +71,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(Description));
                     NotifyOfPropertyChange(nameof(PaymentMethodName));
                     this.TrackChange(nameof(Type));
+                    this.TrackChange(nameof(Description));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private string _number = string.Empty;
-        [ExpandoPath("number")]
         public string Number
         {
             get => _number;
@@ -92,6 +90,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(Description));
                     NotifyOfPropertyChange(nameof(PaymentMethodName));
                     this.TrackChange(nameof(Number));
+                    this.TrackChange(nameof(Description));
                     ValidateNumber();
                     MasterContext.RefreshCanSave();
                 }
@@ -99,7 +98,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private bool _isActive;
-        [ExpandoPath("isActive")]
         public bool IsActive
         {
             get => _isActive;
@@ -116,7 +114,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _reference = string.Empty;
-        [ExpandoPath("reference")]
         public string Reference
         {
             get => _reference;
@@ -128,13 +125,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(Reference));
                     NotifyOfPropertyChange(nameof(Description));
                     this.TrackChange(nameof(Reference));
+                    this.TrackChange(nameof(Description));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _displayOrder;
-        [ExpandoPath("displayOrder")]
         public int DisplayOrder
         {
             get => _displayOrder;
@@ -151,7 +148,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _provider = string.Empty;
-        [ExpandoPath("provider")]
         public string Provider
         {
             get => _provider;
@@ -164,13 +160,13 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(Description));
                     NotifyOfPropertyChange(nameof(PaymentMethodName));
                     this.TrackChange(nameof(Provider));
+                    this.TrackChange(nameof(Description));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _bankId;
-        [ExpandoPath("bankId")]
         public int BankId
         {
             get => _bankId;
@@ -251,6 +247,22 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private bool _enablePaymentMethod;
+        public bool EnablePaymentMethod
+        {
+            get => _enablePaymentMethod;
+            set
+            {
+                if (_enablePaymentMethod != value)
+                {
+                    _enablePaymentMethod = value;
+                    NotifyOfPropertyChange(nameof(EnablePaymentMethod));
+                    this.TrackChange(nameof(EnablePaymentMethod));
+                    MasterContext.RefreshCanSave();
+                }
+            }
+        }
+
         private string _paymentMethodAbbreviation = string.Empty;
         public string PaymentMethodAbbreviation
         {
@@ -293,13 +305,15 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     MasterContext.RefreshCanSave();
                     if (!_accountingAccountSelectExisting)
                     {
-                        SelectedAccountingAccount = MasterContext.BankAccountAccountingAccounts?.FirstOrDefault(x => x.Id == 0);
+                        SelectedAccountingAccount = null;
                     }
                 }
             }
         }
 
         private AccountingAccountGraphQLModel? _selectedAccountingAccount;
+
+        [ExpandoPath("accountingAccountId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountingAccount
         {
             get => _selectedAccountingAccount;
@@ -309,15 +323,11 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _selectedAccountingAccount = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingAccount));
-                    NotifyOfPropertyChange(nameof(AccountingAccountId));
-                    this.TrackChange(nameof(AccountingAccountId));
+                    this.TrackChange(nameof(SelectedAccountingAccount));
                     MasterContext.RefreshCanSave();
                 }
             }
         }
-
-        [ExpandoPath("accountingAccountId")]
-        public int AccountingAccountId => AccountingAccountSelectExisting ? (SelectedAccountingAccount?.Id ?? 0) : 0;
 
         /// <summary>
         /// Banco padre guardado antes de crear una nueva cuenta.
@@ -345,7 +355,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 if (!IsEditing) return false;
                 if (HasErrors) return false;
                 if (string.IsNullOrWhiteSpace(Number)) return false;
-                if (AccountingAccountSelectExisting && (SelectedAccountingAccount == null || SelectedAccountingAccount.Id == 0))
+                if (AccountingAccountSelectExisting && SelectedAccountingAccount == null)
                     return false;
                 if (!this.HasChanges()) return false;
                 return true;
@@ -398,9 +408,10 @@ namespace NetErp.Treasury.Masters.PanelEditors
             IsActive = true;
             Reference = string.Empty;
             DisplayOrder = 0;
+            EnablePaymentMethod = false;
             AccountingAccountAutoCreate = true;
             AccountingAccountSelectExisting = false;
-            SelectedAccountingAccount = MasterContext.BankAccountAccountingAccounts?.FirstOrDefault(x => x.Id == 0);
+            SelectedAccountingAccount = null;
 
             SeedDefaultValues();
             ClearAllErrors();
@@ -434,6 +445,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
             AccountingAccountSelectExisting = true;
             SelectedAccountingAccount = MasterContext.BankAccountAccountingAccounts?
                 .FirstOrDefault(a => a.Id == bankAccountDTO.AccountingAccount?.Id);
+            EnablePaymentMethod = bankAccountDTO.PaymentMethod != null && bankAccountDTO.PaymentMethod.Id > 0;
             PaymentMethodAbbreviation = bankAccountDTO.PaymentMethod?.Abbreviation ?? string.Empty;
 
             // Set allowed cost centers
@@ -461,14 +473,23 @@ namespace NetErp.Treasury.Masters.PanelEditors
             this.SeedValue(nameof(Reference), Reference);
             this.SeedValue(nameof(DisplayOrder), DisplayOrder);
             this.SeedValue(nameof(Provider), Provider);
-            this.SeedValue(nameof(AccountingAccountId), AccountingAccountId);
+            this.SeedValue(nameof(SelectedAccountingAccount), SelectedAccountingAccount);
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(EnablePaymentMethod), EnablePaymentMethod);
             this.AcceptChanges();
         }
 
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(BankId), BankId);
+            this.SeedValue(nameof(Type), Type);
             this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(DisplayOrder), DisplayOrder);
+            this.SeedValue(nameof(Provider), Provider);
+            this.SeedValue(nameof(SelectedAccountingAccount), SelectedAccountingAccount);
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(EnablePaymentMethod), EnablePaymentMethod);
             this.AcceptChanges();
         }
 
@@ -480,36 +501,39 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<BankAccountGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<BankAccountGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Type)
-                .Field(e => e.Number)
-                .Field(e => e.IsActive)
-                .Field(e => e.Description)
-                .Field(e => e.Reference)
-                .Field(e => e.DisplayOrder)
-                .Field(e => e.Provider)
-                .SelectList(e => e.AllowedCostCenters, ac => ac
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.PaymentMethod, pm => pm
-                    .Field(p => p.Id)
-                    .Field(p => p.Abbreviation)
-                    .Field(p => p.Name))
-                .Select(e => e.AccountingAccount, aa => aa
-                    .Field(a => a.Id)
-                    .Field(a => a.Code)
-                    .Field(a => a.Name))
-                .Select(e => e.Bank, b => b
-                    .Field(a => a.Id)
-                    .Select(a => a.AccountingEntity, ae => ae
-                        .Field(x => x.Id)
-                        .Field(x => x.SearchName)
-                        .Field(x => x.CaptureType)))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "bankAccount", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Type)
+                    .Field(e => e.Number)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Description)
+                    .Field(e => e.Reference)
+                    .Field(e => e.DisplayOrder)
+                    .Field(e => e.Provider)
+                    .Select(e => e.PaymentMethod, pm => pm
+                        .Field(p => p.Id)
+                        .Field(p => p.Abbreviation)
+                        .Field(p => p.Name))
+                    .Select(e => e.AccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Code)
+                        .Field(a => a.Name))
+                    .Select(e => e.Bank, b => b
+                        .Field(a => a.Id)
+                        .Select(a => a.AccountingEntity, ae => ae
+                            .Field(x => x.Id)
+                            .Field(x => x.SearchName)
+                            .Field(x => x.CaptureType))))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateBankAccountInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateBankAccountInput!");
             var fragment = new GraphQLQueryFragment("createBankAccount", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -518,43 +542,44 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<BankAccountGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<BankAccountGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Type)
-                .Field(e => e.Number)
-                .Field(e => e.IsActive)
-                .Field(e => e.Description)
-                .Field(e => e.Reference)
-                .Field(e => e.DisplayOrder)
-                .Field(e => e.Provider)
-                .SelectList(e => e.AllowedCostCenters, ac => ac
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
-                .Select(e => e.PaymentMethod, pm => pm
-                    .Field(p => p.Id)
-                    .Field(p => p.Abbreviation)
-                    .Field(p => p.Name))
-                .Select(e => e.AccountingAccount, aa => aa
-                    .Field(a => a.Id)
-                    .Field(a => a.Code)
-                    .Field(a => a.Name))
-                .Select(e => e.Bank, b => b
-                    .Field(a => a.Id)
-                    .Select(a => a.AccountingEntity, ae => ae
-                        .Field(x => x.Id)
-                        .Field(x => x.SearchName)
-                        .Field(x => x.CaptureType)))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "bankAccount", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Type)
+                    .Field(e => e.Number)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Description)
+                    .Field(e => e.Reference)
+                    .Field(e => e.DisplayOrder)
+                    .Field(e => e.Provider)
+                    .Select(e => e.PaymentMethod, pm => pm
+                        .Field(p => p.Id)
+                        .Field(p => p.Abbreviation)
+                        .Field(p => p.Name))
+                    .Select(e => e.AccountingAccount, aa => aa
+                        .Field(a => a.Id)
+                        .Field(a => a.Code)
+                        .Field(a => a.Name))
+                    .Select(e => e.Bank, b => b
+                        .Field(a => a.Id)
+                        .Select(a => a.AccountingEntity, ae => ae
+                            .Field(x => x.Id)
+                            .Field(x => x.SearchName)
+                            .Field(x => x.CaptureType))))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var fragment = new GraphQLQueryFragment(
-                "updateBankAccount",
-                [
-                    new GraphQLQueryParameter("id", "Int!"),
-                    new GraphQLQueryParameter("data", "UpdateBankAccountInput!")
-                ],
-                fields,
-                "UpdateResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateBankAccountInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateBankAccount", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
@@ -563,47 +588,23 @@ namespace NetErp.Treasury.Masters.PanelEditors
         protected override async Task<UpsertResponseType<BankAccountGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
-            dynamic variables = new ExpandoObject();
+            dynamic variables;
 
             if (IsNewRecord)
             {
                 query = GetCreateQuery();
-                variables.data = new ExpandoObject();
-                variables.data.type = Type;
-                variables.data.number = Number.Trim().RemoveExtraSpaces();
-                variables.data.isActive = IsActive;
-                variables.data.description = Description;
-                variables.data.reference = Reference?.Trim() ?? "";
-                variables.data.displayOrder = DisplayOrder;
-                variables.data.accountingAccountId = AccountingAccountId;
-                variables.data.provider = BankCaptureInfoAsPN ? Provider : "";
-                variables.data.bankId = BankId;
-                variables.data.paymentMethodName = PaymentMethodName;
-                variables.data.allowedCostCenters = CostCenters.Where(x => x.IsChecked).Select(x => x.Id).ToList();
-
-                var createResult = await _bankAccountService.CreateAsync(query, variables);
-                return new UpsertResponseType<BankAccountGraphQLModel> { Entity = createResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables.id = Id;
-                variables.data = new ExpandoObject();
-                variables.data.type = Type;
-                variables.data.number = Number.Trim().RemoveExtraSpaces();
-                variables.data.isActive = IsActive;
-                variables.data.description = Description;
-                variables.data.reference = Reference?.Trim() ?? "";
-                variables.data.displayOrder = DisplayOrder;
-                variables.data.accountingAccountId = AccountingAccountId;
-                variables.data.provider = BankCaptureInfoAsPN ? Provider : "";
-                variables.data.bankId = BankId;
-                variables.data.paymentMethodName = PaymentMethodName;
-                variables.data.allowedCostCenters = CostCenters.Where(x => x.IsChecked).Select(x => x.Id).ToList();
-
-                var updateResult = await _bankAccountService.UpdateAsync(query, variables);
-                return new UpsertResponseType<BankAccountGraphQLModel> { Entity = updateResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
+
+            return IsNewRecord
+                ? await _bankAccountService.CreateAsync<UpsertResponseType<BankAccountGraphQLModel>>(query, variables)
+                : await _bankAccountService.UpdateAsync<UpsertResponseType<BankAccountGraphQLModel>>(query, variables);
         }
 
         protected override async Task PublishMessageAsync(UpsertResponseType<BankAccountGraphQLModel> result)

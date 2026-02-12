@@ -98,17 +98,17 @@
                             IndicatorType="BouncingDot"
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False"
                             Grid.Row="4">
             <dxg:GridControl 
                 Margin="0 8 0 0"
                 EnableSmartColumnsGeneration="True"
-                AutoGenerateColumns="None"
+                AutoGenerateColumns="None" 
                 ItemsSource="{Binding Path=Sellers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 SelectedItem="{Binding Path=SelectedSeller, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
-                    <dxg:TableView AllowCascadeUpdate="False" 
-                                   EnableSelectedRowAppearance="True"
+                    <dxg:TableView AllowCascadeUpdate="False" AllowFilterEditor="False" SearchPanelAllowFilter="False" AllowColumnMoving="False"
+                                   EnableSelectedRowAppearance="True" AllowFilterEditorAggregateOperands="No" AllowGrouping="False" AllowBestFit="False" IsGroupPanelMenuEnabled="False"
+                                   AllowColumnFiltering="False" IsColumnMenuEnabled="False"
                                    ShowGroupPanel="False" AlternateRowBackground="Beige">
                         <dxg:TableView.RowStyle>
                             <Style TargetType="dxg:RowControl">
@@ -125,8 +125,8 @@
                 </dxg:GridControl.View>
 
                 <!--N.I.T-->
-                <dxg:GridColumn 
-                    Header="NIT" 
+                <dxg:GridColumn
+                    Header="Cédula" 
                     Width="auto"
                     Binding="{Binding AccountingEntity.IdentificationNumberWithVerificationDigit, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 

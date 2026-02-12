@@ -594,6 +594,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         public bool CaptureInfoAsPJ => SelectedCaptureType.Equals(BooksDictionaries.CaptureTypeEnum.PJ);
 
         private int _selectedCityId;
+        [ExpandoPath("accountingEntity.cityId")]
         public int SelectedCityId
         {
             get => _selectedCityId;
