@@ -57,6 +57,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
+using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
 
 namespace NetErp
 {
@@ -114,8 +115,9 @@ namespace NetErp
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
-
+            _ = kernel.Bind<ProcessTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
@@ -206,8 +208,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AuthorizationSequenceTypeGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ModuleGraphQLModel>>().To<GraphQLRepository<ModuleGraphQLModel>>().InSingletonScope();
 
-            
+
             // Treasury module repositories
             _ = kernel.Bind<IRepository<CompanyLocationGraphQLModel>>().To<GraphQLRepository<CompanyLocationGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CostCenterGraphQLModel>>().To<GraphQLRepository<CostCenterGraphQLModel>>().InSingletonScope();
@@ -351,6 +354,8 @@ namespace NetErp
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
+                _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountPOCO>();
+                
                 // CashDrawer DTOs
                 _ = cfg.CreateMap<CompanyLocationGraphQLModel, CashDrawerCompanyLocationDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CashDrawerCostCenterDTO>();
