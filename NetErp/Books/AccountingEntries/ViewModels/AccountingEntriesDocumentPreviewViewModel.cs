@@ -22,7 +22,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     public class AccountingEntriesDocumentPreviewViewModel : Screen
     {
         private IEventAggregator _eventAggregator;
-        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
 
 
@@ -86,8 +86,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        private AccountingEntryMasterGraphQLModel _selectedAccountingEntryMaster;
-        public AccountingEntryMasterGraphQLModel SelectedAccountingEntryMaster
+        private AccountingEntryGraphQLModel _selectedAccountingEntryMaster;
+        public AccountingEntryGraphQLModel SelectedAccountingEntryMaster
         {
             get { return _selectedAccountingEntryMaster; }
             set
@@ -229,7 +229,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService)
+        public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService)
         {
             this.Context = context;
             this._accountingEntryMasterService = accountingEntryMasterService;
@@ -300,7 +300,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryMasterGraphQLModel> ExecuteCancelAccountingEntryAsync()
+        public async Task<AccountingEntryGraphQLModel> ExecuteCancelAccountingEntryAsync()
         {
             try
             {

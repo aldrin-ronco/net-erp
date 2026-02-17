@@ -1,4 +1,5 @@
 ﻿using Models.Global;
+using Models.Login;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,22 +11,22 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
-    public class AccountingEntryMasterGraphQLModel
+    public class AccountingEntryGraphQLModel
     {
         public BigInteger Id { get; set; } = 0;
         public BigInteger? DraftMasterId { get; set; }
         public string State { get; set; } = string.Empty;
         public DateTime DocumentDate { get; set; } = DateTime.Now.Date;
-        private DateTime _createdAt = DateTime.Now;
-        public DateTime CreatedAt
+        private DateTime _insertedAt = DateTime.Now;
+        public DateTime InsertedAt
         {
-            get { return TimeZoneInfo.ConvertTimeFromUtc(this._createdAt.ToUniversalTime(), TimeZoneInfo.Local); }
-            set { _createdAt = value; }
+            get { return TimeZoneInfo.ConvertTimeFromUtc(this._insertedAt.ToUniversalTime(), TimeZoneInfo.Local); }
+            set { _insertedAt = value; }
         }
         public TimeSpan DocumentTime {  get; set; }
         public string Description { get; set; } = string.Empty;
         public string DocumentNumber { get; set; } = string.Empty;
-        public string CreatedBy { get; set; } = string.Empty;
+        public LoginAccountGraphQLModel CreatedBy { get; set; } 
         public string CancelledBy { get; set; } = string.Empty;
         public bool Annulment { get; set; } = false;
         public AccountingBookGraphQLModel AccountingBook { get; set; }
@@ -83,11 +84,11 @@ namespace Models.Books
     }
     public class AccountingEntryDocumentPreviewDataContext
     {
-        public AccountingEntryMasterGraphQLModel AccountingEntryMaster { get; set; }
+        public AccountingEntryGraphQLModel AccountingEntryMaster { get; set; }
         public PageType<AccountingEntryDetailGraphQLModel> AccountingEntryDetailPage { get; set; }
     }
 
-    public class AccountingEntryMasterDTO : AccountingEntryMasterGraphQLModel
+    public class AccountingEntryMasterDTO : AccountingEntryGraphQLModel
     {
         public bool IsChecked { get; set; } = false;
     }
@@ -99,6 +100,6 @@ namespace Models.Books
 
     public class AccountingEntryMasterCancellationMessage
     {
-        public AccountingEntryMasterGraphQLModel CancelledAccountingEntry { get; set; }
+        public AccountingEntryGraphQLModel CancelledAccountingEntry { get; set; }
     }
 }

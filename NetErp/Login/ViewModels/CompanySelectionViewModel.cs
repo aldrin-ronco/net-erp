@@ -202,7 +202,9 @@ namespace NetErp.Login.ViewModels
 
             if (Debugger.IsAttached)
             {
-                FilteredOrganizationGroups.First().Companies.First(f => f.CompanyId == 15).IsSelected = true;
+               FilteredOrganizationGroups.FirstOrDefault(g => g.Companies.Any(c => c.CompanyId == 15)).Companies.First(f => f.CompanyId == 15).IsSelected = true;
+
+                //FilteredOrganizationGroups.First().Companies.First(f => f.CompanyId == 15).IsSelected = true;
                 _ = ContinueAsync();
             }
         }

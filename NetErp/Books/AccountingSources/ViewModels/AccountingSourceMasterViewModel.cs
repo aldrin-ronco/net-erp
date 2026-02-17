@@ -10,6 +10,7 @@ using Models.Books;
 using Models.Global;
 using Models.Suppliers;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using System;
@@ -34,6 +35,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly ModuleCache _moduleCache;
 
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         // Context
@@ -50,19 +52,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 }
             }
         }
-        private ObservableCollection<ProcessTypeGraphQLModel> _processTypes;
-        public ObservableCollection<ProcessTypeGraphQLModel> ProcessTypes
-        {
-            get => _processTypes;
-            set
-            {
-                if (_processTypes != value)
-                {
-                    _processTypes = value;
-                    NotifyOfPropertyChange(nameof(ProcessTypes));
-                }
-            }
-        }
+       
         /// <summary>
         /// Establece cuando la aplicacion esta ocupada
         /// </summary>
@@ -277,21 +267,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        // Cuentas contables
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
-        {
-            get { return _accountingAccounts; }
-            set
-            {
-                if (_accountingAccounts != value)
-                {
-                    _accountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccounts));
-
-                }
-            }
-        }
+      
 
         // Modulos del sistema administrativo
         private ObservableCollection<ModuleGraphQLModel> _modules;
@@ -312,79 +288,21 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task InitializeAsync()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                
-                string query = GetLoadAccountingSourceQuery(true);
-
-                //AccountingSource Filter
-                dynamic variables = new ExpandoObject();
-                variables.accountingSourcesFilters = new ExpandoObject();
-
-                variables.accountingSourcesFilters.annulment =  false;
-               if(!string.IsNullOrEmpty(FilterSearch))
-                {
-                    variables.accountingSourcesFilters.name =  FilterSearch.Trim().RemoveExtraSpaces();
-
-                }
-
-                if(SelectedModuleId != 0)
-                {
-                 
-                    variables.accountingSourcesFilters.moduleId = SelectedModuleId;
-                }
-
-                // Filtro de cuentas contables
-                variables.accountingAccountsFilters = new ExpandoObject();
-                variables.accountingAccountsFilters.only_auxiliary_accounts = true;
-               
-
-                //Pagination
-                variables.accountingSourcesPagination = new ExpandoObject();
-                variables.accountingSourcesPagination.page = PageIndex;
-                variables.accountingSourcesPagination.pageSize = PageSize;
-
-                // Iniciar cronometro
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                AccountingSourceDataContext result = await _accountingSourceService.GetDataContextAsync<AccountingSourceDataContext>(query, variables);
-
-                // Detener cronometro
-                stopwatch.Stop();
-                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(result.ProcessTypesPage.Entries);
-                App.Current.Dispatcher.Invoke(() =>
-                {
-                    this.Modules = result.ModulesPage.Entries;
-                    this.Modules.Insert(0, new ModuleGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" });
-                    this.AccountingSources = new ObservableCollection<AccountingSourceDTO>(this.Context.AutoMapper.Map<IEnumerable<AccountingSourceDTO>>(result.AccountingSourcesPage.Entries));
-                    this.AccountingAccounts = result.AccountingAccountsPage.Entries;
-                });
-                this.TotalCount = result.AccountingSourcesPage.TotalEntries;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await Task.WhenAll(
+                   _moduleCache.EnsureLoadedAsync()
+               );
+            this.Modules = Context.AutoMapper.Map<ObservableCollection<ModuleGraphQLModel>>(_moduleCache.Items);
+            this.Modules.Insert(0, new ModuleGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" });
+            await LoadAccountingSourcesAsync();
+            
         }
 
-        public AccountingSourceMasterViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService)
+        public AccountingSourceMasterViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, ModuleCache moduleCache)
         {
             this._notificationService = notificationService;
             this._accountingSourceService = accountingSourceService;
             this.Context = context;
+            this._moduleCache = moduleCache;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ =  InitializeAsync();
         }
@@ -455,38 +373,16 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 IsBusy = false;
             }
         }
-        public string GetLoadAccountingSourceQuery(bool withDependencies = false)
+        public string GetLoadAccountingSourceQuery()
         {
-            
-            var moduleFields = FieldSpec<PageType<ModuleGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Code)
-                  .Field(e => e.Name)
-                  .Field(e => e.Abbreviation)
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-            
+
             var accountingSourceFields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
                .Create()
                .SelectList(it => it.Entries, entries => entries
                    .Field(e => e.Id)
-                   .Field(e => e.AnnulmentCode)
-                   .Field(e => e.Code)
-                   .Field(e => e.Name)
-                   .Field(e => e.IsSystemSource)
-                   .Field(e => e.AnnulmentCharacter)
-                   .Field(e => e.IsKardexTransaction)
-                   .Field(e => e.KardexFlow)
-                    .Select(e => e.AccountingAccount, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
+                   .Field(e => e.Code) //ok
+                   .Field(e => e.Name) // ok
+                   .Field(e => e.IsSystemSource) //ok
                    .Select(e => e.ProcessType, cat => cat
                             .Field(c => c.Id)
                             .Field(c => c.Name)
@@ -504,42 +400,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
                .Field(o => o.TotalEntries)
                .Build();
 
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Margin)
-                  .Field(e => e.Code)
-                  .Field(e => e.Name)
-                  .Field(e => e.MarginBasis)
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-            var processTypeFields = FieldSpec<PageType<ProcessTypeGraphQLModel>>
-           .Create()
-           .SelectList(it => it.Entries, entries => entries
-               .Field(e => e.Id)
-               .Field(e => e.Name)
-           )
-           .Field(o => o.PageNumber)
-           .Field(o => o.PageSize)
-           .Field(o => o.TotalPages)
-           .Field(o => o.TotalEntries)
-           .Build();
-
             var accountingSourcePagParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var accountingSourceParameters = new GraphQLQueryParameter("filters", "AccountingSourceFilters");
-            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
 
-            var accountingSourceFragment = new GraphQLQueryFragment("accountingSourcesPage", [accountingSourcePagParameters, accountingSourceParameters], accountingSourceFields, withDependencies ? "AccountingSourcesPage" : "PageResponse");
-            var accountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "AccountingAccountsPage");
-            var moduleFragment = new GraphQLQueryFragment("modulesPage", [], moduleFields, "ModulesPage");
-            var processTypeFragment = new GraphQLQueryFragment("processTypesPage", [], processTypeFields, "ProcessTypesPage");
+            var accountingSourceFragment = new GraphQLQueryFragment("accountingSourcesPage", [accountingSourcePagParameters, accountingSourceParameters], accountingSourceFields,  "PageResponse");
 
-            var builder = withDependencies ? new GraphQLQueryBuilder([accountingSourceFragment, accountingAccountFragment, moduleFragment, processTypeFragment]) : new GraphQLQueryBuilder([accountingSourceFragment]);
+            var builder = new GraphQLQueryBuilder([accountingSourceFragment]);
             return builder.GetQuery();
         }
         public void OnChecked()
@@ -574,10 +440,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
-                var auxiliaryAccounts = from account in this.AccountingAccounts
-                                        select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
-
-                await this.Context.ActivateDetailViewForEditAsync(this.SelectedAccountingSource, ProcessTypes, auxiliaryAccounts);
+                               await this.Context.ActivateDetailViewForEditAsync(this.SelectedAccountingSource);
             }
             catch (Exception ex)
             {
@@ -606,9 +469,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task ExecuteCreateSourceAsync()
         {
-            var auxiliaryAccounts = from account in this.AccountingAccounts
-                                    select new AccountingAccountPOCO { Id = account.Id, Code = account.Code, Name = account.Name };
-            await Context.ActivateDetailViewForNewAsync(ProcessTypes, auxiliaryAccounts);
+            
+            await Context.ActivateDetailViewForNewAsync();
         }
 
         public async Task DeleteSourceAsync()

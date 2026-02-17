@@ -34,11 +34,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
-        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
 
         private readonly CostCenterCache _costCenterCache;
         private readonly AccountingBookCache _accountingBookCache;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+
 
         private readonly Helpers.Services.INotificationService _notificationService;
 
@@ -67,11 +69,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IRepository<AccountingAccountGraphQLModel> accountingAccountService,
                                           IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
                                           IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
-                                          IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
+                                          IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
                                           IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
-             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
+             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache
                                           )
         {
             this.EventAggregator = eventAggregator;
@@ -85,6 +88,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _costCenterCache = costCenterCache;
             _accountingBookCache = accountingBookCache;
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+
             _ = this.ActivateMasterViewAsync();
             
         }
@@ -109,7 +114,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this._accountingEntityService,
                 this._accountingEntryDraftMasterService,
                 this._accountingEntryDraftDetailService,
-                this._accountingAccountService, accountingBooks, costCenters, accountingSources);
+                this._accountingAccountService,
+                this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache );
             // Header
             instance.SelectedAccountingEntryDraftMaster = null;
             instance.DraftMasterId = 0;
@@ -146,7 +152,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 object variables;
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, AccountingEntriesMasterViewModel.AccountingBooks, AccountingEntriesMasterViewModel.CostCenters, AccountingEntriesMasterViewModel.AccountingSources);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache);
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {

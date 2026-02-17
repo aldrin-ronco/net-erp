@@ -6,32 +6,34 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using DevExpress.XtraEditors.Filtering;
 using Dictionaries;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Treasury.Masters.DTO;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Xml.Linq;
-using static Amazon.S3.Util.S3EventNotification;
-using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using Xceed.Wpf.Toolkit.Primitives;
 using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NetErp.Books.AccountingSources.ViewModels
 {
     //TODO revisión general de funcionamiento
     public class AccountingSourceDetailViewModel : Screen
     {
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly ProcessTypeCache _processTypeCache;
         #region Propiedades
 
 
@@ -323,25 +325,30 @@ namespace NetErp.Books.AccountingSources.ViewModels
         }
         #endregion
 
-        public AccountingSourceDetailViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
+        public AccountingSourceDetailViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService,  AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, ProcessTypeCache processTypeCache)
         {
             // Contexto
             this.Context = context;
             this._accountingSourceService = accountingSourceService;
-            this.ProcessTypes = processTypes;
-            // Cargar cuentas contables
+            this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            this._processTypeCache = processTypeCache;
            
-            this.AuxiliaryAccountingAccounts = new ObservableCollection<AccountingAccountPOCO>(auxiliaryAccounts);
-            // Cargar tipos de procesos
-            //this.ProcessTypes = new ObservableCollection<ProcessTypeGraphQLModel>(ProcessTypeService.GetList());
+            _= this.InitializeAsync();
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
          
         }
 
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
-           
-            return Task.CompletedTask;
+            await Task.WhenAll(
+                    _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
+                    _processTypeCache.EnsureLoadedAsync()
+
+                );
+            this.ProcessTypes = Context.AutoMapper.Map<ObservableCollection<ProcessTypeGraphQLModel>>(_processTypeCache.Items);
+            this.AuxiliaryAccountingAccounts = Context.AutoMapper.Map<ObservableCollection<AccountingAccountPOCO>>(_auxiliaryAccountingAccountCache.Items);
+            
+
         }
         protected override void OnViewReady(object view)
         {
@@ -357,7 +364,81 @@ namespace NetErp.Books.AccountingSources.ViewModels
             this.NotifyOfPropertyChange(nameof(CanSave));
         }
 
-       
+        public async Task<AccountingSourceGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            try
+            {
+                string query = GetLoadSByIdQuery();
+
+                dynamic variables = new ExpandoObject();
+
+
+                variables.singleItemResponseId = id;
+
+                var entity = await _accountingSourceService.FindByIdAsync(query, variables);
+
+                
+                PopulateFromAccountingSource(entity);
+
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+        public void PopulateFromAccountingSource(AccountingSourceGraphQLModel entity)
+        {
+            // Propiedades básicas del tax
+            Name = entity.Name;
+            Id = entity.Id;
+            ProcessTypeId = entity.ProcessType.Id;
+            ShortCode = entity.Code.Substring(entity.Code.Length - 3);
+            KardexFlow = entity.KardexFlow;
+            AnnulmentCharacter = entity.AnnulmentCharacter;
+            IsKardexTransaction = entity.IsKardexTransaction;
+            AccountingAccountId = entity.AccountingAccount != null ? entity.AccountingAccount.Id : 0;
+            this.AcceptChanges();
+
+
+
+        }
+        public string GetLoadSByIdQuery()
+        {
+            var entityFields = FieldSpec<AccountingSourceGraphQLModel>
+             .Create()
+                 .Field(e => e.Id)
+                 
+                   .Field(e => e.AnnulmentCode)
+                   .Field(e => e.Code) //ok
+                   .Field(e => e.Name) // ok
+                   .Field(e => e.IsSystemSource) //ok
+                   .Field(e => e.AnnulmentCharacter)
+                   .Field(e => e.IsKardexTransaction)
+                   .Field(e => e.KardexFlow)
+                    .Select(e => e.AccountingAccount, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                   .Select(e => e.ProcessType, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Select(c => c.Module, dep => dep
+                                .Field(d => d.Id)
+                                .Field(d => d.Name)
+                            )
+
+                    )
+             .Build();
+            var taxIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var taxFragment = new GraphQLQueryFragment("accountingSource", [taxIdParameter], entityFields, "SingleItemResponse");
+
+            var builder = new GraphQLQueryBuilder([taxFragment]);
+
+            return builder.GetQuery();
+
+        }
 
         public async Task SaveAsync()
         {
@@ -503,7 +584,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             else
             {
-                var a = CanSave;
+                
                 string query = GetUpdateQuery();
                 variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
