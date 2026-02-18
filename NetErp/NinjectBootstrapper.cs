@@ -115,10 +115,10 @@ namespace NetErp
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ProcessTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
-
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
@@ -184,9 +184,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<AccountingEntityGraphQLModel>>().To<GraphQLRepository<AccountingEntityGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingBookGraphQLModel>>().To<GraphQLRepository<AccountingBookGraphQLModel>>().InSingletonScope();
 
-            _ = kernel.Bind<IRepository<AccountingEntryMasterGraphQLModel>>().To<GraphQLRepository<AccountingEntryMasterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryGraphQLModel>>().To<GraphQLRepository<AccountingEntryGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingEntryDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDetailGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<AccountingEntryDraftMasterGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftMasterGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryDraftGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingEntryDraftDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftDetailGraphQLModel>>().InSingletonScope();
 
             _ = kernel.Bind<IRepository<AccountingPresentationGraphQLModel>>().To<GraphQLRepository<AccountingPresentationGraphQLModel>>().InSingletonScope();
@@ -332,8 +332,8 @@ namespace NetErp
                 _ = cfg.CreateMap<SellerGraphQLModel, SellerDTO>();
                 _ = cfg.CreateMap<AccountingSourceGraphQLModel, AccountingSourceDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountDTO>();
-                _ = cfg.CreateMap<AccountingEntryMasterGraphQLModel, AccountingEntryMasterDTO>();
-                _ = cfg.CreateMap<AccountingEntryDraftMasterGraphQLModel, AccountingEntryDraftMasterDTO>();
+                _ = cfg.CreateMap<AccountingEntryGraphQLModel, AccountingEntryMasterDTO>();
+                _ = cfg.CreateMap<AccountingEntryDraftGraphQLModel, AccountingEntryDraftMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
                 _ = cfg.CreateMap<MeasurementUnitGraphQLModel, MeasurementUnitDTO>();
                 _ = cfg.CreateMap<ItemSizeMasterGraphQLModel, ItemSizeMasterDTO>();

@@ -1,32 +1,38 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
+using Common.Interfaces;
+using DevExpress.Data.Filtering;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using DevExpress.XtraEditors.Controls;
+using Extensions.Books;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
+using NetErp.Billing.PriceList.ViewModels;
+using NetErp.Books.AccountingEntries.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Extensions.Books;
 using System.Windows.Input;
-using Microsoft.VisualStudio.Threading;
-using System.Dynamic;
-using System.Runtime.CompilerServices;
-using DevExpress.Mvvm;
-using DevExpress.Data.Filtering;
-using NetErp.Billing.PriceList.ViewModels;
-using NetErp.Books.AccountingEntries.DTO;
-using Common.Interfaces;
+using static DevExpress.Data.Utils.SafeProcess;
+using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
 {
@@ -37,15 +43,20 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         IHandle<AccountingAccountDeleteMessage>,
         IHandle<CostCenterCreateMessage>
     {
+        private readonly CostCenterCache _costCenterCache;
+        private readonly AccountingBookCache _accountingBookCache;
+        private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+
         Dictionary<string, List<string>> _errors = [];
         private readonly Helpers.Services.INotificationService _notificationService = IoC.Get<Helpers.Services.INotificationService>();
-        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService; 
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
-
+        
 
 
         #region Propiedades
@@ -54,7 +65,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         public AccountingEntriesViewModel Context { get; set; }
 
         // Parent record reference
-        public AccountingEntryDraftMasterGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
+        public AccountingEntryDraftGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
 
         // Accounting Entries
         private ObservableCollection<AccountingEntryDraftDetailDTO> _accountingEntries;
@@ -570,9 +581,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryMasterGraphQLModel> ExecutePublishAccountingEntryAsync()
+        public async Task<AccountingEntryGraphQLModel> ExecutePublishAccountingEntryAsync()
         {
-            AccountingEntryMasterGraphQLModel? entry = null;
+            AccountingEntryGraphQLModel? entry = null;
             object variables = new
             {
                 this.DraftMasterId
@@ -584,7 +595,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     string query = @"
                     mutation($draftMasterId:ID!) {
-                      CreateResponse: createAccountingEntryMasterFromDraft(draftMasterId:$draftMasterId) {
+                      CreateResponse: finalize_accounting_entry_draft(draftId:$draftMasterId) {
                         id 
                         draftMasterId
                         documentNumber
@@ -612,7 +623,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     string query = @"
                     mutation($draftMasterId:ID!) {
-                      UpdateResponse: updateAccountingEntryMasterFromDraft(draftMasterId:$draftMasterId) {
+                      UpdateResponse: finalize_accounting_entry_draft (draftId:$draftMasterId) {
                         id
                         draftMasterId
                         documentNumber
@@ -849,115 +860,59 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task SearchForAccountingEntityMatchAsync()
-        {
-            try
-            {
-                this.IsBusy = true;
-                this.Refresh();
-
-                if (this.IsFilterSearchAccountinEntityOnEditMode)
-                {
-                    await Task.Run(() => this.ExecuteSearchForAccountingEntityMatchAsync());
-                    App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(SelectedAccountingEntityOnEntryId)));
-                }
-                else
-                {
-                    await Task.Run(() =>
-                    {
-                        this.IsFilterSearchAccountinEntityOnEditMode = true;
-                        App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(FilterSearchAccountingEntity)));
-                    });
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+       
 
 
         public async Task InitializeAsync()
         {
-            try
-            {
-                IsBusy = true;
-                // Validaciones
-                this._errors = new Dictionary<string, List<string>>();
-                this.Context.EventAggregator.SubscribeOnUIThread(this);
-
-                if (this.AccountingAccounts == null) // Solo debe suceder una vez
-                {
-                    string query = @"
-                    query ($accountingAccountFilter: AccountingAccountFilterInput) {
-                      ListResponse: accountingAccounts(filter: $accountingAccountFilter) {
-                        id
-                        code
-                        name
-                        margin
-                        marginBasis
-                      }
-                    }";
-                    dynamic variables = new ExpandoObject();
-                    variables.AccountingAccountFilter = new ExpandoObject();
-                    variables.AccountingAccountFilter.Code = new ExpandoObject();
-                    variables.AccountingAccountFilter.Code.@operator = new List<string>() { "length", ">=" };
-                    variables.AccountingAccountFilter.Code.value = 8;
-                    var result = await this._accountingAccountService.GetListAsync(query, variables);
-                    this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(result);
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await Task.WhenAll(
+               _costCenterCache.EnsureLoadedAsync(),
+               _accountingBookCache.EnsureLoadedAsync(),
+                _notAnnulledAccountingSourceCache.EnsureLoadedAsync(),
+                _auxiliaryAccountingAccountCache.EnsureLoadedAsync()
+               );
+            CostCenters = [.. _costCenterCache.Items];
+            this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
+            this.AccountingBooks = [.. _accountingBookCache.Items];
+            this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
+            this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
+            this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
+            this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
+            this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+            
+            
         }
 
         public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context, 
-            IRepository<AccountingEntryMasterGraphQLModel>accountingEntryMasterService, 
+            IRepository<AccountingEntryGraphQLModel>accountingEntryMasterService, 
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
             IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
             IRepository<AccountingAccountGraphQLModel> accountingAccountService,
-            ObservableCollection<AccountingBookGraphQLModel> accountingBooks,
-            ObservableCollection<CostCenterGraphQLModel> costCenters,
-            ObservableCollection<AccountingSourceGraphQLModel> accountingSources)
+             CostCenterCache costCenterCache,
+             AccountingBookCache accountingBookCache,
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
+             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache)
         {
             this.Context = context;
+            _costCenterCache = costCenterCache;
+            _accountingBookCache = accountingBookCache;
+            _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._accountingEntityService = accountingEntityService;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
             this._accountingAccountService = accountingAccountService;
-            this.CostCenters = costCenters;
-            this.AccountingSources = accountingSources;
-            this.AccountingBooks = accountingBooks;
-            
+            this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             
             joinable.Run(async () => await InitializeAsync());
             
         }
 
-        public async Task ExecuteSearchForAccountingEntityMatchAsync()
+        /*public async Task ExecuteSearchForAccountingEntityMatchAsync()
         {
             try
             {
@@ -1001,9 +956,106 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 throw;
             }
+        }*/
+        public async Task SearchForAccountingEntityMatchAsync()
+        {
+           
+            try
+            {
+                if (string.IsNullOrEmpty(this.FilterSearchAccountingEntity))
+                {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        this.AccountingEntitiesSearchResults.Clear();
+                    });
+                    return;
+                }
+                if (this.IsFilterSearchAccountinEntityOnEditMode)
+                {
+                    string query = GetSearchForAccountingEntityMatchQuery();
+                    dynamic variables = new ExpandoObject();
+                    variables.pageResponsePagination = new ExpandoObject();
+                    variables.pageResponsePagination.page = 1;
+                    variables.pageResponsePagination.pageSize = 10;
+
+                    variables.pageResponseFilters = new ExpandoObject();
+                    variables.pageResponseFilters.matching = this.FilterSearchAccountingEntity.Replace(" ", "%").Trim().RemoveExtraSpaces();
+                   
+                    PageType<AccountingEntityGraphQLModel> result = await _accountingEntityService.GetPageAsync(query, variables);
+                    this.AccountingEntitiesSearchResults = [.. result.Entries];
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        AccountingEntitiesSearchResults.Insert(0, new AccountingEntityGraphQLModel() { Id = 0, SearchName = "SELECCIONE UN TERCERO" });
+                        if (AccountingEntitiesSearchResults.ToList().Count == 2) AccountingEntitiesSearchResults = AccountingEntitiesSearchResults.Where(x => x.Id != 0).ToObservableCollection();
+                    });
+
+                    this.IsFilterSearchAccountinEntityOnEditMode = (this.AccountingEntitiesSearchResults.Count == 0);
+                    this.SelectedAccountingEntityOnEntryId = -1; // Necesario para que siempre se ejecute el property change
+                    this.SelectedAccountingEntityOnEntryId = this.AccountingEntitiesSearchResults.FirstOrDefault().Id;
+                  
+                }
+                else
+                {
+                    await Task.Run(() =>
+                    {
+                        this.IsFilterSearchAccountinEntityOnEditMode = true;
+                        App.Current.Dispatcher.Invoke(() => this.SetFocus(nameof(FilterSearchAccountingEntity)));
+                    });
+                }
+
+                IsBusy = true;
+
+               
+                
+
+               
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+        public string GetSearchForAccountingEntityMatchQuery()
+        {
+
+
+            var accountingEntityFields = FieldSpec<PageType<AccountingEntityGraphQLModel>>
+            .Create()
+            .SelectList(it => it.Entries, entries => entries
+                .Field(e => e.Id)
+                .Field(e => e.SearchName)
+                .Field(e => e.VerificationDigit)
+                .Field(e => e.IdentificationNumber)
+                .Field(e => e.InsertedAt)
+            )
+            .Field(o => o.PageNumber)
+            .Field(o => o.PageSize)
+            .Field(o => o.TotalPages)
+            .Field(o => o.TotalEntries)
+            .Build();
+
+
+            var accountingEntityPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var accountingEntityfilterParameters = new GraphQLQueryParameter("filters", "AccountingEntityFilters");
+
+            var accountingEntityFragment = new GraphQLQueryFragment("accountingEntitiesPage", [accountingEntityPagParameters, accountingEntityfilterParameters], accountingEntityFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([accountingEntityFragment]);
+            return builder.GetQuery();
         }
 
-        public async Task<AccountingEntryDraftMasterGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
+        public async Task<AccountingEntryDraftGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
         {
             try
             {
@@ -1096,7 +1148,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     query = @"
                     mutation ($data: CreateAccountingEntryDraftMasterInput!) {
-                      CreateResponse: createAccountingEntryDraftMaster(data: $data) {
+                      CreateResponse: createAccountingEntryDraft(data: $data) {
                         id
                         accountingBook {
                           id
@@ -1148,14 +1200,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     var DocumentDate = this.DocumentDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
                     variables = new
                     {
-                        Data = new
+                        Input = new
                         {
                             CostCenterId = this.SelectedCostCenterId,
                             AccountingSourceId = this.SelectedAccountingSourceId,
                             AccountingBookId = this.SelectedAccountingBookId,
                             DocumentDate,
                             this.Description,
-                            CreatedBy = SessionInfo.UserEmail,
+                            createdById = SessionInfo.SessionId,
                             EntriesDraftDetail = new List<Object>()
                             {
                                 new
@@ -1175,7 +1227,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     // Iniciar cronometro
                     Stopwatch stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    AccountingEntryDraftMasterGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
+                    AccountingEntryDraftGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
                     stopwatch.Stop();
 
                     // Message
@@ -1253,7 +1305,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
             catch (Exception ex)
             {
-                throw;
+               throw;
             }
         }
 

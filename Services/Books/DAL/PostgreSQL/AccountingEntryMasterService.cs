@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Services.Books.DAL.PostgreSQL
 {
-    public class AccountingEntryMasterService : IGenericDataAccess<AccountingEntryMasterGraphQLModel>
+    public class AccountingEntryMasterService : IGenericDataAccess<AccountingEntryGraphQLModel>
     {
     }
 }

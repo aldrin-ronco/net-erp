@@ -280,7 +280,7 @@
                             </Button>
                         </Grid>
                         <!--Boton ejecutar busqueda-->
-                        <Button Grid.Row="5" Grid.Column="2" Margin="4 4 0 4" Padding="2" x:Name="SearchAccountingEntries">
+                        <Button Grid.Row="5" Grid.Column="2" Margin="4 4 0 4" Padding="2" x:Name="SearchAccountingEntriesAsync">
                             <Button.Content>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Image Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}" Margin="0 0 4 0" Width="16"/>
