@@ -6,6 +6,7 @@ using DevExpress.Xpf.Core;
 using Models.Books;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Books.AccountingAccounts.ViewModels;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -21,6 +22,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         public IMapper AutoMapper { get; private set; }
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+
         public IEventAggregator EventAggregator { get; private set; }
 
         private AccountingAccountGroupMasterViewModel _accountingAccountGroupMasterViewModel;
@@ -29,18 +32,25 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 		{
             get
             {
-                if (_accountingAccountGroupMasterViewModel is null) _accountingAccountGroupMasterViewModel = new AccountingAccountGroupMasterViewModel(this, _notificationService, _accountingAccountGroupService);
+                if (_accountingAccountGroupMasterViewModel is null) _accountingAccountGroupMasterViewModel = new AccountingAccountGroupMasterViewModel(this, _notificationService, _accountingAccountGroupService, _auxiliaryAccountingAccountCache);
                 return _accountingAccountGroupMasterViewModel;
             }
         }
 
-        public AccountingAccountGroupViewModel(IMapper mapper, IEventAggregator eventAggregator, Helpers.Services.INotificationService notificationService, IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService)
+        public AccountingAccountGroupViewModel(IMapper mapper,
+            IEventAggregator eventAggregator,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache
+)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _notificationService = notificationService;
             _accountingAccountGroupService = accountingAccountGroupService;
-           EventAggregator = eventAggregator;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+
+            EventAggregator = eventAggregator;
         }
         protected override void OnViewReady(object view)
         {
