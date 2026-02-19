@@ -65,12 +65,29 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        private string _code = string.Empty;
+        public string Code
+        {
+            get => _code;
+            set
+            {
+                if (_code != value)
+                {
+                    _code = value;
+                    NotifyOfPropertyChange(nameof(Code));
+                    this.TrackChange(nameof(Code));
+                    ValidateCode();
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private int _accountingEntityId;
-        [ExpandoPath("accountingEntityId")]
         public int AccountingEntityId
         {
             get => _accountingEntityId;
@@ -103,7 +120,6 @@ namespace NetErp.Treasury.Masters.PanelEditors
         }
 
         private string _paymentMethodPrefix = "Z";
-        [ExpandoPath("paymentMethodPrefix")]
         public string PaymentMethodPrefix
         {
             get => _paymentMethodPrefix;
@@ -114,6 +130,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _paymentMethodPrefix = value;
                     NotifyOfPropertyChange(nameof(PaymentMethodPrefix));
                     this.TrackChange(nameof(PaymentMethodPrefix));
+                    ValidatePaymentMethodPrefix();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -200,6 +217,19 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         #region Validation Methods
 
+        private void ValidateCode()
+        {
+            ClearErrors(nameof(Code));
+            if (string.IsNullOrWhiteSpace(Code))
+            {
+                AddError(nameof(Code), "El código es obligatorio");
+            }
+            else if (Code.Length != 3)
+            {
+                AddError(nameof(Code), "El código debe tener exactamente 3 dígitos");
+            }
+        }
+
         private void ValidateAccountingEntityName()
         {
             ClearErrors(nameof(AccountingEntityName));
@@ -209,9 +239,24 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private void ValidatePaymentMethodPrefix()
+        {
+            ClearErrors(nameof(PaymentMethodPrefix));
+            if (string.IsNullOrWhiteSpace(PaymentMethodPrefix))
+            {
+                AddError(nameof(PaymentMethodPrefix), "El prefijo de método de pago es obligatorio");
+            }
+            else if (PaymentMethodPrefix.Length != 1)
+            {
+                AddError(nameof(PaymentMethodPrefix), "El prefijo debe ser exactamente una letra");
+            }
+        }
+
         public override void ValidateAll()
         {
+            ValidateCode();
             ValidateAccountingEntityName();
+            ValidatePaymentMethodPrefix();
         }
 
         #endregion
@@ -222,6 +267,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
         {
             OriginalDto = null;
             Id = 0;
+            Code = string.Empty;
             AccountingEntityId = 0;
             AccountingEntityName = string.Empty;
             PaymentMethodPrefix = "Z";
@@ -239,6 +285,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
             OriginalDto = bankDTO;
             Id = bankDTO.Id;
+            Code = bankDTO.Code;
             AccountingEntityId = bankDTO.AccountingEntity?.Id ?? 0;
             AccountingEntityName = bankDTO.AccountingEntity?.SearchName ?? string.Empty;
             PaymentMethodPrefix = bankDTO.PaymentMethodPrefix;
@@ -252,6 +299,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         private void SeedCurrentValues()
         {
+            this.SeedValue(nameof(Code), Code);
             this.SeedValue(nameof(AccountingEntityId), AccountingEntityId);
             this.SeedValue(nameof(PaymentMethodPrefix), PaymentMethodPrefix);
             this.AcceptChanges();
@@ -259,6 +307,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         private void SeedDefaultValues()
         {
+            this.ClearSeeds();
             this.SeedValue(nameof(PaymentMethodPrefix), PaymentMethodPrefix);
             this.AcceptChanges();
         }
@@ -271,17 +320,24 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetCreateQuery()
         {
-            var fields = FieldSpec<BankGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<BankGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.PaymentMethodPrefix)
-                .Select(e => e.AccountingEntity, ae => ae
-                    .Field(a => a.Id)
-                    .Field(a => a.SearchName)
-                    .Field(a => a.CaptureType))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "bank", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Code)
+                    .Field(e => e.PaymentMethodPrefix)
+                    .Select(e => e.AccountingEntity, ae => ae
+                        .Field(a => a.Id)
+                        .Field(a => a.SearchName)
+                        .Field(a => a.CaptureType)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateBankInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateBankInput!");
             var fragment = new GraphQLQueryFragment("createBank", [parameter], fields, "CreateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
@@ -290,24 +346,29 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
         protected override string GetUpdateQuery()
         {
-            var fields = FieldSpec<BankGraphQLModel>
+            var fields = FieldSpec<UpsertResponseType<BankGraphQLModel>>
                 .Create()
-                .Field(e => e.Id)
-                .Field(e => e.PaymentMethodPrefix)
-                .Select(e => e.AccountingEntity, ae => ae
-                    .Field(a => a.Id)
-                    .Field(a => a.SearchName)
-                    .Field(a => a.CaptureType))
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "bank", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Code)
+                    .Field(e => e.PaymentMethodPrefix)
+                    .Select(e => e.AccountingEntity, ae => ae
+                        .Field(a => a.Id)
+                        .Field(a => a.SearchName)
+                        .Field(a => a.CaptureType)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
                 .Build();
 
-            var fragment = new GraphQLQueryFragment(
-                "updateBank",
-                [
-                    new GraphQLQueryParameter("id", "Int!"),
-                    new GraphQLQueryParameter("data", "UpdateBankInput!")
-                ],
-                fields,
-                "UpdateResponse");
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateBankInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateBank", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
@@ -316,29 +377,23 @@ namespace NetErp.Treasury.Masters.PanelEditors
         protected override async Task<UpsertResponseType<BankGraphQLModel>> ExecuteSaveAsync()
         {
             string query;
-            dynamic variables = new ExpandoObject();
+            dynamic variables;
 
             if (IsNewRecord)
             {
                 query = GetCreateQuery();
-                variables.data = new ExpandoObject();
-                variables.data.accountingEntityId = AccountingEntityId;
-                variables.data.paymentMethodPrefix = PaymentMethodPrefix;
-
-                var createResult = await _bankService.CreateAsync(query, variables);
-                return new UpsertResponseType<BankGraphQLModel> { Entity = createResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
                 query = GetUpdateQuery();
-                variables.id = Id;
-                variables.data = new ExpandoObject();
-                variables.data.accountingEntityId = AccountingEntityId;
-                variables.data.paymentMethodPrefix = PaymentMethodPrefix;
-
-                var updateResult = await _bankService.UpdateAsync(query, variables);
-                return new UpsertResponseType<BankGraphQLModel> { Entity = updateResult };
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
             }
+
+            return IsNewRecord
+                ? await _bankService.CreateAsync<UpsertResponseType<BankGraphQLModel>>(query, variables)
+                : await _bankService.UpdateAsync<UpsertResponseType<BankGraphQLModel>>(query, variables);
         }
 
         protected override async Task PublishMessageAsync(UpsertResponseType<BankGraphQLModel> result)
@@ -346,12 +401,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new BankCreateMessage { CreatedBank = result.Entity });
+                    new BankCreateMessage { CreatedBank = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new BankUpdateMessage { UpdatedBank = result.Entity });
+                    new BankUpdateMessage { UpdatedBank = result });
             }
         }
 

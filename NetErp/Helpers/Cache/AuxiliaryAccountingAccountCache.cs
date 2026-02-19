@@ -44,10 +44,10 @@ namespace NetErp.Helpers.Cache
             {
                 var query = BuildQuery();
                 dynamic variables = new ExpandoObject();
-                variables.accountingAccountsPagePagination = new ExpandoObject();
-                variables.accountingAccountsPagePagination.pageSize = -1;
-                variables.accountingAccountsPageFilters = new ExpandoObject();
-                variables.accountingAccountsPageFilters.onlyAuxiliaryAccounts = true;
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.onlyAuxiliaryAccounts = true;
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -152,7 +152,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedResponseType?.DeletedId > 0)
             {
-                Remove(message.DeletedResponseType.DeletedId);
+                Remove(message.DeletedResponseType.DeletedId.Value);
             }
             else if (message.DeletedAccountingAccount != null)
             {

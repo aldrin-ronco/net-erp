@@ -13,8 +13,8 @@ namespace Common.Helpers
         /// Versión simple (compatibilidad hacia atrás).
         /// No aplica transformaciones por colección.
         /// </summary>
-        public static ExpandoObject CollectChanges(object viewModel, string? prefix = null)
-            => CollectChanges(viewModel, prefix, null);
+        public static ExpandoObject CollectChanges(object viewModel, string? prefix = null, IEnumerable<string>? excludeProperties = null)
+            => CollectChanges(viewModel, prefix, null, excludeProperties);
 
         /// <summary>
         /// Construye un ExpandoObject con los cambios del ViewModel.
@@ -48,7 +48,8 @@ namespace Common.Helpers
         public static ExpandoObject CollectChanges(
             object viewModel,
             string? prefix,
-            IDictionary<string, Func<object?, object?>>? collectionItemTransformers)
+            IDictionary<string, Func<object?, object?>>? collectionItemTransformers,
+            IEnumerable<string>? excludeProperties = null)
         {
             dynamic root = new ExpandoObject();
             var tracker = viewModel.GetInternalTracker();
@@ -57,10 +58,13 @@ namespace Common.Helpers
                 return root;
 
             var vmType = viewModel.GetType();
+            var excluded = excludeProperties != null ? new HashSet<string>(excludeProperties) : null;
 
             // 1️⃣ Propiedades modificadas
             foreach (var propName in tracker.ChangedProperties)
             {
+                if (excluded?.Contains(propName) == true)
+                    continue;
                 var propInfo = vmType.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
                 if (propInfo == null)
                     continue;
@@ -105,6 +109,9 @@ namespace Common.Helpers
                 foreach (var kv in tracker.SeedValues)
                 {
                     string propName = kv.Key;
+
+                    if (excluded?.Contains(propName) == true)
+                        continue;
 
                     // Si la propiedad fue cambiada, el valor de ChangedProperties tiene prioridad sobre el seed
                     if (tracker.ChangedProperties.Contains(propName))

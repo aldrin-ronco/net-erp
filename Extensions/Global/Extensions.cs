@@ -20,7 +20,7 @@ namespace Extensions.Global
                 centers.Insert(index, updatedCostCenter);
         }
 
-        public static string ToUserMessage(this List<GlobalErrorGraphQLModel> errors, string title = null)
+        public static string ToUserMessage(this List<GlobalErrorGraphQLModel> errors)
         {
             if (errors == null)
                 return string.Empty;
@@ -30,23 +30,12 @@ namespace Extensions.Global
                 return string.Empty;
 
             var sb = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                sb.AppendLine(title);
-            }
 
             foreach (var e in list)
             {
-                //var field = string.IsNullOrWhiteSpace(e.Field) ? null : e.Field.Trim();
                 var message = (e.Message ?? string.Empty).Trim();
-                foreach(string field in e.Fields)
-                {
-                    if (!string.IsNullOrEmpty(field))
-                        sb.AppendLine($"- {field}: {message}");
-                    else
-                        sb.AppendLine($"- {message}");
-                }
-               
+                if (!string.IsNullOrEmpty(message))
+                    sb.AppendLine(message);
             }
 
             return sb.ToString().TrimEnd();
