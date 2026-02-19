@@ -148,6 +148,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _autoTransfer = value;
                     NotifyOfPropertyChange(nameof(AutoTransfer));
                     this.TrackChange(nameof(AutoTransfer));
+                    ValidateAutoTransferCashDrawer();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -222,6 +223,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(SelectedAutoTransferCashDrawer));
                     NotifyOfPropertyChange(nameof(AutoTransferCashDrawerId));
                     this.TrackChange(nameof(AutoTransferCashDrawerId));
+                    ValidateAutoTransferCashDrawer();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -323,9 +325,19 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private void ValidateAutoTransferCashDrawer()
+        {
+            ClearErrors(nameof(SelectedAutoTransferCashDrawer));
+            if (AutoTransfer && (SelectedAutoTransferCashDrawer == null || SelectedAutoTransferCashDrawer.Id == 0))
+            {
+                AddError(nameof(SelectedAutoTransferCashDrawer), "Debe seleccionar una caja para la transferencia automática");
+            }
+        }
+
         public override void ValidateAll()
         {
             ValidateName();
+            ValidateAutoTransferCashDrawer();
         }
 
         #endregion

@@ -127,7 +127,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedCostCenter?.DeletedId > 0)
             {
-                Remove(message.DeletedCostCenter.DeletedId);
+                Remove(message.DeletedCostCenter.DeletedId.Value);
             }
             return Task.CompletedTask;
         }

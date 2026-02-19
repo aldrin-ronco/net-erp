@@ -94,6 +94,9 @@
                                         <DataTrigger Binding="{Binding BankCaptureInfoAsPN}" Value="True">
                                             <Setter Property="Mask" Value="000 000 00 00"/>
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsNewRecord}" Value="False">
+                                            <Setter Property="IsReadOnly" Value="True"/>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </dxe:TextEdit.Style>
@@ -112,7 +115,7 @@
                     </StackPanel>
 
                     <dxe:TextEdit Grid.Row="7" Margin="0 5 0 10" Text="{Binding Description, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                  IsReadOnly="True" Visibility="{Binding AccountingAccountAutoCreate, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+                                  IsReadOnly="True" Visibility="{Binding ShowAutoCreateDescription, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
 
                     <dxg:LookUpEdit Grid.Row="7"
                                     Margin="0 5 0 10" Padding="3"
@@ -127,7 +130,7 @@
                                     ImmediatePopup="True"
                                     CharacterCasing="Upper"
                                     ClearSelectionOnBackspace="True"
-                                    NullText="&lt;&lt; SELECCIONE UNA CUENTA CONTABLE &gt;&gt;"
+                                    NullText="Escriba para buscar una cuenta contable..."
                                     IsEnabled="{Binding IsNewRecord, UpdateSourceTrigger=PropertyChanged}"
                                     ItemsSource="{Binding BankAccountAccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     DisplayMember="FullName"
@@ -135,7 +138,7 @@
                                     PreviewMouseUp="LookUpEdit_PreviewMouseUp"
                                     ValueMember="Id"
                                     SelectedItem="{Binding SelectedAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Visibility="{Binding AccountingAccountSelectExisting, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                    Visibility="{Binding ShowAccountingAccountLookUp, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                         <dxg:LookUpEdit.PopupContentTemplate>
                             <ControlTemplate>
                                 <dxg:GridControl Name="PART_GridControl">

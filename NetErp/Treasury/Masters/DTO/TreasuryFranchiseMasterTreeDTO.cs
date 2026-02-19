@@ -44,86 +44,86 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        private decimal _commissionMargin;
-        public decimal CommissionMargin
+        private decimal _commissionRate;
+        public decimal CommissionRate
         {
-            get { return _commissionMargin; }
+            get { return _commissionRate; }
             set
             {
-                if (_commissionMargin != value)
+                if (_commissionRate != value)
                 {
-                    _commissionMargin = value;
-                    NotifyOfPropertyChange(nameof(CommissionMargin));
+                    _commissionRate = value;
+                    NotifyOfPropertyChange(nameof(CommissionRate));
                 }
             }
         }
 
-        private decimal _reteivaMargin;
-        public decimal ReteivaMargin
+        private decimal _reteivaRate;
+        public decimal ReteivaRate
         {
-            get { return _reteivaMargin; }
+            get { return _reteivaRate; }
             set
             {
-                if (_reteivaMargin != value)
+                if (_reteivaRate != value)
                 {
-                    _reteivaMargin = value;
-                    NotifyOfPropertyChange(nameof(ReteivaMargin));
+                    _reteivaRate = value;
+                    NotifyOfPropertyChange(nameof(ReteivaRate));
                 }
             }
         }
 
-        private decimal _reteicaMargin;
-        public decimal ReteicaMargin
+        private decimal _reteicaRate;
+        public decimal ReteicaRate
         {
-            get { return _reteicaMargin; }
+            get { return _reteicaRate; }
             set
             {
-                if (_reteicaMargin != value)
+                if (_reteicaRate != value)
                 {
-                    _reteicaMargin = value;
-                    NotifyOfPropertyChange(nameof(ReteicaMargin));
+                    _reteicaRate = value;
+                    NotifyOfPropertyChange(nameof(ReteicaRate));
                 }
             }
         }
 
-        private decimal _retefteMargin;
-        public decimal RetefteMargin
+        private decimal _retefteRate;
+        public decimal RetefteRate
         {
-            get { return _retefteMargin; }
+            get { return _retefteRate; }
             set
             {
-                if (_retefteMargin != value)
+                if (_retefteRate != value)
                 {
-                    _retefteMargin = value;
-                    NotifyOfPropertyChange(nameof(RetefteMargin));
+                    _retefteRate = value;
+                    NotifyOfPropertyChange(nameof(RetefteRate));
                 }
             }
         }
 
-        private decimal _ivaMargin;
-        public decimal IvaMargin
+        private decimal _taxRate;
+        public decimal TaxRate
         {
-            get { return _ivaMargin; }
+            get { return _taxRate; }
             set
             {
-                if (_ivaMargin != value)
+                if (_taxRate != value)
                 {
-                    _ivaMargin = value;
-                    NotifyOfPropertyChange(nameof(IvaMargin));
+                    _taxRate = value;
+                    NotifyOfPropertyChange(nameof(TaxRate));
                 }
             }
         }
 
-        private AccountingAccountDTO _accountingAccountCommission = new();
-        public AccountingAccountDTO AccountingAccountCommission
+        private AccountingAccountDTO _commissionAccountingAccount = new();
+        public AccountingAccountDTO CommissionAccountingAccount
         {
-            get { return _accountingAccountCommission; }
+            get { return _commissionAccountingAccount; }
             set
             {
-                if (_accountingAccountCommission != value)
+                if (_commissionAccountingAccount != value)
                 {
-                    _accountingAccountCommission = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccountCommission));
+                    _commissionAccountingAccount = value;
+                    NotifyOfPropertyChange(nameof(CommissionAccountingAccount));
                 }
             }
         }
@@ -245,6 +245,6 @@ namespace NetErp.Treasury.Masters.DTO
             }
         }
 
-        public List<FranchiseByCostCenterGraphQLModel> FranchiseSettingsByCostCenter { get; set; }
+        public List<FranchiseByCostCenterGraphQLModel> FranchisesByCostCenter { get; set; }
     }
 }

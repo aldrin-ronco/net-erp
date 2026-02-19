@@ -147,9 +147,9 @@ namespace NetErp.Helpers.Cache
 
         public Task HandleAsync(TreasuryCashDrawerDeleteMessage message, CancellationToken cancellationToken)
         {
-            if (message.DeletedCashDrawer != null)
+            if (message.DeletedCashDrawer?.DeletedId > 0)
             {
-                Remove(message.DeletedCashDrawer.DeletedId);
+                Remove(message.DeletedCashDrawer.DeletedId.Value);
             }
             return Task.CompletedTask;
         }

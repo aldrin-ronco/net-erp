@@ -54,6 +54,8 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
+                    NotifyOfPropertyChange(nameof(ShowAutoCreateDescription));
+                    NotifyOfPropertyChange(nameof(ShowAccountingAccountLookUp));
                 }
             }
         }
@@ -287,6 +289,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _accountingAccountAutoCreate = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountAutoCreate));
+                    NotifyOfPropertyChange(nameof(ShowAutoCreateDescription));
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -302,14 +305,19 @@ namespace NetErp.Treasury.Masters.PanelEditors
                 {
                     _accountingAccountSelectExisting = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountSelectExisting));
+                    NotifyOfPropertyChange(nameof(ShowAccountingAccountLookUp));
                     MasterContext.RefreshCanSave();
                     if (!_accountingAccountSelectExisting)
                     {
                         SelectedAccountingAccount = null;
                     }
+                    ValidateSelectedAccountingAccount();
                 }
             }
         }
+
+        public bool ShowAutoCreateDescription => IsNewRecord && AccountingAccountAutoCreate;
+        public bool ShowAccountingAccountLookUp => !IsNewRecord || AccountingAccountSelectExisting;
 
         private AccountingAccountGraphQLModel? _selectedAccountingAccount;
 
@@ -324,6 +332,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _selectedAccountingAccount = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingAccount));
                     this.TrackChange(nameof(SelectedAccountingAccount));
+                    ValidateSelectedAccountingAccount();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -375,9 +384,19 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private void ValidateSelectedAccountingAccount()
+        {
+            ClearErrors(nameof(SelectedAccountingAccount));
+            if (AccountingAccountSelectExisting && SelectedAccountingAccount == null)
+            {
+                AddError(nameof(SelectedAccountingAccount), "Debe seleccionar una cuenta contable");
+            }
+        }
+
         public override void ValidateAll()
         {
             ValidateNumber();
+            ValidateSelectedAccountingAccount();
         }
 
         #endregion

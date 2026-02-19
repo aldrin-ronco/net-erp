@@ -42,15 +42,17 @@
             <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="3" Margin="0 5 0 10"
                               ItemsSource="{Binding FranchiseBankAccounts, UpdateSourceTrigger=PropertyChanged}"
                               EditValue="{Binding SelectedBankAccount, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                              DisplayMember="Description" IsTextEditable="False"/>
+                              DisplayMember="Description" IsTextEditable="False"
+                              NullText="&lt;&lt; SELECCIONE UNA CUENTA BANCARIA &gt;&gt;"/>
 
             <TextBlock Text="Nombre de la franquicia" Grid.Column="0" Grid.Row="4" Margin="0 10 0 5" FontWeight="Bold"/>
             <dxe:TextEdit Grid.Column="0" Grid.Row="5" Margin="0 5 0 10" x:Name="FranchiseName" CharacterCasing="Upper"
-                          Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                          Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          IsReadOnly="{Binding IsCostCenterSelected, UpdateSourceTrigger=PropertyChanged}"/>
 
             <TextBlock Text="Tipo de tarjeta" Grid.Column="0" Grid.Row="6" Margin="0 10 0 5" FontWeight="Bold"/>
             <StackPanel Orientation="Horizontal" Grid.Column="0" Grid.Row="7" Margin="0 5 0 10"
-                        IsEnabled="{Binding IsNewRecord, UpdateSourceTrigger=PropertyChanged}">
+                        IsEnabled="{Binding IsCostCenterSelected, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanNegationConverter}}">
                 <RadioButton Content="Débito" GroupName="Type" Margin="0 0 5 0" VerticalAlignment="Center" IsChecked="{Binding Type, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TD, UpdateSourceTrigger=PropertyChanged}"/>
                 <RadioButton Content="Crédito" GroupName="Type" Margin="5 0 0 0" VerticalAlignment="Center" IsChecked="{Binding Type, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=TC, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
@@ -58,8 +60,9 @@
             <TextBlock Text="Cuenta de comisiones" Grid.Column="0" Grid.Row="8" Margin="0 10 0 5" FontWeight="Bold"/>
             <dxe:ComboBoxEdit Grid.Column="0" Grid.Row="9" Margin="0 5 0 10"
                               ItemsSource="{Binding FranchiseAccountingAccountsCommission, UpdateSourceTrigger=PropertyChanged}"
-                              EditValue="{Binding SelectedAccountingAccountCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                              DisplayMember="FullName" IsTextEditable="False"/>
+                              EditValue="{Binding SelectedCommissionAccountingAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              DisplayMember="FullName" IsTextEditable="False"
+                              NullText="&lt;&lt; SELECCIONE UNA CUENTA CONTABLE &gt;&gt;"/>
 
             <TextBlock Text="SIMULADOR" Grid.Column="0" Grid.Row="10" FontWeight="Bold" HorizontalAlignment="Center" FontSize="16"/>
             <Grid Grid.Column="0" Grid.Row="11" Margin="0 10 0 0">
@@ -93,7 +96,7 @@
                 <!--margen iva-->
                 <TextBlock Text="Margen I.V.A" Grid.Column="0" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center"/>
                 <TextBlock Text="[MARGEN_IVA]" Grid.Column="1" Grid.Row="2" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                <dxe:TextEdit Text="{Binding IvaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <dxe:TextEdit Text="{Binding TaxRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Grid.Column="2" Grid.Row="2" Margin="0 5 5 5" HorizontalContentAlignment="Right"
                               MaskType="Numeric" MaskUseAsDisplayFormat="True" MaskCulture="en-US"
                               Mask="{Binding FranchiseDecimalsCount}"/>
@@ -108,7 +111,7 @@
                 <!--margen comision-->
                 <TextBlock Text="Comisión" Grid.Column="0" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center"/>
                 <TextBlock Text="[MARGEN_COMISION]" Grid.Column="1" Grid.Row="3" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                <dxe:TextEdit Text="{Binding CommissionMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <dxe:TextEdit Text="{Binding CommissionRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Grid.Column="2" Grid.Row="3" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding FranchiseDecimalsCount}"/>
                 <dxe:TextEdit Text="{Binding FormulaCommission, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -128,7 +131,7 @@
                 <!--rete iva-->
                 <TextBlock Text="ReteIVA" Grid.Column="0" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center"/>
                 <TextBlock Text="[MARGEN_RETE_IVA]" Grid.Column="1" Grid.Row="4" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                <dxe:TextEdit Text="{Binding ReteivaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <dxe:TextEdit Text="{Binding ReteivaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Grid.Column="2" Grid.Row="4" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding FranchiseDecimalsCount}"/>
                 <dxe:TextEdit Text="{Binding FormulaReteiva, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -148,7 +151,7 @@
                 <!--rete ica-->
                 <TextBlock Text="ReteICA" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center"/>
                 <TextBlock Text="[MARGEN_RETE_ICA]" Grid.Column="1" Grid.Row="5" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                <dxe:TextEdit Text="{Binding ReteicaMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <dxe:TextEdit Text="{Binding ReteicaRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Grid.Column="2" Grid.Row="5" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding FranchiseDecimalsCount}"/>
                 <dxe:TextEdit Text="{Binding FormulaReteica, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -168,7 +171,7 @@
                 <!--rete fuente-->
                 <TextBlock Text="ReteFuente" Grid.Column="0" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center"/>
                 <TextBlock Text="[MARGEN_RETE_FUENTE]" Grid.Column="1" Grid.Row="6" Margin="0 5 0 5" VerticalAlignment="Center" FontWeight="Bold"/>
-                <dxe:TextEdit Text="{Binding RetefteMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <dxe:TextEdit Text="{Binding RetefteRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               Grid.Column="2" Grid.Row="6" Margin="0 5 5 5" HorizontalContentAlignment="Right" MaskCulture="en-US"
                               MaskType="Numeric" MaskUseAsDisplayFormat="True" Mask="{Binding FranchiseDecimalsCount}"/>
                 <dxe:TextEdit Text="{Binding FormulaRetefte, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

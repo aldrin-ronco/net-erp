@@ -131,7 +131,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedBankAccount?.DeletedId > 0)
             {
-                Remove(message.DeletedBankAccount.DeletedId);
+                Remove(message.DeletedBankAccount.DeletedId.Value);
             }
             return Task.CompletedTask;
         }

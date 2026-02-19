@@ -1,6 +1,7 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.ViewModels;
@@ -186,7 +187,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
         /// Template method para guardar. Maneja errores y notificaciones.
         /// </summary>
         /// <returns>True si el guardado fue exitoso, False en caso contrario.</returns>
-        public async Task<bool> SaveAsync()
+        public virtual async Task<bool> SaveAsync()
         {
             try
             {
@@ -197,14 +198,10 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
                 if (!result.Success)
                 {
-                    var errorMessages = result.Errors != null && result.Errors.Count > 0
-                        ? string.Join("\r\n", result.Errors.Select(e => e.Message))
-                        : result.Message;
-
                     Application.Current.Dispatcher.Invoke(() =>
                         ThemedMessageBox.Show(
-                            title: "Atención!",
-                            text: errorMessages,
+                            title: $"{result.Message}!",
+                            text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
                             messageBoxButtons: MessageBoxButton.OK,
                             image: MessageBoxImage.Error));
                     return false;

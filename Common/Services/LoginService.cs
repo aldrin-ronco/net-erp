@@ -56,6 +56,9 @@ namespace Common.Services
                             address
                             businessName
                             captureType
+                            defaultCurrency{
+                                code
+                            }
                             country {
                               code
                             }

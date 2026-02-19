@@ -152,7 +152,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedResponseType?.DeletedId > 0)
             {
-                Remove(message.DeletedResponseType.DeletedId);
+                Remove(message.DeletedResponseType.DeletedId.Value);
             }
             else if (message.DeletedAccountingAccount != null)
             {

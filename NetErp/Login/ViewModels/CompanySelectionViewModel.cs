@@ -202,7 +202,7 @@ namespace NetErp.Login.ViewModels
 
             if (Debugger.IsAttached)
             {
-                FilteredOrganizationGroups.First().Companies.First(f => f.CompanyId == 15).IsSelected = true;
+                FilteredOrganizationGroups.First(x => x.OrganizationId == 36).Companies.First(f => f.CompanyId == 15).IsSelected = true;
                 _ = ContinueAsync();
             }
         }
@@ -402,7 +402,7 @@ namespace NetErp.Login.ViewModels
         {
             try
             {
-                CompanyContextData response = await GetCompanyContextDataAsync(cityCode: company.City.Code, departmentCode: company.Department.Code, countryCode: company.Country.Code, identificationTypeCode: company.IdentificationType.Code);
+                CompanyContextData response = await GetCompanyContextDataAsync(cityCode: company.City.Code, departmentCode: company.Department.Code, countryCode: company.Country.Code, identificationTypeCode: company.IdentificationType.Code, currencyCode: company.DefaultCurrency.Code);
 
                 //bloque de validación
                 if (response.Country is null) throw new Exception($"No country found with code {company.Country.Code}");
@@ -414,6 +414,7 @@ namespace NetErp.Login.ViewModels
                 variables.createResponseInput = new ExpandoObject();
                 variables.createResponseInput.reference = company.Reference;
                 variables.createResponseInput.status = company.Status;
+                variables.createResponseInput.defaultCurrencyId = response.Currency.Id;
 
                 variables.createResponseInput.accountingEntity = new ExpandoObject();
                 variables.createResponseInput.accountingEntity.address = company.Address;
@@ -472,22 +473,29 @@ namespace NetErp.Login.ViewModels
                 .Field(e => e.Id)
                 .Field(e => e.Code).Build();
 
+            var currencyFields = FieldSpec<CurrencyGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Code).Build();
+
             var cityParameters = new List<GraphQLQueryParameter> { new("cityCode", "String!"), new("departmentCode", "String!"), new("countryCode", "String!") };
             var departmentParameters = new List<GraphQLQueryParameter> { new("departmentCode", "String!"), new("countryCode", "String!") };
             var countryParameters = new GraphQLQueryParameter("code", "String!");
             var identificationTypeParameters = new GraphQLQueryParameter("code", "String!");
+            var currencyParameters = new GraphQLQueryParameter("code", "String!");
 
             var cityFragment = new GraphQLQueryFragment("cityByCodes", cityParameters, cityFields, "City");
             var departmentFragment = new GraphQLQueryFragment("departmentByCodes", departmentParameters, departmentFields, "Department");
             var countryFragment = new GraphQLQueryFragment("countryByCode", [countryParameters], countryField, "Country");
             var identificationTypeFragment = new GraphQLQueryFragment("identificationTypeByCode", [identificationTypeParameters], identificationTypeFields, "IdentificationType");
+            var currencyFragment = new GraphQLQueryFragment("currencyByCode", [currencyParameters], currencyFields, "Currency");
 
-            var builder = new GraphQLQueryBuilder([cityFragment, departmentFragment, countryFragment, identificationTypeFragment]);
+            var builder = new GraphQLQueryBuilder([cityFragment, departmentFragment, countryFragment, identificationTypeFragment, currencyFragment]);
 
             return builder.GetQuery();
         }
 
-        public async Task<CompanyContextData> GetCompanyContextDataAsync(string cityCode, string departmentCode, string countryCode, string identificationTypeCode)
+        public async Task<CompanyContextData> GetCompanyContextDataAsync(string cityCode, string departmentCode, string countryCode, string identificationTypeCode, string currencyCode)
         {
             try
             {
@@ -499,6 +507,7 @@ namespace NetErp.Login.ViewModels
                 variables.departmentCountryCode = countryCode;
                 variables.countryCode = countryCode;
                 variables.identificationTypeCode = identificationTypeCode;
+                variables.currencyCode = currencyCode;
                 string query = GetCompanyContextDataQuery();
 
                 CompanyContextData response = await _countryService.GetDataContextAsync<CompanyContextData>(query, variables);
@@ -564,5 +573,6 @@ namespace NetErp.Login.ViewModels
         public DepartmentGraphQLModel Department { get; set; } = new();
         public CountryGraphQLModel Country { get; set; } = new();
         public IdentificationTypeGraphQLModel IdentificationType { get; set; } = new();
+        public CurrencyGraphQLModel Currency { get; set; } = new();
     }
 }

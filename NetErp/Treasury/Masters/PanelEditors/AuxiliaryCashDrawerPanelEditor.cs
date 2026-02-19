@@ -134,6 +134,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     _autoTransfer = value;
                     NotifyOfPropertyChange(nameof(AutoTransfer));
                     this.TrackChange(nameof(AutoTransfer));
+                    ValidateAutoTransferCashDrawer();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -255,6 +256,7 @@ namespace NetErp.Treasury.Masters.PanelEditors
                     NotifyOfPropertyChange(nameof(SelectedAutoTransferCashDrawer));
                     NotifyOfPropertyChange(nameof(AutoTransferCashDrawerId));
                     this.TrackChange(nameof(AutoTransferCashDrawerId));
+                    ValidateAutoTransferCashDrawer();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -272,10 +274,15 @@ namespace NetErp.Treasury.Masters.PanelEditors
         /// </summary>
         public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts => MasterContext.CashDrawerAccountingAccounts;
 
-        /// <summary>
-        /// Delegación del comando de búsqueda de nombre de equipo.
-        /// </summary>
-        public ICommand SearchComputerNameCommand => MasterContext.SearchComputerNameCommand;
+        private ICommand? _searchComputerNameCommand;
+        public ICommand SearchComputerNameCommand
+        {
+            get
+            {
+                _searchComputerNameCommand ??= new RelayCommand(_ => true, _ => ComputerName = SessionInfo.GetComputerName());
+                return _searchComputerNameCommand;
+            }
+        }
 
         #endregion
 
@@ -321,10 +328,20 @@ namespace NetErp.Treasury.Masters.PanelEditors
             }
         }
 
+        private void ValidateAutoTransferCashDrawer()
+        {
+            ClearErrors(nameof(SelectedAutoTransferCashDrawer));
+            if (AutoTransfer && (SelectedAutoTransferCashDrawer == null || SelectedAutoTransferCashDrawer.Id == 0))
+            {
+                AddError(nameof(SelectedAutoTransferCashDrawer), "Debe seleccionar una caja para la transferencia automática");
+            }
+        }
+
         public override void ValidateAll()
         {
             ValidateName();
             ValidateComputerName();
+            ValidateAutoTransferCashDrawer();
         }
 
         #endregion
@@ -341,12 +358,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
             OriginalDto = null;
             Id = 0;
-            Name = "CAJA AUXILIAR";
+            _name = string.Empty;
             CashReviewRequired = false;
             AutoAdjustBalance = false;
             AutoTransfer = false;
             IsPettyCash = false;
-            ComputerName = SessionInfo.GetComputerName();
+            _computerName = string.Empty;
             SelectedCashAccountingAccount = null;
             SelectedCheckAccountingAccount = null;
             SelectedCardAccountingAccount = null;
@@ -354,6 +371,12 @@ namespace NetErp.Treasury.Masters.PanelEditors
 
             SeedDefaultValues();
             ClearAllErrors();
+
+            // Asignar Name y ComputerName DESPUÉS del seeding para que
+            // TrackChange registre los cambios y HasChanges() sea true
+            Name = "CAJA AUXILIAR";
+            ComputerName = SessionInfo.GetComputerName();
+
             ValidateAll();
 
             IsEditing = true;

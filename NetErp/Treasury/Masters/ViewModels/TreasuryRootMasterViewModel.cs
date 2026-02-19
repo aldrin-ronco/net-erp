@@ -3,13 +3,10 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
-using Models.Billing;
 using Models.Books;
 using Models.Global;
-using Models.Inventory;
 using Models.Treasury;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.Modals.ViewModels;
@@ -18,33 +15,20 @@ using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Treasury.Masters.DTO;
 using NetErp.Treasury.Masters.PanelEditors;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Dynamic;
-using System.Globalization;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Xceed.Wpf.Toolkit.Primitives;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Treasury.Masters.ViewModels
 {
-    public class TreasuryRootMasterViewModel : Screen, INotifyDataErrorInfo,
+    public class TreasuryRootMasterViewModel : Screen,
         IHandle<TreasuryCashDrawerCreateMessage>,
         IHandle<TreasuryCashDrawerDeleteMessage>,
         IHandle<TreasuryCashDrawerUpdateMessage>,
@@ -59,8 +43,6 @@ namespace NetErp.Treasury.Masters.ViewModels
         IHandle<FranchiseUpdateMessage>
     {
         public TreasuryRootViewModel Context { get; set; }
-
-        Dictionary<string, List<string>> _errors;
 
         private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
         private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
@@ -116,22 +98,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 }
             }
         }
-
-        private ObservableCollection<CashDrawerGraphQLModel> _cashDrawers;
-
-        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers
-        {
-            get { return _cashDrawers; }
-            set
-            {
-                if (_cashDrawers != value)
-                {
-                    _cashDrawers = value;
-                    NotifyOfPropertyChange(nameof(CashDrawers));
-                }
-            }
-        }
-
 
         private ITreasuryTreeMasterSelectedItem? _selectedItem;
 
@@ -491,23 +457,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
-        private ICommand _searchComputerNameCommand;
-        public ICommand SearchComputerNameCommand
-        {
-            get
-            {
-                if (_searchComputerNameCommand is null) _searchComputerNameCommand = new RelayCommand(CanSearchComputerName, SearchComputerName);
-                return _searchComputerNameCommand;
-            }
-        }
-
-        public void SearchComputerName(object p)
-        {
-            AuxiliaryCashDrawerEditor.ComputerName = SessionInfo.GetComputerName();
-        }
-
-        public bool CanSearchComputerName(object p) => true;
-
         private ObservableCollection<AccountingAccountGraphQLModel> _cashDrawerAccountingAccounts;
 
         public ObservableCollection<AccountingAccountGraphQLModel> CashDrawerAccountingAccounts
@@ -624,192 +573,132 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
 
-        private ICommand _deleteMajorCashDrawerCommand;
-        public ICommand DeleteMajorCashDrawerCommand
-        {
-            get
-            {
-                if (_deleteMajorCashDrawerCommand is null) _deleteMajorCashDrawerCommand = new AsyncCommand(DeleteMajorCashDrawer, CanDeleteMajorCashDrawer);
-                return _deleteMajorCashDrawerCommand;
-            }
-        }
-
-        public async Task DeleteMajorCashDrawer()
+        private async Task DeleteEntityAsync<TModel>(
+            string displayName,
+            int id,
+            string canDeleteFragmentName,
+            string deleteFragmentName,
+            IRepository<TModel> service,
+            Func<DeleteResponseType, Task> publishMessage)
         {
             try
             {
                 IsBusy = true;
                 Refresh();
 
-                var selectedCashDrawer = (MajorCashDrawerMasterTreeDTO)SelectedItem;
-                int id = selectedCashDrawer.Id;
-
-                string canDeleteQuery = GetCanDeleteCashDrawerQuery();
+                string canDeleteQuery = BuildCanDeleteQuery(canDeleteFragmentName);
                 object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._cashDrawerService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
+                var validation = await service.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar el registro {displayName}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
                 IsBusy = true;
                 Refresh();
 
-                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
+                DeleteResponseType deleteResult = await ExecuteDeleteAsync(service, deleteFragmentName, id);
 
                 if (!deleteResult.Success)
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
                     return;
                 }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteMajorCashDrawer));
-
+                await publishMessage(deleteResult);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
+                if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.DeleteEntityAsync \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
-                else
-                {
-                    throw;
-                }
+                else { throw; }
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteMajorCashDrawer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.DeleteEntityAsync \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+        }
 
+        private ICommand _deleteMajorCashDrawerCommand;
+        public ICommand DeleteMajorCashDrawerCommand
+        {
+            get
+            {
+                if (_deleteMajorCashDrawerCommand is null) _deleteMajorCashDrawerCommand = new AsyncCommand(DeleteMajorCashDrawer);
+                return _deleteMajorCashDrawerCommand;
+            }
+        }
+
+        public async Task DeleteMajorCashDrawer()
+        {
+            var selected = (MajorCashDrawerMasterTreeDTO)SelectedItem;
+            await DeleteEntityAsync(selected.Name, selected.Id,
+                "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
 
         #region Delete Query Builders
 
-        private string GetCanDeleteCashDrawerQuery()
+        private string BuildCanDeleteQuery(string fragmentName)
         {
-            var fields = FieldSpec<CanDeleteType>
-                .Create()
+            var fields = FieldSpec<CanDeleteType>.Create()
                 .Field(f => f.CanDelete)
                 .Field(f => f.Message)
                 .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteCashDrawer", [parameter], fields, "CanDeleteResponse");
+            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
-        private string GetCanDeleteBankQuery()
+        private string BuildDeleteMutationQuery(string fragmentName)
         {
-            var fields = FieldSpec<CanDeleteType>
-                .Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteBank", [parameter], fields, "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        private string GetCanDeleteBankAccountQuery()
-        {
-            var fields = FieldSpec<CanDeleteType>
-                .Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteBankAccount", [parameter], fields, "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        private string GetCanDeleteFranchiseQuery()
-        {
-            var fields = FieldSpec<CanDeleteType>
-                .Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteFranchise", [parameter], fields, "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        private string GetDeleteCashDrawerQuery()
-        {
-            var fields = FieldSpec<DeleteResponseType>
-                .Create()
+            var fields = FieldSpec<DeleteResponseType>.Create()
                 .Field(f => f.DeletedId)
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteCashDrawer", [parameter], fields, "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        private string GetDeleteBankQuery()
-        {
-            var fields = FieldSpec<DeleteResponseType>
-                .Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteBank", [parameter], fields, "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        private string GetDeleteBankAccountQuery()
-        {
-            var fields = FieldSpec<DeleteResponseType>
-                .Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteBankAccount", [parameter], fields, "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        private string GetDeleteFranchiseQuery()
-        {
-            var fields = FieldSpec<DeleteResponseType>
-                .Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteFranchise", [parameter], fields, "DeleteResponse");
+            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
@@ -817,39 +706,13 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #region Execute Delete Methods
 
-        private async Task<DeleteResponseType> ExecuteDeleteCashDrawerAsync(int id)
+        private async Task<DeleteResponseType> ExecuteDeleteAsync<TModel>(
+            IRepository<TModel> service, string deleteFragmentName, int id)
         {
-            string query = GetDeleteCashDrawerQuery();
+            string query = BuildDeleteMutationQuery(deleteFragmentName);
             object variables = new { deleteResponseId = id };
-            DeleteResponseType result = await _cashDrawerService.DeleteAsync<DeleteResponseType>(query, variables);
-            this.SelectedItem = null;
-            return result;
-        }
-
-        private async Task<DeleteResponseType> ExecuteDeleteBankAsync(int id)
-        {
-            string query = GetDeleteBankQuery();
-            object variables = new { deleteResponseId = id };
-            DeleteResponseType result = await _bankService.DeleteAsync<DeleteResponseType>(query, variables);
-            this.SelectedItem = null;
-            return result;
-        }
-
-        private async Task<DeleteResponseType> ExecuteDeleteBankAccountAsync(int id)
-        {
-            string query = GetDeleteBankAccountQuery();
-            object variables = new { deleteResponseId = id };
-            DeleteResponseType result = await _bankAccountService.DeleteAsync<DeleteResponseType>(query, variables);
-            this.SelectedItem = null;
-            return result;
-        }
-
-        private async Task<DeleteResponseType> ExecuteDeleteFranchiseAsync(int id)
-        {
-            string query = GetDeleteFranchiseQuery();
-            object variables = new { deleteResponseId = id };
-            DeleteResponseType result = await _franchiseService.DeleteAsync<DeleteResponseType>(query, variables);
-            this.SelectedItem = null;
+            DeleteResponseType result = await service.DeleteAsync<DeleteResponseType>(query, variables);
+            SelectedItem = null;
             return result;
         }
 
@@ -1080,11 +943,11 @@ namespace NetErp.Treasury.Masters.ViewModels
                     .Field(e => e.Id)
                     .Field(e => e.Name)
                     .Field(e => e.Type)
-                    .Field(e => e.CommissionMargin)
-                    .Field(e => e.ReteivaMargin)
-                    .Field(e => e.ReteicaMargin)
-                    .Field(e => e.RetefteMargin)
-                    .Field(e => e.IvaMargin)
+                    .Field(e => e.CommissionRate)
+                    .Field(e => e.ReteivaRate)
+                    .Field(e => e.ReteicaRate)
+                    .Field(e => e.RetefteRate)
+                    .Field(e => e.TaxRate)
                     .Field(e => e.FormulaCommission)
                     .Field(e => e.FormulaReteiva)
                     .Field(e => e.FormulaReteica)
@@ -1092,23 +955,24 @@ namespace NetErp.Treasury.Masters.ViewModels
                     .Select(e => e.BankAccount, ba => ba
                         .Field(b => b.Id)
                         .Field(b => b.Description))
-                    .Select(e => e.AccountingAccountCommission, aa => aa
+                    .Select(e => e.CommissionAccountingAccount, aa => aa
                         .Field(a => a.Id)
                         .Field(a => a.Name))
-                    .SelectList(e => e.FranchiseSettingsByCostCenter, fs => fs
+                    .SelectList(e => e.FranchisesByCostCenter, fs => fs
                         .Field(s => s.Id)
-                        .Field(s => s.CostCenterId)
-                        .Field(s => s.CommissionMargin)
-                        .Field(s => s.ReteivaMargin)
-                        .Field(s => s.ReteicaMargin)
-                        .Field(s => s.RetefteMargin)
-                        .Field(s => s.IvaMargin)
-                        .Field(s => s.BankAccountId)
+                        .Select(s => s.CostCenter, cc => cc.Field(c => c.Id))
+                        .Field(s => s.CommissionRate)
+                        .Field(s => s.ReteivaRate)
+                        .Field(s => s.ReteicaRate)
+                        .Field(s => s.RetefteRate)
+                        .Field(s => s.TaxRate)
+                        .Select(s => s.BankAccount, ba => ba.Field(b => b.Id))
                         .Field(s => s.FormulaCommission)
                         .Field(s => s.FormulaReteiva)
                         .Field(s => s.FormulaReteica)
                         .Field(s => s.FormulaRetefte)
-                        .Field(s => s.FranchiseId)))
+                        .Select(s => s.CommissionAccountingAccount, caa => caa.Field(x => x.Id))
+                        .Select(s => s.Franchise, fr => fr.Field(x => x.Id))))
                 .Build();
 
             var parameters = new List<GraphQLQueryParameter>
@@ -1123,331 +987,81 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #endregion
 
-        public bool CanDeleteMajorCashDrawer => true;
-
         private ICommand _deleteMinorCashDrawerCommand;
         public ICommand DeleteMinorCashDrawerCommand
         {
             get
             {
-                if (_deleteMinorCashDrawerCommand is null) _deleteMinorCashDrawerCommand = new AsyncCommand(DeleteMinorCashDrawer, CanDeleteMinorCashDrawer);
+                if (_deleteMinorCashDrawerCommand is null) _deleteMinorCashDrawerCommand = new AsyncCommand(DeleteMinorCashDrawer);
                 return _deleteMinorCashDrawerCommand;
             }
         }
 
         public async Task DeleteMinorCashDrawer()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                var selectedCashDrawer = (MinorCashDrawerMasterTreeDTO)SelectedItem;
-                int id = selectedCashDrawer.Id;
-
-                string canDeleteQuery = GetCanDeleteCashDrawerQuery();
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._cashDrawerService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return;
-                }
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteMinorCashDrawer));
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteMinorCashDrawer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
+            var selected = (MinorCashDrawerMasterTreeDTO)SelectedItem;
+            await DeleteEntityAsync(selected.Name, selected.Id,
+                "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
-
-        public bool CanDeleteMinorCashDrawer => true;
 
         private ICommand _deleteAuxiliaryCashDrawerCommand;
         public ICommand DeleteAuxiliaryCashDrawerCommand
         {
             get
             {
-                if (_deleteAuxiliaryCashDrawerCommand is null) _deleteAuxiliaryCashDrawerCommand = new AsyncCommand(DeleteAuxiliaryCashDrawer, CanDeleteAuxiliaryCashDrawer);
+                if (_deleteAuxiliaryCashDrawerCommand is null) _deleteAuxiliaryCashDrawerCommand = new AsyncCommand(DeleteAuxiliaryCashDrawer);
                 return _deleteAuxiliaryCashDrawerCommand;
             }
         }
 
         public async Task DeleteAuxiliaryCashDrawer()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                var selectedCashDrawer = (TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem;
-                int id = selectedCashDrawer.Id;
-
-                string canDeleteQuery = GetCanDeleteCashDrawerQuery();
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._cashDrawerService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedCashDrawer.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                DeleteResponseType deleteResult = await ExecuteDeleteCashDrawerAsync(id);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return;
-                }
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new TreasuryCashDrawerDeleteMessage() { DeletedCashDrawer = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteAuxiliaryCashDrawer));
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAuxiliaryCashDrawer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
+            var selected = (TreasuryAuxiliaryCashDrawerMasterTreeDTO)SelectedItem;
+            await DeleteEntityAsync(selected.Name, selected.Id,
+                "canDeleteCashDrawer", "deleteCashDrawer", _cashDrawerService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new TreasuryCashDrawerDeleteMessage { DeletedCashDrawer = result }));
         }
-
-        public bool CanDeleteAuxiliaryCashDrawer => true;
 
         private ICommand _deleteBankCommand;
         public ICommand DeleteBankCommand
         {
             get
             {
-                if (_deleteBankCommand is null) _deleteBankCommand = new AsyncCommand(DeleteBank, CanDeleteBank);
+                if (_deleteBankCommand is null) _deleteBankCommand = new AsyncCommand(DeleteBank);
                 return _deleteBankCommand;
             }
         }
 
         public async Task DeleteBank()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                var selectedBank = (TreasuryBankMasterTreeDTO)SelectedItem;
-                int id = selectedBank.Id;
-
-                string canDeleteQuery = GetCanDeleteBankQuery();
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._bankService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBank.AccountingEntity.SearchName}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                DeleteResponseType deleteResult = await ExecuteDeleteBankAsync(id);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return;
-                }
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankDeleteMessage() { DeletedBank = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteBank));
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteBank" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
+            var selected = (TreasuryBankMasterTreeDTO)SelectedItem;
+            await DeleteEntityAsync(selected.AccountingEntity.SearchName, selected.Id,
+                "canDeleteBank", "deleteBank", _bankService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new BankDeleteMessage { DeletedBank = result }));
         }
-
-        public bool CanDeleteBank => true;
 
         private ICommand _deleteBankAccountCommand;
         public ICommand DeleteBankAccountCommand
         {
             get
             {
-                if (_deleteBankAccountCommand is null) _deleteBankAccountCommand = new AsyncCommand(DeleteBankAccount, CanDeleteBankAccount);
+                if (_deleteBankAccountCommand is null) _deleteBankAccountCommand = new AsyncCommand(DeleteBankAccount);
                 return _deleteBankAccountCommand;
             }
         }
 
         public async Task DeleteBankAccount()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                var selectedBankAccount = (TreasuryBankAccountMasterTreeDTO)SelectedItem;
-                int id = selectedBankAccount.Id;
-
-                string canDeleteQuery = GetCanDeleteBankAccountQuery();
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._bankAccountService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedBankAccount.Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                DeleteResponseType deleteResult = await ExecuteDeleteBankAccountAsync(id);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return;
-                }
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new BankAccountDeleteMessage() { DeletedBankAccount = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteBankAccount));
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteBankAccount" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
+            if (SelectedItem is not TreasuryBankAccountMasterTreeDTO selected) return;
+            await DeleteEntityAsync(selected.Description, selected.Id,
+                "canDeleteBankAccount", "deleteBankAccount", _bankAccountService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new BankAccountDeleteMessage { DeletedBankAccount = result }));
         }
-
-        public bool CanDeleteBankAccount => true;
 
         private ICommand _deleteFranchiseCommand;
         public ICommand DeleteFranchiseCommand
@@ -1461,74 +1075,12 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         public async Task DeleteFranchise()
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                var selectedFranchise = (TreasuryFranchiseMasterTreeDTO)SelectedItem;
-                int id = selectedFranchise.Id;
-
-                string canDeleteQuery = GetCanDeleteFranchiseQuery();
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await this._franchiseService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {selectedFranchise.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                DeleteResponseType deleteResult = await ExecuteDeleteFranchiseAsync(id);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return;
-                }
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new FranchiseDeleteMessage() { DeletedFranchise = deleteResult });
-
-                NotifyOfPropertyChange(nameof(CanDeleteFranchise));
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteFranchise" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
+            var selected = (TreasuryFranchiseMasterTreeDTO)SelectedItem;
+            await DeleteEntityAsync(selected.Name, selected.Id,
+                "canDeleteFranchise", "deleteFranchise", _franchiseService,
+                async result => await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new FranchiseDeleteMessage { DeletedFranchise = result }));
         }
-
-        public bool CanDeleteFranchise => true;
 
         #region "MajorCashDrawer Context Properties"
 
@@ -1655,199 +1207,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                     _franchiseCostCenters = value;
                     NotifyOfPropertyChange(nameof(FranchiseCostCenters));
                 }
-            }
-        }
-
-        #endregion
-
-        #region Franchise Simulator Commands
-
-        private ICommand _franchiseResetFormulaReteivaCommand;
-        public ICommand FranchiseResetFormulaReteivaCommand
-        {
-            get
-            {
-                if (_franchiseResetFormulaReteivaCommand is null) _franchiseResetFormulaReteivaCommand = new RelayCommand(CanFranchiseResetFormulaReteiva, FranchiseResetFormulaReteiva);
-                return _franchiseResetFormulaReteivaCommand;
-            }
-        }
-
-        public void FranchiseResetFormulaReteiva(object p)
-        {
-            if (FranchiseEditor != null)
-                FranchiseEditor.FormulaReteiva = "[VALOR_IVA]*([MARGEN_RETE_IVA]/100)";
-        }
-
-        public bool CanFranchiseResetFormulaReteiva(object p) => true;
-
-        private ICommand _franchiseResetFormulaCommissionCommand;
-        public ICommand FranchiseResetFormulaCommissionCommand
-        {
-            get
-            {
-                if (_franchiseResetFormulaCommissionCommand is null) _franchiseResetFormulaCommissionCommand = new RelayCommand(CanFranchiseResetFormulaCommission, FranchiseResetFormulaCommission);
-                return _franchiseResetFormulaCommissionCommand;
-            }
-        }
-
-        public void FranchiseResetFormulaCommission(object p)
-        {
-            if (FranchiseEditor != null)
-                FranchiseEditor.FormulaCommission = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_COMISION]/100)";
-        }
-
-        public bool CanFranchiseResetFormulaCommission(object p) => true;
-
-        private ICommand _franchiseResetFormulaReteicaCommand;
-        public ICommand FranchiseResetFormulaReteicaCommand
-        {
-            get
-            {
-                if (_franchiseResetFormulaReteicaCommand is null) _franchiseResetFormulaReteicaCommand = new RelayCommand(CanFranchiseResetFormulaReteica, FranchiseResetFormulaReteica);
-                return _franchiseResetFormulaReteicaCommand;
-            }
-        }
-
-        public void FranchiseResetFormulaReteica(object p)
-        {
-            if (FranchiseEditor != null)
-                FranchiseEditor.FormulaReteica = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_ICA]/1000)";
-        }
-
-        public bool CanFranchiseResetFormulaReteica(object p) => true;
-
-        private ICommand _franchiseResetFormulaRetefteCommand;
-        public ICommand FranchiseResetFormulaRetefteCommand
-        {
-            get
-            {
-                if (_franchiseResetFormulaRetefteCommand is null) _franchiseResetFormulaRetefteCommand = new RelayCommand(CanFranchiseResetFormulaRetefte, FranchiseResetFormulaRetefte);
-                return _franchiseResetFormulaRetefteCommand;
-            }
-        }
-
-        public void FranchiseResetFormulaRetefte(object p)
-        {
-            if (FranchiseEditor != null)
-                FranchiseEditor.FormulaRetefte = "([VALOR_TARJETA]-[VALOR_IVA])*([MARGEN_RETE_FUENTE]/100)";
-        }
-
-        public bool CanFranchiseResetFormulaRetefte(object p) => true;
-
-        private ICommand _franchiseSimulatorCommand;
-        public ICommand FranchiseSimulatorCommand
-        {
-            get
-            {
-                if (_franchiseSimulatorCommand is null) _franchiseSimulatorCommand = new RelayCommand(CanFranchiseSimulator, FranchiseSimulator);
-                return _franchiseSimulatorCommand;
-            }
-        }
-
-        public void FranchiseSimulator(object p)
-        {
-            if (FranchiseEditor == null) return;
-
-            try
-            {
-                // Local variables for formula replacement
-                string replacedFormulaCommission = FranchiseEditor.FormulaCommission;
-                string replacedFormulaReteiva = FranchiseEditor.FormulaReteiva;
-                string replacedFormulaReteica = FranchiseEditor.FormulaReteica;
-                string replacedFormulaRetefte = FranchiseEditor.FormulaRetefte;
-
-                // Calculate IVA value
-                decimal simulatedIvaValue = FranchiseEditor.CardValue - (FranchiseEditor.CardValue / (1 + (FranchiseEditor.IvaMargin / 100)));
-                FranchiseEditor.SimulatedIvaValue = simulatedIvaValue;
-
-                // Set up formula variables dictionary
-                Dictionary<string, decimal> formulaVariables = new()
-                {
-                    { "VALOR_TARJETA", FranchiseEditor.CardValue },
-                    { "MARGEN_COMISION", FranchiseEditor.CommissionMargin },
-                    { "MARGEN_RETE_IVA", FranchiseEditor.ReteivaMargin },
-                    { "MARGEN_RETE_ICA", FranchiseEditor.ReteicaMargin },
-                    { "MARGEN_RETE_FUENTE", FranchiseEditor.RetefteMargin },
-                    { "VALOR_IVA", simulatedIvaValue }
-                };
-
-                // Replace variables in formulas
-                foreach (var item in formulaVariables)
-                {
-                    replacedFormulaCommission = replacedFormulaCommission.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    replacedFormulaReteiva = replacedFormulaReteiva.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    replacedFormulaReteica = replacedFormulaReteica.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                    replacedFormulaRetefte = replacedFormulaRetefte.Replace($"[{item.Key}]", item.Value.ToString(CultureInfo.InvariantCulture));
-                }
-
-                // Calculate formula results
-                FranchiseEditor.SimulatedCommission = Convert.ToDecimal(new DataTable().Compute(replacedFormulaCommission, null), CultureInfo.InvariantCulture);
-                FranchiseEditor.SimulatedReteiva = Convert.ToDecimal(new DataTable().Compute(replacedFormulaReteiva, null), CultureInfo.InvariantCulture);
-                FranchiseEditor.SimulatedReteica = Convert.ToDecimal(new DataTable().Compute(replacedFormulaReteica, null), CultureInfo.InvariantCulture);
-                FranchiseEditor.SimulatedRetefte = Convert.ToDecimal(new DataTable().Compute(replacedFormulaRetefte, null), CultureInfo.InvariantCulture);
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"Error al simular la franquicia. \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
-
-        public bool CanFranchiseSimulator(object p)
-        {
-            if (FranchiseEditor == null) return false;
-            return FranchiseEditor.CardValue != 0
-                && !string.IsNullOrEmpty(FranchiseEditor.FormulaCommission)
-                && !string.IsNullOrEmpty(FranchiseEditor.FormulaReteiva)
-                && !string.IsNullOrEmpty(FranchiseEditor.FormulaReteica)
-                && !string.IsNullOrEmpty(FranchiseEditor.FormulaRetefte);
-        }
-
-        public void EditFranchiseByCostCenter(int costCenterId)
-        {
-            if (IsNewRecord || FranchiseEditor == null) return;
-
-            if (costCenterId == 0)
-            {
-                if (SelectedItem is TreasuryFranchiseMasterTreeDTO selectedFranchise)
-                {
-                    FranchiseEditor.CommissionMargin = selectedFranchise.CommissionMargin;
-                    FranchiseEditor.ReteivaMargin = selectedFranchise.ReteivaMargin;
-                    FranchiseEditor.ReteicaMargin = selectedFranchise.ReteicaMargin;
-                    FranchiseEditor.RetefteMargin = selectedFranchise.RetefteMargin;
-                    FranchiseEditor.IvaMargin = selectedFranchise.IvaMargin;
-                    FranchiseEditor.SelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchise.BankAccount.Id);
-                    FranchiseEditor.FormulaCommission = selectedFranchise.FormulaCommission;
-                    FranchiseEditor.FormulaReteiva = selectedFranchise.FormulaReteiva;
-                    FranchiseEditor.FormulaReteica = selectedFranchise.FormulaReteica;
-                    FranchiseEditor.FormulaRetefte = selectedFranchise.FormulaRetefte;
-                    FranchiseEditor.CardValue = 0;
-                    FranchiseEditor.SimulatedCommission = 0;
-                    FranchiseEditor.SimulatedReteiva = 0;
-                    FranchiseEditor.SimulatedReteica = 0;
-                    FranchiseEditor.SimulatedRetefte = 0;
-                    FranchiseEditor.SimulatedIvaValue = 0;
-                }
-                return;
-            }
-            var selectedFranchiseSetting = FranchiseEditor.SettingsByCostCenter.FirstOrDefault(x => x.CostCenterId == costCenterId);
-            if (selectedFranchiseSetting != null)
-            {
-                FranchiseEditor.CommissionMargin = selectedFranchiseSetting.CommissionMargin;
-                FranchiseEditor.ReteivaMargin = selectedFranchiseSetting.ReteivaMargin;
-                FranchiseEditor.ReteicaMargin = selectedFranchiseSetting.ReteicaMargin;
-                FranchiseEditor.RetefteMargin = selectedFranchiseSetting.RetefteMargin;
-                FranchiseEditor.IvaMargin = selectedFranchiseSetting.IvaMargin;
-                FranchiseEditor.SelectedBankAccount = FranchiseBankAccounts.FirstOrDefault(x => x.Id == selectedFranchiseSetting.BankAccountId);
-                FranchiseEditor.FormulaCommission = selectedFranchiseSetting.FormulaCommission;
-                FranchiseEditor.FormulaReteiva = selectedFranchiseSetting.FormulaReteiva;
-                FranchiseEditor.FormulaReteica = selectedFranchiseSetting.FormulaReteica;
-                FranchiseEditor.FormulaRetefte = selectedFranchiseSetting.FormulaRetefte;
-                FranchiseEditor.CardValue = 0;
-                FranchiseEditor.SimulatedCommission = 0;
-                FranchiseEditor.SimulatedReteiva = 0;
-                FranchiseEditor.SimulatedReteica = 0;
-                FranchiseEditor.SimulatedRetefte = 0;
-                FranchiseEditor.SimulatedIvaValue = 0;
             }
         }
 
@@ -1991,6 +1350,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 variables.pageResponseFilters = new ExpandoObject();
                 variables.pageResponseFilters.costCenterId = costCenterDTO.Id;
                 variables.pageResponseFilters.isPettyCash = !isMajor; // false para Major, true para Minor
+                variables.pageResponseFilters.parentId = null;
 
                 PageType<CashDrawerGraphQLModel> result = await _cashDrawerService.GetPageAsync(query, variables);
 
@@ -2087,7 +1447,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                         {
                             bank.Context = this;
                             bank.DummyParent = bankDummyDTO;
-                            bank.BankAccounts.Add(new TreasuryBankAccountMasterTreeDTO() { IsDummyChild = true, Description = "Fucking Dummy" });
+                            bank.BankAccounts.Add(new TreasuryBankAccountMasterTreeDTO() { IsDummyChild = true, Description = "Dummy" });
                             bankDummyDTO?.Banks.Add(bank);
                         }
                     });
@@ -2236,7 +1596,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadMajorCashDrawers" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadAuxiliaryCashDrawers" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
 
@@ -2314,7 +1674,6 @@ namespace NetErp.Treasury.Masters.ViewModels
                 BankAccountAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
 
                 FranchiseAccountingAccountsCommission = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-                FranchiseAccountingAccountsCommission.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CUENTA CONTABLE >>" });
 
                 // Centros de costo
                 BankAccountCostCenters = Context.AutoMapper.Map<ObservableCollection<TreasuryBankAccountCostCenterDTO>>(_costCenterCache.Items);
@@ -2323,11 +1682,6 @@ namespace NetErp.Treasury.Masters.ViewModels
 
                 // Cuentas bancarias
                 FranchiseBankAccounts = new ObservableCollection<BankAccountGraphQLModel>(_bankAccountCache.Items);
-                FranchiseBankAccounts.Insert(0, new BankAccountGraphQLModel() { Id = 0, Description = "<< SELECCIONE UNA CUENTA BANCARIA >>" });
-
-                // Cajas generales
-                CashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
-                CashDrawers.Insert(0, new CashDrawerGraphQLModel() { Id = 0, Name = "<< SELECCIONE UNA CAJA GENERAL >> " });
 
                 // Cajas para auto-transferencia
                 MajorAutoTransferCashDrawerCashDrawers = new ObservableCollection<CashDrawerGraphQLModel>(_majorCashDrawerCache.Items);
@@ -2399,7 +1753,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
             ];
             Context = context;
-            _errors = [];
             Context.EventAggregator.SubscribeOnUIThread(this);
 
             // Initialize Panel Editors
@@ -2408,7 +1761,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryCashDrawerEditor = new AuxiliaryCashDrawerPanelEditor(this, _cashDrawerService);
             BankEditor = new BankPanelEditor(this, _bankService, _dialogService);
             BankAccountEditor = new BankAccountPanelEditor(this, _bankAccountService);
-            FranchiseEditor = new FranchisePanelEditor(this, _franchiseService);
+            FranchiseEditor = new FranchisePanelEditor(this, _franchiseService, _notificationService);
         }
 
         protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
@@ -2532,7 +1885,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                int deletedId = message.DeletedCashDrawer.DeletedId;
+                int? deletedId = message.DeletedCashDrawer.DeletedId;
 
                 // Buscar en cajas generales y auxiliares
                 CashDrawerDummyDTO? majorDummy = DummyItems.OfType<CashDrawerDummyDTO>().FirstOrDefault(x => x.Type == CashDrawerType.Major);
@@ -2661,46 +2014,6 @@ namespace NetErp.Treasury.Masters.ViewModels
             return;
         }
 
-        public bool HasErrors => _errors.Count > 0;
-
-        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
-        private void RaiseErrorsChanged(string propertyName)
-        {
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
-        }
-
-        public IEnumerable GetErrors(string propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
-            return _errors[propertyName];
-        }
-
-        private void AddError(string propertyName, string error)
-        {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
-
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearAllErrors()
-        {
-            _errors.Clear();
-        }
-
         public async Task HandleAsync(BankCreateMessage message, CancellationToken cancellationToken)
         {
             var createdBank = message.CreatedBank.Entity;
@@ -2800,12 +2113,13 @@ namespace NetErp.Treasury.Masters.ViewModels
             return;
         }
 
-        public Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(BankAccountDeleteMessage message, CancellationToken cancellationToken)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                BankDummyDTO bankDummyDTO = DummyItems.FirstOrDefault(x => x is BankDummyDTO) as BankDummyDTO ?? throw new Exception("");
+                var bankDummyDTO = DummyItems.OfType<BankDummyDTO>().FirstOrDefault();
                 if (bankDummyDTO is null) return;
+
                 foreach (var bank in bankDummyDTO.Banks)
                 {
                     var bankAccount = bank.BankAccounts.FirstOrDefault(x => x.Id == message.DeletedBankAccount.DeletedId);
@@ -2816,8 +2130,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                     }
                 }
             });
+            await LoadComboBoxesAsync();
             _notificationService.ShowSuccess(message.DeletedBankAccount.Message);
-            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(BankAccountUpdateMessage message, CancellationToken cancellationToken)
@@ -2904,14 +2218,14 @@ namespace NetErp.Treasury.Masters.ViewModels
             franchiseToUpdate.FormulaReteiva = franchiseDTO.FormulaReteiva;
             franchiseToUpdate.FormulaReteica = franchiseDTO.FormulaReteica;
             franchiseToUpdate.FormulaRetefte = franchiseDTO.FormulaRetefte;
-            franchiseToUpdate.CommissionMargin = franchiseDTO.CommissionMargin;
-            franchiseToUpdate.ReteivaMargin = franchiseDTO.ReteivaMargin;
-            franchiseToUpdate.ReteicaMargin = franchiseDTO.ReteicaMargin;
-            franchiseToUpdate.RetefteMargin = franchiseDTO.RetefteMargin;
-            franchiseToUpdate.IvaMargin = franchiseDTO.IvaMargin;
+            franchiseToUpdate.CommissionRate = franchiseDTO.CommissionRate;
+            franchiseToUpdate.ReteivaRate = franchiseDTO.ReteivaRate;
+            franchiseToUpdate.ReteicaRate = franchiseDTO.ReteicaRate;
+            franchiseToUpdate.RetefteRate = franchiseDTO.RetefteRate;
+            franchiseToUpdate.TaxRate = franchiseDTO.TaxRate;
             franchiseToUpdate.BankAccount = franchiseDTO.BankAccount;
-            franchiseToUpdate.AccountingAccountCommission = franchiseDTO.AccountingAccountCommission;
-            franchiseToUpdate.FranchiseSettingsByCostCenter = franchiseDTO.FranchiseSettingsByCostCenter;
+            franchiseToUpdate.CommissionAccountingAccount = franchiseDTO.CommissionAccountingAccount;
+            franchiseToUpdate.FranchisesByCostCenter = franchiseDTO.FranchisesByCostCenter;
             await Task.Run(() => FranchiseEditor.SetForEdit(franchiseToUpdate));
             _notificationService.ShowSuccess(message.UpdatedFranchise.Message);
             return;
@@ -2926,13 +2240,5 @@ namespace NetErp.Treasury.Masters.ViewModels
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
-    }
-
-    public class CashDrawerComboBoxesDataContext
-    {
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } = [];
-        public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; } = [];
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; } = [];
-        public ObservableCollection<BankAccountGraphQLModel> BankAccounts { get; set; } = [];
     }
 }
