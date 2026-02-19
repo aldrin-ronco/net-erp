@@ -10,6 +10,7 @@ using Models.Billing;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingAccountGroups.DTO;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -24,6 +25,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Xml.Linq;
 using static Amazon.S3.Util.S3EventNotification;
+using static DevExpress.Data.Utils.SafeProcess;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccountGroups.ViewModels
@@ -32,11 +34,18 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
     {
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+
         public AccountingAccountGroupViewModel Context { get; set; }
-        public AccountingAccountGroupMasterViewModel(AccountingAccountGroupViewModel context,  Helpers.Services.INotificationService notificationService, IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService)
+        public AccountingAccountGroupMasterViewModel(AccountingAccountGroupViewModel context,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache
+)
         {
             _notificationService = notificationService;
             _accountingAccountGroupService = accountingAccountGroupService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             Context = context;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ = InitializeAsync();
@@ -391,6 +400,12 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         }
         public async Task InitializeAsync()
         {
+            await Task.WhenAll(
+              _auxiliaryAccountingAccountCache.EnsureLoadedAsync()
+             
+              );
+            AccountingAccounts = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(_auxiliaryAccountingAccountCache.Items)];
+
             try
             {
                 IsBusy = true;
@@ -400,13 +415,10 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 variables.AccountingAccountGroupsFilters = new ExpandoObject();
                 variables.accountingAccountsFilters = new ExpandoObject();
                 variables.accountingAccountsFilters.only_auxiliary_accounts = true;
-                
 
-
-                AccountingAccountGroupDataContext result = await _accountingAccountGroupService.GetDataContextAsync<AccountingAccountGroupDataContext>(query, variables);
-                Groups = [.. result.AccountingAccountGroups.Entries];
+                PageType<AccountingAccountGroupGraphQLModel> result = await _accountingAccountGroupService.GetPageAsync(query, variables);
+                Groups = [.. result.Entries];
                 SelectedGroup = Groups.FirstOrDefault();
-                AccountingAccounts = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(result.AccountingAccounts.Entries)];
             }
             catch (Exception ex)
             {
@@ -425,17 +437,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         public string GetLoadAccountingAccountGroupQuery()
         {
            
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-                  .Field(e => e.Code)
-            ).Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
+          
             var accountingAccountGroupFields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
               .Create()
               .SelectList(it => it.Entries, entries => entries
@@ -456,14 +458,11 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             
             var accountingAccountGroupParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var accountingAccountGroupFilterParameters = new GraphQLQueryParameter("filters", "AccountingAccountGroupFilters");
-            var accountingAccountGroupFragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [accountingAccountGroupParameters, accountingAccountGroupFilterParameters], accountingAccountGroupFields, "AccountingAccountGroups");
+            var accountingAccountGroupFragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [accountingAccountGroupParameters, accountingAccountGroupFilterParameters], accountingAccountGroupFields, "PageResponse");
 
-            var accountingAccountParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var accountingAccountFilterParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-            var accountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters, accountingAccountFilterParameters], accountingAccountFields, "AccountingAccounts");
+            
 
-
-            var builder =  new GraphQLQueryBuilder([accountingAccountGroupFragment, accountingAccountFragment]);
+            var builder =  new GraphQLQueryBuilder([accountingAccountGroupFragment]);
             return builder.GetQuery();
         }
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
