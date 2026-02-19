@@ -6,6 +6,7 @@ using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Books;
 using NetErp.Books.Tax.ViewModels;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,6 +21,8 @@ namespace NetErp.Books.Tax.ViewModels
     {
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<TaxGraphQLModel> _taxService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly TaxCategoryCache _taxCategoryCache;
 
         public IEventAggregator EventAggregator { get; private set; }
         public IMapper AutoMapper { get; private set; }
@@ -36,12 +39,16 @@ namespace NetErp.Books.Tax.ViewModels
         }
         
        
-        public TaxViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxGraphQLModel> taxService)
+        public TaxViewModel(IMapper mapper, IEventAggregator eventAggregator,  Helpers.Services.INotificationService notificationService, IRepository<TaxGraphQLModel> taxService, 
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, TaxCategoryCache taxCategoryCache
+)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _taxCategoryCache = taxCategoryCache;
             _ = Task.Run(async () =>
             {
                 try
@@ -69,17 +76,17 @@ namespace NetErp.Books.Tax.ViewModels
                 throw new AsyncException(innerException: ex);
             }
         }
-        public async Task ActivateDetailViewForEditAsync(int taxId, ObservableCollection<TaxCategoryGraphQLModel> TaxCategories, ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
+        public async Task ActivateDetailViewForEditAsync(int taxId)
         {
-            TaxDetailViewModel instance = new(this,  _taxService, TaxCategories, AccountingAccounts );
+            TaxDetailViewModel instance = new(this,  _taxService,  _auxiliaryAccountingAccountCache, _taxCategoryCache);
             
             await instance.InitializeAsync();
             TaxGraphQLModel tax = await instance.LoadDataForEditAsync(taxId);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
-        public async Task ActivateDetailViewForNewAsync( ObservableCollection<TaxCategoryGraphQLModel> TaxCategories, ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts)
+        public async Task ActivateDetailViewForNewAsync()
         {
-            TaxDetailViewModel instance = new(this, _taxService, TaxCategories, AccountingAccounts);
+            TaxDetailViewModel instance = new(this, _taxService, _auxiliaryAccountingAccountCache, _taxCategoryCache);
             await instance.InitializeAsync();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }

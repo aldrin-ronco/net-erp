@@ -51,7 +51,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task InitializeAsync()
         {
-            await this.LoadTaxesAsync(true);
+            await this.LoadTaxesAsync();
 
         }
         protected override void OnViewAttached(object view, object context)
@@ -192,32 +192,8 @@ namespace NetErp.Books.Tax.ViewModels
         }
         private ObservableCollection<TaxCategoryGraphQLModel> _taxCategories;
 
-        public ObservableCollection<TaxCategoryGraphQLModel> TaxCategories
-        {
-            get { return _taxCategories; }
-            set
-            {
-                if (_taxCategories != value)
-                {
-                    _taxCategories = value;
-                    NotifyOfPropertyChange(nameof(TaxCategories));
-                }
-            }
-        }
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
-
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
-        {
-            get { return _accountingAccounts; }
-            set
-            {
-                if (_accountingAccounts != value)
-                {
-                    _accountingAccounts = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccounts));
-                }
-            }
-        }
+        
+       
         // Tiempo de respuesta
         private string _responseTime;
         public string ResponseTime
@@ -403,7 +379,7 @@ namespace NetErp.Books.Tax.ViewModels
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
-        public async Task LoadTaxesAsync(bool withDependencies = false)
+        public async Task LoadTaxesAsync()
         {
             try
             {
@@ -425,31 +401,15 @@ namespace NetErp.Books.Tax.ViewModels
                     variables.pageResponseFilters.name = FilterSearch.Trim().RemoveExtraSpaces();
                 }
                     
-                string query = GetLoadTaxesQuery(withDependencies);
-                if (withDependencies)
-                {
-                    variables.accountingAccountsFilters = new ExpandoObject();
-                    variables.accountingAccountsFilters.only_auxiliary_accounts = true;
-
-                    TaxDataContext result = await _taxService.GetDataContextAsync<TaxDataContext>(query, variables);
-
-                    this.AccountingAccounts = result.AccountingAccounts.Entries;
-                    TaxCategories = result.TaxCategories.Entries;
-
-                    this.Taxes = result.Taxes.Entries;
-                    PageIndex = result.Taxes.PageNumber;
-                    PageSize = result.Taxes.PageSize;
-                    TotalCount = result.Taxes.TotalEntries;
-                }
-                else
-                {
+                string query = GetLoadTaxesQuery();
+              
 
                     PageType<TaxGraphQLModel> result = await _taxService.GetPageAsync(query, variables);
                     this.Taxes = result.Entries;
                     PageIndex = result.PageNumber;
                     PageSize = result.PageSize;
                     TotalCount = result.TotalEntries;
-                }
+                
 
 
                
@@ -469,7 +429,7 @@ namespace NetErp.Books.Tax.ViewModels
             }
            
         }
-        public string GetLoadTaxesQuery(bool withDependencies = false)
+        public string GetLoadTaxesQuery()
         {
             var taxFields = FieldSpec<PageType<TaxGraphQLModel>>
                 .Create()
@@ -515,35 +475,9 @@ namespace NetErp.Books.Tax.ViewModels
             var taxPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var taxfilterParameters = new GraphQLQueryParameter("filters", "TaxFilters");
 
-            var taxFragment = new GraphQLQueryFragment("taxesPage", [taxPagParameters, taxfilterParameters], taxFields, withDependencies ? "Taxes" : "PageResponse");
-           
-            var taxCategoriesFields = FieldSpec<PageType<TaxCategoryGraphQLModel>>
-           .Create()
-           .SelectList(it => it.Entries, entries => entries
-               .Field(e => e.Id)
-               .Field(e => e.Name)
-               .Field(e => e.Prefix)
-               .Field(e => e.GeneratedTaxRefundAccountIsRequired)
-               .Field(e => e.GeneratedTaxAccountIsRequired)
-               .Field(e => e.DeductibleTaxRefundAccountIsRequired)
-               .Field(e => e.DeductibleTaxAccountIsRequired)
-               )
-           .Build();
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-               .Create()
-               .SelectList(it => it.Entries, entries => entries
-                   .Field(e => e.Id)
-                   .Field(e => e.Name)
-                   .Field(e => e.Code)
-                   )
-               .Build();
-
-            var taxCategoriesParameters = new GraphQLQueryParameter("filters", "TaxCategoryFilters");
-            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-
-            var taxCategoriesFragment = new GraphQLQueryFragment("taxCategoriesPage", [taxCategoriesParameters], taxCategoriesFields, "TaxCategories");
-            var AccountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "AccountingAccounts");
-            var builder = withDependencies ?  new GraphQLQueryBuilder([taxCategoriesFragment, AccountingAccountFragment, taxFragment]) : new GraphQLQueryBuilder([taxFragment]);
+            var taxFragment = new GraphQLQueryFragment("taxesPage", [taxPagParameters, taxfilterParameters], taxFields, "PageResponse");
+     
+            var builder =    new GraphQLQueryBuilder([taxFragment]);
             return builder.GetQuery();
         }
         public async Task EditTaxAsync()
@@ -584,11 +518,11 @@ namespace NetErp.Books.Tax.ViewModels
         }
         public async Task ExecuteActivateDetailViewForEditAsync()
         {
-            await Context.ActivateDetailViewForEditAsync(SelectedTaxGraphQLModel.Id, TaxCategories, AccountingAccounts);
+            await Context.ActivateDetailViewForEditAsync(SelectedTaxGraphQLModel.Id);
         }
         public async Task ExecuteActivateDetailViewForNewAsync()
         {
-            await Context.ActivateDetailViewForNewAsync(TaxCategories, AccountingAccounts);
+            await Context.ActivateDetailViewForNewAsync();
         }
         public Task HandleAsync(TaxDeleteMessage message, CancellationToken cancellationToken)
         {

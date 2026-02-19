@@ -12,6 +12,7 @@ using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Billing.DAL.PostgreSQL;
 using System;
@@ -34,23 +35,20 @@ namespace NetErp.Books.Tax.ViewModels
     public class TaxDetailViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<TaxGraphQLModel> _taxService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly TaxCategoryCache _taxCategoryCache;
 
-        public TaxDetailViewModel(TaxViewModel context, IRepository<TaxGraphQLModel> taxService, ObservableCollection<TaxCategoryGraphQLModel> _taxCategories, ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts)
+        public TaxDetailViewModel(TaxViewModel context, IRepository<TaxGraphQLModel> taxService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, TaxCategoryCache taxCategoryCache)
         {
             _taxService = taxService ?? throw new ArgumentNullException(nameof(taxService));
 
             Context = context;
             _errors = new Dictionary<string, List<string>>();
 
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _taxCategoryCache = taxCategoryCache;
 
-            AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_accountingAccounts)];
-            AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_accountingAccounts)];
-            TaxCategories = [.. Context.AutoMapper.Map<ObservableCollection<TaxCategoryGraphQLModel>>(_taxCategories)];
-
-            AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
-            AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
-
-
+           
             Context.EventAggregator.SubscribeOnUIThread(this);
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
           
@@ -61,7 +59,18 @@ namespace NetErp.Books.Tax.ViewModels
         }
         public async Task InitializeAsync()
         {
-            //await LoadListAsync();
+            await Task.WhenAll(
+             _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
+             _taxCategoryCache.EnsureLoadedAsync()
+
+             );
+            AccountingAccountOperations = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_auxiliaryAccountingAccountCache.Items)];
+            AccountingAccountDevolutions = [.. Context.AutoMapper.Map<ObservableCollection<AccountingAccountGraphQLModel>>(_auxiliaryAccountingAccountCache.Items)];
+            AccountingAccountOperations.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "SELECCIONE CUENTA CONTABLE" });
+            AccountingAccountDevolutions.Insert(0, new AccountingAccountGraphQLModel() { Id = 0, Name = "USAR LA CUENTA DE LA TRANSACCIÓN ORIGINAL" });
+            TaxCategories = [.. Context.AutoMapper.Map<ObservableCollection<TaxCategoryGraphQLModel>>(_taxCategoryCache.Items)];
+
+
             IsActive = true;
            
         }
