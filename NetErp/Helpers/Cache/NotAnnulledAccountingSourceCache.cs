@@ -129,7 +129,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedAccountingSource?.DeletedId > 0)
             {
-                Remove(message.DeletedAccountingSource.DeletedId);
+                Remove(message.DeletedAccountingSource.DeletedId.Value);
             }
 
             return Task.CompletedTask;

@@ -137,7 +137,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedZone?.DeletedId > 0)
             {
-                Remove(message.DeletedZone.DeletedId);
+                Remove(message.DeletedZone.DeletedId.Value);
             }
 
             return Task.CompletedTask;
