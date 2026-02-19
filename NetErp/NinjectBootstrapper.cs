@@ -119,6 +119,9 @@ namespace NetErp
             _ = kernel.Bind<ProcessTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
+
+            _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
+
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
