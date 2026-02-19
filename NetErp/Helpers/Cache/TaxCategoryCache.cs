@@ -113,7 +113,7 @@ namespace NetErp.Helpers.Cache
         {
             if (message.DeletedTaxCategory?.DeletedId > 0)
             {
-                Remove(message.DeletedTaxCategory.DeletedId);
+                Remove(message.DeletedTaxCategory.DeletedId.Value);
             }
 
             return Task.CompletedTask;
