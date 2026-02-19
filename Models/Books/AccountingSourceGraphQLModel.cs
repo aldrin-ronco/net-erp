@@ -59,13 +59,6 @@ namespace Models.Books
         public DeleteResponseType DeletedAccountingSource { get; set; } = new();
     }
 
-    public class AccountingSourceDataContext
-    {
-        public PageType<ModuleGraphQLModel> ModulesPage  { get; set; }
-        public PageType<AccountingAccountGraphQLModel> AccountingAccountsPage { get; set; }
-
-        public PageType<ProcessTypeGraphQLModel> ProcessTypesPage {  get; set; }
-        public PageType<AccountingSourceGraphQLModel>  AccountingSourcesPage {  get; set; } 
-    }
+    
 
 }

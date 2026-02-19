@@ -1,41 +1,44 @@
 ﻿using Caliburn.Micro;
+using Common.Extensions;
 using Common.Helpers;
+using Common.Interfaces;
+using DevExpress.Mvvm;
+using DevExpress.Mvvm.Native;
+using DevExpress.Xpf.Core;
+using DevExpress.XtraEditors.Filtering;
+using DevExpress.XtraPrinting.Native;
 using Dictionaries;
+using Extensions.Global;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
 using Models.Global;
+using NetErp.Billing.Customers.ViewModels;
+using NetErp.Billing.Zones.DTO;
+using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Billing.DAL.PostgreSQL;
+using Services.Books.DAL.PostgreSQL;
 using System;
-using Common.Extensions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using DevExpress.Xpf.Core;
-using Services.Billing.DAL.PostgreSQL;
-using Common.Interfaces;
-using Microsoft.VisualStudio.Threading;
 using System.Windows.Threading;
-using DevExpress.Mvvm;
-using NetErp.Global.CostCenters.DTO;
-using NetErp.Billing.Zones.DTO;
-using System.Diagnostics;
-using System.Collections.Specialized;
-using DevExpress.XtraEditors.Filtering;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using static Models.Global.GraphQLResponseTypes;
-using Services.Books.DAL.PostgreSQL;
-using Extensions.Global;
-using NetErp.Billing.Customers.ViewModels;
+using static DevExpress.Data.Utils.SafeProcess;
 using static Dictionaries.BooksDictionaries;
-using DevExpress.XtraPrinting.Native;
+using static Models.Global.GraphQLResponseTypes;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
@@ -43,6 +46,10 @@ namespace NetErp.Billing.Sellers.ViewModels
     public class SellerDetailViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly IdentificationTypeCache _identificationTypeCache;
+        private readonly CountryCache _countryCache;
+        private readonly ZoneCache _zoneCache;
         #region Commands
 
         private ICommand _deleteMailCommand;
@@ -738,7 +745,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Emails = new ObservableCollection<EmailDTO>();
 
                 
-                SelectedCountry = Context.Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
+                SelectedCountry =_countryCache.Items.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
                 SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
                 SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
                 this.AcceptChanges();
@@ -749,8 +756,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 
                 this.SeedValue(nameof(SelectedCityId), SelectedCityId);
                 this.SeedValue(nameof(Regime), Regime);
-
-                foreach (CostCenterDTO costCenter in Context.CostCenters)
+                foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
                 {
                     costCenters.Add(new CostCenterDTO()
                     {
@@ -760,7 +766,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     });
                 }
                 
-                Zones = [.. Context.Zones];
+                Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items);
                 CostCenters = new ObservableCollection<CostCenterDTO>(costCenters);
             }
             catch (Exception ex)
@@ -1000,8 +1006,16 @@ namespace NetErp.Billing.Sellers.ViewModels
         public SellerDetailViewModel(
             SellerViewModel context,
             IRepository<SellerGraphQLModel> sellerService,
-            IRepository<ZoneGraphQLModel> zoneService)
+            IRepository<ZoneGraphQLModel> zoneService,
+            CostCenterCache costCenterCache,
+            IdentificationTypeCache identificationTypeCache,
+            CountryCache countryCache,
+            ZoneCache zoneCache)
         {
+            _zoneCache = zoneCache;
+            _countryCache = countryCache;
+            _identificationTypeCache = identificationTypeCache;
+            _costCenterCache = costCenterCache;
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             _sellerService = sellerService;
@@ -1011,8 +1025,16 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public async Task InitializeAsync()
         {
-            Countries = Context.Countries;
-            SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == "40"); // 13 es CC
+            await Task.WhenAll(
+                _countryCache.EnsureLoadedAsync(),
+                _zoneCache.EnsureLoadedAsync(),
+                _identificationTypeCache.EnsureLoadedAsync(),
+                _costCenterCache.EnsureLoadedAsync()
+                );
+            Countries = _countryCache.Items;
+            Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items); 
+
+            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == "40"); // 13 es CC
            
         }
         public async Task<SellerGraphQLModel> LoadDataForEditAsync(int id)
@@ -1043,7 +1065,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             // Propiedades básicas del seller
             Id = seller.Id;
             
-            SelectedIdentificationType = Context.IdentificationTypes.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
+            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
             IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
             FirstName = seller.AccountingEntity.FirstName;
             MiddleName = seller.AccountingEntity.MiddleName;
@@ -1060,6 +1082,19 @@ namespace NetErp.Billing.Sellers.ViewModels
             Address = seller.AccountingEntity.Address;
             ZoneId = seller.Zone?.Id;
 
+
+            ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
+            foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
+            {
+                bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
+                costCentersSelection.Add(new CostCenterDTO()
+                {
+                    Id = costCenter.Id,
+                    Name = costCenter.Name,
+                    IsSelected = exist
+                });
+            }
+            CostCenters = costCentersSelection;
         }
         protected override void OnViewAttached(object view, object context)
         {

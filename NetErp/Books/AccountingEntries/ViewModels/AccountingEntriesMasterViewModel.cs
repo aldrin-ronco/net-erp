@@ -2,12 +2,19 @@
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
+using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using Extensions.Books;
+using Extensions.Global;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
+using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,38 +26,32 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Extensions.Books;
-using Extensions.Global;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.VisualStudio.Threading;
-using DevExpress.Mvvm;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntries.ViewModels
 {
     public class AccountingEntriesMasterViewModel : Screen,
         INotifyDataErrorInfo,
-        IHandle<AccountingEntryMasterGraphQLModel>,
-        IHandle<AccountingEntryDraftMasterGraphQLModel>,
+        IHandle<AccountingEntryGraphQLModel>,
+        IHandle<AccountingEntryDraftGraphQLModel>,
         IHandle<AccountingEntryDraftMasterDeleteMessage>,
         IHandle<AccountingEntryMasterDeleteMessage>,
         IHandle<AccountingEntryMasterCancellationMessage>,
-        IHandle<CostCenterCreateMessage>,
-        IHandle<CostCenterUpdateMessage>,
-        IHandle<CostCenterDeleteMessage>,
-        IHandle<AccountingSourceCreateMessage>,
-        IHandle<AccountingSourceUpdateMessage>,
-        IHandle<AccountingSourceDeleteMessage>,
+      
+      
         IHandle<AccountingEntryDraftMasterUpdateMessage>
     {
         #region Popiedades
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly IRepository<AccountingEntryMasterGraphQLModel> _accountingEntryMasterService;
-        private readonly IRepository<AccountingEntryDraftMasterGraphQLModel> _accountingEntryDraftMasterService;
+        private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
+        private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
-
+        private readonly CostCenterCache _costCenterCache;
+        private readonly AccountingBookCache _accountingBookCache;
+        private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
         // Context
         public AccountingEntriesViewModel Context { get; set; }
         // Libros contables
@@ -555,145 +556,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task SearchAccountingEntries()
-        {
-            try
-            {
-                this.IsBusy = true;
-                this.Refresh();
-
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                var accountingEntriesPage = await this.ExecuteSearchAccountingEntriesAsync();
-
-                stopwatch.Stop();
-
-                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-                if (accountingEntriesPage.Count > 0)
-                {
-                    this.TotalCount = accountingEntriesPage.Count;
-                    this.AccountingEntriesMaster = new ObservableCollection<AccountingEntryMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryMasterDTO>>(accountingEntriesPage.Rows));
-                }
-                else
-                {
-                    _notificationService.ShowInfo("No se encontraron registros");
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task<PageType<AccountingEntryMasterGraphQLModel>> ExecuteSearchAccountingEntriesAsync()
-        {
-            try
-            {
-                string query = @"
-                query($filter:AccountingEntryMasterFilterInput){
-                  PageResponse: accountingEntryMasterPage(filter:$filter){
-                    count
-                    rows {
-                      id
-                      accountingBook {
-                        id
-                        name
-                      }
-                      costCenter {
-                        id
-                        name
-                      }
-                      accountingSource {
-                        id
-                        name
-                      }      
-                      state
-                      annulment  
-                      draftMasterId
-                      documentDate
-                      createdAt
-                      description      
-                      documentNumber
-                      createdBy
-                    }
-                  }
-                }";
-
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-
-
-                if (SearchOnAccountingBook) 
-                {
-                    variables.filter.AccountingBookId = new ExpandoObject();
-                    variables.filter.AccountingBookId.@operator = "=";
-                    variables.filter.AccountingBookId.value = SelectedAccountingBookId;
-                }
-                if(SearchOnCostCenter)
-                {
-                    variables.filter.CostCenterId = new ExpandoObject();
-                    variables.filter.CostCenterId.@operator = "=";
-                    variables.filter.CostCenterId.value = SelectedCostCenterId;
-                }
-                if (SearchOnAccountingSource)
-                {
-                    variables.filter.AccountingSourceId = new ExpandoObject();
-                    variables.filter.AccountingSourceId.@operator = "=";
-                    variables.filter.AccountingSourceId.value = SelectedAccountingSourceId;
-                }
-
-                if(SearchOnAccountingEntity)
-                {
-                    variables.filter.AccountingEntityId = new ExpandoObject();
-                    variables.filter.AccountingEntityId.@operator = "=";
-                    variables.filter.AccountingEntityId.value = SelectedAccountingEntityId;
-                }
-                if (SearchOnDocumentNumber)
-                {
-                    variables.filter.DocumentNumber = new ExpandoObject();
-                    variables.filter.DocumentNumber.@operator = "like";
-                    variables.filter.DocumentNumber.value = DocumentNumber.Trim().RemoveExtraSpaces();
-                }
-
-                if (SearchOnDate && !IsDateRange) 
-                {
-                    variables.filter.DocumentDate = new ExpandoObject();
-                    variables.filter.DocumentDate.@operator = SelectedDateFilterOption.ToString();
-                    variables.filter.DocumentDate.value = DateTimeHelper.DateTimeKindUTC(StartDateFilter);
-                }
-
-                if(SearchOnDate && IsDateRange)
-                {
-                    variables.filter.DocumentDate = new ExpandoObject();
-                    variables.filter.DocumentDate.@operator = "between";
-                    variables.filter.DocumentDate.value = new List<DateTime>{ DateTimeHelper.DateTimeKindUTC(StartDateFilter), DateTimeHelper.DateTimeKindUTC(EndDateFilter) };
-                }
-
-                // Paginacion
-                variables.filter.Pagination = new ExpandoObject();
-                variables.filter.Pagination.Page = PageIndex;
-                variables.filter.Pagination.PageSize = PageSize;
-                var result = await this._accountingEntryMasterService.GetPageAsync(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+       
 
         public bool CanSearchAccountingEntries
         {
@@ -835,16 +698,21 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public AccountingEntriesMasterViewModel(AccountingEntriesViewModel context,
             Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingEntryMasterGraphQLModel> accountingEntryMasterService,
-            IRepository<AccountingEntryDraftMasterGraphQLModel> accountingEntryDraftMasterService,
-            IRepository<AccountingEntityGraphQLModel> accountingEntityService)
+            IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
+            IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
+            IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+             CostCenterCache costCenterCache,
+             AccountingBookCache accountingBookCache,
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache)
         {
             this.Context = context;
             _notificationService = notificationService;
             _accountingEntryMasterService = accountingEntryMasterService;
             _accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             _accountingEntityService = accountingEntityService;
-          
+            _costCenterCache = costCenterCache;
+            _accountingBookCache = accountingBookCache;
+            _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
 
@@ -852,103 +720,54 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.Context.EventAggregator.SubscribeOnUIThread(this);
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await Initialize());
+            joinable.Run(async () => await InitializeAsync());
+            
         }
 
-        public async Task Initialize()
+        public async Task InitializeAsync()
+        {
+            await Task.WhenAll(
+               _costCenterCache.EnsureLoadedAsync(),
+               _accountingBookCache.EnsureLoadedAsync(),
+                _notAnnulledAccountingSourceCache.EnsureLoadedAsync()
+               );
+            CostCenters =[.. _costCenterCache.Items];
+            this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
+            this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
+            this.AccountingBooks = [.._accountingBookCache.Items];
+            this.SelectedAccountingBookId = this.AccountingBooks.Count > 0? this.AccountingBooks.FirstOrDefault().Id : 0;
+            this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
+            this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
+            this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
+            await LoadAccountingEntryDraftsAsync();
+            
+        }
+        public async Task LoadAccountingEntryDraftsAsync()
         {
             try
             {
 
-                string query = @"
-                query ($accountingSourceFilter: AccountingSourceFilterInput) {
-                accountingBooks{
-                    id
-                    name
-                },
-                costCenters{
-                    id
-                    name
-                    tradeName
-                },
-                accountingSources(filter: $accountingSourceFilter){
-                    id
-                    name
-                },
-                accountingEntryDraftMasterPage{
-                    count
-                    rows {
-                    id
-                    masterId  
-                    accountingBook {
-                        id
-                        name
-                    }
-                    costCenter {
-                        id
-                        name
-                    }
-                    accountingSource {
-                        id
-                        name
-                    }
-                    documentNumber
-                    documentDate
-                    createdAt
-                    description
-                    createdBy
-                    }
-                }
-                }";
+                IsBusy = true;
 
-                if (this.AccountingBooks == null)
-                {
-                    dynamic variables = new ExpandoObject();
-                    variables.accountingSourceFilter = new ExpandoObject();
-                    variables.accountingSourceFilter.annulment = new ExpandoObject();
-                    variables.accountingSourceFilter.annulment.@operator = "=";
-                    variables.accountingSourceFilter.annulment.value = false;
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = 1;
+                variables.pageResponsePagination.pageSize = 10;
 
-                    this.IsBusy = true;
-                    this.Refresh();
+                variables.pageResponseFilters = new ExpandoObject();
+                
+                string query = GetLoadAccountingEntryDraftsQuery();
+                PageType<AccountingEntryDraftGraphQLModel> result = await _accountingEntryDraftMasterService.GetPageAsync(query, variables);
+                this.AccountingEntriesDraftMaster = new ObservableCollection<AccountingEntryDraftMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryDraftMasterDTO>>(result.Entries));
+                PageIndex = result.PageNumber;
+                PageSize = result.PageSize;
+                TotalCount = result.TotalEntries;
 
-                    // Iniciar cronometro
-                    Stopwatch stopwatch = new();
-                    stopwatch.Start();
-
-                    var data = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDataContext>(query, variables);
-
-                    stopwatch.Stop();
-                    this.DraftResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-                    // Inserto los placeholders
-                    this.AccountingEntriesDraftMaster = new ObservableCollection<AccountingEntryDraftMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryDraftMasterDTO>>(data.AccountingEntryDraftMasterPage.Rows));
-                    this.DraftTotalCount = data.AccountingEntryDraftMasterPage.Count;
-                    this.CostCenters = data.CostCenters;
-                    this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-
-                    this.AccountingSources = data.AccountingSources;
-                    this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-                    
-                    this.AccountingBooks = data.AccountingBooks;
-                    Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingBookUpdateMasterListMessage() { AccountingBooks = [.. this.AccountingBooks.ToList()] });
-
-                    
-                    // Filters
-                    this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
-                    this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
-                    this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
-                    this.Refresh();
-                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
@@ -958,8 +777,170 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 IsBusy = false;
             }
+
+        }
+        public string GetLoadAccountingEntryDraftsQuery()
+        {
+           
+                var accountingEntryDraftFields = FieldSpec<PageType<AccountingEntryDraftGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, cat => cat
+                    .Field(c => c.Id)
+                    .Field(c => c.Name)
+                    
+                    )
+                    .Select(e => e.CostCenter, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                        )
+                    .Select(e => e.AccountingSource, cat => cat
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                        )
+                    
+
+                )
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
+                .Build();
+
+
+            var accountingEntryDraftPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var accountingEntryDraftfilterParameters = new GraphQLQueryParameter("filters", "AccountingEntryDraftFilters");
+
+            var accountingEntryDraftFragment = new GraphQLQueryFragment("accountingEntryDraftsPage", [accountingEntryDraftPagParameters, accountingEntryDraftfilterParameters], accountingEntryDraftFields,  "PageResponse");
+
+            var builder =  new GraphQLQueryBuilder([accountingEntryDraftFragment]);
+            return builder.GetQuery();
         }
         
+        public async Task SearchAccountingEntriesAsync()
+        {
+            try
+            {
+
+                IsBusy = true;
+
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = 1;
+                variables.pageResponsePagination.pageSize = 10;
+
+                variables.pageResponseFilters = new ExpandoObject();
+                if (SearchOnAccountingBook)
+                {
+                    variables.pageResponseFilters.AccountingBookId = SelectedAccountingBookId;
+                }
+                if (SearchOnCostCenter)
+                {
+                    variables.pageResponseFilters.CostCenterId = SelectedCostCenterId;
+                }
+                if (SearchOnAccountingSource)
+                {
+                    variables.pageResponseFilters.AccountingSourceId = SelectedAccountingSourceId;
+                }
+
+                if (SearchOnAccountingEntity)
+                {
+                    variables.pageResponseFilters.AccountingEntityId = SelectedAccountingEntityId;
+                }
+                if (SearchOnDocumentNumber)
+                {
+                    variables.pageResponseFilters.DocumentNumber = DocumentNumber.Trim().RemoveExtraSpaces();
+                }
+
+                if (SearchOnDate && !IsDateRange)
+                {
+                    variables.pageResponseFilters.DocumentDate = DateTimeHelper.DateTimeKindUTC(StartDateFilter);
+                }
+
+                if (SearchOnDate && IsDateRange)
+                {
+                    variables.pageResponseFilters.DocumentDate = new List<DateTime> { DateTimeHelper.DateTimeKindUTC(StartDateFilter), DateTimeHelper.DateTimeKindUTC(EndDateFilter) };
+                }
+
+                string query = GetSearchAccountingEntriesQuery();
+                PageType<AccountingEntryGraphQLModel> result = await _accountingEntryMasterService.GetPageAsync(query, variables);
+                this.AccountingEntriesMaster = new ObservableCollection<AccountingEntryMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryMasterDTO>>(result.Entries));
+                PageIndex = result.PageNumber;
+                PageSize = result.PageSize;
+                TotalCount = result.TotalEntries;
+                if(TotalCount == 0) {
+                    _notificationService.ShowInfo("No se encontraron registros");
+                }
+
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+        }
+        public string GetSearchAccountingEntriesQuery()
+        {
+             
+      
+            var accountingEntryFields = FieldSpec<PageType<AccountingEntryGraphQLModel>>
+            .Create()
+            .SelectList(it => it.Entries, entries => entries
+                .Field(e => e.Id)
+                .Field(e => e.Description)
+                .Field(e => e.DocumentDate)
+                .Field(e => e.DocumentNumber)
+                .Field(e => e.InsertedAt)
+                .Field(e => e.State)
+                .Field(e => e.Annulment)
+                .Select(e => e.AccountingBook, cat => cat
+                .Field(c => c.Id)
+                .Field(c => c.Name)
+
+                )
+                .Select(e => e.CostCenter, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                    )
+                .Select(e => e.AccountingSource, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)
+                    )
+                .Select(e => e.CreatedBy, cat => cat
+                        .Field(c => c.Id)
+                        .Field(c => c.FullName)
+                    )
+
+
+            )
+            .Field(o => o.PageNumber)
+            .Field(o => o.PageSize)
+            .Field(o => o.TotalPages)
+            .Field(o => o.TotalEntries)
+            .Build();
+  
+
+            var accountingEntriesPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
+            var accountingEntriesfilterParameters = new GraphQLQueryParameter("filters", "AccountingEntryFilters");
+
+            var accountingEntryFragment = new GraphQLQueryFragment("accountingEntriesPage", [accountingEntriesPagParameters, accountingEntriesfilterParameters], accountingEntryFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([accountingEntryFragment]);
+            return builder.GetQuery();
+        }
 
         public bool CanSearchForAccountingEntityMatch
         {
@@ -1087,7 +1068,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                await this.Context.ActivateDetailViewForEditAsync(p as AccountingEntryDraftMasterGraphQLModel);
+                await this.Context.ActivateDetailViewForEditAsync(p as AccountingEntryDraftGraphQLModel);
             }
             catch (Exception)
             {
@@ -1394,7 +1375,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return true;
         }
 
-        public Task HandleAsync(AccountingEntryMasterGraphQLModel message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryGraphQLModel message, CancellationToken cancellationToken)
         {
             try
             {
@@ -1411,7 +1392,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingEntryDraftMasterGraphQLModel message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryDraftGraphQLModel message, CancellationToken cancellationToken)
         {
             try
             {
@@ -1482,104 +1463,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel costCenter = this.CostCenters.Where(x => x.Id == message.CreatedCostCenter.Entity.Id).FirstOrDefault();
-                if (costCenter == null) this.CostCenters.Add(message.CreatedCostCenter.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
+       
 
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+      
 
-        public Task HandleAsync(CostCenterUpdateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel updatedCostCenter = this.CostCenters.Where(x => x.Id == message.UpdatedCostCenter.Entity.Id).FirstOrDefault();
-                if (updatedCostCenter != null)
-                {
-                    int index = this.CostCenters.IndexOf(updatedCostCenter);
-                    if (index >= 0) this.CostCenters[index] = message.UpdatedCostCenter.Entity;
-                }
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+       
 
-        public Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                CostCenterGraphQLModel deletedCostCenter = this.CostCenters.Where(x => x.Id == message.DeletedCostCenter.DeletedId).FirstOrDefault();
-                if (deletedCostCenter != null) this.CostCenters.Remove(deletedCostCenter);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new CostCenterUpdateMasterListMessage() { CostCenters = [.. this.CostCenters.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
-        {
-            
-            try
-            {
-                AccountingSourceGraphQLModel createdAccountingSource = this.AccountingSources.Where(x => x.Id == message.CreatedAccountingSource.Entity.Id).FirstOrDefault();
-                if (createdAccountingSource is null) this.AccountingSources.Add(message.CreatedAccountingSource.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceUpdateMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                AccountingSourceGraphQLModel updatedAccountingSource = this.AccountingSources.Where(x => x.Id == message.UpdatedAccountingSource.Entity.Id).FirstOrDefault();
-                if (updatedAccountingSource != null) this.AccountingSources.Replace(message.UpdatedAccountingSource.Entity);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AccountingSourceDeleteMessage message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                AccountingSourceGraphQLModel deletedAccountingSource = this.AccountingSources.Where(x => x.Id == message.DeletedAccountingSource.DeletedId).FirstOrDefault();
-                if (deletedAccountingSource != null) this.AccountingSources.Remove(deletedAccountingSource);
-                Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingSourceUpdateMasterListMessage() { AccountingSources = [.. this.AccountingSources.ToList()] });
-
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            return Task.CompletedTask;
-        }
+       
+       
+       
 
         public Task HandleAsync(AccountingEntryDraftMasterUpdateMessage message, CancellationToken cancellationToken)
         {

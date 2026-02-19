@@ -4,6 +4,8 @@ using Common.Interfaces;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Books.Tax.ViewModels;
+using NetErp.Helpers.Cache;
 using Services.Books.DAL.PostgreSQL;
 using Services.Global.DAL.PostgreSQL;
 using System;
@@ -22,13 +24,15 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         private AccountingSourceMasterViewModel _accountingSourceMasterViewModel;
-
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly ProcessTypeCache _processTypeCache;
+        private readonly ModuleCache _moduleCache;
         public AccountingSourceMasterViewModel AccountingSourceMasterViewModel 
         {
             get
             {
                 
-                    if (_accountingSourceMasterViewModel is null) _accountingSourceMasterViewModel = new(this, _accountingSourceService, _notificationService);
+                    if (_accountingSourceMasterViewModel is null) _accountingSourceMasterViewModel = new(this, _accountingSourceService, _notificationService, _moduleCache);
                     return _accountingSourceMasterViewModel;
                 }
         }
@@ -49,11 +53,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
         public AccountingSourceViewModel(IMapper mapper,
-                                         IEventAggregator eventAggregator,  IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService)
+                                         IEventAggregator eventAggregator,  IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, ProcessTypeCache processTypeCache, ModuleCache moduleCache)
         {
             this._notificationService = notificationService;
             this._accountingSourceService = accountingSourceService;
-
+            this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+                this._moduleCache = moduleCache;
+            this._processTypeCache = processTypeCache;
             this.EventAggregator = eventAggregator;
             this.AutoMapper = mapper;
             _ = Task.Run(ActivateMasterViewAsync);
@@ -72,40 +78,24 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        public async Task ActivateDetailViewForNewAsync(ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
+        public async Task ActivateDetailViewForNewAsync()
         {
             
-            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService, processTypes, auxiliaryAccounts);
+            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService,  _auxiliaryAccountingAccountCache, _processTypeCache);
             //instance.Id = 0; // Necesario para saber que es un nuevo registro
             instance.CleanUpControls();
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
 
-        public async Task ActivateDetailViewForEditAsync(AccountingSourceDTO selectedItem, ObservableCollection<ProcessTypeGraphQLModel> processTypes, IEnumerable<AccountingAccountPOCO> auxiliaryAccounts)
+        public async Task ActivateDetailViewForEditAsync(AccountingSourceDTO selectedItem)
         {
-            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService, processTypes, auxiliaryAccounts);
-
-            // Esta tecnica se una cuando se trabaja con SelectedItem
-            // this.AccountingSourceDetailViewModel.SelectedProcessType = this.AccountingSourceDetailViewModel.ProcessTypes.Where(x => x.Id == selectedItem.ProcessType.Id).FirstOrDefault();
-
-            instance.Id = selectedItem.Id; // Necesario para que el Update se ejecute correctaente
-            instance.ProcessTypeId = selectedItem.ProcessType.Id;
-            instance.ShortCode = selectedItem.Code.Substring(selectedItem.Code.Length - 3); 
-            instance.Name = selectedItem.Name;
-            instance.KardexFlow = selectedItem.KardexFlow;
-            instance.AnnulmentCharacter = selectedItem.AnnulmentCharacter;
-            instance.IsKardexTransaction = selectedItem.IsKardexTransaction;
-
-            if (selectedItem.AccountingAccount != null)
-            {
-                instance.AccountingAccountId = selectedItem.AccountingAccount.Id;
-            }
-            else
-            {
-                instance.AccountingAccountId = 0;
-            }
-
+            AccountingSourceDetailViewModel instance = new(this, _accountingSourceService,  _auxiliaryAccountingAccountCache, _processTypeCache);
+            AccountingSourceGraphQLModel entity = await instance.LoadDataForEditAsync(selectedItem.Id);
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+
+           
+
+           
         }
     }
 }

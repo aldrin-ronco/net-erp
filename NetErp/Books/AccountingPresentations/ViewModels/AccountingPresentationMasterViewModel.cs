@@ -49,19 +49,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
-        private ObservableCollection<AccountingBookDTO> _accountingBooks = [];
-        public ObservableCollection<AccountingBookDTO> AccountingBooks
-        {
-            get { return _accountingBooks; }
-            set
-            {
-                if (_accountingBooks != value)
-                {
-                    _accountingBooks = value;
-                    NotifyOfPropertyChange(nameof(AccountingBooks));
-                }
-            }
-        }
+       
 
         private AccountingPresentationGraphQLModel? _selectedItem;
         public AccountingPresentationGraphQLModel? SelectedItem
@@ -130,7 +118,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         public async Task CreateAccountingPresentationAsync()
         {
-            await Context.ActivateDetailForNewAsync(AccountingBooks);
+            await Context.ActivateDetailForNewAsync();
         }
 
         private ICommand? _deleteAccountingPresentationCommand;
@@ -258,7 +246,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         }
         public async Task EditAccountingPresentationAsync()
         {
-            await Context.ActivateDetailViewForEditAsync(SelectedItem!, AccountingBooks);
+            await Context.ActivateDetailViewForEditAsync(SelectedItem!);
         }
 
         public async Task LoadAccountingPresentationsAsync()
@@ -295,7 +283,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetLoadAccountingPresentationsQuery(true);
+                string query = GetLoadAccountingPresentationsQuery();
 
                 //AccountingSource Filter
                 dynamic variables = new ExpandoObject();
@@ -312,9 +300,8 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                AccountingPresentationDataContext results = await _accountingPresentationService.GetDataContextAsync<AccountingPresentationDataContext>(query, variables);
-                AccountingPresentations = results.AccountingPresentations.Entries;
-                AccountingBooks = Context.AutoMapper.Map<ObservableCollection<AccountingBookDTO>>(results.AccountingBooks.Entries);
+                PageType<AccountingPresentationGraphQLModel> results = await _accountingPresentationService.GetPageAsync(query, variables);
+                AccountingPresentations = results.Entries;
                 IsInitialized = true;
                 
               
@@ -334,7 +321,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
            
         }
-        public string GetLoadAccountingPresentationsQuery(bool withDependencies = false)
+        public string GetLoadAccountingPresentationsQuery()
         {
 
             var accountingPresentationFields = FieldSpec<PageType<AccountingPresentationGraphQLModel>>
@@ -344,10 +331,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
                   .Field(e => e.AllowsClosure)
                   .Field(e => e.Name)
-                  .SelectList(e => e.AccountingBooks, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
+                 
                   .Select(e => e.ClosureAccountingBook, acc => acc
                             .Field(c => c.Id)
                             .Field(c => c.Name)
@@ -359,29 +343,14 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
               .Field(o => o.TotalEntries)
               .Build();
 
-          
-
-            var accountingBooksFields = FieldSpec<PageType<AccountingBookGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-           
 
             var accountingPresentationPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
             var accountingPresentationParameters = new GraphQLQueryParameter("filters", "AccountingPresentationFilters");
 
-            var accountingPresentationFragment = new GraphQLQueryFragment("accountingPresentationsPage", [accountingPresentationPagParameters, accountingPresentationParameters], accountingPresentationFields, withDependencies ? "AccountingPresentations" : "PageResponse");
-            var accountingBookFragment = new GraphQLQueryFragment("accountingBooksPage", [], accountingBooksFields, "AccountingBooks");
+            var accountingPresentationFragment = new GraphQLQueryFragment("accountingPresentationsPage", [accountingPresentationPagParameters, accountingPresentationParameters], accountingPresentationFields,  "PageResponse");
             
 
-            var builder = withDependencies ? new GraphQLQueryBuilder([accountingPresentationFragment, accountingBookFragment]) : new GraphQLQueryBuilder([accountingPresentationFragment]);
+            var builder = new GraphQLQueryBuilder([accountingPresentationFragment]);
             return builder.GetQuery();
         }
         protected override async Task OnInitializeAsync(CancellationToken cancellationToken)

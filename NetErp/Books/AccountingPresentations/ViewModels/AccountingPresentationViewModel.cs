@@ -5,6 +5,8 @@ using DevExpress.Mvvm.Native;
 using Models.Books;
 using Models.Global;
 using NetErp.Billing.Zones.ViewModels;
+using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using NetErp.Helpers.Cache;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Books.AccountingPresentations.ViewModels
 {
@@ -21,6 +24,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly AccountingBookCache _accountingBookCache;
 
         private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
 
@@ -46,17 +50,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 throw;
             }
         }
-        public async Task ActivateDetailForNewAsync(ObservableCollection<AccountingBookDTO> accountingBooks)
+        public async Task ActivateDetailForNewAsync()
         {
             try
             {
-                ObservableCollection<AccountingBookDTO> AccountingBooksToClosure = [.. accountingBooks];
-                AccountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR UN LIBRO" });
-                AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
-                {
-                    AccountingBooks = accountingBooks,
-                    AccountingBooksToClosure = AccountingBooksToClosure,
-                };
+               
+                AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService, _accountingBookCache) {  };
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch
@@ -64,29 +63,16 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 throw;
             }
         }
-        public async Task ActivateDetailViewForEditAsync(AccountingPresentationGraphQLModel accountingPresentation, ObservableCollection<AccountingBookDTO> accountingBooks)
+        public async Task ActivateDetailViewForEditAsync(AccountingPresentationGraphQLModel accountingPresentation)
         {
             try
             {
-                var checkedIds = accountingPresentation.AccountingBooks.Select(p => p.Id).ToHashSet();
-                foreach (var accountingBook in accountingBooks)
-                {
-                    accountingBook.IsChecked = checkedIds.Contains(accountingBook.Id.Value);
-                }
-                ObservableCollection<AccountingBookDTO> AccountingBooksToClosure = [.. accountingBooks];
-                AccountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR lIBRO" });
-                AccountingPresentationDetailViewModel instance = new(this, _notificationService, _accountingPresentationService)
-                {
-                    Id = accountingPresentation.Id,
-                    Name = accountingPresentation.Name,
-                    AllowsClosure = accountingPresentation.AllowsClosure,
-                    AccountingBooks = accountingBooks,
-                    AccountingBooksToClosure = AccountingBooksToClosure,
-                    ClosureAccountingBookId = accountingPresentation.ClosureAccountingBook is null ? 0 : accountingPresentation.ClosureAccountingBook.Id,
-                    AccountingPresentationAccountingBooks = accountingPresentation.AccountingBooks,
-                    AccountingBookIds = checkedIds.ToList()
-                };
+                AccountingPresentationDetailViewModel instance = new(this,  _notificationService, _accountingPresentationService, _accountingBookCache);
+                await instance.InitializeAsync();
+                AccountingPresentationGraphQLModel certificate = await instance.LoadDataForEditAsync(accountingPresentation.Id);
+               
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
+                
             }
             catch
             {
@@ -94,10 +80,11 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }       
         }
         public AccountingPresentationViewModel(IEventAggregator eventAggregator, IMapper mapper, Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService)
+            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService, AccountingBookCache accountingBookCache)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
+            _accountingBookCache = accountingBookCache;
             _notificationService = notificationService;
             _accountingPresentationService = accountingPresentationService;
             _accountingPresentationsMasterViewModel = new AccountingPresentationMasterViewModel(this, _notificationService, _accountingPresentationService); 

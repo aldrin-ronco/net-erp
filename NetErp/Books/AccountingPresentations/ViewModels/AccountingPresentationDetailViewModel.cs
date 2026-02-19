@@ -4,9 +4,15 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using DevExpress.Xpf.Editors;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Models.Billing;
 using Models.Books;
+using NetErp.Books.AccountingAccountGroups.DTO;
+using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Services.Books.DAL.PostgreSQL;
 using System;
 using System.Collections;
@@ -17,13 +23,11 @@ using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
-using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using static Amazon.S3.Util.S3EventNotification;
 using System.Windows.Documents;
+using System.Windows.Input;
 using Xceed.Wpf.Toolkit.Primitives;
+using static Amazon.S3.Util.S3EventNotification;
+using static Models.Global.GraphQLResponseTypes;
 
 
 namespace NetErp.Books.AccountingPresentations.ViewModels
@@ -31,7 +35,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
     class AccountingPresentationDetailViewModel : Screen, INotifyDataErrorInfo
     {
         public AccountingPresentationViewModel Context { get; set; }
-
+        private readonly AccountingBookCache _accountingBookCache;
         Dictionary<string, List<string>> _errors;
 
        
@@ -217,6 +221,98 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 return _saveCommand;
             }
         }
+        public async Task InitializeAsync()
+        {
+            await Task.WhenAll(
+                  _accountingBookCache.EnsureLoadedAsync()
+                  );
+            ObservableCollection<AccountingBookDTO> accountingBooks = Context.AutoMapper.Map<ObservableCollection<AccountingBookDTO>>(_accountingBookCache.Items);
+            ObservableCollection<AccountingBookDTO> accountingBooksToClosure = [.. accountingBooks];
+            accountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR UN LIBRO" });
+            AccountingBooks = [.. accountingBooks]; 
+            AccountingBooksToClosure = accountingBooksToClosure;
+           
+            this.AcceptChanges();
+
+        }
+        public async Task<AccountingPresentationGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            try
+            {
+                string query = GetLoadSByIdQuery();
+
+                dynamic variables = new ExpandoObject();
+
+
+                variables.singleItemResponseId = id;
+
+                var certificate = await _accountingPresentationService.FindByIdAsync(query, variables);
+
+                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
+                PopulateFromTax(certificate);
+
+                return certificate;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+        public void PopulateFromTax(AccountingPresentationGraphQLModel entity)
+        {
+            var checkedIds = entity.AccountingBooks.Select(p => p.Id).ToHashSet();
+            ObservableCollection<AccountingBookDTO> accountingBooks = Context.AutoMapper.Map<ObservableCollection<AccountingBookDTO>>(_accountingBookCache.Items);
+
+                foreach (var accountingBook in accountingBooks)
+                {
+                    accountingBook.IsChecked = checkedIds.Contains(accountingBook.Id.Value);
+                }
+                ObservableCollection<AccountingBookDTO> AccountingBooksToClosure = [.. accountingBooks];
+                AccountingBooksToClosure.Insert(0, new AccountingBookDTO() { Id = null, Name = "SELECCIONAR lIBRO" });
+        
+               
+            Id = entity.Id;
+            Name = entity.Name;
+            AllowsClosure = entity.AllowsClosure;
+            AccountingBooks = [..accountingBooks ];
+            AccountingBooksToClosure = AccountingBooksToClosure;
+            ClosureAccountingBookId = entity.ClosureAccountingBook is null ? 0 : entity.ClosureAccountingBook.Id;
+            AccountingPresentationAccountingBooks = entity.AccountingBooks;
+            AccountingBookIds = checkedIds.ToList();
+            this.AcceptChanges();
+
+
+
+        }
+        public string GetLoadSByIdQuery()
+        {
+            var singleIdFields = FieldSpec<AccountingPresentationGraphQLModel>
+             .Create()
+
+                 .Field(e => e.Id)
+                
+
+                  .Field(e => e.AllowsClosure)
+                  .Field(e => e.Name)
+                  .SelectList(e => e.AccountingBooks, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+                  .Select(e => e.ClosureAccountingBook, acc => acc
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            )
+
+             .Build();
+            var singleIdParameter = new GraphQLQueryParameter("id", "ID!");
+
+            var singleIdFragment = new GraphQLQueryFragment("accountingPresentation", [singleIdParameter], singleIdFields, "SingleItemResponse");
+
+            var builder = new GraphQLQueryBuilder([singleIdFragment]);
+
+            return builder.GetQuery();
+
+        }
         public async Task SaveAsync()
         {
             try
@@ -289,15 +385,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingPresentation", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
-                    .SelectList(e => e.AccountingBooks, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
-                  .Select(e => e.ClosureAccountingBook, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
-
+                 
                     )
                 .Field(f => f.Message)
                 .Field(f => f.Success)
@@ -323,14 +411,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingPresentation", nested: sq => sq
                     .Field(f => f.Id)
                     .Field(f => f.Name)
-                    .SelectList(e => e.AccountingBooks, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
-                  .Select(e => e.ClosureAccountingBook, acc => acc
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            )
+                   
                     )
                 .Field(f => f.Message)
                 .Field(f => f.Success)
@@ -368,7 +449,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         }
 
         public AccountingPresentationDetailViewModel(AccountingPresentationViewModel context, Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService)
+            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService, AccountingBookCache accountingBookCache)
         {
             Context = context;
             _notificationService = notificationService;
@@ -376,6 +457,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             _errors = [];
             AccountingBooks = [];
             AccountingPresentationAccountingBooks = [];
+            _accountingBookCache = accountingBookCache;
         }
 
 
