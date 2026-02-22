@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0: Form content -->
-        <Grid Grid.Row="0" Margin="20 0 0 0" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
+        <Grid Grid.Row="0" Margin="0" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>

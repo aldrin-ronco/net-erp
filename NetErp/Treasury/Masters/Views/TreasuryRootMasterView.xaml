@@ -7,16 +7,12 @@
              xmlns:model="clr-namespace:NetErp.Treasury.Masters.DTO"
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:viewmodel="clr-namespace:NetErp.Treasury.Masters.ViewModels"
-             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-             xmlns:local="clr-namespace:NetErp.Treasury.Masters.Views"
              xmlns:editors="clr-namespace:NetErp.Treasury.Masters.Views.Editors"
              xmlns:pe="clr-namespace:NetErp.Treasury.Masters.PanelEditors"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800" Background="Transparent">
+             d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
@@ -397,17 +393,19 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <Grid Background="Transparent">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.4*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="10" Padding="10,10,10,0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.4*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <Grid Margin="0 10 0 0" Grid.Column="0" Background="Transparent">
+            <Grid Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <dxg:TreeViewControl Background="Transparent"
+            <dxg:TreeViewControl
                         ItemsSource="{Binding DummyItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         h:TreeViewExtension.SelectItemOnRightClick="True"
                         HighlightSelectedNodeIndent="False"
@@ -447,7 +445,7 @@
             </dxg:TreeViewControl>
         </Grid>
 
-        <Grid Grid.Column="1">
+            <Grid Grid.Column="1" Margin="10,0,0,0">
             <ContentControl Content="{Binding CurrentPanelEditor, UpdateSourceTrigger=PropertyChanged}"
                 Visibility="{Binding ContentControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
                 <ContentControl.Resources>
@@ -471,6 +469,7 @@
                     </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </UserControl>

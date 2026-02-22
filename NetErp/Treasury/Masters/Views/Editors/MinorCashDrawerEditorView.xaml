@@ -15,7 +15,7 @@
         <dx:DXTabControl Grid.Row="0" Background="Transparent"
                          TabContentCacheMode="CacheTabsOnSelecting"
                          HorizontalContentAlignment="Stretch"
-                         Margin="20 0 0 0"
+                         Margin="0"
                          SelectedIndex="{Binding MasterSelectedIndex, UpdateSourceTrigger=PropertyChanged}">
 
             <dx:DXTabItem Header="Datos de la caja">
