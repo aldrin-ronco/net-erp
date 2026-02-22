@@ -7,15 +7,10 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
-             xmlns:viewmodel="clr-namespace:NetErp.Global.CostCenters.ViewModels"
-             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:local="clr-namespace:NetErp.Global.CostCenters.Views"
              xmlns:const="clr-namespace:Common.Constants;assembly=Common"
              mc:Ignorable="d"
@@ -256,7 +251,9 @@
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False">
-        <Grid>
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="10" Padding="10,10,10,0">
+            <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="0.4*"/>
                 <ColumnDefinition Width="*"/>
@@ -276,45 +273,15 @@
                                          TreeDerivationMode="HierarchicalDataTemplate"
                                          IsEnabled="{Binding TreeViewIsEnable, UpdateSourceTrigger=PropertyChanged}">
             </dxg:TreeViewControl>
-            <Grid Grid.Column="1">
+            <Grid Grid.Column="1" Margin="10,0,0,0">
 
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="0.13*"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <dxr:RibbonControl Visibility="{Binding TabControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"
-                        Grid.Row="0" Margin="20 10 0 10" IsSimplified="False" 
-                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
-                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center"
-                           MinimizationButtonVisibility="Collapsed">
-                    <dxr:RibbonPage Caption="Opciones">
-                        <dxr:RibbonPageGroup Caption="Acciones">
-                            <dxb:BarButtonItem  Content="Editar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Edit/Edit_16x16.png}"
-                                            IsEnabled="{Binding CanEdit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding EditCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                            <dxb:BarItemSeparator/>
-                            <dxb:BarButtonItem Content="Deshacer" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/History/Undo_16x16.png}"
-                                               IsEnabled="{Binding CanUndo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding UndoCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                            <dxb:BarItemSeparator/>
-                            <dxb:BarButtonItem Content="Guardar" RibbonStyle="SmallWithText" Glyph="{dx:DXImage Images/Save/Save_16x16.png}"
-                                               IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                                <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="ItemClick"/>
-                                </dxmvvm:Interaction.Behaviors>
-                            </dxb:BarButtonItem>
-                        </dxr:RibbonPageGroup>
-                    </dxr:RibbonPage>
-                </dxr:RibbonControl>
 
-                <ContentControl Content="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged}" 
-                            Grid.Row="1"
+                <ContentControl Content="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged}"
+                            Grid.Row="0"
                             Visibility="{Binding TabControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
                     <ContentControl.Resources>
                         <!--TabControl Company-->
@@ -322,7 +289,8 @@
                             <dx:DXTabControl Background="Transparent"
                                          TabContentCacheMode="CacheTabsOnSelecting"
                                          HorizontalContentAlignment="Stretch"
-                                         Margin="20 0 0 0"
+                                         Margin="0"
+                                         BorderBrush="#D9DDE3" BorderThickness="1"
                                          SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
                                     <Grid IsEnabled="{Binding Data.CompanyEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
@@ -343,7 +311,7 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <dxe:TextEdit Text="{Binding Data.CompanyEditor.AccountingEntityCompanySearchName, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
-                                  Grid.Column="0" Margin="0 5 5 5" IsReadOnly="True"/>
+                                  Grid.Column="0" Margin="0 5 5 5" Padding="3" IsReadOnly="True" BorderBrush="#C8CED6"/>
                                             <Button Grid.Column="1" Margin="5 5 0 5" Width="auto" Command="{Binding Path=Data.CompanyEditor.SearchAccountingEntityCommand, Source={StaticResource DataContextProxy}}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="Buscar" VerticalAlignment="Center" Margin="0 0 5 0"/>
@@ -387,7 +355,7 @@
                                        Grid.Column="1" Grid.Row="1" TextWrapping="Wrap" Margin="10"/>
                                 <TextBlock Text="Nombre" Grid.Column="1" Grid.Row="2"/>
                                 <dxe:TextEdit Text="{Binding Data.CompanyLocationEditor.Name, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Grid.Column="1" Grid.Row="3" CharacterCasing="Upper" x:Name="CompanyLocationName"/>
+                                          Grid.Column="1" Grid.Row="3" CharacterCasing="Upper" x:Name="CompanyLocationName" Padding="3" BorderBrush="#C8CED6"/>
                             </Grid>
                         </DataTemplate>
 
@@ -396,7 +364,8 @@
                             <dx:DXTabControl Background="Transparent"
                   TabContentCacheMode="CacheTabsOnSelecting"
                   HorizontalContentAlignment="Stretch"
-                  Margin="20 0 0 0"
+                  Margin="0"
+                  BorderBrush="#D9DDE3" BorderThickness="1"
                   SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
                                     <Grid IsEnabled="{Binding Data.CostCenterEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
@@ -444,182 +413,196 @@
                                         <!--CostCenterName-->
                                         <TextBlock Text="Nombre del almacén" Grid.Row="1" Grid.Column="0" Margin="0 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.Name, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" CharacterCasing="Upper" x:Name="CostCenterName"/>
+                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" Padding="3" CharacterCasing="Upper" x:Name="CostCenterName" BorderBrush="#C8CED6"/>
 
                                         <!--CostCenterTradeName-->
                                         <TextBlock Text="Nombre comercial (aplicado en la factura)" Margin="0 5 0 5" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.TradeName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Row="4" Grid.ColumnSpan="3" Margin="0 0 5 0" CharacterCasing="Upper"/>
+                           Grid.Row="4" Grid.ColumnSpan="3" Margin="0 0 5 0" Padding="3" CharacterCasing="Upper" BorderBrush="#C8CED6"/>
 
                                         <TextBlock Text="Nombre corto" Margin="5 5 0 5" Grid.Row="3" Grid.Column="3"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.ShortName, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Row="4" Grid.Column="4" Margin="5 0 5 0" CharacterCasing="Upper"/>
+                           Grid.Row="4" Grid.Column="4" Margin="5 0 5 0" Padding="3" CharacterCasing="Upper" BorderBrush="#C8CED6"/>
 
 
                                         <!--CostCenterPhones-->
                                         <!--CostCenterPhone1-->
                                         <TextBlock Text="Telefono fijo No. 1" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.PrimaryPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Column="0" Grid.Row="6" Margin="0 0 5 0" MaxLength="10" MaskType="Simple" Mask="000 00 00"/>
+                           Grid.Column="0" Grid.Row="6" Margin="0 0 5 0" Padding="3" MaxLength="10" MaskType="Simple" Mask="000 00 00" BorderBrush="#C8CED6"/>
                                         <!--CostCenterPhone2-->
                                         <TextBlock Text="Telefono fijo No. 2" Grid.Column="1" Grid.Row="5" Margin="5 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.SecondaryPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Column="1" Grid.Row="6" Margin="5 0 5 0" MaxLength="10" MaskType="Simple" Mask="000 00 00"/>
+                           Grid.Column="1" Grid.Row="6" Margin="5 0 5 0" Padding="3" MaxLength="10" MaskType="Simple" Mask="000 00 00" BorderBrush="#C8CED6"/>
 
                                         <!--CostCenterCellPhones-->
                                         <!--CostCenterCellPhone1-->
                                         <TextBlock Text="Celular No. 1" Grid.Column="2" Grid.Row="5" Margin="5 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.PrimaryCellPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Row="6" Grid.Column="2" Margin="5 0 5 0" MaxLength="14" MaskType="Simple" Mask="000 000 00 00"/>
+                           Grid.Row="6" Grid.Column="2" Margin="5 0 5 0" Padding="3" MaxLength="14" MaskType="Simple" Mask="000 000 00 00" BorderBrush="#C8CED6"/>
                                         <!--CostCenterCellPhone2-->
                                         <TextBlock Text="Celular No. 2" Grid.Column="3" Grid.Row="5" Margin="5 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.CostCenterEditor.SecondaryCellPhone, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Row="6" Grid.Column="3" Margin="5 0 5 0" MaxLength="14" MaskType="Simple" Mask="000 000 00 00"/>
+                           Grid.Row="6" Grid.Column="3" Margin="5 0 5 0" Padding="3" MaxLength="14" MaskType="Simple" Mask="000 000 00 00" BorderBrush="#C8CED6"/>
 
-                                        <!--CostCenterCountry-->
-                                        <TextBlock Text="País" Grid.Column="0" Grid.Row="7" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="8"
-                                                    Margin="0 0 5 0" Padding="2"
-                                                    AllowSpin="True"
-                                                    AutoPopulateColumns="False"
-                                                    IsCaseSensitiveSearch="False"
-                                                    IncrementalFiltering="True"
-                                                    IncrementalSearch="True"
-                                                    ValidateOnTextInput="False"
-                                                    FilterCondition="Contains"
-                                                    ImmediatePopup="True"
-                                                    ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    DisplayMember="Name"
-                                                    ValueMember="Id"
-                                                    SelectedItem="{Binding Data.CostCenterEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
-
-                                        <!--CostCenterDepartment-->
-                                        <TextBlock Text="Departamento" Grid.Column="0" Grid.Row="9" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="10"
-             Margin="0 0 5 0" Padding="2"
-             AllowSpin="True"
-             AutoPopulateColumns="False"
-             IsCaseSensitiveSearch="False"
-             IncrementalFiltering="True"
-             IncrementalSearch="True"
-             ValidateOnTextInput="False"
-             FilterCondition="Contains"
-             ImmediatePopup="True"
-             ClearSelectionOnBackspace="True"
-             ItemsSource="{Binding Data.CostCenterEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-             DisplayMember="Name"
-             ValueMember="Id"
-             SelectedItem="{Binding Data.CostCenterEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
-
-                                        <!--CostCenterCity-->
-                                        <TextBlock Text="Ciudad" Grid.Column="0" Grid.Row="11" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12"
-             Margin="0 0 5 0" Padding="2"
-             AllowSpin="True"
-             AutoPopulateColumns="False"
-             IsCaseSensitiveSearch="False"
-             IncrementalFiltering="True"
-             IncrementalSearch="True"
-             ValidateOnTextInput="False"
-             FilterCondition="Contains"
-             ImmediatePopup="True"
-             ClearSelectionOnBackspace="True"
-             ItemsSource="{Binding Data.CostCenterEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-             DisplayMember="Name"
-             ValueMember="Id"
-             SelectedItem="{Binding Data.CostCenterEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre de la ciudad" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
-
-                                        <!--CostCenterAddress-->
-                                        <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="13" Margin="0 5 0 5"/>
-                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.Address, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                           Grid.Row="14" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0"/>
-
-                                        <!--CostCenterDateControlType-->
-                                        <TextBlock Text="Control de fecha para las transacciones" Grid.Column="0" Grid.Row="15" Margin="0 5 0 5" Grid.ColumnSpan="2"/>
-                                        <dxe:ComboBoxEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="16"
-                                            Margin="0 0 5 0"
-                                            IsTextEditable="False"
-                                            ItemsSource="{Binding Data.CostCenterEditor.DateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
-                                            DisplayMember="Value"
-                                            ValueMember="Key"
-                                            EditValue="{Binding Data.CostCenterEditor.DateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-
-                                        <Grid Grid.Column="0" Grid.Row="17" Grid.ColumnSpan="4" Margin="0 0 5 0">
+                                        <!--CostCenter: País, Departamento, Ciudad-->
+                                        <Grid Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="7" Margin="0 0 5 0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!--CostCenterCountry-->
+                                            <TextBlock Text="País" Grid.Column="0" Grid.Row="0" Margin="0,4,4,2"/>
+                                            <dxg:LookUpEdit Grid.Column="0" Grid.Row="1"
+                                                        Margin="0,0,4,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.CostCenterEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
+
+                                            <!--CostCenterDepartment-->
+                                            <TextBlock Text="Departamento" Grid.Column="1" Grid.Row="0" Margin="4,4,4,2"/>
+                                            <dxg:LookUpEdit Grid.Column="1" Grid.Row="1"
+                                                        Margin="4,0,4,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.CostCenterEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.CostCenterEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
+
+                                            <!--CostCenterCity-->
+                                            <TextBlock Text="Ciudad" Grid.Column="2" Grid.Row="0" Margin="4,4,0,2"/>
+                                            <dxg:LookUpEdit Grid.Column="2" Grid.Row="1"
+                                                        Margin="4,0,0,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.CostCenterEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.CostCenterEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre de la ciudad" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
+                                        </Grid>
+
+                                        <!--CostCenterAddress-->
+                                        <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="8" Margin="0 5 0 5"/>
+                                        <dxe:TextEdit Text="{Binding Data.CostCenterEditor.Address, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                           Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" Padding="3" BorderBrush="#C8CED6"/>
+
+                                        <!--CostCenterDateControlType-->
+                                        <TextBlock Text="Control de fecha para las transacciones" Grid.Column="0" Grid.Row="10" Margin="0 5 0 5" Grid.ColumnSpan="2"/>
+                                        <dxe:ComboBoxEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="11"
+                                            Margin="0 0 5 0" Padding="3"
+                                            IsTextEditable="False"
+                                            BorderBrush="#C8CED6"
+                                            ItemsSource="{Binding Data.CostCenterEditor.DateControlTypeDictionary, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                            DisplayMember="Value"
+                                            ValueMember="Key"
+                                            EditValue="{Binding Data.CostCenterEditor.DateControlType, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                        <Grid Grid.Column="0" Grid.Row="12" Grid.ColumnSpan="4" Margin="0 0 5 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
                                             <!--CostCenterShowChangeWindowOnCash-->
-                                            <CheckBox Content="Mostrar ventana para calculo de cambio en efectivo" Grid.Column="0" Margin="0 5 0 5" HorizontalAlignment="Left"
+                                            <CheckBox Content="Mostrar ventana para calculo de cambio en efectivo" Grid.Column="0" Margin="0 5 15 5" HorizontalAlignment="Left"
                                                   IsChecked="{Binding Data.CostCenterEditor.ShowChangeWindowOnCash, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                             <!--CostCenterAllowBuy-->
-                                            <CheckBox Content="¿Este almacén realiza compras?" Grid.Column="1" Margin="0 5 0 5" HorizontalAlignment="Center"
+                                            <CheckBox Content="¿Este almacén realiza compras?" Grid.Column="1" Margin="0 5 15 5" HorizontalAlignment="Left"
                                                   IsChecked="{Binding Data.CostCenterEditor.AllowBuy, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                             <!--CostCenterAllowSell-->
-                                            <CheckBox Content="¿Este almacén realiza ventas?" Grid.Column="2" Margin="0 5 0 5" HorizontalAlignment="Right"
+                                            <CheckBox Content="¿Este almacén realiza ventas?" Grid.Column="2" Margin="0 5 0 5" HorizontalAlignment="Left"
                                                   IsChecked="{Binding Data.CostCenterEditor.AllowSell, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                                         </Grid>
 
-                                        <Grid Grid.Column="0" Grid.Row="20" Margin="0 5 0 5" Grid.ColumnSpan="2">
+                                        <Grid Grid.Column="0" Grid.Row="13" Margin="0 5 0 5" Grid.ColumnSpan="2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="0.3*"/>
                                                 <ColumnDefinition Width="*"/>
@@ -699,7 +682,7 @@
                                                 <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
                                             </StackPanel>
                                         </Grid>
-                                        <dxe:TextEdit Grid.Row="1" Height="60" Margin="0 0 5 0"
+                                        <dxe:TextEdit Grid.Row="1" Height="60" Margin="0 0 5 0" BorderBrush="#C8CED6"
                                                        Text="{Binding Data.CostCenterEditor.InvoiceFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                        MaxLength="{x:Static const:Constant.MemoMaxLength}"
                                                        TextWrapping="Wrap" AcceptsReturn="True"
@@ -714,7 +697,7 @@
                                                 <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
                                             </StackPanel>
                                         </Grid>
-                                        <dxe:TextEdit Grid.Row="3" Height="60" Margin="0 0 5 0"
+                                        <dxe:TextEdit Grid.Row="3" Height="60" Margin="0 0 5 0" BorderBrush="#C8CED6"
                                                        Text="{Binding Data.CostCenterEditor.RemissionFooter, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                        MaxLength="{x:Static const:Constant.MemoMaxLength}"
                                                        TextWrapping="Wrap" AcceptsReturn="True"
@@ -729,7 +712,7 @@
                                                 <TextBlock Foreground="Gray" Text="{x:Static const:Constant.MemoMaxLengthDisplay}"/>
                                             </StackPanel>
                                         </Grid>
-                                        <dxe:TextEdit Grid.Row="5" Height="60" Margin="0 0 5 0"
+                                        <dxe:TextEdit Grid.Row="5" Height="60" Margin="0 0 5 0" BorderBrush="#C8CED6"
                                                        Text="{Binding Data.CostCenterEditor.DefaultInvoiceObservation, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                        MaxLength="{x:Static const:Constant.MemoMaxLength}"
                                                        TextWrapping="Wrap" AcceptsReturn="True"
@@ -745,7 +728,8 @@
                             <dx:DXTabControl Background="Transparent"
                                          TabContentCacheMode="CacheTabsOnSelecting"
                                          HorizontalContentAlignment="Stretch"
-                                         Margin="20 0 0 0"
+                                         Margin="0"
+                                         BorderBrush="#D9DDE3" BorderThickness="1"
                                          SelectedIndex="{Binding Data.SelectedIndex, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
                                 <dx:DXTabItem Header="Basicos">
                                     <Grid IsEnabled="{Binding Data.StorageEditor.IsEditing, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}">
@@ -784,120 +768,133 @@
                                         <!--StorageName-->
                                         <TextBlock Text="Nombre de la bodega" Grid.Row="1" Grid.Column="0" Margin="0 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.StorageEditor.Name, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" x:Name="StorageName" CharacterCasing="Upper"/>
+                                                  Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" Padding="3" x:Name="StorageName" CharacterCasing="Upper" BorderBrush="#C8CED6"/>
 
-                                        <!--StateCountry-->
-                                        <TextBlock Text="País" Grid.Column="0" Grid.Row="3" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="4"
-                                                    Margin="0 0 5 0" Padding="3"
-                                                    AllowSpin="True"
-                                                    AutoPopulateColumns="False"  
-                                                    IsCaseSensitiveSearch="False"
-                                                    IncrementalFiltering="True"
-                                                    IncrementalSearch="True"
-                                                    ValidateOnTextInput="False"
-                                                    FilterCondition="Contains"
-                                                    ImmediatePopup="True"
-                                                    ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    DisplayMember="Name"
-                                                    ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
+                                        <!--Storage: País, Departamento, Ciudad-->
+                                        <Grid Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="3" Margin="0 0 5 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-                                        <!--StorageDepartment-->
-                                        <TextBlock Text="Departamento" Grid.Column="0" Grid.Row="5" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="6" 
-                                                    Margin="0 0 5 0" Padding="3"
-                                                    AllowSpin="True"
-                                                    AutoPopulateColumns="False"  
-                                                    IsCaseSensitiveSearch="False"
-                                                    IncrementalFiltering="True"
-                                                    IncrementalSearch="True"
-                                                    ValidateOnTextInput="False"
-                                                    FilterCondition="Contains"
-                                                    ImmediatePopup="True"
-                                                    ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.StorageEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    DisplayMember="Name"
-                                                    ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
+                                            <!--StateCountry-->
+                                            <TextBlock Text="País" Grid.Column="0" Grid.Row="0" Margin="0,4,4,2"/>
+                                            <dxg:LookUpEdit Grid.Column="0" Grid.Row="1"
+                                                        Margin="0,0,4,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.Countries, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.StorageEditor.SelectedCountry, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
 
-                                        <!--StorageCity-->
-                                        <TextBlock Text="Ciudad" Grid.Column="0" Grid.Row="7" Margin="0 5 0 5"/>
-                                        <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="8" 
-                                                    Margin="0 0 5 0" Padding="3"
-                                                    AllowSpin="True"
-                                                    AutoPopulateColumns="False"  
-                                                    IsCaseSensitiveSearch="False"
-                                                    IncrementalFiltering="True"
-                                                    IncrementalSearch="True"
-                                                    ValidateOnTextInput="False"
-                                                    FilterCondition="Contains"
-                                                    ImmediatePopup="True"
-                                                    ClearSelectionOnBackspace="True"
-                                                    ItemsSource="{Binding Data.StorageEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    DisplayMember="Name"
-                                                    ValueMember="Id"
-                                                    SelectedItem="{Binding Data.StorageEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                            <dxg:LookUpEdit.PopupContentTemplate>
-                                                <ControlTemplate>
-                                                    <dxg:GridControl Name="PART_GridControl">
-                                                        <dxg:GridControl.View>
-                                                            <dxg:TableView AutoWidth="True"/>
-                                                        </dxg:GridControl.View>
-                                                        <dxg:GridControl.Columns>
-                                                            <dxg:GridColumn Header="Nombre de la ciudad" FieldName="Name"/>
-                                                        </dxg:GridControl.Columns>
-                                                    </dxg:GridControl>
-                                                </ControlTemplate>
-                                            </dxg:LookUpEdit.PopupContentTemplate>
-                                            <dxg:LookUpEdit.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel/>
-                                                </ItemsPanelTemplate>
-                                            </dxg:LookUpEdit.ItemsPanel>
-                                        </dxg:LookUpEdit>
+                                            <!--StorageDepartment-->
+                                            <TextBlock Text="Departamento" Grid.Column="1" Grid.Row="0" Margin="4,4,4,2"/>
+                                            <dxg:LookUpEdit Grid.Column="1" Grid.Row="1"
+                                                        Margin="4,0,4,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.StorageEditor.SelectedCountry.Departments, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.StorageEditor.SelectedDepartment, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
+
+                                            <!--StorageCity-->
+                                            <TextBlock Text="Ciudad" Grid.Column="2" Grid.Row="0" Margin="4,4,0,2"/>
+                                            <dxg:LookUpEdit Grid.Column="2" Grid.Row="1"
+                                                        Margin="4,0,0,0" Padding="3"
+                                                        AllowSpin="True"
+                                                        AutoPopulateColumns="False"
+                                                        IsCaseSensitiveSearch="False"
+                                                        IncrementalFiltering="True"
+                                                        IncrementalSearch="True"
+                                                        ValidateOnTextInput="False"
+                                                        FilterCondition="Contains"
+                                                        ImmediatePopup="True"
+                                                        ClearSelectionOnBackspace="True"
+                                                        ItemsSource="{Binding Data.StorageEditor.SelectedDepartment.Cities, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        DisplayMember="Name"
+                                                        ValueMember="Id"
+                                                        SelectedItem="{Binding Data.StorageEditor.SelectedCity, Source={StaticResource DataContextProxy}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <dxg:LookUpEdit.PopupContentTemplate>
+                                                    <ControlTemplate>
+                                                        <dxg:GridControl Name="PART_GridControl">
+                                                            <dxg:GridControl.View>
+                                                                <dxg:TableView AutoWidth="True"/>
+                                                            </dxg:GridControl.View>
+                                                            <dxg:GridControl.Columns>
+                                                                <dxg:GridColumn Header="Nombre de la ciudad" FieldName="Name"/>
+                                                            </dxg:GridControl.Columns>
+                                                        </dxg:GridControl>
+                                                    </ControlTemplate>
+                                                </dxg:LookUpEdit.PopupContentTemplate>
+                                                <dxg:LookUpEdit.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VirtualizingStackPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </dxg:LookUpEdit.ItemsPanel>
+                                            </dxg:LookUpEdit>
+                                        </Grid>
 
                                         <!--StorageAddress-->
-                                        <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="9" Margin="0 5 0 5"/>
+                                        <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="4" Margin="0 5 0 5"/>
                                         <dxe:TextEdit Text="{Binding Data.StorageEditor.Address, Source={StaticResource DataContextProxy}, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                  Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0"/>
+                                                  Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 0 5 0" Padding="3" BorderBrush="#C8CED6"/>
 
                                     </Grid>
                                 </dx:DXTabItem>
@@ -905,18 +902,71 @@
                         </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>
-                <!--<dx:DXTabControl Grid.Row="1"
-                             Background="Transparent"
-                             TabContentCacheMode="CacheTabsOnSelecting"
-                             HorizontalContentAlignment="Stretch"
-                             Margin="20 0 0 0"
-                             SelectedIndex="{Binding SelectedIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"    
-                             Visibility="{Binding TabControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
 
-            </dx:DXTabControl>-->
-
+                <!-- Action buttons -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20"
+                            Visibility="{Binding TabControlVisibility, Converter={dx:BooleanToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}">
+                    <!-- Editar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            Command="{Binding EditCommand}"
+                            IsEnabled="{Binding CanEdit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Deshacer -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            Command="{Binding UndoCommand}"
+                            IsEnabled="{Binding CanUndo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Guardar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
         </Grid>
+        </Border>
     </busyIndicator:BusyMask>
 </UserControl>
