@@ -7,6 +7,7 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:local="clr-namespace:NetErp.Global.Smtp.Views"
              mc:Ignorable="d"
              d:DesignHeight="350" d:DesignWidth="500"
@@ -37,6 +38,7 @@
                     <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   CharacterCasing="Upper"
                                   x:Name="SmtpName"
+                                  h:FocusBehavior.IsFocused="True"
                                   BorderBrush="#C8CED6"
                                   Margin="0,0,0,15"/>
 
