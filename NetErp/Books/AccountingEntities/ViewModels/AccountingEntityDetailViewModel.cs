@@ -1291,6 +1291,23 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             // Accept all changes to reset the tracker
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
+
+            // Establecer foco inicial
+            if (IsNewRecord)
+            {
+                _ = this.SetFocus(nameof(IdentificationNumber));
+            }
+            else
+            {
+                if (CaptureInfoAsPN)
+                {
+                    _ = this.SetFocus(nameof(FirstName));
+                }
+                else
+                {
+                    _ = this.SetFocus(nameof(BusinessName));
+                }
+            }
         }
 
         public string GetAccountingEntityByIdQuery()
