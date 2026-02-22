@@ -8,6 +8,16 @@ namespace Dictionaries
 {
     public class InventoriesDictionaries
     {
+        public static Dictionary<string, string> MeasurementUnitTypeDictionary = new Dictionary<string, string>()
+        {
+            {"LENGTH", "Longitud" },
+            {"MASS", "Masa" },
+            {"VOLUME", "Volumen" },
+            {"AREA", "Área" },
+            {"TIME", "Tiempo" },
+            {"UNIT", "Unidad" }
+        };
+
         public static Dictionary<char, string> KardexFlowDictionary = new Dictionary<char, string>()
         {
             {'I', "ENTRADA" },
