@@ -1,137 +1,42 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using Dictionaries;
+using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
-using Models.Books;
-using Models.DTO.Global;
 using Models.Inventory;
-using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Helpers;
-using Services.Books.DAL.PostgreSQL;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
-using System.Reactive.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
-using DevExpress.XtraEditors.Filtering;
-using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
-    public class MeasurementUnitDetailViewModel : Screen
+    public class MeasurementUnitDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
+        #region Dependencies
 
-        private MeasurementUnitViewModel _context;
-        public MeasurementUnitViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
+        private readonly IEventAggregator _eventAggregator;
 
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
-        {
-            get
-            {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
-            }
-        }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-        public void GoBack(object p)
-        {
-            _ = Task.Run(() => Context.ActivateMasterViewAsync());
-            CleanUpControls();
-        }
+        #endregion
 
-        private int _id;
-        public int Id
-        {
-            get { return _id; }
-            set
-            {
-                if (_id != value)
-                {
-                    _id = value;
-                    NotifyOfPropertyChange(nameof(Id));
-                    NotifyOfPropertyChange(nameof(IsNewRecord));
-                }
-            }
-        }
+        #region State
 
-        public bool IsNewRecord
-        {
-            get { return (this.Id == 0); }
-        }
+        public bool IsNewRecord => MeasurementUnitId == 0;
 
-        private string _name = string.Empty;
-        public string Name
-        {
-            get
-            {
-                if (_name is null) return string.Empty;
-                return _name;
-            }
-            set
-            {
-                if (_name != value)
-                {
-                    _name = value;
-                    NotifyOfPropertyChange(nameof(Name));
-                    this.TrackChange(nameof(Name));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        private string _abbreviation = string.Empty;
-        public string Abbreviation
-        {
-            get
-            {
-                if (_abbreviation is null) return string.Empty;
-                return _abbreviation;
-            }
-            set
-            {
-                if (_abbreviation != value)
-                {
-                    _abbreviation = value;
-                    NotifyOfPropertyChange(nameof(Abbreviation));
-                    this.TrackChange(nameof(Abbreviation));
-
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Is Busy
-        /// </summary>
-        private bool _isBusy = false;
+        private bool _isBusy;
         public bool IsBusy
         {
             get => _isBusy;
@@ -145,108 +50,304 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        private ICommand _saveMeasurementUnitCommand;
+        #endregion
 
-        public ICommand SaveMeasurementUnitCommand
+        #region ComboBox Sources
+
+        public ObservableCollection<KeyValuePair<string, string>> MeasurementUnitTypes { get; } =
+            new(InventoriesDictionaries.MeasurementUnitTypeDictionary.ToList());
+
+        #endregion
+
+        #region Form Properties
+
+        private int _measurementUnitId;
+        public int MeasurementUnitId
+        {
+            get => _measurementUnitId;
+            set
+            {
+                if (_measurementUnitId != value)
+                {
+                    _measurementUnitId = value;
+                    NotifyOfPropertyChange(nameof(MeasurementUnitId));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        private string _name = string.Empty;
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
+                    this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _abbreviation = string.Empty;
+        public string Abbreviation
+        {
+            get => _abbreviation;
+            set
+            {
+                if (_abbreviation != value)
+                {
+                    _abbreviation = value;
+                    NotifyOfPropertyChange(nameof(Abbreviation));
+                    ValidateProperty(nameof(Abbreviation), value);
+                    this.TrackChange(nameof(Abbreviation));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _type = string.Empty;
+        public string Type
+        {
+            get => _type;
+            set
+            {
+                if (_type != value)
+                {
+                    _type = value;
+                    NotifyOfPropertyChange(nameof(Type));
+                    ValidateProperty(nameof(Type), value);
+                    this.TrackChange(nameof(Type));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _dianCode = string.Empty;
+        public string DianCode
+        {
+            get => _dianCode;
+            set
+            {
+                if (_dianCode != value)
+                {
+                    _dianCode = value;
+                    NotifyOfPropertyChange(nameof(DianCode));
+                    ValidateProperty(nameof(DianCode), value);
+                    this.TrackChange(nameof(DianCode));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _errors = new();
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
+            return _errors[propertyName];
+        }
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    break;
+                case nameof(Abbreviation):
+                    if (string.IsNullOrEmpty(Abbreviation)) AddError(propertyName, "La abreviación no puede estar vacía");
+                    break;
+                case nameof(Type):
+                    if (string.IsNullOrEmpty(Type)) AddError(propertyName, "El tipo no puede estar vacío");
+                    break;
+                case nameof(DianCode):
+                    if (string.IsNullOrEmpty(DianCode)) AddError(propertyName, "El código DIAN no puede estar vacío");
+                    break;
+            }
+        }
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Abbreviation), Abbreviation);
+            ValidateProperty(nameof(Type), Type);
+            ValidateProperty(nameof(DianCode), DianCode);
+        }
+
+        #endregion
+
+        #region Button States
+
+        public bool CanSave => !HasErrors && this.HasChanges()
+                               && !string.IsNullOrEmpty(Name)
+                               && !string.IsNullOrEmpty(Abbreviation)
+                               && !string.IsNullOrEmpty(Type)
+                               && !string.IsNullOrEmpty(DianCode);
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand
         {
             get
             {
-                if (_saveMeasurementUnitCommand is null) _saveMeasurementUnitCommand = new AsyncCommand(SaveAsync, CanSave);
-                return _saveMeasurementUnitCommand;
+                _saveCommand ??= new AsyncCommand(SaveAsync);
+                return _saveCommand;
             }
-
         }
 
-
-        public MeasurementUnitDetailViewModel(MeasurementUnitViewModel context,
-            IRepository<MeasurementUnitGraphQLModel> measurementUnitService)
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
         {
-            //_errors = new Dictionary<string, List<string>>();
-            Context = context ?? throw new ArgumentNullException(nameof(context));
-            _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
-            Context.EventAggregator.SubscribeOnUIThread(this);
+            get
+            {
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
+            }
         }
+
+        #endregion
+
+        #region Constructor
+
+        public MeasurementUnitDetailViewModel(
+            IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
+            IEventAggregator eventAggregator)
+        {
+            _measurementUnitService = measurementUnitService;
+            _eventAggregator = eventAggregator;
+        }
+
+        #endregion
+
+        #region Lifecycle
+
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            this.SetFocus(() => Name);
+            ValidateProperties();
             this.AcceptChanges();
-            NotifyOfPropertyChange(nameof(CanSave));
-            _ = this.SetFocus(nameof(Name));
         }
 
-        public void CleanUpControls()
-        {
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            Name = "";
-            Abbreviation = "";
-        }
+        #endregion
+
+        #region Save / Cancel
 
         public async Task SaveAsync()
         {
-             try
+            try
             {
                 IsBusy = true;
                 Refresh();
                 UpsertResponseType<MeasurementUnitGraphQLModel> result = await ExecuteSaveAsync();
                 if (!result.Success)
                 {
-                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
                     return;
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
-                        ? new MeasurementUnitCreateMessage() { CreatedMeasurementUnit = result }
-                        : new MeasurementUnitUpdateMessage() { UpdatedMeasurementUnit = result }
+                        ? new MeasurementUnitCreateMessage { CreatedMeasurementUnit = result }
+                        : new MeasurementUnitUpdateMessage { UpdatedMeasurementUnit = result }
                 );
-                await Context.ActivateMasterViewAsync();
+
+                await TryCloseAsync(true);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
-
-           
         }
+
         public async Task<UpsertResponseType<MeasurementUnitGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    string query = GetCreateQuery();
-
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-
-                    UpsertResponseType<MeasurementUnitGraphQLModel> measurementUnitCreated = await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
-                    return measurementUnitCreated;
-                }
-                else
-                {
-                    string query = GetUpdateQuery();
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = Id;
-                    
-                    UpsertResponseType<MeasurementUnitGraphQLModel> updatedMeasurementUnit = await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
-                    return updatedMeasurementUnit;
-                }
+                string query = GetCreateQuery();
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw;
+                string query = GetUpdateQuery();
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = MeasurementUnitId;
+                return await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
             }
-          
         }
+
+        public async Task CancelAsync()
+        {
+            await TryCloseAsync(false);
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
         public string GetCreateQuery()
         {
             var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
@@ -255,7 +356,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.Abbreviation)
-                    )
+                    .Field(f => f.Type)
+                    .Field(f => f.DianCode))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -264,12 +366,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("input", "CreateMeasurementUnitInput!");
-
             var fragment = new GraphQLQueryFragment("createMeasurementUnit", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
         public string GetUpdateQuery()
@@ -280,7 +378,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     .Field(f => f.Id)
                     .Field(f => f.Name)
                     .Field(f => f.Abbreviation)
-                    )
+                    .Field(f => f.Type)
+                    .Field(f => f.DianCode))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -294,19 +393,18 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateMeasurementUnit", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
-        public bool CanSave
-        {
-            get
-            {
-                // Debe estar el nombre de la unidad de medida
-                return    ( (!string.IsNullOrEmpty(Name.Trim()) && !string.IsNullOrEmpty(Abbreviation.Trim())) && this.HasChanges()) ;
-             
 
-                
-            }
+        #endregion
+
+        #region Helper
+
+        public new void AcceptChanges()
+        {
+            ViewModelExtensions.AcceptChanges(this);
         }
+
+        #endregion
     }
 }

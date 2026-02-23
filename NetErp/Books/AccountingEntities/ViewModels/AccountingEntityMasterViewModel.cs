@@ -150,6 +150,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         }
 
+        private ICommand? _editAccountingEntityCommand;
+        public ICommand EditAccountingEntityCommand
+        {
+            get
+            {
+                _editAccountingEntityCommand ??= new AsyncCommand(EditAccountingEntityAsync);
+                return _editAccountingEntityCommand;
+            }
+        }
+
         private ICommand? _deleteAccountingEntityCommand;
         public ICommand DeleteAccountingEntityCommand
         {
@@ -221,6 +231,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedAccountingEntity = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingEntity));
+                    NotifyOfPropertyChange(nameof(CanEditAccountingEntity));
                     NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
                 }
             }
@@ -561,6 +572,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         {
             return LoadAccountingEntitiesAsync();
         }
+
+        public bool CanEditAccountingEntity => SelectedAccountingEntity != null;
 
         public bool CanDeleteAccountingEntity
         {

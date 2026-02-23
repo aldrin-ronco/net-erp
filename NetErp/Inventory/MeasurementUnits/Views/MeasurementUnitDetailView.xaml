@@ -1,119 +1,108 @@
-﻿<UserControl x:Class="NetErp.Inventory.MeasurementUnits.Views.MeasurementUnitDetailView"
+<UserControl x:Class="NetErp.Inventory.MeasurementUnits.Views.MeasurementUnitDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NetErp.Inventory.MeasurementUnits.Views"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
-             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
-             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:config="clr-namespace:Common.Config;assembly=Common"
-             xmlns:dxc="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
-        <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
-        <SolidColorBrush Color="Pink" Opacity="0.4" x:Key="ValidationBrush"/>
-        <Style TargetType="TextBox">
-            <Style.Triggers>
-                <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="ToolTip">
-                        <Setter.Value>
-                            <ToolTip DataContext="{Binding RelativeSource={RelativeSource Self}, Path=PlacementTarget}">
-                                <ItemsControl ItemsSource="{Binding Path=(Validation.Errors)}" DisplayMemberPath="ErrorContent" />
-                            </ToolTip>
-                        </Setter.Value>
-                    </Setter>
-                    <Setter Property="Background" Value="{StaticResource ValidationBrush}"/>
-                    <Setter Property="Validation.ErrorTemplate" Value="{x:Null}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </UserControl.Resources>
+             xmlns:local="clr-namespace:NetErp.Inventory.MeasurementUnits.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="500"
+             Background="#EEF1F5">
     <busyIndicator:BusyMask x:Name="BusyIndicator"
-                        IsBusy="{Binding IsBusy}"
-                        IndicatorType="BouncingDot"
-                        BusyContent="Please wait..."
-                        BusyContentMargin="0,20,0,0"
-                        IsBusyAtStartup="False">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False" 
-               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
-               RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="20" MinWidth="420">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <dxr:RibbonPage Caption="General">
+                <!-- Form content -->
+                <StackPanel Grid.Row="0" Margin="30,25,30,20">
 
-                    <dxr:RibbonPageGroup Caption="Acciones">
-                        <dxb:BarButtonItem x:Name="btnBack" 
-                           Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
-                           LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" 
-                           Content="Regresar"
-                           RibbonStyle="Large"
-                           Hint="Regresa a la lista de terceros"
-                           Command="{Binding Path=GoBackCommand}"/>
-                        <dxb:BarItemSeparator/>
+                    <!-- Title -->
+                    <TextBlock Text="Información de Unidad de Medida"
+                               FontSize="16" FontWeight="Bold"
+                               Margin="0,0,0,20"/>
 
-                        <dxb:BarButtonItem Content="Guardar" 
-                               Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}" 
-                               LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"                                             
-                               Description="Creates a new document."
-                               Hint="Guarda los cambios realizados"    
-                               IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                               RibbonStyle="Large">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=SaveMeasurementUnitCommand}" EventName="ItemClick"/>
-                            </dxmvvm:Interaction.Behaviors>
-                        </dxb:BarButtonItem>
-                        <dxb:BarItemLinkSeparator/>
-                    </dxr:RibbonPageGroup>
-                </dxr:RibbonPage>
-            </dxr:RibbonControl>
+                    <!-- Nombre -->
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  x:Name="MeasurementUnitName"
+                                  h:FocusBehavior.IsFocused="True"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,15"/>
 
-            <Grid Grid.Row="1">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Nombre de la unidad de medida" HorizontalAlignment="Left" FontSize="13" Margin="5 30 0 0"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" TabIndex="0" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        BorderBrush="LightGray" 
-                        Margin="5 0 5 10"  
-                        TextAlignment="Left"
-                        CharacterCasing="Upper"
-                        HorizontalAlignment="Left"
-                        Width="250">
-                    </TextBox>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Abreviación" HorizontalAlignment="Left" Margin="5 10 0 0" FontSize="13"/>
-                    <TextBox Grid.Row="3" Grid.Column="1" TabIndex="0" Text="{Binding Abbreviation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        BorderBrush="LightGray" 
-                        TextAlignment="Left"
-                        CharacterCasing="Upper"
-                        HorizontalAlignment="Left"
-                        Width="250"
-                        Margin="5 0 5 0">
-                    </TextBox>
-                </Grid>
+                    <!-- Abreviación -->
+                    <TextBlock Text="Abreviación" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit Text="{Binding Path=Abbreviation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,15"/>
+
+                    <!-- Tipo -->
+                    <TextBlock Text="Tipo" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:ComboBoxEdit
+                        ItemsSource="{Binding MeasurementUnitTypes}"
+                        EditValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        DisplayMember="Value"
+                        ValueMember="Key"
+                        IsTextEditable="False"
+                        BorderBrush="#C8CED6"
+                        Margin="0,0,0,15"/>
+
+                    <!-- Código DIAN -->
+                    <TextBlock Text="Código DIAN" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit Text="{Binding Path=DianCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,0"/>
+                </StackPanel>
+
+                <!-- Button bar centered -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                    <!-- Guardar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Cancelar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
-        </Grid>
+        </Border>
     </busyIndicator:BusyMask>
 </UserControl>
