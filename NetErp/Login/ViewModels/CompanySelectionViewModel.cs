@@ -22,6 +22,7 @@ using System.Windows.Input;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
 using INotificationService = NetErp.Helpers.Services.INotificationService;
+using System.Windows;
 
 namespace NetErp.Login.ViewModels
 {
@@ -30,6 +31,7 @@ namespace NetErp.Login.ViewModels
         private readonly INotificationService _notificationService;
         private readonly IEventAggregator _eventAggregator;
         private readonly ILoginService _loginService;
+        private readonly ICompanySeedService _companySeedService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
 
@@ -148,12 +150,14 @@ namespace NetErp.Login.ViewModels
             INotificationService notificationService,
             IEventAggregator eventAggregator,
             ILoginService loginService,
+            ICompanySeedService companySeedService,
             IRepository<CompanyGraphQLModel> companyService,
             IRepository<CountryGraphQLModel> countryService)
         {
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _loginService = loginService ?? throw new ArgumentNullException(nameof(loginService));
+            _companySeedService = companySeedService ?? throw new ArgumentNullException(nameof(companySeedService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
 
@@ -200,11 +204,11 @@ namespace NetErp.Login.ViewModels
             OrganizationGroups = new ObservableCollection<LoginOrganizationDTO>(groupedCompanies);
             FilteredOrganizationGroups = new ObservableCollection<LoginOrganizationDTO>(groupedCompanies);
 
-            if (Debugger.IsAttached)
-            {
-                FilteredOrganizationGroups.First(x => x.OrganizationId == 36).Companies.First(f => f.CompanyId == 15).IsSelected = true;
-                _ = ContinueAsync();
-            }
+            //if (Debugger.IsAttached)
+            //{
+            //    FilteredOrganizationGroups.First(x => x.OrganizationId == 36).Companies.First(f => f.CompanyId == 15).IsSelected = true;
+            //    _ = ContinueAsync();
+            //}
         }
 
         private void ApplyFilter()
@@ -279,6 +283,8 @@ namespace NetErp.Login.ViewModels
                 //Para este punto sí o sí debe haber una empresa seleccionada
                 CompanyGraphQLModel? resolvedCompany = await GetCompanyByReferenceAsync(SelectedCompany!.OriginalData.Company);
 
+                bool needsSeeds;
+
                 if(resolvedCompany is null)
                 {
                     BusyContent = "Dejando todo listo...";
@@ -289,12 +295,37 @@ namespace NetErp.Login.ViewModels
                         return;
                     }
                     currentCompany = createdCompany.Entity;
+                    needsSeeds = true;
                 }
                 else
                 {
                     currentCompany = resolvedCompany;
+                    needsSeeds = string.Equals(SelectedCompany!.OriginalData.Company.SeedStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
                 }
+
                 SessionInfo.CurrentCompany = currentCompany;
+                SessionInfo.LoginCompanyId = SelectedCompany.OriginalData.Company.Id;
+
+                if (needsSeeds)
+                {
+                    BusyContent = "Configurando la empresa...";
+                    var seedProgress = new Progress<string>(message => BusyContent = message);
+                    CompanySeedResultModel seedResult = await _companySeedService.RunSeedsAsync(
+                        SessionInfo.LoginCompanyId, currentCompany.Id, seedProgress);
+
+                    if (!seedResult.Success)
+                    {
+                        string errorDetail = seedResult.Errors.Count > 0
+                            ? string.Join("\n", seedResult.Errors)
+                            : seedResult.Message;
+                        ThemedMessageBox.Show(
+                            text: $"La configuración de la empresa presentó inconvenientes.\n\n{errorDetail}\n\nComunícate con soporte técnico.",
+                            title: "Error de configuración",
+                            messageBoxButtons: MessageBoxButton.OK,
+                            icon: MessageBoxImage.Error);
+                        return;
+                    }
+                }
                 SessionInfo.PendingCompanyReference = null;
 
                 // Publicar mensaje de empresa seleccionada para navegación

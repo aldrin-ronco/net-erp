@@ -9,8 +9,6 @@ using DevExpress.Xpf.Core;
 using DevExpress.Xpf.WindowsUI.Navigation;
 using GraphQL.Client.Http;
 using Models.Books;
-using NetErp.Helpers.Messages;
-using NetErp.Login.ViewModels;
 using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.PriceList.ViewModels;
@@ -30,30 +28,33 @@ using NetErp.Books.Reports.DailyBook.ViewModels;
 using NetErp.Books.Reports.EntityVsAccount.ViewModels;
 using NetErp.Books.Reports.TestBalance.ViewModels;
 using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
+using NetErp.Books.Tax.ViewModels;
+using NetErp.Books.TaxCategory.ViewModels;
 using NetErp.Books.WithholdingCertificateConfig.ViewModels;
 using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Global.CostCenters.ViewModels;
 using NetErp.Global.Email.ViewModels;
 using NetErp.Global.Email.Views;
+using NetErp.Global.Parameter.ViewModels;
 using NetErp.Global.Smtp.ViewModels;
+using NetErp.Helpers.Messages;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.ViewModels;
 using NetErp.Inventory.MeasurementUnits.ViewModels;
+using NetErp.Login.ViewModels;
 using NetErp.Suppliers.Suppliers.ViewModels;
 using NetErp.Treasury.Concept.ViewModels;
 using NetErp.Treasury.Masters.ViewModels;
 using Ninject;
 using Services.Books.DAL.PostgreSQL;
-using NetErp.Global.AuthorizationSequence.ViewModels;
-using NetErp.Books.Tax.ViewModels;
-using NetErp.Global.Parameter.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using NetErp.Books.TaxCategory.ViewModels;
 
 
 namespace NetErp.Global.MainMenu.ViewModels
@@ -86,7 +87,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             try
             {
                 AccountPlanViewModel instance = IoC.Get<AccountPlanViewModel>();
-                 instance.DisplayName = "Plan único de cuentas";
+                instance.DisplayName = "Plan único de cuentas";
                 await ActivateItemAsync(instance, new CancellationToken());
                 int MyNewIndex = Items.IndexOf(instance);
                 if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
@@ -114,7 +115,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(text: $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", title: "Atención !", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -135,7 +136,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -156,7 +157,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -176,7 +177,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -196,7 +197,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -216,7 +217,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -237,7 +238,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -258,7 +259,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -278,7 +279,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -298,7 +299,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -318,7 +319,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -339,7 +340,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -359,7 +360,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -379,7 +380,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -400,7 +401,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -420,7 +421,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -440,7 +441,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -460,7 +461,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -481,7 +482,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -502,7 +503,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -523,7 +524,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -590,7 +591,7 @@ namespace NetErp.Global.MainMenu.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -660,7 +661,7 @@ namespace NetErp.Global.MainMenu.ViewModels
                 _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
-        
+
         public async Task OpenPriceList()
         {
             try

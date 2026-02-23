@@ -100,27 +100,54 @@ namespace NetErp
             //kernel = new StandardKernel();
             _ = kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
-            _ = kernel.Bind<GlobalDataCache>().ToSelf().InSingletonScope();
 
             // Entity Caches (individual caches per entity for better maintainability)
+            // Cada cache se registra como su tipo concreto (para inyección directa en ViewModels)
+            // y como IEntityCache (para limpieza centralizada al salir de empresa)
             _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
-            _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
-            _ = kernel.Bind<WithholdingTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CostCenterCache>());
 
-            
+            _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<IdentificationTypeCache>());
+
+            _ = kernel.Bind<WithholdingTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<WithholdingTypeCache>());
+
             _ = kernel.Bind<CountryCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CountryCache>());
+
             _ = kernel.Bind<BankAccountCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<BankAccountCache>());
+
             _ = kernel.Bind<MajorCashDrawerCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MajorCashDrawerCache>());
+
             _ = kernel.Bind<AuxiliaryAccountingAccountCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuxiliaryAccountingAccountCache>());
+
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CtasRestVtasAccountingAccountGroupCache>());
+
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingBookCache>());
+
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ZoneCache>());
+
             _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<NotAnnulledAccountingSourceCache>());
+
             _ = kernel.Bind<ProcessTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ProcessTypeCache>());
+
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuthorizationSequenceTypeCache>());
+
             _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ModuleCache>());
 
             _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCategoryCache>());
 
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
@@ -240,6 +267,7 @@ namespace NetErp
             
             // Login service
             _ = kernel.Bind<ILoginService>().To<LoginService>().InSingletonScope();
+            _ = kernel.Bind<ICompanySeedService>().To<CompanySeedService>().InSingletonScope();
             //Servicio SQLite usado para almacenar los correos electrónicos guardados localmente para autocompletar en el inicio de sesión
             _ = kernel.Bind<ISQLiteEmailStorageService>().To<SQLiteEmailStorageService>().InSingletonScope();
             

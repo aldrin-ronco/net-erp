@@ -56,6 +56,7 @@ namespace Common.Services
                             address
                             businessName
                             captureType
+                            seedStatus
                             defaultCurrency{
                                 code
                             }

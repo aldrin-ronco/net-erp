@@ -12,12 +12,7 @@ using System.Threading.Tasks;
 using Models.Login;
 using Models.Global;
 using Common.Helpers;
-using System.Dynamic;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using static Models.Global.GraphQLResponseTypes;
-using System.Collections.ObjectModel;
-using NetErp.Helpers;
-using Models.Books;
+using NetErp.Helpers.Cache;
 
 namespace NetErp.Global.Shell.ViewModels
 {
@@ -27,10 +22,11 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly IBackgroundQueueService _backgroundService;
         private readonly IEventAggregator _eventAggregator;
         private readonly ILoginService _loginService;
+        private readonly ICompanySeedService _companySeedService;
         private readonly ISQLiteEmailStorageService _emailStorageService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
-        private readonly GlobalDataCache _globalDataCache;
+        private readonly IEnumerable<IEntityCache> _entityCaches;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private LoginAccountGraphQLModel? _currentAccount;
@@ -71,19 +67,21 @@ namespace NetErp.Global.Shell.ViewModels
             INotificationService notificationService,
             IBackgroundQueueService backgroundService,
             ILoginService loginService,
+            ICompanySeedService companySeedService,
             ISQLiteEmailStorageService emailStorageService,
             IRepository<CompanyGraphQLModel> companyService,
             IRepository<CountryGraphQLModel> countryService,
-            GlobalDataCache globalDataCache)
+            IEnumerable<IEntityCache> entityCaches)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _backgroundService = backgroundService ?? throw new ArgumentNullException(nameof(backgroundService));
             _loginService = loginService ?? throw new ArgumentNullException(nameof(loginService));
+            _companySeedService = companySeedService ?? throw new ArgumentNullException(nameof(companySeedService));
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
-            _globalDataCache = globalDataCache ?? throw new ArgumentNullException(nameof(globalDataCache));
+            _entityCaches = entityCaches ?? throw new ArgumentNullException(nameof(entityCaches));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
             Task.Run(() => ActivateLoginView());
@@ -122,22 +120,22 @@ namespace NetErp.Global.Shell.ViewModels
             _availableCompanies = message.Companies;
 
             // Login exitoso - navegar a CompanySelection
-            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService, _countryService);
+            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService);
             companySelectionViewModel.Initialize(message.Account, message.Companies, message.AccessTicket);
             await ActivateItemAsync(companySelectionViewModel, cancellationToken);
         }
 
         public async Task HandleAsync(CompanySelectedMessage message, CancellationToken cancellationToken)
         {
-            // Empresa seleccionada - cargar datos globales y navegar al MainMenu
-            await LoadGlobalDataAsync();
+            // Empresa seleccionada - navegar al MainMenu
+            // Los caches individuales se cargan bajo demanda (lazy loading) via EnsureLoadedAsync()
             await ActivateItemAsync(MainMenuViewModel, cancellationToken);
         }
 
         public async Task HandleAsync(LogoutMessage message, CancellationToken cancellationToken)
         {
-            // Logout - volver al login
-            _globalDataCache.Clear();
+            // Logout - limpiar todos los caches y volver al login
+            ClearAllCaches();
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -145,87 +143,24 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(ReturnToCompanySelectionMessage message, CancellationToken cancellationToken)
         {
+            // Limpiar todos los caches al salir de la empresa
+            ClearAllCaches();
+
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
             {
-                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companyService, _countryService);
+                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService);
                 companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }
         }
 
-        /// <summary>
-        /// Carga los datos comunes del sistema (IdentificationTypes, Countries) en el GlobalDataCache.
-        /// Esta operación se ejecuta una sola vez al seleccionar la compañía.
-        /// </summary>
-        private async Task LoadGlobalDataAsync()
+        private void ClearAllCaches()
         {
-            try
+            foreach (var cache in _entityCaches)
             {
-                string query = GetGlobalDataContextQuery();
-
-                dynamic variables = new ExpandoObject();
-                variables.identificationTypesPagePagination = new ExpandoObject();
-                variables.countriesPagePagination = new ExpandoObject();
-
-                variables.identificationTypesPagePagination.pageSize = -1;
-                variables.countriesPagePagination.pageSize = -1;
-
-                GlobalDataContextModel result = await _countryService.GetDataContextAsync<GlobalDataContextModel>(query, variables);
-
-                // Inicializar el caché con los datos cargados
-                _globalDataCache.Initialize(
-                    new ObservableCollection<IdentificationTypeGraphQLModel>(result.IdentificationTypes.Entries),
-                    new ObservableCollection<CountryGraphQLModel>(result.Countries.Entries)
-                );
+                cache.Clear();
             }
-            catch (Exception ex)
-            {
-                _notificationService.ShowError($"Error al cargar datos del sistema: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Construye la query GraphQL para cargar IdentificationTypes y Countries en una sola llamada.
-        /// </summary>
-        private string GetGlobalDataContextQuery()
-        {
-            var identificationTypeFields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
-                .Create()
-                .SelectList(selector: it => it.Entries, nested: entries => entries
-                    .Field(it => it.Id)
-                    .Field(it => it.Name)
-                    .Field(it => it.Code)
-                    .Field(it => it.HasVerificationDigit)
-                    .Field(it => it.MinimumDocumentLength)
-                )
-                .Build();
-
-            var countryFields = FieldSpec<PageType<CountryGraphQLModel>>
-                .Create()
-                .SelectList(selector: c => c.Entries, nested: cEntry => cEntry
-                    .Field(c => c.Id)
-                    .Field(c => c.Name)
-                    .Field(c => c.Code)
-                    .SelectList(c => c.Departments, deptSpec => deptSpec
-                        .Field(d => d.Id)
-                        .Field(d => d.Name)
-                        .Field(d => d.Code)
-                        .SelectList(d => d.Cities, citySpec => citySpec
-                            .Field(ci => ci.Id)
-                            .Field(ci => ci.Name)
-                            .Field(ci => ci.Code)
-                        )
-                    )
-                )
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypesPage", [parameter], identificationTypeFields, "identificationTypes");
-            var countryFragment = new GraphQLQueryFragment("countriesPage", [parameter], countryFields, "countries");
-            var builder = new GraphQLQueryBuilder([identificationTypeFragment, countryFragment]);
-            return builder.GetQuery();
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
