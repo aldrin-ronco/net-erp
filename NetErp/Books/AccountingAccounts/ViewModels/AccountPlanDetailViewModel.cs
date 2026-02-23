@@ -1,8 +1,7 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Models.Books;
@@ -14,11 +13,12 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
-    public class AccountPlanDetailViewModel : ViewModelBase
+    public class AccountPlanDetailViewModel : Screen
     {
         #region "Propiedades"
 
@@ -26,20 +26,70 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         private List<string> _debitAccounts = new List<string>() { "1", "5", "6", "7" };
 
+        // Prefijos de cuentas que requieren margen
+        private static readonly List<string> _marginPrefixes = new List<string>() { "2408", "2365", "2367", "2368" };
+
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly List<AccountingAccountGraphQLModel> _accounts;
+        private readonly int _selectedItemId;
+
         public Dictionary<char, string> AccountNature => Dictionaries.BooksDictionaries.AccountNatureDictionary;
-
-        private AccountPlanViewModel _context;
-
-        public AccountPlanViewModel Context
+        private decimal _margin;
+        public decimal Margin
         {
-            get { return _context; }
+            get { return _margin; }
             set
             {
-                SetValue(ref _context, value);
+                if (_margin != value)
+                {
+                    _margin = value;
+                    NotifyOfPropertyChange(nameof(Margin));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
+        private int _marginBasis = 100;
+        public int MarginBasis
+        {
+            get { return _marginBasis; }
+            set
+            {
+                if (_marginBasis != value)
+                {
+                    _marginBasis = value;
+                    NotifyOfPropertyChange(nameof(MarginBasis));
+                    NotifyOfPropertyChange(nameof(IsMarginBasis100));
+                    NotifyOfPropertyChange(nameof(IsMarginBasis1000));
+                }
+            }
+        }
+
+        public bool IsMarginBasis100
+        {
+            get { return _marginBasis == 100; }
+            set { if (value) MarginBasis = 100; }
+        }
+
+        public bool IsMarginBasis1000
+        {
+            get { return _marginBasis == 1000; }
+            set { if (value) MarginBasis = 1000; }
+        }
+
+        public bool RequiresMargin
+        {
+            get
+            {
+                string code = IsNewRecord ? Lv5Code : Code;
+                return code.Length >= 8 && _marginPrefixes.Any(p => code.StartsWith(p));
+            }
+        }
+
+        public Visibility MarginVisibility
+        {
+            get { return RequiresMargin ? Visibility.Visible : Visibility.Collapsed; }
+        }
 
         private string _selectedAccountNature;
 
@@ -51,7 +101,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             set
             {
-                SetValue(ref _selectedAccountNature, value);
+                if (_selectedAccountNature != value)
+                {
+                    _selectedAccountNature = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountNature));
+                }
             }
         }
 
@@ -61,18 +115,24 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _code; }
             set
             {
-                SetValue(ref _code, value, changedCallback: OnCodeChanged);
+                if (_code != value)
+                {
+                    _code = value;
+                    NotifyOfPropertyChange(nameof(Code));
+                    OnCodeChanged();
+                }
             }
         }
 
         protected void OnCodeChanged()
         {
-            RaisePropertyChanged(nameof(IsNewRecord));
-            RaisePropertyChanged(nameof(Lv1Visibility));
-            RaisePropertyChanged(nameof(Lv2Visibility));
-            RaisePropertyChanged(nameof(Lv3Visibility));
-            RaisePropertyChanged(nameof(Lv4Visibility));
-            RaisePropertyChanged(nameof(Lv5Visibility));
+            NotifyOfPropertyChange(nameof(IsNewRecord));
+            NotifyOfPropertyChange(nameof(Lv1Visibility));
+            NotifyOfPropertyChange(nameof(Lv2Visibility));
+            NotifyOfPropertyChange(nameof(Lv3Visibility));
+            NotifyOfPropertyChange(nameof(Lv4Visibility));
+            NotifyOfPropertyChange(nameof(Lv5Visibility));
+            NotifyOfPropertyChange(nameof(MarginVisibility));
         }
 
         // Focus handling
@@ -80,7 +140,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public bool Lv5CodeIsFocused
         {
             get { return _lv5CodeIsFocused; }
-            set { SetValue(ref _lv5CodeIsFocused, value); }
+            set
+            {
+                if (_lv5CodeIsFocused != value)
+                {
+                    _lv5CodeIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv5CodeIsFocused));
+                }
+            }
         }
 
         //Visibilidad
@@ -91,7 +158,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return this._code.Length >= 1 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                SetValue(ref _lv1Visibility, value);
+                if (_lv1Visibility != value)
+                {
+                    _lv1Visibility = value;
+                    NotifyOfPropertyChange(nameof(Lv1Visibility));
+                }
             }
         }
 
@@ -102,7 +173,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return this._code.Length >= 2 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                SetValue(ref _lv2Visibility, value);
+                if (_lv2Visibility != value)
+                {
+                    _lv2Visibility = value;
+                    NotifyOfPropertyChange(nameof(Lv2Visibility));
+                }
             }
         }
 
@@ -113,7 +188,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return this._code.Length >= 4 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                SetValue(ref _lv3Visibility, value);
+                if (_lv3Visibility != value)
+                {
+                    _lv3Visibility = value;
+                    NotifyOfPropertyChange(nameof(Lv3Visibility));
+                }
             }
         }
 
@@ -123,7 +202,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return this._code.Length >= 6 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                SetValue(ref _lv4Visibility, value);
+                if (_lv4Visibility != value)
+                {
+                    _lv4Visibility = value;
+                    NotifyOfPropertyChange(nameof(Lv4Visibility));
+                }
             }
         }
 
@@ -134,7 +217,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return this._code.Length >= 8 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
             set
             {
-                SetValue(ref _lv5Visibility, value);
+                if (_lv5Visibility != value)
+                {
+                    _lv5Visibility = value;
+                    NotifyOfPropertyChange(nameof(Lv5Visibility));
+                }
             }
         }
 
@@ -147,7 +234,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _selectionStart; }
             set
             {
-                SetValue(ref _selectionStart, value);
+                if (_selectionStart != value)
+                {
+                    _selectionStart = value;
+                    NotifyOfPropertyChange(nameof(SelectionStart));
+                }
             }
         }
 
@@ -157,7 +248,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _selectionLength; }
             set
             {
-                SetValue(ref _selectionLength, value);
+                if (_selectionLength != value)
+                {
+                    _selectionLength = value;
+                    NotifyOfPropertyChange(nameof(SelectionLength));
+                }
             }
         }
 
@@ -169,13 +264,18 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv1Code; }
             set
             {
-                SetValue(ref _lv1Code, value, changedCallback: OnLV1CodeChanged);
+                if (_lv1Code != value)
+                {
+                    _lv1Code = value;
+                    NotifyOfPropertyChange(nameof(Lv1Code));
+                    OnLV1CodeChanged();
+                }
             }
         }
 
         protected void OnLV1CodeChanged()
         {
-            RaisePropertyChanged(nameof(SelectedAccountNature));
+            NotifyOfPropertyChange(nameof(SelectedAccountNature));
         }
 
         private string _lv2Code = string.Empty;
@@ -184,7 +284,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv2Code; }
             set
             {
-                SetValue(ref _lv2Code, value);
+                if (_lv2Code != value)
+                {
+                    _lv2Code = value;
+                    NotifyOfPropertyChange(nameof(Lv2Code));
+                }
             }
         }
 
@@ -194,7 +298,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv3Code; }
             set
             {
-                SetValue(ref _lv3Code, value);
+                if (_lv3Code != value)
+                {
+                    _lv3Code = value;
+                    NotifyOfPropertyChange(nameof(Lv3Code));
+                }
             }
         }
 
@@ -204,7 +312,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv4Code; }
             set
             {
-                SetValue(ref _lv4Code, value);
+                if (_lv4Code != value)
+                {
+                    _lv4Code = value;
+                    NotifyOfPropertyChange(nameof(Lv4Code));
+                }
             }
         }
 
@@ -214,13 +326,19 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv5Code; }
             set
             {
-                SetValue(ref _lv5Code, value, changedCallback: OnLv5CodeChanged);
+                if (_lv5Code != value)
+                {
+                    _lv5Code = value;
+                    NotifyOfPropertyChange(nameof(Lv5Code));
+                    OnLv5CodeChanged();
+                }
             }
         }
 
         protected void OnLv5CodeChanged()
         {
-            RaisePropertyChanged(nameof(CanSave));
+            NotifyOfPropertyChange(nameof(CanSave));
+            NotifyOfPropertyChange(nameof(MarginVisibility));
 
             if (IsNewRecord)
             {
@@ -268,7 +386,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv1Name; }
             set
             {
-                SetValue(ref _lv1Name, value, changedCallback: OnAccountingAccountNameChanged);
+                if (_lv1Name != value)
+                {
+                    _lv1Name = value;
+                    NotifyOfPropertyChange(nameof(Lv1Name));
+                    OnAccountingAccountNameChanged();
+                }
             }
         }
 
@@ -278,7 +401,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv2Name; }
             set
             {
-                SetValue(ref _lv2Name, value, changedCallback: OnAccountingAccountNameChanged);
+                if (_lv2Name != value)
+                {
+                    _lv2Name = value;
+                    NotifyOfPropertyChange(nameof(Lv2Name));
+                    OnAccountingAccountNameChanged();
+                }
             }
         }
 
@@ -288,7 +416,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv3Name; }
             set
             {
-                SetValue(ref _lv3Name, value, changedCallback: OnAccountingAccountNameChanged);
+                if (_lv3Name != value)
+                {
+                    _lv3Name = value;
+                    NotifyOfPropertyChange(nameof(Lv3Name));
+                    OnAccountingAccountNameChanged();
+                }
             }
         }
 
@@ -298,7 +431,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv4Name; }
             set
             {
-                SetValue(ref _lv4Name, value, changedCallback: OnAccountingAccountNameChanged);
+                if (_lv4Name != value)
+                {
+                    _lv4Name = value;
+                    NotifyOfPropertyChange(nameof(Lv4Name));
+                    OnAccountingAccountNameChanged();
+                }
             }
         }
 
@@ -308,12 +446,17 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv5Name; }
             set
             {
-                SetValue(ref _lv5Name, value, changedCallback: OnAccountingAccountNameChanged);
+                if (_lv5Name != value)
+                {
+                    _lv5Name = value;
+                    NotifyOfPropertyChange(nameof(Lv5Name));
+                    OnAccountingAccountNameChanged();
+                }
             }
         }
         protected void OnAccountingAccountNameChanged()
         {
-            RaisePropertyChanged(nameof(CanSave));
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         // Focos en codigos de las cuentas
@@ -324,7 +467,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isFocusedLv5Code; }
             set
             {
-                SetValue(ref _isFocusedLv5Code, value);
+                if (_isFocusedLv5Code != value)
+                {
+                    _isFocusedLv5Code = value;
+                    NotifyOfPropertyChange(nameof(IsFocusedLv5Code));
+                }
             }
         }
 
@@ -335,7 +482,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv5NameIsFocused; }
             set
             {
-                SetValue(ref _lv5NameIsFocused, value);
+                if (_lv5NameIsFocused != value)
+                {
+                    _lv5NameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv5NameIsFocused));
+                }
             }
         }
 
@@ -346,7 +497,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv4NameIsFocused; }
             set
             {
-                SetValue(ref _lv4NameIsFocused, value);
+                if (_lv4NameIsFocused != value)
+                {
+                    _lv4NameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv4NameIsFocused));
+                }
             }
         }
 
@@ -357,7 +512,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv3NameIsFocused; }
             set
             {
-                SetValue(ref _lv3NameIsFocused, value);
+                if (_lv3NameIsFocused != value)
+                {
+                    _lv3NameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv3NameIsFocused));
+                }
             }
         }
 
@@ -368,7 +527,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv2NameIsFocused; }
             set
             {
-                SetValue(ref _lv2NameIsFocused, value);
+                if (_lv2NameIsFocused != value)
+                {
+                    _lv2NameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv2NameIsFocused));
+                }
             }
         }
 
@@ -379,7 +542,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv1NameIsFocused; }
             set
             {
-                SetValue(ref _lv1NameIsFocused, value);
+                if (_lv1NameIsFocused != value)
+                {
+                    _lv1NameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(Lv1NameIsFocused));
+                }
             }
         }
         // IsReadonly Name
@@ -390,7 +557,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv1Name; }
             set
             {
-                SetValue(ref _isReadOnlyLv1Name, value);
+                if (_isReadOnlyLv1Name != value)
+                {
+                    _isReadOnlyLv1Name = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv1Name));
+                }
             }
         }
 
@@ -400,7 +571,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv2Name; }
             set
             {
-                SetValue(ref _isReadOnlyLv2Name, value);
+                if (_isReadOnlyLv2Name != value)
+                {
+                    _isReadOnlyLv2Name = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv2Name));
+                }
             }
         }
 
@@ -410,7 +585,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv3Name; }
             set
             {
-                SetValue(ref _isReadOnlyLv3Name, value);
+                if (_isReadOnlyLv3Name != value)
+                {
+                    _isReadOnlyLv3Name = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv3Name));
+                }
             }
         }
 
@@ -420,7 +599,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv4Name; }
             set
             {
-                SetValue(ref _isReadOnlyLv4Name, value);
+                if (_isReadOnlyLv4Name != value)
+                {
+                    _isReadOnlyLv4Name = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv4Name));
+                }
             }
         }
 
@@ -431,7 +614,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv5Name; }
             set
             {
-                SetValue(ref _isReadOnlyLv5Name, value);
+                if (_isReadOnlyLv5Name != value)
+                {
+                    _isReadOnlyLv5Name = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv5Name));
+                }
             }
         }
 
@@ -444,7 +631,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isReadOnlyLv5Code; }
             set
             {
-                SetValue(ref _isReadOnlyLv5Code, value);
+                if (_isReadOnlyLv5Code != value)
+                {
+                    _isReadOnlyLv5Code = value;
+                    NotifyOfPropertyChange(nameof(IsReadOnlyLv5Code));
+                }
             }
         }
 
@@ -457,7 +648,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return string.IsNullOrEmpty(_code); }
             set
             {
-                SetValue(ref _isNewRecord, value);
+                if (_isNewRecord != value)
+                {
+                    _isNewRecord = value;
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
             }
         }
 
@@ -470,7 +665,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _lv5NameStyle; }
             set
             {
-                SetValue(ref _lv5NameStyle, value);
+                if (_lv5NameStyle != value)
+                {
+                    _lv5NameStyle = value;
+                    NotifyOfPropertyChange(nameof(Lv5NameStyle));
+                }
             }
         }
 
@@ -481,24 +680,17 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return _isBusy; }
             set
             {
-                SetValue(ref _isBusy, value, changedCallback: OnIsBusyChanged);
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    OnIsBusyChanged();
+                }
             }
         }
         protected void OnIsBusyChanged()
         {
-            RaisePropertyChanged(nameof(CanSave));
-        }
-
-        // TODO check property definition - can refactor to a local variable ?
-        private AccountPlanMasterViewModel _parent = null!;
-
-        public AccountPlanMasterViewModel Parent
-        {
-            get { return _parent; }
-            set
-            {
-                SetValue(ref _parent, value);
-            }
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         #endregion
@@ -506,13 +698,31 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         #region "Constructores"
 
-        public AccountPlanDetailViewModel(AccountPlanViewModel context, Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
+        public AccountPlanDetailViewModel(
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            List<AccountingAccountGraphQLModel> accounts,
+            int selectedItemId = 0)
         {
-            this.Context = context;
-            this.Parent = context.AccountPlanMasterViewModel;
-            this._accountingAccountService = accountingAccountService;
-            RaisePropertyChanged(nameof(CanSave));
+            _accountingAccountService = accountingAccountService;
+            _accounts = accounts;
+            _selectedItemId = selectedItemId;
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        #endregion
+
+        #region "Lifecycle"
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            PopulateInfo(Code);
+            SetReadOnlyState(Code);
+            // Defer focus so the dialog layout is fully rendered
+            Application.Current.Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                SetLevelFocus(Code);
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         #endregion
@@ -601,12 +811,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     model = new()
                     {
-                        Id = Parent.SelectedItem.Id,
+                        Id = _selectedItemId,
                         Code = this.Lv5Code.RemoveExtraSpaces().Trim(),
                         Name = this.Lv5Name.RemoveExtraSpaces().Trim(),
                         Nature = this.SelectedAccountNature,
-                        Margin = 0,
-                        MarginBasis = 0
+                        Margin = RequiresMargin ? this.Margin : 0,
+                        MarginBasis = RequiresMargin ? this.MarginBasis : 0
                     };
                 }
                 else
@@ -615,7 +825,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     {
                         model = new()
                         {
-                            Id = Parent.SelectedItem.Id,
+                            Id = _selectedItemId,
                             Code = this.Lv4Code.RemoveExtraSpaces().Trim(),
                             Name = this.Lv4Name.RemoveExtraSpaces().Trim(),
                             Nature = this.SelectedAccountNature,
@@ -629,7 +839,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         {
                             model = new()
                             {
-                                Id = Parent.SelectedItem.Id,
+                                Id = _selectedItemId,
                                 Code = this.Lv3Code.RemoveExtraSpaces().Trim(),
                                 Name = this.Lv3Name.RemoveExtraSpaces().Trim(),
                                 Nature = this.SelectedAccountNature,
@@ -643,7 +853,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                             {
                                 model = new()
                                 {
-                                    Id = Parent.SelectedItem.Id,
+                                    Id = _selectedItemId,
                                     Code = this.Lv2Code.RemoveExtraSpaces().Trim(),
                                     Name = this.Lv2Name.RemoveExtraSpaces().Trim(),
                                     Nature = this.SelectedAccountNature,
@@ -655,7 +865,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                             {
                                 model = new()
                                 {
-                                    Id = Parent.SelectedItem.Id,
+                                    Id = _selectedItemId,
                                     Code = this.Lv1Code.RemoveExtraSpaces().Trim(),
                                     Name = this.Lv1Name.RemoveExtraSpaces().Trim(),
                                     Nature = this.SelectedAccountNature,
@@ -790,8 +1000,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     Code = this.Lv5Code.RemoveExtraSpaces().Trim(),
                     Name = this.Lv5Name.RemoveExtraSpaces().Trim(),
                     Nature = this.SelectedAccountNature,
-                    Margin = 0,
-                    MarginBasis = 0
+                    Margin = RequiresMargin ? this.Margin : 0,
+                    MarginBasis = RequiresMargin ? this.MarginBasis : 0
                 };
                 models.Add(modelLv5);
 
@@ -826,7 +1036,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 1)
                 {
                     var lv1 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 1)
                               select account;
 
@@ -862,7 +1072,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 2)
                 {
                     var lv2 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 2)
                               select account;
 
@@ -899,7 +1109,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 4)
                 {
                     var lv3 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 4)
                               select new { account.Code, account.Name, account.Nature };
 
@@ -937,7 +1147,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 6)
                 {
                     var lv4 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 6)
                               select account;
 
@@ -973,7 +1183,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 8)
                 {
                     var lv5 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode
                               select account;
 
@@ -1018,7 +1228,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 1)
                 {
                     var lv1 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 1)
                               select account;
 
@@ -1043,7 +1253,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 2)
                 {
                     var lv2 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 2)
                               select account;
 
@@ -1068,7 +1278,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 4)
                 {
                     var lv3 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 4)
                               select new { account.Code, account.Name, account.Nature };
 
@@ -1094,7 +1304,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 6)
                 {
                     var lv4 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode.Substring(0, 6)
                               select account;
 
@@ -1119,7 +1329,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 if (accountCode.Length >= 8)
                 {
                     var lv5 = from account
-                    in Parent.accounts
+                    in _accounts
                               where account.Code == accountCode
                               select account;
 
@@ -1128,6 +1338,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         this.Lv5Code = lv5.First().Code;
                         this.Lv5Name = lv5.First().Name;
                         this.SelectedAccountNature = lv5.First().Nature;
+                        this.Margin = lv5.First().Margin;
+                        this.MarginBasis = lv5.First().MarginBasis;
                     }
                 }
                 else
@@ -1315,7 +1527,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                var result = from account in Parent.accounts
+                var result = from account in _accounts
                              where account.Code == accountCode
                              select account;
 
@@ -1354,45 +1566,26 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         #region "Commands"
 
-
-
-        [Command]
-        public void Initialize()
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand
         {
-            try
+            get
             {
-                PopulateInfo(this.Code);
-                SetReadOnlyState(this.Code);
-                SetLevelFocus(this.Code);
-
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Initialize" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                _saveCommand ??= new AsyncCommand(SaveAsync);
+                return _saveCommand;
             }
         }
 
-        /// <summary>
-        /// Retorna a la vista padre
-        /// </summary>
-        [Command]
-        public async Task ReturnToAccountingAccountPlanMaster()
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
         {
-            this.Code = "";
-            this.Lv5CodeIsFocused = false;
-            this.Lv5NameIsFocused = false;
-            this.Lv4NameIsFocused = false;
-            this.Lv3NameIsFocused = false;
-            this.Lv2NameIsFocused = false;
-            this.Lv1NameIsFocused = false;
-            CleanUpControls();
-            await this.Context.ActivateMasterViewModel();
+            get
+            {
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
+            }
         }
 
-        public bool CanReturnToAccountingAccountPlanMaster() => true;
-
-        [Command]
         public async Task SaveAsync()
         {
             try
@@ -1410,7 +1603,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
                 else
                 {
-                    if (Context.AccountPlanMasterViewModel.SelectedItem is null) throw new ArgumentException(nameof(Parent.SelectedItem));
+                    if (_selectedItemId <= 0) throw new ArgumentException("No se ha seleccionado una cuenta contable para editar");
                     UpsertResponseType<AccountingAccountGraphQLModel> result = await Task.Run(() => this.UpdateAsync());
                     if (!result.Success)
                     {
@@ -1419,7 +1612,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpsertAccount = result });
                 }
-                await ReturnToAccountingAccountPlanMaster();
+                await TryCloseAsync(true);
             }
             catch (Exception ex)
             {
@@ -1431,11 +1624,18 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 this.IsBusy = false;
             }
         }
+
+        public async Task CancelAsync()
+        {
+            await TryCloseAsync(false);
+        }
+
         public bool CanSave
         {
             get
             {
                 if (this.IsBusy) return false;
+                if (RequiresMargin && this.Margin <= 0) return false;
                 if (this.IsNewRecord)
                 {
                     if (this.Lv5Code.Length < 8) return false;

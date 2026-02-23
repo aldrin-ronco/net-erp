@@ -1,4 +1,4 @@
-﻿using Common.Extensions;
+using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
@@ -32,19 +32,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
-
-        private AccountPlanViewModel _context;
-
-        public AccountPlanViewModel Context
-        {
-            get { return _context; }
-            set 
-            {
-                SetValue(ref _context, value); 
-            }
-        }
-
-
+        private readonly Helpers.IDialogService _dialogService;
 
         private ObservableCollection<AccountingAccountDTO> _accountingAccounts = [];
         public ObservableCollection<AccountingAccountDTO> AccountingAccounts
@@ -64,7 +52,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 SetValue(ref _selectedItem, value);
             }
-        }    
+        }
 
         // Is Busy
         private bool _isBusy = false;
@@ -83,17 +71,18 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         #endregion
 
         #region "Constructores"
-        public AccountPlanMasterViewModel(AccountPlanViewModel context, Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
+        public AccountPlanMasterViewModel(Helpers.Services.INotificationService notificationService,
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            Helpers.IDialogService dialogService)
         {
             try
             {
                 Messenger.Default.Register<AccountingAccountCreateListMessage>(this, OnAccountingAccountCreateListMessage);
                 Messenger.Default.Register<AccountingAccountUpdateMessage>(this, OnAccountingAccountUpdateMessage);
                 Messenger.Default.Register<AccountingAccountDeleteMessage>(this, OnAccountingAccountDeleteMessage);
-                this.Context = context;
                 this._accountingAccountService = accountingAccountService;
                 this._notificationService = notificationService;
+                this._dialogService = dialogService;
             }
             catch (Exception ex)
             {
@@ -351,29 +340,29 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 AccountingAccountDTO? Lv4 = null;
                 AccountingAccountDTO? Lv5 = null;
 
-                if (code.Length >= 1) 
+                if (code.Length >= 1)
                 {
                     Lv1 = this.AccountingAccounts.Where(x => x.Code == code.Substring(0, 1)).FirstOrDefault();
                 };
-                if (code.Length >= 2) 
+                if (code.Length >= 2)
                 {
                     if (Lv1 == null) throw new Exception("LV1 no puede ser null");
                     Lv2 = Lv1.Childrens.Where(x => x.Code == code.Substring(0, 2)).FirstOrDefault();
                 };
-                if (code.Length >= 4) 
+                if (code.Length >= 4)
                 {
                     if (Lv2 == null) throw new Exception("LV2 no puede ser null");
                     Lv3 = Lv2.Childrens.Where(x => x.Code == code.Substring(0, 4)).FirstOrDefault();
                 };
-                if (code.Length >= 6) 
-                { 
+                if (code.Length >= 6)
+                {
                     if (Lv3 == null) throw new Exception("LV3 no puede ser null");
-                    Lv4 = Lv3.Childrens.Where(x => x.Code == code.Substring(0, 6)).FirstOrDefault(); 
+                    Lv4 = Lv3.Childrens.Where(x => x.Code == code.Substring(0, 6)).FirstOrDefault();
                 };
-                if (code.Length >= 8) 
+                if (code.Length >= 8)
                 {
                     if (Lv4 == null) throw new Exception("LV4 no puede ser null");
-                    Lv5 = Lv4.Childrens.Where(x => x.Code == code.Substring(0, 8)).FirstOrDefault(); 
+                    Lv5 = Lv4.Childrens.Where(x => x.Code == code.Substring(0, 8)).FirstOrDefault();
                     if (Lv5 == null) throw new Exception("LV5 no puede ser null");
                 };
 
@@ -524,7 +513,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 this.IsBusy = true;
                 string query = GetInitilizeQuery();
 ;
-                // Loading Data 
+                // Loading Data
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -563,11 +552,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             return true;
         }
 
-        // TODO parameter type revision
         [Command]
         public async Task CreateAsync(object parameter)
         {
-            await Context.ActivateDetailViewModel("");
+            var detail = new AccountPlanDetailViewModel(_accountingAccountService, accounts);
+            await _dialogService.ShowDialogAsync(detail, "Nueva cuenta contable");
         }
 
         public bool CanCreate(object parameter)
@@ -578,10 +567,13 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         [Command]
         public async Task EditAsync(object code)
         {
-            //TODO edit wait indicator
-            this.IsBusy = true;
-            await Task.Run(()=> Context.ActivateDetailViewModel((string)code));
-            this.IsBusy = false;
+            if (SelectedItem == null) return;
+            var detail = new AccountPlanDetailViewModel(
+                _accountingAccountService,
+                accounts,
+                selectedItemId: SelectedItem.Id);
+            detail.Code = (string)code;
+            await _dialogService.ShowDialogAsync(detail, "Modificar cuenta contable");
         }
 
         public bool CanEdit(object code)
@@ -619,17 +611,17 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 this.IsBusy = true;
                 DeleteResponseType deleteResponse = await Task.Run(() => this.ExecuteDeleteAsync(account.Id));
                 RemoveAccountInMemory(accounts, account.Id);
-                if (deleteResponse.Success is false) 
+                if (deleteResponse.Success is false)
                 {
                     Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "No fue posible eliminar la cuenta contable" +
                         (char)13 + (char)13 + deleteResponse.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                     return;
                 }
-                Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = new() 
-                { 
+                Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = new()
+                {
                     Id = account.Id,
                     Code = account.Code
-                }, DeletedResponseType = deleteResponse});    
+                }, DeletedResponseType = deleteResponse});
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -660,7 +652,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// <param name="message">Instancia de List<BooksAccountingAccountModel> con la lista de cuentas creadas, auxiliar y padres</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// 
+        ///
 
         void OnAccountingAccountCreateListMessage(AccountingAccountCreateListMessage message)
         {
@@ -699,7 +691,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         /// <param name="message">Instancia de BooksAccountingAccountModel con los datos de la cuenta actualizados</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// 
+        ///
 
         void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message)
         {
