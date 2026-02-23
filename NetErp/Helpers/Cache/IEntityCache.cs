@@ -4,11 +4,28 @@ using System.Threading.Tasks;
 namespace NetErp.Helpers.Cache
 {
     /// <summary>
-    /// Interfaz base para caches de entidades con lazy loading.
+    /// Interfaz no-genérica base para limpieza centralizada de caches.
+    /// Permite que ShellViewModel limpie todos los caches al salir de una empresa.
+    /// </summary>
+    public interface IEntityCache
+    {
+        /// <summary>
+        /// Indica si el cache ya fue inicializado
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Limpia el cache y marca como no inicializado
+        /// </summary>
+        void Clear();
+    }
+
+    /// <summary>
+    /// Interfaz genérica para caches de entidades con lazy loading.
     /// Cada implementación maneja su propia carga, CRUD y suscripción a mensajes.
     /// </summary>
     /// <typeparam name="T">Tipo de la entidad</typeparam>
-    public interface IEntityCache<T> where T : class
+    public interface IEntityCache<T> : IEntityCache where T : class
     {
         /// <summary>
         /// Colección de items cacheados
@@ -16,19 +33,9 @@ namespace NetErp.Helpers.Cache
         ObservableCollection<T> Items { get; }
 
         /// <summary>
-        /// Indica si el cache ya fue inicializado
-        /// </summary>
-        bool IsInitialized { get; }
-
-        /// <summary>
         /// Asegura que los datos estén cargados. Si no están inicializados, los carga.
         /// </summary>
         Task EnsureLoadedAsync();
-
-        /// <summary>
-        /// Limpia el cache y marca como no inicializado
-        /// </summary>
-        void Clear();
 
         /// <summary>
         /// Agrega un item al cache
