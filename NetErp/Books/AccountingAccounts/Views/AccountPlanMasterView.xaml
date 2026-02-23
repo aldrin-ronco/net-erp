@@ -1,30 +1,16 @@
-﻿<UserControl x:Class="NetErp.Books.AccountingAccounts.Views.AccountPlanMasterView"
+<UserControl x:Class="NetErp.Books.AccountingAccounts.Views.AccountPlanMasterView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"    
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:ioc="clr-namespace:NetErp.IoContainer"
-             xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
-             xmlns:viewmodels="clr-namespace:NetErp.Books.AccountingAccounts.ViewModels"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:model="clr-namespace:NetErp.Books.AccountingAccounts.DTO"
-             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
-             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             xmlns:cal="http://caliburnmicro.com"
-             xmlns:behavior="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:dxwuin="http://schemas.devexpress.com/winfx/2008/xaml/windowsui/navigation" 
-             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" Background="White">
-             <!--d:DataContext="{d:DesignInstance Type=viewmodels:AccountPlanMasterViewModel}"-->
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
-        
+
         <HierarchicalDataTemplate  DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
                 <StackPanel.ContextMenu>
@@ -96,11 +82,11 @@
                         </Style>
                     </Image.Style>
                 </Image>
-                <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0" 
+                <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0"
                ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
 
                 <TextBlock Text=" - " VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Row.Name}" 
+                <TextBlock Text="{Binding Row.Name}"
                ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
 
             </StackPanel>
@@ -116,39 +102,15 @@
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
                             Background="Transparent">
-        
-    <Grid Name="GridMain" Grid.Row="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <!--Busqueda-->
-                <RowDefinition Height="*"/>
-                <!--Arbol-->
-                <RowDefinition Height="20"/>
-                <!--Pie de Control-->
-                <RowDefinition Height="20"/>
-                <!--Pie de Control-->
-            </Grid.RowDefinitions>
-            <dxr:RibbonControl Grid.Row="0" Grid.ColumnSpan="3" IsSimplified="False" 
-                           AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide" 
-                           RibbonStyle="Office2010" ToolbarShowCustomizationButton="False" RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center">
 
-                <dxr:RibbonPage Caption="General">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="10" Padding="10,10,10,0">
+            <Grid Name="GridMain">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                    <dxr:RibbonPageGroup Caption="Acciones">
-                        <dxb:BarButtonItem Glyph="{dx:DXImage 'Images/Actions/New_16x16.png'}" 
-                                           LargeGlyph="{dx:DXImage 'Images/Actions/New_32x32.png'}" 
-                                           Content="Nuevo"
-                                           RibbonStyle="Large"
-                                           IsEnabled="{Binding Path=IsBusy, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
-                                           Hint="Crear una nueva cuenta contable">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=CreateAsyncCommand}" EventName="ItemClick"/>
-                            </dxmvvm:Interaction.Behaviors>
-                        </dxb:BarButtonItem>
-                    </dxr:RibbonPageGroup>
-                </dxr:RibbonPage>
-            </dxr:RibbonControl>
-            <dxg:TreeViewControl 
+                <dxg:TreeViewControl
                     ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                     h:TreeViewExtension.SelectItemOnRightClick="True"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -160,24 +122,34 @@
                     TreeDerivationMode="HierarchicalDataTemplate"
                     ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Grid.Row="1" Grid.Column="0">
-                <dxg:TreeViewControl.NodeStyle>
-                    <Style TargetType="dxg:RowControl">
-                        <Setter Property="Foreground" Value="Black"/>
-                        <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsExpanded}" Value="true"/>
-                                    <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Foreground" Value="Blue"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                            </MultiDataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </dxg:TreeViewControl.NodeStyle>
-            </dxg:TreeViewControl>
-        </Grid>
-        <!--Fin GridMain-->
+                    Grid.Row="0">
+                    <dxg:TreeViewControl.NodeStyle>
+                        <Style TargetType="dxg:RowControl">
+                            <Setter Property="Foreground" Value="Black"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsExpanded}" Value="true"/>
+                                        <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Foreground" Value="Blue"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </dxg:TreeViewControl.NodeStyle>
+                </dxg:TreeViewControl>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,15">
+                    <Button Command="{Binding CreateAsyncCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegationConverter}}"
+                            Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
     </busyIndicator:BusyMask>
 </UserControl>
