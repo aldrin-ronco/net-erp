@@ -134,8 +134,9 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(LogoutMessage message, CancellationToken cancellationToken)
         {
-            // Logout - limpiar todos los caches y volver al login
+            // Logout - limpiar todos los caches y sesión, volver al login
             ClearAllCaches();
+            SessionInfo.CurrentCompany = null;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -143,8 +144,9 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(ReturnToCompanySelectionMessage message, CancellationToken cancellationToken)
         {
-            // Limpiar todos los caches al salir de la empresa
+            // Limpiar todos los caches y la empresa actual al salir
             ClearAllCaches();
+            SessionInfo.CurrentCompany = null;
 
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
