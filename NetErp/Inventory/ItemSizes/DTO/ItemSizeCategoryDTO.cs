@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Inventory;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Inventory.ItemSizes.ViewModels;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.ItemSizes.DTO
 {
-    public class ItemSizeMasterDTO : Screen, ItemSizeType
+    public class ItemSizeCategoryDTO : Screen, ItemSizeType
     {
 
         private ItemSizeMasterViewModel _context;
@@ -29,17 +29,17 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        private ObservableCollection<ItemSizeDetailDTO> _sizes;
+        private ObservableCollection<ItemSizeValueDTO> _itemSizeValues;
 
-        public ObservableCollection<ItemSizeDetailDTO> Sizes
+        public ObservableCollection<ItemSizeValueDTO> ItemSizeValues
         {
-            get { return _sizes; }
+            get { return _itemSizeValues; }
             set
             {
-                if (_sizes != value)
+                if (_itemSizeValues != value)
                 {
-                    _sizes = value;
-                    NotifyOfPropertyChange(nameof(Sizes));
+                    _itemSizeValues = value;
+                    NotifyOfPropertyChange(nameof(ItemSizeValues));
                 }
             }
         }
@@ -114,16 +114,16 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        public ItemSizeMasterDTO()
+        public ItemSizeCategoryDTO()
         {
 
         }
 
-        public ItemSizeMasterDTO(int id, ItemSizeMasterViewModel context, string name, ObservableCollection<ItemSizeDetailDTO> childrens)
+        public ItemSizeCategoryDTO(int id, ItemSizeMasterViewModel context, string name, ObservableCollection<ItemSizeValueDTO> itemSizeValues)
         {
             _id = id;
             _name = name;
-            _sizes = childrens;
+            _itemSizeValues = itemSizeValues;
             _context = context;
         }
         public override string ToString()

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
 {
@@ -23,7 +24,7 @@ namespace Models.Inventory
     {
         public CatalogGraphQLModel UpdatedCatalog { get; set; }
     }
-    public class CatalogDeleteMessage 
+    public class CatalogDeleteMessage
     {
         public CatalogGraphQLModel DeletedCatalog { get; set; }
     }
@@ -33,6 +34,6 @@ namespace Models.Inventory
         public List<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; }
         public List<BrandGraphQLModel> Brands { get; set; }
         public List<AccountingGroupGraphQLModel> AccountingGroups { get; set; }
-        public List<ItemSizeMasterGraphQLModel> Sizes { get; set; }
+        public PageType<ItemSizeCategoryGraphQLModel> Sizes { get; set; }
     }
 }

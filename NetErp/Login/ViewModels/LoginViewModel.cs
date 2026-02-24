@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Interfaces;
+using Models.Global;
 using Models.Login;
 using NetErp.Helpers.Services;
 using System;
@@ -336,7 +337,7 @@ namespace NetErp.Login.ViewModels
     // Mensaje para comunicar login exitoso al Shell
     public class LoginSuccessMessage
     {
-        public LoginAccountGraphQLModel Account { get; set; } = new();
+        public SystemAccountGraphQLModel Account { get; set; } = new();
         public List<LoginCompanyGraphQLModel> Companies { get; set; } = [];
         public LoginTicketGraphQLModel AccessTicket { get; set; } = new();
     }

@@ -35,13 +35,13 @@ namespace NetErp.Login.ViewModels
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
 
-        private LoginAccountGraphQLModel _currentAccount = new();
+        private SystemAccountGraphQLModel _currentAccount = new();
         private ObservableCollection<LoginOrganizationDTO> _organizationGroups = [];
         private ObservableCollection<LoginOrganizationDTO> _filteredOrganizationGroups = [];
         private LoginCompanyInfoDTO? _selectedCompany;
         private LoginTicketGraphQLModel _accessTicket = new();
         private string _searchText = string.Empty;
-        public LoginAccountGraphQLModel CurrentAccount
+        public SystemAccountGraphQLModel CurrentAccount
         {
             get { return _currentAccount; }
             set
@@ -164,7 +164,7 @@ namespace NetErp.Login.ViewModels
             DisplayName = "Selección de Empresa";
         }
 
-        public void Initialize(LoginAccountGraphQLModel account, List<LoginCompanyGraphQLModel> companies, LoginTicketGraphQLModel accessTicket)
+        public void Initialize(SystemAccountGraphQLModel account, List<LoginCompanyGraphQLModel> companies, LoginTicketGraphQLModel accessTicket)
         {
             CurrentAccount = account;
             _accessTicket = accessTicket;
@@ -586,7 +586,7 @@ namespace NetErp.Login.ViewModels
     // Mensajes para comunicación
     public class CompanySelectedMessage
     {
-        public LoginAccountGraphQLModel Account { get; set; } = new();
+        public SystemAccountGraphQLModel Account { get; set; } = new();
         public LoginCompanyGraphQLModel SelectedCompany { get; set; } = new();
     }
 

@@ -806,9 +806,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private ObservableCollection<ItemSizeMasterDTO> _sizes;
+        private ObservableCollection<ItemSizeCategoryDTO> _sizes;
 
-        public ObservableCollection<ItemSizeMasterDTO> Sizes
+        public ObservableCollection<ItemSizeCategoryDTO> Sizes
         {
             get { return _sizes; }
             set
@@ -836,9 +836,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private ItemSizeMasterDTO _selectedSize;
+        private ItemSizeCategoryDTO _selectedSize;
 
-        public ItemSizeMasterDTO SelectedSize
+        public ItemSizeCategoryDTO SelectedSize
         {
             get { return _selectedSize; }
             set
@@ -1634,7 +1634,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 variables.Data.MeasurementUnitId = SelectedMeasurementUnit.Id;
                 variables.Data.ItemBrandId = SelectedBrand.Id;
                 variables.Data.AccountingGroupId = SelectedAccountingGroup.Id;
-                variables.Data.ItemSizeMasterId = SelectedSize.Id;
+                variables.Data.ItemSizeCategoryId = SelectedSize.Id;
                 if (IsNewRecord) variables.Data.ItemSubCategoryId = SelectedSubCategoryIdBeforeNewItem;
 
                 if (eanCodes.Count == 0) variables.Data.EanCodes = new List<object>();
@@ -1840,7 +1840,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 Refresh();
                 string query = @"
-                query{
+                query($sizePagination: PaginationInput){
                     measurementUnits{
                         id
                         name
@@ -1853,21 +1853,23 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                         id
                         name
                         }
-                    sizes: itemsSizesMaster{
-                        id
-                        name
+                    sizes: itemSizeCategoriesPage(pagination: $sizePagination){
+                        entries {
+                            id
+                            name
+                        }
                         }
                 }";
 
-                var dataContext = await _measurementUnitService.GetDataContextAsync<CatalogMasterDataContext>(query, new { });
+                var dataContext = await _measurementUnitService.GetDataContextAsync<CatalogMasterDataContext>(query, new { sizePagination = new { pageSize = -1 } });
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(dataContext.MeasurementUnits);
                     Brands = Context.AutoMapper.Map<ObservableCollection<BrandDTO>>(dataContext.Brands);
                     AccountingGroups = Context.AutoMapper.Map<ObservableCollection<AccountingGroupDTO>>(dataContext.AccountingGroups);
-                    Sizes = Context.AutoMapper.Map<ObservableCollection<ItemSizeMasterDTO>>(dataContext.Sizes);
+                    Sizes = Context.AutoMapper.Map<ObservableCollection<ItemSizeCategoryDTO>>(dataContext.Sizes.Entries);
                     Brands.Insert(0, new BrandDTO() { Id = 0, Name = "<< SELECCIONE UNA MARCA >> " });
-                    Sizes.Insert(0, new ItemSizeMasterDTO() { Id = 0, Name = "<< SELECCIONE UN GRUPO DE TALLAJE >>" });
+                    Sizes.Insert(0, new ItemSizeCategoryDTO() { Id = 0, Name = "<< SELECCIONE UN GRUPO DE TALLAJE >>" });
                 });
 
             }

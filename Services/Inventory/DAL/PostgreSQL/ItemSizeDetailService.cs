@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Services.Inventory.DAL.PostgreSQL
 {
-    public class ItemSizeDetailService : IGenericDataAccess<ItemSizeDetailGraphQLModel>
+    public class ItemSizeDetailService : IGenericDataAccess<ItemSizeValueGraphQLModel>
     {
     }
 }

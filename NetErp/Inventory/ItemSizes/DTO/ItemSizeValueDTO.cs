@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Helpers;
 using DevExpress.Mvvm;
 using NetErp.Helpers;
@@ -14,7 +14,7 @@ using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Inventory.ItemSizes.DTO
 {
-    public class ItemSizeDetailDTO : Screen, ItemSizeType
+    public class ItemSizeValueDTO : Screen, ItemSizeType
     {
         private int _id;
         public int Id
@@ -44,30 +44,30 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        private int _itemSizeMasterId;
-        public int ItemSizeMasterId
+        private int _itemSizeCategoryId;
+        public int ItemSizeCategoryId
         {
-            get { return _itemSizeMasterId; }
+            get { return _itemSizeCategoryId; }
             set
             {
-                if (_itemSizeMasterId != value)
+                if (_itemSizeCategoryId != value)
                 {
-                    _itemSizeMasterId = value;
-                    NotifyOfPropertyChange(nameof(ItemSizeMasterId));
+                    _itemSizeCategoryId = value;
+                    NotifyOfPropertyChange(nameof(ItemSizeCategoryId));
                 }
             }
         }
 
-        private int _presentationOrder;
-        public int PresentationOrder
+        private int _displayOrder;
+        public int DisplayOrder
         {
-            get { return _presentationOrder; }
+            get { return _displayOrder; }
             set
             {
-                if (_presentationOrder != value)
+                if (_displayOrder != value)
                 {
-                    _presentationOrder = value;
-                    NotifyOfPropertyChange(nameof(PresentationOrder));
+                    _displayOrder = value;
+                    NotifyOfPropertyChange(nameof(DisplayOrder));
                 }
             }
         }
@@ -129,16 +129,16 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        public ItemSizeDetailDTO()
+        public ItemSizeValueDTO()
         {
 
         }
 
-        public ItemSizeDetailDTO(int id, string name, int sizeMasterId)
+        public ItemSizeValueDTO(int id, string name, int sizeCategoryId)
         {
             _id = id;
             _name = name;
-            _itemSizeMasterId = sizeMasterId;
+            _itemSizeCategoryId = sizeCategoryId;
         }
         public override string ToString()
         {

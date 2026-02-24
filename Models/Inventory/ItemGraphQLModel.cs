@@ -21,7 +21,7 @@ namespace Models.Inventory
         public bool Billable { get; set; }
         public bool AmountBasedOnWeight { get; set; }
         public BrandGraphQLModel Brand { get; set; } = new();
-        public ItemSizeMasterGraphQLModel Size { get; set; } = new();
+        public ItemSizeCategoryGraphQLModel Size { get; set; } = new();
         public AccountingGroupGraphQLModel AccountingGroup { get; set; } = new();
         public ItemSubCategoryGraphQLModel SubCategory { get; set; } = new();
         public IEnumerable<ItemDetailGraphQLModel> RelatedProducts { get; set; } = [];

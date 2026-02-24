@@ -9,7 +9,7 @@ namespace Models.Login
 {
     public class LoginGraphQLModel
     {
-        public LoginAccountGraphQLModel? Account { get; set; }
+        public SystemAccountGraphQLModel? Account { get; set; }
         public List<LoginCompanyGraphQLModel> Companies { get; set; } = [];
         public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
         public LoginTicketGraphQLModel AccessTicket { get; set; } = new();

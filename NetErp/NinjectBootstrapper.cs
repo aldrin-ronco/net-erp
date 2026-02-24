@@ -154,8 +154,8 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope(); //implementado por books, revisar 
             _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGraphQLModel>>().To<MeasurementUnitService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemSizeDetailGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemSizeMasterGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemSizeValueGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
+            _ = kernel.Bind<IGenericDataAccess<ItemSizeCategoryGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CatalogGraphQLModel>>().To<CatalogService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemTypeGraphQLModel>>().To<ItemTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();
@@ -201,8 +201,8 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ItemTypeGraphQLModel>>().To<GraphQLRepository<ItemTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemCategoryGraphQLModel>>().To<GraphQLRepository<ItemCategoryGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemSubCategoryGraphQLModel>>().To<GraphQLRepository<ItemSubCategoryGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<ItemSizeMasterGraphQLModel>>().To<GraphQLRepository<ItemSizeMasterGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<ItemSizeDetailGraphQLModel>>().To<GraphQLRepository<ItemSizeDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemSizeCategoryGraphQLModel>>().To<GraphQLRepository<ItemSizeCategoryGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemSizeValueGraphQLModel>>().To<GraphQLRepository<ItemSizeValueGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AwsS3ConfigGraphQLModel>>().To<GraphQLRepository<AwsS3ConfigGraphQLModel>>().InSingletonScope();
 
             // Books
@@ -367,8 +367,8 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingEntryDraftGraphQLModel, AccountingEntryDraftMasterDTO>();
                 _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
                 _ = cfg.CreateMap<MeasurementUnitGraphQLModel, MeasurementUnitDTO>();
-                _ = cfg.CreateMap<ItemSizeMasterGraphQLModel, ItemSizeMasterDTO>();
-                _ = cfg.CreateMap<ItemSizeDetailGraphQLModel, ItemSizeDetailDTO>();
+                _ = cfg.CreateMap<ItemSizeCategoryGraphQLModel, ItemSizeCategoryDTO>();
+                _ = cfg.CreateMap<ItemSizeValueGraphQLModel, ItemSizeValueDTO>();
                 _ = cfg.CreateMap<CatalogGraphQLModel, CatalogDTO>();
                 _ = cfg.CreateMap<ItemTypeGraphQLModel, ItemTypeDTO>();
                 _ = cfg.CreateMap<ItemCategoryGraphQLModel, ItemCategoryDTO>();

@@ -17,8 +17,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
         
-        private readonly IRepository<ItemSizeMasterGraphQLModel> _itemSizeMasterService;
-        private readonly IRepository<ItemSizeDetailGraphQLModel> _itemSizeDetailService;
+        private readonly IRepository<ItemSizeCategoryGraphQLModel> _itemSizeMasterService;
+        private readonly IRepository<ItemSizeValueGraphQLModel> _itemSizeDetailService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
         private ItemSizeMasterViewModel _itemSizeMasterViewModel;
@@ -36,8 +36,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public ItemSizeViewModel(
             IMapper mapper,
             IEventAggregator eventAggregator,
-            IRepository<ItemSizeMasterGraphQLModel> itemSizeMasterService,
-            IRepository<ItemSizeDetailGraphQLModel> itemSizeDetailService,
+            IRepository<ItemSizeCategoryGraphQLModel> itemSizeMasterService,
+            IRepository<ItemSizeValueGraphQLModel> itemSizeDetailService,
             Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;

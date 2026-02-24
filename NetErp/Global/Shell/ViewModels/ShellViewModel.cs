@@ -29,7 +29,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly IEnumerable<IEntityCache> _entityCaches;
 
         private MainMenuViewModel? _mainMenuViewModel;
-        private LoginAccountGraphQLModel? _currentAccount;
+        private SystemAccountGraphQLModel? _currentAccount;
         private List<LoginCompanyGraphQLModel>? _availableCompanies;
         private LoginTicketGraphQLModel? _accessTicket;
 

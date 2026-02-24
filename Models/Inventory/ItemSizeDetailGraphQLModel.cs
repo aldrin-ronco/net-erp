@@ -1,4 +1,5 @@
 ﻿using Models.Books;
+using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,27 +8,30 @@ using System.Threading.Tasks;
 
 namespace Models.Inventory
 {
-    public class ItemSizeDetailGraphQLModel
+    public class ItemSizeValueGraphQLModel
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int ItemSizeMasterId { get; set; }
-        public int PresentationOrder {  get; set; }
+        public ItemSizeCategoryGraphQLModel ItemSizeCategory { get; set; } = new();
+        public int DisplayOrder {  get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
+        public DateTime InsertedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
     public class ItemSizeDetailCreateMessage
     {
-        public ItemSizeDetailGraphQLModel CreatedItemSizeDetail { get; set; }
+        public ItemSizeValueGraphQLModel CreatedItemSizeDetail { get; set; }
     }
 
     public class ItemSizeDetailUpdateMessage
     {
-        public ItemSizeDetailGraphQLModel UpdatedItemSizeDetail { get; set; }
+        public ItemSizeValueGraphQLModel UpdatedItemSizeDetail { get; set; }
 
     }
 
     public class ItemSizeDetailDeleteMessage
     {
-        public ItemSizeDetailGraphQLModel DeletedItemSizeDetail { get; set; }
+        public ItemSizeValueGraphQLModel DeletedItemSizeDetail { get; set; }
     }
 }

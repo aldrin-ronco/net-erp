@@ -1,4 +1,4 @@
-﻿using NetErp.Helpers;
+using NetErp.Helpers;
 using NetErp.Inventory.ItemSizes.DTO;
 using NetErp.Inventory.ItemSizes.ViewModels;
 using System;
@@ -38,25 +38,25 @@ namespace NetErp.Inventory.ItemSizes.Views
             {
                 if (e.OldValue is null) return;
 
-                if (e.OldValue is ItemSizeDetailDTO) 
+                if (e.OldValue is ItemSizeValueDTO)
                 {
-                    ((ItemSizeDetailDTO)e.OldValue).IsEditing = false;
-                    if(e.OldValue is ItemSizeDetailDTO item && item.Id == 0)
+                    ((ItemSizeValueDTO)e.OldValue).IsEditing = false;
+                    if(e.OldValue is ItemSizeValueDTO item && item.Id == 0)
                     {
-                        ItemSizeMasterDTO parent = context.ItemSizesMaster.FirstOrDefault(x => x.Id == item.ItemSizeMasterId);
-                        parent.Sizes.Remove(item);
-                        if (parent.Sizes.Count == 0) parent.IsExpanded = false;
+                        ItemSizeCategoryDTO parent = context.ItemSizesMaster.FirstOrDefault(x => x.Id == item.ItemSizeCategoryId);
+                        parent.ItemSizeValues.Remove(item);
+                        if (parent.ItemSizeValues.Count == 0) parent.IsExpanded = false;
                     }
-                } 
+                }
 
-                if (e.OldValue is ItemSizeMasterDTO) 
+                if (e.OldValue is ItemSizeCategoryDTO)
                 {
-                    ((ItemSizeMasterDTO)e.OldValue).IsEditing = false;
-                    if(((ItemSizeMasterDTO)e.OldValue).Id == 0)
+                    ((ItemSizeCategoryDTO)e.OldValue).IsEditing = false;
+                    if(((ItemSizeCategoryDTO)e.OldValue).Id == 0)
                     {
-                        context.ItemSizesMaster.Remove(((ItemSizeMasterDTO)e.OldValue));
+                        context.ItemSizesMaster.Remove(((ItemSizeCategoryDTO)e.OldValue));
                     }
-                } 
+                }
             }
         }
 
@@ -64,12 +64,12 @@ namespace NetErp.Inventory.ItemSizes.Views
         {
             if(DataContext is ItemSizeMasterViewModel context)
             {
-                if(SizesTreeView.SelectedItem is ItemSizeDetailDTO selectedNode)
+                if(SizesTreeView.SelectedItem is ItemSizeValueDTO selectedNode)
                 {
                     context.IsUpdate = false;
-                    ItemSizeMasterDTO parent = context.ItemSizesMaster.FirstOrDefault(x => x.Id == selectedNode.ItemSizeMasterId);
-                    var newNode = new ItemSizeDetailDTO { Name = "NUEVO TALLAJE", IsEditing = true, Id = 0 ,ItemSizeMasterId = parent.Id};
-                    context.ItemSizesMaster.Where(x => x.Id == selectedNode.ItemSizeMasterId).First().Sizes.Add(newNode);
+                    ItemSizeCategoryDTO parent = context.ItemSizesMaster.FirstOrDefault(x => x.Id == selectedNode.ItemSizeCategoryId);
+                    var newNode = new ItemSizeValueDTO { Name = "NUEVO TALLAJE", IsEditing = true, Id = 0 ,ItemSizeCategoryId = parent.Id};
+                    context.ItemSizesMaster.Where(x => x.Id == selectedNode.ItemSizeCategoryId).First().ItemSizeValues.Add(newNode);
                     TreeViewItem itemContainer = SizesTreeView.ItemContainerGenerator.ContainerFromItem(parent) as TreeViewItem;
                     if (itemContainer.ItemContainerGenerator.ContainerFromItem(newNode) is TreeViewItem newContainer)
                     {
@@ -87,13 +87,13 @@ namespace NetErp.Inventory.ItemSizes.Views
                         }
                     }
                     context.SelectedItem = (ItemSizeType)newNode;
-                    context.TextBoxName = ((ItemSizeDetailDTO)context.SelectedItem).Name;
-                    ((ItemSizeDetailDTO)context.SelectedItem).IsEditing = true;
+                    context.TextBoxName = ((ItemSizeValueDTO)context.SelectedItem).Name;
+                    ((ItemSizeValueDTO)context.SelectedItem).IsEditing = true;
                 }
                 else
                 {
                     context.IsUpdate = false;
-                    var newParent = new ItemSizeMasterDTO { Name = "NUEVO GRUPO DE TALLAJE", IsEditing = true, Id = 0};
+                    var newParent = new ItemSizeCategoryDTO { Name = "NUEVO GRUPO DE TALLAJE", IsEditing = true, Id = 0};
                     context.ItemSizesMaster.Add(newParent);
                     TreeViewItem parentContainer = SizesTreeView.ItemContainerGenerator.ContainerFromItem(newParent) as TreeViewItem;
                     if(parentContainer != null)
@@ -110,8 +110,8 @@ namespace NetErp.Inventory.ItemSizes.Views
                         }
                     }
                     context.SelectedItem = (ItemSizeType)newParent;
-                    context.TextBoxName = ((ItemSizeMasterDTO)context.SelectedItem).Name;
-                    ((ItemSizeMasterDTO)context.SelectedItem).IsEditing = true;
+                    context.TextBoxName = ((ItemSizeCategoryDTO)context.SelectedItem).Name;
+                    ((ItemSizeCategoryDTO)context.SelectedItem).IsEditing = true;
                 }
             }
         }
@@ -120,12 +120,12 @@ namespace NetErp.Inventory.ItemSizes.Views
         {
             if (DataContext is ItemSizeMasterViewModel context)
             {
-                if (SizesTreeView.SelectedItem is ItemSizeMasterDTO selectedNode)
+                if (SizesTreeView.SelectedItem is ItemSizeCategoryDTO selectedNode)
                 {
                     context.IsUpdate = false;
-                    var newNode = new ItemSizeDetailDTO { Name = "NUEVO TALLAJE", IsEditing = true, Id = 0, ItemSizeMasterId = selectedNode.Id };
-                    if (selectedNode.Sizes is null) selectedNode.Sizes = [];
-                    selectedNode.Sizes.Add(newNode);
+                    var newNode = new ItemSizeValueDTO { Name = "NUEVO TALLAJE", IsEditing = true, Id = 0, ItemSizeCategoryId = selectedNode.Id };
+                    if (selectedNode.ItemSizeValues is null) selectedNode.ItemSizeValues = [];
+                    selectedNode.ItemSizeValues.Add(newNode);
                     if (selectedNode.IsExpanded is false) selectedNode.IsExpanded = true;
                     TreeViewItem itemContainer = SizesTreeView.ItemContainerGenerator.ContainerFromItem(selectedNode) as TreeViewItem;
                     if (itemContainer.ItemContainerGenerator.ContainerFromItem(newNode) is TreeViewItem newContainer)
@@ -142,8 +142,8 @@ namespace NetErp.Inventory.ItemSizes.Views
                         }
                     }
                     context.SelectedItem = (ItemSizeType)newNode;
-                    context.TextBoxName = ((ItemSizeDetailDTO)context.SelectedItem).Name;
-                    ((ItemSizeDetailDTO)context.SelectedItem).IsEditing = true;
+                    context.TextBoxName = ((ItemSizeValueDTO)context.SelectedItem).Name;
+                    ((ItemSizeValueDTO)context.SelectedItem).IsEditing = true;
                 }
             }
         }

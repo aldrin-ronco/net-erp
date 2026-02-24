@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Xml.Linq;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.ItemSizes.ViewModels
 {
@@ -39,13 +40,11 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         #region "Properties"
 
-        public List<ItemSizeMasterGraphQLModel> itemsSizesMaster = [];
-
-        private readonly IRepository<ItemSizeMasterGraphQLModel> _itemSizeMasterService;
+        private readonly IRepository<ItemSizeCategoryGraphQLModel> _itemSizeCategoryService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
-        private ObservableCollection<ItemSizeMasterDTO> _itemSizesMaster = [];
-        public ObservableCollection<ItemSizeMasterDTO> ItemSizesMaster
+        private ObservableCollection<ItemSizeCategoryDTO> _itemSizesMaster = [];
+        public ObservableCollection<ItemSizeCategoryDTO> ItemSizesMaster
         {
             get { return _itemSizesMaster; }
             set
@@ -96,20 +95,27 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 Refresh();
                 string query = @"
-                query{
-                    ListResponse: itemsSizesMaster{
-                    id
-                    name
-                    sizes{
-                       id
-                       name
-                       presentationOrder
-                       itemSizeMasterId
-                    }
+                query($pageResponsePagination: PaginationInput) {
+                    PageResponse: itemSizeCategoriesPage(pagination: $pageResponsePagination) {
+                        entries {
+                            id
+                            name
+                            itemSizeValues {
+                                id
+                                name
+                                displayOrder
+                                itemSizeCategory {
+                                    id
+                                }
+                            }
+                        }
                     }
                 }";
-                IEnumerable<ItemSizeMasterGraphQLModel> source = await _itemSizeMasterService.GetListAsync(query, new {});
-                ItemSizesMaster = Context.AutoMapper.Map<ObservableCollection<ItemSizeMasterDTO>>(source);
+                dynamic variables = new ExpandoObject();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+                PageType<ItemSizeCategoryGraphQLModel> result = await _itemSizeCategoryService.GetPageAsync(query, variables);
+                ItemSizesMaster = Context.AutoMapper.Map<ObservableCollection<ItemSizeCategoryDTO>>(result.Entries);
 
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -135,10 +141,10 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeMasterDTO selectedItem = ((ItemSizeMasterDTO)SelectedItem);
+                ItemSizeCategoryDTO selectedItem = ((ItemSizeCategoryDTO)SelectedItem);
                 string query = @"
                 query($id: ID){
-                  CanDeleteModel: canDeleteItemSizeMaster(id: $id){
+                  CanDeleteModel: canDeleteItemSizeCategory(id: $id){
                     canDelete
                     message
                   }
@@ -146,7 +152,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
                 object variables = new { selectedItem.Id };
 
-                var validation = await this._itemSizeMasterService.CanDeleteAsync(query, variables);
+                var validation = await this._itemSizeCategoryService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -173,13 +179,13 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Delete" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
-        public async Task<ItemSizeMasterGraphQLModel> ExecuteDeleteItemSizeMaster(int id)
+        public async Task<ItemSizeCategoryGraphQLModel> ExecuteDeleteItemSizeMaster(int id)
         {
             try
             {
                 string query = @"
                 mutation ($id: ID) {
-                  DeleteResponse: deleteItemSizeMaster (id: $id) {
+                  DeleteResponse: deleteItemSizeCategory (id: $id) {
                     id
                     name
                   }
@@ -190,7 +196,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                     Id = (int)id
                 };
 
-                var deletedItemSizeMaster = await _itemSizeMasterService.DeleteAsync(query, variables);
+                var deletedItemSizeMaster = await _itemSizeCategoryService.DeleteAsync(query, variables);
                 return deletedItemSizeMaster;
             }
             catch (Exception)
@@ -204,8 +210,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                TextBoxName = ((ItemSizeMasterDTO)SelectedItem).Name;
-                ((ItemSizeMasterDTO)SelectedItem).IsEditing = true;
+                TextBoxName = ((ItemSizeCategoryDTO)SelectedItem).Name;
+                ((ItemSizeCategoryDTO)SelectedItem).IsEditing = true;
                 _ = this.SetFocus(nameof(TextBoxName));
                 IsUpdate = true;
             }
@@ -216,20 +222,22 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         }
 
-        public async Task<ItemSizeMasterGraphQLModel> UpdateItemSizeMaster()
+        public async Task<ItemSizeCategoryGraphQLModel> UpdateItemSizeMaster()
         {
             try
             {
                 string query = @"
-                mutation($data: UpdateItemSizeMasterInput!, $id: ID){
-                  UpdateResponse: updateItemSizeMaster(data: $data, id: $id){
+                mutation($data: UpdateItemSizeCategoryInput!, $id: ID){
+                  UpdateResponse: updateItemSizeCategory(data: $data, id: $id){
                     id
                     name
-                    sizes{
+                    itemSizeValues {
                         id
                         name
-                        itemSizeMasterId
-                        presentationOrder
+                        itemSizeCategory {
+                            id
+                        }
+                        displayOrder
                     }
                   }
                 }
@@ -237,9 +245,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 dynamic variables = new ExpandoObject();
                 variables.Data = new ExpandoObject();
                 variables.Data.Name = TextBoxName;
-                variables.Id = ((ItemSizeMasterDTO)SelectedItem).Id;
+                variables.Id = ((ItemSizeCategoryDTO)SelectedItem).Id;
 
-                ItemSizeMasterGraphQLModel result = await _itemSizeMasterService.UpdateAsync(query, variables);
+                ItemSizeCategoryGraphQLModel result = await _itemSizeCategoryService.UpdateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -249,13 +257,13 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             }
         }
 
-        public async Task<ItemSizeMasterGraphQLModel> SaveItemSizeMaster()
+        public async Task<ItemSizeCategoryGraphQLModel> SaveItemSizeMaster()
         {
             try
             {
                 string query = @"
-                mutation($data: CreateItemSizeMasterInput!){
-                  CreateResponse: createItemSizeMaster(data: $data){
+                mutation($data: CreateItemSizeCategoryInput!){
+                  CreateResponse: createItemSizeCategory(data: $data){
                     id
                     name
                   }
@@ -264,7 +272,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 variables.Data = new ExpandoObject();
                 variables.Data.Name = TextBoxName;
 
-                ItemSizeMasterGraphQLModel result = await _itemSizeMasterService.CreateAsync(query, variables);
+                ItemSizeCategoryGraphQLModel result = await _itemSizeCategoryService.CreateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -283,9 +291,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeMasterDTO itemSizeMasterDTO = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeMaster.Id).First();
-                int indexToUpdate = ItemSizesMaster.IndexOf(itemSizeMasterDTO);
-                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster[indexToUpdate] = Context.AutoMapper.Map<ItemSizeMasterDTO>(message.UpdatedItemSizeMaster));
+                ItemSizeCategoryDTO itemSizeCategoryDTO = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeMaster.Id).First();
+                int indexToUpdate = ItemSizesMaster.IndexOf(itemSizeCategoryDTO);
+                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster[indexToUpdate] = Context.AutoMapper.Map<ItemSizeCategoryDTO>(message.UpdatedItemSizeMaster));
                 _notificationService.ShowSuccess("Grupo de tallaje actualizado correctamente");
             }
             catch (Exception)
@@ -300,8 +308,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeMasterDTO itemSizeMasterDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeMaster.Id).First();
-                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Remove(itemSizeMasterDTO));
+                ItemSizeCategoryDTO itemSizeCategoryDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeMaster.Id).First();
+                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Remove(itemSizeCategoryDTO));
                 _notificationService.ShowSuccess("Grupo de tallaje eliminado correctamente");
             }
             catch (Exception)
@@ -318,17 +326,17 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    ItemSizeMasterDTO? selectedItemSizeMasterDTO = ItemSizesMaster.Where(x => x.Id == 0).FirstOrDefault();
-                    if (selectedItemSizeMasterDTO != null)
+                    ItemSizeCategoryDTO? selectedItemSizeCategoryDTO = ItemSizesMaster.Where(x => x.Id == 0).FirstOrDefault();
+                    if (selectedItemSizeCategoryDTO != null)
                     {
-                        SelectedItem = selectedItemSizeMasterDTO;
-                        ((ItemSizeMasterDTO)SelectedItem).Id = message.CreatedItemSizeMaster.Id;
-                        ((ItemSizeMasterDTO)SelectedItem).Name = message.CreatedItemSizeMaster.Name;
-                        ((ItemSizeMasterDTO)SelectedItem).IsEditing = false;
+                        SelectedItem = selectedItemSizeCategoryDTO;
+                        ((ItemSizeCategoryDTO)SelectedItem).Id = message.CreatedItemSizeMaster.Id;
+                        ((ItemSizeCategoryDTO)SelectedItem).Name = message.CreatedItemSizeMaster.Name;
+                        ((ItemSizeCategoryDTO)SelectedItem).IsEditing = false;
                     }
                     else
                     {
-                        ItemSizesMaster.Add(Context.AutoMapper.Map<ItemSizeMasterDTO>(message.CreatedItemSizeMaster));
+                        ItemSizesMaster.Add(Context.AutoMapper.Map<ItemSizeCategoryDTO>(message.CreatedItemSizeMaster));
                     }
 
                 });
@@ -350,7 +358,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         #region "Properties"
 
-        private readonly IRepository<ItemSizeDetailGraphQLModel> _itemSizeDetailService;
+        private readonly IRepository<ItemSizeValueGraphQLModel> _itemSizeValueService;
 
         #endregion
 
@@ -390,10 +398,10 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeDetailDTO selectedItem = ((ItemSizeDetailDTO)SelectedItem);
+                ItemSizeValueDTO selectedItem = ((ItemSizeValueDTO)SelectedItem);
                 string query = @"
                 query($id: ID){
-                  CanDeleteModel: canDeleteItemSizeDetail(id: $id){
+                  CanDeleteModel: canDeleteItemSizeValue(id: $id){
                     canDelete
                     message
                   }
@@ -401,7 +409,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
                 object variables = new { selectedItem.Id };
 
-                var validation = await this._itemSizeDetailService.CanDeleteAsync(query, variables);
+                var validation = await this._itemSizeValueService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
@@ -429,17 +437,19 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             }
         }
 
-        public async Task<ItemSizeDetailGraphQLModel> ExecuteDeleteItemSizeDetail(int id)
+        public async Task<ItemSizeValueGraphQLModel> ExecuteDeleteItemSizeDetail(int id)
         {
             try
             {
                 string query = @"
                 mutation ($id: ID) {
-                  DeleteResponse: deleteItemSizeDetail (id: $id) {
+                  DeleteResponse: deleteItemSizeValue (id: $id) {
                     id
                     name
-                    itemSizeMasterId
-                    presentationOrder
+                    itemSizeCategory {
+                        id
+                    }
+                    displayOrder
                   }
                 }";
 
@@ -448,7 +458,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                     Id = (int)id
                 };
 
-                var deletedItemSizeDetail = await _itemSizeDetailService.DeleteAsync(query, variables);
+                var deletedItemSizeDetail = await _itemSizeValueService.DeleteAsync(query, variables);
                 return deletedItemSizeDetail;
             }
             catch (Exception)
@@ -458,27 +468,29 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             }
         }
 
-        public async Task<ItemSizeDetailGraphQLModel> UpdateItemSizeDetail()
+        public async Task<ItemSizeValueGraphQLModel> UpdateItemSizeDetail()
         {
             try
             {
                 string query = @"
-                mutation($data: UpdateItemSizeDetailInput!, $id: ID){
-                  UpdateResponse: updateItemSizeDetail(data: $data, id: $id){
+                mutation($data: UpdateItemSizeValueInput!, $id: ID){
+                  UpdateResponse: updateItemSizeValue(data: $data, id: $id){
                     id
-                    itemSizeMasterId
                     name
-                    presentationOrder
+                    itemSizeCategory {
+                        id
+                    }
+                    displayOrder
                   }
                 }
                 ";
                 dynamic variables = new ExpandoObject();
                 variables.Data = new ExpandoObject();
                 variables.Data.Name = TextBoxName;
-                variables.Data.PresentationOrder = ((ItemSizeDetailDTO)SelectedItem).PresentationOrder;
-                variables.Id = ((ItemSizeDetailDTO)SelectedItem).Id;
+                variables.Data.DisplayOrder = ((ItemSizeValueDTO)SelectedItem).DisplayOrder;
+                variables.Id = ((ItemSizeValueDTO)SelectedItem).Id;
 
-                ItemSizeDetailGraphQLModel result = await _itemSizeDetailService.UpdateAsync(query, variables);
+                ItemSizeValueGraphQLModel result = await _itemSizeValueService.UpdateAsync(query, variables);
                 return result;
 
             }
@@ -493,8 +505,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                TextBoxName = ((ItemSizeDetailDTO)SelectedItem).Name;
-                ((ItemSizeDetailDTO)SelectedItem).IsEditing = true;
+                TextBoxName = ((ItemSizeValueDTO)SelectedItem).Name;
+                ((ItemSizeValueDTO)SelectedItem).IsEditing = true;
                 _ = this.SetFocus(nameof(TextBoxName));
                 IsUpdate = true;
             }
@@ -505,27 +517,29 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             }
         }
 
-        public async Task<ItemSizeDetailGraphQLModel> SaveItemSizeDetail()
+        public async Task<ItemSizeValueGraphQLModel> SaveItemSizeDetail()
         {
             try
             {
-                ItemSizeMasterDTO masterDTO = ItemSizesMaster.FirstOrDefault(x => x.Id == ((ItemSizeDetailDTO)SelectedItem).ItemSizeMasterId);
+                ItemSizeCategoryDTO masterDTO = ItemSizesMaster.FirstOrDefault(x => x.Id == ((ItemSizeValueDTO)SelectedItem).ItemSizeCategoryId);
                 string query = @"
-                mutation($data: CreateItemSizeDetailInput!){
-                  CreateResponse: createItemSizeDetail(data: $data){
+                mutation($data: CreateItemSizeValueInput!){
+                  CreateResponse: createItemSizeValue(data: $data){
                     id
-                    itemSizeMasterId
                     name
-                    presentationOrder
+                    itemSizeCategory {
+                        id
+                    }
+                    displayOrder
                   }
                 }";
                 dynamic variables = new ExpandoObject();
                 variables.Data = new ExpandoObject();
                 variables.Data.Name = TextBoxName;
-                variables.Data.ItemSizeMasterId = masterDTO.Id;
-                variables.Data.PresentationOrder = masterDTO.Sizes.Count - 1;
+                variables.Data.ItemSizeCategoryId = masterDTO.Id;
+                variables.Data.DisplayOrder = masterDTO.ItemSizeValues.Count - 1;
 
-                ItemSizeDetailGraphQLModel result = await _itemSizeDetailService.CreateAsync(query, variables);
+                ItemSizeValueGraphQLModel result = await _itemSizeValueService.CreateAsync(query, variables);
                 return result;
             }
             catch (Exception)
@@ -543,8 +557,8 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeDetailDTO itemDetailDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeDetail.ItemSizeMasterId).FirstOrDefault().Sizes.First(x => x.Id == message.DeletedItemSizeDetail.Id);
-                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemDetailDTO.ItemSizeMasterId).FirstOrDefault().Sizes.Remove(itemDetailDTO));
+                ItemSizeValueDTO itemDetailDTO = ItemSizesMaster.Where(x => x.Id == message.DeletedItemSizeDetail.ItemSizeCategory.Id).FirstOrDefault().ItemSizeValues.First(x => x.Id == message.DeletedItemSizeDetail.Id);
+                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemDetailDTO.ItemSizeCategoryId).FirstOrDefault().ItemSizeValues.Remove(itemDetailDTO));
                 _notificationService.ShowSuccess("Tallaje eliminado correctamente");
             }
             catch (Exception)
@@ -559,10 +573,10 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         {
             try
             {
-                ItemSizeDetailDTO itemSizeDetailDTO = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeDetail.ItemSizeMasterId).First().Sizes.First(x => x.Id == message.UpdatedItemSizeDetail.Id);
-                int indexToUpdate = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeDetail.ItemSizeMasterId).First().Sizes.IndexOf(itemSizeDetailDTO);
-                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemSizeDetailDTO.ItemSizeMasterId).First()
-                                                                .Sizes[indexToUpdate] = Context.AutoMapper.Map<ItemSizeDetailDTO>(message.UpdatedItemSizeDetail));
+                ItemSizeValueDTO itemSizeValueDTO = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeDetail.ItemSizeCategory.Id).First().ItemSizeValues.First(x => x.Id == message.UpdatedItemSizeDetail.Id);
+                int indexToUpdate = ItemSizesMaster.Where(x => x.Id == message.UpdatedItemSizeDetail.ItemSizeCategory.Id).First().ItemSizeValues.IndexOf(itemSizeValueDTO);
+                _ = Application.Current.Dispatcher.Invoke(() => ItemSizesMaster.Where(x => x.Id == itemSizeValueDTO.ItemSizeCategoryId).First()
+                                                                .ItemSizeValues[indexToUpdate] = Context.AutoMapper.Map<ItemSizeValueDTO>(message.UpdatedItemSizeDetail));
                 _notificationService.ShowSuccess("Tallaje actualizado correctamente");
             }
             catch (Exception)
@@ -580,17 +594,17 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    ItemSizeDetailDTO? selectedItemSizeDetailDTO = ItemSizesMaster.Where(x => x.Id == message.CreatedItemSizeDetail.ItemSizeMasterId).First().Sizes.FirstOrDefault(x => x.Id == 0);
-                    if (selectedItemSizeDetailDTO != null)
+                    ItemSizeValueDTO? selectedItemSizeValueDTO = ItemSizesMaster.Where(x => x.Id == message.CreatedItemSizeDetail.ItemSizeCategory.Id).First().ItemSizeValues.FirstOrDefault(x => x.Id == 0);
+                    if (selectedItemSizeValueDTO != null)
                     {
-                        SelectedItem = selectedItemSizeDetailDTO;
-                        ((ItemSizeDetailDTO)SelectedItem).Id = message.CreatedItemSizeDetail.Id;
-                        ((ItemSizeDetailDTO)SelectedItem).Name = message.CreatedItemSizeDetail.Name;
-                        ((ItemSizeDetailDTO)SelectedItem).IsEditing = false;
+                        SelectedItem = selectedItemSizeValueDTO;
+                        ((ItemSizeValueDTO)SelectedItem).Id = message.CreatedItemSizeDetail.Id;
+                        ((ItemSizeValueDTO)SelectedItem).Name = message.CreatedItemSizeDetail.Name;
+                        ((ItemSizeValueDTO)SelectedItem).IsEditing = false;
                     }
                     else
                     {
-                        ItemSizesMaster.Where(x => x.Id == message.CreatedItemSizeDetail.ItemSizeMasterId).First().Sizes.Add(Context.AutoMapper.Map<ItemSizeDetailDTO>(message.CreatedItemSizeDetail));
+                        ItemSizesMaster.Where(x => x.Id == message.CreatedItemSizeDetail.ItemSizeCategory.Id).First().ItemSizeValues.Add(Context.AutoMapper.Map<ItemSizeValueDTO>(message.CreatedItemSizeDetail));
                     }
                 });
                 _notificationService.ShowSuccess("Tallaje creado correctamente");
@@ -711,7 +725,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             {
                 if (IsUpdate is true)
                 {
-                    if (SelectedItem is ItemSizeDetailDTO)
+                    if (SelectedItem is ItemSizeValueDTO)
                     {
                         var updatedItemSizeDetail = await UpdateItemSizeDetail();
                         await Context.EventAggregator.PublishOnCurrentThreadAsync(new ItemSizeDetailUpdateMessage() { UpdatedItemSizeDetail = updatedItemSizeDetail });
@@ -724,7 +738,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
                 }
                 else
                 {
-                    if (SelectedItem is ItemSizeDetailDTO)
+                    if (SelectedItem is ItemSizeValueDTO)
                     {
                         var createdItemSizeDetail = await SaveItemSizeDetail();
                         await Context.EventAggregator.PublishOnCurrentThreadAsync(new ItemSizeDetailCreateMessage() { CreatedItemSizeDetail = createdItemSizeDetail });
@@ -759,13 +773,13 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         #region "Constructor"
         public ItemSizeMasterViewModel(
             ItemSizeViewModel context,
-            IRepository<ItemSizeMasterGraphQLModel> itemSizeMasterService,
-            IRepository<ItemSizeDetailGraphQLModel> itemSizeDetailService,
+            IRepository<ItemSizeCategoryGraphQLModel> itemSizeMasterService,
+            IRepository<ItemSizeValueGraphQLModel> itemSizeDetailService,
             Helpers.Services.INotificationService notificationService)
         {
             Context = context;
-            _itemSizeMasterService = itemSizeMasterService;
-            _itemSizeDetailService = itemSizeDetailService;
+            _itemSizeCategoryService = itemSizeMasterService;
+            _itemSizeValueService = itemSizeDetailService;
             _notificationService = notificationService;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
