@@ -12,6 +12,8 @@ namespace Common.Constants
         public static readonly string DefaultDepartmentCode = "01";
         public static readonly string DefaultCityCode = "001";
         public static readonly string DefaultIdentificationTypeCode = "31";
+        public static readonly string IdentificationTypeCodeCC = "13";
+
 
         /// <summary>
         /// Límite máximo de caracteres para campos MemoEdit (leyendas, observaciones, etc.)

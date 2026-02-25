@@ -964,7 +964,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SelectedRegime = 'R';
             IdentificationNumber = string.Empty;
             VerificationDigit = string.Empty;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
             SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.Undefined;
             BusinessName = string.Empty;
             FirstName = string.Empty;
@@ -977,9 +977,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SecondaryCellPhone = string.Empty;
             Address = string.Empty;
             Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+            SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
+            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
+            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
             foreach (WithholdingTypeDTO retention in WithholdingTypes)
             {
                 retentionList.Add(new WithholdingTypeDTO()
@@ -999,7 +999,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SelectedRegime = 'R';
             IdentificationNumber = string.Empty;
             VerificationDigit = string.Empty;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
             SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
             BusinessName = string.Empty;
             FirstName = string.Empty;

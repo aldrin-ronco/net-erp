@@ -3,21 +3,17 @@ using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using Dictionaries;
-using GraphQL.Client.Http;
 using Models.Billing;
 using Models.Books;
-using Models.DTO.Global;
 using Models.Global;
 using NetErp.Helpers;
 using System;
-using Extensions.Billing;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -27,9 +23,9 @@ using DevExpress.Mvvm;
 using System.Windows.Threading;
 using static Models.Global.GraphQLResponseTypes;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Newtonsoft.Json;
 using Extensions.Global;
 using static Dictionaries.BooksDictionaries;
+using Common.Constants;
 
 namespace NetErp.Billing.Customers.ViewModels
 {
@@ -1414,7 +1410,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 SelectedRegime = 'R';
                 IdentificationNumber = string.Empty;
                 VerificationDigit = string.Empty;
-                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == "31"); // 31 es NIT
+                SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 BusinessName = string.Empty;
                 TradeName = string.Empty;
@@ -1428,9 +1424,9 @@ namespace NetErp.Billing.Customers.ViewModels
                 SecondaryCellPhone = string.Empty;
                 Address = string.Empty;
                 Emails = [];
-                SelectedCountry = Countries.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 01 es el código del atlántico
-                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+                SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 01 es el código del atlántico
+                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
 
                 // Inicializar propiedades de Customer
                 CreditTerm = 0;

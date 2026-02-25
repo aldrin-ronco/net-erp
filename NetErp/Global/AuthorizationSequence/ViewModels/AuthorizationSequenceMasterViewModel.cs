@@ -346,7 +346,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             await Task.WhenAll(
                   _costCenterCache.EnsureLoadedAsync()
                   );
-            ObservableCollection<CostCenterGraphQLModel> costCenter = _costCenterCache.Items;
+            ObservableCollection<CostCenterGraphQLModel> costCenter = [.. _costCenterCache.Items ];
             costCenter.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             CostCenters = [.. costCenter];
             await LoadAuthorizationSequenceAsync();

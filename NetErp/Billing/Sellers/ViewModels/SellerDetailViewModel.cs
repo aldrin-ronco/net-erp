@@ -1,4 +1,5 @@
 ﻿using Caliburn.Micro;
+using Common.Constants;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -45,7 +46,6 @@ namespace NetErp.Billing.Sellers.ViewModels
 {
     public class SellerDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        private readonly IRepository<ZoneGraphQLModel> _zoneService;
         private readonly CostCenterCache _costCenterCache;
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
@@ -745,9 +745,9 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Emails = new ObservableCollection<EmailDTO>();
 
                 
-                SelectedCountry =_countryCache.Items.FirstOrDefault(x => x.Code == "169"); // 169 es el cóodigo de colombia
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == "01"); // 08 es el código del atlántico
-                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == "001").Id; // 001 es el Codigo de Barranquilla
+                SelectedCountry =_countryCache.Items.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
+                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
                 this.AcceptChanges();
                 this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
                 this.SeedValue(nameof(SelectedCountry), SelectedCountry);
@@ -1006,7 +1006,6 @@ namespace NetErp.Billing.Sellers.ViewModels
         public SellerDetailViewModel(
             SellerViewModel context,
             IRepository<SellerGraphQLModel> sellerService,
-            IRepository<ZoneGraphQLModel> zoneService,
             CostCenterCache costCenterCache,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
@@ -1019,7 +1018,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             _sellerService = sellerService;
-            _zoneService = zoneService;
             Emails = [];
         }
 
@@ -1034,7 +1032,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             Countries = _countryCache.Items;
             Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items); 
 
-            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == "40"); // 13 es CC
+            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC); // 13 es CC
            
         }
         public async Task<SellerGraphQLModel> LoadDataForEditAsync(int id)

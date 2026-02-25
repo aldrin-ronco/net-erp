@@ -412,7 +412,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         public async Task InitializeAsync()
         {
            
-            CostCenters = _costCenterCache.Items;
+            CostCenters = [.. _costCenterCache.Items];
             CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS CENTROS DE COSTOS" });
            await LoadSellersAsync();
             
