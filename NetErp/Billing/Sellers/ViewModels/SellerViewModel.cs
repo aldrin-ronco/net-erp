@@ -25,7 +25,6 @@ namespace NetErp.Billing.Sellers.ViewModels
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; private set; }
         private readonly IRepository<SellerGraphQLModel> _sellerService;
-        private readonly IRepository<ZoneGraphQLModel> _zoneService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly CostCenterCache _costCenterCache;
         private readonly IdentificationTypeCache _identificationTypeCache;
@@ -59,7 +58,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             IMapper mapper,
             IEventAggregator eventAggregator,
             IRepository<SellerGraphQLModel> sellerService,
-            IRepository<ZoneGraphQLModel> zoneService,
             Helpers.Services.INotificationService notificationService,
             CostCenterCache costCenterCache,
             IdentificationTypeCache identificationTypeCache,
@@ -69,7 +67,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _sellerService = sellerService;
-            _zoneService = zoneService;
             _notificationService = notificationService;
             _costCenterCache = costCenterCache;
             _countryCache = countryCache;
@@ -118,7 +115,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService,  _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
                 await instance.InitializeAsync();
                 instance.CleanUpControls();
                 
@@ -144,7 +141,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _zoneService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService,  _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
                 await instance.InitializeAsync();
                 SellerGraphQLModel seller =  await instance.LoadDataForEditAsync(sellerId);
                 instance.AcceptChanges();
