@@ -353,52 +353,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
-        private async Task LoadListAsync()
-        {
-
-            this.Refresh();
-
-            // Iniciar cronometro
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            IsBusy = true;
-           
-            string query = GetLoadAuthorizationSequenceQuery();
-
-            dynamic variables = new ExpandoObject();
-            variables.authorizationSequencesFilters = new ExpandoObject();
-            variables.pageResponsePagination = new ExpandoObject();
-            variables.pageResponsePagination.page = PageIndex;
-            variables.pageResponsePagination.pageSize = PageSize;
-
-           
-            variables.authorizationSequencesFilters.isActive = IsActive;
-            variables.authorizationSequencesFilters.number = FilterSearch?.Length > 0 ? FilterSearch.Trim().RemoveExtraSpaces() : "";
-           
-            
-            try
-            {
-               
-                AuthorizationSequenceDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDataContext>(query, variables);
-
-               
-               
-                stopwatch.Stop();
-                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Authorizations = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(source.AuthorizationSequences.Entries);
-                TotalCount = source.AuthorizationSequences.Count;
-                _isLoaded = true;
-            }
-            catch (Exception e)
-            {
-               
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
-        }
+       
 
         public async Task LoadAuthorizationSequenceAsync()
         {
