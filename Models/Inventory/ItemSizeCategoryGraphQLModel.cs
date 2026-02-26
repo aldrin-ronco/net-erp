@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
 {
@@ -14,24 +15,23 @@ namespace Models.Inventory
         public string Name { get; set; } = string.Empty;
         public IEnumerable<ItemSizeValueGraphQLModel> ItemSizeValues { get; set; } = [];
         public CompanyGraphQLModel Company { get; set; } = new();
-        //TODO: añadir createdBy que es de tipo Account 
+        //TODO: añadir createdBy que es de tipo Account
         public DateTime InsertedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
-    public class ItemSizeMasterCreateMessage
+    public class ItemSizeCategoryCreateMessage
     {
-        public ItemSizeCategoryGraphQLModel CreatedItemSizeMaster { get; set; }
+        public UpsertResponseType<ItemSizeCategoryGraphQLModel> CreatedItemSizeCategory { get; set; } = new();
     }
 
-    public class ItemSizeMasterUpdateMessage
+    public class ItemSizeCategoryUpdateMessage
     {
-        public ItemSizeCategoryGraphQLModel UpdatedItemSizeMaster { get; set; }
-
+        public UpsertResponseType<ItemSizeCategoryGraphQLModel> UpdatedItemSizeCategory { get; set; } = new();
     }
 
-    public class ItemSizeMasterDeleteMessage
+    public class ItemSizeCategoryDeleteMessage
     {
-        public ItemSizeCategoryGraphQLModel DeletedItemSizeMaster { get; set; }
+        public DeleteResponseType DeletedItemSizeCategory { get; set; } = new();
     }
 }

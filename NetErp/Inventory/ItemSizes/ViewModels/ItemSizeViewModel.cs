@@ -17,18 +17,18 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public IMapper AutoMapper { get; private set; }
         public IEventAggregator EventAggregator { get; set; }
         
-        private readonly IRepository<ItemSizeCategoryGraphQLModel> _itemSizeMasterService;
-        private readonly IRepository<ItemSizeValueGraphQLModel> _itemSizeDetailService;
+        private readonly IRepository<ItemSizeCategoryGraphQLModel> _itemSizeCategoryService;
+        private readonly IRepository<ItemSizeValueGraphQLModel> _itemSizeValueService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
-        private ItemSizeMasterViewModel _itemSizeMasterViewModel;
+        private ItemSizeCategoryViewModel _itemSizeCategoryViewModel;
 
-        public ItemSizeMasterViewModel ItemSizeMasterViewModel
+        public ItemSizeCategoryViewModel ItemSizeCategoryViewModel
         {
             get
             {
-                if (_itemSizeMasterViewModel is null) _itemSizeMasterViewModel = new ItemSizeMasterViewModel(this, _itemSizeMasterService, _itemSizeDetailService, _notificationService);
-                return _itemSizeMasterViewModel;
+                if (_itemSizeCategoryViewModel is null) _itemSizeCategoryViewModel = new ItemSizeCategoryViewModel(this, _itemSizeCategoryService, _itemSizeValueService, _notificationService);
+                return _itemSizeCategoryViewModel;
             }
         }
 
@@ -36,24 +36,24 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public ItemSizeViewModel(
             IMapper mapper,
             IEventAggregator eventAggregator,
-            IRepository<ItemSizeCategoryGraphQLModel> itemSizeMasterService,
-            IRepository<ItemSizeValueGraphQLModel> itemSizeDetailService,
+            IRepository<ItemSizeCategoryGraphQLModel> itemSizeCategoryService,
+            IRepository<ItemSizeValueGraphQLModel> itemSizeValueService,
             Helpers.Services.INotificationService notificationService)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-            _itemSizeMasterService = itemSizeMasterService;
-            _itemSizeDetailService = itemSizeDetailService;
+            _itemSizeCategoryService = itemSizeCategoryService;
+            _itemSizeValueService = itemSizeValueService;
             _notificationService = notificationService;
-            _ = ActivateMasterViewModel();
+            _ = ActivateCategoryViewModel();
         }
 
 
-        public async Task ActivateMasterViewModel()
+        public async Task ActivateCategoryViewModel()
         {
             try
             {
-                await ActivateItemAsync(ItemSizeMasterViewModel, new CancellationToken());
+                await ActivateItemAsync(ItemSizeCategoryViewModel, new CancellationToken());
             }
             catch (Exception)
             {

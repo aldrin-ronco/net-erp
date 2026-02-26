@@ -154,8 +154,6 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope(); //implementado por books, revisar 
             _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGraphQLModel>>().To<MeasurementUnitService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemSizeValueGraphQLModel>>().To<ItemSizeDetailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemSizeCategoryGraphQLModel>>().To<ItemSizeMasterService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CatalogGraphQLModel>>().To<CatalogService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemTypeGraphQLModel>>().To<ItemTypeService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();

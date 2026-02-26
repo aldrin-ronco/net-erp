@@ -1,34 +1,10 @@
 using Caliburn.Micro;
-using Models.Inventory;
-using NetErp.Books.AccountingAccounts.DTO;
-using NetErp.Inventory.ItemSizes.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Inventory.ItemSizes.DTO
 {
-    public class ItemSizeCategoryDTO : Screen, ItemSizeType
+    public class ItemSizeCategoryDTO : PropertyChangedBase, ItemSizeType
     {
-
-        private ItemSizeMasterViewModel _context;
-
-        public ItemSizeMasterViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
-
         private ObservableCollection<ItemSizeValueDTO> _itemSizeValues;
 
         public ObservableCollection<ItemSizeValueDTO> ItemSizeValues
@@ -54,20 +30,6 @@ namespace NetErp.Inventory.ItemSizes.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                }
-            }
-        }
-
-        private bool _isEditing = false;
-        public bool IsEditing
-        {
-            get { return _isEditing; }
-            set
-            {
-                if (_isEditing != value)
-                {
-                    _isEditing = value;
-                    NotifyOfPropertyChange(nameof(IsEditing));
                 }
             }
         }
@@ -114,18 +76,6 @@ namespace NetErp.Inventory.ItemSizes.DTO
             }
         }
 
-        public ItemSizeCategoryDTO()
-        {
-
-        }
-
-        public ItemSizeCategoryDTO(int id, ItemSizeMasterViewModel context, string name, ObservableCollection<ItemSizeValueDTO> itemSizeValues)
-        {
-            _id = id;
-            _name = name;
-            _itemSizeValues = itemSizeValues;
-            _context = context;
-        }
         public override string ToString()
         {
             return $"{_name}";

@@ -1,20 +1,8 @@
 using Caliburn.Micro;
-using Common.Helpers;
-using DevExpress.Mvvm;
-using NetErp.Helpers;
-using NetErp.Inventory.ItemSizes.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Inventory.ItemSizes.DTO
 {
-    public class ItemSizeValueDTO : Screen, ItemSizeType
+    public class ItemSizeValueDTO : PropertyChangedBase, ItemSizeType
     {
         private int _id;
         public int Id
@@ -26,20 +14,6 @@ namespace NetErp.Inventory.ItemSizes.DTO
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
-                }
-            }
-        }
-
-        private bool _isEditing = false;
-        public bool IsEditing
-        {
-            get { return _isEditing; }
-            set
-            {
-                if (_isEditing != value)
-                {
-                    _isEditing = value;
-                    NotifyOfPropertyChange(nameof(IsEditing));
                 }
             }
         }
@@ -97,34 +71,6 @@ namespace NetErp.Inventory.ItemSizes.DTO
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
-                }
-            }
-        }
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
-        private bool _isExpanded = false;
-        public bool IsExpanded
-        {
-            get { return _isExpanded; }
-            set
-            {
-                if (_isExpanded != value)
-                {
-                    _isExpanded = value;
-                    NotifyOfPropertyChange(nameof(IsExpanded));
                 }
             }
         }

@@ -1,10 +1,5 @@
-﻿using Models.Books;
-using Models.Global;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Models.Global;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
 {
@@ -19,19 +14,18 @@ namespace Models.Inventory
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 
-    public class ItemSizeDetailCreateMessage
+    public class ItemSizeValueCreateMessage
     {
-        public ItemSizeValueGraphQLModel CreatedItemSizeDetail { get; set; }
+        public UpsertResponseType<ItemSizeValueGraphQLModel> CreatedItemSizeValue { get; set; } = new();
     }
 
-    public class ItemSizeDetailUpdateMessage
+    public class ItemSizeValueUpdateMessage
     {
-        public ItemSizeValueGraphQLModel UpdatedItemSizeDetail { get; set; }
-
+        public UpsertResponseType<ItemSizeValueGraphQLModel> UpdatedItemSizeValue { get; set; } = new();
     }
 
-    public class ItemSizeDetailDeleteMessage
+    public class ItemSizeValueDeleteMessage
     {
-        public ItemSizeValueGraphQLModel DeletedItemSizeDetail { get; set; }
+        public DeleteResponseType DeletedItemSizeValue { get; set; } = new();
     }
 }
