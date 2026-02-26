@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Models.Global;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace Models.Login
 {
     public class LoginValidateTicketGraphQLModel
     {
-        public LoginAccountGraphQLModel Account { get; set; } = new();
+        public SystemAccountGraphQLModel Account { get; set; } = new();
         public List<GlobalErrorGraphQLModel> Errors { get; set; } = [];
         public string Message { get; set; } = string.Empty;
         public string SessionId { get; set; } = string.Empty;

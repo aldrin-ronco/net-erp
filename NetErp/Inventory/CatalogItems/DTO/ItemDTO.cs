@@ -266,9 +266,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ItemSizeMasterDTO _size;
+        private ItemSizeCategoryDTO _size;
 
-        public ItemSizeMasterDTO Size
+        public ItemSizeCategoryDTO Size
         {
             get { return _size; }
             set

@@ -1,5 +1,4 @@
 ﻿using Models.Global;
-using Models.Login;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,7 +25,7 @@ namespace Models.Books
         public TimeSpan DocumentTime {  get; set; }
         public string Description { get; set; } = string.Empty;
         public string DocumentNumber { get; set; } = string.Empty;
-        public LoginAccountGraphQLModel CreatedBy { get; set; } 
+        public SystemAccountGraphQLModel CreatedBy { get; set; } 
         public string CancelledBy { get; set; } = string.Empty;
         public bool Annulment { get; set; } = false;
         public AccountingBookGraphQLModel AccountingBook { get; set; }
