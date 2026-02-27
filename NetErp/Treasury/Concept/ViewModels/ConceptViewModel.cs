@@ -5,6 +5,7 @@ using Common.Interfaces;
 using Models.Books;
 using Models.Global;
 using Models.Treasury;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,7 +23,8 @@ namespace NetErp.Treasury.Concept.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
 
         private readonly IRepository<TreasuryConceptGraphQLModel> _conceptService;
-        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+
         private ConceptMasterViewModel _conceptMasterViewModel;
         public ConceptMasterViewModel ConceptMasterViewModel
         {
@@ -37,13 +39,13 @@ namespace NetErp.Treasury.Concept.ViewModels
             IEventAggregator eventAggregator,
             IRepository<TreasuryConceptGraphQLModel> conceptService,
             Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
             _conceptService = conceptService;
             _notificationService = notificationService;
-            _accountingAccountService = accountingAccountService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _ = ActivateMasterViewAsync();
         }
         
@@ -63,7 +65,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             try
             {
-                ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
+                ConceptDetailViewModel instance = new(this, _conceptService, _auxiliaryAccountingAccountCache);
 
                 instance.ConceptId = concept.Id;
                 instance.Name = concept.Name;
@@ -86,7 +88,7 @@ namespace NetErp.Treasury.Concept.ViewModels
         {
             try
             {
-                ConceptDetailViewModel instance = new(this, _conceptService, _accountingAccountService);
+                ConceptDetailViewModel instance = new(this, _conceptService, _auxiliaryAccountingAccountCache);
                 instance.CleanUpControls();                
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
                 instance.Type = "D";

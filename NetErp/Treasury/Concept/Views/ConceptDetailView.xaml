@@ -126,7 +126,7 @@
 
                     <TextBlock Grid.Row="6" Text="Cuenta contable" HorizontalAlignment="Left" Margin="0,0 ,0,5"></TextBlock>
                     <dxg:LookUpEdit Grid.Row="7" Width="450" HorizontalAlignment="Center" 
-                      ItemsSource="{Binding AccountingAccount}"
+                      ItemsSource="{Binding AccountingAccounts}"
                       
                       EditValue="{Binding AccountingAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"              
                       IsTextEditable="True"
@@ -175,13 +175,6 @@
                           Mask="f2" IsTextEditable="False" 
                           MaskUseAsDisplayFormat="True"/>
 
-                        <Slider Minimum="0"
-                            Maximum="100"
-                            Value="{Binding PercentageValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            TickFrequency="0.01"
-                            IsSnapToTickEnabled="True"
-                            Width="100"
-                            Margin="0,0,0,10"/>     
 
                         <!-- Texto descriptivo -->
                         <TextBlock Text=" Base " VerticalAlignment="Center" Margin="10,0,10,0"/>
