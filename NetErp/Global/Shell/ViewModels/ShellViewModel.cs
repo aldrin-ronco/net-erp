@@ -37,7 +37,7 @@ namespace NetErp.Global.Shell.ViewModels
         {
             get
             {
-                if (_mainMenuViewModel == null) this._mainMenuViewModel = new();
+                if (_mainMenuViewModel == null) this._mainMenuViewModel = IoC.Get<MainMenuViewModel>();
                 return _mainMenuViewModel;
             }
         }
@@ -136,6 +136,7 @@ namespace NetErp.Global.Shell.ViewModels
         {
             // Logout - limpiar todos los caches y sesión, volver al login
             ClearAllCaches();
+            _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
@@ -146,6 +147,7 @@ namespace NetErp.Global.Shell.ViewModels
         {
             // Limpiar todos los caches y la empresa actual al salir
             ClearAllCaches();
+            _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
 
             // Volver a la selección de empresa si tenemos los datos almacenados
