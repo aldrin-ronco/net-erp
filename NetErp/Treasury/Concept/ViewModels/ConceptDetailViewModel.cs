@@ -1,60 +1,63 @@
-﻿using Amazon.Util.Internal;
-using Caliburn.Micro;
+﻿using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Treasury;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Ninject.Activation;
-using Services.Books.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
-using System.Linq;
-using System.Runtime.InteropServices.JavaScript;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Xceed.Wpf.Toolkit.Primitives;
 using static Models.Global.GraphQLResponseTypes;
 using static Models.Treasury.TreasuryConceptGraphQLModel;
-using static Models.Global.GraphQLResponseTypes;
-using Extensions.Global;
-using DevExpress.XtraEditors.Filtering;
+using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
 
 namespace NetErp.Treasury.Concept.ViewModels
 {
     public class ConceptDetailViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<TreasuryConceptGraphQLModel> _conceptService;
-        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
 
         public ConceptViewModel Context { get; set; }
         public ConceptDetailViewModel(
             ConceptViewModel context,
             IRepository<TreasuryConceptGraphQLModel> conceptService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
+            AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache
+            )
         {
             Context = context;
             _conceptService = conceptService;
-            _accountingAccountService = accountingAccountService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _ = this.InitializeAsync();
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await LoadNamesAccountingAccountsAsync());
             _errors = new Dictionary<string, List<string>>();
+           
+           
         }
+        public async Task InitializeAsync()
+        {
+            await Task.WhenAll(
+                    _auxiliaryAccountingAccountCache.EnsureLoadedAsync()
 
+                );
+            this.AccountingAccounts = [.. _auxiliaryAccountingAccountCache.Items ];
+            AccountingAccounts.Insert(0, new() { Id = 0, Name = "<< SELECCIONE UNA CUENTA >>" });
+
+        }
         private string _name;
         public string Name
         {
@@ -304,66 +307,22 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
             }
         }
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccount;
-        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccount
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
         {
-            get { return _accountingAccount; }
+            get { return _accountingAccounts; }
             set
             {
-                if (_accountingAccount != value)
+                if (_accountingAccounts != value)
                 {
-                    _accountingAccount = value;
-                    NotifyOfPropertyChange(nameof(AccountingAccount));
+                    _accountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccounts));
                 }
             }
         }
 
-        public async Task LoadNamesAccountingAccountsAsync()
-        {
-            try
-            {
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
+       
 
-                variables.pageResponseFilters.only_auxiliary_accounts = true;
-                string query = GetLoadAccountingAccountsQuery();
-                PageType<AccountingAccountGraphQLModel> result = await _accountingAccountService.GetPageAsync(query, variables);
-
-
-
-
-                AccountingAccount = result.Entries;
-                AccountingAccount.Insert(0, new() { Id = 0, Name = "<< SELECCIONE UNA CUENTA >>" });
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-        }
-
-        public string GetLoadAccountingAccountsQuery()
-        {
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-             .Create()
-             .SelectList(it => it.Entries, entries => entries
-                 .Field(e => e.Id)
-                 .Field(e => e.Margin)
-                 .Field(e => e.Code)
-                 .Field(e => e.Name)
-                 .Field(e => e.MarginBasis)
-             )
-             .Field(o => o.PageNumber)
-             .Field(o => o.PageSize)
-             .Field(o => o.TotalPages)
-             .Field(o => o.TotalEntries)
-             .Build();
-            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-
-            var accountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "pageResponse");
-           
-            var builder = new GraphQLQueryBuilder([ accountingAccountFragment]) ;
-            return builder.GetQuery();
-        }
         public async Task GoBackAsync()
         {
             await Context.ActivateMasterViewAsync();

@@ -286,7 +286,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 variables.pageResponseFilters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(SelectedType) && SelectedType != "T")
                 {
-                    variables.filter.type = SelectedType;
+                    variables.pageResponseFilters.type = SelectedType;
                 }
                 string query = GetLoadTreasuryConceptQuery();
 
