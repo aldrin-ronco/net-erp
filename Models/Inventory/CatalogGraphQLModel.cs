@@ -1,9 +1,6 @@
-﻿using Models.Books;
+using Models.Global;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
@@ -12,28 +9,25 @@ namespace Models.Inventory
     {
         public int Id {  get; set; }
         public string Name { get; set; } = string.Empty;
-        public IEnumerable<ItemTypeGraphQLModel> ItemsTypes { get; set; }
+        public CompanyGraphQLModel Company { get; set; } = new();
+        public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
+        public DateTime InsertedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public IEnumerable<ItemTypeGraphQLModel> ItemTypes { get; set; }
     }
 
     public class CatalogCreateMessage
     {
-        public CatalogGraphQLModel CreatedCatalog { get; set; }
+        public UpsertResponseType<CatalogGraphQLModel> CreatedCatalog { get; set; } = new();
     }
 
     public class CatalogUpdateMessage
     {
-        public CatalogGraphQLModel UpdatedCatalog { get; set; }
+        public UpsertResponseType<CatalogGraphQLModel> UpdatedCatalog { get; set; } = new();
     }
     public class CatalogDeleteMessage
     {
         public CatalogGraphQLModel DeletedCatalog { get; set; }
     }
 
-    public class CatalogMasterDataContext
-    {
-        public List<MeasurementUnitGraphQLModel> MeasurementUnits { get; set; }
-        public List<BrandGraphQLModel> Brands { get; set; }
-        public List<AccountingGroupGraphQLModel> AccountingGroups { get; set; }
-        public PageType<ItemSizeCategoryGraphQLModel> Sizes { get; set; }
-    }
 }

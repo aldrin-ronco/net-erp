@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
@@ -25,8 +26,23 @@ namespace Models.Books
         public TaxGraphQLModel SellTax2 { get; set; } = new();
     }
 
-    public class AccountingGroupDTO : AccountingGroupGraphQLModel 
+    public class AccountingGroupDTO : AccountingGroupGraphQLModel
     {
-        
+
+    }
+
+    public class AccountingGroupCreateMessage
+    {
+        public UpsertResponseType<AccountingGroupGraphQLModel> CreatedAccountingGroup { get; set; } = new();
+    }
+
+    public class AccountingGroupUpdateMessage
+    {
+        public UpsertResponseType<AccountingGroupGraphQLModel> UpdatedAccountingGroup { get; set; } = new();
+    }
+
+    public class AccountingGroupDeleteMessage
+    {
+        public DeleteResponseType DeletedAccountingGroup { get; set; } = new();
     }
 }

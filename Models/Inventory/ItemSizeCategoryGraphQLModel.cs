@@ -15,9 +15,9 @@ namespace Models.Inventory
         public string Name { get; set; } = string.Empty;
         public IEnumerable<ItemSizeValueGraphQLModel> ItemSizeValues { get; set; } = [];
         public CompanyGraphQLModel Company { get; set; } = new();
-        //TODO: añadir createdBy que es de tipo Account
-        public DateTime InsertedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
+        public DateTime InsertedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
     public class ItemSizeCategoryCreateMessage

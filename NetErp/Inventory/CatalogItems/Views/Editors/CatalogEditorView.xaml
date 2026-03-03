@@ -1,0 +1,49 @@
+<UserControl x:Class="NetErp.Inventory.CatalogItems.Views.Editors.CatalogEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}"
+              FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Nombre del catálogo" Grid.Row="0" Margin="5 5 0 5"/>
+            <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
+                          CharacterCasing="Upper"
+                          Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          HorizontalAlignment="Stretch"/>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,15">
+            <Button Command="{Binding EditCommand}" IsEnabled="{Binding MasterCanEdit}"
+                    Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                <StackPanel HorizontalAlignment="Center">
+                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button Command="{Binding UndoCommand}" IsEnabled="{Binding MasterCanUndo}"
+                    Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                <StackPanel HorizontalAlignment="Center">
+                    <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button Command="{Binding SaveCommand}" IsEnabled="{Binding MasterCanSave}"
+                    Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                <StackPanel HorizontalAlignment="Center">
+                    <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

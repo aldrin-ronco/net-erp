@@ -100,8 +100,7 @@
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
                             BusyContent="Please wait..."
-                            BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False">
+                            BusyContentMargin="0,20,0,0">
 
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
                 CornerRadius="8" Margin="10" Padding="10,10,10,0">

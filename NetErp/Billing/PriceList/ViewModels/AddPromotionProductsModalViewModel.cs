@@ -190,17 +190,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemTypeGraphQLModel> _itemsTypes = [];
+        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = [];
 
-        public ObservableCollection<ItemTypeGraphQLModel> ItemsTypes
+        public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
-            get { return _itemsTypes; }
+            get { return _itemTypes; }
             set
             {
-                if (_itemsTypes != value)
+                if (_itemTypes != value)
                 {
-                    _itemsTypes = value;
-                    NotifyOfPropertyChange(nameof(ItemsTypes));
+                    _itemTypes = value;
+                    NotifyOfPropertyChange(nameof(ItemTypes));
                 }
             }
         }
@@ -337,12 +337,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         // Métodos de construcción de listas
         private void BuildItemTypes()
         {
-            if (SelectedCatalog?.ItemsTypes == null) return;
+            if (SelectedCatalog?.ItemTypes == null) return;
 
             _isUpdating = true;
-            ItemsTypes = [.. SelectedCatalog.ItemsTypes];
-            ItemsTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
-            _selectedItemType = ItemsTypes.First(x => x.Id == 0);
+            ItemTypes = [.. SelectedCatalog.ItemTypes];
+            ItemTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
+            _selectedItemType = ItemTypes.First(x => x.Id == 0);
             NotifyOfPropertyChange(nameof(SelectedItemType));
             BuildItemCategories();
             _isUpdating = false;

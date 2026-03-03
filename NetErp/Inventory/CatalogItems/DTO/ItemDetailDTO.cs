@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-	public class ItemDetailDTO : Screen, ICloneable
+	public class ComponentsByItemDTO : Screen, ICloneable
 	{
 		private string _id;
 
@@ -55,16 +55,16 @@ namespace NetErp.Inventory.CatalogItems.DTO
 			}
 		}
 
-		private ItemDTO _item;
-		public ItemDTO Item
+		private ItemDTO _component;
+		public ItemDTO Component
 		{
-			get { return _item; }
+			get { return _component; }
 			set
 			{
-				if (_item != value)
+				if (_component != value)
 				{
-					_item = value;
-					NotifyOfPropertyChange(nameof(Item));
+					_component = value;
+					NotifyOfPropertyChange(nameof(Component));
 				}
 			}
 		}

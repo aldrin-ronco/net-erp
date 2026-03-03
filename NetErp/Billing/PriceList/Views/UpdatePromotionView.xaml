@@ -175,7 +175,7 @@
 
                 <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="10 0 10 0">
                     <TextBlock Text="Tipo de producto" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemsTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
                   IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
                 </StackPanel>
 

@@ -168,17 +168,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemTypeGraphQLModel> _itemsTypes = new();
+        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = new();
 
-        public ObservableCollection<ItemTypeGraphQLModel> ItemsTypes
+        public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
-            get { return _itemsTypes; }
+            get { return _itemTypes; }
             set
             {
-                if (_itemsTypes != value)
+                if (_itemTypes != value)
                 {
-                    _itemsTypes = value;
-                    NotifyOfPropertyChange(nameof(ItemsTypes));
+                    _itemTypes = value;
+                    NotifyOfPropertyChange(nameof(ItemTypes));
                 }
             }
         }
@@ -814,12 +814,12 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private void LoadItemTypes()
         {
-            if (SelectedCatalog?.ItemsTypes is null) return;
+            if (SelectedCatalog?.ItemTypes is null) return;
 
             _isUpdating = true;
-            ItemsTypes = new ObservableCollection<ItemTypeGraphQLModel>(SelectedCatalog.ItemsTypes);
-            ItemsTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
-            SelectedItemType = ItemsTypes.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemType can't be null");
+            ItemTypes = new ObservableCollection<ItemTypeGraphQLModel>(SelectedCatalog.ItemTypes);
+            ItemTypes.Insert(0, new ItemTypeGraphQLModel { Id = 0, Name = "<< MOSTRAR TODOS LOS TIPOS DE PRODUCTOS >>" });
+            SelectedItemType = ItemTypes.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemType can't be null");
             LoadItemCategories();
             _isUpdating = false;
         }

@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public interface ICatalogItem
+    public interface ICatalogItem : INotifyPropertyChanged
     {
+        int Id { get; set; }
+        string Name { get; set; }
     }
 }
