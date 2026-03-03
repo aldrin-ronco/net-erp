@@ -13,7 +13,7 @@ using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemDTO : Screen, ICloneable, ICatalogItem
+    public class ItemDTO : PropertyChangedBase, ICloneable, ICatalogItem
     {
         private int _id;
 
@@ -165,9 +165,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ObservableCollection<EanCodeDTO> _eanCodes;
+        private ObservableCollection<string> _eanCodes;
 
-        public ObservableCollection<EanCodeDTO> EanCodes
+        public ObservableCollection<string> EanCodes
         {
             get { return _eanCodes; }
             set
@@ -194,8 +194,8 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private CatalogMasterViewModel _context;
-        public CatalogMasterViewModel Context
+        private CatalogRootMasterViewModel _context;
+        public CatalogRootMasterViewModel Context
         {
             get { return _context; }
             set
@@ -251,9 +251,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private BrandDTO _brand;
+        private ItemBrandDTO _brand;
 
-        public BrandDTO Brand
+        public ItemBrandDTO Brand
         {
             get { return _brand; }
             set
@@ -266,17 +266,17 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ItemSizeCategoryDTO _size;
+        private ItemSizeCategoryDTO _sizeCategory;
 
-        public ItemSizeCategoryDTO Size
+        public ItemSizeCategoryDTO SizeCategory
         {
-            get { return _size; }
+            get { return _sizeCategory; }
             set
             {
-                if (_size != value)
+                if (_sizeCategory != value)
                 {
-                    _size = value;
-                    NotifyOfPropertyChange(nameof(Size));
+                    _sizeCategory = value;
+                    NotifyOfPropertyChange(nameof(SizeCategory));
                 }
             }
         }
@@ -311,24 +311,24 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ObservableCollection<ItemDetailDTO> _relatedProducts;
+        private ObservableCollection<ComponentsByItemDTO> _components;
 
-        public ObservableCollection<ItemDetailDTO> RelatedProducts
+        public ObservableCollection<ComponentsByItemDTO> Components
         {
-            get { return _relatedProducts; }
-            set 
+            get { return _components; }
+            set
             {
-                if (_relatedProducts != value)
+                if (_components != value)
                 {
-                    _relatedProducts = value;
-                    NotifyOfPropertyChange(nameof(RelatedProducts));
+                    _components = value;
+                    NotifyOfPropertyChange(nameof(Components));
                 }
             }
         }
 
-        private ObservableCollection<ItemImageDTO> _images;
+        private ObservableCollection<ImageByItemDTO> _images;
 
-        public ObservableCollection<ItemImageDTO> Images
+        public ObservableCollection<ImageByItemDTO> Images
         {
             get { return _images; }
             set
@@ -346,7 +346,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 
         }
 
-        public ItemDTO(int id, CatalogMasterViewModel context, string name)
+        public ItemDTO(int id, CatalogRootMasterViewModel context, string name)
         {
             _id = id;
             _name = name;

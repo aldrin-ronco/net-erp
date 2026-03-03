@@ -14,10 +14,10 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemTypeDTO: Screen, ICatalogItem, ICloneable
+    public class ItemTypeDTO: PropertyChangedBase, ICatalogItem, ICloneable
     {
-        private CatalogMasterViewModel _context;
-        public CatalogMasterViewModel Context
+        private CatalogRootMasterViewModel _context;
+        public CatalogRootMasterViewModel Context
         {
             get { return _context; }
             set 
@@ -170,32 +170,32 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private MeasurementUnitDTO _measurementUnitByDefault;
+        private MeasurementUnitDTO _defaultMeasurementUnit;
 
-        public MeasurementUnitDTO MeasurementUnitByDefault
+        public MeasurementUnitDTO DefaultMeasurementUnit
         {
-            get { return _measurementUnitByDefault; }
+            get { return _defaultMeasurementUnit; }
             set 
             {
-                if (_measurementUnitByDefault != value)
+                if (_defaultMeasurementUnit != value)
                 {
-                    _measurementUnitByDefault = value;
-                    NotifyOfPropertyChange(nameof(MeasurementUnitByDefault));
+                    _defaultMeasurementUnit = value;
+                    NotifyOfPropertyChange(nameof(DefaultMeasurementUnit));
                 }
             }
         }
 
-        private AccountingGroupDTO _accountingGroupByDefault;
+        private AccountingGroupDTO _defaultAccountingGroup;
 
-        public AccountingGroupDTO AccountingGroupByDefault
+        public AccountingGroupDTO DefaultAccountingGroup
         {
-            get { return _accountingGroupByDefault; }
+            get { return _defaultAccountingGroup; }
             set 
             {
-                if (_accountingGroupByDefault != value)
+                if (_defaultAccountingGroup != value)
                 {
-                    _accountingGroupByDefault = value;
-                    NotifyOfPropertyChange(nameof(AccountingGroupByDefault));
+                    _defaultAccountingGroup = value;
+                    NotifyOfPropertyChange(nameof(DefaultAccountingGroup));
                 }
             }
         }
@@ -206,7 +206,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 
         }
 
-        public ItemTypeDTO(int id, CatalogMasterViewModel context, string name, string prefixChar, bool stockControl, ObservableCollection<ItemCategoryDTO> itemsCategories)
+        public ItemTypeDTO(int id, CatalogRootMasterViewModel context, string name, string prefixChar, bool stockControl, ObservableCollection<ItemCategoryDTO> itemsCategories)
         {
             _id = id;
             _name = name;

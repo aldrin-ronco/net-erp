@@ -149,6 +149,18 @@ namespace NetErp
             _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCategoryCache>());
 
+            _ = kernel.Bind<MeasurementUnitCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MeasurementUnitCache>());
+
+            _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
+
+            _ = kernel.Bind<AccountingGroupCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingGroupCache>());
+
+            _ = kernel.Bind<ItemSizeCategoryCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemSizeCategoryCache>());
+
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
@@ -159,7 +171,7 @@ namespace NetErp
             _ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemSubCategoryGraphQLModel>>().To<ItemSubCategoryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<EanCodeGraphQLModel>>().To<EanCodeService>().InSingletonScope();
+
             _ = kernel.Bind<IGenericDataAccess<AwsS3ConfigGraphQLModel>>().To<AwsS3ConfigService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CompanyGraphQLModel>>().To<CompanyService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<CompanyLocationGraphQLModel>>().To<CompanyLocationService>().InSingletonScope();
@@ -201,6 +213,8 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ItemSubCategoryGraphQLModel>>().To<GraphQLRepository<ItemSubCategoryGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemSizeCategoryGraphQLModel>>().To<GraphQLRepository<ItemSizeCategoryGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemSizeValueGraphQLModel>>().To<GraphQLRepository<ItemSizeValueGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<ItemBrandGraphQLModel>>().To<GraphQLRepository<ItemBrandGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingGroupGraphQLModel>>().To<GraphQLRepository<AccountingGroupGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AwsS3ConfigGraphQLModel>>().To<GraphQLRepository<AwsS3ConfigGraphQLModel>>().InSingletonScope();
 
             // Books
@@ -372,11 +386,10 @@ namespace NetErp
                 _ = cfg.CreateMap<ItemCategoryGraphQLModel, ItemCategoryDTO>();
                 _ = cfg.CreateMap<ItemSubCategoryGraphQLModel, ItemSubCategoryDTO>();
                 _ = cfg.CreateMap<ItemGraphQLModel, ItemDTO>();
-                _ = cfg.CreateMap<BrandGraphQLModel, BrandDTO>();
+                _ = cfg.CreateMap<ItemBrandGraphQLModel, ItemBrandDTO>();
                 _ = cfg.CreateMap<AccountingGroupGraphQLModel, AccountingGroupDTO>();
-                _ = cfg.CreateMap<EanCodeGraphQLModel, EanCodeDTO>();
-                _ = cfg.CreateMap<ItemDetailGraphQLModel, ItemDetailDTO>();
-                _ = cfg.CreateMap<ItemImageGraphQLModel, ItemImageDTO>();
+                _ = cfg.CreateMap<ComponentsByItemGraphQLModel, ComponentsByItemDTO>();
+                _ = cfg.CreateMap<ImageByItemGraphQLModel, ImageByItemDTO>();
                 _ = cfg.CreateMap<CompanyGraphQLModel, CompanyDTO>();
                 _ = cfg.CreateMap<CompanyLocationGraphQLModel, CompanyLocationDTO>();
                 _ = cfg.CreateMap<StorageGraphQLModel, StorageDTO>();

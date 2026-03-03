@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemSubCategoryDTO: Screen, ICatalogItem
+    public class ItemSubCategoryDTO: PropertyChangedBase, ICatalogItem
     {
         private int _id;
 
@@ -56,8 +56,8 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private CatalogMasterViewModel _context;
-        public CatalogMasterViewModel Context
+        private CatalogRootMasterViewModel _context;
+        public CatalogRootMasterViewModel Context
         {
             get { return _context; }
             set
@@ -141,7 +141,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 
         }
 
-        public ItemSubCategoryDTO(int id, CatalogMasterViewModel context, string name, ObservableCollection<ItemDTO> items)
+        public ItemSubCategoryDTO(int id, CatalogRootMasterViewModel context, string name, ObservableCollection<ItemDTO> items)
         {
             _id = id;
             _name = name;

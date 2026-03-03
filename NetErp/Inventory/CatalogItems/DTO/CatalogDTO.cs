@@ -1,46 +1,11 @@
-﻿using Caliburn.Micro;
-using NetErp.Inventory.CatalogItems.ViewModels;
-using System;
-using System.Collections.Generic;
+using Caliburn.Micro;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class CatalogDTO: Screen
+    public class CatalogDTO : PropertyChangedBase, ICatalogItem
     {
-        private CatalogMasterViewModel _context;
-        public CatalogMasterViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
-
-        private bool _isDummyChild = false;
-        public bool IsDummyChild
-        {
-            get { return _isDummyChild; }
-            set
-            {
-                if (_isDummyChild != value)
-                {
-                    _isDummyChild = value;
-                    NotifyOfPropertyChange(nameof(IsDummyChild));
-                }
-            }
-        }
-
         private int _id;
-
         public int Id
         {
             get { return _id; }
@@ -68,37 +33,18 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ObservableCollection<ItemTypeDTO> _itemsTypes = [];
-
-        public ObservableCollection<ItemTypeDTO> ItemsTypes
+        private ObservableCollection<ItemTypeDTO> _itemTypes = [];
+        public ObservableCollection<ItemTypeDTO> ItemTypes
         {
-            get { return _itemsTypes; }
+            get { return _itemTypes; }
             set
             {
-                if (_itemsTypes != value)
+                if (_itemTypes != value)
                 {
-                    _itemsTypes = value;
-                    NotifyOfPropertyChange(nameof(ItemsTypes));
+                    _itemTypes = value;
+                    NotifyOfPropertyChange(nameof(ItemTypes));
                 }
             }
         }
-
-        public CatalogDTO()
-        {
-
-        }
-
-        public CatalogDTO(int id, CatalogMasterViewModel context, string name, ObservableCollection<ItemTypeDTO> itemsTypes)
-        {
-            _id = id;
-            _name = name;
-            _context = context;
-            _itemsTypes = itemsTypes;
-        }
-        public override string ToString()
-        {
-            return $"{_name}";
-        }
-
     }
 }

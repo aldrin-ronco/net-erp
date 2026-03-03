@@ -420,5 +420,5 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
     }
 
-    public enum MessageToken { RelatedProduct, SearchProduct }
+    public enum MessageToken { Component, SearchProduct }
 }

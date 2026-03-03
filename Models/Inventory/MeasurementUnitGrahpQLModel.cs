@@ -1,4 +1,4 @@
-﻿using Models.Books;
+using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +16,9 @@ namespace Models.Inventory
         public string Abbreviation { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public string DianCode { get; set; } = string.Empty;
+        public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
+        public DateTime InsertedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
     public class MeasurementUnitDTO : MeasurementUnitGraphQLModel, ICloneable
@@ -34,7 +37,7 @@ namespace Models.Inventory
     }
     public class MeasurementUnitDeleteMessage
     {
-        public DeleteResponseType DeletedMeasurementUnit { get; set; } 
+        public DeleteResponseType DeletedMeasurementUnit { get; set; }
     }
 
     public class MeasurementUnitUpdateMessage
@@ -42,4 +45,3 @@ namespace Models.Inventory
         public UpsertResponseType<MeasurementUnitGraphQLModel> UpdatedMeasurementUnit { get; set; } = new();
     }
 }
-

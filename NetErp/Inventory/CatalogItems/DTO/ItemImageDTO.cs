@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,34 +8,19 @@ using System.Windows.Media.Imaging;
 
 namespace NetErp.Inventory.CatalogItems.DTO
 {
-    public class ItemImageDTO: Screen, ICloneable
+    public class ImageByItemDTO: Screen, ICloneable
     {
-		private string _id;
+		private int _displayOrder;
 
-		public string Id
+		public int DisplayOrder
 		{
-			get { return _id; }
-			set 
+			get { return _displayOrder; }
+			set
 			{
-				if (_id != value) 
+				if (_displayOrder != value)
 				{
-					_id = value;
-					NotifyOfPropertyChange(nameof(Id));
-				}
-			}
-		}
-
-		private int _itemId;
-
-		public int ItemId
-		{
-			get { return _itemId; }
-			set 
-			{
-				if (_itemId != value) 
-				{
-					_itemId = value;
-					NotifyOfPropertyChange(nameof(ItemId));
+                    _displayOrder = value;
+					NotifyOfPropertyChange(nameof(DisplayOrder));
 				}
 			}
 		}
@@ -45,7 +30,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 		public string S3Bucket
 		{
 			get { return _s3Bucket; }
-			set 
+			set
 			{
 				if (_s3Bucket != value)
 				{
@@ -60,7 +45,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 		public string S3BucketDirectory
 		{
 			get { return _s3BucketDirectory; }
-			set 
+			set
 			{
 				if (_s3BucketDirectory != value)
 				{
@@ -75,7 +60,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 		public string S3FileName
 		{
 			get { return _s3FileName; }
-			set 
+			set
 			{
 				if (_s3FileName != value)
 				{
@@ -85,27 +70,12 @@ namespace NetErp.Inventory.CatalogItems.DTO
 			}
 		}
 
-		private int _order;
-
-		public int Order
-		{
-			get { return _order; }
-			set 
-			{
-				if (_order != value)
-				{
-                    _order = value;
-					NotifyOfPropertyChange(nameof(Order));
-				}
-			}
-		}
-
 		private string _imagePath;
 
 		public string ImagePath
 		{
 			get { return _imagePath; }
-			set 
+			set
 			{
 				if (_imagePath != value)
 				{
@@ -121,7 +91,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 		public BitmapImage SourceImage
 		{
 			get { return _sourceImage; }
-			set 
+			set
 			{
 				if (_sourceImage != value)
 				{
