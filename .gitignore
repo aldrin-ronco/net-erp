@@ -5,6 +5,7 @@
 
 # Schema fetch script (contains credentials)
 fetch-schema.js
+schema.graphql
 
 # User-specific files
 *.suo
