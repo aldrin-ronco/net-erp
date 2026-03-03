@@ -1,711 +1,257 @@
-﻿using Caliburn.Micro;
-using Common.Extensions;
-using Common.Helpers;
+using Caliburn.Micro;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Xpf.Controls.Internal;
 using DevExpress.Xpf.Core;
-using DevExpress.Xpf.WindowsUI.Navigation;
-using GraphQL.Client.Http;
-using Models.Books;
-using NetErp.Billing.CreditLimit.ViewModels;
-using NetErp.Billing.Customers.ViewModels;
-using NetErp.Billing.PriceList.ViewModels;
-using NetErp.Billing.Sellers.ViewModels;
-using NetErp.Billing.Zones.ViewModels;
-using NetErp.Books.AccountingAccountGroups.ViewModels;
-using NetErp.Books.AccountingAccounts.ViewModels;
-using NetErp.Books.AccountingBooks.ViewModels;
-using NetErp.Books.AccountingEntities.ViewModels;
-using NetErp.Books.AccountingEntries.ViewModels;
-using NetErp.Books.AccountingPresentations.ViewModels;
-using NetErp.Books.AccountingSources.ViewModels;
-using NetErp.Books.IdentificationTypes.ViewModels;
-using NetErp.Books.Reports.AnnualIncomeStatement.ViewModels;
-using NetErp.Books.Reports.AuxiliaryBook.ViewModels;
-using NetErp.Books.Reports.DailyBook.ViewModels;
-using NetErp.Books.Reports.EntityVsAccount.ViewModels;
-using NetErp.Books.Reports.TestBalance.ViewModels;
-using NetErp.Books.Reports.TestBalanceByEntity.ViewModels;
-using NetErp.Books.Tax.ViewModels;
-using NetErp.Books.TaxCategory.ViewModels;
-using NetErp.Books.WithholdingCertificateConfig.ViewModels;
-using NetErp.Global.AuthorizationSequence.ViewModels;
-using NetErp.Global.CostCenters.ViewModels;
-using NetErp.Global.Email.ViewModels;
-using NetErp.Global.Email.Views;
-using NetErp.Global.Parameter.ViewModels;
-using NetErp.Global.Smtp.ViewModels;
-using NetErp.Helpers.Messages;
-using NetErp.Inventory.CatalogItems.ViewModels;
-using NetErp.Inventory.ItemSizes.ViewModels;
-using NetErp.Inventory.MeasurementUnits.ViewModels;
+using Models.Global;
+using NetErp.Global.MainMenu.Models;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Login.ViewModels;
-using NetErp.Suppliers.Suppliers.ViewModels;
-using NetErp.Treasury.Concept.ViewModels;
-using NetErp.Treasury.Masters.ViewModels;
-using Ninject;
-using Services.Books.DAL.PostgreSQL;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Windows;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.MainMenu.ViewModels
 {
     public class MainMenuViewModel : Conductor<IScreen>.Collection.OneActive
     {
         private readonly IEventAggregator _eventAggregator;
-        private int selectedIndex;
+        private readonly IRepository<MenuItemGraphQLModel> _menuItemService;
+        private bool _isMenuLoaded;
 
+        private int _selectedIndex;
         public int SelectedIndex
         {
-            get => selectedIndex;
+            get => _selectedIndex;
             set
             {
-                if (selectedIndex != value)
+                if (_selectedIndex != value)
                 {
-                    selectedIndex = value;
+                    _selectedIndex = value;
                     NotifyOfPropertyChange(nameof(SelectedIndex));
                 }
             }
         }
-        public MainMenuViewModel()
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
+
+        private ObservableCollection<MenuModuleDisplayModel> _menuModules = [];
+        public ObservableCollection<MenuModuleDisplayModel> MenuModules
+        {
+            get => _menuModules;
+            set
+            {
+                _menuModules = value;
+                NotifyOfPropertyChange(nameof(MenuModules));
+            }
+        }
+
+        public MainMenuViewModel(IRepository<MenuItemGraphQLModel> menuItemService)
         {
             _eventAggregator = IoC.Get<IEventAggregator>();
+            _menuItemService = menuItemService;
         }
 
-
-        public async Task OpenAccountingAccounts()
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            try
+            if (!_isMenuLoaded)
             {
-                AccountPlanViewModel instance = IoC.Get<AccountPlanViewModel>();
-                instance.DisplayName = "Plan único de cuentas";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+                await LoadMenuAsync();
+                _isMenuLoaded = true;
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "OpenOption1" : currentMethod.Name.Between("<", ">"))} \r\n{exGraphQL.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                ThemedMessageBox.Show(text: ex.Message, title: "Atencion!", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAccountingEntities()
-        {
-            try
-            {
-                AccountingEntityViewModel instance = IoC.Get<AccountingEntityViewModel>();
-                instance.DisplayName = "Administración de terceros";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(text: $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", title: "Atención !", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show(text: ex.Message, title: "Atencion !", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information);
-            }
+            await base.OnActivateAsync(cancellationToken);
         }
 
-        public async Task OpenCustomer()
+        private string BuildMenuQuery()
         {
-            try
-            {
-                CustomerViewModel instance = IoC.Get<CustomerViewModel>();
-                instance.DisplayName = "Administración de clientes";
-                await ActivateItemAsync(instance, new CancellationToken()).ConfigureAwait(false);
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            var fields = FieldSpec<PageType<MenuModuleGraphQLModel>>
+                .Create()
+                .SelectList(selector: p => p.Entries, nested: module => module
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.Icon)
+                    .Field(f => f.DisplayOrder)
+                    .Field(f => f.IsActive)
+                    .SelectList(f => f.MenuItemGroups, group => group
+                        .Field(g => g.Id)
+                        .Field(g => g.Name)
+                        .Field(g => g.DisplayOrder)
+                        .Field(g => g.IsActive)
+                        .SelectList(g => g.MenuItems, item => item
+                            .Field(i => i.Id)
+                            .Field(i => i.ItemKey)
+                            .Field(i => i.Name)
+                            .Field(i => i.Icon)
+                            .Field(i => i.DisplayOrder)
+                            .Field(i => i.IsLockable)
+                            .Field(i => i.IsActive)
+                        )
+                    )
+                )
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+
+            var fragment = new GraphQLQueryFragment(
+                "menuModulesPage",
+                [paginationParam],
+                fields,
+                "menuModules");
+
+            return new NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder([fragment])
+                .GetQuery(GraphQLOperations.QUERY);
         }
 
-        public async Task OpenSupplier()
+        private async Task LoadMenuAsync()
         {
             try
             {
-                SupplierViewModel instance = IoC.Get<SupplierViewModel>();
-                instance.DisplayName = "Administración de proveedores";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenSeller()
-        {
-            try
-            {
-                SellerViewModel instance = IoC.Get<SellerViewModel>();
-                instance.DisplayName = "Administración de vendedores";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenZone()
-        {
-            try
-            {
-                ZoneViewModel instance = IoC.Get<ZoneViewModel>();
-                instance.DisplayName = "Administración de zonas de ventas";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAccountingPresentationAsync()
-        {
-            try
-            {
-                AccountingPresentationViewModel instance = IoC.Get<AccountingPresentationViewModel>();
-                instance.DisplayName = "Presentaciones contables";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+                string query = BuildMenuQuery();
 
-        }
-        public async Task OpenAccountingSource()
-        {
-            try
-            {
-                AccountingSourceViewModel instance = IoC.Get<AccountingSourceViewModel>();
-                instance.DisplayName = "Fuentes contables";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                dynamic variables = new ExpandoObject();
+                variables.menuModulesPagination = new ExpandoObject();
+                variables.menuModulesPagination.pageSize = -1;
+
+                MenuDataContext result = await _menuItemService.GetDataContextAsync<MenuDataContext>(query, variables);
+                MenuModules = BuildMenuStructure(result);
             }
             catch (Exception ex)
             {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                Application.Current.Dispatcher.Invoke(() =>
+                    ThemedMessageBox.Show(title: "Error al cargar menú", text: $"{ex.GetType().Name}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                MenuModules = BuildFallbackMenu();
             }
         }
 
-        public async Task OpenAuxiliaryBook()
+        private ObservableCollection<MenuModuleDisplayModel> BuildMenuStructure(MenuDataContext data)
         {
-            try
-            {
-                AuxiliaryBookViewModel instance = IoC.Get<AuxiliaryBookViewModel>();
-                instance.DisplayName = "Libro auxiliar";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenTestBalance()
-        {
-            try
-            {
-                TestBalanceViewModel instance = IoC.Get<TestBalanceViewModel>();
-                instance.DisplayName = "Balance de prueba";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show($"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", "Atención !", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show(ex.Message, "Atencion !", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenDailyBookByEntity()
-        {
-            try
-            {
-                DailyBookByEntityViewModel instance = IoC.Get<DailyBookByEntityViewModel>();
-                instance.DisplayName = "Libro diario por tercero";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAnnualIncomeStatement()
-        {
-            try
-            {
-                AnnualIncomeStatementViewModel instance = IoC.Get<AnnualIncomeStatementViewModel>();
-                instance.DisplayName = "Estado de resultados anual";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+            var modules = new ObservableCollection<MenuModuleDisplayModel>();
 
-        public async Task OpenEntityVsAccount()
-        {
-            try
+            foreach (var module in data.MenuModules.Entries.OrderBy(m => m.DisplayOrder))
             {
-                EntityVsAccountViewModel instance = IoC.Get<EntityVsAccountViewModel>();
-                instance.DisplayName = "Movimiento por tercero & cuenta";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenTestBalanceByEntity()
-        {
-            try
-            {
-                TestBalanceByEntityViewModel instance = IoC.Get<TestBalanceByEntityViewModel>();
-                instance.DisplayName = "Balance de prueba por tercero";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAccountingEntries()
-        {
-            try
-            {
-                AccountingEntriesViewModel instance = IoC.Get<AccountingEntriesViewModel>();
-                instance.DisplayName = "Comprobantes contables";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                var displayModule = new MenuModuleDisplayModel
+                {
+                    Name = module.Name,
+                    Icon = module.Icon
+                };
 
-        public async Task OpenMeasurementUnits()
-        {
-            try
-            {
-                MeasurementUnitViewModel instance = IoC.Get<MeasurementUnitViewModel>();
-                instance.DisplayName = "Unidades de medida";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenItemSizes()
-        {
-            try
-            {
-                ItemSizeViewModel instance = IoC.Get<ItemSizeViewModel>();
-                instance.DisplayName = "Grupos de tallaje";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenIdentificationType()
-        {
-            try
-            {
-                IdentificationTypeViewModel instance = IoC.Get<IdentificationTypeViewModel>();
-                instance.DisplayName = "Tipos de documentos de identidad";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenCatalogItems()
-        {
-            try
-            {
-                CatalogViewModel instance = IoC.Get<CatalogViewModel>();
-                instance.DisplayName = "Catalogo de productos";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                var groups = module.MenuItemGroups
+                    .OrderBy(g => g.DisplayOrder)
+                    .ToList();
 
-        public async Task OpenCostCenters()
-        {
-            try
-            {
-                CostCenterViewModel instance = IoC.Get<CostCenterViewModel>();
-                instance.DisplayName = "Administración de centros de costos";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                bool isFirstGroup = true;
+                foreach (var group in groups)
+                {
+                    var items = group.MenuItems
+                        .OrderBy(i => i.DisplayOrder)
+                        .ToList();
 
-        public async Task OpenTreasuryRootMaster()
-        {
-            try
-            {
-                TreasuryRootViewModel instance = IoC.Get<TreasuryRootViewModel>();
-                instance.DisplayName = "Administración de cajas, bancos y franquicias";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                    if (items.Count == 0)
+                        continue;
 
-        public async Task OpenSmtp()
-        {
-            try
-            {
-                SmtpViewModel instance = IoC.Get<SmtpViewModel>();
-                instance.DisplayName = "Administración de smtp";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                    // Insert separator between groups (not before the first)
+                    if (!isFirstGroup)
+                    {
+                        displayModule.Items.Add(new MenuItemDisplayModel { IsSeparator = true });
+                    }
 
-        public async Task OpenCreditLimit()
-        {
-            try
-            {
-                CreditLimitViewModel instance = IoC.Get<CreditLimitViewModel>();
-                instance.DisplayName = "Administración de cupos de crédito";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                    foreach (var item in items)
+                    {
+                        displayModule.Items.Add(new MenuItemDisplayModel
+                        {
+                            Name = item.Name,
+                            ItemKey = item.ItemKey,
+                            Icon = item.Icon,
+                            IsSeparator = false,
+                            Command = new AsyncCommand(() => OpenMenuItemAsync(item.ItemKey, item.Name))
+                        });
+                    }
 
-        public async Task OpenEmail()
-        {
-            try
-            {
-                EmailViewModel instance = IoC.Get<EmailViewModel>();
-                instance.DisplayName = "Administración de email";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAccountingBooks()
-        {
-            try
-            {
-                AccountingBookViewModel instance = IoC.Get<AccountingBookViewModel>();
-                instance.DisplayName = "Administración de libros contables";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenTreasuryConcept()
-        {
-            try
-            {
-                ConceptViewModel instance = IoC.Get<ConceptViewModel>();
-                instance.DisplayName = "Administración de conceptos de ingresos, egresos y descuentos";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content.ToString());
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
+                    isFirstGroup = false;
+                }
 
-        public async Task OpenAccountingAccountGroups()
-        {
-            try
-            {
-                AccountingAccountGroupViewModel instance = IoC.Get<AccountingAccountGroupViewModel>();
-                instance.DisplayName = "Administración de agrupación de cuentas contables";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        public async Task OpenWithholdingCertificateConfig()
-        {
-            try
-            {
-                WithholdingCertificateConfigViewModel instance = IoC.Get<WithholdingCertificateConfigViewModel>();
-                instance.DisplayName = "Configuración del certificado de retención";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenAuthorizationSequence()
-        {
-            try
-            {
-                AuthorizationSequenceViewModel instance = IoC.Get<AuthorizationSequenceViewModel>();
-                instance.DisplayName = "Secuencia de Autorizacion";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenParameter()
-        {
-            try
-            {
-                ParameterViewModel instance = IoC.Get<ParameterViewModel>();
-                instance.DisplayName = "Configuración";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        public async Task OpenPriceList()
-        {
-            try
-            {
-                PriceListViewModel instance = IoC.Get<PriceListViewModel>();
-                instance.DisplayName = "Administración de listas de precios";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        public async Task OpenTax()
-        {
-            try
-            {
-                TaxViewModel instance = IoC.Get<TaxViewModel>();
-                instance.DisplayName = "Administración de Impuestos";
-                await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
-            }
-            catch (Exception ex)
-            {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                // Only add modules that have items
+                if (displayModule.Items.Count > 0)
+                    modules.Add(displayModule);
             }
 
+            // Add "Sistema" module programmatically
+            modules.Add(BuildSystemModule());
+
+            return modules;
         }
-        public async Task OpenTaxCategory()
+
+        private ObservableCollection<MenuModuleDisplayModel> BuildFallbackMenu()
+        {
+            return [BuildSystemModule()];
+        }
+
+        private MenuModuleDisplayModel BuildSystemModule()
+        {
+            return new MenuModuleDisplayModel
+            {
+                Name = "Sistema",
+                Icon = string.Empty,
+                Items =
+                [
+                    new MenuItemDisplayModel
+                    {
+                        Name = "Volver a la selección de empresa",
+                        ItemKey = "ReturnToCompanySelection",
+                        IsSeparator = false,
+                        Command = new DelegateCommand(ReturnToCompanySelection)
+                    }
+                ]
+            };
+        }
+
+        private async Task OpenMenuItemAsync(string itemKey, string displayName)
         {
             try
             {
-                TaxCategoryViewModel instance = IoC.Get<TaxCategoryViewModel>();
-                instance.DisplayName = "Administración de Tipos de Impuesto";
+                IsBusy = true;
+                await Task.Yield();
+
+                Type? vmType = typeof(MainMenuViewModel).Assembly.GetTypes()
+                    .FirstOrDefault(t => t.IsClass && t.Name == itemKey);
+
+                if (vmType == null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                        ThemedMessageBox.Show(title: "Atención!", text: $"No se encontró el módulo '{itemKey}'.", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Warning));
+                    return;
+                }
+
+                var instance = (IScreen)IoC.GetInstance(vmType, null);
+                instance.DisplayName = displayName;
                 await ActivateItemAsync(instance, new CancellationToken());
-                int MyNewIndex = Items.IndexOf(instance);
-                if (MyNewIndex >= 0) SelectedIndex = MyNewIndex;
+                int newIndex = Items.IndexOf(instance);
+                if (newIndex >= 0) SelectedIndex = newIndex;
             }
             catch (Exception ex)
             {
-                _ = ThemedMessageBox.Show("Atencion !", ex.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                Application.Current.Dispatcher.Invoke(() =>
+                    ThemedMessageBox.Show(title: "Atención!", text: ex.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 

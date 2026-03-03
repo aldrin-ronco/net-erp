@@ -1,20 +1,20 @@
-﻿<UserControl x:Class="NetErp.Global.MainMenu.Views.MainMenuView"
+<UserControl x:Class="NetErp.Global.MainMenu.Views.MainMenuView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:NetErp.Global.MainMenu.Views"
-             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core" 
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:mainMenuViewModel="clr-namespace:NetErp.Global.MainMenu.ViewModels"
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:cal="http://caliburnmicro.com"
              xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:ioc="clr-namespace:NetErp.IoContainer"
-             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator" 
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              d:DataContext="{d:DesignInstance Type=mainMenuViewModel:MainMenuViewModel}"
              DataContext="{ioc:DISource Type=mainMenuViewModel:MainMenuViewModel}"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <ResourceDictionary Source="..\..\Dictionaries\Views.xaml"/>
@@ -32,67 +32,51 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Menu Grid.Row="0">
-            <MenuItem Header="Contabilidad">
-                <MenuItem Header="Plan único de cuentas" x:Name="OpenAccountingAccounts"/>
-                <MenuItem Header="Adminitración de terceros" x:Name="OpenAccountingEntities"></MenuItem>
-                <MenuItem Header="Administración de proveedores" x:Name="OpenSupplier"></MenuItem>
-                <MenuItem Header="Fuentes contables" x:Name="OpenAccountingSource"></MenuItem>
-                <MenuItem Header="Comprobantes contables" x:Name="OpenAccountingEntries"/>
-                <MenuItem Header="Tipos de Documentos" x:Name="OpenIdentificationType"/>
-                <MenuItem Header="Presentaciones contables" x:Name="OpenAccountingPresentationAsync"/>
-                <MenuItem Header="Administración de libros contables" x:Name="OpenAccountingBooks"/>
-                <MenuItem Header="Administración de agrupación de cuentas contables" x:Name="OpenAccountingAccountGroups"/>
-                <MenuItem Header="Configuración del certificado de retención" x:Name="OpenWithholdingCertificateConfig"/>
-                <MenuItem Header="Administración de Impuestos" x:Name="OpenTax"/>
-                <MenuItem Header="Administración de Tipos de Impuesto" x:Name="OpenTaxCategory"/>
-                <Separator/>
-                <MenuItem Header="Libro Auxiliar" x:Name="OpenAuxiliaryBook"/>
-                <MenuItem Header="Balance de prueba" x:Name="OpenTestBalance"/>
-                <MenuItem Header="Libro Diario Por Tercero" x:Name="OpenDailyBookByEntity"/>
-                <MenuItem Header="Movimiento por tercero y cuenta" x:Name="OpenEntityVsAccount"/>
-                <MenuItem Header="Balance de prueba por tercero" x:Name="OpenTestBalanceByEntity"/>
-                <MenuItem Header="Estado de resultados anual" x:Name="OpenAnnualIncomeStatement"/>
-                
-            </MenuItem>
-            <MenuItem Header="Ventas">
-                <MenuItem Header="Administración de vendedores" x:Name="OpenSeller"></MenuItem>
-                <MenuItem Header="Administración de clientes" x:Name="OpenCustomer"></MenuItem>
-                <MenuItem Header="Administración de cupos de crédito" x:Name="OpenCreditLimit"/>
-                <MenuItem Header="Administracion de zonas de ventas" x:Name="OpenZone"/>
-                <MenuItem Header="Administración de listas de precios" x:Name="OpenPriceList"/>
-            </MenuItem>
-            <MenuItem Header="Inventario">
-                <MenuItem Header="Unidades de medida" x:Name="OpenMeasurementUnits"/>
-                <MenuItem Header="Grupos de tallaje" x:Name="OpenItemSizes"/>
-                <MenuItem Header="Catalogo de productos" x:Name="OpenCatalogItems"/>
-            </MenuItem>
-            <MenuItem Header="Tesorería">
-                <MenuItem Header="Administración de cajas, bancos y franquicias" x:Name="OpenTreasuryRootMaster"/>
-                <MenuItem Header="Administración de conceptos de ingresos, egresos y descuentos" x:Name="OpenTreasuryConcept"/>
-            </MenuItem>
-            <MenuItem Header="Global" Click="MenuItem_Click">
-                <MenuItem Header="Administración de centros de costos" x:Name="OpenCostCenters"/>
-                <MenuItem Header="Administración de smtp" x:Name="OpenSmtp"/>
-                <MenuItem Header="Administración de correos corporativos" x:Name="OpenEmail"/>
-                <MenuItem Header="Secuencias de Autorización" x:Name="OpenAuthorizationSequence"/>
-                <MenuItem Header="Configuración" x:Name="OpenParameter"/>
-            </MenuItem>
-            <MenuItem Header="Sistema">
-                <MenuItem Header="Volver a la selección de empresa" x:Name="ReturnToCompanySelection"/>
-            </MenuItem>
+        <Menu Grid.Row="0" Padding="0,4" ItemsSource="{Binding MenuModules}">
+            <Menu.ItemContainerStyle>
+                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                    <Setter Property="Padding" Value="8,4"/>
+                    <Setter Property="Header" Value="{Binding Name}"/>
+                    <Setter Property="ItemsSource" Value="{Binding Items}"/>
+                    <Setter Property="ItemContainerStyle">
+                        <Setter.Value>
+                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                <Setter Property="Header" Value="{Binding Name}"/>
+                                <Setter Property="Command" Value="{Binding Command}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSeparator}" Value="True">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="MenuItem">
+                                                    <Separator/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Menu.ItemContainerStyle>
         </Menu>
-        <dx:DXTabControl     x:Name="Items"
-                             Grid.Row="1"
-                             Background="Transparent"
-                             TabContentCacheMode="CacheTabsOnSelecting"
-                             HorizontalContentAlignment="Stretch"
-                             ItemContainerStyle="{Binding Source={StaticResource TabItemStyle}}"
-                             SelectedIndex="{Binding Path=SelectedIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-            <dx:DXTabControl.View>
-                <dx:TabControlScrollView ShowHeaderMenu="True" ShowHiddenTabItemsInHeaderMenu="False" HeaderLocation="Bottom" HeaderOrientation="Horizontal" AllowAnimation="True" 
-                                         ScrollButtonShowMode="Never"/>
-            </dx:DXTabControl.View>
-        </dx:DXTabControl>
+        <busyIndicator:BusyMask Grid.Row="1"
+                                IsBusy="{Binding IsBusy}"
+                                IndicatorType="BouncingDot"
+                                BusyContent="Cargando módulo..."
+                                BusyContentMargin="0,20,0,0"
+                                IsBusyAtStartup="False">
+            <dx:DXTabControl     x:Name="Items"
+                                 Background="Transparent"
+                                 TabContentCacheMode="CacheTabsOnSelecting"
+                                 HorizontalContentAlignment="Stretch"
+                                 ItemContainerStyle="{Binding Source={StaticResource TabItemStyle}}"
+                                 SelectedIndex="{Binding Path=SelectedIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                <dx:DXTabControl.View>
+                    <dx:TabControlScrollView ShowHeaderMenu="True" ShowHiddenTabItemsInHeaderMenu="False" HeaderLocation="Bottom" HeaderOrientation="Horizontal" AllowAnimation="True"
+                                             ScrollButtonShowMode="Never"/>
+                </dx:DXTabControl.View>
+            </dx:DXTabControl>
+        </busyIndicator:BusyMask>
     </Grid>
 </UserControl>

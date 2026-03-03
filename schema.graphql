@@ -451,6 +451,171 @@ type RootQueryType {
     at: IsoDatetime!
   ): Module
 
+  "Get paginated list of menu modules"
+  menuModulesPage(
+    pagination: Pagination
+
+    filters: MenuModuleFilters
+
+    "Sort configuration"
+    sort: [MenuModuleSortInput]
+  ): MenuModulePage
+
+  "Get menu module by ID"
+  menuModule(
+    "Menu module ID to fetch"
+    id: ID!
+  ): MenuModule
+
+  "Get menu module by name"
+  menuModuleByName(
+    "Menu module name to fetch"
+    name: String!
+  ): MenuModule
+
+  "Check if a menu module can be deleted"
+  canDeleteMenuModule(
+    "Menu module ID to check"
+    id: ID!
+  ): CanDeleteMenuModulePayload
+
+  "Audit timeline for a MenuModule"
+  menuModuleTimelinePage(
+    "Menu module ID"
+    id: ID!
+
+    pagination: Pagination
+
+    filters: MenuModuleTimelineFilters
+
+    sort: [MenuModuleTimelineSortInput]
+  ): MenuModuleTimelinePage
+
+  "Reconstruct MenuModule at a specific version"
+  menuModuleAtVersion(
+    "Menu module ID"
+    id: ID!
+
+    "Version ID"
+    versionId: ID!
+  ): MenuModule
+
+  "Reconstruct MenuModule as of a timestamp"
+  menuModuleAsOf(
+    "Menu module ID"
+    id: ID!
+
+    "Timestamp (inclusive)"
+    at: IsoDatetime!
+  ): MenuModule
+
+  "Get paginated list of menu items"
+  menuItemsPage(
+    pagination: Pagination
+
+    filters: MenuItemFilters
+
+    "Sort configuration"
+    sort: [MenuItemSortInput]
+  ): MenuItemPage
+
+  "Get menu item by ID"
+  menuItem(
+    "Menu item ID to fetch"
+    id: ID!
+  ): MenuItem
+
+  "Get menu item by item_key"
+  menuItemByItemKey(
+    "Menu item item_key to fetch"
+    itemKey: String!
+  ): MenuItem
+
+  "Check if a menu item can be deleted"
+  canDeleteMenuItem(
+    "Menu item ID to check"
+    id: ID!
+  ): CanDeleteMenuItemPayload
+
+  "Audit timeline for a MenuItem"
+  menuItemTimelinePage(
+    "Menu item ID"
+    id: ID!
+
+    pagination: Pagination
+
+    filters: MenuItemTimelineFilters
+
+    sort: [MenuItemTimelineSortInput]
+  ): MenuItemTimelinePage
+
+  "Reconstruct MenuItem at a specific version"
+  menuItemAtVersion(
+    "Menu item ID"
+    id: ID!
+
+    "Version ID"
+    versionId: ID!
+  ): MenuItem
+
+  "Reconstruct MenuItem as of a timestamp"
+  menuItemAsOf(
+    "Menu item ID"
+    id: ID!
+
+    "Timestamp (inclusive)"
+    at: IsoDatetime!
+  ): MenuItem
+
+  "Get paginated list of menu item groups"
+  menuItemGroupsPage(
+    pagination: Pagination
+
+    filters: MenuItemGroupFilters
+
+    "Sort configuration"
+    sort: [MenuItemGroupSortInput]
+  ): MenuItemGroupPage
+
+  "Get menu item group by ID"
+  menuItemGroup(
+    "Menu item group ID to fetch"
+    id: ID!
+  ): MenuItemGroup
+
+  "Check if a menu item group can be deleted"
+  canDeleteMenuItemGroup(
+    "Menu item group ID to check"
+    id: ID!
+  ): CanDeleteMenuItemGroupPayload
+
+  menuItemGroupTimelinePage(
+    "Menu item group ID"
+    id: ID!
+
+    pagination: Pagination
+
+    filters: MenuItemGroupTimelineFilters
+
+    sort: [MenuItemGroupTimelineSortInput]
+  ): MenuItemGroupTimelinePage
+
+  menuItemGroupAtVersion(
+    "Menu item group ID"
+    id: ID!
+
+    "Version ID"
+    versionId: ID!
+  ): MenuItemGroup
+
+  menuItemGroupAsOf(
+    "Menu item group ID"
+    id: ID!
+
+    "Timestamp (inclusive)"
+    at: IsoDatetime!
+  ): MenuItemGroup
+
   "Get paginated list of process types"
   processTypesPage(
     pagination: Pagination
@@ -2755,6 +2920,87 @@ type RootMutationType {
     "Module ID to delete"
     id: ID!
   ): DeleteModulePayload
+
+  "Create a new menu module"
+  createMenuModule(
+    "Menu module data"
+    input: CreateMenuModuleInput!
+  ): CreateMenuModulePayload
+
+  "Update an existing menu module"
+  updateMenuModule(
+    "Menu module ID to update"
+    id: ID!
+
+    "Data to update"
+    data: UpdateMenuModuleInput!
+  ): UpdateMenuModulePayload
+
+  "Bulk update display_order of menu modules"
+  bulkUpdateMenuModulesDisplayOrder(
+    "Menu modules display_order updates"
+    input: [MenuModuleDisplayOrderUpdateInput!]!
+  ): BulkUpdateMenuModulesDisplayOrderPayload
+
+  "Delete a menu module"
+  deleteMenuModule(
+    "Menu module ID to delete"
+    id: ID!
+  ): DeleteMenuModulePayload
+
+  "Create a new menu item"
+  createMenuItem(
+    "Menu item data"
+    input: CreateMenuItemInput!
+  ): CreateMenuItemPayload
+
+  "Update an existing menu item"
+  updateMenuItem(
+    "Menu item ID to update"
+    id: ID!
+
+    "Data to update"
+    data: UpdateMenuItemInput!
+  ): UpdateMenuItemPayload
+
+  "Bulk update display_order of menu items"
+  bulkUpdateMenuItemsDisplayOrder(
+    "Menu items display_order updates"
+    input: [MenuItemDisplayOrderUpdateInput!]!
+  ): BulkUpdateMenuItemsDisplayOrderPayload
+
+  "Delete a menu item"
+  deleteMenuItem(
+    "Menu item ID to delete"
+    id: ID!
+  ): DeleteMenuItemPayload
+
+  "Create a new menu item group"
+  createMenuItemGroup(
+    "Menu item group data"
+    input: CreateMenuItemGroupInput!
+  ): CreateMenuItemGroupPayload
+
+  "Update an existing menu item group"
+  updateMenuItemGroup(
+    "Menu item group ID to update"
+    id: ID!
+
+    "Data to update"
+    data: UpdateMenuItemGroupInput!
+  ): UpdateMenuItemGroupPayload
+
+  "Transactional bulk update menu item groups display order (all-or-nothing)"
+  bulkUpdateMenuItemGroupsDisplayOrder(
+    "List of {id, display_order} updates to apply in a single transaction"
+    input: [MenuItemGroupDisplayOrderUpdateInput!]!
+  ): BulkUpdateMenuItemGroupsDisplayOrderPayload
+
+  "Delete a menu item group"
+  deleteMenuItemGroup(
+    "Menu item group ID to delete"
+    id: ID!
+  ): DeleteMenuItemGroupPayload
 
   "Create a new process type"
   createProcessType(
@@ -5089,6 +5335,12 @@ type Item {
   "Components (child item + quantity) for this parent item"
   components: [ComponentsByItem]
 
+  "EAN codes for this item"
+  eanCodes: [String]
+
+  "Images for this item"
+  images: [ImageByItem]
+
   "User who created this record"
   createdBy: Account
 
@@ -7082,6 +7334,9 @@ type Catalog {
 
   "Inventory catalog name"
   name: String!
+
+  "Item types that belong to this catalog"
+  itemTypes: [ItemType]
 
   "Company this inventory catalog belongs to"
   company: Company
@@ -16792,6 +17047,446 @@ type ProcessTypeTimelinePage {
   pageNumber: Int!
 
   "Total pages"
+  totalPages: Int!
+}
+
+type MenuItemGroup {
+  id: ID
+  name: String
+  displayOrder: Int
+  isActive: Boolean
+  company: Company
+  menuModule: MenuModule
+  menuItems: [MenuItem]
+  insertedAt: IsoDatetime
+  updatedAt: IsoDatetime
+}
+
+type MenuItemGroupPage {
+  entries: [MenuItemGroup]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+input MenuItemGroupFilters {
+  name: String
+  menuModuleId: ID
+  displayOrder: Int
+  isActive: Boolean
+  matching: String
+}
+
+enum MenuItemGroupSortField {
+  ID
+  COMPANY_ID
+  MENU_MODULE_ID
+  NAME
+  DISPLAY_ORDER
+  IS_ACTIVE
+  INSERTED_AT
+  UPDATED_AT
+}
+
+input MenuItemGroupSortInput {
+  field: MenuItemGroupSortField!
+  direction: SortDirection!
+}
+
+input CreateMenuItemGroupInput {
+  menuModuleId: ID!
+  name: String!
+  displayOrder: Int
+  isActive: Boolean
+}
+
+input UpdateMenuItemGroupInput {
+  menuModuleId: ID
+  name: String
+  displayOrder: Int
+  isActive: Boolean
+}
+
+input MenuItemGroupDisplayOrderUpdateInput {
+  id: ID!
+  displayOrder: Int!
+}
+
+type CreateMenuItemGroupPayload {
+  menuItemGroup: MenuItemGroup
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type UpdateMenuItemGroupPayload {
+  menuItemGroup: MenuItemGroup
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type BulkUpdateMenuItemGroupsDisplayOrderPayload {
+  menuItemGroups: [MenuItemGroup]
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type DeleteMenuItemGroupPayload {
+  success: Boolean!
+  message: String!
+  deletedId: ID
+}
+
+type CanDeleteMenuItemGroupPayload {
+  canDelete: Boolean!
+  message: String
+}
+
+type MenuItemGroupChange {
+  field: String!
+  op: AuditOp!
+  old: String
+  new: String
+}
+
+type MenuItemGroupTimelineItem {
+  "Audit version identifier"
+  version: ID!
+
+  "Audit action"
+  action: AuditAction!
+
+  "When the change was recorded"
+  recordedAt: IsoDatetime!
+
+  "User who performed the action"
+  user: Account
+
+  "Humanized field-level changes"
+  changes: [MenuItemGroupChange]!
+}
+
+input MenuItemGroupTimelineFilters {
+  action: AuditAction
+  from: IsoDatetime
+  to: IsoDatetime
+}
+
+enum MenuItemGroupTimelineSortField {
+  RECORDED_AT
+  ACTION
+}
+
+input MenuItemGroupTimelineSortInput {
+  field: MenuItemGroupTimelineSortField!
+  direction: SortDirection!
+}
+
+type MenuItemGroupTimelinePage {
+  entries: [MenuItemGroupTimelineItem]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+type MenuItem {
+  id: ID
+  itemKey: String
+  name: String
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+  isActive: Boolean
+  company: Company
+  menuItemGroup: MenuItemGroup
+  insertedAt: IsoDatetime
+  updatedAt: IsoDatetime
+}
+
+type MenuItemPage {
+  entries: [MenuItem]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+input MenuItemFilters {
+  name: String
+  itemKey: String
+  menuItemGroupId: ID
+  isLockable: Boolean
+  isActive: Boolean
+  matching: String
+}
+
+enum MenuItemSortField {
+  ID
+  MENU_ITEM_GROUP_ID
+  COMPANY_ID
+  ITEM_KEY
+  NAME
+  ICON
+  DISPLAY_ORDER
+  IS_LOCKABLE
+  IS_ACTIVE
+  INSERTED_AT
+  UPDATED_AT
+}
+
+input MenuItemSortInput {
+  field: MenuItemSortField!
+  direction: SortDirection!
+}
+
+input CreateMenuItemInput {
+  menuItemGroupId: ID!
+  itemKey: String!
+  name: String!
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+  isActive: Boolean
+}
+
+input UpdateMenuItemInput {
+  menuItemGroupId: ID
+  itemKey: String
+  name: String
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+  isActive: Boolean
+}
+
+input MenuItemDisplayOrderUpdateInput {
+  id: ID!
+  displayOrder: Int!
+}
+
+type CreateMenuItemPayload {
+  menuItem: MenuItem
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type UpdateMenuItemPayload {
+  menuItem: MenuItem
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type BulkUpdateMenuItemsDisplayOrderPayload {
+  menuItems: [MenuItem]
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type DeleteMenuItemPayload {
+  success: Boolean!
+  message: String!
+  deletedId: ID
+}
+
+type CanDeleteMenuItemPayload {
+  canDelete: Boolean!
+  message: String
+}
+
+type MenuItemChange {
+  field: String!
+  op: AuditOp!
+  old: String
+  new: String
+}
+
+type MenuItemTimelineItem {
+  "Audit version identifier"
+  version: ID!
+
+  "Audit action"
+  action: AuditAction!
+
+  "When the change was recorded"
+  recordedAt: IsoDatetime!
+
+  "User who performed the action"
+  user: Account
+
+  "Humanized field-level changes"
+  changes: [MenuItemChange]!
+}
+
+input MenuItemTimelineFilters {
+  action: AuditAction
+  from: IsoDatetime
+  to: IsoDatetime
+}
+
+enum MenuItemTimelineSortField {
+  RECORDED_AT
+  ACTION
+}
+
+input MenuItemTimelineSortInput {
+  field: MenuItemTimelineSortField!
+  direction: SortDirection!
+}
+
+type MenuItemTimelinePage {
+  entries: [MenuItemTimelineItem]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+type MenuModule {
+  id: ID
+  name: String
+  icon: String
+  displayOrder: Int
+  isActive: Boolean
+  company: Company
+  menuItemGroups: [MenuItemGroup]
+  insertedAt: IsoDatetime
+  updatedAt: IsoDatetime
+}
+
+type MenuModulePage {
+  entries: [MenuModule]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+input MenuModuleFilters {
+  name: String
+  matching: String
+  isActive: Boolean
+  displayOrder: Int
+}
+
+enum MenuModuleSortField {
+  ID
+  NAME
+  ICON
+  COMPANY_ID
+  DISPLAY_ORDER
+  IS_ACTIVE
+  INSERTED_AT
+  UPDATED_AT
+}
+
+input MenuModuleSortInput {
+  field: MenuModuleSortField!
+  direction: SortDirection!
+}
+
+input CreateMenuModuleInput {
+  name: String!
+  icon: String
+  displayOrder: Int
+  isActive: Boolean
+}
+
+input UpdateMenuModuleInput {
+  name: String
+  icon: String
+  displayOrder: Int
+  isActive: Boolean
+}
+
+input MenuModuleDisplayOrderUpdateInput {
+  id: ID!
+  displayOrder: Int!
+}
+
+type CreateMenuModulePayload {
+  menuModule: MenuModule
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type UpdateMenuModulePayload {
+  menuModule: MenuModule
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type BulkUpdateMenuModulesDisplayOrderPayload {
+  menuModules: [MenuModule]
+  success: Boolean!
+  message: String!
+  errors: [FieldError]
+}
+
+type DeleteMenuModulePayload {
+  success: Boolean!
+  message: String!
+  deletedId: ID
+}
+
+type CanDeleteMenuModulePayload {
+  canDelete: Boolean!
+  message: String
+}
+
+type MenuModuleChange {
+  field: String!
+  op: AuditOp!
+  old: String
+  new: String
+}
+
+type MenuModuleTimelineItem {
+  "Audit version identifier"
+  version: ID!
+
+  "Audit action"
+  action: AuditAction!
+
+  "When the change was recorded"
+  recordedAt: IsoDatetime!
+
+  "User who performed the action"
+  user: Account
+
+  "Humanized field-level changes"
+  changes: [MenuModuleChange]!
+}
+
+input MenuModuleTimelineFilters {
+  action: AuditAction
+  from: IsoDatetime
+  to: IsoDatetime
+}
+
+enum MenuModuleTimelineSortField {
+  RECORDED_AT
+  ACTION
+}
+
+input MenuModuleTimelineSortInput {
+  field: MenuModuleTimelineSortField!
+  direction: SortDirection!
+}
+
+type MenuModuleTimelinePage {
+  entries: [MenuModuleTimelineItem]!
+  totalEntries: Int!
+  pageSize: Int!
+  pageNumber: Int!
   totalPages: Int!
 }
 
