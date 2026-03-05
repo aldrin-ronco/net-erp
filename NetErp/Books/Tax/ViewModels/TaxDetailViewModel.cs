@@ -172,7 +172,7 @@ namespace NetErp.Books.Tax.ViewModels
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxSection));
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxRefundAccount));
                     NotifyOfPropertyChange(nameof(IsVisiblePercentage));
-                    if (!IsVisiblePercentage) Rate = null;
+                    if (!IsVisiblePercentage) Rate = 0;
                     if (!IsVisibleGeneratedTaxSection) GeneratedTaxAccountId = null;
                     if (!IsVisibleGeneratedTaxRefundAccount) GeneratedTaxRefundAccountId = null;
                     if (!IsVisibleDeductibleTaxSection) DeductibleTaxAccountId = null;
@@ -513,6 +513,10 @@ namespace NetErp.Books.Tax.ViewModels
             base.OnViewReady(view);
             ValidateProperties();
             this.AcceptChanges();
+            if (IsNewRecord)
+            {
+                this.TrackChange(nameof(Rate));
+            }
             Formula = "Formula por definir";
             AlternativeFormula = "AlternativeFormula por definir";
         }

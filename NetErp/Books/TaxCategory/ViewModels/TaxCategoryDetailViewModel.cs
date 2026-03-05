@@ -328,6 +328,10 @@ namespace NetErp.Books.TaxCategory.ViewModels
             base.OnViewReady(view);
             ValidateProperties();
             this.AcceptChanges();
+            if (IsNewRecord)
+            {
+                this.TrackChange(nameof(UsesPercentage));
+            }
         }
 
         #endregion
