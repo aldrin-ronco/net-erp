@@ -330,7 +330,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             this.AcceptChanges();
             if (IsNewRecord)
             {
-                this.TrackChange(nameof(UsesPercentage));
+                this.SeedValue(nameof(UsesPercentage), false);
             }
         }
 

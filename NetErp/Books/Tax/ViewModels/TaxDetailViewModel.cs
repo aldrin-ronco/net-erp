@@ -515,7 +515,7 @@ namespace NetErp.Books.Tax.ViewModels
             this.AcceptChanges();
             if (IsNewRecord)
             {
-                this.TrackChange(nameof(Rate));
+                this.SeedValue(nameof(Rate), 0m);
             }
             Formula = "Formula por definir";
             AlternativeFormula = "AlternativeFormula por definir";
