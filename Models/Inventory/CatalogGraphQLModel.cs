@@ -27,7 +27,7 @@ namespace Models.Inventory
     }
     public class CatalogDeleteMessage
     {
-        public CatalogGraphQLModel DeletedCatalog { get; set; }
+        public DeleteResponseType DeletedCatalog { get; set; } = new();
     }
 
 }

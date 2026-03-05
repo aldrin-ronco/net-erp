@@ -9,7 +9,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
+        <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}"
+              FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -23,34 +24,40 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Nombre" Grid.Row="0" Margin="5 5 0 5" FontWeight="Bold"/>
-            <dxe:TextEdit Grid.Row="1" Margin="5 0 0 5"
+            <TextBlock Text="Nombre" Grid.Row="0" Margin="5 5 0 5"/>
+            <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
+                          CharacterCasing="Upper"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Stretch"/>
 
-            <TextBlock Text="Nombre corto (1 caracter)" Grid.Row="2" Margin="5 5 0 5" FontWeight="Bold"/>
+            <TextBlock Text="Nombre corto (1 caracter)" Grid.Row="2" Margin="5 5 0 5"/>
             <dxe:TextEdit Grid.Row="3" Margin="5 0 0 5" MaxLength="1"
                           CharacterCasing="Upper"
                           Text="{Binding PrefixChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Left" Width="50"/>
 
-            <CheckBox Grid.Row="4" Margin="5 10 0 5" Content="Controla inventario"
-                      IsChecked="{Binding StockControl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                      IsEnabled="{Binding StockControlEnable}"/>
+            <dxe:CheckEdit Grid.Row="4" Margin="5 10 0 5" Content="Controla inventario"
+                           IsChecked="{Binding StockControl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           IsEnabled="{Binding StockControlEnable}"
+                           Style="{StaticResource BlueCheckedTextStyle}"/>
 
-            <TextBlock Text="Unidad de medida por defecto" Grid.Row="5" Margin="5 10 0 5" FontWeight="Bold"/>
+            <TextBlock Text="Unidad de medida por defecto" Grid.Row="5" Margin="5 10 0 5"/>
             <dxe:ComboBoxEdit Grid.Row="6" Margin="5 0 0 5"
                               ItemsSource="{Binding MeasurementUnits}"
                               SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMember="Name"
-                              IsTextEditable="False"/>
+                              IsTextEditable="False"
+                              AllowNullInput="True"
+                              NullText="&lt;&lt; SELECCIONE UNA UNIDAD DE MEDIDA &gt;&gt;"/>
 
-            <TextBlock Text="Grupo contable por defecto" Grid.Row="7" Margin="5 10 0 5" FontWeight="Bold"/>
+            <TextBlock Text="Grupo contable por defecto" Grid.Row="7" Margin="5 10 0 5"/>
             <dxe:ComboBoxEdit Grid.Row="8" Margin="5 0 0 5"
                               ItemsSource="{Binding AccountingGroups}"
                               SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                               DisplayMember="Name"
-                              IsTextEditable="False"/>
+                              IsTextEditable="False"
+                              AllowNullInput="True"
+                              NullText="&lt;&lt; SELECCIONE UN GRUPO CONTABLE &gt;&gt;"/>
         </Grid>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,15">
