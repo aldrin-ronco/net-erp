@@ -26,10 +26,10 @@
                 </Grid.RowDefinitions>
 
                 <!-- Form content -->
-                <StackPanel Grid.Row="0" Margin="30,25,30,20">
+                <StackPanel Grid.Row="0" Margin="30,25,30,10">
 
-                    <!-- Tipo de impuesto -->
-                    <TextBlock Text="Tipo de impuesto" FontSize="13" Margin="0,0,0,5"/>
+                    <!-- Tipo de impuesto (ComboBox en creación, TextEdit en edición) -->
+                    <TextBlock Text="Tipo de impuesto" FontSize="13" Margin="0,0,0,4"/>
                     <dxe:ComboBoxEdit
                         Padding="2"
                         ItemsSource="{Binding Path=TaxCategories, UpdateSourceTrigger=PropertyChanged}"
@@ -39,40 +39,40 @@
                         NullValueButtonPlacement="EditBox"
                         EditValue="{Binding SelectedTaxCategoryGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         BorderBrush="#C8CED6"
-                        Margin="0,0,0,15"/>
+                        Margin="0,0,0,10"
+                        Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+                    <TextBlock
+                        Text="{Binding SelectedTaxCategoryGraphQLModel.Name, Mode=OneWay}"
+                        FontSize="13"
+                        Margin="0,0,0,10"
+                        Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
 
-                    <!-- Nombre y Tasa en la misma fila -->
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="2*"/>
-                        </Grid.ColumnDefinitions>
+                    <!-- Nombre -->
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,4"/>
+                    <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  x:Name="Name"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,10"/>
 
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
-                            <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                          CharacterCasing="Upper"
-                                          x:Name="Name"
-                                          BorderBrush="#C8CED6"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Porcentaje" FontSize="13" Margin="0,0,0,5"/>
-                            <dxe:SpinEdit MinValue="0" Increment="1"
-                                          Padding="2"
-                                          Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                          IsFloatValue="False"
-                                          MaskType="Numeric"
-                                          x:Name="Rate"
-                                          BorderBrush="#C8CED6"/>
-                        </StackPanel>
-                    </Grid>
+                    <!-- Porcentaje (visible solo si TaxCategory usa porcentaje) -->
+                    <StackPanel Visibility="{Binding IsVisiblePercentage, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                Margin="0,0,0,10">
+                        <TextBlock Text="Porcentaje" FontSize="13" Margin="0,0,0,4"/>
+                        <dxe:SpinEdit MinValue="0" Increment="1"
+                                      Padding="2"
+                                      Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      IsFloatValue="False"
+                                      MaskType="Numeric"
+                                      x:Name="Rate"
+                                      BorderBrush="#C8CED6"/>
+                    </StackPanel>
 
                     <!-- Impuesto Generado -->
-                    <StackPanel Visibility="{Binding IsVisibleGeneratedTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                        <TextBlock Text="Impuesto Generado" FontSize="13" Margin="0,0,0,8"/>
-                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,5"/>
+                    <StackPanel Visibility="{Binding IsVisibleGeneratedTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                Margin="0,0,0,10">
+                        <TextBlock Text="Impuesto Generado" FontSize="13" Margin="0,0,0,4"/>
+                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,4"/>
                         <dxe:ComboBoxEdit
                             Padding="2"
                             ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
@@ -83,10 +83,10 @@
                             NullValueButtonPlacement="EditBox"
                             EditValue="{Binding GeneratedTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             BorderBrush="#C8CED6"
-                            Margin="0,0,0,10"/>
+                            Margin="0,0,0,8"/>
 
                         <StackPanel Visibility="{Binding IsVisibleGeneratedTaxRefundAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,4"/>
                             <dxe:ComboBoxEdit
                                 Padding="2"
                                 ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
@@ -100,14 +100,11 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Separador entre secciones (solo si ambas son visibles) -->
-                    <Separator Visibility="{Binding IsVisibleSectionSeparator, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                               Margin="0,10,0,10"/>
-
                     <!-- Impuesto Descontable -->
-                    <StackPanel Visibility="{Binding IsVisibleDeductibleTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                        <TextBlock Text="Impuesto Descontable" FontSize="13" Margin="0,0,0,8"/>
-                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,5"/>
+                    <StackPanel Visibility="{Binding IsVisibleDeductibleTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                Margin="0,0,0,10">
+                        <TextBlock Text="Impuesto Descontable" FontSize="13" Margin="0,0,0,4"/>
+                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,4"/>
                         <dxe:ComboBoxEdit
                             Padding="2"
                             ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
@@ -118,10 +115,10 @@
                             NullValueButtonPlacement="EditBox"
                             EditValue="{Binding DeductibleTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             BorderBrush="#C8CED6"
-                            Margin="0,0,0,10"/>
+                            Margin="0,0,0,8"/>
 
                         <StackPanel Visibility="{Binding IsVisibleDeductibleTaxRefundAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,4"/>
                             <dxe:ComboBoxEdit
                                 Padding="2"
                                 ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
@@ -135,15 +132,10 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Separador antes del checkbox (solo si hay alguna sección de cuentas) -->
-                    <Separator Visibility="{Binding IsVisibleAnySectionAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                               Margin="0,10,0,10"/>
-
                     <!-- Impuesto Activo -->
                     <dxe:CheckEdit Content="Impuesto Activo"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,0"
                                    IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 

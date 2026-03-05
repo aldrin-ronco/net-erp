@@ -171,8 +171,8 @@ namespace NetErp.Books.Tax.ViewModels
                     NotifyOfPropertyChange(nameof(IsVisibleGeneratedTaxRefundAccount));
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxSection));
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxRefundAccount));
-                    NotifyOfPropertyChange(nameof(IsVisibleSectionSeparator));
-                    NotifyOfPropertyChange(nameof(IsVisibleAnySectionAccount));
+                    NotifyOfPropertyChange(nameof(IsVisiblePercentage));
+                    if (!IsVisiblePercentage) Rate = null;
                     if (!IsVisibleGeneratedTaxSection) GeneratedTaxAccountId = null;
                     if (!IsVisibleGeneratedTaxRefundAccount) GeneratedTaxRefundAccountId = null;
                     if (!IsVisibleDeductibleTaxSection) DeductibleTaxAccountId = null;
@@ -324,11 +324,9 @@ namespace NetErp.Books.Tax.ViewModels
             && SelectedTaxCategoryGraphQLModel.DeductibleTaxAccountIsRequired
             && SelectedTaxCategoryGraphQLModel.DeductibleTaxRefundAccountIsRequired;
 
-        public bool IsVisibleSectionSeparator =>
-            IsVisibleGeneratedTaxSection && IsVisibleDeductibleTaxSection;
-
-        public bool IsVisibleAnySectionAccount =>
-            IsVisibleGeneratedTaxSection || IsVisibleDeductibleTaxSection;
+        public bool IsVisiblePercentage =>
+            SelectedTaxCategoryGraphQLModel != null
+            && SelectedTaxCategoryGraphQLModel.UsesPercentage;
 
         #endregion
 
@@ -390,7 +388,7 @@ namespace NetErp.Books.Tax.ViewModels
             switch (propertyName)
             {
                 case nameof(Rate):
-                    if (!value.HasValue || value == 0) AddError(propertyName, "La tasa es requerida");
+                    if (IsVisiblePercentage && (!value.HasValue || value == 0)) AddError(propertyName, "El porcentaje es requerido");
                     break;
             }
         }
@@ -443,7 +441,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public bool CanSave => !HasErrors && this.HasChanges()
                                && !string.IsNullOrEmpty(Name)
-                               && Rate.HasValue && Rate > 0
+                               && (!IsVisiblePercentage || (Rate.HasValue && Rate > 0))
                                && TaxCategoryId.HasValue;
 
         #endregion
@@ -503,6 +501,7 @@ namespace NetErp.Books.Tax.ViewModels
             TaxCategories = [.. _taxCategoryCache.Items];
 
             IsActive = true;
+            Rate = 0;
         }
 
         #endregion
@@ -674,6 +673,7 @@ namespace NetErp.Books.Tax.ViewModels
                 .Field(e => e.Rate)
                 .Field(e => e.IsActive)
                 .Field(e => e.Formula)
+                .Field(e => e.AlternativeFormula)
                 .Select(e => e.TaxCategory, cat => cat
                     .Field(c => c.Id)
                     .Field(c => c.Name)
