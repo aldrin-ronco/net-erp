@@ -920,63 +920,82 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task DeleteCatalog()
         {
+            if (SelectedCatalog == null) return;
+
             try
             {
                 IsBusy = true;
+                Refresh();
+
                 int id = SelectedCatalog.Id;
-
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteCatalog(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _catalogService.CanDeleteAsync(query, variables);
+                string canDeleteQuery = GetCanDeleteQuery("canDeleteCatalog");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _catalogService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedCatalog.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar el catálogo {SelectedCatalog.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
+                IsBusy = true;
                 Refresh();
 
-                string deleteQuery = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteCatalog(id: $id) {
-                    id
-                    name
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteCatalog");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _catalogService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object deleteVariables = new { Id = id };
-                CatalogGraphQLModel deletedCatalog = await _catalogService.DeleteAsync(deleteQuery, deleteVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new CatalogDeleteMessage() { DeletedCatalog = deletedCatalog });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new CatalogDeleteMessage { DeletedCatalog = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1558,6 +1577,31 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
+        private static string GetCanDeleteQuery(string fragmentName)
+        {
+            var fields = FieldSpec<CanDeleteType>.Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "CanDeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        private static string GetDeleteMutationQuery(string fragmentName)
+        {
+            var fields = FieldSpec<DeleteResponseType>.Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "DeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        }
+
         public async Task LoadCatalogsAsync()
         {
             try
@@ -1983,10 +2027,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                Catalogs.Remove(Catalogs.Where(x => x.Id == message.DeletedCatalog.Id).First());
-                SelectedCatalog = Catalogs.First();
+                CatalogDTO? catalogToRemove = Catalogs.FirstOrDefault(x => x.Id == message.DeletedCatalog.DeletedId);
+                if (catalogToRemove != null)
+                    Catalogs.Remove(catalogToRemove);
+
+                SelectedCatalog = Catalogs.Count > 0 ? Catalogs.First() : null;
             });
-            _notificationService.ShowSuccess("Catálogo eliminado correctamente");
+            _notificationService.ShowSuccess(message.DeletedCatalog.Message);
             return Task.CompletedTask;
         }
 

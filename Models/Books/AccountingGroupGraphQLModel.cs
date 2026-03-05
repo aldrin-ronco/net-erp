@@ -17,13 +17,13 @@ namespace Models.Books
         public AccountingAccountGraphQLModel AccountInventory { get; set; } = new();
         public AccountingAccountGraphQLModel AccountIncomeReverse { get; set; } = new();
         public AccountingAccountGraphQLModel AccountAiuAdministration { get; set; } = new();
-        public AccountingAccountGraphQLModel AccountAiuUnforenseen { get; set; } = new();
+        public AccountingAccountGraphQLModel AccountAiuUnforeseen { get; set; } = new();
         public AccountingAccountGraphQLModel AccountAiuUtility { get; set; } = new();
         public bool AllowAiu { get; set; }
-        public TaxGraphQLModel BuyTax1 { get; set; } = new();
-        public TaxGraphQLModel BuyTax2 { get; set; } = new();
-        public TaxGraphQLModel SellTax1 { get; set; } = new();
-        public TaxGraphQLModel SellTax2 { get; set; } = new();
+        public TaxGraphQLModel PurchasePrimaryTax { get; set; } = new();
+        public TaxGraphQLModel PurchaseSecondaryTax { get; set; } = new();
+        public TaxGraphQLModel SalesPrimaryTax { get; set; } = new();
+        public TaxGraphQLModel SalesSecondaryTax { get; set; } = new();
     }
 
     public class AccountingGroupDTO : AccountingGroupGraphQLModel

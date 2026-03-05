@@ -760,7 +760,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (var item in PriceListDetail)
                 {
                     item.Context = this;
-                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SellTax1, item.CatalogItem.AccountingGroup.SellTax2);
+                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SalesPrimaryTax, item.CatalogItem.AccountingGroup.SalesSecondaryTax);
                     item.Profit = GetProfit(item);
                 }
 
