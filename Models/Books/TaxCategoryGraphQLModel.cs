@@ -1,19 +1,13 @@
-﻿using Models.Billing;
-using Models.Global;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Models.Global.GraphQLResponseTypes;
+﻿using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {
     public class TaxCategoryGraphQLModel
     {
         public int Id { get; set; }
+        public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public bool UsesPercentage { get; set; }
         public bool GeneratedTaxAccountIsRequired { get; set; }
         public bool GeneratedTaxRefundAccountIsRequired { get; set; }
         public bool DeductibleTaxAccountIsRequired { get; set; }

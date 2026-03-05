@@ -1,28 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NetErp.Books.TaxCategory.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace NetErp.Books.TaxCategory.Views
 {
-    /// <summary>
-    /// Lógica de interacción para TaxCategoryDetailView.xaml
-    /// </summary>
     public partial class TaxCategoryDetailView : UserControl
     {
         public TaxCategoryDetailView()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            if (DataContext is TaxCategoryDetailViewModel vm)
+            {
+                if (vm.IsNewRecord)
+                    TaxCategoryCode.Focus();
+                else
+                    TaxCategoryName.Focus();
+            }
         }
     }
 }
