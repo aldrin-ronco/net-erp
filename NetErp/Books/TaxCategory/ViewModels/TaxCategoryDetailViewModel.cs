@@ -1,245 +1,39 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
-using Models.Billing;
 using Models.Books;
-using Models.Global;
-using NetErp.Global.AuthorizationSequence.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Ninject.Activation;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Security.Policy;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static Amazon.S3.Util.S3EventNotification;
-using static Chilkat.Http;
-using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using Extensions.Global;
 
 namespace NetErp.Books.TaxCategory.ViewModels
 {
-    public class TaxCategoryDetailViewModel :  Screen, INotifyDataErrorInfo
+    public class TaxCategoryDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        #region DependecyProperties
-        private readonly IRepository<TaxCategoryGraphQLModel> _TaxCategoryService;
+        #region Dependencies
+
+        private readonly IRepository<TaxCategoryGraphQLModel> _taxCategoryService;
+        private readonly IEventAggregator _eventAggregator;
 
         #endregion
 
-        #region InitializationMethods
-        public TaxCategoryDetailViewModel(TaxCategoryViewModel context, TaxCategoryGraphQLModel? entity, IRepository<TaxCategoryGraphQLModel> TaxCategoryService)
-        {
+        #region State
 
+        public bool IsNewRecord => TaxCategoryId == 0;
 
-            Context = context;
-            _TaxCategoryService = TaxCategoryService ?? throw new ArgumentNullException(nameof(TaxCategoryService));
-            _errors = new Dictionary<string, List<string>>();
-            if (entity != null)
-            {
-                _entity = entity;
-
-            }
-            Context.EventAggregator.SubscribeOnUIThread(this);
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
-
-        }
-        public async Task InitializeAsync()
-        {
-            CleanUpControls();
-            if (Entity != null)
-            {
-                SetUpdateProperties(Entity);
-            }
-        }
-        protected override void OnViewReady(object view)
-        {
-            base.OnViewReady(view);
-            this.AcceptChanges();
-            NotifyOfPropertyChange(nameof(CanSave));
-            this.SetFocus(() => Name);
-            ValidateProperties();
-        }
-        public void SetUpdateProperties(TaxCategoryGraphQLModel entity)
-        {
-            Name = entity.Name;
-            Prefix = entity.Prefix;
-            GeneratedTaxAccountIsRequired = entity.GeneratedTaxAccountIsRequired;
-            GeneratedTaxRefundAccountIsRequired = entity.GeneratedTaxRefundAccountIsRequired;
-            DeductibleTaxAccountIsRequired = entity.DeductibleTaxAccountIsRequired;
-            DeductibleTaxRefundAccountIsRequired = entity.DeductibleTaxRefundAccountIsRequired;
-
-        }
-        #endregion
-
-        #region Properties
-        private TaxCategoryViewModel _context;
-        public TaxCategoryViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
-        private TaxCategoryGraphQLModel? _entity;
-        public TaxCategoryGraphQLModel Entity
-        {
-            get { return _entity; }
-            set
-            {
-                if (_entity != value)
-                {
-                    _entity = value;
-                    NotifyOfPropertyChange(nameof(Entity));
-
-                }
-            }
-        }
-     
-        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
-        public bool IsReadOnlyGeneratedTaxRefundAccountIsRequired => GeneratedTaxAccountIsRequired.Equals(false);
-        public bool IsReadOnlyDeductibleTaxRefundAccountIsRequired => DeductibleTaxAccountIsRequired.Equals(false);
-        public bool IsNewRecord
-        {
-            get { return _isNewRecord; }
-
-        }
-
-        private string _name;
-        public string Name
-        {
-            get { return _name; }
-            set
-            {
-                if (_name != value)
-                {
-                    _name = value;
-                    ValidateProperty(nameof(Name), Name);
-                    NotifyOfPropertyChange(nameof(Name));
-                    this.TrackChange(nameof(Name));
-                    NotifyOfPropertyChange(nameof(CanSave));
-
-                }
-            }
-        }
-        private string _prefix;
-        public string Prefix
-        {
-            get { return _prefix; }
-            set
-            {
-                if (_prefix != value)
-                {
-                    _prefix = value;
-                    ValidateProperty(nameof(Prefix), Prefix);
-                    NotifyOfPropertyChange(nameof(Prefix));
-                    this.TrackChange(nameof(Prefix));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-        private bool _generatedTaxAccountIsRequired;
-        public bool GeneratedTaxAccountIsRequired
-        {
-            get { return _generatedTaxAccountIsRequired; }
-            set
-            {
-                if (_generatedTaxAccountIsRequired != value)
-                {
-                    _generatedTaxAccountIsRequired = value;
-                    NotifyOfPropertyChange(nameof(GeneratedTaxAccountIsRequired));
-                    this.TrackChange(nameof(GeneratedTaxAccountIsRequired));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    NotifyOfPropertyChange(nameof(IsReadOnlyGeneratedTaxRefundAccountIsRequired));
-                    if (value == false) GeneratedTaxRefundAccountIsRequired = false;
-                }
-            }
-        }
-        private bool _generatedTaxRefundAccountIsRequired;
-        public bool GeneratedTaxRefundAccountIsRequired
-        {
-            get { return _generatedTaxRefundAccountIsRequired; }
-            set
-            {
-                if (_generatedTaxRefundAccountIsRequired != value)
-                {
-                    _generatedTaxRefundAccountIsRequired = value;
-                    NotifyOfPropertyChange(nameof(GeneratedTaxRefundAccountIsRequired));
-                    this.TrackChange(nameof(GeneratedTaxRefundAccountIsRequired));
-                    NotifyOfPropertyChange(nameof(CanSave));
-
-                }
-            }
-        }
-        private bool _deductibleTaxAccountIsRequired;
-        public bool DeductibleTaxAccountIsRequired
-        {
-            get { return _deductibleTaxAccountIsRequired; }
-            set
-            {
-                if (_deductibleTaxAccountIsRequired != value)
-                {
-                    _deductibleTaxAccountIsRequired = value;
-                    NotifyOfPropertyChange(nameof(DeductibleTaxAccountIsRequired));
-                    NotifyOfPropertyChange(nameof(IsReadOnlyDeductibleTaxRefundAccountIsRequired));
-                    this.TrackChange(nameof(DeductibleTaxAccountIsRequired));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    if (value == false) DeductibleTaxRefundAccountIsRequired = false;
-
-
-                }
-               
-            }
-        }
-        private bool _deductibleTaxRefundAccountIsRequired;
-        public bool DeductibleTaxRefundAccountIsRequired
-        {
-            get { return _deductibleTaxRefundAccountIsRequired; }
-            set
-            {
-                if (_deductibleTaxRefundAccountIsRequired != value)
-                {
-                    _deductibleTaxRefundAccountIsRequired = value;
-                    NotifyOfPropertyChange(nameof(DeductibleTaxRefundAccountIsRequired));
-                    this.TrackChange(nameof(DeductibleTaxRefundAccountIsRequired));
-                    NotifyOfPropertyChange(nameof(CanSave));
-
-                }
-            }
-        }
-        #endregion
-
-        #region Validation
-        public bool HasErrors => _errors.Count > 0;
-
-        Dictionary<string, List<string>> _errors;
-
-        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-        private bool _isBusy = false;
+        private bool _isBusy;
         public bool IsBusy
         {
             get => _isBusy;
@@ -252,78 +46,187 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 }
             }
         }
-        public IEnumerable GetErrors(string propertyName)
+
+        #endregion
+
+        #region Form Properties
+
+        private int _taxCategoryId;
+        public int TaxCategoryId
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            get => _taxCategoryId;
+            set
+            {
+                if (_taxCategoryId != value)
+                {
+                    _taxCategoryId = value;
+                    NotifyOfPropertyChange(nameof(TaxCategoryId));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        private string _code = string.Empty;
+        public string Code
+        {
+            get => _code;
+            set
+            {
+                if (_code != value)
+                {
+                    _code = value;
+                    NotifyOfPropertyChange(nameof(Code));
+                    ValidateProperty(nameof(Code), value);
+                    if (IsNewRecord) this.TrackChange(nameof(Code));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public bool IsCodeReadOnly => !IsNewRecord;
+
+        private string _name = string.Empty;
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
+                    this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _prefix = string.Empty;
+        public string Prefix
+        {
+            get => _prefix;
+            set
+            {
+                if (_prefix != value)
+                {
+                    _prefix = value;
+                    NotifyOfPropertyChange(nameof(Prefix));
+                    ValidateProperty(nameof(Prefix), value);
+                    this.TrackChange(nameof(Prefix));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private bool _usesPercentage;
+        public bool UsesPercentage
+        {
+            get => _usesPercentage;
+            set
+            {
+                if (_usesPercentage != value)
+                {
+                    _usesPercentage = value;
+                    NotifyOfPropertyChange(nameof(UsesPercentage));
+                    this.TrackChange(nameof(UsesPercentage));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private bool _generatedTaxAccountIsRequired;
+        public bool GeneratedTaxAccountIsRequired
+        {
+            get => _generatedTaxAccountIsRequired;
+            set
+            {
+                if (_generatedTaxAccountIsRequired != value)
+                {
+                    _generatedTaxAccountIsRequired = value;
+                    NotifyOfPropertyChange(nameof(GeneratedTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(IsReadOnlyGeneratedTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(GeneratedTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    if (value == false) GeneratedTaxRefundAccountIsRequired = false;
+                }
+            }
+        }
+
+        private bool _generatedTaxRefundAccountIsRequired;
+        public bool GeneratedTaxRefundAccountIsRequired
+        {
+            get => _generatedTaxRefundAccountIsRequired;
+            set
+            {
+                if (_generatedTaxRefundAccountIsRequired != value)
+                {
+                    _generatedTaxRefundAccountIsRequired = value;
+                    NotifyOfPropertyChange(nameof(GeneratedTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(GeneratedTaxRefundAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private bool _deductibleTaxAccountIsRequired;
+        public bool DeductibleTaxAccountIsRequired
+        {
+            get => _deductibleTaxAccountIsRequired;
+            set
+            {
+                if (_deductibleTaxAccountIsRequired != value)
+                {
+                    _deductibleTaxAccountIsRequired = value;
+                    NotifyOfPropertyChange(nameof(DeductibleTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(IsReadOnlyDeductibleTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(DeductibleTaxAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    if (value == false) DeductibleTaxRefundAccountIsRequired = false;
+                }
+            }
+        }
+
+        private bool _deductibleTaxRefundAccountIsRequired;
+        public bool DeductibleTaxRefundAccountIsRequired
+        {
+            get => _deductibleTaxRefundAccountIsRequired;
+            set
+            {
+                if (_deductibleTaxRefundAccountIsRequired != value)
+                {
+                    _deductibleTaxRefundAccountIsRequired = value;
+                    NotifyOfPropertyChange(nameof(DeductibleTaxRefundAccountIsRequired));
+                    this.TrackChange(nameof(DeductibleTaxRefundAccountIsRequired));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public bool IsReadOnlyGeneratedTaxRefundAccountIsRequired => !GeneratedTaxAccountIsRequired;
+        public bool IsReadOnlyDeductibleTaxRefundAccountIsRequired => !DeductibleTaxAccountIsRequired;
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _errors = new();
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
             return _errors[propertyName];
         }
 
-        #endregion
-        #region Commands
-        private ICommand _saveCommand;
-        public ICommand SaveCommand
-        {
-            get
-            {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
-                return _saveCommand;
-            }
-        }
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
-        {
-            get
-            {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
-            }
-        }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-        private void ValidateProperties()
-        {
-            ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Prefix), Prefix);
-
-        }
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
-
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(Prefix):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El Prefijo no puede estar vacío");
-                        break;
-
-                }
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-
-        }
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
+
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
@@ -335,33 +238,102 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-        public void CleanUpControls()
+
+        private void ClearErrors(string propertyName)
         {
-            Name = "";
-            Prefix = "";
-            GeneratedTaxAccountIsRequired = false;
-            GeneratedTaxRefundAccountIsRequired = false;
-            DeductibleTaxAccountIsRequired = false;
-            DeductibleTaxRefundAccountIsRequired = false;
-
-
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
         }
-        public void GoBack(object p)
+
+        private void ValidateProperty(string propertyName, string value)
         {
-            CleanUpControls();
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
-
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Code):
+                    if (string.IsNullOrEmpty(Code)) AddError(propertyName, "El código no puede estar vacío");
+                    break;
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    break;
+                case nameof(Prefix):
+                    if (string.IsNullOrEmpty(Prefix)) AddError(propertyName, "El prefijo no puede estar vacío");
+                    break;
+            }
         }
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Code), Code);
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Prefix), Prefix);
+        }
+
         #endregion
-       
-        public bool CanSave
+
+        #region Button States
+
+        public bool CanSave => !HasErrors && this.HasChanges()
+                               && !string.IsNullOrEmpty(Code)
+                               && !string.IsNullOrEmpty(Name)
+                               && !string.IsNullOrEmpty(Prefix)
+                               && (GeneratedTaxAccountIsRequired || DeductibleTaxAccountIsRequired);
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand
         {
             get
             {
-                if (_errors.Count > 0 || (GeneratedTaxAccountIsRequired == false && DeductibleTaxAccountIsRequired == false) || !this.HasChanges()) { return false; }
-                return true;
+                _saveCommand ??= new AsyncCommand(SaveAsync);
+                return _saveCommand;
             }
         }
+
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
+        {
+            get
+            {
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
+            }
+        }
+
+        #endregion
+
+        #region Constructor
+
+        public TaxCategoryDetailViewModel(
+            IRepository<TaxCategoryGraphQLModel> taxCategoryService,
+            IEventAggregator eventAggregator)
+        {
+            _taxCategoryService = taxCategoryService;
+            _eventAggregator = eventAggregator;
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            ValidateProperties();
+            this.AcceptChanges();
+        }
+
+        #endregion
+
+        #region Save / Cancel
+
         public async Task SaveAsync()
         {
             try
@@ -371,73 +343,108 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 UpsertResponseType<TaxCategoryGraphQLModel> result = await ExecuteSaveAsync();
                 if (!result.Success)
                 {
-                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
                     return;
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
-                        ? new TaxCategoryCreateMessage() { CreatedTaxCategory = result }
-                        : new TaxCategoryUpdateMessage() { UpdatedTaxCategory = result }
+                        ? new TaxCategoryCreateMessage { CreatedTaxCategory = result }
+                        : new TaxCategoryUpdateMessage { UpdatedTaxCategory = result }
                 );
-               
-                // Context.EnableOnViewReady = false;
-                await Context.ActivateMasterViewModelAsync();
+
+                await TryCloseAsync(true);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
         }
+
         public async Task<UpsertResponseType<TaxCategoryGraphQLModel>> ExecuteSaveAsync()
         {
-           
-            
             if (IsNewRecord)
             {
-              
                 string query = GetCreateQuery();
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-
-                UpsertResponseType<TaxCategoryGraphQLModel> taxCategoryCreated = await _TaxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
-                return taxCategoryCreated;
+                return await _taxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
             }
             else
             {
                 string query = GetUpdateQuery();
-
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Entity.Id;
-
-                UpsertResponseType<TaxCategoryGraphQLModel> updatedTaxCategory = await _TaxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
-                return updatedTaxCategory;
-                
+                variables.updateResponseId = TaxCategoryId;
+                return await _taxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
             }
-
         }
+
+        public async Task CancelAsync()
+        {
+            await TryCloseAsync(false);
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        public string GetCreateQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<TaxCategoryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "taxCategory", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Code)
+                    .Field(f => f.Name)
+                    .Field(f => f.Prefix)
+                    .Field(f => f.UsesPercentage)
+                    .Field(e => e.GeneratedTaxAccountIsRequired)
+                    .Field(e => e.GeneratedTaxRefundAccountIsRequired)
+                    .Field(e => e.DeductibleTaxAccountIsRequired)
+                    .Field(e => e.DeductibleTaxRefundAccountIsRequired))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateTaxCategoryInput!");
+            var fragment = new GraphQLQueryFragment("createTaxCategory", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        }
+
         public string GetUpdateQuery()
         {
             var fields = FieldSpec<UpsertResponseType<TaxCategoryGraphQLModel>>
                 .Create()
                 .Select(selector: f => f.Entity, alias: "entity", overrideName: "taxCategory", nested: sq => sq
                     .Field(f => f.Id)
+                    .Field(f => f.Code)
                     .Field(f => f.Name)
                     .Field(f => f.Prefix)
-                     .Field(e => e.GeneratedTaxRefundAccountIsRequired)
+                    .Field(f => f.UsesPercentage)
                     .Field(e => e.GeneratedTaxAccountIsRequired)
-                    .Field(e => e.DeductibleTaxRefundAccountIsRequired)
+                    .Field(e => e.GeneratedTaxRefundAccountIsRequired)
                     .Field(e => e.DeductibleTaxAccountIsRequired)
-
-                    )
+                    .Field(e => e.DeductibleTaxRefundAccountIsRequired))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -451,46 +458,18 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateTaxCategory", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
-   
-        public string GetCreateQuery()
+
+        #endregion
+
+        #region Helper
+
+        public new void AcceptChanges()
         {
-            var fields = FieldSpec<UpsertResponseType<TaxCategoryGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "taxCategory", nested: sq => sq
-                    .Field(f => f.Id)
-                    .Field(f => f.Name)
-                    .Field(f => f.Prefix)
-                     .Field(e => e.GeneratedTaxRefundAccountIsRequired)
-                    .Field(e => e.GeneratedTaxAccountIsRequired)
-                    .Field(e => e.DeductibleTaxRefundAccountIsRequired)
-                    .Field(e => e.DeductibleTaxAccountIsRequired)
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("input", "CreateTaxCategoryInput!");
-
-            var fragment = new GraphQLQueryFragment("createTaxCategory", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-      
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
-        {
-
-            // Desconectar eventos para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
-            return base.OnDeactivateAsync(close, cancellationToken);
+            ViewModelExtensions.AcceptChanges(this);
         }
 
+        #endregion
     }
 }
