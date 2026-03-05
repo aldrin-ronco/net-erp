@@ -1,12 +1,4 @@
-﻿using Models.Billing;
-using Models.Global;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Models.Global.GraphQLResponseTypes;
+﻿using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
 {

@@ -286,13 +286,13 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 {
                     IsBusy = false;
                     ThemedMessageBox.Show("Atención !",
-                        "El registro no puede ser eliminado" + (char)13 + (char)13 + validation.Message,
+                        $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedTaxCategory = await Task.Run(() => ExecuteDeleteTaxCategoryAsync(SelectedTaxCategory.Id));
+                DeleteResponseType deletedTaxCategory = await ExecuteDeleteTaxCategoryAsync(SelectedTaxCategory.Id);
 
                 if (!deletedTaxCategory.Success)
                 {
