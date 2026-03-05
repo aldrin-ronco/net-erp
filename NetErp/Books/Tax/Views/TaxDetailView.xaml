@@ -1,198 +1,188 @@
-﻿<UserControl x:Class="NetErp.Books.Tax.Views.TaxDetailView"
+<UserControl x:Class="NetErp.Books.Tax.Views.TaxDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:NetErp.Books.Tax.Views"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-            xmlns:cal="http://caliburnmicro.com"
-            xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
-            xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
-            xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-            xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-            xmlns:config="clr-namespace:Common.Config;assembly=Common"
-            xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-            xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-            xmlns:h="clr-namespace:NetErp.Helpers"
-            xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             mc:Ignorable="d"
+             d:DesignHeight="550" d:DesignWidth="550"
+             Background="#EEF1F5">
     <busyIndicator:BusyMask x:Name="BusyIndicator"
-     IsBusy="{Binding IsBusy}"
-     IndicatorType="BouncingDot"
-     BusyContent="Please wait..."
-     BusyContentMargin="0,20,0,0"
-     IsBusyAtStartup="False">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <dxr:RibbonControl Grid.Column="0" Grid.ColumnSpan="3" IsSimplified="False"
-               AllowSimplifiedRibbon="True" ShowApplicationButton="False" ToolbarShowMode="Hide"
-               RibbonStyle="Office2010" ToolbarShowCustomizationButton="False"
-               RibbonTitleBarVisibility="Collapsed" VerticalAlignment="Center"> 
-
-                <dxr:RibbonPage Caption="General">
-
-                    <dxr:RibbonPageGroup Caption="Acciones">
-                        <dxb:BarButtonItem x:Name="btnBack"
-               Glyph="{dx:DXImage 'Images/Navigation/Backward_16x16.png'}"
-               LargeGlyph="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}"
-               Content="Regresar"
-               RibbonStyle="Large"
-               Hint="Regresa a la lista"
-               Command="{Binding Path=GoBackCommand}" />
-                        <dxb:BarItemSeparator />
-                        <dxb:BarButtonItem
-               x:Name="btnSave"
-               Glyph="{dx:DXImage 'Images/Save/Save_16x16.png'}"
-               LargeGlyph="{dx:DXImage 'Images/Save/Save_32x32.png'}"
-               Content="Guardar"
-               RibbonStyle="Large"
-               IsEnabled="{Binding Path=CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-               Hint="Guardar">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding Path=SaveCommand}"
-                       EventName="ItemClick" />
-                            </dxmvvm:Interaction.Behaviors>
-                        </dxb:BarButtonItem>
-                        <dxb:BarItemSeparator />
-
-                        <dxb:BarItemLinkSeparator />
-                    </dxr:RibbonPageGroup>
-                </dxr:RibbonPage>
-            </dxr:RibbonControl>
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.5*" />
-                    <ColumnDefinition Width="7*" />
-                    <ColumnDefinition Width="1.5*" />
-
-                </Grid.ColumnDefinitions>
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Please wait..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="20" MinWidth="480">
+            <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="150" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="150" />
-
-
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <Grid Grid.Column="1" Grid.Row="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Margin="10 5 0 5" Orientation="Vertical"  >
-                                        <TextBlock Text="Selecciona un tipo de impuesto" Margin="0 0 0 2" />
-                                        <dxe:ComboBoxEdit
-                         Padding="2"
-                         ItemsSource="{Binding Path=TaxCategories, UpdateSourceTrigger=PropertyChanged}"
-                         IsTextEditable="False"
-                         DisplayMember="Name"
-                         EditValue="{Binding SelectedTaxCategoryGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="2*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="10 5 0 5" Orientation="Vertical" >
-                            <TextBlock Text="Nombre del impuesto" Margin="0 0 0 2" />
-                            <dxe:TextEdit
-                             Padding="2"
-                             Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                             CharacterCasing="Upper"
-                             x:Name="Name"
-                             Margin="0 0 0 2" />
-                         </StackPanel>
-                        <StackPanel Orientation="Vertical" Margin="10 5 0 5" Grid.Column="1">
-                            <TextBlock Text="Tasa"
-                            Margin="0 0 0 2" />
-                            <dxe:SpinEdit MinValue="0" Increment="1"
-                            Padding="2"
-                            Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            CharacterCasing="Upper"
 
-                            IsFloatValue="False"
-                            MaskType="Numeric"
-                            x:Name="Rate"
-                            Margin="0 0 0 2" />
+                <!-- Form content -->
+                <StackPanel Grid.Row="0" Margin="30,25,30,20">
+
+                    <!-- Tipo de impuesto -->
+                    <TextBlock Text="Tipo de impuesto" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:ComboBoxEdit
+                        Padding="2"
+                        ItemsSource="{Binding Path=TaxCategories, UpdateSourceTrigger=PropertyChanged}"
+                        IsTextEditable="False"
+                        DisplayMember="Name"
+                        NullText="Seleccione un tipo de impuesto"
+                        NullValueButtonPlacement="EditBox"
+                        EditValue="{Binding SelectedTaxCategoryGraphQLModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        BorderBrush="#C8CED6"
+                        Margin="0,0,0,15"/>
+
+                    <!-- Nombre y Tasa en la misma fila -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="2*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                          CharacterCasing="Upper"
+                                          x:Name="Name"
+                                          BorderBrush="#C8CED6"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Porcentaje" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:SpinEdit MinValue="0" Increment="1"
+                                          Padding="2"
+                                          Text="{Binding Path=Rate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                          IsFloatValue="False"
+                                          MaskType="Numeric"
+                                          x:Name="Rate"
+                                          BorderBrush="#C8CED6"/>
                         </StackPanel>
                     </Grid>
-                    
-                    <TextBlock Grid.Row="3" Text="IMPUESTO GENERADO"
-                     FontWeight="Bold"
-                     Margin="6 5 0 5" />
-                    <StackPanel Grid.Row="4" Margin="6 5 0 5" Orientation="Vertical" >
-                        <TextBlock Text="Operación" Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit
-                        Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="FullName"
-                        IsEnabled="{Binding IsEnabledSelectedGeneratedTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ValueMember="Id"
-                        EditValue="{Binding GeneratedTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="5" Margin="6 5 0 5" Orientation="Vertical" >
-                        <TextBlock Text="Devolución" Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit
-                        Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="FullName"
-                        IsEnabled="{Binding IsEnabledSelectedGeneratedTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ValueMember="Id"
-                        EditValue="{Binding GeneratedTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <TextBlock Grid.Row="6" Text="IMPUESTO DESCONTABLE"
-                      FontWeight="Bold"
-                      Margin="6 5 0 5" />
-                        <StackPanel Grid.Row="7" Margin="6 5 0 5" Orientation="Vertical" >
-                        <TextBlock Text="Operación" Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit
-                        Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="FullName"
-                        IsEnabled="{Binding IsEnabledSelectedDeductibleTaxAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ValueMember="Id"
-                        EditValue="{Binding DeductibleTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <StackPanel Grid.Row="8" Margin="6 5 0 5" Orientation="Vertical" >
-                        <TextBlock Text="Devolución" Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit
-                        Padding="2"
-                        ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
-                        IsTextEditable="False"
-                        DisplayMember="FullName"
-                        IsEnabled="{Binding IsEnabledSelectedDeductibleTaxRefundAccount, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        ValueMember="Id"
-                        EditValue="{Binding DeductibleTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           IsSynchronizedWithCurrentItem="True" />
-                    </StackPanel>
-                    <dxe:CheckEdit Content="Impuesto Activo" Grid.Row="9"
-                     Margin="6 5 0 5"
-                     Style="{StaticResource BlueCheckedTextStyle}"
-                     Padding="2"
-                     IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                </Grid>
-            </Grid>
 
-        </Grid>
+                    <!-- Impuesto Generado -->
+                    <StackPanel Visibility="{Binding IsVisibleGeneratedTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Impuesto Generado" FontSize="13" Margin="0,0,0,8"/>
+                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,5"/>
+                        <dxe:ComboBoxEdit
+                            Padding="2"
+                            ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
+                            IsTextEditable="False"
+                            DisplayMember="FullName"
+                            ValueMember="Id"
+                            NullText="Seleccione cuenta contable"
+                            NullValueButtonPlacement="EditBox"
+                            EditValue="{Binding GeneratedTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            BorderBrush="#C8CED6"
+                            Margin="0,0,0,10"/>
+
+                        <StackPanel Visibility="{Binding IsVisibleGeneratedTaxRefundAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,5"/>
+                            <dxe:ComboBoxEdit
+                                Padding="2"
+                                ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="False"
+                                DisplayMember="FullName"
+                                ValueMember="Id"
+                                NullText="Seleccione cuenta de devolución"
+                                NullValueButtonPlacement="EditBox"
+                                EditValue="{Binding GeneratedTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                BorderBrush="#C8CED6"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Separador entre secciones (solo si ambas son visibles) -->
+                    <Separator Visibility="{Binding IsVisibleSectionSeparator, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Margin="0,10,0,10"/>
+
+                    <!-- Impuesto Descontable -->
+                    <StackPanel Visibility="{Binding IsVisibleDeductibleTaxSection, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Impuesto Descontable" FontSize="13" Margin="0,0,0,8"/>
+                        <TextBlock Text="Operación" FontSize="12" Margin="0,0,0,5"/>
+                        <dxe:ComboBoxEdit
+                            Padding="2"
+                            ItemsSource="{Binding Path=AccountingAccountOperations, UpdateSourceTrigger=PropertyChanged}"
+                            IsTextEditable="False"
+                            DisplayMember="FullName"
+                            ValueMember="Id"
+                            NullText="Seleccione cuenta contable"
+                            NullValueButtonPlacement="EditBox"
+                            EditValue="{Binding DeductibleTaxAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            BorderBrush="#C8CED6"
+                            Margin="0,0,0,10"/>
+
+                        <StackPanel Visibility="{Binding IsVisibleDeductibleTaxRefundAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Devolución" FontSize="12" Margin="0,0,0,5"/>
+                            <dxe:ComboBoxEdit
+                                Padding="2"
+                                ItemsSource="{Binding Path=AccountingAccountDevolutions, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="False"
+                                DisplayMember="FullName"
+                                ValueMember="Id"
+                                NullText="Seleccione cuenta de devolución"
+                                NullValueButtonPlacement="EditBox"
+                                EditValue="{Binding DeductibleTaxRefundAccountId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                BorderBrush="#C8CED6"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Separador antes del checkbox (solo si hay alguna sección de cuentas) -->
+                    <Separator Visibility="{Binding IsVisibleAnySectionAccount, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Margin="0,10,0,10"/>
+
+                    <!-- Impuesto Activo -->
+                    <dxe:CheckEdit Content="Impuesto Activo"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   Padding="2"
+                                   Margin="0,0,0,0"
+                                   IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <!-- Button bar centered -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                    <!-- Guardar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Cancelar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
     </busyIndicator:BusyMask>
 </UserControl>
