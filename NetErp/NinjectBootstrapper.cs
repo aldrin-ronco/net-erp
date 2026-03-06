@@ -57,7 +57,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
-using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
+
 
 namespace NetErp
 {
@@ -398,7 +398,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
-                _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountPOCO>();
+                // AccountingAccountPOCO mapping removed - AccountingSources now uses AccountingAccountGraphQLModel directly
                 
                 // CashDrawer DTOs
                 _ = cfg.CreateMap<CompanyLocationGraphQLModel, CashDrawerCompanyLocationDTO>();
