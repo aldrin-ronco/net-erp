@@ -26,13 +26,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private AccountingSourceMasterViewModel _accountingSourceMasterViewModel;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
-        private readonly ModuleCache _moduleCache;
+        private readonly MenuModuleCache _menuModuleCache;
         public AccountingSourceMasterViewModel AccountingSourceMasterViewModel 
         {
             get
             {
                 
-                    if (_accountingSourceMasterViewModel is null) _accountingSourceMasterViewModel = new(this, _accountingSourceService, _notificationService, _moduleCache);
+                    if (_accountingSourceMasterViewModel is null) _accountingSourceMasterViewModel = new(this, _accountingSourceService, _notificationService, _menuModuleCache);
                     return _accountingSourceMasterViewModel;
                 }
         }
@@ -53,12 +53,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
         public AccountingSourceViewModel(IMapper mapper,
-                                         IEventAggregator eventAggregator,  IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, ProcessTypeCache processTypeCache, ModuleCache moduleCache)
+                                         IEventAggregator eventAggregator,  IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, ProcessTypeCache processTypeCache, MenuModuleCache menuModuleCache)
         {
             this._notificationService = notificationService;
             this._accountingSourceService = accountingSourceService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
-                this._moduleCache = moduleCache;
+            this._menuModuleCache = menuModuleCache;
             this._processTypeCache = processTypeCache;
             this.EventAggregator = eventAggregator;
             this.AutoMapper = mapper;

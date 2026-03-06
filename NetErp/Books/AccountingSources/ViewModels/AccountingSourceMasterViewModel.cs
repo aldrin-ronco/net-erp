@@ -35,7 +35,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly ModuleCache _moduleCache;
+        private readonly MenuModuleCache _menuModuleCache;
 
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         // Context
@@ -270,8 +270,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
       
 
         // Modulos del sistema administrativo
-        private ObservableCollection<ModuleGraphQLModel> _modules;
-        public ObservableCollection<ModuleGraphQLModel> Modules
+        private ObservableCollection<MenuModuleGraphQLModel> _modules;
+        public ObservableCollection<MenuModuleGraphQLModel> Modules
         {
             get { return _modules; }
             set
@@ -288,21 +288,18 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-                   _moduleCache.EnsureLoadedAsync()
-               );
-            this.Modules = Context.AutoMapper.Map<ObservableCollection<ModuleGraphQLModel>>(_moduleCache.Items);
-            this.Modules.Insert(0, new ModuleGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" });
+            await _menuModuleCache.EnsureLoadedAsync();
+            this.Modules = Context.AutoMapper.Map<ObservableCollection<MenuModuleGraphQLModel>>(_menuModuleCache.Items);
+            this.Modules.Insert(0, new MenuModuleGraphQLModel() { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" });
             await LoadAccountingSourcesAsync();
-            
         }
 
-        public AccountingSourceMasterViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, ModuleCache moduleCache)
+        public AccountingSourceMasterViewModel(AccountingSourceViewModel context, IRepository<AccountingSourceGraphQLModel> accountingSourceService, Helpers.Services.INotificationService notificationService, MenuModuleCache menuModuleCache)
         {
             this._notificationService = notificationService;
             this._accountingSourceService = accountingSourceService;
             this.Context = context;
-            this._moduleCache = moduleCache;
+            this._menuModuleCache = menuModuleCache;
             Context.EventAggregator.SubscribeOnUIThread(this);
             _ =  InitializeAsync();
         }
@@ -340,7 +337,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
                 if (SelectedModuleId != 0)
                 {
-                    variables.pageResponseFilters.moduleId =  SelectedModuleId;
+                    variables.pageResponseFilters.menuModuleId =  SelectedModuleId;
                 }
                 
                 //Pagination
@@ -386,11 +383,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
                    .Select(e => e.ProcessType, cat => cat
                             .Field(c => c.Id)
                             .Field(c => c.Name)
-                            .Select(c => c.Module, dep => dep
+                            .Select(c => c.MenuModule, dep => dep
                                 .Field(d => d.Id)
                                 .Field(d => d.Name)
                             )
-
                     )
 
                )

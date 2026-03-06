@@ -10,7 +10,7 @@ namespace Models.Global
     {
         public int Id { get; set; } = 0;
         public string Name { get; set; } = string.Empty;
-        public ModuleGraphQLModel Module { get; set; }
+        public MenuModuleGraphQLModel MenuModule { get; set; }
         public override string ToString()
         {
             return this.Name;

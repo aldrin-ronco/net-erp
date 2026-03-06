@@ -423,7 +423,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
                    .Select(e => e.ProcessType, cat => cat
                             .Field(c => c.Id)
                             .Field(c => c.Name)
-                            .Select(c => c.Module, dep => dep
+                            .Select(c => c.MenuModule, dep => dep
                                 .Field(d => d.Id)
                                 .Field(d => d.Name)
                             )
@@ -574,19 +574,19 @@ namespace NetErp.Books.AccountingSources.ViewModels
          
            
 
+            var excludes = !IsKardexTransaction ? new[] { nameof(KardexFlow), nameof(AccountingAccountId) } : null;
+
             if (IsNewRecord)
             {
-
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
                 string query = GetCreateQuery();
                 UpsertResponseType<AccountingSourceGraphQLModel> AccountingSourceCreated = await _accountingSourceService.CreateAsync<UpsertResponseType<AccountingSourceGraphQLModel>>(query, variables);
                 return AccountingSourceCreated;
             }
             else
             {
-                
                 string query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
                 variables.updateResponseId = Id;
                 UpsertResponseType<AccountingSourceGraphQLModel> updatedAccountingSource = await _accountingSourceService.UpdateAsync<UpsertResponseType<AccountingSourceGraphQLModel>>(query, variables);
                 return updatedAccountingSource;

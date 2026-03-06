@@ -143,8 +143,8 @@ namespace NetErp
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuthorizationSequenceTypeCache>());
 
-            _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
-            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ModuleCache>());
+            _ = kernel.Bind<MenuModuleCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MenuModuleCache>());
 
             _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCategoryCache>());
@@ -251,6 +251,7 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AuthorizationSequenceTypeGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ModuleGraphQLModel>>().To<GraphQLRepository<ModuleGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<MenuModuleGraphQLModel>>().To<GraphQLRepository<MenuModuleGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<MenuItemGraphQLModel>>().To<GraphQLRepository<MenuItemGraphQLModel>>().InSingletonScope();
 
 

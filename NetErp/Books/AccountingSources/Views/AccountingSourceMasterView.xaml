@@ -149,7 +149,7 @@
                 <dxg:GridColumn 
                     Header="Modulo" 
                     Width=".2*" 
-                    Binding="{Binding ProcessType.Module.Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    Binding="{Binding ProcessType.MenuModule.Name, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
 
 
                 <!--Establece si la fuente contable es de sistema o de usuario-->
