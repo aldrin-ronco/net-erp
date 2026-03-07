@@ -162,8 +162,6 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 IsBusy = false;
             }
            
-            
-            
         }
 
         public async Task<UpsertResponseType<AccountingBookGraphQLModel>> ExecuteSaveAsync()
