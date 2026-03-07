@@ -411,6 +411,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<AccountingAccountGroupDTO, AccountingAccountGroupDTO>();
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
