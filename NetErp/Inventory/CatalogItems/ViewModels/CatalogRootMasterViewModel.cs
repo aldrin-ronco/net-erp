@@ -431,7 +431,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 IsBusy = true;
                 await LoadComboBoxesAsync();
-                //await LoadAwsS3Credentials();
+                //await LoadAwsS3CredentialsAsync();
                 await LoadCatalogsAsync();
             }
             catch (AsyncException ex)
@@ -554,7 +554,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task Save()
+        public async Task SaveAsync()
         {
             if (CurrentPanelEditor == null) return;
 
@@ -603,7 +603,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _editCommand ??= new DevExpress.Mvvm.DelegateCommand(Edit, () => CanEdit);
+                _editCommand ??= new DevExpress.Mvvm.DelegateCommand(Edit);
                 return _editCommand;
             }
         }
@@ -613,7 +613,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _saveCommand ??= new AsyncCommand(Save, CanSave);
+                _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
@@ -623,7 +623,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _undoCommand ??= new DevExpress.Mvvm.DelegateCommand(Undo, () => CanUndo);
+                _undoCommand ??= new DevExpress.Mvvm.DelegateCommand(Undo);
                 return _undoCommand;
             }
         }
@@ -632,7 +632,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region Create Commands (context menus)
 
-        public async Task CreateItemType()
+        public async Task CreateItemTypeAsync()
         {
             if (SelectedCatalog == null) return;
             IsNewRecord = true;
@@ -643,7 +643,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEdit = false;
         }
 
-        public async Task CreateItemCategory()
+        public async Task CreateItemCategoryAsync()
         {
             if (SelectedItem is not ItemTypeDTO itemType) return;
             IsNewRecord = true;
@@ -654,7 +654,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEdit = false;
         }
 
-        public async Task CreateItemSubCategory()
+        public async Task CreateItemSubCategoryAsync()
         {
             if (SelectedItem is not ItemCategoryDTO itemCategory) return;
             IsNewRecord = true;
@@ -665,7 +665,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEdit = false;
         }
 
-        public async Task CreateItem()
+        public async Task CreateItemAsync()
         {
             if (SelectedItem is not ItemSubCategoryDTO subCategory) return;
             SelectedSubCategoryIdBeforeNewItem = subCategory.Id;
@@ -677,7 +677,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEdit = false;
         }
 
-        public async Task CreateCatalog()
+        public async Task CreateCatalogAsync()
         {
             IsNewRecord = true;
             CurrentPanelEditor = CatalogEditor;
@@ -687,7 +687,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanEdit = false;
         }
 
-        public async Task UpdateCatalog()
+        public async Task UpdateCatalogAsync()
         {
             if (SelectedCatalog == null) return;
             CurrentPanelEditor = CatalogEditor;
@@ -723,7 +723,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _createCatalogCommand ??= new AsyncCommand(CreateCatalog, CanCreateCatalog);
+                _createCatalogCommand ??= new AsyncCommand(CreateCatalogAsync, CanCreateCatalog);
                 return _createCatalogCommand;
             }
         }
@@ -733,7 +733,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _updateCatalogCommand ??= new AsyncCommand(UpdateCatalog, CanUpdateCatalog);
+                _updateCatalogCommand ??= new AsyncCommand(UpdateCatalogAsync, CanUpdateCatalog);
                 return _updateCatalogCommand;
             }
         }
@@ -743,7 +743,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _deleteCatalogCommand ??= new AsyncCommand(DeleteCatalog, CanDeleteCatalog);
+                _deleteCatalogCommand ??= new AsyncCommand(DeleteCatalogAsync, CanDeleteCatalog);
                 return _deleteCatalogCommand;
             }
         }
@@ -753,7 +753,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _createItemTypeCommand ??= new AsyncCommand(CreateItemType, CanCreateItemType);
+                _createItemTypeCommand ??= new AsyncCommand(CreateItemTypeAsync, CanCreateItemType);
                 return _createItemTypeCommand;
             }
         }
@@ -763,7 +763,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _updateItemTypeCommand ??= new AsyncCommand(UpdateItemType, CanUpdateItemType);
+                _updateItemTypeCommand ??= new AsyncCommand(UpdateItemTypeAsync, CanUpdateItemType);
                 return _updateItemTypeCommand;
             }
         }
@@ -773,7 +773,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _deleteItemTypeCommand ??= new AsyncCommand(DeleteItemType, CanDeleteItemType);
+                _deleteItemTypeCommand ??= new AsyncCommand(DeleteItemTypeAsync, CanDeleteItemType);
                 return _deleteItemTypeCommand;
             }
         }
@@ -783,7 +783,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _createItemCategoryCommand ??= new AsyncCommand(CreateItemCategory, CanCreateItemCategory);
+                _createItemCategoryCommand ??= new AsyncCommand(CreateItemCategoryAsync, CanCreateItemCategory);
                 return _createItemCategoryCommand;
             }
         }
@@ -793,7 +793,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _updateItemCategoryCommand ??= new AsyncCommand(UpdateItemCategory, CanUpdateItemCategory);
+                _updateItemCategoryCommand ??= new AsyncCommand(UpdateItemCategoryAsync, CanUpdateItemCategory);
                 return _updateItemCategoryCommand;
             }
         }
@@ -803,7 +803,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _deleteItemCategoryCommand ??= new AsyncCommand(DeleteItemCategory, CanDeleteItemCategory);
+                _deleteItemCategoryCommand ??= new AsyncCommand(DeleteItemCategoryAsync, CanDeleteItemCategory);
                 return _deleteItemCategoryCommand;
             }
         }
@@ -813,7 +813,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _createItemSubCategoryCommand ??= new AsyncCommand(CreateItemSubCategory, CanCreateItemSubCategory);
+                _createItemSubCategoryCommand ??= new AsyncCommand(CreateItemSubCategoryAsync, CanCreateItemSubCategory);
                 return _createItemSubCategoryCommand;
             }
         }
@@ -823,7 +823,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _updateItemSubCategoryCommand ??= new AsyncCommand(UpdateItemSubCategory, CanUpdateItemSubCategory);
+                _updateItemSubCategoryCommand ??= new AsyncCommand(UpdateItemSubCategoryAsync, CanUpdateItemSubCategory);
                 return _updateItemSubCategoryCommand;
             }
         }
@@ -833,7 +833,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _deleteItemSubCategoryCommand ??= new AsyncCommand(DeleteItemSubCategory, CanDeleteItemSubCategory);
+                _deleteItemSubCategoryCommand ??= new AsyncCommand(DeleteItemSubCategoryAsync, CanDeleteItemSubCategory);
                 return _deleteItemSubCategoryCommand;
             }
         }
@@ -843,7 +843,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _createItemCommand ??= new AsyncCommand(CreateItem, CanCreateItem);
+                _createItemCommand ??= new AsyncCommand(CreateItemAsync, CanCreateItem);
                 return _createItemCommand;
             }
         }
@@ -853,7 +853,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _deleteItemCommand ??= new AsyncCommand(DeleteItem, CanDeleteItem);
+                _deleteItemCommand ??= new AsyncCommand(DeleteItemAsync, CanDeleteItem);
                 return _deleteItemCommand;
             }
         }
@@ -863,7 +863,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                _discontinueItemCommand ??= new AsyncCommand(DiscontinueItem, CanDiscontinueItem);
+                _discontinueItemCommand ??= new AsyncCommand(DiscontinueItemAsync, CanDiscontinueItem);
                 return _discontinueItemCommand;
             }
         }
@@ -884,7 +884,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region Update methods (set for edit via context menu)
 
-        public async Task UpdateItemType()
+        public async Task UpdateItemTypeAsync()
         {
             if (SelectedItem is not ItemTypeDTO itemType) return;
             CurrentPanelEditor = ItemTypeEditor;
@@ -894,7 +894,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanUndo = false;
         }
 
-        public async Task UpdateItemCategory()
+        public async Task UpdateItemCategoryAsync()
         {
             if (SelectedItem is not ItemCategoryDTO itemCategory) return;
             CurrentPanelEditor = ItemCategoryEditor;
@@ -904,7 +904,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             CanUndo = false;
         }
 
-        public async Task UpdateItemSubCategory()
+        public async Task UpdateItemSubCategoryAsync()
         {
             if (SelectedItem is not ItemSubCategoryDTO itemSubCategory) return;
             CurrentPanelEditor = ItemSubCategoryEditor;
@@ -918,7 +918,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region Delete Methods
 
-        public async Task DeleteCatalog()
+        public async Task DeleteCatalogAsync()
         {
             if (SelectedCatalog == null) return;
 
@@ -983,7 +983,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
                         title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{graphQLError.Errors[0].Message}",
+                        text: $"{GetType().Name}.{nameof(DeleteCatalogAsync)} \r\n{graphQLError.Errors[0].Message}",
                         messageBoxButtons: MessageBoxButton.OK,
                         image: MessageBoxImage.Error));
                 }
@@ -993,7 +993,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteCatalog)} \r\n{ex.Message}",
+                    text: $"{GetType().Name}.{nameof(DeleteCatalogAsync)} \r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error));
             }
@@ -1003,67 +1003,84 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task DeleteItemType()
+        public async Task DeleteItemTypeAsync()
         {
+            if (SelectedItem is not ItemTypeDTO itemType) return;
+
             try
             {
                 IsBusy = true;
-                int id = ((ItemTypeDTO)SelectedItem).Id;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteItemType(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _itemTypeService.CanDeleteAsync(query, variables);
+                int id = itemType.Id;
+                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemType");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _itemTypeService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((ItemTypeDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar el tipo de item {itemType.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
+                IsBusy = true;
                 Refresh();
 
-                string deleteQuery = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteItemType(id: $id) {
-                    id
-                    name
-                    prefixChar
-                    stockControl
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteItemType");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _itemTypeService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object deleteVariables = new { Id = id };
-                ItemTypeGraphQLModel deletedItemType = await _itemTypeService.DeleteAsync(deleteQuery, deleteVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemTypeDeleteMessage() { DeletedItemType = deletedItemType });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemTypeDeleteMessage { DeletedItemType = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemType)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DeleteItemTypeAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemType)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteItemTypeAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1071,68 +1088,84 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task DeleteItemCategory()
+        public async Task DeleteItemCategoryAsync()
         {
+            if (SelectedItem is not ItemCategoryDTO itemCategory) return;
+
             try
             {
                 IsBusy = true;
-                int id = ((ItemCategoryDTO)SelectedItem).Id;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteItemCategory(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _itemCategoryService.CanDeleteAsync(query, variables);
+                int id = itemCategory.Id;
+                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemCategory");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _itemCategoryService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((ItemCategoryDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar la categoría {itemCategory.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
+                IsBusy = true;
                 Refresh();
 
-                string deleteQuery = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteItemCategory(id: $id) {
-                    id
-                    name
-                    itemType{
-                        id
-                    }
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteItemCategory");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _itemCategoryService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object deleteVariables = new { Id = id };
-                ItemCategoryGraphQLModel deletedItemCategory = await _itemCategoryService.DeleteAsync(deleteQuery, deleteVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemCategoryDeleteMessage() { DeletedItemCategory = deletedItemCategory });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemCategoryDeleteMessage { DeletedItemCategory = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemCategory)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DeleteItemCategoryAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemCategory)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteItemCategoryAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1140,71 +1173,84 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task DeleteItemSubCategory()
+        public async Task DeleteItemSubCategoryAsync()
         {
+            if (SelectedItem is not ItemSubCategoryDTO itemSubCategory) return;
+
             try
             {
                 IsBusy = true;
-                int id = ((ItemSubCategoryDTO)SelectedItem).Id;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteItemSubCategory(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _itemSubCategoryService.CanDeleteAsync(query, variables);
+                int id = itemSubCategory.Id;
+                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemSubCategory");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _itemSubCategoryService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((ItemSubCategoryDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar la subcategoría {itemSubCategory.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
+                IsBusy = true;
                 Refresh();
 
-                string deleteQuery = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteItemSubCategory(id: $id) {
-                    id
-                    name
-                    itemCategory{
-                        id
-                        itemType{
-                            id
-                        }
-                    }
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteItemSubCategory");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _itemSubCategoryService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object deleteVariables = new { Id = id };
-                ItemSubCategoryGraphQLModel deletedItemSubCategory = await _itemSubCategoryService.DeleteAsync(deleteQuery, deleteVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemSubCategoryDeleteMessage() { DeletedItemSubCategory = deletedItemSubCategory });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemSubCategoryDeleteMessage { DeletedItemSubCategory = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemSubCategory)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DeleteItemSubCategoryAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemSubCategory)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteItemSubCategoryAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1212,7 +1258,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task DeleteItem()
+        public async Task DeleteItemAsync()
         {
             try
             {
@@ -1298,13 +1344,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItem)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItem)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1312,7 +1358,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task DiscontinueItem()
+        public async Task DiscontinueItemAsync()
         {
             try
             {
@@ -1384,13 +1430,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItem)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItem)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1463,25 +1509,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedItem);
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
-            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories[0].IsDummyChild)
+            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories.Count > 0 && itemTypeDTO.ItemsCategories[0].IsDummyChild)
             {
-                await LoadItemsCategories(itemTypeDTO);
+                await LoadItemsCategoriesAsync(itemTypeDTO);
                 itemTypeDTO.IsExpanded = true;
             }
             if (!itemTypeDTO.IsExpanded) itemTypeDTO.IsExpanded = true;
             ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
             if (itemCategoryDTO is null) return;
-            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories[0].IsDummyChild)
+            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
             {
-                await LoadItemsSubCategories(itemCategoryDTO);
+                await LoadItemsSubCategoriesAsync(itemCategoryDTO);
                 itemCategoryDTO.IsExpanded = true;
             }
             if (!itemCategoryDTO.IsExpanded) itemCategoryDTO.IsExpanded = true;
             ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
             if (itemSubCategoryDTO is null) return;
-            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items[0].IsDummyChild)
+            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items.Count > 0 && itemSubCategoryDTO.Items[0].IsDummyChild)
             {
-                await LoadItems(itemSubCategoryDTO);
+                await LoadItemsAsync(itemSubCategoryDTO);
                 itemSubCategoryDTO.IsExpanded = true;
                 ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
                 if (item is null) return;
@@ -1503,7 +1549,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region Data Loading
 
-        public async Task LoadAwsS3Credentials()
+        public async Task LoadAwsS3CredentialsAsync()
         {
             try
             {
@@ -1643,7 +1689,31 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task LoadItemsCategories(ItemTypeDTO itemType)
+        private static string GetLoadItemCategoriesQuery()
+        {
+            var fields = FieldSpec<PageType<ItemCategoryGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.PageSize)
+                .Field(f => f.TotalPages)
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.ItemType, it => it
+                        .Field(t => t.Id)))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination"),
+                new("filters", "ItemCategoryFilters")
+            };
+            var fragment = new GraphQLQueryFragment("itemCategoriesPage", parameters, fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public async Task LoadItemsCategoriesAsync(ItemTypeDTO itemType)
         {
             try
             {
@@ -1652,49 +1722,80 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     itemType.ItemsCategories.Remove(itemType.ItemsCategories[0]);
                 });
 
-                List<int> ids = [itemType.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: itemsCategoriesByItemTypesIds(ids: $ids){
-                        id
-                        name
-                        itemType{
-                            id
-                        }
-                      }
-                    }";
+                string query = GetLoadItemCategoriesQuery();
+
                 dynamic variables = new ExpandoObject();
-                variables.ids = ids;
+                variables.PageResponsePagination = new ExpandoObject();
+                variables.PageResponsePagination.PageSize = -1;
+                variables.PageResponseFilters = new ExpandoObject();
+                variables.PageResponseFilters.ItemTypeId = itemType.Id;
 
-                var source = await _itemCategoryService.GetListAsync(query, variables);
-                ItemsCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(source);
+                var result = await _itemCategoryService.GetPageAsync(query, variables);
+                ItemsCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(result.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (ItemsCategories.Count == 0)
                 {
-                    foreach (ItemCategoryDTO itemCategory in ItemsCategories)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        itemCategory.Context = this;
-                        itemCategory.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Items = [], Name = "Dummy" });
-                        itemType.ItemsCategories.Add(itemCategory);
-                    }
-                });
+                        itemType.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Este tipo de item no tiene categorías registradas");
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        foreach (ItemCategoryDTO itemCategory in ItemsCategories)
+                        {
+                            itemCategory.Context = this;
+                            itemCategory.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Items = [], Name = "Dummy" });
+                            itemType.ItemsCategories.Add(itemCategory);
+                        }
+                    });
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategories)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategories)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategoriesAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
 
-        public async Task LoadItemsSubCategories(ItemCategoryDTO itemCategory)
+        private static string GetLoadItemSubCategoriesQuery()
+        {
+            var fields = FieldSpec<PageType<ItemSubCategoryGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.PageSize)
+                .Field(f => f.TotalPages)
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.ItemCategory, ic => ic
+                        .Field(c => c.Id)
+                        .Select(c => c.ItemType, it => it
+                            .Field(t => t.Id))))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination"),
+                new("filters", "ItemSubCategoryFilters")
+            };
+            var fragment = new GraphQLQueryFragment("itemSubCategoriesPage", parameters, fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public async Task LoadItemsSubCategoriesAsync(ItemCategoryDTO itemCategory)
         {
             try
             {
@@ -1702,57 +1803,60 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     itemCategory.SubCategories.Remove(itemCategory.SubCategories[0]);
                 });
-                List<int> ids = [itemCategory.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: itemsSubCategoriesByCategoriesIds(ids: $ids){
-                        id
-                        name
-                        itemCategory{
-                            id
-                            itemType{
-                                id
-                                measurementUnitByDefault{
-                                    id
-                                    name
-                                }
-                                accountingGroupByDefault{
-                                    id
-                                    name
-                                }
-                            }
-                        }
-                      }
-                    }";
+
+                string query = GetLoadItemSubCategoriesQuery();
                 dynamic variables = new ExpandoObject();
-                variables.ids = ids;
+                variables.PageResponsePagination = new ExpandoObject();
+                variables.PageResponsePagination.PageSize = -1;
+                variables.PageResponseFilters = new ExpandoObject();
+                variables.PageResponseFilters.ItemCategoryId = itemCategory.Id;
 
-                var source = await _itemSubCategoryService.GetListAsync(query, variables);
-                ItemsSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(source);
+                var result = await _itemSubCategoryService.GetPageAsync(query, variables);
+                ItemsSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(result.Entries);
 
-                foreach (ItemSubCategoryDTO itemSubCategory in ItemsSubCategories)
+                if (ItemsSubCategories.Count == 0)
                 {
-                    itemSubCategory.Context = this;
-                    itemSubCategory.Items.Add(new ItemDTO() { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
-                    itemCategory.SubCategories.Add(itemSubCategory);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        itemCategory.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta categoría no tiene subcategorías registradas");
+                }
+                else
+                {
+                    foreach (ItemSubCategoryDTO itemSubCategory in ItemsSubCategories)
+                    {
+                        itemSubCategory.Context = this;
+                        itemSubCategory.Items.Add(new ItemDTO() { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
+                        itemCategory.SubCategories.Add(itemSubCategory);
+                    }
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsSubCategories)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(LoadItemsSubCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsSubCategories)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(LoadItemsSubCategoriesAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
         }
 
-        public async Task LoadItems(ItemSubCategoryDTO itemSubCategory)
+        public async Task LoadItemsAsync(ItemSubCategoryDTO itemSubCategory)
         {
             try
             {
@@ -1822,10 +1926,21 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 var source = await _itemService.GetListAsync(query, variables);
                 Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(source);
 
-                foreach (ItemDTO item in Items)
+                if (Items.Count == 0)
                 {
-                    item.Context = this;
-                    itemSubCategory.Items.Add(item);
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        itemSubCategory.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta subcategoría no tiene productos registrados");
+                }
+                else
+                {
+                    foreach (ItemDTO item in Items)
+                    {
+                        item.Context = this;
+                        itemSubCategory.Items.Add(item);
+                    }
                 }
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -1833,13 +1948,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItems)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItems)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
 
@@ -1849,13 +1964,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public Task HandleAsync(ItemTypeCreateMessage message, CancellationToken cancellationToken)
         {
-            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.CreatedItemType);
+            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.CreatedItemType.Entity);
             itemTypeDTO.Context = this;
             itemTypeDTO.ItemsCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, Name = "Dummy", SubCategories = [] });
             if (SelectedCatalog.Id != itemTypeDTO.Catalog.Id) return Task.CompletedTask;
             SelectedCatalog.ItemTypes.Add(itemTypeDTO);
             SelectedItem = itemTypeDTO;
-            _notificationService.ShowSuccess("Tipo de item creado correctamente");
+            NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
+            _notificationService.ShowSuccess(message.CreatedItemType.Message);
             return Task.CompletedTask;
         }
 
@@ -1863,19 +1979,20 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.DeletedItemType.Id).FirstOrDefault();
+                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.DeletedItemType.DeletedId);
                 if (itemTypeDTO is null) return;
                 SelectedCatalog.ItemTypes.Remove(itemTypeDTO);
                 SelectedItem = null;
+                NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
             });
-            _notificationService.ShowSuccess("Tipo de item eliminado correctamente");
+            _notificationService.ShowSuccess(message.DeletedItemType.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(ItemTypeUpdateMessage message, CancellationToken cancellationToken)
         {
-            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.UpdatedItemType);
-            ItemTypeDTO? itemToUpdate = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemType.Id);
+            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.UpdatedItemType.Entity);
+            ItemTypeDTO? itemToUpdate = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemType.Entity.Id);
             if (itemToUpdate == null) return Task.CompletedTask;
             itemToUpdate.Id = itemTypeDTO.Id;
             itemToUpdate.Name = itemTypeDTO.Name;
@@ -1883,25 +2000,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemToUpdate.StockControl = itemTypeDTO.StockControl;
             itemToUpdate.DefaultMeasurementUnit = itemTypeDTO.DefaultMeasurementUnit;
             itemToUpdate.DefaultAccountingGroup = itemTypeDTO.DefaultAccountingGroup;
-            _notificationService.ShowSuccess("Tipo de item actualizado correctamente");
+            _notificationService.ShowSuccess(message.UpdatedItemType.Message);
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(ItemCategoryCreateMessage message, CancellationToken cancellationToken)
         {
-            ItemCategoryDTO itemCategoryDTO = Context.AutoMapper.Map<ItemCategoryDTO>(message.CreatedItemCategory);
+            ItemCategoryDTO itemCategoryDTO = Context.AutoMapper.Map<ItemCategoryDTO>(message.CreatedItemCategory.Entity);
             itemCategoryDTO.Context = this;
             itemCategoryDTO.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Name = "Dummy", Items = [] });
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemCategoryDTO.ItemType.Id);
             if (itemTypeDTO is null) return;
-            if (itemTypeDTO.IsExpanded == false && itemTypeDTO.ItemsCategories[0].IsDummyChild)
+            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories.Count > 0 && itemTypeDTO.ItemsCategories[0].IsDummyChild)
             {
-                await LoadItemsCategories(itemTypeDTO);
+                await LoadItemsCategoriesAsync(itemTypeDTO);
                 itemTypeDTO.IsExpanded = true;
                 ItemCategoryDTO? itemCategory = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemCategoryDTO.Id);
                 if (itemCategory is null) return;
                 SelectedItem = itemCategory;
-                _notificationService.ShowSuccess("Categoría de item creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
                 return;
             }
             if (itemTypeDTO.IsExpanded == false)
@@ -1909,56 +2026,62 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemTypeDTO.IsExpanded = true;
                 itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
                 SelectedItem = itemCategoryDTO;
-                _notificationService.ShowSuccess("Categoría de item creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
                 return;
             }
             itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
             SelectedItem = itemCategoryDTO;
-            _notificationService.ShowSuccess("Categoría de item creada correctamente");
+            _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
         }
 
         public Task HandleAsync(ItemCategoryDeleteMessage message, CancellationToken cancellationToken)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.DeletedItemCategory.ItemType.Id).FirstOrDefault();
-                if (itemTypeDTO is null) return;
-                itemTypeDTO.ItemsCategories.Remove(itemTypeDTO.ItemsCategories.Where(x => x.Id == message.DeletedItemCategory.Id).First());
+                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
+                {
+                    ItemCategoryDTO? categoryToRemove = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.DeletedItemCategory.DeletedId);
+                    if (categoryToRemove != null)
+                    {
+                        itemTypeDTO.ItemsCategories.Remove(categoryToRemove);
+                        break;
+                    }
+                }
                 SelectedItem = null;
             });
-            _notificationService.ShowSuccess("Categoría de item eliminada correctamente");
+            _notificationService.ShowSuccess(message.DeletedItemCategory.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(ItemCategoryUpdateMessage message, CancellationToken cancellationToken)
         {
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.UpdatedItemCategory.ItemType.Id).FirstOrDefault();
+            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTOToUpdate = itemTypeDTO.ItemsCategories.Where(x => x.Id == message.UpdatedItemCategory.Id).FirstOrDefault();
+            ItemCategoryDTO? itemCategoryDTOToUpdate = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.Id);
             if (itemCategoryDTOToUpdate is null) return Task.CompletedTask;
-            itemCategoryDTOToUpdate.Id = message.UpdatedItemCategory.Id;
-            itemCategoryDTOToUpdate.Name = message.UpdatedItemCategory.Name;
-            _notificationService.ShowSuccess("Categoría de item actualizada correctamente");
+            itemCategoryDTOToUpdate.Id = message.UpdatedItemCategory.Entity.Id;
+            itemCategoryDTOToUpdate.Name = message.UpdatedItemCategory.Entity.Name;
+            _notificationService.ShowSuccess(message.UpdatedItemCategory.Message);
             return Task.CompletedTask;
         }
 
         public async Task HandleAsync(ItemSubCategoryCreateMessage message, CancellationToken cancellationToken)
         {
-            ItemSubCategoryDTO itemSubCategoryDTO = Context.AutoMapper.Map<ItemSubCategoryDTO>(message.CreatedItemSubCategory);
+            ItemSubCategoryDTO itemSubCategoryDTO = Context.AutoMapper.Map<ItemSubCategoryDTO>(message.CreatedItemSubCategory.Entity);
             itemSubCategoryDTO.Context = this;
             itemSubCategoryDTO.Items.Add(new ItemDTO() { IsDummyChild = true, Name = "Dummy" });
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
             ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.Id);
             if (itemCategoryDTO is null) return;
-            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories[0].IsDummyChild)
+            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
             {
-                await LoadItemsSubCategories(itemCategoryDTO);
+                await LoadItemsSubCategoriesAsync(itemCategoryDTO);
                 itemCategoryDTO.IsExpanded = true;
                 ItemSubCategoryDTO? itemSubCategory = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.Id);
                 if (itemSubCategory is null) return;
                 SelectedItem = itemSubCategory;
-                _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
                 return;
             }
             if (!itemCategoryDTO.IsExpanded)
@@ -1966,40 +2089,47 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemCategoryDTO.IsExpanded = true;
                 itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
                 SelectedItem = itemSubCategoryDTO;
-                _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
+                _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
                 return;
             }
             itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
             SelectedItem = itemSubCategoryDTO;
-            _notificationService.ShowSuccess("Subcategoría de item creada correctamente");
+            _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
         }
 
         public Task HandleAsync(ItemSubCategoryDeleteMessage message, CancellationToken cancellationToken)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.DeletedItemSubCategory.ItemCategory.ItemType.Id).FirstOrDefault();
-                if (itemTypeDTO is null) return;
-                ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.DeletedItemSubCategory.ItemCategory.Id);
-                if (itemCategoryDTO is null) return;
-                itemCategoryDTO.SubCategories.Remove(itemCategoryDTO.SubCategories.Where(x => x.Id == message.DeletedItemSubCategory.Id).First());
-                SelectedItem = null;
+                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
+                {
+                    foreach (var itemCategoryDTO in itemTypeDTO.ItemsCategories)
+                    {
+                        ItemSubCategoryDTO? subCategoryToRemove = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.DeletedItemSubCategory.DeletedId);
+                        if (subCategoryToRemove != null)
+                        {
+                            itemCategoryDTO.SubCategories.Remove(subCategoryToRemove);
+                            SelectedItem = null;
+                            return;
+                        }
+                    }
+                }
             });
-            _notificationService.ShowSuccess("Subcategoría de item eliminada correctamente");
+            _notificationService.ShowSuccess(message.DeletedItemSubCategory.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(ItemSubCategoryUpdateMessage message, CancellationToken cancellationToken)
         {
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.UpdatedItemSubCategory.ItemCategory.ItemType.Id).FirstOrDefault();
+            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.Id);
             if (itemCategoryDTO is null) return Task.CompletedTask;
-            ItemSubCategoryDTO? itemSubCategoryDTOToUpdate = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Id);
+            ItemSubCategoryDTO? itemSubCategoryDTOToUpdate = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.Id);
             if (itemSubCategoryDTOToUpdate is null) return Task.CompletedTask;
-            itemSubCategoryDTOToUpdate.Id = message.UpdatedItemSubCategory.Id;
-            itemSubCategoryDTOToUpdate.Name = message.UpdatedItemSubCategory.Name;
-            _notificationService.ShowSuccess("Subcategoría de item actualizada correctamente");
+            itemSubCategoryDTOToUpdate.Id = message.UpdatedItemSubCategory.Entity.Id;
+            itemSubCategoryDTOToUpdate.Name = message.UpdatedItemSubCategory.Entity.Name;
+            _notificationService.ShowSuccess(message.UpdatedItemSubCategory.Message);
             return Task.CompletedTask;
         }
 
@@ -2063,9 +2193,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (itemCategoryDTO is null) return;
             ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
             if (itemSubCategoryDTO is null) return;
-            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items[0].IsDummyChild)
+            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items.Count > 0 && itemSubCategoryDTO.Items[0].IsDummyChild)
             {
-                await LoadItems(itemSubCategoryDTO);
+                await LoadItemsAsync(itemSubCategoryDTO);
                 itemSubCategoryDTO.IsExpanded = true;
                 ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
                 if (item is null) return;
