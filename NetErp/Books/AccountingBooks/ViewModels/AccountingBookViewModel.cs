@@ -12,6 +12,7 @@ using IDialogService = NetErp.Helpers.IDialogService;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,6 +96,62 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             }
         }
 
+        private int _pageIndex = 1;
+        public int PageIndex
+        {
+            get => _pageIndex;
+            set
+            {
+                if (_pageIndex != value)
+                {
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
+                }
+            }
+        }
+
+        private int _pageSize = 50;
+        public int PageSize
+        {
+            get => _pageSize;
+            set
+            {
+                if (_pageSize != value)
+                {
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
+                }
+            }
+        }
+
+        private int _totalCount;
+        public int TotalCount
+        {
+            get => _totalCount;
+            set
+            {
+                if (_totalCount != value)
+                {
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
+                }
+            }
+        }
+
+        private string _responseTime = string.Empty;
+        public string ResponseTime
+        {
+            get => _responseTime;
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        }
+
         #endregion
 
         #region Button States
@@ -133,6 +190,16 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             {
                 _deleteBookCommand ??= new AsyncCommand(DeleteBookAsync);
                 return _deleteBookCommand;
+            }
+        }
+
+        private ICommand? _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                _paginationCommand ??= new AsyncCommand(LoadAccountingBooksAsync);
+                return _paginationCommand;
             }
         }
 
@@ -280,14 +347,24 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             {
                 IsBusy = true;
 
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
+
                 dynamic variables = new ExpandoObject();
                 variables.pageResponseFilters = new ExpandoObject();
                 variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = PageIndex;
+                variables.pageResponsePagination.pageSize = PageSize;
+
                 string query = GetLoadAccountingBooksQuery();
                 PageType<AccountingBookGraphQLModel> result = await _accountingBookService.GetPageAsync(query, variables);
 
+                TotalCount = result.TotalEntries;
                 AccountingBooks = [.. result.Entries];
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -319,10 +396,15 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Name))
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("filters", "AccountingBookFilters");
-            var fragment = new GraphQLQueryFragment("accountingBooksPage", [parameter], fields, "PageResponse");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "AccountingBookFilters");
+            var fragment = new GraphQLQueryFragment("accountingBooksPage", [paginationParam, filtersParam], fields, "PageResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
