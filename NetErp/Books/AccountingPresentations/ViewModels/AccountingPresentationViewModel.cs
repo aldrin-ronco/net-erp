@@ -13,6 +13,7 @@ using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -97,6 +98,62 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
+        private int _pageIndex = 1;
+        public int PageIndex
+        {
+            get => _pageIndex;
+            set
+            {
+                if (_pageIndex != value)
+                {
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
+                }
+            }
+        }
+
+        private int _pageSize = 50;
+        public int PageSize
+        {
+            get => _pageSize;
+            set
+            {
+                if (_pageSize != value)
+                {
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
+                }
+            }
+        }
+
+        private int _totalCount;
+        public int TotalCount
+        {
+            get => _totalCount;
+            set
+            {
+                if (_totalCount != value)
+                {
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
+                }
+            }
+        }
+
+        private string _responseTime = string.Empty;
+        public string ResponseTime
+        {
+            get => _responseTime;
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        }
+
         #endregion
 
         #region Button States
@@ -135,6 +192,16 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             {
                 _deletePresentationCommand ??= new AsyncCommand(DeletePresentationAsync);
                 return _deletePresentationCommand;
+            }
+        }
+
+        private ICommand? _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                _paginationCommand ??= new AsyncCommand(LoadAccountingPresentationsAsync);
+                return _paginationCommand;
             }
         }
 
@@ -286,14 +353,24 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             {
                 IsBusy = true;
 
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
+
                 dynamic variables = new ExpandoObject();
                 variables.pageResponseFilters = new ExpandoObject();
                 variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.page = PageIndex;
+                variables.pageResponsePagination.pageSize = PageSize;
+
                 string query = GetLoadAccountingPresentationsQuery();
                 PageType<AccountingPresentationGraphQLModel> result = await _accountingPresentationService.GetPageAsync(query, variables);
 
+                TotalCount = result.TotalEntries;
                 AccountingPresentations = [.. result.Entries];
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {

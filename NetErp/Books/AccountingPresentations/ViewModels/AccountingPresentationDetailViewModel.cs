@@ -222,7 +222,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         public bool CanSave => !HasErrors && this.HasChanges()
                                && !string.IsNullOrEmpty(Name)
                                && AccountingBookIds.Count > 0
-                               && (!AllowsClosure || ClosureAccountingBookId > 0);
+                               && (!AllowsClosure || ClosureAccountingBookId.HasValue);
 
         #endregion
 
