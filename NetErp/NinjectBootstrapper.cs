@@ -27,7 +27,6 @@ using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.DTO;
-using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.DynamicControl;
 using NetErp.Global.MainMenu.ViewModels;
@@ -370,7 +369,6 @@ namespace NetErp
             var config = new MapperConfiguration(cfg =>
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
-                _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
                 _ = cfg.CreateMap<WithholdingTypeGraphQLModel, WithholdingTypeDTO>();
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();

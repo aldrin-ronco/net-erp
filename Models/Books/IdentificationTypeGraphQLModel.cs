@@ -1,9 +1,4 @@
-﻿using Models.Login;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Books
@@ -20,6 +15,9 @@ namespace Models.Books
 
         // Requiere digito de verificacion
         public bool HasVerificationDigit { get; set; } = false;
+
+        // Permite letras en el documento
+        public bool AllowsLetters { get; set; } = false;
 
         // Longitud minima del documento
         public int MinimumDocumentLength { get; set; } = 7;
