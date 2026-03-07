@@ -413,8 +413,6 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.AccountingAccountGroupsFilters = new ExpandoObject();
-                variables.accountingAccountsFilters = new ExpandoObject();
-                variables.accountingAccountsFilters.only_auxiliary_accounts = true;
 
                 PageType<AccountingAccountGroupGraphQLModel> result = await _accountingAccountGroupService.GetPageAsync(query, variables);
                 Groups = [.. result.Entries];
