@@ -106,4 +106,14 @@ namespace NetErp.Books.AccountingAccountGroups.DTO
 
         public WithholdingCertificateConfigDetailViewModel? Context { get; set; }
     }
+
+    public class AccountingAccountGroupFilterDTO : PropertyChangedBase
+    {
+        public int Id { get; set; }
+        public int AccountingAccountId { get; set; }
+        public string AccountingAccountCode { get; set; } = string.Empty;
+        public string AccountingAccountName { get; set; } = string.Empty;
+        public string FullName => $"{AccountingAccountCode.Trim()} - {AccountingAccountName.Trim()}";
+    }
+
 }

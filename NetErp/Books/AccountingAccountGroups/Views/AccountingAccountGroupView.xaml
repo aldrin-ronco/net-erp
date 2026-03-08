@@ -38,6 +38,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -53,15 +54,50 @@
                                           IsEnabled="{Binding AccountingAccountGroupComboBoxIsEnabled, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
-                    <!-- Row 1: Account selector -->
+                    <!-- Row 1: Group filters (read-only summary + config button) -->
                     <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="Filtros del grupo" VerticalAlignment="Center"/>
+                            <Button Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    Margin="6,0,0,0" Padding="2" VerticalAlignment="Center"
+                                    ToolTip="Configurar filtros del grupo"
+                                    IsEnabled="{Binding CanOpenFilterDialog, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
+                                <dxmvvm:Interaction.Behaviors>
+                                    <dxmvvm:EventToCommand Command="{Binding OpenFilterDialogCommand}" EventName="Click"/>
+                                </dxmvvm:Interaction.Behaviors>
+                                <Image Source="{dx:DXImage 'Images/Setup/Properties_16x16.png'}" Width="16" Height="16"/>
+                            </Button>
+                        </StackPanel>
+                        <!-- Read-only filter chips -->
+                        <ItemsControl ItemsSource="{Binding GroupFilters}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#E8F0FE" BorderBrush="#B0C4DE" BorderThickness="1"
+                                            CornerRadius="4" Padding="6,3" Margin="0,0,6,4">
+                                        <TextBlock Text="{Binding FullName}" VerticalAlignment="Center" FontSize="12"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Sin filtros configurados — se mostrarán todas las cuentas"
+                                   Foreground="Gray" FontSize="11" FontStyle="Italic"
+                                   Visibility="{Binding HasGroupFilters, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+                    </StackPanel>
+
+                    <!-- Row 2: Account selector -->
+                    <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,12,0,0">
                         <TextBlock Text="Seleccione la cuenta contable" Margin="0,0,0,5"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <dxe:ComboBoxEdit ItemsSource="{Binding Path=AccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
+                            <dxe:ComboBoxEdit ItemsSource="{Binding Path=FilteredAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
                                               IsTextEditable="False"
                                               DisplayMember="FullName"
                                               ValueMember="Code"
@@ -77,8 +113,8 @@
                         </Grid>
                     </StackPanel>
 
-                    <!-- Row 2: Search filter -->
-                    <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,12,0,0">
+                    <!-- Row 3: Search filter -->
+                    <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,12,0,0">
                         <TextBlock Text="¿Qué desea buscar?" Margin="0,0,0,5"/>
                         <dxe:ButtonEdit
                             NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
@@ -94,8 +130,8 @@
                         </dxe:ButtonEdit>
                     </StackPanel>
 
-                    <!-- Row 3: Grid -->
-                    <dxg:GridControl Grid.Row="3" Margin="0,10,0,0"
+                    <!-- Row 4: Grid -->
+                    <dxg:GridControl Grid.Row="4" Margin="0,10,0,0"
                                      ItemsSource="{Binding Path=SelectedGroupAccountingAccounts, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <dxg:GridControl.View>
                             <dxg:TableView AllowEditing="False"
@@ -107,7 +143,9 @@
                                            ColumnFilterPopupMode="Disabled"
                                            AllowSorting="False"
                                            AllowColumnFiltering="False"
-                                           IsColumnMenuEnabled="False"/>
+                                           IsColumnMenuEnabled="False"
+                                           AllowPerPixelScrolling="False"
+                                           RowMinHeight="23"/>
                         </dxg:GridControl.View>
 
                         <dxg:GridColumn Header="Código" Width="Auto" HorizontalHeaderContentAlignment="Center"
@@ -143,8 +181,8 @@
                         </dxg:GridColumn>
                     </dxg:GridControl>
 
-                    <!-- Row 4: Action buttons centered -->
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                    <!-- Row 5: Action buttons centered -->
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
                         <!-- Guardar -->
                         <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                                 IsEnabled="{Binding CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
