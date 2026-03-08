@@ -412,6 +412,10 @@ namespace NetErp
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
                 _ = cfg.CreateMap<AccountingAccountGroupDTO, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<AccountingAccountGroupFilterGraphQLModel, AccountingAccountGroupFilterDTO>()
+                    .ForMember(dest => dest.AccountingAccountId, opt => opt.MapFrom(src => src.AccountingAccount.Id))
+                    .ForMember(dest => dest.AccountingAccountCode, opt => opt.MapFrom(src => src.AccountingAccount.Code))
+                    .ForMember(dest => dest.AccountingAccountName, opt => opt.MapFrom(src => src.AccountingAccount.Name));
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();

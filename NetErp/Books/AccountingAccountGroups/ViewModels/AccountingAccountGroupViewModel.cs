@@ -24,6 +24,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         private readonly IMapper _autoMapper;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
@@ -79,7 +80,15 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                         SelectedGroupAccountingAccounts = _autoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(_selectedGroup.Accounts);
                         foreach (var account in SelectedGroupAccountingAccounts) account.Context = this;
                         _selectedGroupAccountingAccountsShadow = [.. SelectedGroupAccountingAccounts];
+                        GroupFilters = _autoMapper.Map<ObservableCollection<AccountingAccountGroupFilterDTO>>(_selectedGroup.Filters);
+                        UpdateFilteredAccounts();
                     }
+                    else
+                    {
+                        GroupFilters = [];
+                        UpdateFilteredAccounts();
+                    }
+                    NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
                 }
             }
         }
@@ -100,6 +109,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         private ObservableCollection<AccountingAccountGroupDTO> _selectedGroupAccountingAccountsShadow = [];
 
+        // All accounts loaded from API (minCodeLength >= 4)
         private ObservableCollection<AccountingAccountGroupDTO> _accountingAccounts = [];
         public ObservableCollection<AccountingAccountGroupDTO> AccountingAccounts
         {
@@ -113,6 +123,39 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 }
             }
         }
+
+        // Accounts filtered by group filter prefixes (bound to the account selector combo)
+        private ObservableCollection<AccountingAccountGroupDTO> _filteredAccountingAccounts = [];
+        public ObservableCollection<AccountingAccountGroupDTO> FilteredAccountingAccounts
+        {
+            get => _filteredAccountingAccounts;
+            set
+            {
+                if (_filteredAccountingAccounts != value)
+                {
+                    _filteredAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(FilteredAccountingAccounts));
+                }
+            }
+        }
+
+        // Group filters (prefix accounts)
+        private ObservableCollection<AccountingAccountGroupFilterDTO> _groupFilters = [];
+        public ObservableCollection<AccountingAccountGroupFilterDTO> GroupFilters
+        {
+            get => _groupFilters;
+            set
+            {
+                if (_groupFilters != value)
+                {
+                    _groupFilters = value;
+                    NotifyOfPropertyChange(nameof(GroupFilters));
+                    NotifyOfPropertyChange(nameof(HasGroupFilters));
+                }
+            }
+        }
+
+        public bool HasGroupFilters => GroupFilters != null && GroupFilters.Count > 0;
 
         private string _filterSearch = string.Empty;
         public string FilterSearch
@@ -166,6 +209,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         public bool CanDeleteAccountingAccount => SelectedGroupAccountingAccounts.Any(x => x.IsChecked);
 
         public bool CanUndo => HasPendingChanges;
+
+        public bool CanOpenFilterDialog => !HasPendingChanges && SelectedGroup != null;
 
         private bool _isAllChecked;
         public bool IsAllChecked
@@ -226,6 +271,16 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
         }
 
+        private ICommand? _openFilterDialogCommand;
+        public ICommand OpenFilterDialogCommand
+        {
+            get
+            {
+                _openFilterDialogCommand ??= new AsyncCommand(OpenFilterDialogAsync);
+                return _openFilterDialogCommand;
+            }
+        }
+
         #endregion
 
         #region Constructor
@@ -233,11 +288,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         public AccountingAccountGroupViewModel(
             IMapper mapper,
             Helpers.Services.INotificationService notificationService,
+            Helpers.IDialogService dialogService,
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             _autoMapper = mapper;
             _notificationService = notificationService;
+            _dialogService = dialogService;
             _accountingAccountGroupService = accountingAccountGroupService;
             _accountingAccountService = accountingAccountService;
         }
@@ -262,7 +319,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             {
                 IsBusy = true;
 
-                string accountsQuery = GetLoadAccountingAccountsQuery();
+                string accountsQuery = _loadAccountingAccountsQuery.Value;
                 dynamic accountsVariables = new ExpandoObject();
                 accountsVariables.AccountingAccountsPagePagination = new ExpandoObject();
                 accountsVariables.AccountingAccountsPagePagination.pageSize = -1;
@@ -274,7 +331,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 AccountingAccounts = _autoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(accountsResult.Entries);
                 foreach (var account in AccountingAccounts) account.Context = this;
 
-                string query = GetLoadAccountingAccountGroupQuery();
+                string query = _loadAccountingAccountGroupQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.AccountingAccountGroupsFilters = new ExpandoObject();
 
@@ -295,6 +352,58 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region Group Filters
+
+        private void UpdateFilteredAccounts()
+        {
+            if (GroupFilters == null || GroupFilters.Count == 0)
+            {
+                FilteredAccountingAccounts = new ObservableCollection<AccountingAccountGroupDTO>(AccountingAccounts);
+            }
+            else
+            {
+                var prefixes = GroupFilters.Select(f => f.AccountingAccountCode.Trim()).ToList();
+                FilteredAccountingAccounts = new ObservableCollection<AccountingAccountGroupDTO>(
+                    AccountingAccounts.Where(a => prefixes.Any(p => a.Code.TrimEnd().StartsWith(p))));
+            }
+            SelectedAccountingAccountCode = string.Empty;
+        }
+
+        public async Task OpenFilterDialogAsync()
+        {
+            if (SelectedGroup is null) return;
+
+            try
+            {
+                var dialog = new AccountingAccountGroupFilterDialogViewModel(
+                    _autoMapper, _notificationService, _dialogService, _accountingAccountGroupService);
+                dialog.Initialize(SelectedGroup, AccountingAccounts);
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    dialog.DialogWidth = parentView.ActualWidth * 0.7;
+
+                bool? result = await _dialogService.ShowDialogAsync(dialog, $"Filtros del grupo: {SelectedGroup.Name}");
+
+                if (dialog.FiltersChanged)
+                {
+                    GroupFilters = _autoMapper.Map<ObservableCollection<AccountingAccountGroupFilterDTO>>(SelectedGroup.Filters);
+                    UpdateFilteredAccounts();
+                }
+            }
+            catch (Exception ex)
+            {
+                await Execute.OnUIThreadAsync(() =>
+                {
+                    ThemedMessageBox.Show(title: "Atención!",
+                        text: $"{GetType().Name}.OpenFilterDialogAsync \r\n{ex.Message}",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    return Task.CompletedTask;
+                });
             }
         }
 
@@ -327,9 +436,10 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         public void AddAccountingAccounts()
         {
+            string selectedCode = SelectedAccountingAccountCode.Trim();
             foreach (var accountingAccount in AccountingAccounts)
             {
-                if (accountingAccount.Code.StartsWith(SelectedAccountingAccountCode)
+                if (accountingAccount.Code.TrimEnd().StartsWith(selectedCode)
                     && accountingAccount.Code.Trim().Length >= 8
                     && _selectedGroupAccountingAccountsShadow.FirstOrDefault(x => x.Id == accountingAccount.Id) == null)
                 {
@@ -345,6 +455,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
             NotifyOfPropertyChange(nameof(CanSave));
             NotifyOfPropertyChange(nameof(CanUndo));
+            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
         }
 
         public void DeleteAccountingAccounts()
@@ -363,6 +474,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
             NotifyOfPropertyChange(nameof(CanSave));
             NotifyOfPropertyChange(nameof(CanUndo));
+            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
         }
 
         #endregion
@@ -383,6 +495,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
             NotifyOfPropertyChange(nameof(CanSave));
             NotifyOfPropertyChange(nameof(CanUndo));
+            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
         }
 
         #endregion
@@ -401,7 +514,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             {
                 IsBusy = true;
 
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.updateResponseData = new ExpandoObject();
                 variables.updateResponseData.name = SelectedGroup!.Name;
@@ -417,6 +530,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
                 NotifyOfPropertyChange(nameof(CanSave));
                 NotifyOfPropertyChange(nameof(CanUndo));
+                NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
                 _notificationService.ShowSuccess("La configuración se ha guardado correctamente");
             }
             catch (Exception ex)
@@ -439,7 +553,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadAccountingAccountGroupQuery()
+        private static readonly Lazy<string> _loadAccountingAccountGroupQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
                 .Create()
@@ -451,7 +565,13 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                         .Field(c => c.Id)
                         .Field(c => c.Name)
                         .Field(c => c.Code)
-                        .Field(c => c.Nature)))
+                        .Field(c => c.Nature))
+                    .SelectList(e => e.Filters, f => f
+                        .Field(fi => fi.Id)
+                        .Select(fi => fi.AccountingAccount, acc => acc
+                            .Field(a => a.Id)
+                            .Field(a => a.Code)
+                            .Field(a => a.Name))))
                 .Field(o => o.PageNumber)
                 .Field(o => o.PageSize)
                 .Field(o => o.TotalPages)
@@ -462,9 +582,9 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             var filtersParam = new GraphQLQueryParameter("filters", "AccountingAccountGroupFilters");
             var fragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [paginationParam, filtersParam], fields, "PageResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingAccountGroupGraphQLModel>>
                 .Create()
@@ -491,9 +611,9 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             };
             var fragment = new GraphQLQueryFragment("UpdateAccountingAccountGroupWithAccounts", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetLoadAccountingAccountsQuery()
+        private static readonly Lazy<string> _loadAccountingAccountsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
                 .Create()
@@ -513,7 +633,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             var sortParam = new GraphQLQueryParameter("sort", "[AccountingAccountSortInput]");
             var fragment = new GraphQLQueryFragment("AccountingAccountsPage", [paginationParam, filtersParam, sortParam], fields, "PageResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
     }
