@@ -665,7 +665,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             try
             {
                 Refresh();
-                string query = GetLoadItemSizeCategoriesQuery();
+                string query = _loadItemSizeCategoriesQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
                 variables.pageResponsePagination.pageSize = -1;
@@ -696,7 +696,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         public async Task<UpsertResponseType<ItemSizeCategoryGraphQLModel>> CreateItemSizeCategoryAsync()
         {
-            string query = GetCreateItemSizeCategoryQuery();
+            string query = _createItemSizeCategoryQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.createResponseInput = new ExpandoObject();
             variables.createResponseInput.Name = EditingName;
@@ -706,7 +706,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         public async Task<UpsertResponseType<ItemSizeCategoryGraphQLModel>> UpdateItemSizeCategoryAsync()
         {
-            string query = GetUpdateItemSizeCategoryQuery();
+            string query = _updateItemSizeCategoryQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.updateResponseData = new ExpandoObject();
             variables.updateResponseData.Name = EditingName;
@@ -720,7 +720,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             try
             {
                 ItemSizeCategoryDTO selectedItem = ((ItemSizeCategoryDTO)SelectedItem);
-                string query = GetCanDeleteItemSizeCategoryQuery();
+                string query = _canDeleteItemSizeCategoryQuery.Value;
 
                 object variables = new { canDeleteResponseId = selectedItem.Id };
 
@@ -759,7 +759,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteItemSizeCategoryAsync(int id)
         {
-            string query = GetDeleteItemSizeCategoryQuery();
+            string query = _deleteItemSizeCategoryQuery.Value;
 
             object variables = new
             {
@@ -774,7 +774,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
         public async Task<UpsertResponseType<ItemSizeValueGraphQLModel>> CreateItemSizeValueAsync()
         {
             var parent = ItemSizeCategories.FirstOrDefault(x => x.Id == SelectedCategoryIdForNewValue);
-            string query = GetCreateItemSizeValueQuery();
+            string query = _createItemSizeValueQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.createResponseInput = new ExpandoObject();
             variables.createResponseInput.Name = EditingName;
@@ -786,7 +786,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         public async Task<UpsertResponseType<ItemSizeValueGraphQLModel>> UpdateItemSizeValueAsync()
         {
-            string query = GetUpdateItemSizeValueQuery();
+            string query = _updateItemSizeValueQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.updateResponseData = new ExpandoObject();
             variables.updateResponseData.Name = EditingName;
@@ -801,7 +801,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             try
             {
                 ItemSizeValueDTO selectedItem = ((ItemSizeValueDTO)SelectedItem);
-                string query = GetCanDeleteItemSizeValueQuery();
+                string query = _canDeleteItemSizeValueQuery.Value;
 
                 object variables = new { canDeleteResponseId = selectedItem.Id };
 
@@ -840,7 +840,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteItemSizeValueAsync(int id)
         {
-            string query = GetDeleteItemSizeValueQuery();
+            string query = _deleteItemSizeValueQuery.Value;
 
             object variables = new
             {
@@ -960,11 +960,11 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
 
         #endregion
 
-        #region QueryBuilder Methods
+        #region GraphQL Queries
 
         // ItemSizeCategory queries
 
-        public static string GetLoadItemSizeCategoriesQuery()
+        private static readonly Lazy<string> _loadItemSizeCategoriesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<ItemSizeCategoryGraphQLModel>>
                 .Create()
@@ -982,9 +982,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
             var fragment = new GraphQLQueryFragment("itemSizeCategoriesPage", [parameter], fields, alias: "PageResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public static string GetCanDeleteItemSizeCategoryQuery()
+        private static readonly Lazy<string> _canDeleteItemSizeCategoryQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -995,9 +995,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteItemSizeCategory", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public static string GetDeleteItemSizeCategoryQuery()
+        private static readonly Lazy<string> _deleteItemSizeCategoryQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -1009,9 +1009,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteItemSizeCategory", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public static string GetCreateItemSizeCategoryQuery()
+        private static readonly Lazy<string> _createItemSizeCategoryQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ItemSizeCategoryGraphQLModel>>
                 .Create()
@@ -1028,9 +1028,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateItemSizeCategoryInput!");
             var fragment = new GraphQLQueryFragment("createItemSizeCategory", [parameter], fields, alias: "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public static string GetUpdateItemSizeCategoryQuery()
+        private static readonly Lazy<string> _updateItemSizeCategoryQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ItemSizeCategoryGraphQLModel>>
                 .Create()
@@ -1054,11 +1054,11 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var idParam = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("updateItemSizeCategory", [dataParam, idParam], fields, alias: "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         // ItemSizeValue queries
 
-        public static string GetCanDeleteItemSizeValueQuery()
+        private static readonly Lazy<string> _canDeleteItemSizeValueQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -1069,9 +1069,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteItemSizeValue", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public static string GetDeleteItemSizeValueQuery()
+        private static readonly Lazy<string> _deleteItemSizeValueQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -1083,9 +1083,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteItemSizeValue", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public static string GetCreateItemSizeValueQuery()
+        private static readonly Lazy<string> _createItemSizeValueQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ItemSizeValueGraphQLModel>>
                 .Create()
@@ -1105,9 +1105,9 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateItemSizeValueInput!");
             var fragment = new GraphQLQueryFragment("createItemSizeValue", [parameter], fields, alias: "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public static string GetUpdateItemSizeValueQuery()
+        private static readonly Lazy<string> _updateItemSizeValueQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ItemSizeValueGraphQLModel>>
                 .Create()
@@ -1128,7 +1128,7 @@ namespace NetErp.Inventory.ItemSizes.ViewModels
             var idParam = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("updateItemSizeValue", [dataParam, idParam], fields, alias: "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 
