@@ -270,7 +270,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetCanDeleteMeasurementUnitQuery();
+                string query = _canDeleteMeasurementUnitQuery.Value;
                 object variables = new { canDeleteResponseId = SelectedMeasurementUnit.Id };
                 var validation = await _measurementUnitService.CanDeleteAsync(query, variables);
 
@@ -323,7 +323,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteMeasurementUnitAsync(int id)
         {
-            string query = GetDeleteMeasurementUnitQuery();
+            string query = _deleteMeasurementUnitQuery.Value;
             object variables = new { deleteResponseId = id };
             return await _measurementUnitService.DeleteAsync<DeleteResponseType>(query, variables);
         }
@@ -350,7 +350,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 variables.pageResponsePagination.Page = PageIndex;
                 variables.pageResponsePagination.PageSize = PageSize;
 
-                string query = GetLoadMeasurementUnitsQuery();
+                string query = _loadMeasurementUnitsQuery.Value;
                 PageType<MeasurementUnitGraphQLModel> result = await _measurementUnitService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -381,7 +381,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadMeasurementUnitsQuery()
+        private static readonly Lazy<string> _loadMeasurementUnitsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<MeasurementUnitGraphQLModel>>
                 .Create()
@@ -399,9 +399,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             var fragment = new GraphQLQueryFragment("measurementUnitsPage", [filtersParameter, paginationParameter], fields, "PageResponse");
 
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public string GetDeleteMeasurementUnitQuery()
+        private static readonly Lazy<string> _deleteMeasurementUnitQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -413,9 +413,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteMeasurementUnit", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetCanDeleteMeasurementUnitQuery()
+        private static readonly Lazy<string> _canDeleteMeasurementUnitQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -426,7 +426,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteMeasurementUnit", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 
