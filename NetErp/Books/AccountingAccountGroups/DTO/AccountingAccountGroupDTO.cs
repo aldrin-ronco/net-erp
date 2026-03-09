@@ -87,6 +87,7 @@ namespace NetErp.Books.AccountingAccountGroups.DTO
         public int Id { get; set; }
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string Nature { get; set; } = string.Empty;
         public int GroupId { get; set; }
 
         private bool? _isChecked = false;

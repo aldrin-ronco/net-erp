@@ -1,56 +1,59 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using DevExpress.DirectX.Common.DirectWrite;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
-using NetErp.Books.AccountingAccountGroups.DTO;
-using NetErp.Books.AccountingAccountGroups.ViewModels;
-using NetErp.Books.AccountingEntities.ViewModels;
+using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Ninject.Activation;
-using Services.Books.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
-   public class WithholdingCertificateConfigMasterViewModel : Screen,
-         IHandle<WithholdingCertificateConfigDeleteMessage>,
+    public class WithholdingCertificateConfigMasterViewModel : Screen,
+        IHandle<WithholdingCertificateConfigDeleteMessage>,
         IHandle<WithholdingCertificateConfigUpdateMessage>,
         IHandle<WithholdingCertificateConfigCreateMessage>
     {
+        #region Dependencies
+
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
-        public WithholdingCertificateConfigMasterViewModel(WithholdingCertificateConfigViewModel context, Helpers.Services.INotificationService notificationService, IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
-        {
-            Context = context;
-            Context.EventAggregator.SubscribeOnUIThread(this);
-            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-            _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
-        }
-        private ObservableCollection<WithholdingCertificateConfigGraphQLModel> _certificates;
 
+        #endregion
+
+        #region Grid Properties
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
+
+        private ObservableCollection<WithholdingCertificateConfigGraphQLModel> _certificates = [];
         public ObservableCollection<WithholdingCertificateConfigGraphQLModel> Certificates
         {
-            get { return _certificates; }
+            get => _certificates;
             set
             {
                 if (_certificates != value)
@@ -61,48 +64,41 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        private WithholdingCertificateConfigGraphQLModel? _selectedWithholdingCertificateConfigGraphQLModel;
-        public WithholdingCertificateConfigGraphQLModel? SelectedWithholdingCertificateConfigGraphQLModel
+        private WithholdingCertificateConfigGraphQLModel? _selectedCertificate;
+        public WithholdingCertificateConfigGraphQLModel? SelectedCertificate
         {
-            get { return _selectedWithholdingCertificateConfigGraphQLModel; }
+            get => _selectedCertificate;
             set
             {
-                if (_selectedWithholdingCertificateConfigGraphQLModel != value)
+                if (_selectedCertificate != value)
                 {
-                    _selectedWithholdingCertificateConfigGraphQLModel = value;
-                    NotifyOfPropertyChange(nameof(_selectedWithholdingCertificateConfigGraphQLModel));
-                    // NotifyOfPropertyChange(nameof(CanDelete_selectedWithholdingCertificateConfigGraphQLModel));
+                    _selectedCertificate = value;
+                    NotifyOfPropertyChange(nameof(SelectedCertificate));
+                    NotifyOfPropertyChange(nameof(CanEditCertificate));
+                    NotifyOfPropertyChange(nameof(CanDeleteCertificate));
                 }
             }
         }
-        protected override void OnViewAttached(object view, object context)
-        {
-            base.OnViewAttached(view, context);
-            _ = Task.Run(() => InitializeAsync());
-        }
-        private bool _isBusy;
 
-        public bool IsBusy
+        private string _filterSearch = string.Empty;
+        public string FilterSearch
         {
-            get { return _isBusy; }
+            get => _filterSearch;
             set
             {
-                if (_isBusy != value)
+                if (_filterSearch != value)
                 {
-                    _isBusy = value;
-                    NotifyOfPropertyChange(nameof(IsBusy));
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadCertificatesAsync();
                 }
             }
         }
-        
-        #region Paginacion
-        /// <summary>
-        /// PageIndex
-        /// </summary>
-        private int _pageIndex = 1; // DevExpress first page is index zero
+
+        private int _pageIndex = 1;
         public int PageIndex
         {
-            get { return _pageIndex; }
+            get => _pageIndex;
             set
             {
                 if (_pageIndex != value)
@@ -113,13 +109,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        /// <summary>
-        /// PageSize
-        /// </summary>
-        private int _pageSize = 50; // Default PageSize 50
+        private int _pageSize = 50;
         public int PageSize
         {
-            get { return _pageSize; }
+            get => _pageSize;
             set
             {
                 if (_pageSize != value)
@@ -128,30 +121,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-
-        }
-        // Tiempo de respuesta
-        private string _responseTime;
-        public string ResponseTime
-        {
-            get { return _responseTime; }
-            set
-            {
-                if (_responseTime != value)
-                {
-                    _responseTime = value;
-                    NotifyOfPropertyChange(nameof(ResponseTime));
-                }
-            }
         }
 
-        /// <summary>
-        /// TotalCount
-        /// </summary>
-        private int _totalCount = 0;
+        private int _totalCount;
         public int TotalCount
         {
-            get { return _totalCount; }
+            get => _totalCount;
             set
             {
                 if (_totalCount != value)
@@ -162,115 +137,258 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        /// <summary>
-        /// PaginationCommand para controlar evento
-        /// </summary>
-        private ICommand _paginationCommand;
-        public ICommand PaginationCommand
+        private string _responseTime = string.Empty;
+        public string ResponseTime
+        {
+            get => _responseTime;
+            set
+            {
+                if (_responseTime != value)
+                {
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        }
+
+        #endregion
+
+        #region Button States
+
+        public bool CanEditCertificate => SelectedCertificate != null;
+        public bool CanDeleteCertificate => SelectedCertificate != null;
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _createCommand;
+        public ICommand CreateCommand
         {
             get
             {
-                if (_paginationCommand == null) this._paginationCommand = new RelayCommand(CanExecuteChangeIndex, ExecuteChangeIndex);
-                return _paginationCommand;
+                _createCommand ??= new AsyncCommand(CreateAsync);
+                return _createCommand;
             }
         }
-        private async void ExecuteChangeIndex(object parameter)
+
+        private ICommand? _editCommand;
+        public ICommand EditCommand
         {
-            await LoadWithholdingCertificateConfigAsync();
+            get
+            {
+                _editCommand ??= new AsyncCommand(EditAsync);
+                return _editCommand;
+            }
         }
 
-        private bool CanExecuteChangeIndex(object parameter)
-        {
-            return true;
-        }
-
-
-        #endregion
-        private ICommand _deleteCommand;
+        private ICommand? _deleteCommand;
         public ICommand DeleteCommand
         {
             get
             {
-                if (_deleteCommand is null) _deleteCommand = new AsyncCommand(DeleteCertificateAsync, CanDeleteCertificate);
+                _deleteCommand ??= new AsyncCommand(DeleteAsync);
                 return _deleteCommand;
             }
         }
 
-        public bool CanDeleteCertificate
+        private ICommand? _paginationCommand;
+        public ICommand PaginationCommand
         {
             get
             {
-                if (SelectedWithholdingCertificateConfigGraphQLModel is null) return false;
-                return true;
+                _paginationCommand ??= new AsyncCommand(LoadCertificatesAsync);
+                return _paginationCommand;
             }
         }
-        private ICommand _newCommand;
 
-        public ICommand NewCommand
+        #endregion
+
+        #region Constructor
+
+        public WithholdingCertificateConfigMasterViewModel(
+            WithholdingCertificateConfigViewModel context,
+            Helpers.Services.INotificationService notificationService,
+            IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService)
         {
-            get
-            {
-                if (_newCommand is null) _newCommand = new AsyncCommand(NewAsync);
-                return _newCommand;
-            }
+            Context = context;
+            _notificationService = notificationService;
+            _withholdingCertificateConfigService = withholdingCertificateConfigService;
+            Context.EventAggregator.SubscribeOnPublishedThread(this);
         }
-        public async Task DeleteCertificateAsync()
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override async void OnViewReady(object view)
         {
+            base.OnViewReady(view);
+            await LoadCertificatesAsync();
+        }
+
+        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+            }
+            await base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region CRUD Operations
+
+        public async Task CreateAsync()
+        {
+            await Context.ActivateDetailViewForNew();
+        }
+
+        public async Task EditAsync()
+        {
+            if (SelectedCertificate == null) return;
+            await Context.ActivateDetailViewForEdit(SelectedCertificate);
+        }
+
+        public async Task DeleteAsync()
+        {
+            if (SelectedCertificate == null) return;
             try
             {
                 IsBusy = true;
-                int id = SelectedWithholdingCertificateConfigGraphQLModel.Id;
-                string query = GetCanDeleteWithholdingCertificateQuery();
+                Refresh();
 
-                object variables = new { canDeleteResponseId = SelectedWithholdingCertificateConfigGraphQLModel.Id };
-
+                string query = _canDeleteQuery.Value;
+                object variables = new { canDeleteResponseId = SelectedCertificate.Id };
                 var validation = await _withholdingCertificateConfigService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                    if (ThemedMessageBox.Show("Atención !",
+                        "¿Confirma que desea eliminar el registro seleccionado?",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
-                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    ThemedMessageBox.Show("Atención !",
+                        "El registro no puede ser eliminado" + (char)13 + (char)13 + validation.Message,
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-               
-                Refresh();
-                var deletedCertificate = await ExecuteDeleteCertificateAsync(id);
 
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(new     WithholdingCertificateConfigDeleteMessage { DeletedWithholdingCertificateConfig = deletedCertificate });
+                IsBusy = true;
+                DeleteResponseType deletedCertificate = await Task.Run(() => ExecuteDeleteAsync(SelectedCertificate.Id));
 
-                // Desactivar opcion de eliminar registros
-                NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+                if (!deletedCertificate.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!",
+                        text: $"No pudo ser eliminado el registro \n\n {deletedCertificate.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new WithholdingCertificateConfigDeleteMessage { DeletedWithholdingCertificateConfig = deletedCertificate });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!)!;
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteWithholdingCertificateConfig" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
         }
-        public string GetCanDeleteWithholdingCertificateQuery()
+
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+            string query = _deleteQuery.Value;
+            object variables = new { deleteResponseId = id };
+            return await _withholdingCertificateConfigService.DeleteAsync<DeleteResponseType>(query, variables);
+        }
+
+        #endregion
+
+        #region Load
+
+        public async Task LoadCertificatesAsync()
+        {
+            try
+            {
+                IsBusy = true;
+
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
+
+                dynamic variables = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch)
+                    ? ""
+                    : FilterSearch.Trim().RemoveExtraSpaces();
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.Page = PageIndex;
+                variables.pageResponsePagination.PageSize = PageSize;
+
+                string query = _loadQuery.Value;
+                PageType<WithholdingCertificateConfigGraphQLModel> result = await _withholdingCertificateConfigService.GetPageAsync(query, variables);
+
+                TotalCount = result.TotalEntries;
+                Certificates = [.. result.Entries];
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!)!;
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        private static readonly Lazy<string> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .Field(o => o.TotalEntries)
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Description))
+                .Build();
+
+            var filtersParam = new GraphQLQueryParameter("filters", "WithholdingCertificateFilters");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("withholdingCertificatesPage", [filtersParam, paginationParam], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _canDeleteQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -279,196 +397,47 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-
             var fragment = new GraphQLQueryFragment("canDeleteWithholdingCertificate", [parameter], fields, alias: "CanDeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-        public string  GetDeleteWithholdingCertificateQuery()
+        private static readonly Lazy<string> _deleteQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
-               .Create()
-               .Field(f => f.DeletedId)
-               .Field(f => f.Message)
-               .Field(f => f.Success)
-               .Build();
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-
             var fragment = new GraphQLQueryFragment("deleteWithholdingCertificate", [parameter], fields, alias: "DeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
 
-            var builder = new GraphQLQueryBuilder([fragment]);
+        #endregion
 
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-        public async Task<DeleteResponseType> ExecuteDeleteCertificateAsync(int id)
-        {
-            try
-            {
+        #region Event Handlers
 
-                string query = GetDeleteWithholdingCertificateQuery();
-
-                object variables = new
-                {
-                    deleteResponseId = id
-                };
-
-                // Eliminar registros
-                DeleteResponseType deletedRecord = await _withholdingCertificateConfigService.DeleteAsync<DeleteResponseType>(query, variables);
-                return deletedRecord;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-           
-
-        }
-        public async Task NewAsync()
+        public async Task HandleAsync(WithholdingCertificateConfigCreateMessage message, CancellationToken cancellationToken)
         {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                SelectedWithholdingCertificateConfigGraphQLModel = null;
-                await Task.Run(() => ExecuteActivateWithholdingCertificateConfigForNewAsync());
-                
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "NewWithholdingCertificateConfigEntity" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-        public async Task EditWithholdingCertificateConfig()
-        {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                await Task.Run(() => ExecuteActivateWithholdingCertificateConfigAsync());
-                SelectedWithholdingCertificateConfigGraphQLModel = null;
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EditWithholdingCertificateConfig" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-        public async Task ExecuteActivateWithholdingCertificateConfigAsync()
-        {
-            await Context.ActivateDetailViewForEdit(SelectedWithholdingCertificateConfigGraphQLModel);
-        }
-        public async Task ExecuteActivateWithholdingCertificateConfigForNewAsync()
-        {
-            await Context.ActivateDetailViewForNew();
-        }
-        
-        
-        public async Task InitializeAsync()
-        {
-           await LoadWithholdingCertificateConfigAsync();
-        }
-        public async Task LoadWithholdingCertificateConfigAsync()
-        {
-            try
-            {
-                this.Refresh();
-
-                // Iniciar cronometro
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                IsBusy = true;
-                
-                string query = GetLoadWithholdingCertificateConfigQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.Page = PageIndex;
-                variables.pageResponsePagination.PageSize = PageSize;
-                PageType<WithholdingCertificateConfigGraphQLModel> result =     await _withholdingCertificateConfigService.GetPageAsync(query, variables);
-                stopwatch.Stop();
-                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                Certificates =result.Entries;
-                TotalCount = result.TotalEntries;
-
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                //Initialized = true;
-                IsBusy = false;
-            }
-        }
-        public string GetLoadWithholdingCertificateConfigQuery()
-        {
-            var withholdingCertificateFields = FieldSpec<PageType<WithholdingCertificateConfigGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Description)
-                  .Field(e => e.Name)
- 
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-            var withholdingCertificatePagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var withholdingCertificatefilterParameters = new GraphQLQueryParameter("filters", "WithholdingCertificateFilters");
-            var withholdingCertificateFragment = new GraphQLQueryFragment("withholdingCertificatesPage", [withholdingCertificatePagParameters, withholdingCertificatefilterParameters], withholdingCertificateFields, "PageResponse");
-            var builder =  new GraphQLQueryBuilder([withholdingCertificateFragment]);
-            return builder.GetQuery();
-        }
-        public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
-        {
-            _notificationService.ShowSuccess(message.DeletedWithholdingCertificateConfig.Message);
-            await LoadWithholdingCertificateConfigAsync();
-           
+            await LoadCertificatesAsync();
+            _notificationService.ShowSuccess(message.CreatedWithholdingCertificateConfig.Message);
         }
 
         public async Task HandleAsync(WithholdingCertificateConfigUpdateMessage message, CancellationToken cancellationToken)
         {
+            await LoadCertificatesAsync();
             _notificationService.ShowSuccess(message.UpdatedWithholdingCertificateConfig.Message);
-            await LoadWithholdingCertificateConfigAsync();
-            
         }
 
-        public async Task HandleAsync(WithholdingCertificateConfigCreateMessage message, CancellationToken cancellationToken)
+        public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
         {
-            _notificationService.ShowSuccess(message.CreatedWithholdingCertificateConfig.Message);
-            await LoadWithholdingCertificateConfigAsync();
-            
+            await LoadCertificatesAsync();
+            SelectedCertificate = null;
+            _notificationService.ShowSuccess(message.DeletedWithholdingCertificateConfig.Message);
         }
 
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
-        {
-
-            // Desconectar eventos para evitar memory leaks
-            if (close)
-            {
-                Context.EventAggregator.Unsubscribe(this);
-            }
-            
-            return base.OnDeactivateAsync(close, cancellationToken);
-        }
+        #endregion
     }
 }
