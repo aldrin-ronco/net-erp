@@ -367,14 +367,13 @@ namespace NetErp.Treasury.Concept.ViewModels
 
         }
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TreasuryConceptGraphQLModel>>
                 .Create()
                 .Select(selector: f => f.Entity, alias: "entity", overrideName: "concept", nested: sq => sq
                     .Field(f => f.Id)
-                    .Field(f => f.Name)
-                    )
+                    .Field(f => f.Name))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -383,22 +382,17 @@ namespace NetErp.Treasury.Concept.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("input", "CreateTreasuryConceptInput!");
-
             var fragment = new GraphQLQueryFragment("createTreasuryConcept", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
 
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TreasuryConceptGraphQLModel>>
                 .Create()
                 .Select(selector: f => f.Entity, alias: "entity", overrideName: "concept", nested: sq => sq
                     .Field(f => f.Id)
-                    .Field(f => f.Name)
-                    )
+                    .Field(f => f.Name))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -412,9 +406,8 @@ namespace NetErp.Treasury.Concept.ViewModels
                 new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateTreasuryConcept", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
 
         public async Task<UpsertResponseType<TreasuryConceptGraphQLModel>> ExecuteSaveAsync()
         {
@@ -423,7 +416,7 @@ namespace NetErp.Treasury.Concept.ViewModels
             {
                 if (IsNewRecord)
                 {
-                    string query = GetCreateQuery();
+                    string query = _createQuery.Value;
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
 
                     UpsertResponseType<TreasuryConceptGraphQLModel> treasuryConceptGraphQLModelCreated = await _conceptService.CreateAsync<UpsertResponseType<TreasuryConceptGraphQLModel>>(query, variables);
@@ -431,7 +424,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 }
                 else
                 {
-                    string query = GetUpdateQuery();
+                    string query = _updateQuery.Value;
 
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                     variables.updateResponseId = ConceptId;
