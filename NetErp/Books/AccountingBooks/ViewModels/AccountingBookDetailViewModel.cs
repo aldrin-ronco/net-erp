@@ -247,13 +247,13 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _accountingBookService.CreateAsync<UpsertResponseType<AccountingBookGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
                 return await _accountingBookService.UpdateAsync<UpsertResponseType<AccountingBookGraphQLModel>>(query, variables);
@@ -269,7 +269,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingBookGraphQLModel>>
                 .Create()
@@ -286,9 +286,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateAccountingBookInput!");
             var fragment = new GraphQLQueryFragment("createAccountingBook", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingBookGraphQLModel>>
                 .Create()
@@ -309,7 +309,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateAccountingBook", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
     }

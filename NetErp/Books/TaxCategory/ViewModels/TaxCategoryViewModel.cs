@@ -271,7 +271,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetCanDeleteTaxCategoryQuery();
+                string query = _canDeleteTaxCategoryQuery.Value;
                 object variables = new { canDeleteResponseId = SelectedTaxCategory.Id };
                 var validation = await _taxCategoryService.CanDeleteAsync(query, variables);
 
@@ -324,7 +324,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteTaxCategoryAsync(int id)
         {
-            string query = GetDeleteTaxCategoryQuery();
+            string query = _deleteTaxCategoryQuery.Value;
             object variables = new { deleteResponseId = id };
             return await _taxCategoryService.DeleteAsync<DeleteResponseType>(query, variables);
         }
@@ -351,7 +351,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 variables.pageResponsePagination.Page = PageIndex;
                 variables.pageResponsePagination.PageSize = PageSize;
 
-                string query = GetLoadTaxCategoriesQuery();
+                string query = _loadTaxCategoriesQuery.Value;
                 PageType<TaxCategoryGraphQLModel> result = await _taxCategoryService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -382,7 +382,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadTaxCategoriesQuery()
+        private static readonly Lazy<string> _loadTaxCategoriesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<TaxCategoryGraphQLModel>>
                 .Create()
@@ -404,9 +404,9 @@ namespace NetErp.Books.TaxCategory.ViewModels
             var fragment = new GraphQLQueryFragment("taxCategoriesPage", [filtersParameter, paginationParameter], fields, "PageResponse");
 
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public string GetDeleteTaxCategoryQuery()
+        private static readonly Lazy<string> _deleteTaxCategoryQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -418,9 +418,9 @@ namespace NetErp.Books.TaxCategory.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteTaxCategory", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetCanDeleteTaxCategoryQuery()
+        private static readonly Lazy<string> _canDeleteTaxCategoryQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -431,7 +431,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteTaxCategory", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 

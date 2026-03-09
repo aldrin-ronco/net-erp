@@ -307,7 +307,7 @@ namespace NetErp.Books.Tax.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetCanDeleteTaxQuery();
+                string query = _canDeleteTaxQuery.Value;
                 object variables = new { canDeleteResponseId = SelectedTax.Id };
                 var validation = await _taxService.CanDeleteAsync(query, variables);
 
@@ -360,7 +360,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteTaxAsync(int id)
         {
-            string query = GetDeleteTaxQuery();
+            string query = _deleteTaxQuery.Value;
             object variables = new { deleteResponseId = id };
             return await _taxService.DeleteAsync<DeleteResponseType>(query, variables);
         }
@@ -388,7 +388,7 @@ namespace NetErp.Books.Tax.ViewModels
                 variables.pageResponsePagination.Page = PageIndex;
                 variables.pageResponsePagination.PageSize = PageSize;
 
-                string query = GetLoadTaxesQuery();
+                string query = _loadTaxesQuery.Value;
                 PageType<TaxGraphQLModel> result = await _taxService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -419,7 +419,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadTaxesQuery()
+        private static readonly Lazy<string> _loadTaxesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<TaxGraphQLModel>>
                 .Create()
@@ -456,9 +456,9 @@ namespace NetErp.Books.Tax.ViewModels
             var fragment = new GraphQLQueryFragment("taxesPage", [filtersParameter, paginationParameter], fields, "PageResponse");
 
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public string GetDeleteTaxQuery()
+        private static readonly Lazy<string> _deleteTaxQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -470,9 +470,9 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteTax", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetCanDeleteTaxQuery()
+        private static readonly Lazy<string> _canDeleteTaxQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -483,7 +483,7 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteTax", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 
