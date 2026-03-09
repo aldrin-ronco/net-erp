@@ -299,7 +299,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = GetLoadByIdQuery();
+            string query = _loadByIdQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.singleItemResponseId = id;
 
@@ -400,13 +400,13 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
                 return await _accountingPresentationService.CreateAsync<UpsertResponseType<AccountingPresentationGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
                 variables.updateResponseId = Id;
                 return await _accountingPresentationService.UpdateAsync<UpsertResponseType<AccountingPresentationGraphQLModel>>(query, variables);
@@ -422,7 +422,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingPresentationGraphQLModel>>
                 .Create()
@@ -439,9 +439,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateAccountingPresentationInput!");
             var fragment = new GraphQLQueryFragment("createAccountingPresentation", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingPresentationGraphQLModel>>
                 .Create()
@@ -462,9 +462,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateAccountingPresentation", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetLoadByIdQuery()
+        private static readonly Lazy<string> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<AccountingPresentationGraphQLModel>
                 .Create()
@@ -482,7 +482,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("accountingPresentation", [parameter], fields, "SingleItemResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
     }

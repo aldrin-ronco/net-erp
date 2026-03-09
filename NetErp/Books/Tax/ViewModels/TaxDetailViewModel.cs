@@ -527,7 +527,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = GetLoadByIdQuery();
+            string query = _loadByIdQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.singleItemResponseId = id;
 
@@ -604,13 +604,13 @@ namespace NetErp.Books.Tax.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
                 return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
@@ -626,7 +626,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -643,9 +643,9 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateTaxInput!");
             var fragment = new GraphQLQueryFragment("createTax", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -666,9 +666,9 @@ namespace NetErp.Books.Tax.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateTax", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetLoadByIdQuery()
+        private static readonly Lazy<string> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<TaxGraphQLModel>
                 .Create()
@@ -702,7 +702,7 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("tax", [parameter], fields, "SingleItemResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 

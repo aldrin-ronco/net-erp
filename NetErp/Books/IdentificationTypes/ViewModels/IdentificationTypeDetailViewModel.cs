@@ -235,7 +235,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
                 if (IsNewRecord)
                 {
-                    string query = GetCreateQuery();
+                    string query = _createQuery.Value;
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
                     UpsertResponseType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
 
@@ -250,7 +250,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 }
                 else
                 {
-                    string query = GetUpdateQuery();
+                    string query = _updateQuery.Value;
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
                     variables.updateResponseId = Id;
                     UpsertResponseType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
@@ -296,7 +296,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
                 .Create()
@@ -317,9 +317,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateIdentificationTypeInput!");
             var fragment = new GraphQLQueryFragment("createIdentificationType", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
                 .Create()
@@ -344,7 +344,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateIdentificationType", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
     }

@@ -771,7 +771,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         }
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingAccountGraphQLModel>>
                 .Create()
@@ -799,7 +799,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             var fragment = new GraphQLQueryFragment("updateAccountingAccount", parameters, fields, "UpdateResponse");
             var builder = new GraphQLQueryBuilder([fragment]);
             return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         public async Task<UpsertResponseType<AccountingAccountGraphQLModel>> UpdateAsync()
         {
@@ -878,7 +878,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
                 if (model is null) throw new Exception("model no puede ser null");
 
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
 
                 object variables = new
                 {
@@ -902,7 +902,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
 
-        public string GetInsertQuery()
+        private static readonly Lazy<string> _insertQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<List<AccountingAccountGraphQLModel>>>
                 .Create()
@@ -929,7 +929,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
         /// <summary>
         /// Guarda la nueva cuenta contable o actualiza los cambios
         /// </summary>
@@ -1005,7 +1005,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 };
                 models.Add(modelLv5);
 
-                string query = GetInsertQuery();
+                string query = _insertQuery.Value;
 
                 var modelsWithOutIds = from model in models
                                        select new { model.Code, model.Name, model.Nature, model.Margin, model.MarginBasis };

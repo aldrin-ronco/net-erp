@@ -285,7 +285,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetCanDeleteIdentificationTypeQuery();
+                string query = _canDeleteIdentificationTypeQuery.Value;
                 object variables = new { canDeleteResponseId = SelectedIdentificationType.Id };
                 var validation = await _identificationTypeService.CanDeleteAsync(query, variables);
 
@@ -305,7 +305,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 }
 
                 IsBusy = true;
-                string deleteQuery = GetDeleteIdentificationTypeQuery();
+                string deleteQuery = _deleteIdentificationTypeQuery.Value;
                 object deleteVars = new { deleteResponseId = SelectedIdentificationType.Id };
                 DeleteResponseType deletedIdentificationType = await _identificationTypeService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
@@ -358,7 +358,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 variables.pageResponsePagination.page = PageIndex;
                 variables.pageResponsePagination.pageSize = PageSize;
 
-                string query = GetLoadIdentificationTypesQuery();
+                string query = _loadIdentificationTypesQuery.Value;
                 PageType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -389,7 +389,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadIdentificationTypesQuery()
+        private static readonly Lazy<string> _loadIdentificationTypesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<IdentificationTypeGraphQLModel>>
                 .Create()
@@ -410,9 +410,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             var filtersParam = new GraphQLQueryParameter("filters", "IdentificationTypeFilters");
             var fragment = new GraphQLQueryFragment("identificationTypesPage", [paginationParam, filtersParam], fields, "PageResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        public string GetDeleteIdentificationTypeQuery()
+        private static readonly Lazy<string> _deleteIdentificationTypeQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -424,9 +424,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteIdentificationType", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetCanDeleteIdentificationTypeQuery()
+        private static readonly Lazy<string> _canDeleteIdentificationTypeQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -437,7 +437,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteIdentificationType", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 

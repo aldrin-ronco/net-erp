@@ -1076,7 +1076,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (!IsNewRecord) variables.updateResponseId = Id;
 
                 // Query usando QueryBuilder
-                query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();
+                query = IsNewRecord ? _createQuery.Value : _updateQuery.Value;
 
                 UpsertResponseType<AccountingEntityGraphQLModel> result = IsNewRecord
                     ? await _accountingEntityService.CreateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables)
@@ -1268,7 +1268,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
         #endregion
 
-        #region Data Loading and QueryBuilder Methods
+        #region Data Loading and GraphQL Queries
 
         protected override void OnViewReady(object view)
         {
@@ -1310,7 +1310,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public string GetAccountingEntityByIdQuery()
+        private static readonly Lazy<string> _accountingEntityByIdQuery = new(() =>
         {
             var accountingEntityFields = FieldSpec<AccountingEntityGraphQLModel>
                 .Create()
@@ -1361,7 +1361,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             var builder = new GraphQLQueryBuilder([accountingEntityFragment]);
 
             return builder.GetQuery();
-        }
+        });
 
         public async Task SetDataForNewAsync()
         {
@@ -1419,7 +1419,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 Countries = _countryCache.Items;
 
                 // Cargar solo el AccountingEntity específico
-                string query = GetAccountingEntityByIdQuery();
+                string query = _accountingEntityByIdQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.singleItemResponseId = id;
 
@@ -1475,7 +1475,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             this.AcceptChanges();
         }
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingEntityGraphQLModel>>
                 .Create()
@@ -1530,9 +1530,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingEntityGraphQLModel>>
                 .Create()
@@ -1591,7 +1591,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 
