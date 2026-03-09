@@ -54,11 +54,21 @@ namespace NetErp.Helpers
         {
             // Ensure it is a FrameworkElement instance.
             var fe = d as FrameworkElement;
-            if (fe != null && e.OldValue == null && e.NewValue != null && (bool)e.NewValue)
+            if (fe != null && e.NewValue != null && (bool)e.NewValue)
             {
-                // Attach to the Loaded event to set the focus there. If we do it here it will
-                // be overridden by the view rendering the framework element.
-                fe.Loaded += FrameworkElementLoaded;
+                if (fe.IsLoaded)
+                {
+                    // Element already loaded, set focus directly.
+                    fe.Focus();
+                    var tb = fe as TextBoxBase;
+                    if (tb != null) tb.SelectAll();
+                }
+                else
+                {
+                    // Attach to the Loaded event to set the focus there. If we do it here it will
+                    // be overridden by the view rendering the framework element.
+                    fe.Loaded += FrameworkElementLoaded;
+                }
             }
         }
         /// <summary>

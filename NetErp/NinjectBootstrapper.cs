@@ -127,6 +127,9 @@ namespace NetErp
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CtasRestVtasAccountingAccountGroupCache>());
 
+            _ = kernel.Bind<AccountingAccountGroupCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingAccountGroupCache>());
+
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingBookCache>());
 
