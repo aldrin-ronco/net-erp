@@ -390,7 +390,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 int locationId = companyLocation.Id;
 
-                string canDeleteQuery = GetCanDeleteCompanyLocationQuery();
+                string canDeleteQuery = _canDeleteCompanyLocationQuery.Value;
                 object canDeleteVariables = new { canDeleteResponseId = locationId };
                 CanDeleteType validation = await _companyLocationService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
@@ -410,7 +410,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string deleteQuery = GetDeleteCompanyLocationQuery();
+                string deleteQuery = _deleteCompanyLocationQuery.Value;
                 object deleteVariables = new { deleteResponseId = locationId };
                 DeleteResponseType deleteResult = await _companyLocationService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
@@ -473,7 +473,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 int storageId = storage.Id;
 
-                string canDeleteQuery = GetCanDeleteStorageQuery();
+                string canDeleteQuery = _canDeleteStorageQuery.Value;
                 object canDeleteVariables = new { canDeleteResponseId = storageId };
                 CanDeleteType validation = await _storageService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
@@ -493,7 +493,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string deleteQuery = GetDeleteStorageQuery();
+                string deleteQuery = _deleteStorageQuery.Value;
                 object deleteVariables = new { deleteResponseId = storageId };
                 DeleteResponseType deleteResult = await _storageService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
@@ -556,7 +556,7 @@ namespace NetErp.Global.CostCenters.ViewModels
 
                 int costCenterId = costCenter.Id;
 
-                string canDeleteQuery = GetCanDeleteCostCenterQuery();
+                string canDeleteQuery = _canDeleteCostCenterQuery.Value;
                 object canDeleteVariables = new { canDeleteResponseId = costCenterId };
                 CanDeleteType validation = await _costCenterService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
@@ -576,7 +576,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string deleteQuery = GetDeleteCostCenterQuery();
+                string deleteQuery = _deleteCostCenterQuery.Value;
                 object deleteVariables = new { deleteResponseId = costCenterId };
                 DeleteResponseType deleteResult = await _costCenterService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
@@ -918,7 +918,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     storageDummyDTO.Storages.Remove(storageDummyDTO.Storages[0]);
                 });
 
-                string query = GetLoadStoragesQuery();
+                string query = _loadStoragesQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -967,7 +967,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     costCenterDummyDTO.CostCenters.Remove(costCenterDummyDTO.CostCenters[0]);
                 });
 
-                string query = GetLoadCostCentersQuery();
+                string query = _loadCostCentersQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -1014,7 +1014,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     company.Locations.Remove(company.Locations[0]);
                 });
 
-                string query = GetLoadCompaniesLocationsQuery();
+                string query = _loadCompaniesLocationsQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -1054,7 +1054,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private string GetLoadCompaniesLocationsQuery()
+        private static readonly Lazy<string> _loadCompaniesLocationsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CompanyLocationGraphQLModel>>
                 .Create()
@@ -1067,12 +1067,10 @@ namespace NetErp.Global.CostCenters.ViewModels
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
             var fragment = new GraphQLQueryFragment("companyLocationsPage", [parameter], fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadStoragesQuery()
+        private static readonly Lazy<string> _loadStoragesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<StorageGraphQLModel>>
                 .Create()
@@ -1102,12 +1100,10 @@ namespace NetErp.Global.CostCenters.ViewModels
                 new("filters", "StorageFilters")
             };
             var fragment = new GraphQLQueryFragment("storagesPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadCostCentersQuery()
+        private static readonly Lazy<string> _loadCostCentersQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
                 .Create()
@@ -1158,14 +1154,12 @@ namespace NetErp.Global.CostCenters.ViewModels
                 new("filters", "CostCenterFilters")
             };
             var fragment = new GraphQLQueryFragment("costCentersPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
         #region Delete Queries
 
-        private string GetCanDeleteCompanyLocationQuery()
+        private static readonly Lazy<string> _canDeleteCompanyLocationQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -1176,9 +1170,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteCompanyLocation", [parameter], fields, "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        private string GetDeleteCompanyLocationQuery()
+        private static readonly Lazy<string> _deleteCompanyLocationQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -1190,9 +1184,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteCompanyLocation", [parameter], fields, "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        private string GetCanDeleteStorageQuery()
+        private static readonly Lazy<string> _canDeleteStorageQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -1203,9 +1197,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteStorage", [parameter], fields, "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        private string GetDeleteStorageQuery()
+        private static readonly Lazy<string> _deleteStorageQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -1217,9 +1211,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteStorage", [parameter], fields, "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        private string GetCanDeleteCostCenterQuery()
+        private static readonly Lazy<string> _canDeleteCostCenterQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -1230,9 +1224,9 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteCostCenter", [parameter], fields, "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
-        private string GetDeleteCostCenterQuery()
+        private static readonly Lazy<string> _deleteCostCenterQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -1244,7 +1238,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteCostCenter", [parameter], fields, "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 
@@ -1265,7 +1259,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             try
             {
                 Refresh();
-                string query = GetLoadCompanyQuery();
+                string query = _loadCompanyQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.singleItemResponseId = SessionInfo.CurrentCompany!.Id; //A este punto la empresa sí o sí tuvo que ser seleccionada
@@ -1305,7 +1299,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             }
         }
 
-        private string GetLoadCompanyQuery()
+        private static readonly Lazy<string> _loadCompanyQuery = new(() =>
         {
             var fields = FieldSpec<CompanyGraphQLModel>
                 .Create()
@@ -1316,10 +1310,8 @@ namespace NetErp.Global.CostCenters.ViewModels
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("company", [parameter], fields, "SingleItemResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
 
         public CostCenterMasterViewModel(
