@@ -40,6 +40,10 @@
                                       DisplayMember="FullName"
                                       ValueMember="Id"
                                       BorderBrush="#C8CED6"
+                                      NullText="Seleccione un centro de costo"
+                                      ShowNullTextForEmptyValue="True"
+                                      AllowNullInput="True"
+                                      NullValueButtonPlacement="EditBox"
                                       EditValue="{Binding CostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
