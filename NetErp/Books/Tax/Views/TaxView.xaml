@@ -79,6 +79,7 @@
                                 <Style TargetType="dxg:RowControl">
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Row.IsActive}" Value="False">
+                                            <Setter Property="Foreground" Value="Red"/>
                                             <Setter Property="Opacity" Value="0.5"/>
                                         </DataTrigger>
                                     </Style.Triggers>
