@@ -111,8 +111,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        private int _costCenterId;
-        public int CostCenterId
+        private int? _costCenterId;
+        public int? CostCenterId
         {
             get => _costCenterId;
             set
@@ -329,7 +329,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         public bool CanSave => !HasErrors && this.HasChanges()
                                && !string.IsNullOrEmpty(Name)
                                && !string.IsNullOrEmpty(Description)
-                               && CostCenterId != 0
+                               && CostCenterId is > 0
                                && SelectedAccountingAccountGroupId is > 0
                                && AccountingAccounts.Any(x => x.IsChecked == true);
 
@@ -424,8 +424,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             await _costCenterCache.EnsureLoadedAsync();
 
             CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items);
-            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            CostCenterId = Entity?.CostCenter?.Id ?? 0;
+            CostCenterId = Entity?.CostCenter?.Id;
 
             await LoadAccountingAccountGroupsAsync();
 
@@ -582,7 +581,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             Name = entity.Name;
             Description = entity.Description;
-            CostCenterId = entity.CostCenter?.Id ?? 0;
+            CostCenterId = entity.CostCenter?.Id;
             Entity = entity;
             this.AcceptChanges();
         }
