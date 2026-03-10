@@ -18,6 +18,7 @@ namespace Models.Global
         public string TechnicalKey { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public string Origin { get; set; } = string.Empty;
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public string Prefix { get; set; } = string.Empty;
