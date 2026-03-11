@@ -182,7 +182,7 @@ namespace NetErp.Global.Shell.ViewModels
             var fragment = new GraphQLQueryFragment("globalConfig", [], fields, "SingleItemResponse");
             var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
             var config = await _globalConfigService.GetSingleItemAsync(query, new { });
-            SessionInfo.DefaultAwsS3Config = config.DefaultAwsS3Config;
+            if (config is not null) SessionInfo.DefaultAwsS3Config = config.DefaultAwsS3Config;
         }
 
         private void ClearAllCaches()
