@@ -776,8 +776,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
                 else
                 {
-                    ThemedMessageBox.Show("Atención !", numberingRangeResponse.Message,
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", numberingRangeResponse.Message,
+                        MessageBoxButton.OK, MessageBoxImage.Warning));
                 }
             }
             catch (Exception e)
@@ -801,7 +801,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             variables.activeDianSoftwareConfigDocumentCategory = "INVOICE";
 
             var context = await _dianConfigService.GetDataContextAsync<ActiveDianSoftwareConfigDataContext>(query, variables);
-            return context?.ActiveDianSoftwareConfig;
+            var config = context?.ActiveDianSoftwareConfig;
+
+            if (config == null || config.Id < 1) return null;
+            if (!config.IsActive) return null;
+
+            return config;
         }
 
         private async Task<DianCertificateGraphQLModel?> LoadActiveDianCertificateAsync()
@@ -811,7 +816,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             dynamic variables = new ExpandoObject();
 
             var context = await _dianCertService.GetDataContextAsync<ActiveDianCertificateDataContext>(query, variables);
-            return context?.ActiveDianCertificate;
+            var cert = context?.ActiveDianCertificate;
+
+            if (cert == null || cert.Id < 1) return null;
+
+            return cert;
         }
 
         #endregion
@@ -1119,6 +1128,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(f => f.SoftwareId)
                 .Field(f => f.ServiceUrl)
                 .Field(f => f.WsdlUrl)
+                .Field(f => f.IsActive)
                 .Build();
 
             var envParam = new GraphQLQueryParameter("environment", "DianEnvironment!");

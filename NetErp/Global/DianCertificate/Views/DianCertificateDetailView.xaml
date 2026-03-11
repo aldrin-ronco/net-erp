@@ -1,0 +1,176 @@
+<UserControl x:Class="NetErp.Global.DianCertificate.Views.DianCertificateDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             mc:Ignorable="d"
+             d:DesignHeight="500" d:DesignWidth="550"
+             Background="#EEF1F5">
+
+    <UserControl.Resources>
+        <h:MultiplyConverter x:Key="MultiplyConverter"/>
+    </UserControl.Resources>
+
+    <UserControl.Width>
+        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
+                 Converter="{StaticResource MultiplyConverter}"
+                 ConverterParameter="0.65"/>
+    </UserControl.Width>
+
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Form content -->
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="30,25,30,20">
+
+                        <!-- File Selection -->
+                        <StackPanel>
+
+                            <!-- File path + browse -->
+                            <TextBlock Text="Archivo del certificado (.p12 / .pfx)" FontSize="13" Margin="0,0,0,5"/>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <dxe:TextEdit Grid.Column="0"
+                                              Text="{Binding FilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              IsReadOnly="True"
+                                              NullText="Seleccione un archivo .p12 o .pfx"
+                                              BorderBrush="#C8CED6"/>
+                                <Button Grid.Column="1" Content="Examinar..." Padding="12,0" Margin="8,0,0,0"
+                                        Cursor="Hand">
+                                    <dxmvvm:Interaction.Behaviors>
+                                        <dxmvvm:EventToCommand Command="{Binding BrowseCommand}" EventName="Click"/>
+                                    </dxmvvm:Interaction.Behaviors>
+                                </Button>
+                            </Grid>
+
+                            <!-- Password -->
+                            <TextBlock Text="Contraseña del certificado" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:PasswordBoxEdit
+                                Password="{Binding FilePassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                NullText="Ingrese la contraseña del archivo .p12"
+                                BorderBrush="#C8CED6"
+                                Margin="0,0,0,12"/>
+
+                            <!-- Extract button -->
+                            <Button Margin="0,0,0,20" Padding="8,6"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="{Binding CanExtract, Mode=OneWay}">
+                                <dxmvvm:Interaction.Behaviors>
+                                    <dxmvvm:EventToCommand Command="{Binding ExtractCommand}" EventName="Click"/>
+                                </dxmvvm:Interaction.Behaviors>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
+                                           Margin="0,0,4,0" Width="16"/>
+                                    <TextBlock Text="Extraer información del certificado" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Certificate Info (visible after extraction) -->
+                        <StackPanel Visibility="{Binding CertificateInfoVisibility, Mode=OneWay}">
+
+                            <!-- Serial Number -->
+                            <TextBlock Text="No. de serie" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:TextEdit Text="{Binding SerialNumber, Mode=OneWay}"
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"/>
+
+                            <!-- Issuer -->
+                            <TextBlock Text="Emisor" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:TextEdit Text="{Binding Issuer, Mode=OneWay}"
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"
+                                          TextWrapping="Wrap" AcceptsReturn="True"
+                                          VerticalContentAlignment="Top" MinHeight="25"/>
+
+                            <!-- Subject -->
+                            <TextBlock Text="Sujeto" FontSize="13" Margin="0,0,0,5"/>
+                            <dxe:TextEdit Text="{Binding Subject, Mode=OneWay}"
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"
+                                          TextWrapping="Wrap" AcceptsReturn="True"
+                                          VerticalContentAlignment="Top" MinHeight="25"/>
+
+                            <!-- ValidFrom + ValidTo -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="5"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Válido desde" FontSize="13"/>
+                                <dxe:DateEdit Grid.Row="2" Grid.Column="0"
+                                              EditValue="{Binding ValidFrom, Mode=OneWay}"
+                                              IsReadOnly="True" BorderBrush="#C8CED6"/>
+
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Válido hasta" FontSize="13"/>
+                                <dxe:DateEdit Grid.Row="2" Grid.Column="2"
+                                              EditValue="{Binding ValidTo, Mode=OneWay}"
+                                              IsReadOnly="True" BorderBrush="#C8CED6"/>
+                            </Grid>
+
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Button bar centered -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                    <!-- Guardar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Cancelar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>
