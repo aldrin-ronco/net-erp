@@ -21,6 +21,7 @@ namespace Common.Helpers
         public static string? PendingCompanyReference { get; set; }
         public static int LoginCompanyId { get; set; }
         public static string ApiKey {  get; set; } = "ak_z3J419SUU9qcv4imiin7JgTa5lSbnbo5tDDpiY4CFHE"; //TODO modificar la lógica de asignación y extracción de este campo
+        public static AwsS3ConfigGraphQLModel? DefaultAwsS3Config { get; set; }
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool GetSystemMetrics(int nIndex);

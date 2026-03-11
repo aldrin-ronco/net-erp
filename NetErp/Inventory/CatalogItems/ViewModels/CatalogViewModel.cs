@@ -21,7 +21,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly IRepository<ItemCategoryGraphQLModel> _itemCategoryService;
         private readonly IRepository<ItemSubCategoryGraphQLModel> _itemSubCategoryService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
-        private readonly IRepository<AwsS3ConfigGraphQLModel> _awsS3Service;
+        private readonly IRepository<S3StorageLocationGraphQLModel> _s3LocationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
@@ -44,7 +44,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _itemCategoryService,
                     _itemSubCategoryService,
                     _itemService,
-                    _awsS3Service,
+                    _s3LocationService,
                     _dialogService,
                     _notificationService,
                     _measurementUnitCache,
@@ -78,7 +78,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             IRepository<ItemCategoryGraphQLModel> itemCategoryService,
             IRepository<ItemSubCategoryGraphQLModel> itemSubCategoryService,
             IRepository<ItemGraphQLModel> itemService,
-            IRepository<AwsS3ConfigGraphQLModel> awsS3Service,
+            IRepository<S3StorageLocationGraphQLModel> s3LocationService,
             Helpers.IDialogService dialogService,
             Helpers.Services.INotificationService notificationService,
             MeasurementUnitCache measurementUnitCache,
@@ -93,7 +93,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemCategoryService = itemCategoryService;
             _itemSubCategoryService = itemSubCategoryService;
             _itemService = itemService;
-            _awsS3Service = awsS3Service;
+            _s3LocationService = s3LocationService;
             _dialogService = dialogService;
             _notificationService = notificationService;
             _measurementUnitCache = measurementUnitCache;

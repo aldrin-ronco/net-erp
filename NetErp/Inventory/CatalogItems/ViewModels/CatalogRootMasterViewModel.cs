@@ -25,7 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Dictionaries;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
 
@@ -55,7 +55,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly IRepository<ItemCategoryGraphQLModel> _itemCategoryService;
         private readonly IRepository<ItemSubCategoryGraphQLModel> _itemSubCategoryService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
-        private readonly IRepository<AwsS3ConfigGraphQLModel> _awsS3Service;
+        private readonly IRepository<S3StorageLocationGraphQLModel> _s3LocationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
 
@@ -110,7 +110,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public AwsS3ConfigGraphQLModel AwsS3Config { get; set; }
+        public S3Helper S3Helper { get; private set; }
+        public string LocalImageCachePath { get; private set; }
 
         private bool _isNewRecord;
         public bool IsNewRecord
@@ -379,7 +380,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             IRepository<ItemCategoryGraphQLModel> itemCategoryService,
             IRepository<ItemSubCategoryGraphQLModel> itemSubCategoryService,
             IRepository<ItemGraphQLModel> itemService,
-            IRepository<AwsS3ConfigGraphQLModel> awsS3Service,
+            IRepository<S3StorageLocationGraphQLModel> s3LocationService,
             Helpers.IDialogService dialogService,
             Helpers.Services.INotificationService notificationService,
             MeasurementUnitCache measurementUnitCache,
@@ -393,7 +394,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemCategoryService = itemCategoryService;
             _itemSubCategoryService = itemSubCategoryService;
             _itemService = itemService;
-            _awsS3Service = awsS3Service;
+            _s3LocationService = s3LocationService;
             _dialogService = dialogService;
             _notificationService = notificationService;
             _measurementUnitCache = measurementUnitCache;
@@ -409,7 +410,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemEditor = new ItemPanelEditor(this, _itemService, _dialogService);
 
             // Register for search product messages
-            Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.SearchProduct, false, OnFindProductMessage);
+            Messenger.Default.Register<ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel>>(this, SearchWithThreeColumnsGridMessageToken.SearchProduct, false, OnFindProductMessage);
 
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
@@ -431,7 +432,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 IsBusy = true;
                 await LoadComboBoxesAsync();
-                //await LoadAwsS3CredentialsAsync();
+                await LoadS3ConfigAsync();
                 await LoadCatalogsAsync();
             }
             catch (AsyncException ex)
@@ -514,17 +515,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             ItemEditor.SetForEdit(itemDTO);
             // Download S3 images if needed
-            if (ItemEditor.ItemImages.Count > 0)
+            if (ItemEditor.Images.Count > 0)
             {
-                foreach (ImageByItemDTO image in ItemEditor.ItemImages)
+                foreach (ImageByItemDTO image in ItemEditor.Images)
                 {
-                    string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string imagesLocalPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                    string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
                     if (!Path.Exists(imagesLocalPath))
                     {
-                        S3Helper.S3FileName = image.S3FileName;
-                        S3Helper.LocalFilePath = imagesLocalPath;
-                        await S3Helper.DownloadFileFromS3();
+                        await S3Helper.DownloadFileAsync(imagesLocalPath, image.S3FileName);
                     }
                     System.Windows.Media.Imaging.BitmapImage bitmap = new();
                     bitmap.BeginInit();
@@ -574,6 +572,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     CanUndo = false;
                     CanEdit = true;
                     IsNewRecord = false;
+
                 }
             }
             finally
@@ -584,9 +583,11 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public void Undo()
         {
+            bool wasCatalogEditor = CurrentPanelEditor == CatalogEditor;
+
             CurrentPanelEditor?.Undo();
 
-            if (IsNewRecord)
+            if (IsNewRecord || wasCatalogEditor)
             {
                 SelectedItem = null;
                 CurrentPanelEditor = null;
@@ -594,7 +595,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
             IsEditing = false;
             CanUndo = false;
-            CanEdit = true;
+            CanEdit = SelectedItem != null;
             IsNewRecord = false;
         }
 
@@ -679,6 +680,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task CreateCatalogAsync()
         {
+            SelectedItem = null;
             IsNewRecord = true;
             CurrentPanelEditor = CatalogEditor;
             CatalogEditor.SetForNew(null);
@@ -690,6 +692,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public async Task UpdateCatalogAsync()
         {
             if (SelectedCatalog == null) return;
+            SelectedItem = null;
             CurrentPanelEditor = CatalogEditor;
             CatalogEditor.SetForEdit(new CatalogDTO { Id = SelectedCatalog.Id, Name = SelectedCatalog.Name });
             CatalogEditor.IsEditing = true;
@@ -1260,97 +1263,93 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task DeleteItemAsync()
         {
+            if (SelectedItem is not ItemDTO itemDTO) return;
+
             try
             {
                 IsBusy = true;
-                int id = ((ItemDTO)SelectedItem).Id;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDeleteItem(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _itemService.CanDeleteAsync(query, variables);
+                int id = itemDTO.Id;
+                string canDeleteQuery = GetCanDeleteQuery("canDeleteItem");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _itemService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {((ItemDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea eliminar el registro {itemDTO.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
                 IsBusy = true;
                 Refresh();
 
-                // Delete images from S3 and local repository
-                if (ItemEditor.ItemImages != null && ItemEditor.ItemImages.Count > 0)
+                // Delete images from S3 and local repository before deleting the item
+                if (ItemEditor.Images != null && ItemEditor.Images.Count > 0)
                 {
-                    foreach (ImageByItemDTO image in ItemEditor.ItemImages)
+                    foreach (ImageByItemDTO image in ItemEditor.Images)
                     {
-                        string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                        string imagesLocalPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                        string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
                         if (Path.Exists(imagesLocalPath)) File.Delete(imagesLocalPath);
-                        S3Helper.S3FileName = image.S3FileName;
-                        await S3Helper.DeleteFileFromS3Async();
+                        await S3Helper.DeleteFileAsync(image.S3FileName);
                     }
                 }
 
-                string deleteQuery = @"
-                mutation ($id: Int!) {
-                  DeleteResponse: deleteItem(id: $id) {
-                    id
-                    name
-                    reference
-                    code
-                    isActive
-                    allowFraction
-                    hasExtendedInformation
-                    aiuBasedService
-                    amountBasedOnWeight
-                    billable
-                    accountingGroup{ id }
-                    brand{ id }
-                    measurementUnit{ id }
-                    size{ id }
-                    subCategory{
-                      id
-                      itemCategory{
-                        id
-                        itemType{ id }
-                      }
-                    }
-                    eanCodes{ id }
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteItem");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _itemService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object deleteVariables = new { Id = id };
-                ItemGraphQLModel deletedItem = await _itemService.DeleteAsync(deleteQuery, deleteVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage() { DeletedItem = deletedItem });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1360,83 +1359,82 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task DiscontinueItemAsync()
         {
+            if (SelectedItem is not ItemDTO itemDTO) return;
+
             try
             {
                 IsBusy = true;
-                int id = ((ItemDTO)SelectedItem).Id;
+                Refresh();
 
-                string query = @"query($id:Int!){
-                  CanDeleteModel: canDiscontinueItem(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-
-                object variables = new { Id = id };
-                var validation = await _itemService.CanDeleteAsync(query, variables);
+                int id = itemDTO.Id;
+                string canDeleteQuery = GetCanDeleteQuery("canDiscontinueItem");
+                object canDeleteVariables = new { canDeleteResponseId = id };
+                var validation = await _itemService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea descontinuar el registro {((ItemDTO)SelectedItem).Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
+                    MessageBoxResult result = ThemedMessageBox.Show(
+                        title: "Confirme...",
+                        text: $"¿Confirma que desea descontinuar el registro {itemDTO.Name}?",
+                        messageBoxButtons: MessageBoxButton.YesNo,
+                        image: MessageBoxImage.Question);
                     if (result != MessageBoxResult.Yes) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser descontinuado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"El registro no puede ser descontinuado\n\n{validation.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                     return;
                 }
 
+                IsBusy = true;
                 Refresh();
 
-                string updateQuery = @"
-                mutation ($id: Int!, $data: UpdateItemInput!) {
-                  UpdateResponse: updateItem(id: $id, data: $data) {
-                    id
-                    name
-                    reference
-                    code
-                    isActive
-                    allowFraction
-                    hasExtendedInformation
-                    aiuBasedService
-                    amountBasedOnWeight
-                    billable
-                    accountingGroup{ id }
-                    brand{ id }
-                    measurementUnit{ id }
-                    size{ id }
-                    subCategory{
-                      id
-                      itemCategory{
-                        id
-                        itemType{ id }
-                      }
-                    }
-                    eanCodes{ id }
-                  }
-                }";
+                string deleteQuery = GetDeleteMutationQuery("deleteItem");
+                object deleteVariables = new { deleteResponseId = id };
+                DeleteResponseType deleteResult = await _itemService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
-                object updateVariables = new { Id = id, Data = new { IsActive = false } };
-                ItemGraphQLModel discontinuedItem = await _itemService.UpdateAsync(updateQuery, updateVariables);
+                if (!deleteResult.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudo descontinuar el registro.\n\n{deleteResult.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
                 SelectedItem = null;
+                CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage() { DeletedItem = discontinuedItem });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteResult });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -1450,31 +1448,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async void SearchProducts(object p)
         {
-            string query = @"query($filter: ItemFilterInput){
-                            PageResponse: itemPage(filter: $filter){
-                            count
-                            rows{
-                                id
-                                name
-                                code
-                                reference
-                                allowFraction
-                                measurementUnit{
-                                id
-                                name
-                                }
-                                subCategory{
-                                    id
-                                    itemCategory{
-                                        id
-                                        itemType{
-                                            id
-                                        }
-                                    }
-                                }
-                            }
-                            }
-                        }";
+            string query = GetSearchProductsQuery();
 
             string fieldHeader1 = "Código";
             string fieldHeader2 = "Nombre";
@@ -1482,31 +1456,55 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             string fieldData1 = "Code";
             string fieldData2 = "Name";
             string fieldData3 = "Reference";
-            dynamic variables = new ExpandoObject();
-            variables.filter = new ExpandoObject();
-            variables.filter.and = new ExpandoObject[]
-            {
-                new(),
-                new()
-            };
-            variables.filter.and[0].catalogId = new ExpandoObject();
-            variables.filter.and[0].catalogId.@operator = "=";
-            variables.filter.and[0].catalogId.value = SelectedCatalog.Id;
-            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.SearchProduct, Context, _dialogService);
+
+            var viewModel = new SearchWithThreeColumnsGridViewModel<ItemGraphQLModel>(
+                query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3,
+                null, SearchWithThreeColumnsGridMessageToken.SearchProduct, _dialogService);
 
             await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
         }
 
-        public async void OnFindProductMessage(ReturnedItemFromModalViewMessage message)
+        private static string GetSearchProductsQuery()
+        {
+            var fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.PageSize)
+                .Field(f => f.TotalPages)
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Code)
+                    .Field(e => e.Reference)
+                    .Select(e => e.SubCategory, sub => sub
+                        .Field(s => s.Id)
+                        .Select(s => s.ItemCategory, ic => ic
+                            .Field(c => c.Id)
+                            .Select(c => c.ItemType, it => it
+                                .Field(t => t.Id)))))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("filters", "ItemFilters"),
+                new("pagination", "Pagination")
+            };
+            var fragment = new GraphQLQueryFragment("itemsPage", parameters, fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
+        public async void OnFindProductMessage(ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel> message)
         {
             IsBusy = true;
             await OnFindProductMessageAsync(message);
             IsBusy = false;
         }
 
-        public async Task OnFindProductMessageAsync(ReturnedItemFromModalViewMessage message)
+        public async Task OnFindProductMessageAsync(ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel> message)
         {
-            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedItem);
+            if (message.ReturnedData is null) return;
+            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedData);
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
             if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories.Count > 0 && itemTypeDTO.ItemsCategories[0].IsDummyChild)
@@ -1549,22 +1547,35 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         #region Data Loading
 
-        public async Task LoadAwsS3CredentialsAsync()
+        public async Task LoadS3ConfigAsync()
         {
             try
             {
-                string query = @"
-                query{
-                  SingleItemResponse: awsS3Configs{
-                    id
-                    secretKey
-                    accessKey
-                    description
-                    region
-                  }
-                }";
-                AwsS3Config = await _awsS3Service.FindByIdAsync(query, new { });
-                S3Helper.Initialize("qtsattachments".ToLower(), "berdic/products_images".ToLower(), AwsS3Config.AccessKey, AwsS3Config.SecretKey, GlobalDictionaries.AwsSesRegionDictionary[AwsS3Config.Region]);
+                var fields = FieldSpec<S3StorageLocationGraphQLModel>
+                    .Create()
+                    .Field(f => f.Id)
+                    .Field(f => f.Key)
+                    .Field(f => f.Bucket)
+                    .Field(f => f.Directory)
+                    .Field(f => f.Description)
+                    .Select(f => f.AwsS3Config, nested: aws => aws
+                        .Field(a => a.Id)
+                        .Field(a => a.AccessKey)
+                        .Field(a => a.SecretKey)
+                        .Field(a => a.Region)
+                        .Field(a => a.Description))
+                    .Build();
+
+                var parameter = new GraphQLQueryParameter("key", "String!");
+                var fragment = new GraphQLQueryFragment("s3StorageLocationByKey", [parameter], fields, "SingleItemResponse");
+                var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
+                var location = await _s3LocationService.GetSingleItemAsync(query, new { singleItemResponseKey = "product_images" });
+
+                S3Helper = Common.Helpers.S3Helper.FromStorageLocation(location);
+
+                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                LocalImageCachePath = Path.Combine(appDir, "cache", location.Bucket, location.Directory);
+                System.IO.Directory.CreateDirectory(LocalImageCachePath);
             }
             catch (Exception ex)
             {
@@ -1856,6 +1867,69 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        private static string GetLoadItemsQuery()
+        {
+            var fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.PageSize)
+                .Field(f => f.TotalPages)
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Code)
+                    .Field(e => e.Reference)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.AllowFraction)
+                    .Field(e => e.HasExtendedInformation)
+                    .Field(e => e.Billable)
+                    .Field(e => e.AmountBasedOnWeight)
+                    .Field(e => e.AiuBasedService)
+                    .Field(e => e.EanCodes)
+                    .Select(e => e.MeasurementUnit, mu => mu
+                        .Field(m => m.Id))
+                    .Select(e => e.Brand, b => b
+                        .Field(br => br.Id))
+                    .Select(e => e.AccountingGroup, ag => ag
+                        .Field(a => a.Id))
+                    .Select(e => e.SizeCategory, sc => sc
+                        .Field(s => s.Id))
+                    .SelectList(e => e.Components, comp => comp
+                        .Field(c => c.Quantity)
+                        .Select(c => c.Component, ci => ci
+                            .Field(i => i.Id)
+                            .Field(i => i.Name)
+                            .Field(i => i.Reference)
+                            .Field(i => i.Code)
+                            .Select(i => i.MeasurementUnit, mu => mu
+                                .Field(m => m.Id)
+                                .Field(m => m.Name))))
+                    .SelectList(e => e.Images, img => img
+                        .Field(i => i.DisplayOrder)
+                        .Field(i => i.S3Bucket)
+                        .Field(i => i.S3BucketDirectory)
+                        .Field(i => i.S3FileName)
+                        .Select(i => i.Item, item => item
+                            .Field(it => it.Id)))
+                    .Select(e => e.SubCategory, sub => sub
+                        .Field(s => s.Id)
+                        .Select(s => s.ItemCategory, ic => ic
+                            .Field(c => c.Id)
+                            .Select(c => c.ItemType, it => it
+                                .Field(t => t.Id)
+                                .Field(t => t.StockControl)))))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("pagination", "Pagination"),
+                new("filters", "ItemFilters")
+            };
+            var fragment = new GraphQLQueryFragment("itemsPage", parameters, fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+
         public async Task LoadItemsAsync(ItemSubCategoryDTO itemSubCategory)
         {
             try
@@ -1864,67 +1938,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     itemSubCategory.Items.Remove(itemSubCategory.Items[0]);
                 });
-                List<int> ids = [itemSubCategory.Id];
-                string query = @"
-                    query($ids: [Int!]!){
-                      ListResponse: itemsBySubCategoriesIds(ids: $ids){
-                        id
-                        name
-                        code
-                        reference
-                        isActive
-                        allowFraction
-                        hasExtendedInformation
-                        billable
-                        amountBasedOnWeight
-                        aiuBasedService
-                        measurementUnit{ id }
-                        brand{ id }
-                        accountingGroup{ id }
-                        size{ id }
-                        eanCodes{
-                            id
-                            eanCode
-                        }
-                        images{
-                            id
-                            s3Bucket
-                            s3BucketDirectory
-                            s3FileName
-                            order
-                            item{ id }
-                        }
-                        relatedProducts{
-                            id
-                            quantity
-                            item{
-                                id
-                                name
-                                reference
-                                code
-                                measurementUnit{
-                                    id
-                                    name
-                                }
-                            }
-                        }
-                        subCategory{
-                            id
-                            itemCategory{
-                                id
-                                itemType{
-                                    id
-                                    stockControl
-                                }
-                            }
-                        }
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.ids = ids;
 
-                var source = await _itemService.GetListAsync(query, variables);
-                Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(source);
+                string query = GetLoadItemsQuery();
+                dynamic variables = new ExpandoObject();
+                variables.PageResponsePagination = new ExpandoObject();
+                variables.PageResponsePagination.PageSize = -1;
+                variables.PageResponseFilters = new ExpandoObject();
+                variables.PageResponseFilters.SubCategoryId = itemSubCategory.Id;
+
+                var result = await _itemService.GetPageAsync(query, variables);
+                Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(result.Entries);
 
                 if (Items.Count == 0)
                 {
@@ -1945,16 +1968,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
+                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
+                    exGraphQL.Content?.ToString() ?? "");
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
         }
 
@@ -2167,25 +2199,35 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(ItemDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(ItemDeleteMessage message, CancellationToken cancellationToken)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.DeletedItem.SubCategory.ItemCategory.ItemType.Id).FirstOrDefault();
-                if (itemTypeDTO is null) return;
-                ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.DeletedItem.SubCategory.ItemCategory.Id);
-                if (itemCategoryDTO is null) return;
-                ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.DeletedItem.SubCategory.Id);
-                if (itemSubCategoryDTO is null) return;
-                itemSubCategoryDTO.Items.Remove(itemSubCategoryDTO.Items.Where(x => x.Id == message.DeletedItem.Id).First());
-                SelectedItem = null;
+                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
+                {
+                    foreach (var itemCategoryDTO in itemTypeDTO.ItemsCategories)
+                    {
+                        foreach (var itemSubCategoryDTO in itemCategoryDTO.SubCategories)
+                        {
+                            ItemDTO? itemToRemove = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == message.DeletedItem.DeletedId);
+                            if (itemToRemove != null)
+                            {
+                                itemSubCategoryDTO.Items.Remove(itemToRemove);
+                                SelectedItem = null;
+                                return;
+                            }
+                        }
+                    }
+                }
             });
-            _notificationService.ShowSuccess("Item eliminado correctamente");
+            _notificationService.ShowSuccess(message.DeletedItem.Message);
+            return Task.CompletedTask;
         }
 
         public async Task HandleAsync(ItemCreateMessage message, CancellationToken cancellationToken)
         {
-            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.CreatedItem);
+            IsNewRecord = false;
+            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.CreatedItem.Entity);
             itemDTO.Context = this;
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
@@ -2200,7 +2242,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
                 if (item is null) return;
                 SelectedItem = item;
-                _notificationService.ShowSuccess("Item creado correctamente");
+                _notificationService.ShowSuccess(message.CreatedItem.Message);
                 return;
             }
             if (!itemSubCategoryDTO.IsExpanded)
@@ -2208,25 +2250,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 itemSubCategoryDTO.IsExpanded = true;
                 itemSubCategoryDTO.Items.Add(itemDTO);
                 SelectedItem = itemDTO;
-                _notificationService.ShowSuccess("Item creado correctamente");
+                _notificationService.ShowSuccess(message.CreatedItem.Message);
                 return;
             }
             itemSubCategoryDTO.Items.Add(itemDTO);
             SelectedItem = itemDTO;
-            _notificationService.ShowSuccess("Item creado correctamente");
+            _notificationService.ShowSuccess(message.CreatedItem.Message);
         }
 
         public Task HandleAsync(ItemUpdateMessage message, CancellationToken cancellationToken)
         {
-            ItemDTO item = Context.AutoMapper.Map<ItemDTO>(message.UpdatedItem);
+            ItemDTO item = Context.AutoMapper.Map<ItemDTO>(message.UpdatedItem.Entity);
             item.Context = this;
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.Where(x => x.Id == message.UpdatedItem.SubCategory.ItemCategory.ItemType.Id).FirstOrDefault();
+            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.SubCategory.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.Id);
             if (itemCategoryDTO is null) return Task.CompletedTask;
-            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.SubCategory.Id);
+            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.Id);
             if (itemSubCategoryDTO is null) return Task.CompletedTask;
-            ItemDTO? itemDTOToUpdate = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == message.UpdatedItem.Id);
+            ItemDTO? itemDTOToUpdate = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.Id);
             if (itemDTOToUpdate is null) return Task.CompletedTask;
             itemDTOToUpdate.Id = item.Id;
             itemDTOToUpdate.Name = item.Name;
@@ -2240,8 +2282,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemDTOToUpdate.SizeCategory = item.SizeCategory;
             itemDTOToUpdate.EanCodes = new ObservableCollection<string>(item.EanCodes);
             itemDTOToUpdate.Components = new ObservableCollection<ComponentsByItemDTO>(item.Components);
-            itemDTOToUpdate.Images = new ObservableCollection<ImageByItemDTO>(item.Images);
-            _notificationService.ShowSuccess("Item actualizado correctamente");
+            itemDTOToUpdate.Images = new ObservableCollection<ImageByItemDTO>(item.Images.OrderBy(x => x.DisplayOrder));
+            _notificationService.ShowSuccess(message.UpdatedItem.Message);
             return Task.CompletedTask;
         }
 
