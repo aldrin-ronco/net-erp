@@ -325,7 +325,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
         private static (string certPem, string keyPem, string serial, string issuer, string subject, DateTime validFrom, DateTime validTo)
             ExtractFromP12(string filePath, string password)
         {
-            using var cert = new X509Certificate2(filePath, password, X509KeyStorageFlags.Exportable);
+            using var cert = X509CertificateLoader.LoadPkcs12FromFile(filePath, password, X509KeyStorageFlags.Exportable);
 
             string certPem = cert.ExportCertificatePem();
 
