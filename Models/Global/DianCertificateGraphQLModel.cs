@@ -1,4 +1,5 @@
 using System;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
@@ -12,7 +13,8 @@ namespace Models.Global
         public string Subject { get; set; } = string.Empty;
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
-        public bool IsActive { get; set; }
+        public bool IsExpired => ValidTo.HasValue && ValidTo.Value < DateTime.Now;
+        public bool IsDefault { get; set; }
         public DateTime? InsertedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -20,5 +22,25 @@ namespace Models.Global
     public class ActiveDianCertificateDataContext
     {
         public DianCertificateGraphQLModel ActiveDianCertificate { get; set; }
+    }
+
+    public class GlobalConfigDianCertificateContext
+    {
+        public GlobalConfigDefaultCertificate GlobalConfig { get; set; }
+    }
+
+    public class GlobalConfigDefaultCertificate
+    {
+        public DianCertificateGraphQLModel DefaultDianCertificate { get; set; }
+    }
+
+    public class DianCertificateCreateMessage
+    {
+        public UpsertResponseType<DianCertificateGraphQLModel> CreatedCertificate { get; set; }
+    }
+
+    public class DianCertificateDeleteMessage
+    {
+        public DeleteResponseType DeletedCertificate { get; set; }
     }
 }

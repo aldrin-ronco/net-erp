@@ -53,9 +53,12 @@ namespace NetErp.Helpers
             namespaces.AddNamespace("b", "http://schemas.datacontract.org/2004/07/NumberRangeResponseList");
             namespaces.AddNamespace("c", "http://schemas.datacontract.org/2004/07/NumberRangeResponse");
 
-            XmlNode responseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
+            namespaces.AddNamespace("i", "http://www.w3.org/2001/XMLSchema-instance");
 
-            if (responseList != null)
+            XmlNode responseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
+            bool isNil = responseList?.Attributes?["i:nil"]?.Value == "true";
+
+            if (responseList != null && !isNil && responseList.HasChildNodes)
             {
                 ObservableCollection<AuthorizationSequenceGraphQLModel> authorizationSequences = [];
                 foreach (XmlNode item in responseList.ChildNodes)
@@ -78,8 +81,9 @@ namespace NetErp.Helpers
             else
             {
                 result.Status = false;
+                XmlNode operationDesc = xDoc.SelectSingleNode("//b:OperationDescription", namespaces);
                 XmlNode fail = xDoc.SelectSingleNode("//s:Reason", namespaces);
-                result.Message = fail?.InnerText ?? "Respuesta inesperada de la DIAN";
+                result.Message = operationDesc?.InnerText ?? fail?.InnerText ?? "Respuesta inesperada de la DIAN";
                 return result;
             }
         }
