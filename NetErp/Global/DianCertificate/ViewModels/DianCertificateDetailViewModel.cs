@@ -4,6 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
 using Models.Global;
 using NetErp.Helpers;
@@ -284,14 +285,14 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
         }
 
-        public async Task ExtractCertificateAsync()
+        public Task ExtractCertificateAsync()
         {
             try
             {
                 IsBusy = true;
 
                 var (certPem, keyPem, serial, issuer, subject, validFrom, validTo) =
-                    await Task.Run(() => ExtractFromP12(FilePath, FilePassword));
+                    ExtractFromP12(FilePath, FilePassword);
 
                 CertificatePem = certPem;
                 PrivateKeyPem = keyPem;
@@ -318,6 +319,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 IsBusy = false;
             }
+            return Task.CompletedTask;
         }
 
         private static (string certPem, string keyPem, string serial, string issuer, string subject, DateTime validFrom, DateTime validTo)
@@ -367,7 +369,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 variables.createResponseInput.validFrom = ValidFrom?.ToString("o");
                 variables.createResponseInput.validTo = ValidTo?.ToString("o");
 
-                var result = await _dianCertificateService.CreateAsync<UpsertResponseType<DianCertificateGraphQLModel>>(query, variables);
+                UpsertResponseType<DianCertificateGraphQLModel> result = await _dianCertificateService.CreateAsync<UpsertResponseType<DianCertificateGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
