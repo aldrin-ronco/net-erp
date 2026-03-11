@@ -25,7 +25,9 @@
             <!-- Tab 1: Básicos -->
             <dx:DXTabItem Header="Básicos">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <Grid Margin="10">
+                    <Grid Margin="10"
+                          FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}"
+                          IsEnabledChanged="OnFormIsEnabledChanged">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -46,8 +48,8 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Images Gallery -->
-                        <dxlc:TileLayoutControl Background="{x:Null}" Grid.Row="0" Grid.ColumnSpan="2"
-                                                ItemsSource="{Binding ItemImages, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <dxlc:TileLayoutControl Background="{x:Null}" Grid.Row="0" Grid.ColumnSpan="2" 
+                                                ItemsSource="{Binding Images, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 HorizontalAlignment="Center" Orientation="Horizontal"
                                                 Padding="0" BreakFlowToFit="False" VerticalAlignment="Center">
                             <dxlc:TileLayoutControl.ItemTemplate>
@@ -87,41 +89,41 @@
                             </StackPanel>
                         </Button>
 
-                        <!-- Código (read-only, hidden for new records) -->
+                        <!-- Código (read-only, oculto para nuevos registros) -->
                         <TextBlock Text="Código" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"
                                    Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
-                        <TextBox Grid.Row="2" Grid.Column="1"
-                                 Text="{Binding Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 IsReadOnly="True" Margin="0,0,0,5" CharacterCasing="Upper"
-                                 Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+                        <dxe:TextEdit Grid.Row="2" Grid.Column="1"
+                                      Text="{Binding Code, Mode=OneWay}"
+                                      IsReadOnly="True" Margin="0,0,0,5" CharacterCasing="Upper"
+                                      Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
 
                         <!-- Nombre -->
                         <TextBlock Text="Nombre" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <dxe:TextEdit Grid.Row="3" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
-                                      Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="3" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                      Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
 
                         <!-- Referencia -->
                         <TextBlock Text="Referencia" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1"
-                                 Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,0,0,5" CharacterCasing="Upper"/>
+                        <dxe:TextEdit Grid.Row="4" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                      Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
 
                         <!-- Unidad de medida -->
                         <TextBlock Text="Unidad de medida" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Row="5" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
-                                  ItemsSource="{Binding MeasurementUnits}"
-                                  DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:ComboBoxEdit Grid.Row="5" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                          ItemsSource="{Binding MeasurementUnits}"
+                                          DisplayMember="Name"
+                                          SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                          IsTextEditable="False"/>
 
                         <!-- Marca -->
                         <TextBlock Text="Marca" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <dxe:ComboBoxEdit Grid.Row="6" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
-                                          ItemsSource="{Binding Brands}"
+                                          ItemsSource="{Binding ItemBrands}"
                                           DisplayMember="Name"
                                           SelectedItem="{Binding SelectedBrand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False"
@@ -142,10 +144,11 @@
                         <!-- Grupo contable -->
                         <TextBlock Text="Grupo contable" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right"
                                    Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Row="8" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
-                                  ItemsSource="{Binding AccountingGroups}"
-                                  DisplayMemberPath="Name"
-                                  SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxe:ComboBoxEdit Grid.Row="8" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                          ItemsSource="{Binding AccountingGroups}"
+                                          DisplayMember="Name"
+                                          SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                          IsTextEditable="False"/>
                     </Grid>
                 </ScrollViewer>
             </dx:DXTabItem>
@@ -344,16 +347,21 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <CheckBox Content="Registrar información extendida" Grid.Row="0" Margin="0,5"
-                              IsChecked="{Binding HasExtendedInformation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <CheckBox Content="Permitir fracción" Grid.Row="1" Margin="0,5"
-                              IsChecked="{Binding AllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <CheckBox Content="Servicio basado en AIU" Grid.Row="2" Margin="0,5"
-                              IsChecked="{Binding AiuBasedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <CheckBox Content="Aplica para venta" Grid.Row="3" Margin="0,5"
-                              IsChecked="{Binding Billable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <CheckBox Content="Cantidad controlada por báscula en la venta" Grid.Row="4" Margin="0,5"
-                              IsChecked="{Binding AmountBasedOnWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxe:CheckEdit Content="Registrar información extendida" Grid.Row="0" Margin="0,5"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   IsChecked="{Binding HasExtendedInformation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxe:CheckEdit Content="Permitir fracción" Grid.Row="1" Margin="0,5"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   IsChecked="{Binding AllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxe:CheckEdit Content="Servicio basado en AIU" Grid.Row="2" Margin="0,5"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   IsChecked="{Binding AiuBasedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxe:CheckEdit Content="Aplica para venta" Grid.Row="3" Margin="0,5"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   IsChecked="{Binding Billable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxe:CheckEdit Content="Cantidad controlada por báscula en la venta" Grid.Row="4" Margin="0,5"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   IsChecked="{Binding AmountBasedOnWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>
             </dx:DXTabItem>
         </dx:DXTabControl>

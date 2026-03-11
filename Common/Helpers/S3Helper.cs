@@ -1,98 +1,81 @@
-﻿using Amazon;
+using Amazon;
 using Amazon.S3;
-using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using Common.Interfaces;
+using Dictionaries;
+using Models.Global;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Common.Helpers
 {
-    public static class S3Helper
+    public class S3Helper
     {
+        public string Bucket { get; }
+        public string Directory { get; }
 
-        public static string S3Bucket { get; set; } = string.Empty;
-        public static string S3Directory { get; set; } = string.Empty;
+        private readonly string _accessKey;
+        private readonly string _secretKey;
+        private readonly RegionEndpoint _region;
 
-        public static string LocalFilePath { get; set; } = string.Empty;
-        public static string S3FileName {  get; set; } = string.Empty;
-
-        public static string S3AccessKey {  get; set; } = string.Empty;
-
-        public static string S3SecretKey { get; set; } = string.Empty;
-
-        public static RegionEndpoint Region { get; set; } 
-
-
-        public static void Initialize(string s3Bucket, string s3Directory, string s3AccessKey, string s3SecretKey, RegionEndpoint region)
+        public S3Helper(string accessKey, string secretKey, RegionEndpoint region, string bucket, string directory)
         {
-            S3Bucket = s3Bucket;
-            S3Directory = s3Directory;
-            S3AccessKey = s3AccessKey;
-            S3SecretKey = s3SecretKey;
-            Region = region;
+            _accessKey = accessKey ?? throw new ArgumentNullException(nameof(accessKey));
+            _secretKey = secretKey ?? throw new ArgumentNullException(nameof(secretKey));
+            _region = region ?? throw new ArgumentNullException(nameof(region));
+            Bucket = bucket ?? throw new ArgumentNullException(nameof(bucket));
+            Directory = directory ?? throw new ArgumentNullException(nameof(directory));
         }
 
-
-        public async static Task DeleteFileFromS3Async()
+        public static S3Helper FromStorageLocation(S3StorageLocationGraphQLModel location)
         {
-            try
-            {
-                IAmazonS3 client = new AmazonS3Client(S3AccessKey, S3SecretKey, Region);
-                DeleteObjectRequest request = new();
-                request.BucketName = S3Bucket.Trim(); //no subdirectory just bucket name
-                request.Key = string.IsNullOrEmpty(S3Directory) ? S3FileName.Trim() : $@"{S3Directory.Trim()}/{S3FileName.Trim()}"; //file name up in S3
-                await client.DeleteObjectAsync(request); //commensing the transfer
-                client.Dispose();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            var awsConfig = location.AwsS3Config ?? SessionInfo.DefaultAwsS3Config
+                ?? throw new InvalidOperationException("No se encontró configuración AWS S3. Verifique que la empresa tenga configuración global o que la ubicación de almacenamiento tenga credenciales propias.");
+
+            var region = GlobalDictionaries.AwsSesRegionDictionary[awsConfig.Region];
+
+            return new S3Helper(
+                awsConfig.AccessKey,
+                awsConfig.SecretKey,
+                region,
+                location.Bucket,
+                location.Directory);
         }
 
-        public static async Task DownloadFileFromS3()
+        public async Task UploadFileAsync(string localFilePath, string s3FileName)
         {
-            try
+            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
+            using var utility = new TransferUtility(client);
+            var request = new TransferUtilityUploadRequest
             {
-                IAmazonS3 client = new AmazonS3Client(S3AccessKey, S3SecretKey, Region);
-                TransferUtility utility = new(client);
-                TransferUtilityDownloadRequest request = new();
-                request.BucketName = S3Bucket.Trim(); //no subdirectory just bucket name
-                request.Key = string.IsNullOrEmpty(S3Directory) ? S3FileName.Trim() : $@"{S3Directory.Trim()}/{S3FileName.Trim()}"; //file name up in S3
-                request.FilePath = LocalFilePath; //local file name
-                await utility.DownloadAsync(request); //commensing the transfer
-                utility.Dispose();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+                BucketName = Bucket.Trim(),
+                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}",
+                FilePath = localFilePath
+            };
+            await utility.UploadAsync(request);
         }
 
-        public async static Task UploadFileToS3Async()
+        public async Task DownloadFileAsync(string localFilePath, string s3FileName)
         {
-            try
+            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
+            using var utility = new TransferUtility(client);
+            var request = new TransferUtilityDownloadRequest
             {
-                IAmazonS3 client = new AmazonS3Client(S3AccessKey, S3SecretKey, Region);
-                TransferUtility utility = new(client);
-                TransferUtilityUploadRequest request = new();
-                request.BucketName = S3Bucket.Trim(); //no subdirectory just bucket name
-                request.Key = string.IsNullOrEmpty(S3Directory) ? S3FileName.Trim() : $@"{S3Directory.Trim()}/{S3FileName.Trim()}"; //file name up in S3
-                request.FilePath = LocalFilePath; //local file name
-                await utility.UploadAsync(request); //commensing the transfer
-                utility.Dispose();
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+                BucketName = Bucket.Trim(),
+                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}",
+                FilePath = localFilePath
+            };
+            await utility.DownloadAsync(request);
         }
 
+        public async Task DeleteFileAsync(string s3FileName)
+        {
+            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
+            var request = new Amazon.S3.Model.DeleteObjectRequest
+            {
+                BucketName = Bucket.Trim(),
+                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}"
+            };
+            await client.DeleteObjectAsync(request);
+        }
     }
-
 }

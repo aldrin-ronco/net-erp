@@ -1,40 +1,30 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Mvvm.Xpf;
-using DevExpress.Xpf.Bars;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
-using Models.Inventory;
-using NetErp.Books.AccountingAccounts.ViewModels;
 using NetErp.Helpers;
-using NetErp.Inventory.CatalogItems.DTO;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static DevExpress.Drawing.Printing.Internal.DXPageSizeInfo;
+using static Models.Global.GraphQLResponseTypes;
 
-namespace NetErp.Inventory.CatalogItems.ViewModels
+namespace NetErp.Global.Modals.ViewModels
 {
-    public class SearchItemModalViewModel<TModel, XModel> : Screen
+    public class SearchWithThreeColumnsGridViewModel<XModel> : Screen
     {
-        public readonly IGenericDataAccess<XModel> DynamicService = IoC.Get<IGenericDataAccess<XModel>>();
-
+        public readonly IRepository<XModel> DynamicService = IoC.Get<IRepository<XModel>>();
 
         private readonly Helpers.IDialogService _dialogService;
 
         public string Query { get; set; } = string.Empty;
 
-        public MessageToken? MessageToken { get; set; }
-        public dynamic Variables { get; set; }
+        public SearchWithThreeColumnsGridMessageToken? MessageToken { get; set; }
+        public dynamic? Variables { get; set; }
 
         private string _fieldHeader1;
         public string FieldHeader1
@@ -120,8 +110,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private TModel? _selectedItem;
-        public TModel? SelectedItem
+        private XModel? _selectedItem;
+        public XModel? SelectedItem
         {
             get { return _selectedItem; }
             set
@@ -131,22 +121,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private CatalogViewModel _context;
-        public CatalogViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
-
-        private ObservableCollection<TModel> _itemsSource;
-        public ObservableCollection<TModel> ItemsSource
+        private ObservableCollection<XModel> _itemsSource;
+        public ObservableCollection<XModel> ItemsSource
         {
             get { return _itemsSource; }
             set
@@ -175,22 +151,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
 
         private bool _filterSearchFocus;
-
         public bool FilterSearchFocus
         {
             get { return _filterSearchFocus; }
             set
             {
-                if (_filterSearchFocus != value)
-                {
-                    _filterSearchFocus = value;
-                    NotifyOfPropertyChange(nameof(FilterSearchFocus));
-                }
+                _filterSearchFocus = value;
+                NotifyOfPropertyChange(nameof(FilterSearchFocus));
             }
         }
 
         private bool _gridFocus;
-
         public bool GridFocus
         {
             get { return _gridFocus; }
@@ -204,16 +175,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private int _pageIndex = 1;
-        public int PageIndex
+        private int _pageNumber = 1;
+        public int PageNumber
         {
-            get { return _pageIndex; }
+            get { return _pageNumber; }
             set
             {
-                if (_pageIndex != value)
+                if (_pageNumber != value)
                 {
-                    _pageIndex = value;
-                    NotifyOfPropertyChange(nameof(PageIndex));
+                    _pageNumber = value;
+                    NotifyOfPropertyChange(nameof(PageNumber));
                 }
             }
         }
@@ -232,22 +203,21 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private int _totalCount;
-        public int TotalCount
+        private int _totalEntries;
+        public int TotalEntries
         {
-            get { return _totalCount; }
+            get { return _totalEntries; }
             set
             {
-                if (_totalCount != value)
+                if (_totalEntries != value)
                 {
-                    _totalCount = value;
-                    NotifyOfPropertyChange(nameof(TotalCount));
+                    _totalEntries = value;
+                    NotifyOfPropertyChange(nameof(TotalEntries));
                 }
             }
         }
 
         private bool _isBusy;
-
         public bool IsBusy
         {
             get { return _isBusy; }
@@ -265,7 +235,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             if (FilterSearch.Length > 2 || FilterSearch.Length == 0)
             {
-                _ = Task.Run(() => LoadItemsAsync());
+                _ = Task.Run(() => LoadItemsSourceAsync());
             }
         }
 
@@ -279,34 +249,50 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             GridFocus = controlName == nameof(GridFocus);
         }
 
-        public async Task LoadItemsAsync()
+        private ICommand _paginationCommand;
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                if (_paginationCommand == null) _paginationCommand = new AsyncCommand(ExecuteChangeIndex, CanExecuteChangeIndex);
+                return _paginationCommand;
+            }
+        }
+
+        private async Task ExecuteChangeIndex()
+        {
+            await LoadItemsSourceAsync();
+        }
+
+        private bool CanExecuteChangeIndex()
+        {
+            return true;
+        }
+
+        public async Task LoadItemsSourceAsync()
         {
             try
             {
                 IsBusy = true;
-                Variables.filter.and[1].or = new ExpandoObject[]
+                if (Variables is null)
                 {
-                    new(),
-                    new()
-                };
+                    Variables = new ExpandoObject();
+                    Variables.pageResponseFilters = new ExpandoObject();
+                }
 
-                Variables.filter.and[1].or[0].name = new ExpandoObject();
-                Variables.filter.and[1].or[0].name.@operator = "like";
-                Variables.filter.and[1].or[0].name.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                Variables.pageResponseFilters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                Variables.filter.and[1].or[1].reference = new ExpandoObject();
-                Variables.filter.and[1].or[1].reference.@operator = "like";
-                Variables.filter.and[1].or[1].reference.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                //Pagination
+                Variables.pageResponsePagination = new ExpandoObject();
+                Variables.pageResponsePagination.Page = PageNumber;
+                Variables.pageResponsePagination.PageSize = PageSize;
+                PageType<XModel> result = await DynamicService.GetPageAsync(Query, Variables);
 
-                Variables.filter.Pagination = new ExpandoObject();
-                Variables.filter.Pagination.Page = PageIndex;
-                Variables.filter.Pagination.PageSize = PageSize;
-
-                var result = await DynamicService.GetPage(Query, Variables);
-
-                TotalCount = result.PageResponse.Count;
-                ItemsSource = new ObservableCollection<TModel>(Context.AutoMapper.Map<ObservableCollection<TModel>>(result.PageResponse.Rows));
-                this.SetFocus(() => FilterSearch);
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ItemsSource = new ObservableCollection<XModel>(result.Entries);
+                    this.SetFocus(() => FilterSearch);
+                });
 
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -325,7 +311,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             catch (Exception ex)
             {
                 System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadItemsAsync" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "LoadItemsSourceAsync" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
             finally
             {
@@ -356,16 +342,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                if (_rowDoubleClickCommand == null) _rowDoubleClickCommand = new AsyncCommand(RowDoubleClick);
+                if (_rowDoubleClickCommand == null) _rowDoubleClickCommand = new AsyncCommand(RowDoubleClickAsync);
                 return _rowDoubleClickCommand;
             }
         }
 
-        public async Task RowDoubleClick()
+        public async Task RowDoubleClickAsync()
         {
-            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken);
+            Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);
         }
+
 
         private ICommand _enterKeyCommand;
 
@@ -373,14 +360,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             get
             {
-                if (_enterKeyCommand == null) _enterKeyCommand = new AsyncCommand(EnterKey);
+                if (_enterKeyCommand == null) _enterKeyCommand = new AsyncCommand(EnterKeyAsync);
                 return _enterKeyCommand;
             }
         }
 
-        public async Task EnterKey()
+        public async Task EnterKeyAsync()
         {
-            Messenger.Default.Send(message: new ReturnedItemFromModalViewMessage() { ReturnedItem = Context.AutoMapper.Map<ItemDTO>(SelectedItem) }, token: MessageToken);
+            Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);
         }
 
@@ -401,24 +388,28 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             this.SetFocus(() => FilterSearch);
         }
 
-        public SearchItemModalViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldHeader3, string fieldData1, string fieldData2, string fieldData3, dynamic variables, MessageToken? messageToken, CatalogViewModel context, Helpers.IDialogService dialogService)
+        public SearchWithThreeColumnsGridViewModel(string query, string fieldHeader1, string fieldHeader2, string fieldHeader3, string fieldData1, string fieldData2, string fieldData3, dynamic? variables, SearchWithThreeColumnsGridMessageToken? messageToken, Helpers.IDialogService dialogService)
         {
             _dialogService = dialogService;
             Query = query;
-            FieldHeader1 = fieldHeader1;
-            FieldHeader2 = fieldHeader2;
-            FieldHeader3 = fieldHeader3;
-            FieldData1 = fieldData1;
-            FieldData2 = fieldData2;
-            FieldData3 = fieldData3;
+            _fieldHeader1 = fieldHeader1;
+            _fieldHeader2 = fieldHeader2;
+            _fieldHeader3 = fieldHeader3;
+            _fieldData1 = fieldData1;
+            _fieldData2 = fieldData2;
+            _fieldData3 = fieldData3;
             Variables = variables;
-            Context = context;
             SelectedItem = default;
             MessageToken = messageToken;
-            ItemsSource = new ObservableCollection<TModel>();
-            _ = Task.Run(() => LoadItemsAsync());
+            _itemsSource = new ObservableCollection<XModel>();
+            _ = Task.Run(() => LoadItemsSourceAsync());
         }
     }
 
-    public enum MessageToken { Component, SearchProduct }
+    public enum SearchWithThreeColumnsGridMessageToken { Component, SearchProduct }
+
+    public class ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>
+    {
+        public XModel? ReturnedData { get; set; }
+    }
 }
