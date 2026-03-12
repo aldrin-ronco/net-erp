@@ -19,6 +19,7 @@
             <TextBlock Text="Nombre de la categoría" Grid.Row="0" Margin="5 5 0 5"/>
             <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
                           CharacterCasing="Upper"
+                          MaxLength="{Binding NameMaxLength}"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Stretch"/>
         </Grid>

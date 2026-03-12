@@ -33,6 +33,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly Helpers.Cache.StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -41,11 +42,13 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         public ItemPanelEditor(
             CatalogRootMasterViewModel masterContext,
             IRepository<ItemGraphQLModel> itemService,
-            Helpers.IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            Helpers.Cache.StringLengthCache stringLengthCache)
             : base(masterContext)
         {
             _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
 
             Messenger.Default.Register<ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel>>(this, SearchWithThreeColumnsGridMessageToken.Component, false, OnFindComponentMessage);
         }
@@ -116,6 +119,10 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 }
             }
         }
+
+        // MaxLength properties from StringLengthCache
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(Name));
+        public int ReferenceMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(Reference));
 
         private bool _isActive = true;
         public bool IsActive

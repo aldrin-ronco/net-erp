@@ -166,6 +166,9 @@ namespace NetErp
             _ = kernel.Bind<ItemSizeCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemSizeCategoryCache>());
 
+            _ = kernel.Bind<StringLengthCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StringLengthCache>());
+
             _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
@@ -254,6 +257,7 @@ namespace NetErp
             
 
             // Global
+            _ = kernel.Bind<IRepository<EntityStringLengthsGraphQLModel>>().To<GraphQLRepository<EntityStringLengthsGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AuthorizationSequenceTypeGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceTypeGraphQLModel>>().InSingletonScope();

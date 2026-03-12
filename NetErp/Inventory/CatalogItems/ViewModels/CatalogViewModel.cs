@@ -30,6 +30,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
         private readonly ItemSizeCategoryCache _itemSizeCategoryCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         private CatalogRootMasterViewModel _catalogRootMasterViewModel;
 
@@ -50,7 +51,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _measurementUnitCache,
                     _itemBrandCache,
                     _accountingGroupCache,
-                    _itemSizeCategoryCache);
+                    _itemSizeCategoryCache,
+                    _stringLengthCache);
                 return _catalogRootMasterViewModel;
             }
         }
@@ -84,7 +86,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             MeasurementUnitCache measurementUnitCache,
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
-            ItemSizeCategoryCache itemSizeCategoryCache)
+            ItemSizeCategoryCache itemSizeCategoryCache,
+            StringLengthCache stringLengthCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -100,6 +103,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemBrandCache = itemBrandCache;
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
+            _stringLengthCache = stringLengthCache;
             Task.Run(ActivateMasterView);
         }
 

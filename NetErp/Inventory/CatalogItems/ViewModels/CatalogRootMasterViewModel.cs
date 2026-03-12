@@ -64,6 +64,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
         private readonly ItemSizeCategoryCache _itemSizeCategoryCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -386,7 +387,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             MeasurementUnitCache measurementUnitCache,
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
-            ItemSizeCategoryCache itemSizeCategoryCache)
+            ItemSizeCategoryCache itemSizeCategoryCache,
+            StringLengthCache stringLengthCache)
         {
             Context = context;
             _catalogService = catalogService;
@@ -401,13 +403,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemBrandCache = itemBrandCache;
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
+            _stringLengthCache = stringLengthCache;
 
             // Initialize PanelEditors
-            CatalogEditor = new CatalogPanelEditor(this, _catalogService);
-            ItemTypeEditor = new ItemTypePanelEditor(this, _itemTypeService);
-            ItemCategoryEditor = new ItemCategoryPanelEditor(this, _itemCategoryService);
-            ItemSubCategoryEditor = new ItemSubCategoryPanelEditor(this, _itemSubCategoryService);
-            ItemEditor = new ItemPanelEditor(this, _itemService, _dialogService);
+            CatalogEditor = new CatalogPanelEditor(this, _catalogService, _stringLengthCache);
+            ItemTypeEditor = new ItemTypePanelEditor(this, _itemTypeService, _stringLengthCache);
+            ItemCategoryEditor = new ItemCategoryPanelEditor(this, _itemCategoryService, _stringLengthCache);
+            ItemSubCategoryEditor = new ItemSubCategoryPanelEditor(this, _itemSubCategoryService, _stringLengthCache);
+            ItemEditor = new ItemPanelEditor(this, _itemService, _dialogService, _stringLengthCache);
 
             // Register for search product messages
             Messenger.Default.Register<ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel>>(this, SearchWithThreeColumnsGridMessageToken.SearchProduct, false, OnFindProductMessage);
@@ -431,6 +434,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             try
             {
                 IsBusy = true;
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.CatalogItem);
                 await LoadComboBoxesAsync();
                 await LoadS3ConfigAsync();
                 await LoadCatalogsAsync();
