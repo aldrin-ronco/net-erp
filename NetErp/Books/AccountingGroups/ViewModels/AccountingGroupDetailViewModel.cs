@@ -4,33 +4,24 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using GraphQL.Client.Http;
-using Models.Billing;
 using Models.Books;
-using Models.DTO.Global;
 using Models.Global;
-using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Global.DAL.PostgreSQL;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
-using Extensions.Global;
-
-using System.Net;
-using System.Security.Policy;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Amazon.S3.Util.S3EventNotification;
-using static Dictionaries.BooksDictionaries;
-using static Models.Global.GraphQLResponseTypes;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingGroups.ViewModels
@@ -38,19 +29,216 @@ namespace NetErp.Books.AccountingGroups.ViewModels
     public class AccountingGroupDetailViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<AccountingGroupGraphQLModel> _accountingGroupService;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly TaxCache _taxCache;
+
         public AccountingGroupViewModel Context { get; set; }
-        public AccountingGroupDetailViewModel(AccountingGroupViewModel context, IRepository<AccountingGroupGraphQLModel> accountingGroupService)
+        public AccountingGroupDetailViewModel(AccountingGroupViewModel context, IRepository<AccountingGroupGraphQLModel> accountingGroupService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+            TaxCache taxCache)
         {
             Context = context;
             _errors = new Dictionary<string, List<string>>();
             _accountingGroupService = accountingGroupService;
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _taxCache = taxCache;
+            _= InitializeAsync();
+
         }
         public async Task InitializeAsync()
         {
             await Task.WhenAll(
-                
+                _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
+                _taxCache.EnsureLoadedAsync()
+
                 );
+            AiuAdministrationAccountingAccounts = [.. _auxiliaryAccountingAccountCache.Items];
+            AiuUnforeseenAccountingAccounts =     [.. _auxiliaryAccountingAccountCache.Items];
+            AiuUtilityAccountingAccounts =        [.. _auxiliaryAccountingAccountCache.Items];
+
+            AccountCostAccountingAccounts =       [.. _auxiliaryAccountingAccountCache.Items];
+            IncomeAccountingAccounts =            [.. _auxiliaryAccountingAccountCache.Items];
+            IncomeReverseAccountingAccounts =     [.. _auxiliaryAccountingAccountCache.Items];
+            InventoryAccountingAccounts =         [.. _auxiliaryAccountingAccountCache.Items];
+
+            PurchasePrimaryTaxes = [.. _taxCache.Items];
+            SalesPrimaryTaxes = [.. _taxCache.Items];
+            
+
         }
+        protected override void OnViewReady(object view)
+        {
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+        protected override void OnViewAttached(object view, object context)
+        {
+            base.OnViewAttached(view, context);
+            ValidateProperties();
+            this.AcceptChanges();
+
+        }
+        #region Collections
+        private ObservableCollection<TaxGraphQLModel> _purchasePrimaryTaxes;
+        public ObservableCollection<TaxGraphQLModel> PurchasePrimaryTaxes
+        {
+            get { return _purchasePrimaryTaxes; }
+            set
+            {
+                if (_purchasePrimaryTaxes != value)
+                {
+                    _purchasePrimaryTaxes = value;
+                    NotifyOfPropertyChange(nameof(PurchasePrimaryTaxes));
+
+                }
+            }
+        }
+
+
+        private ObservableCollection<TaxGraphQLModel> _purchaseSecondaryTaxes;
+        public ObservableCollection<TaxGraphQLModel> PurchaseSecondaryTaxes
+        {
+            get { return _purchaseSecondaryTaxes; }
+            set
+            {
+                if (_purchaseSecondaryTaxes != value)
+                {
+                    _purchaseSecondaryTaxes = value;
+                    NotifyOfPropertyChange(nameof(PurchaseSecondaryTaxes));
+                }
+            }
+        }
+
+        private ObservableCollection<TaxGraphQLModel> _salesPrimaryTaxes;
+        public ObservableCollection<TaxGraphQLModel> SalesPrimaryTaxes
+        {
+            get { return _salesPrimaryTaxes; }
+            set
+            {
+                if (_salesPrimaryTaxes != value)
+                {
+                    _salesPrimaryTaxes = value;
+                    NotifyOfPropertyChange(nameof(SalesPrimaryTaxes));
+                }
+            }
+        }
+
+
+        private ObservableCollection<TaxGraphQLModel> _salesSecondaryTaxes;
+        public ObservableCollection<TaxGraphQLModel> SalesSecondaryTaxes
+        {
+            get { return _salesSecondaryTaxes; }
+            set
+            {
+                if (_salesSecondaryTaxes != value)
+                {
+                    _salesSecondaryTaxes = value;
+                    NotifyOfPropertyChange(nameof(SalesSecondaryTaxes));
+                }
+            }
+        }
+
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _aiuAdministrationAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AiuAdministrationAccountingAccounts
+        {
+            get { return _aiuAdministrationAccountingAccounts; }
+            set
+            {
+                if (_aiuAdministrationAccountingAccounts != value)
+                {
+                    _aiuAdministrationAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AiuAdministrationAccountingAccounts));
+                }
+            }
+        }
+
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _aiuUnforeseenAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AiuUnforeseenAccountingAccounts
+        {
+            get { return _aiuUnforeseenAccountingAccounts; }
+            set
+            {
+                if (_aiuUnforeseenAccountingAccounts != value)
+                {
+                    _aiuUnforeseenAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AiuUnforeseenAccountingAccounts));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _aiuUtilityAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AiuUtilityAccountingAccounts
+        {
+            get { return _aiuUtilityAccountingAccounts; }
+            set
+            {
+                if (_aiuUtilityAccountingAccounts != value)
+                {
+                    _aiuUtilityAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AiuUtilityAccountingAccounts));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _accountCostAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> AccountCostAccountingAccounts
+        {
+            get { return _accountCostAccountingAccounts; }
+            set
+            {
+                if (_accountCostAccountingAccounts != value)
+                {
+                    _accountCostAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AccountCostAccountingAccounts));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _incomeAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> IncomeAccountingAccounts
+        {
+            get { return _incomeAccountingAccounts; }
+            set
+            {
+                if (_incomeAccountingAccounts != value)
+                {
+                    _incomeAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(IncomeAccountingAccounts));
+                }
+            }
+        }
+
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _incomeReverseAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> IncomeReverseAccountingAccounts
+        {
+            get { return _incomeReverseAccountingAccounts; }
+            set
+            {
+                if (_incomeReverseAccountingAccounts != value)
+                {
+                    _incomeReverseAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(IncomeReverseAccountingAccounts));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGraphQLModel> _inventoryAccountingAccounts;
+        public ObservableCollection<AccountingAccountGraphQLModel> InventoryAccountingAccounts
+        {
+            get { return _inventoryAccountingAccounts; }
+            set
+            {
+                if (_inventoryAccountingAccounts != value)
+                {
+                    _inventoryAccountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(InventoryAccountingAccounts));
+                }
+            }
+        }
+
+        #endregion
         #region ModelProperties
 
         private int _id;
@@ -65,80 +253,129 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountAiuAdministration;
-        public AccountingAccountGraphQLModel SelectedAccountAiuAdministration
+       private AccountingAccountGraphQLModel? _selectedAccountAiuAdministration;
+        [ExpandoPath("accountAiuAdministrationId", SerializeAsId = true)]
+        public AccountingAccountGraphQLModel? SelectedAccountAiuAdministration
         {
             get => _selectedAccountAiuAdministration;
             set
             {
                 _selectedAccountAiuAdministration = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountAiuAdministration));
+                this.TrackChange(nameof(SelectedAccountAiuAdministration));
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountAiuUnforeseen;
-        public AccountingAccountGraphQLModel SelectedAccountAiuUnforeseen
+
+       private AccountingAccountGraphQLModel? _selectedAccountAiuUnforeseen;
+        [ExpandoPath("accountAiuUnforeseenId", SerializeAsId = true)]
+        public AccountingAccountGraphQLModel? SelectedAccountAiuUnforeseen
         {
             get => _selectedAccountAiuUnforeseen;
             set
             {
                 _selectedAccountAiuUnforeseen = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountAiuUnforeseen));
+                this.TrackChange(nameof(SelectedAccountAiuUnforeseen));
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountAiuUtility;
-        public AccountingAccountGraphQLModel SelectedAccountAiuUtility
+       private AccountingAccountGraphQLModel? _selectedAccountAiuUtility;
+        [ExpandoPath("accountAiuUtilityId", SerializeAsId = true)]
+
+        public AccountingAccountGraphQLModel? SelectedAccountAiuUtility
         {
             get => _selectedAccountAiuUtility;
             set
             {
                 _selectedAccountAiuUtility = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountAiuUtility));
+                this.TrackChange(nameof(SelectedAccountAiuUtility));
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountCost;
-        public AccountingAccountGraphQLModel SelectedAccountCost
+       private AccountingAccountGraphQLModel? _selectedAccountCost;
+        [ExpandoPath("accountCostId", SerializeAsId = true)]
+
+        public AccountingAccountGraphQLModel? SelectedAccountCost
         {
             get => _selectedAccountCost;
             set
             {
                 _selectedAccountCost = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountCost));
+                this.TrackChange(nameof(SelectedAccountCost));
+                ValidateProperty(nameof(SelectedAccountCost), value?.Id);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountIncome;
-        public AccountingAccountGraphQLModel SelectedAccountIncome
+       private AccountingAccountGraphQLModel? _selectedAccountIncome;
+        [ExpandoPath("accountIncomeId", SerializeAsId = true)]
+
+        public AccountingAccountGraphQLModel? SelectedAccountIncome
         {
             get => _selectedAccountIncome;
             set
             {
                 _selectedAccountIncome = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountIncome));
+                this.TrackChange(nameof(SelectedAccountIncome));
+                ValidateProperty(nameof(SelectedAccountIncome), value?.Id);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountIncomeReverse;
-        public AccountingAccountGraphQLModel SelectedAccountIncomeReverse
+       private AccountingAccountGraphQLModel? _selectedAccountIncomeReverse;
+        [ExpandoPath("accountIncomeReverseId", SerializeAsId = true)]
+
+        public AccountingAccountGraphQLModel? SelectedAccountIncomeReverse
         {
             get => _selectedAccountIncomeReverse;
             set
             {
                 _selectedAccountIncomeReverse = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountIncomeReverse));
+                this.TrackChange(nameof(SelectedAccountIncomeReverse));
+                ValidateProperty(nameof(SelectedAccountIncomeReverse), value?.Id);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private AccountingAccountGraphQLModel _selectedAccountInventory;
-        public AccountingAccountGraphQLModel SelectedAccountInventory
+       private AccountingAccountGraphQLModel? _selectedAccountInventory;
+        [ExpandoPath("accountInventoryId", SerializeAsId = true)]
+
+        public AccountingAccountGraphQLModel? SelectedAccountInventory
         {
             get => _selectedAccountInventory;
             set
             {
                 _selectedAccountInventory = value;
                 NotifyOfPropertyChange(nameof(SelectedAccountInventory));
+                this.TrackChange(nameof(SelectedAccountInventory));
+                ValidateProperty(nameof(SelectedAccountInventory), value?.Id);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
@@ -150,50 +387,96 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             {
                 _name = value;
                 NotifyOfPropertyChange(nameof(Name));
+                this.TrackChange(nameof(Name));
+                ValidateProperty(nameof(Name), value);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private TaxGraphQLModel _purchasePrimaryTax;
-        public TaxGraphQLModel PurchasePrimaryTax
+        private TaxGraphQLModel? _selectedPurchasePrimaryTax;
+        [ExpandoPath("purchasePrimaryTaxId", SerializeAsId = true)]
+
+        public TaxGraphQLModel? SelectedPurchasePrimaryTax
         {
-            get => _purchasePrimaryTax;
+            get => _selectedPurchasePrimaryTax;
             set
             {
-                _purchasePrimaryTax = value;
-                NotifyOfPropertyChange(nameof(PurchasePrimaryTax));
+                _selectedPurchasePrimaryTax = value;
+                NotifyOfPropertyChange(nameof(SelectedPurchasePrimaryTax));
+                this.TrackChange(nameof(SelectedPurchasePrimaryTax));
+                ValidateProperty(nameof(SelectedPurchasePrimaryTax), value?.Id);
+                NotifyOfPropertyChange(nameof(PurchaseSecondaryTaxVisibility));
+                PurchaseSecondaryTaxes = [.. _taxCache.Items.Where(f => f.Id != value?.Id)];
+                this.SeedValue(nameof(SelectedPurchaseSecondaryTax), SelectedPurchaseSecondaryTax);
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private TaxGraphQLModel _purchaseSecondaryTax;
-        public TaxGraphQLModel PurchaseSecondaryTax
+
+        private TaxGraphQLModel? _selectedPurchaseSecondaryTax;
+        [ExpandoPath("purchaseSecondaryTaxId", SerializeAsId = true)]
+        public TaxGraphQLModel? SelectedPurchaseSecondaryTax
         {
-            get => _purchaseSecondaryTax;
+            get => _selectedPurchaseSecondaryTax;
             set
             {
-                _purchaseSecondaryTax = value;
-                NotifyOfPropertyChange(nameof(PurchaseSecondaryTax));
+                _selectedPurchaseSecondaryTax = value;
+                NotifyOfPropertyChange(nameof(SelectedPurchaseSecondaryTax));
+                this.TrackChange(nameof(SelectedPurchaseSecondaryTax), SelectedPurchaseSecondaryTax?.Id > 0 ? SelectedPurchaseSecondaryTax : null);
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private TaxGraphQLModel _salesPrimaryTax;
-        public TaxGraphQLModel SalesPrimaryTax
+        private TaxGraphQLModel? _selectedSalesPrimaryTax;
+        [ExpandoPath("salesPrimaryTaxId", SerializeAsId = true)]
+        public TaxGraphQLModel? SelectedSalesPrimaryTax
         {
-            get => _salesPrimaryTax;
+            get => _selectedSalesPrimaryTax;
             set
             {
-                _salesPrimaryTax = value;
-                NotifyOfPropertyChange(nameof(SalesPrimaryTax));
+                _selectedSalesPrimaryTax = value;
+                NotifyOfPropertyChange(nameof(SelectedSalesPrimaryTax));
+                this.TrackChange(nameof(SelectedSalesPrimaryTax));
+                ValidateProperty(nameof(SelectedSalesPrimaryTax), value?.Id);
+                
+               NotifyOfPropertyChange(nameof(SalesSecondaryTaxVisibility));
+                if (value == null)
+                {
+                    this.SelectedSalesSecondaryTax = null;
+                }
+                else
+                {
+                    SalesSecondaryTaxes = [.. _taxCache.Items.Where(f => f.Id != value.Id)];
+
+                }
+                this.SeedValue(nameof(SelectedSalesSecondaryTax), SelectedSalesSecondaryTax);
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
-        private TaxGraphQLModel _salesSecondaryTax;
-        public TaxGraphQLModel SalesSecondaryTax
+        private TaxGraphQLModel? _selectedSalesSecondaryTax;
+        [ExpandoPath("salesSecondaryTaxId", SerializeAsId = true)]
+        public TaxGraphQLModel? SelectedSalesSecondaryTax
         {
-            get => _salesSecondaryTax;
+            get => _selectedSalesSecondaryTax;
             set
             {
-                _salesSecondaryTax = value;
-                NotifyOfPropertyChange(nameof(SalesSecondaryTax));
+                _selectedSalesSecondaryTax = value;
+                NotifyOfPropertyChange(nameof(SelectedSalesSecondaryTax));
+                this.TrackChange(nameof(SelectedSalesSecondaryTax), SelectedSalesSecondaryTax?.Id > 0 ? SelectedSalesSecondaryTax : null);
+
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
         private bool _allowAiu;
@@ -204,6 +487,11 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             {
                 _allowAiu = value;
                 NotifyOfPropertyChange(nameof(AllowAiu));
+                NotifyOfPropertyChange(nameof(AllowAiuVisibility));
+                this.TrackChange(nameof(AllowAiu));
+                NotifyOfPropertyChange(nameof(CanSave));
+
+
             }
         }
 
@@ -245,7 +533,33 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 return true;
             }
         }
-       
+        private Visibility _purchaseSecondaryTaxVisibility;
+        public Visibility PurchaseSecondaryTaxVisibility
+        {
+            get { return SelectedPurchasePrimaryTax != null  ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                _purchaseSecondaryTaxVisibility = value;
+            }
+        }
+        private Visibility _salesSecondaryTaxVisibility;
+        public Visibility SalesSecondaryTaxVisibility
+        {
+            get { return (SelectedSalesPrimaryTax != null) ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                _salesSecondaryTaxVisibility = value;
+            }
+        }
+        private Visibility _allowAiuVisibility;
+        public Visibility AllowAiuVisibility
+        {
+            get { return (AllowAiu == true) ? Visibility.Visible : Visibility.Collapsed; }
+            set
+            {
+                _allowAiuVisibility = value;
+            }
+        }
         private bool _isBusy = false;
         public bool IsBusy
         {
@@ -279,7 +593,80 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         public bool HasErrors => _errors.Count > 0;
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(Name):
+                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
+                        break;
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+        private void ValidateProperties()
+        {
+          
+            
+                ValidateProperty(nameof(Name), Name);
+                ValidateProperty(nameof(SelectedAccountCost), SelectedAccountCost?.Id);
+            ValidateProperty(nameof(SelectedAccountIncome), SelectedAccountIncome?.Id);
+            
+            ValidateProperty(nameof(SelectedAccountIncomeReverse), SelectedAccountIncomeReverse?.Id);
+                ValidateProperty(nameof(SelectedAccountInventory), SelectedAccountInventory?.Id);
+                ValidateProperty(nameof(SelectedSalesPrimaryTax), SelectedSalesPrimaryTax?.Id);
+                ValidateProperty(nameof(SelectedPurchasePrimaryTax), SelectedPurchasePrimaryTax?.Id);
 
+        }
+        private void ValidateProperty(string propertyName, int? value)
+        {
+            
+            try
+            {
+                ClearErrors(propertyName);
+                switch (propertyName)
+                {
+                    case nameof(SelectedAccountCost):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar una cuenta de Costo");
+                        break;
+                    case nameof(SelectedAccountIncome):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar una cuenta de Ingreso");
+                        break;
+                    case nameof(SelectedAccountInventory):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar una cuenta de Inventario");
+                        break;
+                    case nameof(SelectedAccountIncomeReverse):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar una cuenta de Devolucion");
+                        break;
+
+
+                   
+                    case nameof(SelectedPurchasePrimaryTax):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar un impusto de compras");
+                        break;
+                   
+                    case nameof(SelectedSalesPrimaryTax):
+                        if (value == 0 || value == null) AddError(propertyName, "Debe Seleccionar un impuesto de venta");
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
@@ -337,15 +724,54 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         }
         public void PopulateFromAccountingGroup(AccountingGroupGraphQLModel entity)
         {
-            // Propiedades básicas del entity
-           /* Id = entity.Id;
-
-            IdentificationNumber = entity.AccountingEntity.IdentificationNumber;
            
-            ZoneId = entity.Zone?.Id;*/
+            PurchasePrimaryTaxes = [.. _taxCache.Items];
+            SalesPrimaryTaxes = [.. _taxCache.Items];
+
+            Id = entity.Id;
+            Name = entity.Name;
+            AllowAiu = entity.AllowAiu;
+            SelectedAccountAiuAdministration = AiuAdministrationAccountingAccounts.FirstOrDefault(f => f.Id ==  entity.AccountAiuAdministration?.Id);
+            SelectedAccountAiuUnforeseen = AiuUnforeseenAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountAiuUnforeseen?.Id);
+            SelectedAccountAiuUtility = AiuUtilityAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountAiuUtility?.Id);
+            SelectedAccountCost = AccountCostAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountCost?.Id);
+            SelectedAccountIncome = IncomeAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountIncome?.Id);
+            SelectedAccountIncomeReverse = IncomeReverseAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountIncomeReverse?.Id);
+            SelectedAccountInventory = InventoryAccountingAccounts.FirstOrDefault(f => f.Id == entity.AccountInventory?.Id);
+
+            SelectedPurchasePrimaryTax = PurchasePrimaryTaxes.FirstOrDefault(f => f.Id == entity.PurchasePrimaryTax?.Id);
+            SelectedSalesPrimaryTax = SalesPrimaryTaxes.FirstOrDefault(f => f.Id == entity.SalesPrimaryTax?.Id);
+
+            PurchaseSecondaryTaxes = [.. _taxCache.Items.Where(f => f.Id != SelectedPurchasePrimaryTax?.Id)];
+
+            SelectedPurchaseSecondaryTax = PurchaseSecondaryTaxes.FirstOrDefault(f => f.Id == entity.PurchaseSecondaryTax?.Id);
 
 
-      
+            this.SeedValue(nameof(SelectedPurchaseSecondaryTax), SelectedPurchaseSecondaryTax);
+
+            SalesSecondaryTaxes = [.. _taxCache.Items.Where(f => f.Id != SelectedSalesPrimaryTax?.Id)];
+
+            SelectedSalesSecondaryTax = SalesSecondaryTaxes.FirstOrDefault(f => f.Id == entity.SalesSecondaryTax?.Id);
+
+            this.SeedValue(nameof(Name), Name);
+
+            this.SeedValue(nameof(AllowAiu), AllowAiu);
+            this.SeedValue(nameof(SelectedAccountAiuAdministration), SelectedAccountAiuAdministration);
+            this.SeedValue(nameof(SelectedAccountAiuUnforeseen), SelectedAccountAiuUnforeseen);
+            this.SeedValue(nameof(SelectedAccountAiuUtility), SelectedAccountAiuUtility);
+            this.SeedValue(nameof(SelectedAccountCost), SelectedAccountCost);
+            this.SeedValue(nameof(SelectedAccountIncome), SelectedAccountIncome);
+            this.SeedValue(nameof(SelectedAccountIncomeReverse), SelectedAccountIncomeReverse);
+            this.SeedValue(nameof(SelectedAccountInventory), SelectedAccountInventory);
+            this.SeedValue(nameof(SelectedPurchasePrimaryTax), SelectedPurchasePrimaryTax);
+            this.SeedValue(nameof(SelectedPurchaseSecondaryTax), SelectedPurchaseSecondaryTax);
+            this.SeedValue(nameof(SelectedSalesPrimaryTax), SelectedSalesPrimaryTax);
+            this.SeedValue(nameof(SelectedSalesSecondaryTax), SelectedSalesSecondaryTax);
+
+            this.AcceptChanges();
+
+
+
         }
         public async Task SaveAsync()
         {
@@ -463,64 +889,77 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         }
         public string GetLoadAccountingGroupByIdQuery()
         {
-            var sellersFields = FieldSpec<AccountingGroupGraphQLModel>
+            var accountingGroupFields = FieldSpec<AccountingGroupGraphQLModel>
              .Create()
 
                  .Field(e => e.Id)
 
                  .Field(e => e.Name)
-                 /*  .Select(e => e.AccountingEntity, acc => acc
-                             .Field(c => c.Id)
-                             .Field(c => c.VerificationDigit)
-                             .Field(c => c.IdentificationNumber)
-                             .Field(c => c.FirstName)
-                             .Field(c => c.MiddleName)
-                             .Field(c => c.FirstLastName)
-                             .Field(c => c.MiddleLastName)
-                             .Field(c => c.SearchName)
-                             .Field(c => c.PrimaryPhone)
-                             .Field(c => c.SecondaryPhone)
-                             .Field(c => c.PrimaryCellPhone)
-                             .Field(c => c.SecondaryCellPhone)
-                             .Field(c => c.Address)
-                             .Field(c => c.TelephonicInformation)
-                             .Select(e => e.IdentificationType, co => co
-                                     .Field(x => x.Id)
-                                     .Field(x => x.Code)
-                                 )
-                             .Select(e => e.Country, co => co
-                                     .Field(x => x.Id)
-                                 )
-                             .Select(e => e.City, co => co
-                                     .Field(x => x.Id)
-                                 )
-                             .Select(e => e.Department, co => co
-                                     .Field(x => x.Id)
-                                     )
-                             .SelectList(e => e.Emails, co => co
-                                     .Field(x => x.Id)
-                                     .Field(x => x.Description)
-                                     .Field(x => x.Email)
-                                     .Field(x => x.isElectronicInvoiceRecipient)
-                                     )
-                             )
-                    .SelectList(e => e.CostCenters, acc => acc
-                         .Field(c => c.Id)
-                         .Field(c => c.Name)
-                    )
-                    .Select(e => e.Zone, acc => acc
+                 .Select(e => e.AccountAiuAdministration, acc => acc
                          .Field(c => c.Id)
                          .Field(c => c.Name)
 
+                 )
+                 .Select(e => e.AccountAiuUnforeseen, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.AccountAiuUtility, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.AccountCost, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.AccountIncome, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.AccountIncomeReverse, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.AccountInventory, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Field(c => c.AllowAiu)
+
+                 .Select(e => e.PurchasePrimaryTax, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.PurchaseSecondaryTax, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.SalesPrimaryTax, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
+                 .Select(e => e.SalesSecondaryTax, acc => acc
+                         .Field(c => c.Id)
+                         .Field(c => c.Name)
+
+                 )
 
 
-               )*/
                  .Build();
-            var sellerIdParameter = new GraphQLQueryParameter("id", "ID!");
+            var accountingGroupIdParameter = new GraphQLQueryParameter("id", "ID!");
 
-            var sellerFragment = new GraphQLQueryFragment("seller", [sellerIdParameter], sellersFields, "SingleItemResponse");
+            var accountingGroupFragment = new GraphQLQueryFragment("accountingGroup", [accountingGroupIdParameter], accountingGroupFields, "SingleItemResponse");
 
-            var builder = new GraphQLQueryBuilder([sellerFragment]);
+            var builder = new GraphQLQueryBuilder([accountingGroupFragment]);
 
             return builder.GetQuery();
 

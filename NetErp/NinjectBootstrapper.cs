@@ -149,6 +149,9 @@ namespace NetErp
             _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCategoryCache>());
 
+                 _ = kernel.Bind<TaxCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCache>());
+
             _ = kernel.Bind<MeasurementUnitCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MeasurementUnitCache>());
 

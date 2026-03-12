@@ -5,6 +5,7 @@ using Common.Interfaces;
 using Models.Billing;
 using Models.Books;
 using NetErp.Books.AccountingBooks.ViewModels;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,6 +21,10 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingGroupGraphQLModel> _accountingGroupService;
         private AccountingGroupMasterViewModel _accountingGroupMasterViewModel;
+        private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly TaxCache _taxCache;
+
+
         private AccountingGroupMasterViewModel AccountingGroupMasterViewModel
         {
             get
@@ -30,14 +35,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
         public AccountingGroupViewModel(IMapper mapper, IEventAggregator eventAggregator, Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingGroupGraphQLModel> accountingGroupService)
+            IRepository<AccountingGroupGraphQLModel> accountingGroupService, AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache, TaxCache taxCache)
         {
             _accountingGroupService = accountingGroupService;
             _notificationService = notificationService;
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
-
+            _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _ = Task.Run(ActivateMasterViewAsync);
+            _taxCache = taxCache;
         }
 
         public async Task ActivateMasterViewAsync()
@@ -55,8 +61,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         {
             try
             {
-                AccountingGroupDetailViewModel instance = new(this, _accountingGroupService);
-                await instance.InitializeAsync();
+                AccountingGroupDetailViewModel instance = new(this, _accountingGroupService, _auxiliaryAccountingAccountCache, _taxCache);
                 AccountingGroupGraphQLModel group = await instance.LoadDataForEditAsync(id);
                 instance.AcceptChanges();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
@@ -70,7 +75,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         {
             try
             {
-                AccountingGroupDetailViewModel instance = new(this, _accountingGroupService);
+                AccountingGroupDetailViewModel instance = new(this, _accountingGroupService, _auxiliaryAccountingAccountCache, _taxCache);
                 //instance.CleanUpControls();
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
