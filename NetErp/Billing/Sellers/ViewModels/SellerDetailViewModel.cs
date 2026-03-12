@@ -1032,7 +1032,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             Countries = _countryCache.Items;
             Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items); 
 
-            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC); // 13 es CC
+            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC); 
            
         }
         public async Task<SellerGraphQLModel> LoadDataForEditAsync(int id)

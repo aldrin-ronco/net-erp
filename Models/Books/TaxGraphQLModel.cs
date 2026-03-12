@@ -23,12 +23,7 @@ namespace Models.Books
         public string AlternativeFormula { get; set; } = string.Empty;
     }
 
-    public class TaxDataContext
-    {
-        public PageType<TaxCategoryGraphQLModel> TaxCategories { get; set; } 
-        public PageType<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
-        public PageType<TaxGraphQLModel> Taxes { get; set; }
-    }
+  
     public class TaxCreateMessage
     {
         public UpsertResponseType<TaxGraphQLModel> CreatedTax { get; set; } = new();
