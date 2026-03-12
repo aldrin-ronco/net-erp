@@ -19,12 +19,12 @@
 
         <!-- Tab Control with inline tabs -->
         <dx:DXTabControl Grid.Row="0" Margin="5"
-                         SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
+                         SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
 
             <!-- Tab 1: Básicos -->
             <dx:DXTabItem Header="Básicos">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
                     <Grid Margin="10"
                           FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}"
                           IsEnabledChanged="OnFormIsEnabledChanged">
@@ -127,8 +127,8 @@
                                           DisplayMember="Name"
                                           SelectedItem="{Binding SelectedBrand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False"
-                                          NullText="Seleccione una marca"
-                                          AllowNullInput="True"/>
+                                          NullText="SELECCIONE UNA MARCA"
+                                          AllowNullInput="True" NullValueButtonPlacement="EditBox"/>
 
                         <!-- Grupo de tallaje -->
                         <TextBlock Text="Grupo de tallaje" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right"
@@ -138,8 +138,8 @@
                                           DisplayMember="Name"
                                           SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsTextEditable="False"
-                                          NullText="Seleccione un grupo de tallaje"
-                                          AllowNullInput="True"/>
+                                          NullText="SELECCIONE UN GRUPO DE TALLAJE"
+                                          AllowNullInput="True" NullValueButtonPlacement="EditBox"/>
 
                         <!-- Grupo contable -->
                         <TextBlock Text="Grupo contable" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right"
@@ -155,7 +155,7 @@
 
             <!-- Tab 2: Códigos de barras -->
             <dx:DXTabItem Header="Códigos de barras">
-                <Grid Margin="10">
+                <Grid Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -218,88 +218,85 @@
 
             <!-- Tab 3: Productos relacionados -->
             <dx:DXTabItem Header="Productos relacionados">
-                <Grid Margin="10">
+                <Grid Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Search + fields + Add button -->
+                    <!-- Row 1: Search fields -->
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="1.5*"/>
-                            <ColumnDefinition Width="0.5*"/>
-                            <ColumnDefinition Width="0.5*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Search button -->
-                        <Button Grid.Column="0" Margin="0,0,5,5"
-                                Command="{Binding OpenSearchComponents}">
-                            <Image Source="{dx:DXImage 'Images/Function Library/Lookup&amp;Reference_16x16.png'}" Stretch="None">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value=".5"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                        </Button>
+                        <TextBlock Text="Producto" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <dxe:ButtonEdit Grid.Column="1" IsReadOnly="True"
+                                        Text="{Binding ComponentName, Mode=OneWay}"
+                                        AllowDefaultButton="False"
+                                        NullText="Buscar producto o servicio...">
+                            <dxe:ButtonEdit.Buttons>
+                                <dxe:ButtonInfo GlyphKind="Search" Command="{Binding OpenSearchComponents}"
+                                                ToolTip="Buscar producto"/>
+                            </dxe:ButtonEdit.Buttons>
+                        </dxe:ButtonEdit>
 
-                        <!-- Nombre del producto -->
-                        <StackPanel Grid.Column="1" Margin="5,0">
-                            <TextBlock Text="Nombre del producto o servicio"/>
-                            <TextBox IsEnabled="False" Margin="0,5,0,0" CharacterCasing="Upper"
-                                     Text="{Binding ComponentName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
+                        <TextBlock Text="Ref." Grid.Column="2" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                        <dxe:TextEdit Grid.Column="3" IsReadOnly="True" Width="100"
+                                      Text="{Binding ComponentReference, Mode=OneWay}"/>
 
-                        <!-- Referencia -->
-                        <StackPanel Grid.Column="2" Margin="5,0">
-                            <TextBlock Text="Referencia"/>
-                            <TextBox IsEnabled="False" Margin="0,5,0,0" CharacterCasing="Upper"
-                                     Text="{Binding ComponentReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
+                        <TextBlock Text="Código" Grid.Column="4" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                        <dxe:TextEdit Grid.Column="5" IsReadOnly="True" Width="100"
+                                      Text="{Binding ComponentCode, Mode=OneWay}"/>
+                    </Grid>
 
-                        <!-- Código -->
-                        <StackPanel Grid.Column="3" Margin="5,0">
-                            <TextBlock Text="Código"/>
-                            <TextBox IsEnabled="False" Margin="0,5,0,0" CharacterCasing="Upper"
-                                     Text="{Binding ComponentCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
+                    <!-- Row 2: Quantity + Add -->
+                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                        <!-- Cantidad -->
-                        <StackPanel Grid.Column="4" Margin="5,0">
-                            <TextBlock Text="Cantidad"/>
-                            <dxe:SpinEdit Margin="0,5,0,0" MinValue="0"
-                                          IsEnabled="{Binding ComponentQuantityIsEnable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          IsFloatValue="{Binding ComponentAllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Width="80"/>
-                        </StackPanel>
+                        <TextBlock Text="Cantidad" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <dxe:SpinEdit x:Name="ComponentQuantitySpinEdit" Grid.Column="1" MinValue="0" Width="100"
+                                      Value="{Binding ComponentQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEnabled="{Binding ComponentQuantityIsEnable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsFloatValue="{Binding ComponentAllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEnabledChanged="OnComponentQuantityIsEnabledChanged">
+                            <dxe:SpinEdit.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding AddComponentCommand}"/>
+                            </dxe:SpinEdit.InputBindings>
+                        </dxe:SpinEdit>
 
-                        <!-- Add button -->
-                        <Button Grid.Column="5" Margin="5,15,0,0" VerticalAlignment="Center"
-                                Command="{Binding AddComponentCommand}">
-                            <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value=".5"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
+                        <Button Grid.Column="3" Command="{Binding AddComponentCommand}"
+                                Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None" VerticalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value=".5"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Agregar" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            </StackPanel>
                         </Button>
                     </Grid>
 
                     <!-- Related Products Grid -->
-                    <dxg:GridControl Grid.Row="1" Margin="0,8,0,0"
+                    <dxg:GridControl Grid.Row="2" Margin="0,8,0,0"
                                      EnableSmartColumnsGeneration="True"
                                      ItemsSource="{Binding Components, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      AutoGenerateColumns="None"
@@ -339,7 +336,7 @@
 
             <!-- Tab 4: Otros datos -->
             <dx:DXTabItem Header="Otros datos">
-                <Grid Margin="10">
+                <Grid Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>

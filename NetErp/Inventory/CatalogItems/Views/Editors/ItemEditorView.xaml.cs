@@ -17,5 +17,13 @@ namespace NetErp.Inventory.CatalogItems.Views.Editors
                 Dispatcher.BeginInvoke(() => NameTextEdit.Focus(), DispatcherPriority.Render);
             }
         }
+
+        private void OnComponentQuantityIsEnabledChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is true)
+            {
+                Dispatcher.BeginInvoke(() => ComponentQuantitySpinEdit.Focus(), DispatcherPriority.Render);
+            }
+        }
     }
 }

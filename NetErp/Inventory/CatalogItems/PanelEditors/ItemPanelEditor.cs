@@ -2,6 +2,7 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
+using DevExpress.Xpf.Core;
 using Force.DeepCloner;
 using Microsoft.Win32;
 using Models.Books;
@@ -19,6 +20,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using static Models.Global.GraphQLResponseTypes;
@@ -215,71 +217,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         #region ComboBox Selection Properties
 
-        private int _measurementUnitId;
-        public int MeasurementUnitId
-        {
-            get => _measurementUnitId;
-            set
-            {
-                if (_measurementUnitId != value)
-                {
-                    _measurementUnitId = value;
-                    NotifyOfPropertyChange(nameof(MeasurementUnitId));
-                    this.TrackChange(nameof(MeasurementUnitId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _brandId;
-        public int BrandId
-        {
-            get => _brandId;
-            set
-            {
-                if (_brandId != value)
-                {
-                    _brandId = value;
-                    NotifyOfPropertyChange(nameof(BrandId));
-                    this.TrackChange(nameof(BrandId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _accountingGroupId;
-        public int AccountingGroupId
-        {
-            get => _accountingGroupId;
-            set
-            {
-                if (_accountingGroupId != value)
-                {
-                    _accountingGroupId = value;
-                    NotifyOfPropertyChange(nameof(AccountingGroupId));
-                    this.TrackChange(nameof(AccountingGroupId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _sizeCategoryId;
-        public int SizeCategoryId
-        {
-            get => _sizeCategoryId;
-            set
-            {
-                if (_sizeCategoryId != value)
-                {
-                    _sizeCategoryId = value;
-                    NotifyOfPropertyChange(nameof(SizeCategoryId));
-                    this.TrackChange(nameof(SizeCategoryId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
         private MeasurementUnitDTO _selectedMeasurementUnit;
+        [ExpandoPath("measurementUnitId", SerializeAsId = true)]
         public MeasurementUnitDTO SelectedMeasurementUnit
         {
             get => _selectedMeasurementUnit;
@@ -289,7 +228,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedMeasurementUnit = value;
                     NotifyOfPropertyChange(nameof(SelectedMeasurementUnit));
-                    if (value != null) MeasurementUnitId = value.Id;
+                    this.TrackChange(nameof(SelectedMeasurementUnit), value);
                     ValidateMeasurementUnit();
                     MasterContext.RefreshCanSave();
                 }
@@ -297,6 +236,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         }
 
         private ItemBrandDTO _selectedBrand;
+        [ExpandoPath("brandId", SerializeAsId = true)]
         public ItemBrandDTO SelectedBrand
         {
             get => _selectedBrand;
@@ -306,12 +246,14 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedBrand = value;
                     NotifyOfPropertyChange(nameof(SelectedBrand));
-                    if (value != null) BrandId = value.Id;
+                    this.TrackChange(nameof(SelectedBrand), value);
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private AccountingGroupDTO _selectedAccountingGroup;
+        [ExpandoPath("accountingGroupId", SerializeAsId = true)]
         public AccountingGroupDTO SelectedAccountingGroup
         {
             get => _selectedAccountingGroup;
@@ -321,7 +263,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedAccountingGroup = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingGroup));
-                    if (value != null) AccountingGroupId = value.Id;
+                    this.TrackChange(nameof(SelectedAccountingGroup), value);
                     ValidateAccountingGroup();
                     MasterContext.RefreshCanSave();
                 }
@@ -329,6 +271,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         }
 
         private ItemSizeCategoryDTO _selectedSize;
+        [ExpandoPath("sizeCategoryId", SerializeAsId = true)]
         public ItemSizeCategoryDTO SelectedSize
         {
             get => _selectedSize;
@@ -338,7 +281,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedSize = value;
                     NotifyOfPropertyChange(nameof(SelectedSize));
-                    if (value != null) SizeCategoryId = value.Id;
+                    this.TrackChange(nameof(SelectedSize), value);
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
@@ -711,6 +655,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         {
             if (SelectedEanCode != null)
             {
+                if (ThemedMessageBox.Show("Atención!", $"¿Confirma que desea eliminar el código de barras: {SelectedEanCode}?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 EanCodes.Remove(SelectedEanCode);
             }
         }
@@ -873,6 +818,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         {
             if (SelectedComponent != null)
             {
+                if (ThemedMessageBox.Show("Atención!", $"¿Confirma que desea eliminar el producto relacionado: {SelectedComponent.Component?.Name}?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 Components.Remove(SelectedComponent);
             }
         }
@@ -910,6 +856,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             ComponentReference = ReturnedItemFromModal.Reference;
             ComponentCode = ReturnedItemFromModal.Code;
             ComponentAllowFraction = ReturnedItemFromModal.AllowFraction;
+            ComponentQuantityIsEnable = true;
         }
 
         #endregion
@@ -949,8 +896,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     HasComponents = !itemTypeDTO.StockControl;
                 }
             }
-            SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == 0);
-            SelectedSize = Sizes?.FirstOrDefault(x => x.Id == 0);
+            SelectedBrand = null;
+            SelectedSize = null;
 
             ComponentName = string.Empty;
             ComponentCode = string.Empty;
@@ -982,39 +929,21 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             SubCategoryId = itemDTO.SubCategory?.Id ?? 0;
 
             // ComboBox selections
-            if (itemDTO.Brand != null)
-            {
-                SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == itemDTO.Brand.Id);
-                BrandId = itemDTO.Brand.Id;
-            }
-            else
-            {
-                SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == 0);
-                BrandId = 0;
-            }
+            SelectedBrand = itemDTO.Brand != null
+                ? ItemBrands?.FirstOrDefault(x => x.Id == itemDTO.Brand.Id)
+                : null;
 
-            if (itemDTO.SizeCategory != null)
-            {
-                SelectedSize = Sizes?.FirstOrDefault(x => x.Id == itemDTO.SizeCategory.Id);
-                SizeCategoryId = itemDTO.SizeCategory.Id;
-            }
-            else
-            {
-                SelectedSize = Sizes?.FirstOrDefault(x => x.Id == 0);
-                SizeCategoryId = 0;
-            }
+            SelectedSize = itemDTO.SizeCategory != null
+                ? Sizes?.FirstOrDefault(x => x.Id == itemDTO.SizeCategory.Id)
+                : null;
 
-            if (itemDTO.MeasurementUnit != null)
-            {
-                SelectedMeasurementUnit = MeasurementUnits?.FirstOrDefault(x => x.Id == itemDTO.MeasurementUnit.Id);
-                MeasurementUnitId = itemDTO.MeasurementUnit.Id;
-            }
+            SelectedMeasurementUnit = itemDTO.MeasurementUnit != null
+                ? MeasurementUnits?.FirstOrDefault(x => x.Id == itemDTO.MeasurementUnit.Id)
+                : null;
 
-            if (itemDTO.AccountingGroup != null)
-            {
-                SelectedAccountingGroup = AccountingGroups?.FirstOrDefault(x => x.Id == itemDTO.AccountingGroup.Id);
-                AccountingGroupId = itemDTO.AccountingGroup.Id;
-            }
+            SelectedAccountingGroup = itemDTO.AccountingGroup != null
+                ? AccountingGroups?.FirstOrDefault(x => x.Id == itemDTO.AccountingGroup.Id)
+                : null;
 
             // Collections
             EanCodes = itemDTO.EanCodes != null
@@ -1073,10 +1002,10 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
             this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
             this.SeedValue(nameof(AiuBasedService), AiuBasedService);
-            this.SeedValue(nameof(MeasurementUnitId), MeasurementUnitId);
-            this.SeedValue(nameof(BrandId), BrandId);
-            this.SeedValue(nameof(AccountingGroupId), AccountingGroupId);
-            this.SeedValue(nameof(SizeCategoryId), SizeCategoryId);
+            this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
+            this.SeedValue(nameof(SelectedBrand), SelectedBrand);
+            this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
+            this.SeedValue(nameof(SelectedSize), SelectedSize);
             this.AcceptChanges();
         }
 
@@ -1090,8 +1019,10 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
             this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
             this.SeedValue(nameof(AiuBasedService), AiuBasedService);
-            this.SeedValue(nameof(MeasurementUnitId), MeasurementUnitId);
-            this.SeedValue(nameof(AccountingGroupId), AccountingGroupId);
+            this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
+            this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
+            this.SeedValue(nameof(SelectedBrand), SelectedBrand);
+            this.SeedValue(nameof(SelectedSize), SelectedSize);
             this.AcceptChanges();
         }
 
