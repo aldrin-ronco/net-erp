@@ -810,6 +810,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             if (e.PropertyName == nameof(CostCenterDTO.IsSelected))
             {
                 // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
+                this.TrackChange(nameof(SelectedCostCenterIds));
                 NotifyOfPropertyChange(() => CanSave);
             }
         }
@@ -828,6 +829,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 foreach (CostCenterDTO p in e.OldItems)
                     p.PropertyChanged -= CostCenter_PropertyChanged;
             }
+            this.TrackChange(nameof(SelectedCostCenterIds));
 
             NotifyOfPropertyChange(() => CanSave);
         }
