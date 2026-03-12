@@ -16,7 +16,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Nombre de la categoría" Grid.Row="0" Margin="5 5 0 5" FontWeight="Bold"/>
+            <TextBlock Text="Nombre de la categoría" Grid.Row="0" Margin="5 5 0 5"/>
             <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
                           CharacterCasing="Upper"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

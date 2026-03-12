@@ -573,6 +573,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     CanEdit = true;
                     IsNewRecord = false;
 
+                    if (CurrentPanelEditor is ItemPanelEditor itemEditor)
+                        itemEditor.SelectedTabIndex = 0;
                 }
             }
             finally
@@ -1363,47 +1365,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
             try
             {
-                IsBusy = true;
-                Refresh();
-
-                int id = itemDTO.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDiscontinueItem");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _itemService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea descontinuar el registro {itemDTO.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser descontinuado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
+                MessageBoxResult result = ThemedMessageBox.Show(
+                    title: "Confirme...",
+                    text: $"¿Confirma que desea descontinuar el registro {itemDTO.Name}?",
+                    messageBoxButtons: MessageBoxButton.YesNo,
+                    image: MessageBoxImage.Question);
+                if (result != MessageBoxResult.Yes) return;
 
                 IsBusy = true;
                 Refresh();
 
-                string deleteQuery = GetDeleteMutationQuery("deleteItem");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _itemService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
+                string query = GetDiscontinueItemQuery();
+                object variables = new { updateResponseId = itemDTO.Id, updateResponseData = new { isActive = false } };
+                var updateResult = await _itemService.UpdateAsync<UpsertResponseType<ItemGraphQLModel>>(query, variables);
 
-                if (!deleteResult.Success)
+                if (!updateResult.Success)
                 {
                     ThemedMessageBox.Show(
                         title: "Atención!",
-                        text: $"No se pudo descontinuar el registro.\n\n{deleteResult.Message}",
+                        text: $"No se pudo descontinuar el registro.\n\n{updateResult.Message}",
                         messageBoxButtons: MessageBoxButton.OK,
                         image: MessageBoxImage.Error);
                     return;
@@ -1412,7 +1392,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 SelectedItem = null;
                 CurrentPanelEditor = null;
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteResult });
+                var deleteMessage = new DeleteResponseType
+                {
+                    DeletedId = itemDTO.Id,
+                    Success = true,
+                    Message = updateResult.Message
+                };
+                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteMessage });
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1442,6 +1428,23 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
+        private static string GetDiscontinueItemQuery()
+        {
+            var fields = FieldSpec<UpsertResponseType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateItemInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateItem", parameters, fields, "UpdateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        }
+
         #endregion
 
         #region Search Products
@@ -1457,9 +1460,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             string fieldData2 = "Name";
             string fieldData3 = "Reference";
 
+            dynamic variables = new ExpandoObject();
+            variables.pageResponseFilters = new ExpandoObject();
+            variables.pageResponseFilters.IsActive = true;
+
             var viewModel = new SearchWithThreeColumnsGridViewModel<ItemGraphQLModel>(
                 query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3,
-                null, SearchWithThreeColumnsGridMessageToken.SearchProduct, _dialogService);
+                variables, SearchWithThreeColumnsGridMessageToken.SearchProduct, _dialogService);
 
             await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
         }
@@ -1945,6 +1952,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 variables.PageResponsePagination.PageSize = -1;
                 variables.PageResponseFilters = new ExpandoObject();
                 variables.PageResponseFilters.SubCategoryId = itemSubCategory.Id;
+                variables.PageResponseFilters.IsActive = true;
 
                 var result = await _itemService.GetPageAsync(query, variables);
                 Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(result.Entries);
