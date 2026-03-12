@@ -28,11 +28,13 @@
             <TextBlock Text="Nombre" Grid.Row="0" Margin="5 5 0 5"/>
             <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
                           CharacterCasing="Upper"
+                          MaxLength="{Binding NameMaxLength}"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Stretch"/>
 
             <TextBlock Text="Nombre corto (1 caracter)" Grid.Row="2" Margin="5 5 0 5"/>
-            <dxe:TextEdit Grid.Row="3" Margin="5 0 0 5" MaxLength="1"
+            <dxe:TextEdit Grid.Row="3" Margin="5 0 0 5"
+                          MaxLength="{Binding PrefixCharMaxLength}"
                           CharacterCasing="Upper"
                           Text="{Binding PrefixChar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Left" Width="50"/>

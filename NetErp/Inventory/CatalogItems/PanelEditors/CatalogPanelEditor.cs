@@ -17,6 +17,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         #region Fields
 
         private readonly IRepository<CatalogGraphQLModel> _catalogService;
+        private readonly Helpers.Cache.StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -24,15 +25,20 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         public CatalogPanelEditor(
             CatalogRootMasterViewModel masterContext,
-            IRepository<CatalogGraphQLModel> catalogService)
+            IRepository<CatalogGraphQLModel> catalogService,
+            Helpers.Cache.StringLengthCache stringLengthCache)
             : base(masterContext)
         {
             _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
         }
 
         #endregion
 
         #region Properties
+
+        // MaxLength properties from StringLengthCache
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<CatalogGraphQLModel>(nameof(Name));
 
         private int _id;
         public int Id
