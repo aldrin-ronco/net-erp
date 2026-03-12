@@ -326,13 +326,13 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = MeasurementUnitId;
                 return await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
@@ -348,7 +348,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
                 .Create()
@@ -368,9 +368,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateMeasurementUnitInput!");
             var fragment = new GraphQLQueryFragment("createMeasurementUnit", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
                 .Create()
@@ -394,7 +394,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateMeasurementUnit", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 

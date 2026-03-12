@@ -13,6 +13,7 @@ using Models.Login;
 using Models.Global;
 using Common.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 
 namespace NetErp.Global.Shell.ViewModels
 {
@@ -26,6 +27,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly ISQLiteEmailStorageService _emailStorageService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
+        private readonly IRepository<GlobalConfigGraphQLModel> _globalConfigService;
         private readonly IEnumerable<IEntityCache> _entityCaches;
 
         private MainMenuViewModel? _mainMenuViewModel;
@@ -71,6 +73,7 @@ namespace NetErp.Global.Shell.ViewModels
             ISQLiteEmailStorageService emailStorageService,
             IRepository<CompanyGraphQLModel> companyService,
             IRepository<CountryGraphQLModel> countryService,
+            IRepository<GlobalConfigGraphQLModel> globalConfigService,
             IEnumerable<IEntityCache> entityCaches)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -81,6 +84,7 @@ namespace NetErp.Global.Shell.ViewModels
             _emailStorageService = emailStorageService ?? throw new ArgumentNullException(nameof(emailStorageService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
+            _globalConfigService = globalConfigService ?? throw new ArgumentNullException(nameof(globalConfigService));
             _entityCaches = entityCaches ?? throw new ArgumentNullException(nameof(entityCaches));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
@@ -127,7 +131,8 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(CompanySelectedMessage message, CancellationToken cancellationToken)
         {
-            // Empresa seleccionada - navegar al MainMenu
+            // Empresa seleccionada - cargar configuración global AWS y navegar al MainMenu
+            await LoadGlobalAwsConfigAsync();
             // Los caches individuales se cargan bajo demanda (lazy loading) via EnsureLoadedAsync()
             await ActivateItemAsync(MainMenuViewModel, cancellationToken);
         }
@@ -138,6 +143,7 @@ namespace NetErp.Global.Shell.ViewModels
             ClearAllCaches();
             _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
+            SessionInfo.DefaultAwsS3Config = null;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -149,6 +155,7 @@ namespace NetErp.Global.Shell.ViewModels
             ClearAllCaches();
             _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
+            SessionInfo.DefaultAwsS3Config = null;
 
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
@@ -157,6 +164,25 @@ namespace NetErp.Global.Shell.ViewModels
                 companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }
+        }
+
+        private async Task LoadGlobalAwsConfigAsync()
+        {
+            var fields = FieldSpec<GlobalConfigGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Select(f => f.DefaultAwsS3Config, nested: aws => aws
+                    .Field(a => a.Id)
+                    .Field(a => a.AccessKey)
+                    .Field(a => a.SecretKey)
+                    .Field(a => a.Region)
+                    .Field(a => a.Description))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("globalConfig", [], fields, "SingleItemResponse");
+            var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
+            var config = await _globalConfigService.GetSingleItemAsync(query, new { });
+            if (config is not null) SessionInfo.DefaultAwsS3Config = config.DefaultAwsS3Config;
         }
 
         private void ClearAllCaches()

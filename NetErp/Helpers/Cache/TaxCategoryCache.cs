@@ -89,6 +89,7 @@ namespace NetErp.Helpers.Cache
                   .Field(e => e.Id)
                   .Field(e => e.Name)
                   .Field(e => e.Prefix)
+               .Field(e => e.UsesPercentage)
                .Field(e => e.GeneratedTaxRefundAccountIsRequired)
                .Field(e => e.GeneratedTaxAccountIsRequired)
                .Field(e => e.DeductibleTaxRefundAccountIsRequired)

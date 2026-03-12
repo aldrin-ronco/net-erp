@@ -288,7 +288,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 {
                     variables.pageResponseFilters.type = SelectedType;
                 }
-                string query = GetLoadTreasuryConceptQuery();
+                string query = _loadTreasuryConceptQuery.Value;
 
                 PageType<TreasuryConceptGraphQLModel> result = await _conceptService.GetPageAsync(query, variables);
                 TotalCount = result.TotalEntries;
@@ -310,10 +310,9 @@ namespace NetErp.Treasury.Concept.ViewModels
 
             
         }
-        public string GetLoadTreasuryConceptQuery()
+        private static readonly Lazy<string> _loadTreasuryConceptQuery = new(() =>
         {
-                                     
-            var treasuryConceptFields = FieldSpec<PageType<TreasuryConceptGraphQLModel>>
+            var fields = FieldSpec<PageType<TreasuryConceptGraphQLModel>>
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
@@ -322,23 +321,19 @@ namespace NetErp.Treasury.Concept.ViewModels
                     .Field(e => e.Margin)
                     .Field(e => e.AllowMargin)
                     .Field(e => e.MarginBasis)
-                    .Select(c => c.AccountingAccount, map => map 
+                    .Select(c => c.AccountingAccount, map => map
                         .Field(f => f.Id)
                         .Field(f => f.Code)
-                        .Field(f => f.Name)
-                    )
-                    )
+                        .Field(f => f.Name)))
                 .Build();
 
-            var treasuryConceptParameters = new GraphQLQueryParameter("filters", "TreasuryConceptFilters");
-            var treasuryConceptPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var treasuryConceptFragment = new GraphQLQueryFragment("treasuryConceptsPage", [treasuryConceptParameters, treasuryConceptPagParameters], treasuryConceptFields, "PageResponse");
+            var filtersParam = new GraphQLQueryParameter("filters", "TreasuryConceptFilters");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("treasuryConceptsPage", [filtersParam, paginationParam], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            var builder = new GraphQLQueryBuilder([treasuryConceptFragment]);
-
-            return builder.GetQuery();
-        }
-        public string GetCanDeleteTreasuryConceptQuery()
+        private static readonly Lazy<string> _canDeleteTreasuryConceptQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -347,14 +342,11 @@ namespace NetErp.Treasury.Concept.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-
             var fragment = new GraphQLQueryFragment("canDeleteTreasuryConcept", [parameter], fields, alias: "CanDeleteResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-        public string GetDeleteTreasuryConceptQuery()
+        private static readonly Lazy<string> _deleteTreasuryConceptQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -364,19 +356,15 @@ namespace NetErp.Treasury.Concept.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("id", "ID!");
-
             var fragment = new GraphQLQueryFragment("deleteTreasuryConcept", [parameter], fields, alias: "DeleteResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
         public async Task<DeleteResponseType> ExecuteDeleteTreasuryConceptAsync(int id)
         {
             try
             {
 
-                string query = GetDeleteTreasuryConceptQuery();
+                string query = _deleteTreasuryConceptQuery.Value;
 
                 object variables = new
                 {
@@ -400,7 +388,7 @@ namespace NetErp.Treasury.Concept.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
 
-                string query = GetCanDeleteTreasuryConceptQuery();
+                string query = _canDeleteTreasuryConceptQuery.Value;
 
                 object variables = new { canDeleteResponseId = SelectedItem.Id };
 

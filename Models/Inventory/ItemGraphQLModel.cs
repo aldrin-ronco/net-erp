@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Inventory
 {
@@ -39,17 +40,17 @@ namespace Models.Inventory
 
     public class ItemCreateMessage
     {
-        public ItemGraphQLModel CreatedItem { get; set; }
+        public UpsertResponseType<ItemGraphQLModel> CreatedItem { get; set; } = new();
     }
 
     public class ItemUpdateMessage
     {
-        public ItemGraphQLModel UpdatedItem { get; set; }
+        public UpsertResponseType<ItemGraphQLModel> UpdatedItem { get; set; } = new();
     }
 
     public class ItemDeleteMessage
     {
-        public ItemGraphQLModel DeletedItem { get; set; }
+        public DeleteResponseType DeletedItem { get; set; } = new();
     }
 
 

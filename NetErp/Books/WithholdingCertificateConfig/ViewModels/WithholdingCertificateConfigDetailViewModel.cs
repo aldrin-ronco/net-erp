@@ -1,13 +1,11 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.Native;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Global.CostCenters.DTO;
@@ -25,245 +23,31 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
     public class WithholdingCertificateConfigDetailViewModel : Screen, INotifyDataErrorInfo
     {
+        #region Dependencies
 
         private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
-        private readonly CtasRestVtasAccountingAccountGroupCache _ctasRestVtasAccountingAccountGroupCache;
+        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
+        private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
 
-        public WithholdingCertificateConfigDetailViewModel(WithholdingCertificateConfigViewModel context,  IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService, CtasRestVtasAccountingAccountGroupCache ctasRestVtasAccountingAccountGroupCache, CostCenterCache costCenterCache)
-        {
-            _errors = new Dictionary<string, List<string>>();
-            Context = context;
-            _ctasRestVtasAccountingAccountGroupCache = ctasRestVtasAccountingAccountGroupCache ?? throw new ArgumentNullException(nameof(ctasRestVtasAccountingAccountGroupCache));
-            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
-            _withholdingCertificateConfigService = withholdingCertificateConfigService ?? throw new ArgumentNullException(nameof(withholdingCertificateConfigService));
-       
+        public WithholdingCertificateConfigViewModel Context { get; set; }
 
-            Context.EventAggregator.SubscribeOnUIThread(this);
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-           // joinable.Run(async () => await InitializeAsync());
+        #endregion
 
-        }
-        #region Propiedades
-        // Context
-        private WithholdingCertificateConfigViewModel _context;
-        public WithholdingCertificateConfigViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
+        #region State
 
-        // Identity
-        private WithholdingCertificateConfigGraphQLModel? _entity;
-        public WithholdingCertificateConfigGraphQLModel? Entity
-        {
-            get { return _entity; }
-            set {
-                if (_entity != value)
-                {
-                    _entity = value;
-                    NotifyOfPropertyChange(nameof(_entity));
-                }
-            }
-        }
-        [ExpandoPath("AccountingAccountIds")]
-        public List<int> AccountingAccountIds => AccountingAccounts.Where(f => f.IsChecked == true).Select(x => x.Id).ToList();
-
-        
-        private string _description;
-        public string Description
-        {
-            get { return _description; }
-            set
-            {
-                if (_description != value)
-                {
-                    _description = value;
-                    NotifyOfPropertyChange(nameof(Description));
-                    this.TrackChange(nameof(Description));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(Description), value);
-                }
-            }
-        }
-        private string _name;
-
-        public string Name
-        {
-            get { return _name; }
-            set
-            {
-                if (_name != value)
-                {
-                    _name = value;
-                    NotifyOfPropertyChange(nameof(Name));
-                    this.TrackChange(nameof(Name));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    ValidateProperty(nameof(Name), value);
-                }
-            }
-        }
-
-        Dictionary<string, List<string>> _errors;
-        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
-        public bool IsNewRecord
-        {
-            get { return _isNewRecord; }
-            
-        }
-        protected override void OnViewReady(object view)
-        {
-            base.OnViewReady(view);
-            this.SetFocus(() => Name);
-            ValidateProperties();
-            this.AcceptChanges();
-        }
-        
-        public bool CanSave
-        {
-            get
-            {
-              
-                if (string.IsNullOrEmpty(Name)) return false;
-
-                // Debe haber ingresado una descripcion
-                if (string.IsNullOrEmpty(Description)) return false;
-
-                if (CostCenterId == null || CostCenterId == 0) return false;
-
-                if (!AccountingAccounts.Any(x => x.IsChecked == true)) return false;
-                if (_errors.Count > 0 || !this.HasChanges()) { return false; }
-               
-                // Debe haber ingresado un nombre
-                return true;
-            }
-        }
-        public bool HasErrors => _errors.Count > 0;
-
-        public IEnumerable GetErrors(string propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
-            return _errors[propertyName];
-        }
-        private CaptureTypeEnum _selectedCaptureType;
-
-
-        private int _costCenterId;
-        public int CostCenterId
-        {
-            get { return _costCenterId; }
-            set
-            {
-                if (_costCenterId != value)
-                {
-                    _costCenterId = value;
-                    NotifyOfPropertyChange(nameof(CostCenterId));
-                    this.TrackChange(nameof(CostCenterId));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-        private ObservableCollection<CostCenterDTO> _costCenters;
-
-
-        private ObservableCollection<AccountingAccountGroupDetailDTO> _accountingAccounts;
-
-        public ObservableCollection<CostCenterDTO> CostCenters
-        {
-            get { return _costCenters; }
-            set
-            {
-                if (_costCenters != value)
-                {
-                    _costCenters = value;
-                    NotifyOfPropertyChange(nameof(CostCenters));
-                }
-            }
-        }
-        public bool WithholdingCertificateConfigComboBoxIsEnabled
-        {
-            get
-            {
-                return true;
-            }
-        }
-        public ObservableCollection<AccountingAccountGroupDetailDTO> AccountingAccounts
-        {
-            get { return _accountingAccounts; }
-            set
-            {
-                if (_accountingAccounts != value)
-                {
-                    _accountingAccounts = value;
-                   
-                    NotifyOfPropertyChange(nameof(AccountingAccounts));
-                    ListenAccountingAccountChek();
-
-                }
-            }
-        }
-        private void ListenAccountingAccountChek()
-        {
-            foreach (var account in AccountingAccounts)
-            {
-                account.PropertyChanged += AccountingAccount_PropertyChanged;
-            }
-
-            // Escuchar cuando se agregan nuevos elementos
-            AccountingAccounts.CollectionChanged += AccountingAccount_CollectionChanged;
-        }
-        private void AccountingAccount_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(AccountingAccountGroupDetailDTO.IsChecked))
-            {
-                // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
-                NotifyOfPropertyChange(() => AccountingAccountIds);
-                this.TrackChange(nameof(AccountingAccountIds));
-
-                NotifyOfPropertyChange(() => CanSave);
-               
-            }
-        }
-        private void AccountingAccount_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            // Escuchar cambios de los nuevos elementos
-            if (e.NewItems != null)
-            {
-                foreach (AccountingAccountGroupDetailDTO p in e.NewItems)
-                    p.PropertyChanged += AccountingAccount_PropertyChanged;
-            }
-
-            // Opcional: dejar de escuchar eliminados
-            if (e.OldItems != null)
-            {
-                foreach (AccountingAccountGroupDetailDTO p in e.OldItems)
-                    p.PropertyChanged -= AccountingAccount_PropertyChanged;
-            }
-
-            NotifyOfPropertyChange(() => CanSave);
-        }
+        public bool IsNewRecord => Entity == null || Entity.Id == 0;
 
         private bool _isBusy;
-
         public bool IsBusy
         {
-            get { return _isBusy; }
+            get => _isBusy;
             set
             {
                 if (_isBusy != value)
@@ -273,320 +57,190 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
             }
         }
-        public bool CaptureInfoAsPN => true;
-        #endregion
-        #region command
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
+
+        private WithholdingCertificateConfigGraphQLModel? _entity;
+        public WithholdingCertificateConfigGraphQLModel? Entity
         {
-            get
+            get => _entity;
+            set
             {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
-            }
-        }
-        private ICommand _saveCommand;
-
-        public ICommand SaveCommand
-        {
-            get
-            {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync);
-                return _saveCommand;
-            }
-        }
-
-        public void GoBack(object p)
-        {
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
-            CleanUpControls();
-        }
-        public void CleanUpControls()
-        {
-            Name = "";
-            Description = "";
-            CostCenterId = 0;
-        }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-        #endregion
-
-        public async Task InitializeAsync()
-        {
-            await Task.WhenAll(
-                  _ctasRestVtasAccountingAccountGroupCache.EnsureLoadedAsync(),
-                  _costCenterCache.EnsureLoadedAsync()
-                  );
-            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items);
-            CostCenters.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            CostCenterId = Entity?.CostCenter?.Id ?? 0;
-           
-            //Cuentas
-            IEnumerable<AccountingAccountGroupGraphQLModel> source = _ctasRestVtasAccountingAccountGroupCache.Items; //result.AccountingAccountGroups.Entries;
-            ObservableCollection<AccountingAccountGroupDetailDTO> acgd = Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(source.First().Accounts);
-            foreach (var accountingAccount in acgd)
-            {
-                accountingAccount.Context = this;
-                accountingAccount.IsChecked = Entity?.AccountingAccounts?.FirstOrDefault(x => x.Id == accountingAccount.Id) != null ? true : false;
-            }
-
-            AccountingAccounts = [.. acgd];
-            this.AcceptChanges();
-
-        }
-
-        public async Task SaveAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> result = await ExecuteSaveAsync();
-                if (!result.Success)
+                if (_entity != value)
                 {
-                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
-                    return;
+                    _entity = value;
+                    NotifyOfPropertyChange(nameof(Entity));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
-                    IsNewRecord
-                        ? new WithholdingCertificateConfigCreateMessage() { CreatedWithholdingCertificateConfig = result }
-                        : new WithholdingCertificateConfigUpdateMessage() { UpdatedWithholdingCertificateConfig = result }
-                );
-
-                // Context.EnableOnViewReady = false;
-                await Context.ActivateMasterViewModelAsync();
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-           
-           
-        }
-        public async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
-        {
-            dynamic variables = new ExpandoObject();
-          
-
-            if (IsNewRecord)
-            {
-
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                string query = GetCreateQuery();
-                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> WithholdingCertificateCreated = await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
-                return WithholdingCertificateCreated;
-            }
-            else
-            {
-                string query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Entity.Id;
-                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> updatedWithholdingCertificate = await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
-                return updatedWithholdingCertificate;
-            }
-           
-        }
-        public string GetCreateQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
-                   .Field(e => e.Id)
-                   .Field(e => e.Description)
-                   .Field(e => e.Name)
-                    
-
-                    .Select(e => e.CostCenter, cos => cos
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                    
-
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("input", "CreateWithholdingCertificateInput!");
-
-            var fragment = new GraphQLQueryFragment("createWithholdingCertificate", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-        public string GetUpdateQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
-                    .Field(e => e.Id)
-                   .Field(e => e.Description)
-                   .Field(e => e.Name)
-                   
-
-                    .Select(e => e.CostCenter, cos => cos
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                   
-
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateWithholdingCertificateInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateWithholdingCertificate", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-      
-       
-       
-        public async Task<WithholdingCertificateConfigGraphQLModel> LoadDataForEditAsync(int id)
-        {
-            try
-            {
-                string query = GetLoadSByIdQuery();
-
-                dynamic variables = new ExpandoObject();
-
-
-                variables.singleItemResponseId = id;
-
-                var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
-
-                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
-                PopulateFromTax(certificate);
-
-                return certificate;
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
             }
         }
-        public void PopulateFromTax(WithholdingCertificateConfigGraphQLModel entity)
+
+        #endregion
+
+        #region Form Properties
+
+        private string _name = string.Empty;
+        public string Name
         {
-            // Propiedades básicas del tax
-            Name = entity.Name;
-            Description = entity.Description;
-            CostCenterId = entity.CostCenter.Id;
-            Entity = entity;
-            this.AcceptChanges();
-
-
-
-        }
-        public string GetLoadSByIdQuery()
-        {
-            var singleIdFields = FieldSpec<WithholdingCertificateConfigGraphQLModel>
-             .Create()
-
-                 .Field(e => e.Id)
-                     
-                  .Field(e => e.Description)
-                  .Field(e => e.Name)
-                  .SelectList(e => e.AccountingAccounts, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-
-                  )
-                  .Select(e => e.CostCenter, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-                      .Field(c => c.Address)
-                      .Select(e => e.City, cit => cit
-                              .Field(d => d.Id)
-                              .Field(d => d.Name)
-                              .Select(d => d.Department, dep => dep
-                              .Field(d => d.Id)
-                              .Field(d => d.Name)
-                              )
-                      )
-
-
-                  )
-              
-
-             .Build();
-            var singleIdParameter = new GraphQLQueryParameter("id", "ID!");
-
-            var singleIdFragment = new GraphQLQueryFragment("withholdingCertificate", [singleIdParameter], singleIdFields, "SingleItemResponse");
-
-            var builder = new GraphQLQueryBuilder([singleIdFragment]);
-
-            return builder.GetQuery();
-
-        }
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
+            get => _name;
+            set
             {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
+                if (_name != value)
+                {
+                    _name = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
+                    this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
+        }
+
+        private string _description = string.Empty;
+        public string Description
+        {
+            get => _description;
+            set
+            {
+                if (_description != value)
+                {
+                    _description = value;
+                    NotifyOfPropertyChange(nameof(Description));
+                    ValidateProperty(nameof(Description), value);
+                    this.TrackChange(nameof(Description));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _costCenterId;
+        public int? CostCenterId
+        {
+            get => _costCenterId;
+            set
+            {
+                if (_costCenterId != value)
+                {
+                    _costCenterId = value;
+                    NotifyOfPropertyChange(nameof(CostCenterId));
+                    this.TrackChange(nameof(CostCenterId));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private ObservableCollection<CostCenterDTO> _costCenters = [];
+        public ObservableCollection<CostCenterDTO> CostCenters
+        {
+            get => _costCenters;
+            set
+            {
+                if (_costCenters != value)
+                {
+                    _costCenters = value;
+                    NotifyOfPropertyChange(nameof(CostCenters));
+                }
+            }
+        }
+
+        private ObservableCollection<AccountingAccountGroupGraphQLModel> _accountingAccountGroups = [];
+        public ObservableCollection<AccountingAccountGroupGraphQLModel> AccountingAccountGroups
+        {
+            get => _accountingAccountGroups;
+            set
+            {
+                if (_accountingAccountGroups != value)
+                {
+                    _accountingAccountGroups = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccountGroups));
+                }
+            }
+        }
+
+        private int? _selectedAccountingAccountGroupId;
+        public int? SelectedAccountingAccountGroupId
+        {
+            get => _selectedAccountingAccountGroupId;
+            set
+            {
+                if (_selectedAccountingAccountGroupId != value)
+                {
+                    // Si hay cuentas marcadas, confirmar antes de cambiar
+                    if (AccountingAccounts.Any(a => a.IsChecked == true))
+                    {
+                        var result = ThemedMessageBox.Show("Atención !",
+                            "Al cambiar el grupo se perderá la selección de cuentas actual. ¿Desea continuar?",
+                            MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                        if (result == MessageBoxResult.No)
+                        {
+                            // Forzar re-notificación para revertir el combo al valor anterior
+                            NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
+                            return;
+                        }
+                    }
+
+                    _selectedAccountingAccountGroupId = value;
+                    NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
+                    NotifyOfPropertyChange(nameof(AccountingAccountGroupId));
+                    this.TrackChange(nameof(AccountingAccountGroupId));
+                    if (value is > 0) _ = LoadGroupAccountsAsync(value.Value, restoreSelection: false);
+                    else
+                    {
+                        AccountingAccounts = [];
+                        _isAllChecked = false;
+                        NotifyOfPropertyChange(nameof(IsAllChecked));
+                        NotifyOfPropertyChange(nameof(AccountingAccountIds));
+                        NotifyOfPropertyChange(nameof(CanSave));
+                    }
+                }
+            }
+        }
+
+        [ExpandoPath("AccountingAccountGroupId")]
+        public int? AccountingAccountGroupId => SelectedAccountingAccountGroupId;
+
+        [ExpandoPath("AccountingAccountIds")]
+        public List<int> AccountingAccountIds => AccountingAccounts
+            .Where(f => f.IsChecked == true)
+            .Select(x => x.Id)
+            .ToList();
+
+        private ObservableCollection<AccountingAccountGroupDetailDTO> _accountingAccounts = [];
+        public ObservableCollection<AccountingAccountGroupDetailDTO> AccountingAccounts
+        {
+            get => _accountingAccounts;
+            set
+            {
+                if (_accountingAccounts != value)
+                {
+                    UnsubscribeAccountingAccountEvents();
+                    _accountingAccounts = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccounts));
+                    SubscribeAccountingAccountEvents();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _errors = new();
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
+            return _errors[propertyName];
         }
 
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value)  ) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                    case nameof(Description):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción no puede estar vacío");
-                        break;
-                   
-                        
-                }
-             }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
-       
 
-        private void ValidateProperties()
-        {
-            ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Description), Description);
-           
-        }
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
@@ -598,12 +252,484 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    break;
+                case nameof(Description):
+                    if (string.IsNullOrEmpty(Description)) AddError(propertyName, "La descripción no puede estar vacía");
+                    break;
+            }
+        }
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Description), Description);
+        }
+
+        #endregion
+
+        #region Focus
+
+        private bool _nameIsFocused;
+        public bool NameIsFocused
+        {
+            get => _nameIsFocused;
+            set
+            {
+                if (_nameIsFocused != value)
+                {
+                    _nameIsFocused = value;
+                    NotifyOfPropertyChange(nameof(NameIsFocused));
+                }
+            }
+        }
+
+        private void SetFocusOnName()
+        {
+            NameIsFocused = false;
+            NameIsFocused = true;
+        }
+
+        #endregion
+
+        #region Button States
+
+        private bool _isAllChecked;
+        public bool IsAllChecked
+        {
+            get => _isAllChecked;
+            set
+            {
+                if (_isAllChecked != value)
+                {
+                    _isAllChecked = value;
+                    NotifyOfPropertyChange(nameof(IsAllChecked));
+                    foreach (var account in AccountingAccounts) account.IsChecked = value;
+                }
+            }
+        }
+
+        public bool CanSave => !HasErrors && this.HasChanges()
+                               && !string.IsNullOrEmpty(Name)
+                               && !string.IsNullOrEmpty(Description)
+                               && CostCenterId is > 0
+                               && SelectedAccountingAccountGroupId is > 0
+                               && AccountingAccounts.Any(x => x.IsChecked == true);
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand
+        {
+            get
+            {
+                _saveCommand ??= new AsyncCommand(SaveAsync);
+                return _saveCommand;
+            }
+        }
+
+        private ICommand? _goBackCommand;
+        public ICommand GoBackCommand
+        {
+            get
+            {
+                _goBackCommand ??= new AsyncCommand(GoBackAsync);
+                return _goBackCommand;
+            }
+        }
+
+        #endregion
+
+        #region Constructor
+
+        private int? _editId;
+
+        public WithholdingCertificateConfigDetailViewModel(
+            WithholdingCertificateConfigViewModel context,
+            IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService,
+            AccountingAccountGroupCache accountingAccountGroupCache,
+            CostCenterCache costCenterCache,
+            int? editId = null)
+        {
+            Context = context;
+            _withholdingCertificateConfigService = withholdingCertificateConfigService;
+            _accountingAccountGroupCache = accountingAccountGroupCache;
+            _accountingAccountGroupService = IoC.Get<IRepository<AccountingAccountGroupGraphQLModel>>();
+            _costCenterCache = costCenterCache;
+            _editId = editId;
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override async void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            try
+            {
+                IsBusy = true;
+                if (_editId.HasValue)
+                    await LoadDataForEditAsync(_editId.Value);
+                await InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.OnViewReady \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            ValidateProperties();
+            this.AcceptChanges();
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(SetFocusOnName),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-
-            // Desconectar eventos para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
+            UnsubscribeAccountingAccountEvents();
             return base.OnDeactivateAsync(close, cancellationToken);
         }
+
+        #endregion
+
+        #region Initialize
+
+        public async Task InitializeAsync()
+        {
+            await _costCenterCache.EnsureLoadedAsync();
+
+            CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items);
+            CostCenterId = Entity?.CostCenter?.Id;
+
+            await LoadAccountingAccountGroupsAsync();
+
+            // Cargar grupo desde la entidad (el campo accountingAccountGroup viene directamente del API)
+            if (Entity?.AccountingAccountGroup is { Id: > 0 } group)
+            {
+                _selectedAccountingAccountGroupId = group.Id;
+                NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
+                await LoadGroupAccountsAsync(group.Id);
+            }
+        }
+
+        private async Task LoadAccountingAccountGroupsAsync()
+        {
+            try
+            {
+                await _accountingAccountGroupCache.EnsureLoadedAsync();
+                AccountingAccountGroups = new ObservableCollection<AccountingAccountGroupGraphQLModel>(_accountingAccountGroupCache.Items);
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+
+        private async Task LoadGroupAccountsAsync(int groupId, bool restoreSelection = true)
+        {
+            try
+            {
+                IsBusy = true;
+
+                string query = _loadGroupByIdQuery.Value;
+                dynamic variables = new ExpandoObject();
+                variables.singleItemResponseId = groupId;
+
+                var group = await _accountingAccountGroupService.FindByIdAsync(query, variables);
+
+                ObservableCollection<AccountingAccountGroupDetailDTO> acgd =
+                    Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(group.Accounts);
+
+                foreach (var account in acgd)
+                {
+                    account.Context = this;
+                    account.IsChecked = restoreSelection && Entity?.AccountingAccounts?.Any(x => x.Id == account.Id) == true;
+                }
+
+                AccountingAccounts = [.. acgd];
+                _isAllChecked = AccountingAccounts.Count > 0 && AccountingAccounts.All(a => a.IsChecked == true);
+                NotifyOfPropertyChange(nameof(IsAllChecked));
+                NotifyOfPropertyChange(nameof(AccountingAccountIds));
+                NotifyOfPropertyChange(nameof(CanSave));
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region Save / Cancel
+
+        public async Task SaveAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                Refresh();
+                UpsertResponseType<WithholdingCertificateConfigGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new WithholdingCertificateConfigCreateMessage { CreatedWithholdingCertificateConfig = result }
+                        : new WithholdingCertificateConfigUpdateMessage { UpdatedWithholdingCertificateConfig = result }
+                );
+
+                await Context.ActivateMasterViewModelAsync();
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!)!;
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            catch (Exception ex)
+            {
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
+        {
+            if (IsNewRecord)
+            {
+                string query = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+            }
+            else
+            {
+                string query = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity!.Id;
+                return await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+            }
+        }
+
+        public async Task GoBackAsync()
+        {
+            await Context.ActivateMasterViewModelAsync();
+        }
+
+        #endregion
+
+        #region Load for Edit
+
+        public async Task<WithholdingCertificateConfigGraphQLModel> LoadDataForEditAsync(int id)
+        {
+            string query = _loadByIdQuery.Value;
+            dynamic variables = new ExpandoObject();
+            variables.singleItemResponseId = id;
+
+            var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
+            PopulateFromEntity(certificate);
+            return certificate;
+        }
+
+        public void PopulateFromEntity(WithholdingCertificateConfigGraphQLModel entity)
+        {
+            Name = entity.Name;
+            Description = entity.Description;
+            CostCenterId = entity.CostCenter?.Id;
+            Entity = entity;
+            this.AcceptChanges();
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        private static readonly Lazy<string> _loadGroupByIdQuery = new(() =>
+        {
+            var fields = FieldSpec<AccountingAccountGroupGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Name)
+                .Field(e => e.Key)
+                .SelectList(e => e.Accounts, accounts => accounts
+                    .Field(a => a.Id)
+                    .Field(a => a.Code)
+                    .Field(a => a.Name)
+                    .Field(a => a.Nature))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("accountingAccountGroup", [parameter], fields, "SingleItemResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        {
+            var fields = FieldSpec<WithholdingCertificateConfigGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Name)
+                .Field(e => e.Description)
+                .Select(e => e.AccountingAccountGroup, group => group
+                    .Field(g => g.Id))
+                .SelectList(e => e.AccountingAccounts, accounts => accounts
+                    .Field(a => a.Id)
+                    .Field(a => a.Name))
+                .Select(e => e.CostCenter, cost => cost
+                    .Field(c => c.Id))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("withholdingCertificate", [parameter], fields, "SingleItemResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _createQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Description)
+                    .Select(e => e.CostCenter, cost => cost
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateWithholdingCertificateInput!");
+            var fragment = new GraphQLQueryFragment("createWithholdingCertificate", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
+
+        private static readonly Lazy<string> _updateQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "withholdingCertificate", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Description)
+                    .Select(e => e.CostCenter, cost => cost
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateWithholdingCertificateInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateWithholdingCertificate", parameters, fields, "UpdateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
+
+        #endregion
+
+        #region Accounting Account Event Subscriptions
+
+        private void SubscribeAccountingAccountEvents()
+        {
+            foreach (var account in _accountingAccounts)
+            {
+                account.PropertyChanged += AccountingAccount_PropertyChanged;
+            }
+            _accountingAccounts.CollectionChanged += AccountingAccounts_CollectionChanged;
+        }
+
+        private void UnsubscribeAccountingAccountEvents()
+        {
+            if (_accountingAccounts == null) return;
+            foreach (var account in _accountingAccounts)
+            {
+                account.PropertyChanged -= AccountingAccount_PropertyChanged;
+            }
+            _accountingAccounts.CollectionChanged -= AccountingAccounts_CollectionChanged;
+        }
+
+        private void AccountingAccount_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AccountingAccountGroupDetailDTO.IsChecked))
+            {
+                NotifyOfPropertyChange(nameof(AccountingAccountIds));
+                this.TrackChange(nameof(AccountingAccountIds));
+                NotifyOfPropertyChange(nameof(CanSave));
+                _isAllChecked = AccountingAccounts.Count > 0 && AccountingAccounts.All(a => a.IsChecked == true);
+                NotifyOfPropertyChange(nameof(IsAllChecked));
+            }
+        }
+
+        private void AccountingAccounts_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (AccountingAccountGroupDetailDTO item in e.NewItems)
+                    item.PropertyChanged += AccountingAccount_PropertyChanged;
+            }
+            if (e.OldItems != null)
+            {
+                foreach (AccountingAccountGroupDetailDTO item in e.OldItems)
+                    item.PropertyChanged -= AccountingAccount_PropertyChanged;
+            }
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        #endregion
     }
 }

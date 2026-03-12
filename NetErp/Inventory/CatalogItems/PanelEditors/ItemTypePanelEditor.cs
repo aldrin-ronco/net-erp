@@ -128,6 +128,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _catalogId = value;
                     NotifyOfPropertyChange(nameof(CatalogId));
+                    this.TrackChange(nameof(CatalogId));
                 }
             }
         }
@@ -143,6 +144,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     _defaultMeasurementUnitId = value;
                     NotifyOfPropertyChange(nameof(DefaultMeasurementUnitId));
                     this.TrackChange(nameof(DefaultMeasurementUnitId));
+                    ValidateDefaultMeasurementUnit();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -159,6 +161,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     _defaultAccountingGroupId = value;
                     NotifyOfPropertyChange(nameof(DefaultAccountingGroupId));
                     this.TrackChange(nameof(DefaultAccountingGroupId));
+                    ValidateDefaultAccountingGroup();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -207,7 +210,6 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             {
                 if (!IsEditing) return false;
                 if (HasErrors) return false;
-                if (DefaultMeasurementUnitId <= 0 || DefaultAccountingGroupId <= 0) return false;
                 if (!this.HasChanges()) return false;
                 return true;
             }
@@ -233,10 +235,26 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 AddError(nameof(PrefixChar), "El nombre corto debe ser exactamente un caracter");
         }
 
+        private void ValidateDefaultMeasurementUnit()
+        {
+            ClearErrors(nameof(SelectedMeasurementUnit));
+            if (DefaultMeasurementUnitId <= 0)
+                AddError(nameof(SelectedMeasurementUnit), "Debe seleccionar una unidad de medida");
+        }
+
+        private void ValidateDefaultAccountingGroup()
+        {
+            ClearErrors(nameof(SelectedAccountingGroup));
+            if (DefaultAccountingGroupId <= 0)
+                AddError(nameof(SelectedAccountingGroup), "Debe seleccionar un grupo contable");
+        }
+
         public override void ValidateAll()
         {
             ValidateName();
             ValidatePrefixChar();
+            ValidateDefaultMeasurementUnit();
+            ValidateDefaultAccountingGroup();
         }
 
         #endregion
@@ -300,6 +318,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(CatalogId), CatalogId);
             this.AcceptChanges();
         }
 
@@ -331,7 +350,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateItemTypeInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateItemTypeInput!");
             var fragment = new GraphQLQueryFragment("createItemType", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
@@ -359,7 +378,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             var parameters = new List<GraphQLQueryParameter>
             {
                 new("data", "UpdateItemTypeInput!"),
-                new("id", "Int!")
+                new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateItemType", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
@@ -373,8 +392,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             if (IsNewRecord)
             {
                 query = GetCreateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseData");
-                variables.createResponseData.catalogId = CatalogId;
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
@@ -393,12 +411,12 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemTypeCreateMessage { CreatedItemType = result.Entity });
+                    new ItemTypeCreateMessage { CreatedItemType = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemTypeUpdateMessage { UpdatedItemType = result.Entity });
+                    new ItemTypeUpdateMessage { UpdatedItemType = result });
             }
         }
 

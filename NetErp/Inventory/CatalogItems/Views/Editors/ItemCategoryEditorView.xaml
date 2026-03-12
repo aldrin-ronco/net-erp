@@ -9,13 +9,16 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}">
+        <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}"
+              FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}"
+              IsEnabledChanged="OnFormIsEnabledChanged">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Nombre de la categoría" Grid.Row="0" Margin="5 5 0 5" FontWeight="Bold"/>
-            <dxe:TextEdit Grid.Row="1" Margin="5 0 0 5"
+            <TextBlock Text="Nombre de la categoría" Grid.Row="0" Margin="5 5 0 5"/>
+            <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
+                          CharacterCasing="Upper"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           HorizontalAlignment="Stretch"/>
         </Grid>

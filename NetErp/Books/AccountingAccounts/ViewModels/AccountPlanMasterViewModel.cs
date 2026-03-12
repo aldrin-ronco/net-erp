@@ -418,7 +418,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
-        public string GetDeleteAccountingAccountQuery()
+        private static readonly Lazy<string> _deleteAccountingAccountQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
             .Create()
@@ -434,12 +434,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
         public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
             try
             {
-                string query = GetDeleteAccountingAccountQuery();
+                string query = _deleteAccountingAccountQuery.Value;
 
                 object variables = new
                 {
@@ -456,7 +456,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
-        public string GetInitilizeQuery()
+        private static readonly Lazy<string> _initializeQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
                 .Create()
@@ -480,10 +480,9 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery();
+        });
 
-        }
-
-        public string GetCanDeleteAccountingAccountQuery()
+        private static readonly Lazy<string> _canDeleteAccountingAccountQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -498,7 +497,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             var builder = new GraphQLQueryBuilder([fragment]);
 
             return builder.GetQuery();
-        }
+        });
 
         #endregion
 
@@ -511,7 +510,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 this.IsBusy = true;
-                string query = GetInitilizeQuery();
+                string query = _initializeQuery.Value;
 ;
                 // Loading Data
 
@@ -588,7 +587,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
 
                 this.IsBusy = true;
-                string query = GetCanDeleteAccountingAccountQuery();
+                string query = _canDeleteAccountingAccountQuery.Value;
 
                 object variables = new { canDeleteResponseId = account.Id };
 

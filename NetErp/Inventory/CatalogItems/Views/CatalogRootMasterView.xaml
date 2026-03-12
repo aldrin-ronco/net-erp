@@ -16,7 +16,7 @@
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              x:Class="NetErp.Inventory.CatalogItems.Views.CatalogRootMasterView"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Focusable="False">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
 
@@ -31,18 +31,6 @@
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <TextBlock Text="Crear una nueva categoría"/>
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <Separator/>
-                        <MenuItem Command="{Binding Path=Data.UpdateItemTypeCommand, Source={StaticResource DataContextProxy}}">
-                            <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
-                            </MenuItem.Icon>
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Modificar tipo de item: "/>
-                                    <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-                                </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator/>
@@ -97,18 +85,6 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Command="{Binding Path=Data.UpdateItemCategoryCommand, Source={StaticResource DataContextProxy}}">
-                            <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
-                            </MenuItem.Icon>
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Modificar categoría: "/>
-                                    <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-                                </StackPanel>
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <Separator/>
                         <MenuItem Command="{Binding Path=Data.DeleteItemCategoryCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -157,18 +133,6 @@
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <TextBlock Text="Crear un nuevo item"/>
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <Separator/>
-                        <MenuItem Command="{Binding Path=Data.UpdateItemSubCategoryCommand, Source={StaticResource DataContextProxy}}">
-                            <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
-                            </MenuItem.Icon>
-                            <MenuItem.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Modificar sub categoría: "/>
-                                    <TextBlock Text="{Binding Row.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-                                </StackPanel>
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator/>
@@ -234,7 +198,7 @@
                                 </StackPanel>
                             </MenuItem.Header>
                             <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Actions/Reset_16x16.png'}"/>
+                                <Image Source="{dx:DXImage 'Images/Mail/Inbox_16x16.png'}"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
@@ -251,8 +215,8 @@
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="10">
-            <Grid x:Name="MainContainer">
+                CornerRadius="8" Margin="10" Focusable="False">
+            <Grid x:Name="MainContainer" Focusable="False">
                 <Grid.OpacityMask>
                     <VisualBrush>
                         <VisualBrush.Visual>
@@ -324,14 +288,14 @@
                 </dxr:RibbonControl>
 
                 <!-- Main content: Tree + PanelEditor -->
-                <Grid Grid.Row="1" Margin="10,10,10,0">
+                <Grid Grid.Row="1" Margin="10,10,10,0" Focusable="False">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="0.4*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Catalog ComboBox + Tree -->
-                    <Grid Grid.Column="0">
+                    <Grid Grid.Column="0" Focusable="False">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -359,13 +323,26 @@
                                          ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          TreeDerivationMode="HierarchicalDataTemplate">
+                            <dxg:TreeViewControl.NodeStyle>
+                                <Style TargetType="dxg:RowControl">
+                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding Row.IsExpanded}" Value="true"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Foreground" Value="Blue"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </dxg:TreeViewControl.NodeStyle>
                         </dxg:TreeViewControl>
                     </Grid>
 
                     <!-- Right: ContentControl with PanelEditor DataTemplates -->
                     <ContentControl Grid.Column="1" Margin="10,0,0,0"
                         Content="{Binding CurrentPanelEditor}"
-                        Visibility="{Binding ContentControlVisibility, Converter={dx:BooleanToVisibilityConverter}}">
+                        Visibility="{Binding ContentControlVisibility, Converter={dx:BooleanToVisibilityConverter}}" Focusable="False">
                         <ContentControl.Resources>
                             <DataTemplate DataType="{x:Type pe:CatalogPanelEditor}">
                                 <editors:CatalogEditorView/>

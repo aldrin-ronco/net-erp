@@ -32,7 +32,6 @@
                             IndicatorType="BouncingDot"
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False"
                             Grid.Row="1">
 
             <dxg:GridControl Grid.Row="1" ItemsSource="{Binding Path=ItemsSource, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

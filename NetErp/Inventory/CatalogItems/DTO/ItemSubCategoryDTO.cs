@@ -114,7 +114,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
                         {
                             if (_items[0].IsDummyChild) 
                             {
-                                _ = _context.LoadItems(this);
+                                _ = _context.LoadItemsAsync(this);
                             }
                         }
                     }

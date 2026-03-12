@@ -362,8 +362,4 @@ namespace NetErp.Inventory.CatalogItems.DTO
             return this.MemberwiseClone();
         }
     }
-    public class ReturnedItemFromModalViewMessage
-    {
-        public ItemDTO ReturnedItem { get; set; }
-    }
 }

@@ -171,8 +171,8 @@ namespace NetErp.Books.Tax.ViewModels
                     NotifyOfPropertyChange(nameof(IsVisibleGeneratedTaxRefundAccount));
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxSection));
                     NotifyOfPropertyChange(nameof(IsVisibleDeductibleTaxRefundAccount));
-                    NotifyOfPropertyChange(nameof(IsVisibleSectionSeparator));
-                    NotifyOfPropertyChange(nameof(IsVisibleAnySectionAccount));
+                    NotifyOfPropertyChange(nameof(IsVisiblePercentage));
+                    if (!IsVisiblePercentage) Rate = 0;
                     if (!IsVisibleGeneratedTaxSection) GeneratedTaxAccountId = null;
                     if (!IsVisibleGeneratedTaxRefundAccount) GeneratedTaxRefundAccountId = null;
                     if (!IsVisibleDeductibleTaxSection) DeductibleTaxAccountId = null;
@@ -324,11 +324,9 @@ namespace NetErp.Books.Tax.ViewModels
             && SelectedTaxCategoryGraphQLModel.DeductibleTaxAccountIsRequired
             && SelectedTaxCategoryGraphQLModel.DeductibleTaxRefundAccountIsRequired;
 
-        public bool IsVisibleSectionSeparator =>
-            IsVisibleGeneratedTaxSection && IsVisibleDeductibleTaxSection;
-
-        public bool IsVisibleAnySectionAccount =>
-            IsVisibleGeneratedTaxSection || IsVisibleDeductibleTaxSection;
+        public bool IsVisiblePercentage =>
+            SelectedTaxCategoryGraphQLModel != null
+            && SelectedTaxCategoryGraphQLModel.UsesPercentage;
 
         #endregion
 
@@ -390,7 +388,7 @@ namespace NetErp.Books.Tax.ViewModels
             switch (propertyName)
             {
                 case nameof(Rate):
-                    if (!value.HasValue || value == 0) AddError(propertyName, "La tasa es requerida");
+                    if (IsVisiblePercentage && (!value.HasValue || value == 0)) AddError(propertyName, "El porcentaje es requerido");
                     break;
             }
         }
@@ -443,7 +441,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public bool CanSave => !HasErrors && this.HasChanges()
                                && !string.IsNullOrEmpty(Name)
-                               && Rate.HasValue && Rate > 0
+                               && (!IsVisiblePercentage || (Rate.HasValue && Rate > 0))
                                && TaxCategoryId.HasValue;
 
         #endregion
@@ -503,6 +501,7 @@ namespace NetErp.Books.Tax.ViewModels
             TaxCategories = [.. _taxCategoryCache.Items];
 
             IsActive = true;
+            Rate = 0;
         }
 
         #endregion
@@ -514,6 +513,10 @@ namespace NetErp.Books.Tax.ViewModels
             base.OnViewReady(view);
             ValidateProperties();
             this.AcceptChanges();
+            if (IsNewRecord)
+            {
+                this.SeedValue(nameof(Rate), 0m);
+            }
             Formula = "Formula por definir";
             AlternativeFormula = "AlternativeFormula por definir";
         }
@@ -524,7 +527,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = GetLoadByIdQuery();
+            string query = _loadByIdQuery.Value;
             dynamic variables = new ExpandoObject();
             variables.singleItemResponseId = id;
 
@@ -601,13 +604,13 @@ namespace NetErp.Books.Tax.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
                 return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
@@ -623,7 +626,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -640,9 +643,9 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateTaxInput!");
             var fragment = new GraphQLQueryFragment("createTax", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -663,9 +666,9 @@ namespace NetErp.Books.Tax.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateTax", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetLoadByIdQuery()
+        private static readonly Lazy<string> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<TaxGraphQLModel>
                 .Create()
@@ -674,6 +677,7 @@ namespace NetErp.Books.Tax.ViewModels
                 .Field(e => e.Rate)
                 .Field(e => e.IsActive)
                 .Field(e => e.Formula)
+                .Field(e => e.AlternativeFormula)
                 .Select(e => e.TaxCategory, cat => cat
                     .Field(c => c.Id)
                     .Field(c => c.Name)
@@ -698,7 +702,7 @@ namespace NetErp.Books.Tax.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("tax", [parameter], fields, "SingleItemResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 

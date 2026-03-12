@@ -134,7 +134,7 @@
                                    FontWeight="SemiBold" 
                                    Margin="0,0,0,8"
                                    Foreground="#2c3e50"/>
-                        
+
                         <dxe:ComboBoxEdit Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                           ItemsSource="{Binding FilteredEmails}"
                                           IsTextEditable="True"
@@ -148,9 +148,6 @@
                                           NullText="Ingresa tu correo electrónico"
                                           ShowNullTextForEmptyValue="True"
                                           BorderThickness="2">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:KeyToCommand KeyGesture="Enter" Command="{Binding LoginCommand}"/>
-                            </dxmvvm:Interaction.Behaviors>
                             <dxe:ComboBoxEdit.StyleSettings>
                                 <dxe:ComboBoxStyleSettings/>
                             </dxe:ComboBoxEdit.StyleSettings>

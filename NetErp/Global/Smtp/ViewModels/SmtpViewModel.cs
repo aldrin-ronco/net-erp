@@ -269,7 +269,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = GetCanDeleteSmtpQuery();
+                string query = _canDeleteSmtpQuery.Value;
                 object variables = new { canDeleteResponseId = SelectedSmtp.Id };
                 var validation = await _smtpService.CanDeleteAsync(query, variables);
 
@@ -322,7 +322,7 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteSmtpAsync(int id)
         {
-            string query = GetDeleteSmtpQuery();
+            string query = _deleteSmtpQuery.Value;
             object variables = new { deleteResponseId = id };
             return await _smtpService.DeleteAsync<DeleteResponseType>(query, variables);
         }
@@ -349,7 +349,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 variables.pageResponsePagination.Page = PageIndex;
                 variables.pageResponsePagination.PageSize = PageSize;
 
-                string query = GetLoadSmtpsQuery();
+                string query = _loadSmtpsQuery.Value;
                 PageType<SmtpGraphQLModel> result = await _smtpService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -380,9 +380,9 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadSmtpsQuery()
+        private static readonly Lazy<string> _loadSmtpsQuery = new(() =>
         {
-            var smtpsFields = FieldSpec<PageType<SmtpGraphQLModel>>
+            var fields = FieldSpec<PageType<SmtpGraphQLModel>>
                 .Create()
                 .Field(it => it.TotalEntries)
                 .SelectList(it => it.Entries, entries => entries
@@ -392,14 +392,13 @@ namespace NetErp.Global.Smtp.ViewModels
                     .Field(e => e.Port))
                 .Build();
 
-            var smtpsParameters = new GraphQLQueryParameter("filters", "SmtpFilters");
-            var smtpsPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var smtpsFragment = new GraphQLQueryFragment("smtpsPage", [smtpsParameters, smtpsPagParameters], smtpsFields, "PageResponse");
+            var filtersParam = new GraphQLQueryParameter("filters", "SmtpFilters");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("smtpsPage", [filtersParam, paginationParam], fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return new GraphQLQueryBuilder([smtpsFragment]).GetQuery();
-        }
-
-        public string GetDeleteSmtpQuery()
+        private static readonly Lazy<string> _deleteSmtpQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -411,9 +410,9 @@ namespace NetErp.Global.Smtp.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("deleteSmtp", [parameter], fields, alias: "DeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetCanDeleteSmtpQuery()
+        private static readonly Lazy<string> _canDeleteSmtpQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -424,7 +423,7 @@ namespace NetErp.Global.Smtp.ViewModels
             var parameter = new GraphQLQueryParameter("id", "ID!");
             var fragment = new GraphQLQueryFragment("canDeleteSmtp", [parameter], fields, alias: "CanDeleteResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        });
 
         #endregion
 

@@ -677,29 +677,39 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #region Delete Query Builders
 
-        private string BuildCanDeleteQuery(string fragmentName)
-        {
-            var fields = FieldSpec<CanDeleteType>.Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _canDeleteQueryCache = new();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        private static string BuildCanDeleteQuery(string fragmentName)
+        {
+            return _canDeleteQueryCache.GetOrAdd(fragmentName, name =>
+            {
+                var fields = FieldSpec<CanDeleteType>.Create()
+                    .Field(f => f.CanDelete)
+                    .Field(f => f.Message)
+                    .Build();
+
+                var parameter = new GraphQLQueryParameter("id", "ID!");
+                var fragment = new GraphQLQueryFragment(name, [parameter], fields, "CanDeleteResponse");
+                return new GraphQLQueryBuilder([fragment]).GetQuery();
+            });
         }
 
-        private string BuildDeleteMutationQuery(string fragmentName)
-        {
-            var fields = FieldSpec<DeleteResponseType>.Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _deleteMutationQueryCache = new();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        private static string BuildDeleteMutationQuery(string fragmentName)
+        {
+            return _deleteMutationQueryCache.GetOrAdd(fragmentName, name =>
+            {
+                var fields = FieldSpec<DeleteResponseType>.Create()
+                    .Field(f => f.DeletedId)
+                    .Field(f => f.Message)
+                    .Field(f => f.Success)
+                    .Build();
+
+                var parameter = new GraphQLQueryParameter("id", "ID!");
+                var fragment = new GraphQLQueryFragment(name, [parameter], fields, "DeleteResponse");
+                return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            });
         }
 
         #endregion
@@ -720,7 +730,7 @@ namespace NetErp.Treasury.Masters.ViewModels
 
         #region Load Query Builders
 
-        private string GetLoadCompanyLocationsQuery()
+        private static readonly Lazy<string> _loadCompanyLocationsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CompanyLocationGraphQLModel>>
                 .Create()
@@ -733,12 +743,10 @@ namespace NetErp.Treasury.Masters.ViewModels
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
             var fragment = new GraphQLQueryFragment("companyLocationsPage", [parameter], fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadBanksQuery()
+        private static readonly Lazy<string> _loadBanksQuery = new(() =>
         {
             var fields = FieldSpec<PageType<BankGraphQLModel>>
                 .Create()
@@ -757,12 +765,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("pagination", "Pagination")
             };
             var fragment = new GraphQLQueryFragment("banksPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadBankAccountsQuery()
+        private static readonly Lazy<string> _loadBankAccountsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<BankAccountGraphQLModel>>
                 .Create()
@@ -796,12 +802,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("filters", "BankAccountFilters")
             };
             var fragment = new GraphQLQueryFragment("bankAccountsPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadCostCentersByLocationQuery()
+        private static readonly Lazy<string> _loadCostCentersByLocationQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
                 .Create()
@@ -818,12 +822,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("filters", "CostCenterFilters")
             };
             var fragment = new GraphQLQueryFragment("costCentersPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadMajorCashDrawersQuery()
+        private static readonly Lazy<string> _loadMajorCashDrawersQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
                 .Create()
@@ -860,12 +862,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("filters", "CashDrawerFilters")
             };
             var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadAuxiliaryCashDrawersQuery()
+        private static readonly Lazy<string> _loadAuxiliaryCashDrawersQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
                 .Create()
@@ -900,12 +900,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("filters", "CashDrawerFilters")
             };
             var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadMinorCashDrawersQuery()
+        private static readonly Lazy<string> _loadMinorCashDrawersQuery = new(() =>
         {
             var fields = FieldSpec<PageType<CashDrawerGraphQLModel>>
                 .Create()
@@ -930,12 +928,10 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("filters", "CashDrawerFilters")
             };
             var fragment = new GraphQLQueryFragment("cashDrawersPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            return builder.GetQuery();
-        }
-
-        private string GetLoadFranchisesQuery()
+        private static readonly Lazy<string> _loadFranchisesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<FranchiseGraphQLModel>>
                 .Create()
@@ -980,10 +976,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                 new("pagination", "Pagination")
             };
             var fragment = new GraphQLQueryFragment("franchisesPage", parameters, fields, "PageResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
         #endregion
 
@@ -1225,7 +1219,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     dummyDTO.Locations.Remove(dummyDTO.Locations[0]);
                 });
                 Refresh();
-                string query = GetLoadCompanyLocationsQuery();
+                string query = _loadCompanyLocationsQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -1281,7 +1275,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     locationDTO.CostCenters.Remove(locationDTO.CostCenters[0]);
                 });
 
-                string query = GetLoadCostCentersByLocationQuery();
+                string query = _loadCostCentersByLocationQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
                 variables.pageResponseFilters = new ExpandoObject();
@@ -1342,7 +1336,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                 });
 
                 bool isMajor = costCenterDTO.Type == CashDrawerType.Major;
-                string query = isMajor ? GetLoadMajorCashDrawersQuery() : GetLoadMinorCashDrawersQuery();
+                string query = isMajor ? _loadMajorCashDrawersQuery.Value : _loadMinorCashDrawersQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -1431,7 +1425,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bankDummyDTO.Banks.Remove(bankDummyDTO.Banks[0]);
                 });
                 Refresh();
-                string query = GetLoadBanksQuery();
+                string query = _loadBanksQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.banksPagePagination = new ExpandoObject();
@@ -1490,7 +1484,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     bank.BankAccounts.Remove(bank.BankAccounts[0]);
                 });
                 Refresh();
-                string query = GetLoadBankAccountsQuery();
+                string query = _loadBankAccountsQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.bankAccountsPagePagination = new ExpandoObject();
                 variables.bankAccountsPagePagination.pageSize = -1;
@@ -1549,7 +1543,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     majorCashDrawer.AuxiliaryCashDrawers.Remove(majorCashDrawer.AuxiliaryCashDrawers[0]);
                 });
 
-                string query = GetLoadAuxiliaryCashDrawersQuery();
+                string query = _loadAuxiliaryCashDrawersQuery.Value;
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponsePagination = new ExpandoObject();
@@ -1609,7 +1603,7 @@ namespace NetErp.Treasury.Masters.ViewModels
                     franchiseDummyDTO.Franchises.Remove(franchiseDummyDTO.Franchises[0]);
                 });
                 Refresh();
-                string query = GetLoadFranchisesQuery();
+                string query = _loadFranchisesQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.franchisesPagePagination = new ExpandoObject();
                 variables.franchisesPagePagination.pageSize = -1;

@@ -328,6 +328,10 @@ namespace NetErp.Books.TaxCategory.ViewModels
             base.OnViewReady(view);
             ValidateProperties();
             this.AcceptChanges();
+            if (IsNewRecord)
+            {
+                this.SeedValue(nameof(UsesPercentage), false);
+            }
         }
 
         #endregion
@@ -383,13 +387,13 @@ namespace NetErp.Books.TaxCategory.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _taxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = TaxCategoryId;
                 return await _taxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
@@ -405,7 +409,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxCategoryGraphQLModel>>
                 .Create()
@@ -429,9 +433,9 @@ namespace NetErp.Books.TaxCategory.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateTaxCategoryInput!");
             var fragment = new GraphQLQueryFragment("createTaxCategory", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxCategoryGraphQLModel>>
                 .Create()
@@ -459,7 +463,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateTaxCategory", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 

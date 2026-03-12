@@ -10,7 +10,8 @@
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="10" IsEnabled="{Binding IsEditing, UpdateSourceTrigger=PropertyChanged}"
-              FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}">
+              FocusManager.FocusedElement="{Binding ElementName=NameTextEdit}"
+              IsEnabledChanged="OnFormIsEnabledChanged">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -44,7 +45,7 @@
             <TextBlock Text="Unidad de medida por defecto" Grid.Row="5" Margin="5 10 0 5"/>
             <dxe:ComboBoxEdit Grid.Row="6" Margin="5 0 0 5"
                               ItemsSource="{Binding MeasurementUnits}"
-                              SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                               DisplayMember="Name"
                               IsTextEditable="False"
                               AllowNullInput="True"
@@ -53,7 +54,7 @@
             <TextBlock Text="Grupo contable por defecto" Grid.Row="7" Margin="5 10 0 5"/>
             <dxe:ComboBoxEdit Grid.Row="8" Margin="5 0 0 5"
                               ItemsSource="{Binding AccountingGroups}"
-                              SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
                               DisplayMember="Name"
                               IsTextEditable="False"
                               AllowNullInput="True"

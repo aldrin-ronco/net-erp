@@ -1,5 +1,4 @@
-﻿using Caliburn.Micro;
-using Common.Config;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
@@ -8,11 +7,7 @@ using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
-
-using Models.DTO.Global;
 using Models.Global;
-using NetErp.Global.CostCenters.DTO;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -28,497 +23,74 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
+
 namespace NetErp.Global.AuthorizationSequence.ViewModels
 {
     public class AuthorizationSequenceDetailViewModel : Screen, INotifyDataErrorInfo
     {
+        #region Dependencies
 
-        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AuthorizationSequenceGraphQLModel> _authorizationSequenceService;
+        private readonly IRepository<DianSoftwareConfigGraphQLModel> _dianConfigService;
+        private readonly IRepository<DianCertificateGraphQLModel> _dianCertService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly CostCenterCache _costCenterCache;
         private readonly AuthorizationSequenceTypeCache _authorizationSequenceTypeCache;
 
+        #endregion
 
-        public AuthorizationSequenceDetailViewModel(
-            AuthorizationSequenceViewModel context,
-            Helpers.Services.INotificationService notificationService,
-            IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService,
-            CostCenterCache costCenterCache,
-            AuthorizationSequenceTypeCache authorizationSequenceTypeCache
-            )
-        {
+        #region State
 
-            _notificationService = notificationService;
-            _authorizationSequenceService = authorizationSequenceService;
-            Context = context;
-            _errors = new Dictionary<string, List<string>>();
-            _costCenterCache = costCenterCache;
-            _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
-
-           
-
-            Context.EventAggregator.SubscribeOnUIThread(this);
-
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-
-            joinable.Run(async () => await InitializeAsync());
-
-        }
-        public async Task InitializeAsync()
-        {
-            await Task.WhenAll(
-                 _costCenterCache.EnsureLoadedAsync(),
-                 _authorizationSequenceTypeCache.EnsureLoadedAsync()
-                 );
-            ObservableCollection<CostCenterDTO> costCenter = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items);
-            costCenter.Insert(0, new CostCenterDTO() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            CostCenters = [.. costCenter];
-            AuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(_authorizationSequenceTypeCache.Items);
-            AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(_authorizationSequenceTypeCache.Items);
-            AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
-            CostCenterId = _entity != null ? _entity.CostCenter.Id : 0;
-            AuthorizationSequenceTypeId = _entity != null ? _entity.AuthorizationSequenceType.Id : AvaliableAuthorizationSequenceTypes.First(f => f.Id == 0).Id;
-            
-            if (LoadOrphan)
-            {
-                await LoadListAsync();
-            }
-           
-                
-           
-        }
-        public  void SearchAuthorizationSequences()
-        {
-            try
-            {
-                IsBusy = true;
-               
-                Refresh();
-                var numberingRangeResponse = GetAuthorizationSequences.GetNumberingRange(RequestMethods.GetNumberingRange);
-                if (numberingRangeResponse.Status)
-                {
-                    var authorizationSequences = numberingRangeResponse.AuthorizationSequences;
-                    authorizationSequences.Insert(0, new AuthorizationSequenceGraphQLModel() { Id = 9999999, Description = "SELECCIONE UNA AUTORIZACION" });
-                    AuthorizationSequences = [.. authorizationSequences];
-                    SelectedAuthorizationSequence = AuthorizationSequences.First(f => f.Id == 9999999);
-                }
-                else
-                {
-                    _notificationService.ShowError(numberingRangeResponse.Message);
-                }
-               
-
-               
-            }
-            catch (Exception e)
-            {
-                _notificationService.ShowError(e.Message);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-        
-        #region DBProperties
         private AuthorizationSequenceGraphQLModel? _entity;
-        public AuthorizationSequenceGraphQLModel Entity
+        public AuthorizationSequenceGraphQLModel? Entity
         {
-            get { return _entity; }
+            get => _entity;
             set
             {
                 if (_entity != value)
                 {
                     _entity = value;
+                    NotifyOfPropertyChange(nameof(Entity));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
                     NotifyOfPropertyChange(nameof(OriginVisibility));
-
                 }
             }
         }
-        private int _id ;
-        private int? _startRange;
-        private int? _endRange;
 
-        private string _number;
-        private string _prefix;
-        private string _technicalKey;
-        private string _reference;
-        private int? _currentInvoiceNumber;
-        
+        public bool IsNewRecord => Entity == null || Entity.Id < 1;
 
-        private DateOnly? _startDate = DateOnly.FromDateTime(DateTime.Now);
-        private DateOnly? _endDate = DateOnly.FromDateTime(DateTime.Now);
-        private bool _isActive = true;
-        
+        private DianSoftwareConfigGraphQLModel? _dianConfig;
+        private DianCertificateGraphQLModel? _dianCertificate;
 
-
-        public int Id
+        private bool _isDianAvailable = false;
+        public bool IsDianAvailable
         {
-            get { return _id; }
+            get => _isDianAvailable;
             set
             {
-                if (_id != value)
+                if (_isDianAvailable != value)
                 {
-                    _id = value;
-                    NotifyOfPropertyChange(nameof(Id));
+                    _isDianAvailable = value;
+                    NotifyOfPropertyChange(nameof(IsDianAvailable));
                 }
             }
         }
-        public int? StartRange
+
+        private string _dianUnavailableReason = "Verificando disponibilidad DIAN...";
+        public string DianUnavailableReason
         {
-            get { return _startRange; }
+            get => _dianUnavailableReason;
             set
             {
-                if (_startRange != value)
+                if (_dianUnavailableReason != value)
                 {
-                    _startRange = value;
-                    NotifyOfPropertyChange(nameof(StartRange));
-                    ValidateProperty(nameof(StartRange), value);
-                    this.TrackChange(nameof(StartRange));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-        public int? EndRange
-        {
-            get { return _endRange; }
-            set
-            {
-                if (_endRange != value)
-                {
-                    _endRange = value;
-                    NotifyOfPropertyChange(nameof(EndRange));
-                    ValidateProperty(nameof(EndRange), value);
-                    this.TrackChange(nameof(EndRange));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
+                    _dianUnavailableReason = value;
+                    NotifyOfPropertyChange(nameof(DianUnavailableReason));
                 }
             }
         }
 
-        
-        
-        public string Number
-        {
-            get { return _number; }
-            set
-            {
-                if (_number != value)
-                {
-                    _number = value;
-                    NotifyOfPropertyChange(nameof(Number));
-                    this.TrackChange(nameof(Number));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(Number), value);
-                }
-            }
-        }
-       
-        public string Prefix
-        {
-            get { return _prefix; }
-            set
-            {
-                if (_prefix != value)
-                {
-                    _prefix = value;
-                    NotifyOfPropertyChange(nameof(Prefix));
-                    this.TrackChange(nameof(Prefix));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(Prefix), value);
-                    
-                }
-            }
-        }
-
-       
-
-        public string TechnicalKey
-        {
-            get { return _technicalKey; }
-            set
-            {
-                if (_technicalKey != value)
-                {
-                    _technicalKey = value;
-                    NotifyOfPropertyChange(nameof(TechnicalKey));
-                    this.TrackChange(nameof(TechnicalKey));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(TechnicalKey), value);
-                }
-            }
-        }
-
-        public string Reference
-        {
-            get { return _reference; }
-            set
-            {
-                if (_reference != value)
-                {
-                    _reference = value;
-                    NotifyOfPropertyChange(nameof(Reference));
-                    this.TrackChange(nameof(Reference));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(Reference), value);
-                }
-            }
-        }
-        public int? CurrentInvoiceNumber
-        {
-            get { return _currentInvoiceNumber; }
-            set
-            {
-                if (_currentInvoiceNumber != value)
-                {
-                    _currentInvoiceNumber = value;
-                    NotifyOfPropertyChange(nameof(CurrentInvoiceNumber));
-                    this.TrackChange(nameof(CurrentInvoiceNumber));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(CurrentInvoiceNumber), value);
-                }
-            }
-        }
-
-
-        public DateOnly? StartDate
-        {
-            get { return _startDate; }
-            set
-            {
-                if (_startDate != value)
-                {
-                    _startDate = value;
-                    NotifyOfPropertyChange(nameof(StartDate));
-                    this.TrackChange(nameof(StartDate));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-
-        public DateOnly? EndDate
-        {
-            get { return _endDate; }
-            set
-            {
-                if (_endDate != value)
-                {
-                    _endDate = value;
-                    NotifyOfPropertyChange(nameof(EndDate));
-                    this.TrackChange(nameof(EndDate));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-
-        public bool IsActive
-        {
-            get { return _isActive; }
-            set
-            {
-                if (_isActive != value)
-                {
-                    _isActive = value;
-                    NotifyOfPropertyChange(nameof(IsActive));
-                    this.TrackChange(nameof(IsActive));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-
-        private int _costCenterId;
-        public int CostCenterId
-        {
-            get { return _costCenterId; }
-            set
-            {
-                if (_costCenterId != value)
-                {
-                    _costCenterId = value;
-                    NotifyOfPropertyChange(nameof(CostCenterId));
-                    this.TrackChange(nameof(CostCenterId));
-
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                    ValidateProperty(nameof(CostCenterId), value);
-                }
-            }
-        }
-        private AuthorizationSequenceGraphQLModel _selectedAuthorizationSequence;
-        public AuthorizationSequenceGraphQLModel SelectedAuthorizationSequence
-        {
-            get { return _selectedAuthorizationSequence; }
-            set
-            {
-                if (_selectedAuthorizationSequence != value)
-                {
-                    _selectedAuthorizationSequence = value;
-                    if (value != null) { SetSelectedAuthorizationSequence(value);  }
-                    if (value == null) { ClearValues(); }
-                    NotifyOfPropertyChange(nameof(SelectedAuthorizationSequence));
-                    if (value == null) { ClearValues(); }
-                    NotifyOfPropertyChange(nameof(FieldsVisibility));
-                    
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-        private AuthorizationSequenceGraphQLModel _nextAuthorizationSequenceId;
-        public AuthorizationSequenceGraphQLModel NextAuthorizationSequenceId
-        {
-            get { return _nextAuthorizationSequenceId; }
-            set
-            {
-                if (_nextAuthorizationSequenceId != value)
-                {
-                    _nextAuthorizationSequenceId = value;
-                    
-                    NotifyOfPropertyChange(nameof(NextAuthorizationSequenceId));
-                    this.TrackChange(nameof(CostCenterId));
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-        private int _authorizationSequenceTypeId;
-        public int AuthorizationSequenceTypeId
-        {
-            get { return _authorizationSequenceTypeId; }
-            set
-            {
-                if (_authorizationSequenceTypeId != value)
-                {
-                    _authorizationSequenceTypeId = value;
-                    NotifyOfPropertyChange(nameof(AuthorizationSequenceTypeId));
-                    NotifyOfPropertyChange(nameof(TechnicalKey));
-                    this.TrackChange(nameof(AuthorizationSequenceTypeId));
-                    ValidateProperty(nameof(TechnicalKey), TechnicalKey);
-                    ValidateProperty(nameof(AuthorizationSequenceTypeId), value);
-                    this.NotifyOfPropertyChange(nameof(this.CanSave));
-                }
-            }
-        }
-        // Regimen Seleccionado
-        private char _mode = 'A';
-        public char Mode
-        {
-            get { return _mode; }
-            set
-            {
-                if (_mode != value)
-                {
-                    _mode = value;
-                    NotifyOfPropertyChange(nameof(Mode));
-                    this.TrackChange(nameof(Mode));
-
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
-        }
-        #endregion
-
-        private Visibility _fieldsVisibility;
-        public Visibility FieldsVisibility
-        {
-            get { return (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && SelectedAuthorizationSequence != null && SelectedAuthorizationSequence?.Id != 9999999) ) ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                _fieldsVisibility = value;
-            }
-        }
-        private Visibility _authorizationsVisibility;
-        public Visibility AuthorizationsVisibility
-        {
-            get { return  SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && AuthorizationSequences?.Count > 0 ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                _authorizationsVisibility = value;
-            }
-        }
-
-
-        #region Properties
-        private Visibility _lv1Visibility;
-        public Visibility Lv1Visibility
-        {
-            get { return SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                _lv1Visibility = value;
-            }
-        }
-
-        private Visibility _reliefVisibility;
-        public Visibility ReliefVisibility
-        {
-            get { return LoadOrphan  ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                _reliefVisibility = value;
-            }
-        }
-
-        private Visibility _originVisibility;
-        public Visibility OriginVisibility
-        {
-            get { return (Entity == null || Entity?.Id < 1) ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                _originVisibility = value;
-            }
-        }
-        public bool LoadOrphan => (_entity != null && (_entity.CostCenter?.FeCashDefaultAuthorizationSequence?.Id == Entity.Id || _entity.CostCenter?.FeCreditDefaultAuthorizationSequence?.Id == Entity.Id) && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50);
-        public bool SequenceD => SelectedSequenceOrigin.Equals(SequenceOriginEnum.D);
-        public bool EnabledAST => (Entity == null && (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && string.IsNullOrEmpty(TechnicalKey)) ));
-        private SequenceOriginEnum _selectedSequenceOrigin;
-        public SequenceOriginEnum SelectedSequenceOrigin
-        {
-            get { return _selectedSequenceOrigin; }
-            set
-            {
-                if (_selectedSequenceOrigin != value)
-                {
-                    _selectedSequenceOrigin = value;
-                    NotifyOfPropertyChange(nameof(SelectedSequenceOrigin));
-                    NotifyOfPropertyChange(nameof(Lv1Visibility));
-                    NotifyOfPropertyChange(nameof(SequenceD));
-                    NotifyOfPropertyChange(nameof(EnabledAST));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    NotifyOfPropertyChange(nameof(FieldsVisibility));
-                    NotifyOfPropertyChange(nameof(AuthorizationsVisibility));
-                    
-                    ClearValues();
-                }
-            }
-        }
-
-        private AuthorizationSequenceViewModel _context;
-        public AuthorizationSequenceViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
-        Dictionary<string, List<string>> _errors;
-
-        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-        private bool _isNewRecord => Entity?.Id > 0 ? false : true;
-
-        public bool IsNewRecord
-        {
-            get { return _isNewRecord; }
-            
-        }
-        private bool _isBusy = false;
+        private bool _isBusy;
         public bool IsBusy
         {
             get => _isBusy;
@@ -531,39 +103,67 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        private ObservableCollection<AuthorizationSequenceGraphQLModel> _authorizationSequences;
-        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences
-        {
-            get { return _authorizationSequences; }
-            set
-            {
-                if (_authorizationSequences != value)
-                {
-                    _authorizationSequences = value;
-                    NotifyOfPropertyChange(nameof(FieldsVisibility));
-                    NotifyOfPropertyChange(nameof(AuthorizationSequences));
-                    NotifyOfPropertyChange(nameof(AuthorizationsVisibility));
 
-                }
-            }
-        }
-        private ObservableCollection<CostCenterDTO> _costCenters;
-        private ObservableCollection<AuthorizationSequenceGraphQLModel> _orphanAuthorizationSequences;
-        public ObservableCollection<AuthorizationSequenceGraphQLModel> OrphanAuthorizationSequences
+        #endregion
+
+        #region Sequence Origin
+
+        private SequenceOriginEnum _selectedSequenceOrigin;
+        public SequenceOriginEnum SelectedSequenceOrigin
         {
-            get { return _orphanAuthorizationSequences; }
+            get => _selectedSequenceOrigin;
             set
             {
-                if (_orphanAuthorizationSequences != value)
+                if (_selectedSequenceOrigin != value)
                 {
-                    _orphanAuthorizationSequences = value;
-                    NotifyOfPropertyChange(nameof(OrphanAuthorizationSequences));
+                    _selectedSequenceOrigin = value;
+                    Origin = value == SequenceOriginEnum.D ? "DIAN" : "MANUAL";
+                    NotifyOfPropertyChange(nameof(SelectedSequenceOrigin));
+                    NotifyOfPropertyChange(nameof(Lv1Visibility));
+                    NotifyOfPropertyChange(nameof(SequenceD));
+                    NotifyOfPropertyChange(nameof(EnabledAST));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    NotifyOfPropertyChange(nameof(FieldsVisibility));
+                    NotifyOfPropertyChange(nameof(AuthorizationsVisibility));
+                    ClearValues();
                 }
             }
         }
-        public ObservableCollection<CostCenterDTO> CostCenters
+
+        public bool SequenceD => IsNewRecord
+            ? SelectedSequenceOrigin.Equals(SequenceOriginEnum.D)
+            : string.Equals(Entity?.Origin, "DIAN", StringComparison.OrdinalIgnoreCase);
+
+        public bool EnabledAST => IsNewRecord
+            ? SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && string.IsNullOrEmpty(TechnicalKey))
+            : !SequenceD;
+
+        #endregion
+
+        #region Visibility
+
+        public Visibility OriginVisibility => (Entity == null || Entity.Id < 1) ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility Lv1Visibility => SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && !(AuthorizationSequences?.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility AuthorizationsVisibility => SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && AuthorizationSequences?.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility FieldsVisibility => (SelectedSequenceOrigin.Equals(SequenceOriginEnum.M) || (SelectedSequenceOrigin.Equals(SequenceOriginEnum.D) && SelectedDianAuthorization != null)) ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility ReliefVisibility => LoadOrphan ? Visibility.Visible : Visibility.Collapsed;
+
+        public bool LoadOrphan => _entity != null
+            && (_entity.CostCenter?.FeCashDefaultAuthorizationSequence?.Id == Entity!.Id || _entity.CostCenter?.FeCreditDefaultAuthorizationSequence?.Id == Entity!.Id)
+            && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50;
+
+        #endregion
+
+        #region ComboBox Sources
+
+        private ObservableCollection<CostCenterGraphQLModel> _costCenters = [];
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
-            get { return _costCenters; }
+            get => _costCenters;
             set
             {
                 if (_costCenters != value)
@@ -573,12 +173,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _avaliableauthorizationSequenceTypes;
-        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _authorizationSequenceTypes = [];
 
+        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _authorizationSequenceTypes = [];
         public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes
         {
-            get { return _authorizationSequenceTypes; }
+            get => _authorizationSequenceTypes;
             set
             {
                 if (_authorizationSequenceTypes != value)
@@ -588,274 +187,361 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
             }
         }
-        public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AvaliableAuthorizationSequenceTypes
+
+        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _availableAuthorizationSequenceTypes = [];
+        public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AvailableAuthorizationSequenceTypes
         {
-            get { return _avaliableauthorizationSequenceTypes; }
+            get => _availableAuthorizationSequenceTypes;
             set
             {
-                if (_avaliableauthorizationSequenceTypes != value)
+                if (_availableAuthorizationSequenceTypes != value)
                 {
-                    _avaliableauthorizationSequenceTypes = value;
-                    NotifyOfPropertyChange(nameof(AvaliableAuthorizationSequenceTypes));
+                    _availableAuthorizationSequenceTypes = value;
+                    NotifyOfPropertyChange(nameof(AvailableAuthorizationSequenceTypes));
                 }
             }
         }
 
-        public Dictionary<char, string> ModeDictionary { get { return BooksDictionaries.ModeDictionary; } }
-       
-        #endregion
-
-        #region Commands
-        private ICommand _saveCommand;
-        public ICommand SaveCommand
+        private ObservableCollection<AuthorizationSequenceGraphQLModel> _authorizationSequences = [];
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences
         {
-            get
+            get => _authorizationSequences;
+            set
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
-                return _saveCommand;
-            }
-        }
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
-        {
-            get
-            {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
-            }
-        }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-        public  void SetSelectedAuthorizationSequence(AuthorizationSequenceGraphQLModel authoritationSequence)
-        {
-            Number = authoritationSequence.Number;
-            Prefix = authoritationSequence.Prefix;
-            TechnicalKey = authoritationSequence.TechnicalKey;
-            StartDate = authoritationSequence.StartDate;
-            EndDate = authoritationSequence.EndDate;
-            StartRange = authoritationSequence.StartRange;
-            EndRange = authoritationSequence.EndRange;
-            CurrentInvoiceNumber = authoritationSequence.StartRange;
-
-            if (string.IsNullOrEmpty(authoritationSequence.TechnicalKey))
-            {
-                AvaliableAuthorizationSequenceTypes = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceTypeGraphQLModel>>(AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
-                AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
-                AuthorizationSequenceTypeId = 0;
-
-            }
-            else
-            {
-                AuthorizationSequenceTypeId = AvaliableAuthorizationSequenceTypes.First(f => f.Prefix != "FE").Id;
-            }
-            NotifyOfPropertyChange(nameof(EnabledAST));
-        }
-        public void ClearValues()
-        {
-            Number = "";
-            Prefix = "";
-            TechnicalKey = "";
-            StartDate = null;
-            EndDate = null;
-            StartRange = null;
-            EndRange = null;
-            AvaliableAuthorizationSequenceTypes = [.. AuthorizationSequenceTypes];
-            AvaliableAuthorizationSequenceTypes.Insert(0, new AuthorizationSequenceTypeGraphQLModel() { Id = 0, Name = "SELECCIONE TIPO" });
-
-        }
-        public async Task SaveAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                UpsertResponseType<AuthorizationSequenceGraphQLModel> result = await ExecuteSaveAsync();
-                if (!result.Success)
+                if (_authorizationSequences != value)
                 {
-                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
-                    return;
+                    _authorizationSequences = value;
+                    NotifyOfPropertyChange(nameof(AuthorizationSequences));
+                    NotifyOfPropertyChange(nameof(Lv1Visibility));
+                    NotifyOfPropertyChange(nameof(AuthorizationsVisibility));
+                    NotifyOfPropertyChange(nameof(FieldsVisibility));
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
-                    IsNewRecord
-                        ? new AuthorizationSequenceCreateMessage() { CreatedAuthorizationSequence = result }
-                        : new AuthorizationSequenceUpdateMessage() { UpdatedAuthorizationSequence = result }
-                );
-
-                // Context.EnableOnViewReady = false;
-                await Context.ActivateMasterViewModelAsync();
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-                
-
         }
 
-        public async Task<UpsertResponseType<AuthorizationSequenceGraphQLModel>> ExecuteSaveAsync()
+        private AuthorizationSequenceGraphQLModel? _selectedDianAuthorization;
+        public AuthorizationSequenceGraphQLModel? SelectedDianAuthorization
         {
-            
-            dynamic variables = new ExpandoObject();
-           
-
-            if (IsNewRecord)
+            get => _selectedDianAuthorization;
+            set
             {
-               
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                string query = GetCreateQuery();
-                UpsertResponseType<AuthorizationSequenceGraphQLModel> AuthorizationCreated = await _authorizationSequenceService.CreateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
-                return AuthorizationCreated;
+                if (_selectedDianAuthorization != value)
+                {
+                    _selectedDianAuthorization = value;
+                    if (value != null) SetSelectedAuthorizationSequence(value);
+                    if (value == null) ClearValues();
+                    NotifyOfPropertyChange(nameof(SelectedDianAuthorization));
+                    NotifyOfPropertyChange(nameof(FieldsVisibility));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
-            else
-            {
-                
-                string query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Entity.Id;
-                UpsertResponseType<AuthorizationSequenceGraphQLModel> updatedAuthorization = await _authorizationSequenceService.UpdateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
-                return updatedAuthorization;
-            }
-            
         }
+
+        private ObservableCollection<AuthorizationSequenceGraphQLModel> _orphanAuthorizationSequences = [];
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> OrphanAuthorizationSequences
+        {
+            get => _orphanAuthorizationSequences;
+            set
+            {
+                if (_orphanAuthorizationSequences != value)
+                {
+                    _orphanAuthorizationSequences = value;
+                    NotifyOfPropertyChange(nameof(OrphanAuthorizationSequences));
+                }
+            }
+        }
+
+        private AuthorizationSequenceGraphQLModel? _nextAuthorizationSequenceId;
+        public AuthorizationSequenceGraphQLModel? NextAuthorizationSequenceId
+        {
+            get => _nextAuthorizationSequenceId;
+            set
+            {
+                if (_nextAuthorizationSequenceId != value)
+                {
+                    _nextAuthorizationSequenceId = value;
+                    NotifyOfPropertyChange(nameof(NextAuthorizationSequenceId));
+                    this.TrackChange(nameof(NextAuthorizationSequenceId));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public Dictionary<char, string> ModeDictionary => BooksDictionaries.ModeDictionary;
 
         #endregion
 
-                #region Validaciones
-        public bool CanSave
-        {
-            get
-            {
-                if (_errors.Count > 0 || (AuthorizationSequenceTypeId == 0)|| ( CostCenterId == 0) || (string.IsNullOrEmpty(Mode.ToString()))  || !this.HasChanges()) { return false; }
-                return true;
-            }
-        }
-        public bool EnabledToCreated
-        {
-            get
-            {
-                if (Entity == null ) return true;
-               
+        #region Form Properties
 
-                return false;
+        private string _number = string.Empty;
+        public string Number
+        {
+            get => _number;
+            set
+            {
+                if (_number != value)
+                {
+                    _number = value;
+                    NotifyOfPropertyChange(nameof(Number));
+                    ValidateProperty(nameof(Number), value);
+                    this.TrackChange(nameof(Number));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
+
+        private string _prefix = string.Empty;
+        public string Prefix
+        {
+            get => _prefix;
+            set
+            {
+                if (_prefix != value)
+                {
+                    _prefix = value;
+                    NotifyOfPropertyChange(nameof(Prefix));
+                    ValidateProperty(nameof(Prefix), value);
+                    this.TrackChange(nameof(Prefix));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _technicalKey = string.Empty;
+        public string TechnicalKey
+        {
+            get => _technicalKey;
+            set
+            {
+                if (_technicalKey != value)
+                {
+                    _technicalKey = value;
+                    NotifyOfPropertyChange(nameof(TechnicalKey));
+                    ValidateProperty(nameof(TechnicalKey), value);
+                    this.TrackChange(nameof(TechnicalKey));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _reference = string.Empty;
+        public string Reference
+        {
+            get => _reference;
+            set
+            {
+                if (_reference != value)
+                {
+                    _reference = value;
+                    NotifyOfPropertyChange(nameof(Reference));
+                    ValidateProperty(nameof(Reference), value);
+                    this.TrackChange(nameof(Reference));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _startRange;
+        public int? StartRange
+        {
+            get => _startRange;
+            set
+            {
+                if (_startRange != value)
+                {
+                    _startRange = value;
+                    NotifyOfPropertyChange(nameof(StartRange));
+                    ValidateProperty(nameof(StartRange), value);
+                    this.TrackChange(nameof(StartRange));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _endRange;
+        public int? EndRange
+        {
+            get => _endRange;
+            set
+            {
+                if (_endRange != value)
+                {
+                    _endRange = value;
+                    NotifyOfPropertyChange(nameof(EndRange));
+                    ValidateProperty(nameof(EndRange), value);
+                    this.TrackChange(nameof(EndRange));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _currentInvoiceNumber;
+        public int? CurrentInvoiceNumber
+        {
+            get => _currentInvoiceNumber;
+            set
+            {
+                if (_currentInvoiceNumber != value)
+                {
+                    _currentInvoiceNumber = value;
+                    NotifyOfPropertyChange(nameof(CurrentInvoiceNumber));
+                    ValidateProperty(nameof(CurrentInvoiceNumber), value);
+                    this.TrackChange(nameof(CurrentInvoiceNumber));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private DateOnly? _startDate = DateOnly.FromDateTime(DateTime.Now);
+        public DateOnly? StartDate
+        {
+            get => _startDate;
+            set
+            {
+                if (_startDate != value)
+                {
+                    _startDate = value;
+                    NotifyOfPropertyChange(nameof(StartDate));
+                    this.TrackChange(nameof(StartDate));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private DateOnly? _endDate = DateOnly.FromDateTime(DateTime.Now);
+        public DateOnly? EndDate
+        {
+            get => _endDate;
+            set
+            {
+                if (_endDate != value)
+                {
+                    _endDate = value;
+                    NotifyOfPropertyChange(nameof(EndDate));
+                    this.TrackChange(nameof(EndDate));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private bool _isActive = true;
+        public bool IsActive
+        {
+            get => _isActive;
+            set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                    NotifyOfPropertyChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _costCenterId;
+        public int? CostCenterId
+        {
+            get => _costCenterId;
+            set
+            {
+                if (_costCenterId != value)
+                {
+                    _costCenterId = value;
+                    NotifyOfPropertyChange(nameof(CostCenterId));
+                    ValidateProperty(nameof(CostCenterId), value);
+                    this.TrackChange(nameof(CostCenterId));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private int? _authorizationSequenceTypeId;
+        public int? AuthorizationSequenceTypeId
+        {
+            get => _authorizationSequenceTypeId;
+            set
+            {
+                if (_authorizationSequenceTypeId != value)
+                {
+                    _authorizationSequenceTypeId = value;
+                    NotifyOfPropertyChange(nameof(AuthorizationSequenceTypeId));
+                    NotifyOfPropertyChange(nameof(TechnicalKey));
+                    this.TrackChange(nameof(AuthorizationSequenceTypeId));
+                    ValidateProperty(nameof(TechnicalKey), TechnicalKey);
+                    ValidateProperty(nameof(AuthorizationSequenceTypeId), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private char _mode = 'A';
+        public char Mode
+        {
+            get => _mode;
+            set
+            {
+                if (_mode != value)
+                {
+                    _mode = value;
+                    NotifyOfPropertyChange(nameof(Mode));
+                    this.TrackChange(nameof(Mode));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        private string _origin = "MANUAL";
+        public string Origin
+        {
+            get => _origin;
+            set
+            {
+                if (_origin != value)
+                {
+                    _origin = value;
+                    NotifyOfPropertyChange(nameof(Origin));
+                    this.TrackChange(nameof(Origin));
+                }
+            }
+        }
+
+        public bool EnabledToCreated => Entity == null;
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _errors = [];
+
         public bool HasErrors => _errors.Count > 0;
 
-        protected override void OnViewReady(object view)
-        {
-            SelectedSequenceOrigin = SequenceOriginEnum.M;
-            base.OnViewReady(view);
-            this.SetFocus(() => Number);
-           
-            ValidateProperties();
-            this.AcceptChanges();
-            if (Entity == null)
-            {
-                this.TrackChange(nameof(Mode));
-                this.TrackChange(nameof(StartDate));
-                this.TrackChange(nameof(EndDate));
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
-            }
-
-            NotifyOfPropertyChange(nameof(CanSave));
-        }
-        public void GoBack(object p)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            CleanUpControls();
-            _ = Task.Run(() => Context.ActivateMasterViewModelAsync());
-           
-        }
-        public void CleanUpControls()
-        {
-            Number = "";
-            Reference = "";
-            CostCenterId =  0;
-            SelectedSequenceOrigin = SequenceOriginEnum.M;
-        }
-        public IEnumerable GetErrors(string propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
             return _errors[propertyName];
         }
-        private void ValidateProperty(string propertyName, int? value)
+
+        private void RaiseErrorsChanged(string propertyName)
         {
-            try
-            {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
 
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = [];
 
-                    case nameof(CostCenterId):
-                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un centro de costo");
-                        break;
-                    case nameof(AuthorizationSequenceTypeId):
-                        if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un tipo de autorización");
-                        break;
-                    case nameof(StartRange):
-                        if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
-                        break;
-                    case nameof(EndRange):
-                        if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
-                        break;
-                    case nameof(CurrentInvoiceNumber):
-                        if (!value.HasValue) AddError(propertyName, "El número de factura no puede estar vacío");
-                        if (value.HasValue && (value < StartRange || value > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
-                        break;
-                }
-            }
-            catch (Exception ex)
+            if (!_errors[propertyName].Contains(error))
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
             }
         }
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
 
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Number):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de Autorizacion no puede estar vacío");
-                        break;
-                    case nameof(Prefix):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El prefijo no puede estar vacío");
-                        if(!string.IsNullOrEmpty(value) && int.TryParse(value.Substring(value.Length - 1, 1)[0].ToString(), out int numericValue)) AddError(propertyName, "El ultimo carácter no debe ser numérico ");
-                        break;
-                    case nameof(Reference):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La Referencia no puede estar vacío");
-                        break;
-                    case nameof(TechnicalKey):
-
-                        var selectedAuthorizationSequenceType = Entity != null? Entity.AuthorizationSequenceType : AuthorizationSequenceTypeId > 0?  AuthorizationSequenceTypes.First(f => f.Id == AuthorizationSequenceTypeId) : null;
-                        if (string.IsNullOrEmpty(value) && selectedAuthorizationSequenceType?.Prefix == "FE") AddError(propertyName, "La Clave técnica no puede estar vacío");
-                        break;
-                   
-                  
-
-
-                }
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
         private void ClearErrors(string propertyName)
         {
             if (_errors.ContainsKey(propertyName))
@@ -864,15 +550,62 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 RaiseErrorsChanged(propertyName);
             }
         }
-        private void RaiseErrorsChanged(string propertyName)
+
+        private void ValidateProperty(string propertyName, int? value)
         {
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(CostCenterId):
+                    if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un centro de costo");
+                    break;
+                case nameof(AuthorizationSequenceTypeId):
+                    if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un tipo de autorización");
+                    break;
+                case nameof(StartRange):
+                    if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
+                    break;
+                case nameof(EndRange):
+                    if (!value.HasValue) AddError(propertyName, "El rango final no puede estar vacío");
+                    break;
+                case nameof(CurrentInvoiceNumber):
+                    if (!value.HasValue) AddError(propertyName, "El número de factura no puede estar vacío");
+                    if (value.HasValue && (value < StartRange || value > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
+                    break;
+            }
         }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Number):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de autorización no puede estar vacío");
+                    break;
+                case nameof(Prefix):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El prefijo no puede estar vacío");
+                    if (!string.IsNullOrEmpty(value) && int.TryParse(value[^1].ToString(), out _)) AddError(propertyName, "El último carácter no debe ser numérico");
+                    break;
+                case nameof(Reference):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La referencia no puede estar vacía");
+                    break;
+                case nameof(TechnicalKey):
+                    var selectedType = Entity != null
+                        ? Entity.AuthorizationSequenceType
+                        : AuthorizationSequenceTypeId is > 0
+                            ? AuthorizationSequenceTypes.FirstOrDefault(f => f.Id == AuthorizationSequenceTypeId)
+                            : null;
+                    if (string.IsNullOrEmpty(value) && selectedType?.Prefix == "FE") AddError(propertyName, "La clave técnica no puede estar vacía");
+                    break;
+            }
+        }
+
         private void ValidateProperties()
         {
             ValidateProperty(nameof(CostCenterId), CostCenterId);
             ValidateProperty(nameof(AuthorizationSequenceTypeId), AuthorizationSequenceTypeId);
-
             ValidateProperty(nameof(Number), Number);
             ValidateProperty(nameof(Prefix), Prefix);
             ValidateProperty(nameof(Reference), Reference);
@@ -880,123 +613,550 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             ValidateProperty(nameof(CurrentInvoiceNumber), CurrentInvoiceNumber);
             ValidateProperty(nameof(StartRange), StartRange);
             ValidateProperty(nameof(EndRange), EndRange);
-
-
         }
-        private void AddError(string propertyName, string error)
-        {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
         #endregion
 
-        #region ApiMethods
-      
-        
-        private async Task LoadListAsync()
+        #region Button States
+
+        public bool CanSave => !HasErrors
+            && AuthorizationSequenceTypeId is > 0
+            && CostCenterId is > 0
+            && Mode != '\0'
+            && this.HasChanges();
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand
         {
-            string query = GetLoadQueries();
-            dynamic variables = new ExpandoObject();
+            get
+            {
+                _saveCommand ??= new AsyncCommand(SaveAsync);
+                return _saveCommand;
+            }
+        }
+
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
+        {
+            get
+            {
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
+            }
+        }
+
+        private ICommand? _searchDianCommand;
+        public ICommand SearchDianCommand
+        {
+            get
+            {
+                _searchDianCommand ??= new AsyncCommand(SearchAuthorizationSequencesAsync);
+                return _searchDianCommand;
+            }
+        }
+
+        #endregion
+
+        #region Constructor
+
+        public AuthorizationSequenceDetailViewModel(
+            IRepository<AuthorizationSequenceGraphQLModel> authorizationSequenceService,
+            IRepository<DianSoftwareConfigGraphQLModel> dianConfigService,
+            IRepository<DianCertificateGraphQLModel> dianCertService,
+            IEventAggregator eventAggregator,
+            CostCenterCache costCenterCache,
+            AuthorizationSequenceTypeCache authorizationSequenceTypeCache)
+        {
+            _authorizationSequenceService = authorizationSequenceService;
+            _dianConfigService = dianConfigService;
+            _dianCertService = dianCertService;
+            _eventAggregator = eventAggregator;
+            _costCenterCache = costCenterCache;
+            _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override async void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
             try
             {
                 IsBusy = true;
-                variables.filter = new ExpandoObject();
-                if (LoadOrphan)
+                SelectedSequenceOrigin = SequenceOriginEnum.M;
+
+                var tasks = new List<Task>
                 {
-                    variables.authorizationSequencesFilters = new ExpandoObject();
-                    variables.authorizationSequencesFilters.isActive = true;
-                    variables.authorizationSequencesFilters.CostCenterId = _entity.CostCenter.Id;
-                    //variables.authorizationSequencesFilters.nextAuthorizationSequenceId = null;
-                    variables.authorizationSequencesFilters.endDateFrom = DateTime.Today.ToString("yyyy-MM-dd");
+                    _costCenterCache.EnsureLoadedAsync(),
+                    _authorizationSequenceTypeCache.EnsureLoadedAsync()
+                };
+
+                if (IsNewRecord)
+                {
+                    tasks.Add(LoadAndCacheDianPrerequisitesAsync());
                 }
 
-                AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
+                await Task.WhenAll(tasks);
 
-               
-                if (LoadOrphan)
-                {
-                        var Orphans = source.AuthorizationSequences?.Entries.Where(f => f.NextAuthorizationSequence == null).Where(f => f.Id != Entity.Id);
-                        var selected = Orphans.FirstOrDefault(f => f.Id == Entity.NextAuthorizationSequence?.Id);
-                        if (Entity.NextAuthorizationSequence != null && Orphans.FirstOrDefault(f => f.Id == Entity.NextAuthorizationSequence?.Id) == null)
-                        {
-                            Orphans.Append(Entity.NextAuthorizationSequence);
-                        }
-                    OrphanAuthorizationSequences = Context.AutoMapper.Map<ObservableCollection<AuthorizationSequenceGraphQLModel>>(Orphans);
+                CostCenters = [.. _costCenterCache.Items];
+                AuthorizationSequenceTypes = [.. _authorizationSequenceTypeCache.Items];
+                AvailableAuthorizationSequenceTypes = [.. _authorizationSequenceTypeCache.Items];
 
-                }
-                
-              
+                CostCenterId = _entity?.CostCenter?.Id;
+                AuthorizationSequenceTypeId = _entity?.AuthorizationSequenceType?.Id;
+
+                if (LoadOrphan) await LoadOrphanSequencesAsync();
             }
             catch (Exception ex)
             {
-                throw;
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.OnViewReady: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+
+                ValidateProperties();
+                this.AcceptChanges();
+
+                if (Entity == null)
+                {
+                    this.TrackChange(nameof(Mode));
+                    this.TrackChange(nameof(Origin));
+                    this.TrackChange(nameof(StartDate));
+                    this.TrackChange(nameof(EndDate));
+                }
+
+                NotifyOfPropertyChange(nameof(CanSave));
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                    new System.Action(() => this.SetFocus(() => Number)),
+                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }
+        }
+
+        #endregion
+
+        #region DIAN Search
+
+        private async Task LoadAndCacheDianPrerequisitesAsync()
+        {
+            var configTask = LoadActiveDianSoftwareConfigAsync();
+            var certTask = LoadActiveDianCertificateAsync();
+            await Task.WhenAll(configTask, certTask);
+
+            _dianConfig = configTask.Result;
+            _dianCertificate = certTask.Result;
+
+            var reasons = new List<string>();
+            if (_dianConfig == null) reasons.Add("No hay configuración DIAN activa para facturación electrónica");
+            if (_dianCertificate == null) reasons.Add("No hay certificado DIAN activo");
+
+            IsDianAvailable = reasons.Count == 0;
+            DianUnavailableReason = reasons.Count > 0 ? string.Join("\n", reasons) : string.Empty;
+        }
+
+        public async Task SearchAuthorizationSequencesAsync()
+        {
+            try
+            {
+                IsBusy = true;
+
+                var numberingRangeResponse = await Task.Run(() => GetAuthorizationSequences.GetNumberingRange(_dianConfig!, _dianCertificate!));
+                if (numberingRangeResponse.Status)
+                {
+                    AuthorizationSequences = [.. numberingRangeResponse.AuthorizationSequences];
+                    SelectedDianAuthorization = null;
+                }
+                else
+                {
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", numberingRangeResponse.Message,
+                        MessageBoxButton.OK, MessageBoxImage.Warning));
+                }
+            }
+            catch (Exception e)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"Error al consultar la DIAN: {e.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
-
         }
 
-        public async Task<AuthorizationSequenceGraphQLModel> LoadDataForEditAsync(int id)
+        private async Task<DianSoftwareConfigGraphQLModel?> LoadActiveDianSoftwareConfigAsync()
+        {
+            string query = _dianConfigQuery.Value;
+
+            dynamic variables = new ExpandoObject();
+            variables.activeDianSoftwareConfigEnvironment = "PRODUCTION";
+            variables.activeDianSoftwareConfigDocumentCategory = "INVOICE";
+
+            var context = await _dianConfigService.GetDataContextAsync<ActiveDianSoftwareConfigDataContext>(query, variables);
+            var config = context?.ActiveDianSoftwareConfig;
+
+            if (config == null || config.Id < 1) return null;
+            if (!config.IsActive) return null;
+
+            return config;
+        }
+
+        private async Task<DianCertificateGraphQLModel?> LoadActiveDianCertificateAsync()
+        {
+            string query = _dianCertQuery.Value;
+
+            dynamic variables = new ExpandoObject();
+
+            var context = await _dianCertService.GetDataContextAsync<ActiveDianCertificateDataContext>(query, variables);
+            var cert = context?.ActiveDianCertificate;
+
+            if (cert == null || cert.Id < 1) return null;
+
+            return cert;
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        public void SetSelectedAuthorizationSequence(AuthorizationSequenceGraphQLModel authorization)
+        {
+            Number = authorization.Number;
+            Prefix = authorization.Prefix;
+            TechnicalKey = authorization.TechnicalKey;
+            StartDate = authorization.StartDate;
+            EndDate = authorization.EndDate;
+            StartRange = authorization.StartRange;
+            EndRange = authorization.EndRange;
+            CurrentInvoiceNumber = authorization.StartRange;
+
+            if (string.IsNullOrEmpty(authorization.TechnicalKey))
+            {
+                AvailableAuthorizationSequenceTypes = new ObservableCollection<AuthorizationSequenceTypeGraphQLModel>(
+                    AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
+                AuthorizationSequenceTypeId = null;
+            }
+            else
+            {
+                AvailableAuthorizationSequenceTypes = [.. AuthorizationSequenceTypes];
+                var feType = AvailableAuthorizationSequenceTypes.FirstOrDefault(f => f.Prefix == "FE");
+                AuthorizationSequenceTypeId = feType?.Id;
+            }
+            NotifyOfPropertyChange(nameof(EnabledAST));
+        }
+
+        public void ClearValues()
+        {
+            Number = string.Empty;
+            Prefix = string.Empty;
+            TechnicalKey = string.Empty;
+            StartDate = null;
+            EndDate = null;
+            StartRange = null;
+            EndRange = null;
+            CurrentInvoiceNumber = null;
+            AvailableAuthorizationSequenceTypes = [.. AuthorizationSequenceTypes];
+        }
+
+        #endregion
+
+        #region Save / Cancel
+
+        public async Task SaveAsync()
         {
             try
             {
-                string query = GetLoadAuthorizationSequenceByIdQuery();
+                IsBusy = true;
+                UpsertResponseType<AuthorizationSequenceGraphQLModel> result = await ExecuteSaveAsync();
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    return;
+                }
 
-                dynamic variables = new ExpandoObject();
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AuthorizationSequenceCreateMessage { CreatedAuthorizationSequence = result }
+                        : new AuthorizationSequenceUpdateMessage { UpdatedAuthorizationSequence = result }
+                );
 
-
-                variables.singleItemResponseId = id;
-
-                var entity = await _authorizationSequenceService.FindByIdAsync(query, variables);
-                Entity = entity;
-
-                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
-                PopulateFromAuthorizationSequence(entity);
-
-                return entity;
+                await TryCloseAsync(true);
+            }
+            catch (GraphQLHttpRequestException exGraphQL)
+            {
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                throw new AsyncException(innerException: ex);
+                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
-        public void PopulateFromAuthorizationSequence(AuthorizationSequenceGraphQLModel entity)
-        {
-           
-            Id = entity.Id;
 
-            Id = entity.Id;
+        private async Task<UpsertResponseType<AuthorizationSequenceGraphQLModel>> ExecuteSaveAsync()
+        {
+            if (IsNewRecord)
+            {
+                string query = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _authorizationSequenceService.CreateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
+            }
+            else
+            {
+                string query = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity!.Id;
+                return await _authorizationSequenceService.UpdateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
+            }
+        }
+
+        public async Task CancelAsync()
+        {
+            await TryCloseAsync(false);
+        }
+
+        #endregion
+
+        #region Load Data
+
+        public async Task LoadDataForEditAsync(int id)
+        {
+            string query = _loadByIdQuery.Value;
+            dynamic variables = new ExpandoObject();
+            variables.singleItemResponseId = id;
+
+            var entity = await _authorizationSequenceService.FindByIdAsync(query, variables);
+            Entity = entity;
+            PopulateFromEntity(entity);
+        }
+
+        private void PopulateFromEntity(AuthorizationSequenceGraphQLModel entity)
+        {
             Number = entity.Number;
             Reference = entity.Reference;
             Prefix = entity.Prefix;
             TechnicalKey = entity.TechnicalKey;
             Mode = entity.Mode;
+            Origin = entity.Origin;
             StartDate = entity.StartDate;
             EndDate = entity.EndDate;
             StartRange = entity.StartRange;
             EndRange = entity.EndRange;
             CurrentInvoiceNumber = entity.CurrentInvoiceNumber;
             IsActive = entity.IsActive;
-            CostCenterId =  _entity.CostCenter.Id;
-            AuthorizationSequenceTypeId = _entity.AuthorizationSequenceType.Id;
-
-
+            NotifyOfPropertyChange(nameof(SequenceD));
+            NotifyOfPropertyChange(nameof(EnabledAST));
         }
-        public string GetLoadAuthorizationSequenceByIdQuery()
+
+        private async Task LoadOrphanSequencesAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                string query = _orphanQuery.Value;
+                dynamic variables = new ExpandoObject();
+                variables.authorizationSequencesFilters = new ExpandoObject();
+                variables.authorizationSequencesFilters.isActive = true;
+                variables.authorizationSequencesFilters.costCenterId = _entity!.CostCenter!.Id;
+                variables.authorizationSequencesFilters.endDateFrom = DateTime.Today.ToString("yyyy-MM-dd");
+
+                AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
+
+                ObservableCollection<AuthorizationSequenceGraphQLModel>? entries = source?.AuthorizationSequences?.Entries;
+                if (entries != null)
+                {
+                    List<AuthorizationSequenceGraphQLModel> orphans = entries
+                        .Where(f => f.NextAuthorizationSequence == null)
+                        .Where(f => f.Id != Entity!.Id)
+                        .ToList();
+
+                    if (Entity!.NextAuthorizationSequence != null && !orphans.Any(f => f.Id == Entity.NextAuthorizationSequence.Id))
+                    {
+                        orphans.Add(Entity.NextAuthorizationSequence);
+                    }
+                    OrphanAuthorizationSequences = [.. orphans];
+                }
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        private static readonly Lazy<string> _createQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.Prefix)
+                    .Field(e => e.CurrentInvoiceNumber)
+                    .Field(e => e.StartRange)
+                    .Field(e => e.EndRange)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Origin)
+                    .Select(e => e.CostCenter, cos => cos
+                        .Field(c => c.Id)
+                        .Field(c => c.Name))
+                    .Select(e => e.AuthorizationSequenceType, type => type
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreateAuthorizationSequenceInput!");
+            var fragment = new GraphQLQueryFragment("createAuthorizationSequence", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
+
+        private static readonly Lazy<string> _updateQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.Prefix)
+                    .Field(e => e.CurrentInvoiceNumber)
+                    .Field(e => e.StartRange)
+                    .Field(e => e.EndRange)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.Origin)
+                    .Select(e => e.CostCenter, cos => cos
+                        .Field(c => c.Id)
+                        .Field(c => c.Name))
+                    .Select(e => e.AuthorizationSequenceType, type => type
+                        .Field(c => c.Id)
+                        .Field(c => c.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateAuthorizationSequenceInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
+
+        private static readonly Lazy<string> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<AuthorizationSequenceGraphQLModel>
-             .Create()
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Description)
+                .Field(e => e.Number)
+                .Field(e => e.IsActive)
+                .Field(e => e.Origin)
+                .Field(e => e.Prefix)
+                .Field(e => e.CurrentInvoiceNumber)
+                .Field(e => e.Mode)
+                .Field(e => e.TechnicalKey)
+                .Field(e => e.Reference)
+                .Field(e => e.StartDate)
+                .Field(e => e.EndDate)
+                .Field(e => e.StartRange)
+                .Field(e => e.EndRange)
+                .Select(e => e.NextAuthorizationSequence, cat => cat
+                    .Field(c => c.Id)
+                    .Field(c => c.Description))
+                .Select(e => e.CostCenter, cat => cat
+                    .Field(c => c.Id)
+                    .Field(c => c.Name)
+                    .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
+                        .Field(d => d.Id)
+                        .Field(d => d.Description))
+                    .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
+                        .Field(d => d.Id)
+                        .Field(d => d.Description)))
+                .Select(e => e.AuthorizationSequenceType, cat => cat
+                    .Field(c => c.Id)
+                    .Field(c => c.Name))
+                .Build();
 
-                 .Field(e => e.Id)
-                 .Field(e => e.Description)
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+            var fragment = new GraphQLQueryFragment("authorizationSequence", [parameter], fields, "SingleItemResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _dianConfigQuery = new(() =>
+        {
+            var fields = FieldSpec<DianSoftwareConfigGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.ProviderNit)
+                .Field(f => f.ProviderDv)
+                .Field(f => f.SoftwareId)
+                .Field(f => f.ServiceUrl)
+                .Field(f => f.WsdlUrl)
+                .Field(f => f.IsActive)
+                .Build();
+
+            var envParam = new GraphQLQueryParameter("environment", "DianEnvironment!");
+            var catParam = new GraphQLQueryParameter("documentCategory", "DianDocumentCategory!");
+            var fragment = new GraphQLQueryFragment("activeDianSoftwareConfig", [envParam, catParam], fields);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _dianCertQuery = new(() =>
+        {
+            var fields = FieldSpec<DianCertificateGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.CertificatePem)
+                .Field(f => f.PrivateKeyPem)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("activeDianCertificate", [], fields);
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
+
+        private static readonly Lazy<string> _orphanQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
                     .Field(e => e.Number)
                     .Field(e => e.IsActive)
                     .Field(e => e.Prefix)
@@ -1010,180 +1170,40 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(e => e.EndRange)
                     .Select(e => e.NextAuthorizationSequence, cat => cat
                         .Field(c => c.Id)
-                        .Field(c => c.Description)
-
-                    )
+                        .Field(c => c.Description))
                     .Select(e => e.CostCenter, cat => cat
                         .Field(c => c.Id)
                         .Field(c => c.Name)
                         .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Description)
-                            )
+                            .Field(d => d.Id)
+                            .Field(d => d.Description))
                         .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
-                                .Field(d => d.Id)
-                                .Field(d => d.Description)
-                            )
-                    )
+                            .Field(d => d.Id)
+                            .Field(d => d.Description)))
                     .Select(e => e.AuthorizationSequenceType, cat => cat
                         .Field(c => c.Id)
-                        .Field(c => c.Name)
-                    )
-                 .Build();
-            var IdParameter = new GraphQLQueryParameter("id", "ID!");
-
-            var fragment = new GraphQLQueryFragment("authorizationSequence", [IdParameter], fields, "SingleItemResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-
-        }
-        public string GetLoadQueries()
-        {
-        
-            
-            
-         
-            var authorizationFields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Description)
-                  .Field(e => e.Number)
-                  .Field(e => e.IsActive)
-                  .Field(e => e.Prefix)
-                  .Field(e => e.CurrentInvoiceNumber)
-                  .Field(e => e.Mode)
-                  .Field(e => e.TechnicalKey)
-                  .Field(e => e.Reference)
-                  .Field(e => e.StartDate)
-                  .Field(e => e.EndDate)
-                  .Field(e => e.StartRange)
-                  .Field(e => e.EndRange)
-                  .Select(e => e.NextAuthorizationSequence, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Description)
-
-                  )
-                  .Select(e => e.CostCenter, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-                      .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
-                              .Field(d => d.Id)
-                              .Field(d => d.Description)
-                          )
-                      .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
-                              .Field(d => d.Id)
-                              .Field(d => d.Description)
-                          )
-                  )
-                  .Select(e => e.AuthorizationSequenceType, cat => cat
-                      .Field(c => c.Id)
-                      .Field(c => c.Name)
-                  )
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-
-            var authorizationPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var authorizationfilterParameters = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
-            var authorizationFragment = new GraphQLQueryFragment("authorizationSequencesPage", [authorizationPagParameters, authorizationfilterParameters], authorizationFields,  "AuthorizationSequences");
-            var builder = new GraphQLQueryBuilder([authorizationFragment]);
-            return builder.GetQuery();
-        }
-        public string GetCreateQuery()
-        {           
-            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
-                   .Field(e => e.Id)
-                   .Field(e => e.Description)
-                   .Field(e => e.Prefix)
-                    .Field(e => e.CurrentInvoiceNumber)
-                    .Field(e => e.StartRange)
-                    .Field(e => e.EndRange)
-                    .Field(e => e.StartDate)
-                    .Field(e => e.EndDate)
-                    .Field(e => e.IsActive)
-
-                    .Select(e => e.CostCenter, cos => cos
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                    .Select(e => e.AuthorizationSequenceType, type => type
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-                    
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
+                        .Field(c => c.Name)))
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateAuthorizationSequenceInput!");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
+            var fragment = new GraphQLQueryFragment("authorizationSequencesPage", [paginationParam, filtersParam], fields, "AuthorizationSequences");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
+        });
 
-            var fragment = new GraphQLQueryFragment("createAuthorizationSequence", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-        public string GetUpdateQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "authorizationSequence", nested: sq => sq
-                    .Field(e => e.Id)
-                   .Field(e => e.Description)
-                   .Field(e => e.Prefix)
-                    .Field(e => e.CurrentInvoiceNumber)
-                    .Field(e => e.StartRange)
-                    .Field(e => e.EndRange)
-                    .Field(e => e.StartDate)
-                    .Field(e => e.EndDate)
-                    .Field(e => e.IsActive)
-
-                    .Select(e => e.CostCenter, cos => cos
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                     )
-                    .Select(e => e.AuthorizationSequenceType, type => type
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                    )
-
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-            
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateAuthorizationSequenceInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
         #endregion
-        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
-        {
 
-            // Desconectar eventos para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
-            return base.OnDeactivateAsync(close, cancellationToken);
+        #region Helper
+
+        public new void AcceptChanges()
+        {
+            ViewModelExtensions.AcceptChanges(this);
         }
+
+        #endregion
     }
 }

@@ -76,6 +76,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _itemTypeId = value;
                     NotifyOfPropertyChange(nameof(ItemTypeId));
+                    this.TrackChange(nameof(ItemTypeId));
                 }
             }
         }
@@ -154,6 +155,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(ItemTypeId), ItemTypeId);
             this.AcceptChanges();
         }
 
@@ -179,7 +181,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     .Field(e => e.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("data", "CreateItemCategoryInput!");
+            var parameter = new GraphQLQueryParameter("input", "CreateItemCategoryInput!");
             var fragment = new GraphQLQueryFragment("createItemCategory", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
@@ -203,7 +205,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             var parameters = new List<GraphQLQueryParameter>
             {
                 new("data", "UpdateItemCategoryInput!"),
-                new("id", "Int!")
+                new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("updateItemCategory", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
@@ -217,8 +219,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             if (IsNewRecord)
             {
                 query = GetCreateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseData");
-                variables.createResponseData.itemTypeId = ItemTypeId;
+                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
             }
             else
             {
@@ -237,12 +238,12 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemCategoryCreateMessage { CreatedItemCategory = result.Entity });
+                    new ItemCategoryCreateMessage { CreatedItemCategory = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemCategoryUpdateMessage { UpdatedItemCategory = result.Entity });
+                    new ItemCategoryUpdateMessage { UpdatedItemCategory = result });
             }
         }
 

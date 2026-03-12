@@ -27,7 +27,6 @@ using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Books.AccountingAccounts.DTO;
 using NetErp.Books.AccountingEntities.ViewModels;
 using NetErp.Books.AccountingEntries.DTO;
-using NetErp.Books.IdentificationTypes.DTO;
 using NetErp.Global.CostCenters.DTO;
 using NetErp.Global.DynamicControl;
 using NetErp.Global.MainMenu.ViewModels;
@@ -57,7 +56,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
-using static NetErp.Books.AccountingSources.ViewModels.AccountingSourceDetailViewModel;
+
 
 namespace NetErp
 {
@@ -128,6 +127,9 @@ namespace NetErp
             _ = kernel.Bind<CtasRestVtasAccountingAccountGroupCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CtasRestVtasAccountingAccountGroupCache>());
 
+            _ = kernel.Bind<AccountingAccountGroupCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingAccountGroupCache>());
+
             _ = kernel.Bind<AccountingBookCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccountingBookCache>());
 
@@ -143,8 +145,8 @@ namespace NetErp
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuthorizationSequenceTypeCache>());
 
-            _ = kernel.Bind<ModuleCache>().ToSelf().InSingletonScope();
-            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ModuleCache>());
+            _ = kernel.Bind<MenuModuleCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MenuModuleCache>());
 
             _ = kernel.Bind<TaxCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<TaxCategoryCache>());
@@ -219,6 +221,8 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ItemBrandGraphQLModel>>().To<GraphQLRepository<ItemBrandGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingGroupGraphQLModel>>().To<GraphQLRepository<AccountingGroupGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AwsS3ConfigGraphQLModel>>().To<GraphQLRepository<AwsS3ConfigGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<GlobalConfigGraphQLModel>>().To<GraphQLRepository<GlobalConfigGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<S3StorageLocationGraphQLModel>>().To<GraphQLRepository<S3StorageLocationGraphQLModel>>().InSingletonScope();
 
             // Books
             _ = kernel.Bind<IRepository<TaxGraphQLModel>>().To<GraphQLRepository<TaxGraphQLModel>>().InSingletonScope();
@@ -253,7 +257,10 @@ namespace NetErp
             _ = kernel.Bind<IRepository<AuthorizationSequenceGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ProcessTypeGraphQLModel>>().To<GraphQLRepository<ProcessTypeGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AuthorizationSequenceTypeGraphQLModel>>().To<GraphQLRepository<AuthorizationSequenceTypeGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<DianSoftwareConfigGraphQLModel>>().To<GraphQLRepository<DianSoftwareConfigGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<DianCertificateGraphQLModel>>().To<GraphQLRepository<DianCertificateGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ModuleGraphQLModel>>().To<GraphQLRepository<ModuleGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<MenuModuleGraphQLModel>>().To<GraphQLRepository<MenuModuleGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<MenuItemGraphQLModel>>().To<GraphQLRepository<MenuItemGraphQLModel>>().InSingletonScope();
 
 
@@ -372,7 +379,6 @@ namespace NetErp
             var config = new MapperConfiguration(cfg =>
             {
                 _ = cfg.CreateMap<AccountingEntityGraphQLModel, AccountingEntityDTO>();
-                _ = cfg.CreateMap<IdentificationTypeGraphQLModel, IdentificationTypeDTO>();
                 _ = cfg.CreateMap<WithholdingTypeGraphQLModel, WithholdingTypeDTO>();
                 _ = cfg.CreateMap<SupplierGraphQLModel, SupplierDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, CostCenterDTO>();
@@ -400,7 +406,7 @@ namespace NetErp
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();
-                _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountPOCO>();
+                // AccountingAccountPOCO mapping removed - AccountingSources now uses AccountingAccountGraphQLModel directly
                 
                 // CashDrawer DTOs
                 _ = cfg.CreateMap<CompanyLocationGraphQLModel, CashDrawerCompanyLocationDTO>();
@@ -415,6 +421,11 @@ namespace NetErp
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<AccountingAccountGroupDTO, AccountingAccountGroupDTO>();
+                _ = cfg.CreateMap<AccountingAccountGroupFilterGraphQLModel, AccountingAccountGroupFilterDTO>()
+                    .ForMember(dest => dest.AccountingAccountId, opt => opt.MapFrom(src => src.AccountingAccount.Id))
+                    .ForMember(dest => dest.AccountingAccountCode, opt => opt.MapFrom(src => src.AccountingAccount.Code))
+                    .ForMember(dest => dest.AccountingAccountName, opt => opt.MapFrom(src => src.AccountingAccount.Name));
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
                 _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();

@@ -2,7 +2,7 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using Dictionaries;
+using DevExpress.Xpf.Core;
 using Force.DeepCloner;
 using Microsoft.Win32;
 using Models.Books;
@@ -10,6 +10,7 @@ using Models.Inventory;
 using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Inventory.CatalogItems.DTO;
+using NetErp.Global.Modals.ViewModels;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
 using NetErp.Inventory.MeasurementUnits.ViewModels;
@@ -18,8 +19,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using static Models.Global.GraphQLResponseTypes;
@@ -46,7 +47,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             _itemService = itemService ?? throw new ArgumentNullException(nameof(itemService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
-            Messenger.Default.Register<ReturnedItemFromModalViewMessage>(this, MessageToken.Component, false, OnFindComponentMessage);
+            Messenger.Default.Register<ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel>>(this, SearchWithThreeColumnsGridMessageToken.Component, false, OnFindComponentMessage);
         }
 
         #endregion
@@ -110,6 +111,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     _reference = value;
                     NotifyOfPropertyChange(nameof(Reference));
                     this.TrackChange(nameof(Reference));
+                    ValidateReference();
                     MasterContext.RefreshCanSave();
                 }
             }
@@ -215,71 +217,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         #region ComboBox Selection Properties
 
-        private int _measurementUnitId;
-        public int MeasurementUnitId
-        {
-            get => _measurementUnitId;
-            set
-            {
-                if (_measurementUnitId != value)
-                {
-                    _measurementUnitId = value;
-                    NotifyOfPropertyChange(nameof(MeasurementUnitId));
-                    this.TrackChange(nameof(MeasurementUnitId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _brandId;
-        public int BrandId
-        {
-            get => _brandId;
-            set
-            {
-                if (_brandId != value)
-                {
-                    _brandId = value;
-                    NotifyOfPropertyChange(nameof(BrandId));
-                    this.TrackChange(nameof(BrandId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _accountingGroupId;
-        public int AccountingGroupId
-        {
-            get => _accountingGroupId;
-            set
-            {
-                if (_accountingGroupId != value)
-                {
-                    _accountingGroupId = value;
-                    NotifyOfPropertyChange(nameof(AccountingGroupId));
-                    this.TrackChange(nameof(AccountingGroupId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
-        private int _sizeId;
-        public int SizeId
-        {
-            get => _sizeId;
-            set
-            {
-                if (_sizeId != value)
-                {
-                    _sizeId = value;
-                    NotifyOfPropertyChange(nameof(SizeId));
-                    this.TrackChange(nameof(SizeId));
-                    MasterContext.RefreshCanSave();
-                }
-            }
-        }
-
         private MeasurementUnitDTO _selectedMeasurementUnit;
+        [ExpandoPath("measurementUnitId", SerializeAsId = true)]
         public MeasurementUnitDTO SelectedMeasurementUnit
         {
             get => _selectedMeasurementUnit;
@@ -289,12 +228,15 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedMeasurementUnit = value;
                     NotifyOfPropertyChange(nameof(SelectedMeasurementUnit));
-                    if (value != null) MeasurementUnitId = value.Id;
+                    this.TrackChange(nameof(SelectedMeasurementUnit), value);
+                    ValidateMeasurementUnit();
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private ItemBrandDTO _selectedBrand;
+        [ExpandoPath("brandId", SerializeAsId = true)]
         public ItemBrandDTO SelectedBrand
         {
             get => _selectedBrand;
@@ -304,12 +246,14 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedBrand = value;
                     NotifyOfPropertyChange(nameof(SelectedBrand));
-                    if (value != null) BrandId = value.Id;
+                    this.TrackChange(nameof(SelectedBrand), value);
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private AccountingGroupDTO _selectedAccountingGroup;
+        [ExpandoPath("accountingGroupId", SerializeAsId = true)]
         public AccountingGroupDTO SelectedAccountingGroup
         {
             get => _selectedAccountingGroup;
@@ -319,12 +263,15 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedAccountingGroup = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingGroup));
-                    if (value != null) AccountingGroupId = value.Id;
+                    this.TrackChange(nameof(SelectedAccountingGroup), value);
+                    ValidateAccountingGroup();
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
 
         private ItemSizeCategoryDTO _selectedSize;
+        [ExpandoPath("sizeCategoryId", SerializeAsId = true)]
         public ItemSizeCategoryDTO SelectedSize
         {
             get => _selectedSize;
@@ -334,7 +281,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _selectedSize = value;
                     NotifyOfPropertyChange(nameof(SelectedSize));
-                    if (value != null) SizeId = value.Id;
+                    this.TrackChange(nameof(SelectedSize), value);
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
@@ -356,10 +304,19 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             {
                 if (_eanCodes != value)
                 {
+                    if (_eanCodes != null) _eanCodes.CollectionChanged -= EanCodes_CollectionChanged;
                     _eanCodes = value;
+                    if (_eanCodes != null) _eanCodes.CollectionChanged += EanCodes_CollectionChanged;
                     NotifyOfPropertyChange(nameof(EanCodes));
+                    this.TrackChange(nameof(EanCodes));
+                    MasterContext.RefreshCanSave();
                 }
             }
+        }
+        private void EanCodes_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            this.TrackChange(nameof(EanCodes));
+            MasterContext.RefreshCanSave();
         }
 
         private ObservableCollection<ComponentsByItemDTO> _components = [];
@@ -370,25 +327,44 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             {
                 if (_components != value)
                 {
+                    if (_components != null) _components.CollectionChanged -= Components_CollectionChanged;
                     _components = value;
+                    if (_components != null) _components.CollectionChanged += Components_CollectionChanged;
                     NotifyOfPropertyChange(nameof(Components));
+                    this.TrackChange(nameof(Components));
+                    MasterContext.RefreshCanSave();
                 }
             }
         }
-
-        private ObservableCollection<ImageByItemDTO> _itemImages = [];
-        public ObservableCollection<ImageByItemDTO> ItemImages
+        private void Components_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            get => _itemImages;
+            this.TrackChange(nameof(Components));
+            MasterContext.RefreshCanSave();
+        }
+
+        private ObservableCollection<ImageByItemDTO> _images = [];
+        public ObservableCollection<ImageByItemDTO> Images
+        {
+            get => _images;
             set
             {
-                if (_itemImages != value)
+                if (_images != value)
                 {
-                    _itemImages = value;
-                    NotifyOfPropertyChange(nameof(ItemImages));
+                    if (_images != null) _images.CollectionChanged -= Images_CollectionChanged;
+                    _images = value;
+                    if (_images != null) _images.CollectionChanged += Images_CollectionChanged;
+                    NotifyOfPropertyChange(nameof(Images));
                     NotifyOfPropertyChange(nameof(CanAddImage));
+                    this.TrackChange(nameof(Images));
+                    MasterContext.RefreshCanSave();
                 }
             }
+        }
+        private void Images_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            this.TrackChange(nameof(Images));
+            NotifyOfPropertyChange(nameof(CanAddImage));
+            MasterContext.RefreshCanSave();
         }
 
         #endregion
@@ -582,6 +558,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 {
                     _subCategoryId = value;
                     NotifyOfPropertyChange(nameof(SubCategoryId));
+                    this.TrackChange(nameof(SubCategoryId));
                 }
             }
         }
@@ -612,9 +589,33 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                 AddError(nameof(Name), "El nombre del item no puede estar vacío");
         }
 
+        private void ValidateReference()
+        {
+            ClearErrors(nameof(Reference));
+            if (string.IsNullOrWhiteSpace(Reference))
+                AddError(nameof(Reference), "La referencia del item no puede estar vacía");
+        }
+
+        private void ValidateMeasurementUnit()
+        {
+            ClearErrors(nameof(SelectedMeasurementUnit));
+            if (SelectedMeasurementUnit is null)
+                AddError(nameof(SelectedMeasurementUnit), "Debe seleccionar una unidad de medida");
+        }
+
+        private void ValidateAccountingGroup()
+        {
+            ClearErrors(nameof(SelectedAccountingGroup));
+            if (SelectedAccountingGroup is null)
+                AddError(nameof(SelectedAccountingGroup), "Debe seleccionar un grupo contable");
+        }
+
         public override void ValidateAll()
         {
             ValidateName();
+            ValidateReference();
+            ValidateMeasurementUnit();
+            ValidateAccountingGroup();
         }
 
         #endregion
@@ -654,6 +655,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         {
             if (SelectedEanCode != null)
             {
+                if (ThemedMessageBox.Show("Atención!", $"¿Confirma que desea eliminar el código de barras: {SelectedEanCode}?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 EanCodes.Remove(SelectedEanCode);
             }
         }
@@ -702,16 +704,16 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                         ImagePath = selectedFilePath,
                         SourceImage = bitmap,
                         S3FileName = fileName.Replace(" ", "_").ToLower(),
-                        S3Bucket = S3Helper.S3Bucket,
-                        S3BucketDirectory = S3Helper.S3Directory
+                        S3Bucket = MasterContext.S3Helper.Bucket,
+                        S3BucketDirectory = MasterContext.S3Helper.Directory
                     };
-                    ItemImages.Add(itemImage);
+                    Images.Add(itemImage);
                 }
             }
         }
 
-        public bool CanAddImageCmd(object p) => ItemImages != null && ItemImages.Count < 4;
-        public bool CanAddImage => ItemImages != null && ItemImages.Count < 4;
+        public bool CanAddImageCmd(object p) => Images != null && Images.Count < 4;
+        public bool CanAddImage => Images != null && Images.Count < 4;
 
         private ICommand _deleteImageCommand;
         public ICommand DeleteImageCommand
@@ -727,7 +729,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         {
             if (p is ImageByItemDTO itemImageDTO)
             {
-                ItemImages.Remove(itemImageDTO);
+                Images.Remove(itemImageDTO);
             }
         }
 
@@ -759,22 +761,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         public async void SearchComponents(object p)
         {
-            string query = @"query($filter: ItemFilterInput){
-                        PageResponse: itemPage(filter: $filter){
-                        count
-                        rows{
-                            id
-                            name
-                            code
-                            reference
-                            allowFraction
-                            measurementUnit{
-                            id
-                            name
-                            }
-                        }
-                        }
-                    }";
+            string query = GetSearchComponentsQuery();
 
             string fieldHeader1 = "Código";
             string fieldHeader2 = "Nombre";
@@ -782,19 +769,37 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             string fieldData1 = "Code";
             string fieldData2 = "Name";
             string fieldData3 = "Reference";
-            dynamic variables = new System.Dynamic.ExpandoObject();
-            variables.filter = new System.Dynamic.ExpandoObject();
-            variables.filter.and = new System.Dynamic.ExpandoObject[]
-            {
-                new(),
-                new()
-            };
-            variables.filter.and[0].catalogId = new System.Dynamic.ExpandoObject();
-            variables.filter.and[0].catalogId.@operator = "=";
-            variables.filter.and[0].catalogId.value = MasterContext.SelectedCatalog.Id;
-            var viewModel = new SearchItemModalViewModel<ItemDTO, ItemGraphQLModel>(query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3, variables, MessageToken.Component, MasterContext.Context, _dialogService);
+
+            var viewModel = new SearchWithThreeColumnsGridViewModel<ItemGraphQLModel>(
+                query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3,
+                null, SearchWithThreeColumnsGridMessageToken.Component, _dialogService);
 
             await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
+        }
+
+        private static string GetSearchComponentsQuery()
+        {
+            var fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.PageNumber)
+                .Field(f => f.PageSize)
+                .Field(f => f.TotalPages)
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Code)
+                    .Field(e => e.Reference)
+                    .Field(e => e.AllowFraction))
+                .Build();
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("filters", "ItemFilters"),
+                new("pagination", "Pagination")
+            };
+            var fragment = new GraphQLQueryFragment("itemsPage", parameters, fields, "PageResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
         public bool CanOpenSearchComponents(object p) => true;
@@ -813,6 +818,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         {
             if (SelectedComponent != null)
             {
+                if (ThemedMessageBox.Show("Atención!", $"¿Confirma que desea eliminar el producto relacionado: {SelectedComponent.Component?.Name}?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 Components.Remove(SelectedComponent);
             }
         }
@@ -842,13 +848,15 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         public bool CanAddComponent(object p) => ComponentQuantity != 0;
 
-        private void OnFindComponentMessage(ReturnedItemFromModalViewMessage message)
+        private void OnFindComponentMessage(ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel> message)
         {
-            ReturnedItemFromModal = MasterContext.Context.AutoMapper.Map<ItemDTO>(message.ReturnedItem);
+            if (message.ReturnedData is null) return;
+            ReturnedItemFromModal = MasterContext.Context.AutoMapper.Map<ItemDTO>(message.ReturnedData);
             ComponentName = ReturnedItemFromModal.Name;
             ComponentReference = ReturnedItemFromModal.Reference;
             ComponentCode = ReturnedItemFromModal.Code;
             ComponentAllowFraction = ReturnedItemFromModal.AllowFraction;
+            ComponentQuantityIsEnable = true;
         }
 
         #endregion
@@ -873,7 +881,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             AiuBasedService = false;
             EanCodes = [];
             Components = [];
-            ItemImages = [];
+            Images = [];
             SelectedTabIndex = 0;
 
             // Set defaults from parent ItemType
@@ -888,8 +896,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     HasComponents = !itemTypeDTO.StockControl;
                 }
             }
-            SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == 0);
-            SelectedSize = Sizes?.FirstOrDefault(x => x.Id == 0);
+            SelectedBrand = null;
+            SelectedSize = null;
 
             ComponentName = string.Empty;
             ComponentCode = string.Empty;
@@ -921,39 +929,21 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             SubCategoryId = itemDTO.SubCategory?.Id ?? 0;
 
             // ComboBox selections
-            if (itemDTO.Brand != null)
-            {
-                SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == itemDTO.Brand.Id);
-                BrandId = itemDTO.Brand.Id;
-            }
-            else
-            {
-                SelectedBrand = ItemBrands?.FirstOrDefault(x => x.Id == 0);
-                BrandId = 0;
-            }
+            SelectedBrand = itemDTO.Brand != null
+                ? ItemBrands?.FirstOrDefault(x => x.Id == itemDTO.Brand.Id)
+                : null;
 
-            if (itemDTO.SizeCategory != null)
-            {
-                SelectedSize = Sizes?.FirstOrDefault(x => x.Id == itemDTO.SizeCategory.Id);
-                SizeId = itemDTO.SizeCategory.Id;
-            }
-            else
-            {
-                SelectedSize = Sizes?.FirstOrDefault(x => x.Id == 0);
-                SizeId = 0;
-            }
+            SelectedSize = itemDTO.SizeCategory != null
+                ? Sizes?.FirstOrDefault(x => x.Id == itemDTO.SizeCategory.Id)
+                : null;
 
-            if (itemDTO.MeasurementUnit != null)
-            {
-                SelectedMeasurementUnit = MeasurementUnits?.FirstOrDefault(x => x.Id == itemDTO.MeasurementUnit.Id);
-                MeasurementUnitId = itemDTO.MeasurementUnit.Id;
-            }
+            SelectedMeasurementUnit = itemDTO.MeasurementUnit != null
+                ? MeasurementUnits?.FirstOrDefault(x => x.Id == itemDTO.MeasurementUnit.Id)
+                : null;
 
-            if (itemDTO.AccountingGroup != null)
-            {
-                SelectedAccountingGroup = AccountingGroups?.FirstOrDefault(x => x.Id == itemDTO.AccountingGroup.Id);
-                AccountingGroupId = itemDTO.AccountingGroup.Id;
-            }
+            SelectedAccountingGroup = itemDTO.AccountingGroup != null
+                ? AccountingGroups?.FirstOrDefault(x => x.Id == itemDTO.AccountingGroup.Id)
+                : null;
 
             // Collections
             EanCodes = itemDTO.EanCodes != null
@@ -962,8 +952,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             Components = itemDTO.Components != null
                 ? new ObservableCollection<ComponentsByItemDTO>(itemDTO.Components.Select(x => (ComponentsByItemDTO)x.Clone()).ToList())
                 : [];
-            ItemImages = itemDTO.Images != null
-                ? new ObservableCollection<ImageByItemDTO>(itemDTO.Images.Select(x => (ImageByItemDTO)x.Clone()).ToList())
+            Images = itemDTO.Images != null
+                ? new ObservableCollection<ImageByItemDTO>(itemDTO.Images.Select(x => (ImageByItemDTO)x.Clone()).OrderBy(x => x.DisplayOrder).ToList())
                 : [];
 
             // Load images from local/S3
@@ -986,17 +976,14 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         private async Task LoadImagesAsync()
         {
-            if (ItemImages.Count > 0)
+            if (Images.Count > 0)
             {
-                foreach (ImageByItemDTO image in ItemImages)
+                foreach (ImageByItemDTO image in Images)
                 {
-                    string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string imagesLocalPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                    string imagesLocalPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     if (!Path.Exists(imagesLocalPath))
                     {
-                        S3Helper.S3FileName = image.S3FileName;
-                        S3Helper.LocalFilePath = imagesLocalPath;
-                        await S3Helper.DownloadFileFromS3();
+                        await MasterContext.S3Helper.DownloadFileAsync(imagesLocalPath, image.S3FileName);
                     }
                     BitmapImage bitmap = ConvertBitMapImage(imagesLocalPath);
                     image.SourceImage = bitmap;
@@ -1015,16 +1002,27 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
             this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
             this.SeedValue(nameof(AiuBasedService), AiuBasedService);
-            this.SeedValue(nameof(MeasurementUnitId), MeasurementUnitId);
-            this.SeedValue(nameof(BrandId), BrandId);
-            this.SeedValue(nameof(AccountingGroupId), AccountingGroupId);
-            this.SeedValue(nameof(SizeId), SizeId);
+            this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
+            this.SeedValue(nameof(SelectedBrand), SelectedBrand);
+            this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
+            this.SeedValue(nameof(SelectedSize), SelectedSize);
             this.AcceptChanges();
         }
 
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(SubCategoryId), SubCategoryId);
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(AllowFraction), AllowFraction);
+            this.SeedValue(nameof(Billable), Billable);
+            this.SeedValue(nameof(AmountBasedOnWeight), AmountBasedOnWeight);
+            this.SeedValue(nameof(HasExtendedInformation), HasExtendedInformation);
+            this.SeedValue(nameof(AiuBasedService), AiuBasedService);
+            this.SeedValue(nameof(SelectedMeasurementUnit), SelectedMeasurementUnit);
+            this.SeedValue(nameof(SelectedAccountingGroup), SelectedAccountingGroup);
+            this.SeedValue(nameof(SelectedBrand), SelectedBrand);
+            this.SeedValue(nameof(SelectedSize), SelectedSize);
             this.AcceptChanges();
         }
 
@@ -1034,168 +1032,135 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         protected override int GetId() => Id;
 
+        private static Dictionary<string, object> BuildItemResponseFields()
+        {
+            var fields = FieldSpec<UpsertResponseType<ItemGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "item", nested: entity => entity
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Reference)
+                    .Field(e => e.Code)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.AllowFraction)
+                    .Field(e => e.HasExtendedInformation)
+                    .Field(e => e.AiuBasedService)
+                    .Field(e => e.AmountBasedOnWeight)
+                    .Field(e => e.Billable)
+                    .Field(e => e.EanCodes)
+                    .Select(e => e.AccountingGroup, ag => ag
+                        .Field(a => a.Id))
+                    .Select(e => e.Brand, b => b
+                        .Field(br => br.Id))
+                    .Select(e => e.MeasurementUnit, mu => mu
+                        .Field(m => m.Id))
+                    .Select(e => e.SizeCategory, sc => sc
+                        .Field(s => s.Id))
+                    .Select(e => e.SubCategory, sub => sub
+                        .Field(s => s.Id)
+                        .Select(s => s.ItemCategory, ic => ic
+                            .Field(c => c.Id)
+                            .Select(c => c.ItemType, it => it
+                                .Field(t => t.Id))))
+                    .SelectList(e => e.Components, comp => comp
+                        .Field(c => c.Quantity)
+                        .Select(c => c.Component, ci => ci
+                            .Field(i => i.Id)
+                            .Field(i => i.Name)
+                            .Field(i => i.Code)
+                            .Field(i => i.Reference)
+                            .Field(i => i.AllowFraction)
+                            .Select(i => i.MeasurementUnit, mu => mu
+                                .Field(m => m.Id)
+                                .Field(m => m.Name)))
+                        .Select(c => c.Parent, p => p
+                            .Field(pp => pp.Id)))
+                    .SelectList(e => e.Images, img => img
+                        .Field(i => i.DisplayOrder)
+                        .Field(i => i.S3Bucket)
+                        .Field(i => i.S3BucketDirectory)
+                        .Field(i => i.S3FileName)
+                        .Select(i => i.Item, item => item
+                            .Field(it => it.Id))))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, errors => errors
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Build();
+
+            return fields;
+        }
+
         protected override string GetCreateQuery()
         {
-            return @"
-                mutation ($data: CreateItemInput!) {
-                  CreateResponse: createItem(data: $data) {
-                    id
-                    name
-                    reference
-                    code
-                    isActive
-                    allowFraction
-                    hasExtendedInformation
-                    aiuBasedService
-                    amountBasedOnWeight
-                    billable
-                    accountingGroup{ id }
-                    brand{ id }
-                    measurementUnit{ id }
-                    size{ id }
-                    subCategory{
-                      id
-                      itemCategory{
-                        id
-                        itemType{ id }
-                      }
-                    }
-                    eanCodes{ id eanCode }
-                    images{
-                        id s3Bucket s3BucketDirectory s3FileName order
-                        item{ id }
-                    }
-                    components{
-                        id quantity
-                        item{ id name code reference allowFraction measurementUnit{ id name } }
-                        parent{ id }
-                    }
-                  }
-                }";
+            var fields = BuildItemResponseFields();
+            var parameter = new GraphQLQueryParameter("input", "CreateItemInput!");
+            var fragment = new GraphQLQueryFragment("createItem", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
         protected override string GetUpdateQuery()
         {
-            return @"
-                mutation ($id: Int!, $data: UpdateItemInput!) {
-                  UpdateResponse: updateItem(id: $id, data: $data) {
-                    id
-                    name
-                    reference
-                    code
-                    isActive
-                    allowFraction
-                    hasExtendedInformation
-                    aiuBasedService
-                    amountBasedOnWeight
-                    billable
-                    accountingGroup{ id }
-                    brand{ id }
-                    measurementUnit{ id }
-                    size{ id }
-                    subCategory{
-                      id
-                      itemCategory{
-                        id
-                        itemType{ id }
-                      }
-                    }
-                    eanCodes{ id eanCode }
-                    images{
-                        id s3Bucket s3BucketDirectory s3FileName order
-                        item{ id }
-                    }
-                    components{
-                        id quantity
-                        item{ id name code reference allowFraction measurementUnit{ id name } }
-                        parent{ id }
-                    }
-                  }
-                }";
+            var fields = BuildItemResponseFields();
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("data", "UpdateItemInput!"),
+                new("id", "ID!")
+            };
+            var fragment = new GraphQLQueryFragment("updateItem", parameters, fields, "UpdateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         }
 
         protected override async Task<UpsertResponseType<ItemGraphQLModel>> ExecuteSaveAsync()
         {
-            // Handle S3 images
             await HandleS3ImagesAsync();
 
-            // Build variables
-            List<object> eanCodes = [];
-            List<object> components = [];
-            List<object> images = [];
-
-            if (ItemImages != null)
+            var transformers = new Dictionary<string, Func<object?, object?>>
             {
-                foreach (ImageByItemDTO image in ItemImages)
+                [nameof(Components)] = item =>
                 {
-                    images.Add(new { image.S3Bucket, image.S3BucketDirectory, image.S3FileName, DisplayOrder = ItemImages.IndexOf(image) });
-                }
-            }
-
-            if (EanCodes != null)
-            {
-                foreach (string eanCode in EanCodes)
+                    var component = (ComponentsByItemDTO)item!;
+                    return new { itemId = component.Component.Id, quantity = component.Quantity };
+                },
+                [nameof(Images)] = item =>
                 {
-                    eanCodes.Add(eanCode);
+                    var image = (ImageByItemDTO)item!;
+                    return new
+                    {
+                        s3Bucket = image.S3Bucket,
+                        s3BucketDirectory = image.S3BucketDirectory,
+                        s3FileName = image.S3FileName,
+                        displayOrder = Images.IndexOf(image)
+                    };
                 }
-            }
+            };
 
-            if (Components != null)
-            {
-                foreach (ComponentsByItemDTO component in Components)
-                {
-                    components.Add(new { itemId = component.Component.Id, component.Quantity });
-                }
-            }
-
-            dynamic variables = new System.Dynamic.ExpandoObject();
-            variables.Data = new System.Dynamic.ExpandoObject();
-            if (!IsNewRecord) variables.Id = Id;
-            variables.Data.Name = Name;
-            variables.Data.Reference = Reference;
-            variables.Data.IsActive = IsActive;
-            variables.Data.AllowFraction = AllowFraction;
-            variables.Data.HasExtendedInformation = HasExtendedInformation;
-            variables.Data.AiuBasedService = AiuBasedService;
-            variables.Data.AmountBasedOnWeight = AmountBasedOnWeight;
-            variables.Data.Billable = Billable;
-            variables.Data.MeasurementUnitId = SelectedMeasurementUnit?.Id ?? 0;
-            variables.Data.ItemBrandId = SelectedBrand?.Id ?? 0;
-            variables.Data.AccountingGroupId = SelectedAccountingGroup?.Id ?? 0;
-            variables.Data.ItemSizeCategoryId = SelectedSize?.Id ?? 0;
-            if (IsNewRecord) variables.Data.ItemSubCategoryId = SubCategoryId;
-            variables.Data.EanCodes = eanCodes;
-            variables.Data.Components = components;
-            variables.Data.Images = images;
+            dynamic variables = ChangeCollector.CollectChanges(
+                this,
+                prefix: IsNewRecord ? "createResponseInput" : "updateResponseData",
+                transformers);
 
             string query = IsNewRecord ? GetCreateQuery() : GetUpdateQuery();
 
-            // Wrap in UpsertResponseType manually since existing API returns ItemGraphQLModel directly
-            var result = IsNewRecord
-                ? await _itemService.CreateAsync(query, variables)
-                : await _itemService.UpdateAsync(query, variables);
+            if (!IsNewRecord)
+                variables.updateResponseId = Id;
 
-            return new UpsertResponseType<ItemGraphQLModel>
-            {
-                Entity = result,
-                Success = true,
-                Message = "OK"
-            };
+            return IsNewRecord
+                ? await _itemService.CreateAsync<UpsertResponseType<ItemGraphQLModel>>(query, variables)
+                : await _itemService.UpdateAsync<UpsertResponseType<ItemGraphQLModel>>(query, variables);
         }
 
         private async Task HandleS3ImagesAsync()
         {
-            if (ItemImages == null) return;
+            if (Images == null) return;
 
             if (IsNewRecord)
             {
-                foreach (ImageByItemDTO image in ItemImages)
+                foreach (ImageByItemDTO image in Images)
                 {
-                    S3Helper.LocalFilePath = image.ImagePath;
-                    S3Helper.S3FileName = image.S3FileName;
-                    await S3Helper.UploadFileToS3Async();
-                    string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string destinationPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                    await MasterContext.S3Helper.UploadFileAsync(image.ImagePath, image.S3FileName);
+                    string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     File.Copy(image.ImagePath, destinationPath, true);
                 }
             }
@@ -1206,25 +1171,20 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
                     ? new List<ImageByItemDTO>(OriginalDto.Images.Select(x => (ImageByItemDTO)x.Clone()).ToList())
                     : new List<ImageByItemDTO>();
 
-                var itemsToDelete = originalImages.Where(item => !ItemImages.Select(i => i.S3FileName).Contains(item.S3FileName)).ToList();
-                var itemsToAdd = ItemImages.Where(item => !originalImages.Select(i => i.S3FileName).Contains(item.S3FileName)).ToList();
+                var itemsToDelete = originalImages.Where(item => !Images.Select(i => i.S3FileName).Contains(item.S3FileName)).ToList();
+                var itemsToAdd = Images.Where(item => !originalImages.Select(i => i.S3FileName).Contains(item.S3FileName)).ToList();
 
                 foreach (ImageByItemDTO image in itemsToDelete)
                 {
-                    S3Helper.S3FileName = image.S3FileName;
-                    await S3Helper.DeleteFileFromS3Async();
-                    string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string destinationPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                    await MasterContext.S3Helper.DeleteFileAsync(image.S3FileName);
+                    string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     if (Path.Exists(destinationPath)) File.Delete(destinationPath);
                 }
 
                 foreach (ImageByItemDTO image in itemsToAdd)
                 {
-                    S3Helper.LocalFilePath = image.ImagePath;
-                    S3Helper.S3FileName = image.S3FileName;
-                    await S3Helper.UploadFileToS3Async();
-                    string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                    string destinationPath = Path.Combine(directoryPath, "custom", "catalog_item_images", "bd_berdic", image.S3FileName);
+                    await MasterContext.S3Helper.UploadFileAsync(image.ImagePath, image.S3FileName);
+                    string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     File.Copy(image.ImagePath, destinationPath, true);
                 }
             }
@@ -1235,12 +1195,12 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             if (IsNewRecord)
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemCreateMessage { CreatedItem = result.Entity });
+                    new ItemCreateMessage { CreatedItem = result });
             }
             else
             {
                 await MasterContext.Context.EventAggregator.PublishOnUIThreadAsync(
-                    new ItemUpdateMessage { UpdatedItem = result.Entity });
+                    new ItemUpdateMessage { UpdatedItem = result });
             }
         }
 

@@ -289,13 +289,13 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = GetCreateQuery();
+                string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _smtpService.CreateAsync<UpsertResponseType<SmtpGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = GetUpdateQuery();
+                string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = SmtpId;
                 return await _smtpService.UpdateAsync<UpsertResponseType<SmtpGraphQLModel>>(query, variables);
@@ -311,7 +311,7 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #region GraphQL Queries
 
-        public string GetCreateQuery()
+        private static readonly Lazy<string> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<SmtpGraphQLModel>>
                 .Create()
@@ -330,9 +330,9 @@ namespace NetErp.Global.Smtp.ViewModels
             var parameter = new GraphQLQueryParameter("input", "CreateSmtpInput!");
             var fragment = new GraphQLQueryFragment("createSmtp", [parameter], fields, "CreateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
-        public string GetUpdateQuery()
+        private static readonly Lazy<string> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<SmtpGraphQLModel>>
                 .Create()
@@ -355,7 +355,7 @@ namespace NetErp.Global.Smtp.ViewModels
             };
             var fragment = new GraphQLQueryFragment("updateSmtp", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
+        });
 
         #endregion
 
