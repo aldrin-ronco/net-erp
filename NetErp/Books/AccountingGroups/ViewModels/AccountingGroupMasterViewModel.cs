@@ -179,7 +179,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
                 dynamic variables = new ExpandoObject();
                 variables.pageResponseFilters = new ExpandoObject();
-               // variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
                 string query = GetLoadAccountingGroupsQuery();
 
