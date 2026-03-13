@@ -8,6 +8,7 @@ using Extensions.Global;
 using GraphQL.Client.Http;
 using Models.Books;
 using Models.Global;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json;
@@ -69,6 +70,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         {
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
+            this.SetFocus(() => Name);
         }
         protected override void OnViewAttached(object view, object context)
         {
@@ -369,9 +371,9 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             set
             {
                 _selectedAccountInventory = value;
-                NotifyOfPropertyChange(nameof(SelectedAccountInventory));
                 this.TrackChange(nameof(SelectedAccountInventory));
                 ValidateProperty(nameof(SelectedAccountInventory), value?.Id);
+                NotifyOfPropertyChange(nameof(SelectedAccountInventory));
 
                 NotifyOfPropertyChange(nameof(CanSave));
 

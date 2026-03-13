@@ -9,6 +9,7 @@
     xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
     xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
     d:DesignHeight="450" d:DesignWidth="800">
@@ -69,7 +70,6 @@
                     <RowDefinition Height="8.0*" />
                     <RowDefinition Height="1.0*" />
 
-
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*" />
@@ -77,267 +77,428 @@
                     <ColumnDefinition Width="1.5*" />
 
                 </Grid.ColumnDefinitions>
-
-                <Grid Grid.Row="1" Grid.Column="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="auto" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Margin="6 5 0 5"
-                        Orientation="Vertical">
-                        <TextBlock Text="Nombre del grupo" Margin="0 0 0 2" />
-                        <dxe:TextEdit
-                            Margin="0 0 0 2"
-                            Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                            CharacterCasing="Upper"
-                            x:Name="Name"
-                        />
-                    </StackPanel>
-                    <TextBlock Grid.Row="1" Text="Impuesto de compra"
-                        FontWeight="Bold"
-                        Margin="6 5 0 5" />
-
-
-                    <Grid Grid.Row="2"
-                        VerticalAlignment="Center"
-                        Height="auto">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
-
-                        </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto" Grid.Row="1" Grid.Column="1">
+                    <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Impuesto de compra principal" Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=PurchasePrimaryTaxes, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedPurchasePrimaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Visibility="{Binding Path=PurchaseSecondaryTaxVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                            Grid.Row="0" Grid.Column="1">
-                            <TextBlock Text="Impuesto de compra secundario  (opcional)" Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                NullText="SELECCIONE UN IMPUESTO"
-                                AllowNullInput="True" 
-                                NullValueButtonPlacement="EditBox"
-                                ItemsSource="{Binding Path=PurchaseSecondaryTaxes, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedPurchaseSecondaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
-
-
-                    </Grid>
-
-                    <TextBlock Grid.Row="3" Text="Impuesto de Venta"
-                        FontWeight="Bold"
-                        Margin="6 5 0 5" />
-
-
-                    <Grid Grid.Row="4"
-                        VerticalAlignment="Center"
-                        Height="auto">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
-
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
                             <RowDefinition Height="auto" />
                         </Grid.RowDefinitions>
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Impuesto de venta principal" Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=SalesPrimaryTaxes, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedSalesPrimaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
-                        <StackPanel Orientation="Vertical" Margin="6 5 10 5"
-                            Grid.Row="0" Grid.Column="1"
-                            Visibility="{Binding Path=SalesSecondaryTaxVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                        >
-                            <TextBlock Text="Impuesto de venta secundario  (opcional)" Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=SalesSecondaryTaxes, UpdateSourceTrigger=PropertyChanged}"
-                                NullText="SELECCIONE UN IMPUESTO"
-                                AllowNullInput="True" 
-NullValueButtonPlacement="EditBox"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedSalesSecondaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
 
-
-                    </Grid>
-
-                    <TextBlock Grid.Row="5" Text="Cuentas "
-                        FontWeight="Bold"
-                        Margin="6 5 0 5" />
-                    <StackPanel Grid.Row="6" Grid.Column="0" Margin="6 5 0 5"
-                        Orientation="Vertical">
-                        <TextBlock Text="Cuenta de costo" Grid.Row="0" Grid.Column="0"
-                            Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit Margin="0 0 0 2"
-                            Padding="2"
-                            ItemsSource="{Binding Path=AccountCostAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                            IsTextEditable="False"
-                            DisplayMember="Name"
-                            EditValue="{Binding Path=SelectedAccountCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            IsSynchronizedWithCurrentItem="True"
-                        />
-                    </StackPanel>
-                    <StackPanel Grid.Row="7" Grid.Column="0" Margin="6 5 0 5"
-                        Orientation="Vertical">
-                        <TextBlock Text="Cuenta de inventario" Grid.Row="0" Grid.Column="0"
-                            Margin="0 0 0 2" />
-                        <dxe:ComboBoxEdit Margin="0 0 0 2"
-                            Padding="2"
-                            ItemsSource="{Binding Path=InventoryAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                            IsTextEditable="False"
-                            DisplayMember="Name"
-                            EditValue="{Binding Path=SelectedAccountInventory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            IsSynchronizedWithCurrentItem="True"
-                        />
-                    </StackPanel>
-
-                    <Grid Grid.Row="8"
-                        VerticalAlignment="Center"
-                        Height="auto">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="5*" />
-                            <ColumnDefinition Width="5*" />
-
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto" />
-                        </Grid.RowDefinitions>
-
-
-                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="6 5 0 5"
+                        <StackPanel Grid.Row="0" Margin="6 5 0 5"
                             Orientation="Vertical">
-                            <TextBlock Text="Cuenta de ingreso" Grid.Row="0" Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=IncomeAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAccountIncome, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
+                            <TextBlock Text="Nombre del grupo" Margin="0 0 0 2" />
+                            <dxe:TextEdit
+                                Margin="0 0 0 2"
+                                Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                CharacterCasing="Upper"
+                                x:Name="Name"
                             />
                         </StackPanel>
+                        <TextBlock Grid.Row="1" Text="Impuesto de compra"
+                            FontWeight="Bold"
+                            Margin="6 5 0 5" />
 
-                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="6 5 0 5"
+
+                        <Grid Grid.Row="2"
+                            VerticalAlignment="Center"
+                            Height="auto">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="Impuesto de compra principal" Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                    Padding="2"
+                                    ItemsSource="{Binding Path=PurchasePrimaryTaxes, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="False"
+                                    DisplayMember="Name"
+                                    EditValue="{Binding Path=SelectedPurchasePrimaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSynchronizedWithCurrentItem="True"
+                                />
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Visibility="{Binding Path=PurchaseSecondaryTaxVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                                Grid.Row="0" Grid.Column="1">
+                                <TextBlock Text="Impuesto de compra secundario  (opcional)"
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                    Padding="2"
+                                    NullText="SELECCIONE UN IMPUESTO"
+                                    AllowNullInput="True"
+                                    NullValueButtonPlacement="EditBox"
+                                    ItemsSource="{Binding Path=PurchaseSecondaryTaxes, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="False"
+                                    DisplayMember="Name"
+                                    EditValue="{Binding Path=SelectedPurchaseSecondaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSynchronizedWithCurrentItem="True"
+                                />
+                            </StackPanel>
+
+
+                        </Grid>
+
+                        <TextBlock Grid.Row="3" Text="Impuesto de Venta"
+                            FontWeight="Bold"
+                            Margin="6 5 0 5" />
+
+
+                        <Grid Grid.Row="4"
+                            VerticalAlignment="Center"
+                            Height="auto">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="Impuesto de venta principal" Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                    Padding="2"
+                                    ItemsSource="{Binding Path=SalesPrimaryTaxes, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="False"
+                                    DisplayMember="Name"
+                                    EditValue="{Binding Path=SelectedSalesPrimaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSynchronizedWithCurrentItem="True"
+                                />
+                            </StackPanel>
+                            <StackPanel Orientation="Vertical" Margin="6 5 10 5"
+                                Grid.Row="0" Grid.Column="1"
+                                Visibility="{Binding Path=SalesSecondaryTaxVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                            >
+                                <TextBlock Text="Impuesto de venta secundario  (opcional)"
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxe:ComboBoxEdit Margin="0 0 0 2"
+                                    Padding="2"
+                                    ItemsSource="{Binding Path=SalesSecondaryTaxes, UpdateSourceTrigger=PropertyChanged}"
+                                    NullText="SELECCIONE UN IMPUESTO"
+                                    AllowNullInput="True"
+                                    NullValueButtonPlacement="EditBox"
+                                    IsTextEditable="False"
+                                    DisplayMember="Name"
+                                    EditValue="{Binding Path=SelectedSalesSecondaryTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsSynchronizedWithCurrentItem="True"
+                                />
+                            </StackPanel>
+
+
+                        </Grid>
+
+                        <TextBlock Grid.Row="5" Text="Cuentas "
+                            FontWeight="Bold"
+                            Margin="6 5 0 5" />
+                        <StackPanel Grid.Row="6" Grid.Column="0" Margin="6 5 0 5"
                             Orientation="Vertical">
-                            <TextBlock Text="Cuenta de devolucion de ingreso" Grid.Row="0"
-                                Grid.Column="0"
+                            <TextBlock Text="Cuenta de costo" Grid.Row="0" Grid.Column="0"
                                 Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=IncomeReverseAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAccountIncomeReverse, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
+                            <dxg:LookUpEdit
+                                Width="Auto" HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding AccountCostAccountingAccounts}"
+                                EditValue="{Binding SelectedAccountCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="True"
+                                AutoComplete="False"
+                                DisplayMember="FullName"
+                                IsPopupAutoWidth="True"
+                                AutoPopulateColumns="False"
+                                Margin="0 0 0 20">
+                                <dxg:LookUpEdit.StyleSettings>
+                                    <dxg:SearchLookUpEditStyleSettings />
+                                </dxg:LookUpEdit.StyleSettings>
+
+                                <dxg:LookUpEdit.PopupContentTemplate>
+                                    <ControlTemplate>
+                                        <dxg:GridControl Name="SelectedAccountCost">
+                                            <dxg:GridControl.Columns>
+                                                <dxg:GridColumn FieldName="FullName"
+                                                    Header="Cuenta contable" Width="100" />
+                                            </dxg:GridControl.Columns>
+                                            <dxg:GridControl.View>
+                                                <dxg:TableView AutoWidth="True" />
+                                            </dxg:GridControl.View>
+                                        </dxg:GridControl>
+                                    </ControlTemplate>
+                                </dxg:LookUpEdit.PopupContentTemplate>
+
+                            </dxg:LookUpEdit>
+
                         </StackPanel>
+                        <StackPanel Grid.Row="7" Grid.Column="0" Margin="6 5 0 5"
+                            Orientation="Vertical">
+                            <TextBlock Text="Cuenta de inventario" Grid.Row="0" Grid.Column="0"
+                                Margin="0 0 0 2" />
+                            <dxg:LookUpEdit
+                                Width="Auto" HorizontalAlignment="Stretch"
+                                ItemsSource="{Binding InventoryAccountingAccounts}"
+                                EditValue="{Binding SelectedAccountInventory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                IsTextEditable="True"
+                                AutoComplete="False"
+                                DisplayMember="FullName"
+                                IsPopupAutoWidth="True"
+                                AutoPopulateColumns="False"
+                                Margin="0 0 0 20">
+                                <dxg:LookUpEdit.StyleSettings>
+                                    <dxg:SearchLookUpEditStyleSettings />
+                                </dxg:LookUpEdit.StyleSettings>
+
+                                <dxg:LookUpEdit.PopupContentTemplate>
+                                    <ControlTemplate>
+                                        <dxg:GridControl Name="PART_GridControl">
+                                            <dxg:GridControl.Columns>
+                                                <dxg:GridColumn FieldName="FullName"
+                                                    Header="Cuenta contable" Width="100" />
+                                            </dxg:GridControl.Columns>
+                                            <dxg:GridControl.View>
+                                                <dxg:TableView AutoWidth="True" />
+                                            </dxg:GridControl.View>
+                                        </dxg:GridControl>
+                                    </ControlTemplate>
+                                </dxg:LookUpEdit.PopupContentTemplate>
+
+                            </dxg:LookUpEdit>
+
+                        </StackPanel>
+
+                        <Grid Grid.Row="8"
+                            VerticalAlignment="Center"
+                            Height="auto">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="5*" />
+
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="6 5 0 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="Cuenta de ingreso" Grid.Row="0" Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxg:LookUpEdit
+                                    Width="Auto" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding IncomeAccountingAccounts}"
+                                    EditValue="{Binding SelectedAccountIncome, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="True"
+                                    AutoComplete="False"
+                                    DisplayMember="FullName"
+                                    IsPopupAutoWidth="True"
+                                    AutoPopulateColumns="False"
+                                    Margin="0 0 0 20">
+                                    <dxg:LookUpEdit.StyleSettings>
+                                        <dxg:SearchLookUpEditStyleSettings />
+                                    </dxg:LookUpEdit.StyleSettings>
+
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn FieldName="FullName"
+                                                        Header="Cuenta contable" Width="100" />
+                                                </dxg:GridControl.Columns>
+                                                <dxg:GridControl.View>
+                                                    <dxg:TableView AutoWidth="True" />
+                                                </dxg:GridControl.View>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+
+                                </dxg:LookUpEdit>
+
+
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="6 5 0 5"
+                                Orientation="Vertical">
+                                <TextBlock Text="Cuenta de devolucion de ingreso" Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxg:LookUpEdit
+                                    Width="Auto" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding IncomeReverseAccountingAccounts}"
+                                    EditValue="{Binding SelectedAccountIncomeReverse, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="True"
+                                    AutoComplete="False"
+                                    DisplayMember="FullName"
+                                    IsPopupAutoWidth="True"
+                                    AutoPopulateColumns="False"
+                                    Margin="0 0 0 20">
+                                    <dxg:LookUpEdit.StyleSettings>
+                                        <dxg:SearchLookUpEditStyleSettings />
+                                    </dxg:LookUpEdit.StyleSettings>
+
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn FieldName="FullName"
+                                                        Header="Cuenta contable" Width="100" />
+                                                </dxg:GridControl.Columns>
+                                                <dxg:GridControl.View>
+                                                    <dxg:TableView AutoWidth="True" />
+                                                </dxg:GridControl.View>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+
+                                </dxg:LookUpEdit>
+
+                            </StackPanel>
+
+                        </Grid>
+                        <dxe:CheckEdit Content="Permitir Cuentas Aiu" Grid.Row="9"
+                            Margin="6 5 0 5"
+                            Style="{StaticResource BlueCheckedTextStyle}"
+                            Padding="2"
+                            IsChecked="{Binding AllowAiu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Grid Grid.Row="10"
+                            Visibility="{Binding Path=AllowAiuVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Margin="6 5 0 5" Orientation="Vertical">
+                                <TextBlock Text="Cuenta de Administracion" Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxg:LookUpEdit
+                                    Width="Auto" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding AiuAdministrationAccountingAccounts}"
+                                    EditValue="{Binding SelectedAccountAiuAdministration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="True"
+                                    AutoComplete="False"
+                                    DisplayMember="FullName"
+                                    IsPopupAutoWidth="True"
+                                    AutoPopulateColumns="False"
+                                    Margin="0 0 0 20">
+                                    <dxg:LookUpEdit.StyleSettings>
+                                        <dxg:SearchLookUpEditStyleSettings />
+                                    </dxg:LookUpEdit.StyleSettings>
+
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn FieldName="FullName"
+                                                        Header="Cuenta contable" Width="100" />
+                                                </dxg:GridControl.Columns>
+                                                <dxg:GridControl.View>
+                                                    <dxg:TableView AutoWidth="True" />
+                                                </dxg:GridControl.View>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+
+                                </dxg:LookUpEdit>
+
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Margin="6 5 0 5" Orientation="Vertical">
+                                <TextBlock Text="Cuenta de forense" Grid.Row="0" Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxg:LookUpEdit
+                                    Width="Auto" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding AiuUnforeseenAccountingAccounts}"
+                                    EditValue="{Binding SelectedAccountAiuUnforeseen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="True"
+                                    AutoComplete="False"
+                                    DisplayMember="FullName"
+                                    IsPopupAutoWidth="True"
+                                    AutoPopulateColumns="False"
+                                    Margin="0 0 0 20">
+                                    <dxg:LookUpEdit.StyleSettings>
+                                        <dxg:SearchLookUpEditStyleSettings />
+                                    </dxg:LookUpEdit.StyleSettings>
+
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn FieldName="FullName"
+                                                        Header="Cuenta contable" Width="100" />
+                                                </dxg:GridControl.Columns>
+                                                <dxg:GridControl.View>
+                                                    <dxg:TableView AutoWidth="True" />
+                                                </dxg:GridControl.View>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+
+                                </dxg:LookUpEdit>
+
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Margin="6 5 0 5" Orientation="Vertical">
+                                <TextBlock Text="Cuenta de utilidad" Grid.Row="0" Grid.Column="0"
+                                    Margin="0 0 0 2" />
+                                <dxg:LookUpEdit
+                                    Width="Auto" HorizontalAlignment="Stretch"
+                                    ItemsSource="{Binding AiuUtilityAccountingAccounts}"
+                                    EditValue="{Binding SelectedAccountAiuUtility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    IsTextEditable="True"
+                                    AutoComplete="False"
+                                    DisplayMember="FullName"
+                                    IsPopupAutoWidth="True"
+                                    AutoPopulateColumns="False"
+                                    Margin="0 0 0 20">
+                                    <dxg:LookUpEdit.StyleSettings>
+                                        <dxg:SearchLookUpEditStyleSettings />
+                                    </dxg:LookUpEdit.StyleSettings>
+
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn FieldName="FullName"
+                                                        Header="Cuenta contable" Width="100" />
+                                                </dxg:GridControl.Columns>
+                                                <dxg:GridControl.View>
+                                                    <dxg:TableView AutoWidth="True" />
+                                                </dxg:GridControl.View>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+
+                                </dxg:LookUpEdit>
+                                
+                            </StackPanel>
+                        </Grid>
+
 
                     </Grid>
-                    <dxe:CheckEdit Content="Permitir Cuentas Aiu" Grid.Row="9"
-                        Margin="6 5 0 5"
-                        Style="{StaticResource BlueCheckedTextStyle}"
-                        Padding="2"
-                        IsChecked="{Binding AllowAiu, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <Grid Grid.Row="10"
-                        Visibility="{Binding Path=AllowAiuVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="auto" />
-                            <RowDefinition Height="auto" />
-                            <RowDefinition Height="auto" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Margin="6 5 0 5" Orientation="Vertical">
-                            <TextBlock Text="Cuenta de Administracion" Grid.Row="0" Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=AiuAdministrationAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAccountAiuAdministration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
+                </ScrollViewer>
 
-                        <StackPanel Grid.Row="1" Margin="6 5 0 5" Orientation="Vertical">
-                            <TextBlock Text="Cuenta de forense" Grid.Row="0" Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=AiuUnforeseenAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAccountAiuUnforeseen, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="2" Margin="6 5 0 5" Orientation="Vertical">
-                            <TextBlock Text="Cuenta de utilidad" Grid.Row="0" Grid.Column="0"
-                                Margin="0 0 0 2" />
-                            <dxe:ComboBoxEdit Margin="0 0 0 2"
-                                Padding="2"
-                                ItemsSource="{Binding Path=AiuUtilityAccountingAccounts, UpdateSourceTrigger=PropertyChanged}"
-                                IsTextEditable="False"
-                                DisplayMember="Name"
-                                EditValue="{Binding Path=SelectedAccountAiuUtility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                IsSynchronizedWithCurrentItem="True"
-                            />
-                        </StackPanel>
-                    </Grid>
-
-
-                </Grid>
 
             </Grid>
 
