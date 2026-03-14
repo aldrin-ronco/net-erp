@@ -103,7 +103,6 @@
                             IndicatorType="BouncingDot"
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False"
                             Grid.Row="4">
             <dxg:GridControl 
                 Margin="0 8 0 0"
@@ -112,7 +111,7 @@
                 ItemsSource="{Binding Path=Customers, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 SelectedItem="{Binding Path=SelectedCustomer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
-                    <dxg:TableView AllowCascadeUpdate="False"
+                    <dxg:TableView AllowCascadeUpdate="False" AllowColumnMoving="False"
                                    EnableSelectedRowAppearance="True"
                                    ShowGroupPanel="False" AlternateRowBackground="Beige">
                         <dxg:TableView.RowStyle>

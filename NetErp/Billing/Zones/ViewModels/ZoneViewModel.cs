@@ -5,6 +5,7 @@ using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using NetErp.Billing.Sellers.ViewModels;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace NetErp.Billing.Zones.ViewModels
         public IEventAggregator EventAggregator { get; set; }
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly StringLengthCache _stringLengthCache;
 
         private ZoneMasterViewModel _zoneMasterViewModel;
         public ZoneMasterViewModel ZoneMasterViewModel
@@ -28,19 +30,11 @@ namespace NetErp.Billing.Zones.ViewModels
                 return _zoneMasterViewModel;
             }
         }
-        private ZoneDetailViewModel? _zoneDetailViewModel;
-        public ZoneDetailViewModel ZoneDetailViewModel
-        {
-            get
-            {
-                if (_zoneDetailViewModel is null) _zoneDetailViewModel = new ZoneDetailViewModel(this, _zoneService);
-                return _zoneDetailViewModel;
-            }
-        }
         public async Task ActivateMasterViewAsync()
         {
             try
             {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
                 await ActivateItemAsync(ZoneMasterViewModel, new System.Threading.CancellationToken());
             }
             catch (Exception ex)
@@ -54,7 +48,9 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                await ActivateItemAsync(ZoneDetailViewModel, new System.Threading.CancellationToken());
+                ZoneDetailViewModel instance = new(this, _zoneService, _stringLengthCache);
+                instance.SetForNew();
+                await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (Exception ex)
             {
@@ -66,12 +62,8 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             try
             {
-                ZoneDetailViewModel instance = new(this, _zoneService) {
-                    Id = zone.Id,
-                    Name = zone.Name,
-                    IsActive = zone.IsActive
-                };
-
+                ZoneDetailViewModel instance = new(this, _zoneService, _stringLengthCache);
+                instance.SetForEdit(zone);
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (Exception ex)
@@ -83,11 +75,13 @@ namespace NetErp.Billing.Zones.ViewModels
         public ZoneViewModel(
             IEventAggregator eventAggregator,
             IRepository<ZoneGraphQLModel> zoneService,
-            Helpers.Services.INotificationService notificationService)
+            Helpers.Services.INotificationService notificationService,
+            StringLengthCache stringLengthCache)
         {
             EventAggregator = eventAggregator;
             _zoneService = zoneService;
             _notificationService = notificationService;
+            _stringLengthCache = stringLengthCache;
             _ = Task.Run(async () => 
             {
                 try

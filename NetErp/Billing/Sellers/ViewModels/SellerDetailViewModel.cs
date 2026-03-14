@@ -33,6 +33,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -50,6 +51,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly ZoneCache _zoneCache;
+        private readonly StringLengthCache _stringLengthCache;
         #region Commands
 
         private ICommand _deleteMailCommand;
@@ -90,6 +92,28 @@ namespace NetErp.Billing.Sellers.ViewModels
         Dictionary<string, List<string>> _errors;
 
         public SellerViewModel Context { get; private set; }
+
+        // MaxLength properties from StringLengthCache
+        public int FirstNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstName));
+        public int MiddleNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleName));
+        public int FirstLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstLastName));
+        public int MiddleLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleLastName));
+        public int PrimaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryPhone));
+        public int SecondaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryPhone));
+        public int PrimaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryCellPhone));
+        public int SecondaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryCellPhone));
+        public int AddressMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.Address));
+        public int IdentificationNumberMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.IdentificationNumber));
+
+        public string IdentificationNumberMask
+        {
+            get
+            {
+                int max = IdentificationNumberMaxLength;
+                bool allowsLetters = SelectedIdentificationType?.AllowsLetters ?? false;
+                return allowsLetters ? $"[a-zA-Z0-9]{{0,{max}}}" : $"[0-9]{{0,{max}}}";
+            }
+        }
 
         private string _firstName = string.Empty;
         [ExpandoPath("accountingEntity.firstName")]
@@ -403,6 +427,25 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
         [ExpandoPath("CostCenterIds")]
         public List<int> SelectedCostCenterIds => CostCenters.Where(f => f.IsSelected).Select(s => s.Id).ToList();
+
+        public bool HasCostCenterErrors => CostCenters.All(f => !f.IsSelected);
+
+        // Campos que pertenecen a cada tab
+        private static readonly string[] _basicDataFields = [nameof(FirstName), nameof(FirstLastName), nameof(PrimaryPhone), nameof(SecondaryPhone), nameof(PrimaryCellPhone), nameof(SecondaryCellPhone)];
+
+        public bool HasBasicDataErrors => _basicDataFields.Any(f => _errors.ContainsKey(f));
+        public string BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
+
+        public string CostCenterTabTooltip => HasCostCenterErrors ? "Debe seleccionar al menos un centro de costo" : null;
+
+        private string GetTabTooltip(string[] fields)
+        {
+            var errors = fields
+                .Where(f => _errors.ContainsKey(f))
+                .SelectMany(f => _errors[f])
+                .ToList();
+            return errors.Count > 0 ? string.Join("\n", errors) : null;
+        }
         
         private IdentificationTypeGraphQLModel _selectedIdentificationType;
         [ExpandoPath("accountingEntity.identificationTypeId", SerializeAsId = true)]
@@ -416,6 +459,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
+                    NotifyOfPropertyChange(nameof(IdentificationNumberMask));
                     NotifyOfPropertyChange(nameof(CanSave));
                     if (IsNewRecord)
                     {
@@ -723,15 +767,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public void CleanUpControls()
+        public void SetForNew()
         {
             try
             {
                 List<CostCenterDTO> costCenters = new List<CostCenterDTO>();
-               
-                Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-                IdentificationNumber = string.Empty;
 
+                Id = 0;
+                IdentificationNumber = string.Empty;
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 FirstName = string.Empty;
                 MiddleName = string.Empty;
@@ -744,18 +787,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                 Address = string.Empty;
                 Emails = new ObservableCollection<EmailDTO>();
 
-                
-                SelectedCountry =_countryCache.Items.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
-                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
-                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
-                this.AcceptChanges();
-                this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
-                this.SeedValue(nameof(SelectedCountry), SelectedCountry);
-                this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
-                this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
-                
-                this.SeedValue(nameof(SelectedCityId), SelectedCityId);
-                this.SeedValue(nameof(Regime), Regime);
+                SelectedCountry = _countryCache.Items.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode);
+                SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode);
+                SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id;
+
                 foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
                 {
                     costCenters.Add(new CostCenterDTO()
@@ -765,14 +800,28 @@ namespace NetErp.Billing.Sellers.ViewModels
                         IsSelected = false
                     });
                 }
-                
+
                 Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items);
                 CostCenters = new ObservableCollection<CostCenterDTO>(costCenters);
+
+                SeedDefaultValues();
             }
             catch (Exception ex)
             {
                 throw new AsyncException(innerException: ex);
             }
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.SeedValue(nameof(Regime), Regime);
+            this.AcceptChanges();
         }
 
         public void PhoneInputLostFocus(FrameworkElement element)
@@ -812,6 +861,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 // Aquí puedes actualizar otra propiedad del ViewModel si necesitas
                 this.TrackChange(nameof(SelectedCostCenterIds));
                 NotifyOfPropertyChange(() => CanSave);
+                NotifyOfPropertyChange(nameof(HasCostCenterErrors));
+                NotifyOfPropertyChange(nameof(CostCenterTabTooltip));
             }
         }
         private void CostCenter_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -1011,12 +1062,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             CostCenterCache costCenterCache,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
-            ZoneCache zoneCache)
+            ZoneCache zoneCache,
+            StringLengthCache stringLengthCache)
         {
             _zoneCache = zoneCache;
             _countryCache = countryCache;
             _identificationTypeCache = identificationTypeCache;
             _costCenterCache = costCenterCache;
+            _stringLengthCache = stringLengthCache;
             _errors = new Dictionary<string, List<string>>();
             Context = context;
             _sellerService = sellerService;
@@ -1037,34 +1090,27 @@ namespace NetErp.Billing.Sellers.ViewModels
             SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC); 
            
         }
-        public async Task<SellerGraphQLModel> LoadDataForEditAsync(int id)
+        public async Task LoadDataForEditAsync(int id)
         {
             try
             {
                 string query = GetLoadSellerByIdQuery();
 
                 dynamic variables = new ExpandoObject();
-               
-
                 variables.singleItemResponseId = id;
 
-                var Seller = await _sellerService.FindByIdAsync(query, variables);
-
-                // Poblar el ViewModel con los datos del seller (sin bloquear UI thread)
-                PopulateFromSeller(Seller);
-
-                return Seller;
+                var seller = await _sellerService.FindByIdAsync(query, variables);
+                SetForEdit(seller);
             }
             catch (Exception ex)
             {
                 throw new AsyncException(innerException: ex);
             }
         }
-        public void PopulateFromSeller(SellerGraphQLModel seller)
+        public void SetForEdit(SellerGraphQLModel seller)
         {
-            // Propiedades básicas del seller
             Id = seller.Id;
-            
+
             SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
             IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
             FirstName = seller.AccountingEntity.FirstName;
@@ -1082,7 +1128,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             Address = seller.AccountingEntity.Address;
             ZoneId = seller.Zone?.Id;
 
-
             ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
             foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
             {
@@ -1095,6 +1140,31 @@ namespace NetErp.Billing.Sellers.ViewModels
                 });
             }
             CostCenters = costCentersSelection;
+
+            SeedCurrentValues();
+        }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+            this.SeedValue(nameof(IdentificationNumber), IdentificationNumber);
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(FirstName), FirstName);
+            this.SeedValue(nameof(MiddleName), MiddleName);
+            this.SeedValue(nameof(FirstLastName), FirstLastName);
+            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(Address), Address);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.SeedValue(nameof(ZoneId), ZoneId);
+            this.SeedValue(nameof(Regime), Regime);
+            this.SeedValue(nameof(SelectedCostCenterIds), SelectedCostCenterIds);
+            this.AcceptChanges();
         }
         protected override void OnViewAttached(object view, object context)
         {
@@ -1126,6 +1196,11 @@ namespace NetErp.Billing.Sellers.ViewModels
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            if (_basicDataFields.Contains(propertyName))
+            {
+                NotifyOfPropertyChange(nameof(BasicDataTabTooltip));
+                NotifyOfPropertyChange(nameof(HasBasicDataErrors));
+            }
         }
 
         public IEnumerable GetErrors(string propertyName)
@@ -1283,5 +1358,28 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
 
         #endregion
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                if (_emails != null)
+                {
+                    _emails.CollectionChanged -= Emails_CollectionChanged;
+                }
+
+                foreach (var costCenter in CostCenters)
+                {
+                    costCenter.PropertyChanged -= CostCenter_PropertyChanged;
+                }
+                CostCenters.CollectionChanged -= CostCenter_CollectionChanged;
+
+                this.AcceptChanges();
+                Emails?.Clear();
+                CostCenters?.Clear();
+            }
+
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

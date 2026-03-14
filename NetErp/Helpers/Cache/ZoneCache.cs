@@ -88,6 +88,7 @@ namespace NetErp.Helpers.Cache
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
                   .Field(e => e.Name)
+                  .Field(e => e.IsActive)
               )
               .Field(o => o.PageNumber)
               .Field(o => o.PageSize)

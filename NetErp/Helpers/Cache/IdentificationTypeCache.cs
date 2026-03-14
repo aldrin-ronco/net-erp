@@ -7,12 +7,16 @@ using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class IdentificationTypeCache : IEntityCache<IdentificationTypeGraphQLModel>
+    public class IdentificationTypeCache : IEntityCache<IdentificationTypeGraphQLModel>,
+        IHandle<IdentificationTypeCreateMessage>,
+        IHandle<IdentificationTypeUpdateMessage>,
+        IHandle<IdentificationTypeDeleteMessage>
     {
         private readonly IRepository<IdentificationTypeGraphQLModel> _service;
         private readonly object _lock = new();
@@ -91,6 +95,38 @@ namespace NetErp.Helpers.Cache
             }
         }
 
+        public Task HandleAsync(IdentificationTypeCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (message.CreatedIdentificationType?.Entity != null)
+            {
+                Add(message.CreatedIdentificationType.Entity);
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(IdentificationTypeUpdateMessage message, CancellationToken cancellationToken)
+        {
+            var entity = message.UpdatedIdentificationType?.Entity;
+            if (entity != null)
+            {
+                var existing = Items.FirstOrDefault(x => x.Id == entity.Id);
+                if (existing != null)
+                    Update(entity);
+                else
+                    Add(entity);
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(IdentificationTypeDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (message.DeletedIdentificationType?.DeletedId > 0)
+            {
+                Remove(message.DeletedIdentificationType.DeletedId.Value);
+            }
+            return Task.CompletedTask;
+        }
+
         #region Query Builder
 
         private string BuildQuery()
@@ -102,6 +138,7 @@ namespace NetErp.Helpers.Cache
                     .Field(x => x.Name)
                     .Field(x => x.Code)
                     .Field(x => x.HasVerificationDigit)
+                    .Field(x => x.AllowsLetters)
                     .Field(x => x.MinimumDocumentLength)
                 )
                 .Build();
