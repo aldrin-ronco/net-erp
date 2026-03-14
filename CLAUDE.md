@@ -48,7 +48,13 @@ Example: `$env:NET_ERP_SQL_ENGINE="POSTGRESQL"`
 - Master/Detail pattern: `*MasterViewModel` for list views, `*DetailViewModel` for forms
 - Views auto-bind to ViewModels by naming convention
 
-**Data Access Pattern**: 
+**Two module structures exist**:
+
+1. **List-based modules** (Customers, Sellers, Zones, Suppliers, AccountingEntities): Three-tier `ViewModel` (Conductor) → `MasterViewModel` (list/search) → `DetailViewModel` (form). The Conductor activates master or detail as needed.
+
+2. **Tree/hierarchical modules** (CatalogItems, CostCenters, Treasury): `ViewModel` (Conductor) → `MasterViewModel` (tree + panel area). The Master contains multiple `PanelEditor` instances (one per entity type in the tree). Selected tree node routes to the appropriate PanelEditor via pattern matching.
+
+**Data Access Pattern**:
 - **NEW STANDARD**: Use `IRepository<TModel>` with `GraphQLRepository<TModel>` implementation for all new services
   - CRUD operations via GraphQL with CancellationToken support (CreateAsync, UpdateAsync, DeleteAsync, FindByIdAsync)
   - Pagination support (GetPageAsync)
@@ -60,8 +66,8 @@ Example: `$env:NET_ERP_SQL_ENGINE="POSTGRESQL"`
 ```csharp
 // Services bound based on NET_ERP_SQL_ENGINE environment variable
 Bind(typeof(IGenericDataAccess<AccountingAccountGraphQLModel>))
-    .To(SQLEngine == "POSTGRESQL" ? 
-        typeof(BooksServicesPostgreSQL.AccountingAccountService) : 
+    .To(SQLEngine == "POSTGRESQL" ?
+        typeof(BooksServicesPostgreSQL.AccountingAccountService) :
         typeof(BooksServicesSQLServer.AccountingAccountService))
     .InSingletonScope();
 ```
@@ -132,10 +138,18 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
 - Multiple ViewModels can be active simultaneously in memory
 - `OnDeactivateAsync(close: false)` is NOT called when switching between tabs
 - `OnDeactivateAsync(close: true)` is ONLY called when the user explicitly closes a tab
-- This affects decisions about:
-  - CancellationToken usage (not needed for quick operations since tabs stay open)
-  - Memory management (multiple ViewModels active at once)
-  - Event subscriptions (ViewModels stay subscribed while tab is open)
+- **OnDeactivateAsync cleanup** (unsubscribe events, clear collections) MUST check `if (close)` — otherwise switching tabs destroys module state:
+  ```csharp
+  protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+  {
+      if (close)
+      {
+          Context.EventAggregator.Unsubscribe(this);
+          Items.Clear();
+      }
+      return base.OnDeactivateAsync(close, cancellationToken);
+  }
+  ```
 
 **Key Services** (registered in `NinjectBootstrapper.cs`):
 - `INotificationService` - In-app notifications
@@ -170,24 +184,30 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
   - Type-based sanitization (applies to all properties of a type)
   - Property-specific sanitization (override for specific properties)
 
-**GlobalDataCache** (`Common/Helpers/GlobalDataCache.cs`):
-- Centralized cache for common master data (IdentificationTypes, Countries, etc.)
-- Thread-safe with locks
-- Initialized in `ShellViewModel` on application startup
-- Prevents redundant API calls for frequently accessed data
-- Methods:
-  - `Initialize()` - Load all cached data
-  - `Clear()` - Clear all cached data
-  - `Refresh()` - Reload specific data sets
+**Entity Cache System** (`NetErp/Helpers/Cache/`):
+- Two-tier interface: `IEntityCache` (non-generic, for centralized cleanup) and `IEntityCache<T>` (generic, for typed CRUD)
+- All caches registered as **both concrete type AND `IEntityCache`** in Ninject:
+  ```csharp
+  _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
+  _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CostCenterCache>());
+  ```
+- `ShellViewModel` receives `IEnumerable<IEntityCache>` and calls `ClearAllCaches()` on logout/company switch
+- Caches use **lazy loading** via `EnsureLoadedAsync()` — only load from API on first use
+- Thread-safe with `lock` for all CRUD operations
+- Event-driven updates: caches implement `IHandle<TCreateMessage>`, `IHandle<TUpdateMessage>`, `IHandle<TDeleteMessage>` to stay in sync
+- Available caches: `CostCenterCache`, `IdentificationTypeCache`, `CountryCache`, `ZoneCache`, `WithholdingTypeCache`, `BankAccountCache`, `StringLengthCache`, and more
 
 **ChangeTracker** (`Common/Helpers/ChangeTracker.cs`):
 - Smart change tracking for ViewModels
 - Automatically removes changes when values return to seed
+- `AcceptChanges()` only clears the `_changed` HashSet, NOT `_seedValues` dictionary — seeds survive AcceptChanges
+- `ClearSeeds()` clears the `_seedValues` dictionary — used before re-seeding for new records
 - Supports collection observation via `INotifyCollectionChanged`
 - Methods:
   - `RegisterChange(propertyName, currentValue)` - Track a change
   - `Seed(propertyName, value)` - Set initial/seed value
-  - `AcceptChanges()` - Clear all changes
+  - `AcceptChanges()` - Clear all changes (keeps seeds)
+  - `ClearSeeds()` - Clear all seed values
   - `ObserveCollection(propertyName, collection)` - Track collection changes automatically
   - `HasChanges` - Boolean property indicating if any changes exist
 
@@ -199,19 +219,50 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
   - `this.SeedValue(nameof(PropertyName), value)` - Set seed value
   - `this.HasChanges()` - Check if ViewModel has changes
   - `this.AcceptChanges()` - Clear all tracked changes
+  - `this.ClearSeeds()` - Clear all seed values
   - `this.ObserveCollection(nameof(PropertyName), collection)` - Observe collection changes
 
 **ChangeCollector** (`Common/Helpers/ChangeCollector.cs`):
 - Extracts only modified properties from ViewModels for API calls
 - Automatically applies sanitizers from `SanitizerRegistry`
+- For CREATE operations (prefix contains "create"), iterates `tracker.SeedValues` and includes non-modified seeds in the payload — this is why seeding defaults is critical for new records
 - Advanced features:
   - `collectionItemTransformers` - Transform items in collections before sending
+  - `excludeProperties` - Exclude specific properties from payload
   - `ExpandoPathAttribute` - Customize property paths in generated payload
   - `NormalizeForPayload()` - Normalize objects with `SerializeAsId` attribute
 - Usage:
   ```csharp
   dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createInput");
   ```
+
+**StringLengthCache** (`NetErp/Helpers/Cache/StringLengthCache.cs`):
+- Centralized cache that queries the API for max string lengths per entity field
+- Queries the `stringLengths` GraphQL endpoint once per entity during the session
+- Registered as singleton in `NinjectBootstrapper.cs` and implements `IEntityCache` (cleared on logout/company switch)
+- **This is a standard part of every module's refactoring** — when evaluating what a module needs to be up to standard, StringLengthCache integration is required
+- **Integration steps for a module**:
+  1. **`StringLengthEntities.cs`** (`NetErp/Helpers/Cache/StringLengthEntities.cs`): Add a `Type[]` entry grouping the GraphQL model types the module needs (e.g., `public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel)]`)
+  2. **Root ViewModel** (e.g., `CustomerViewModel`): Inject `StringLengthCache` in constructor, call `await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer)` in `ActivateMasterViewAsync`
+  3. **Detail ViewModel** (e.g., `CustomerDetailViewModel`): Receive `StringLengthCache` via constructor, expose MaxLength properties:
+     ```csharp
+     public int NameMaxLength => _stringLengthCache.GetMaxLength<ZoneGraphQLModel>(nameof(ZoneGraphQLModel.Name));
+     ```
+  4. **XAML View**: Bind `MaxLength="{Binding NameMaxLength}"` on `TextEdit` controls
+  5. **For fields with RegEx mask** (e.g., IdentificationNumber, phones): MaxLength is ignored by DevExpress when mask is set — use `IdentificationNumberMask` property pattern instead:
+     ```csharp
+     public string IdentificationNumberMask
+     {
+         get
+         {
+             int max = IdentificationNumberMaxLength;
+             bool allowsLetters = SelectedIdentificationType?.AllowsLetters ?? false;
+             return allowsLetters ? $"[a-zA-Z0-9]{{0,{max}}}" : $"[0-9]{{0,{max}}}";
+         }
+     }
+     ```
+- Entity name resolution is automatic by convention: `AccountingEntityGraphQLModel` → strip "GraphQLModel" → `ToSnakeCase()` → `"accounting_entity"`. No hardcoded strings needed.
+- `GetMaxLength` returns `0` when not found (DevExpress `TextEdit.MaxLength = 0` means no limit)
 
 **QueryBuilder** (`NetErp/Helpers/GraphQLQueryBuilder/`):
 - Type-safe GraphQL query construction
@@ -239,13 +290,209 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
   var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
   ```
 
+### Standard ViewModel Patterns
+
+#### SetForNew / SetForEdit Pattern
+
+All Detail ViewModels and PanelEditors must use this dual-initialization pattern:
+
+- **`SetForNew(context?)`**: Initialize for CREATE. Sets defaults (Id=0, empty strings, default selections from caches). Calls `SeedDefaultValues()` at the end.
+- **`SetForEdit(dto/model)`**: Initialize for UPDATE. Populates all properties from the entity data. Calls `SeedCurrentValues()` at the end.
+
+```csharp
+public void SetForNew()
+{
+    Id = 0;
+    Name = string.Empty;
+    IsActive = true;
+    SelectedCountry = Countries?.FirstOrDefault(c => c.Id == defaultCountryId);
+    // ... set all defaults
+    SeedDefaultValues();
+}
+
+public void SetForEdit(CustomerGraphQLModel customer)
+{
+    Id = customer.Id;
+    Name = customer.Name;
+    IsActive = customer.IsActive;
+    SelectedCountry = Countries?.FirstOrDefault(c => c.Id == customer.Country?.Id);
+    // ... populate all properties from entity
+    SeedCurrentValues();
+}
+```
+
+#### SeedDefaultValues / SeedCurrentValues Pattern
+
+These methods establish the ChangeTracker baseline. Critical for ChangeCollector to work correctly:
+
+- **`SeedDefaultValues()`**: For NEW records. Clears previous seeds, seeds only properties with meaningful defaults, then accepts changes.
+- **`SeedCurrentValues()`**: For EDIT records. Seeds ALL editable properties with their current values, then accepts changes.
+
+```csharp
+private void SeedDefaultValues()
+{
+    this.ClearSeeds();  // Clear any previous seeds
+    this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+    this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+    this.SeedValue(nameof(IsActive), IsActive);
+    // ... seed properties that have defaults
+    this.AcceptChanges();
+}
+
+private void SeedCurrentValues()
+{
+    this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+    this.SeedValue(nameof(BusinessName), BusinessName);
+    this.SeedValue(nameof(FirstName), FirstName);
+    this.SeedValue(nameof(IsActive), IsActive);
+    // ... seed ALL editable properties
+    this.AcceptChanges();
+}
+```
+
+**Why this matters**: For CREATE, `ChangeCollector` uses seeded values as the payload base (it includes non-modified seeds). Without proper seeding, required fields like `regime` or `captureType` would be `null` in the API call.
+
+#### CanSave Pattern
+
+Standard validation for the Save button:
+
+```csharp
+public bool CanSave
+{
+    get
+    {
+        if (string.IsNullOrEmpty(RequiredField)) return false;
+        if (SomeCollection.Where(f => f.IsSelected).Count() == 0) return false;
+        if (!this.HasChanges()) return false;
+        return _errors.Count <= 0;
+    }
+}
+```
+
+Every property setter that affects CanSave must call `NotifyOfPropertyChange(nameof(CanSave))`.
+
+#### Save Flow with ChangeCollector
+
+```csharp
+public async Task<UpsertResponseType<TModel>> ExecuteSaveAsync()
+{
+    if (IsNewRecord)
+    {
+        string query = GetCreateQuery();
+        dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+        return await _service.CreateAsync<UpsertResponseType<TModel>>(query, variables);
+    }
+    else
+    {
+        string query = GetUpdateQuery();
+        dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+        variables.updateResponseId = Id;
+        return await _service.UpdateAsync<UpsertResponseType<TModel>>(query, variables);
+    }
+}
+```
+
+#### Event Aggregation Pattern (Create/Update/Delete Messages)
+
+After a successful save, publish a message so the MasterViewModel reloads:
+
+```csharp
+// In DetailViewModel after save
+await Context.EventAggregator.PublishOnCurrentThreadAsync(
+    IsNewRecord
+        ? new CustomerCreateMessage() { CreatedCustomer = result }
+        : new CustomerUpdateMessage() { UpdatedCustomer = result }
+);
+
+// In MasterViewModel - handle by reloading the list
+public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
+{
+    await LoadCustomersAsync();
+    _notificationService.ShowSuccess(message.CreatedCustomer.Message);
+}
+```
+
+#### INotifyDataErrorInfo Validation Pattern
+
+Detail ViewModels implement `INotifyDataErrorInfo` with a `Dictionary<string, List<string>> _errors`:
+
+```csharp
+private void ValidateProperty(string propertyName, string value)
+{
+    ClearErrors(propertyName);
+    switch (propertyName)
+    {
+        case nameof(FirstName):
+            if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN)
+                AddError(propertyName, "El primer nombre no puede estar vacío");
+            break;
+    }
+}
+```
+
+#### Tab Validation Indicators
+
+DXTabItem headers can show an orange dot when their tab contains validation errors, plus a ToolTip summarizing the errors:
+
+```csharp
+// ViewModel - group errors by tab
+private static readonly string[] _basicDataFields = [nameof(FirstName), nameof(FirstLastName), ...];
+public bool HasBasicDataErrors => _basicDataFields.Any(f => _errors.ContainsKey(f));
+public string BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
+
+// Notify in RaiseErrorsChanged
+if (_basicDataFields.Contains(propertyName))
+{
+    NotifyOfPropertyChange(nameof(BasicDataTabTooltip));
+    NotifyOfPropertyChange(nameof(HasBasicDataErrors));
+}
+```
+
+```xml
+<!-- XAML -->
+<dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
+    <dx:DXTabItem.Header>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Datos Básicos" VerticalAlignment="Center"/>
+            <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                     Visibility="{Binding Data.HasBasicDataErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+    </dx:DXTabItem.Header>
+```
+
+#### Tree Module Structure (CostCenters, Treasury, CatalogItems)
+
+Tree modules use PanelEditors instead of DetailViewModels:
+
+```csharp
+// MasterViewModel routes selected tree node to panel editor
+public void HandleSelectedItemChanged()
+{
+    CurrentPanelEditor = _selectedItem switch
+    {
+        ItemTypeDTO => ItemTypeEditor,
+        ItemCategoryDTO => ItemCategoryEditor,
+        ItemDTO => ItemEditor,
+        _ => null
+    };
+
+    if (!IsNewRecord && CurrentPanelEditor != null)
+        CurrentPanelEditor.SetForEdit(_selectedItem);
+}
+```
+
+PanelEditors inherit from a generic base class:
+```csharp
+public abstract class CostCentersBasePanelEditor<TDto, TGraphQLModel> : PropertyChangedBase, ICostCentersPanelEditor
+```
+
 ### Development Notes
 
 All GraphQL operations include error handling with custom exception extraction from API responses. The `IGenericDataAccess<T>` interface provides consistent error handling across all data operations.
 
 Master ViewModels typically handle:
 - Paginated data loading
-- Search/filter operations  
+- Search/filter operations
 - CRUD operations with navigation to Detail views
 - Selection state management
 
@@ -254,6 +501,22 @@ Detail ViewModels handle:
 - Validation logic
 - Save/Cancel operations
 - Parent-child relationship management
+
+### Standard Module Refactoring Checklist
+
+When refactoring a module to be up to standard, ensure it has:
+
+- [ ] `IRepository<T>` instead of `IGenericDataAccess<T>`
+- [ ] `ChangeTracker` with `TrackChange()` in every property setter
+- [ ] `SetForNew()` / `SetForEdit()` with `SeedDefaultValues()` / `SeedCurrentValues()`
+- [ ] `ChangeCollector.CollectChanges()` for save payload generation
+- [ ] `StringLengthCache` integration (MaxLength on all string TextEdits)
+- [ ] `INotifyDataErrorInfo` validation
+- [ ] `CanSave` with `HasChanges()` + error check
+- [ ] Event aggregation messages (Create/Update/Delete) with MasterViewModel handlers
+- [ ] `OnDeactivateAsync` guarded by `if (close)` for cleanup
+- [ ] `ExpandoPath` attributes on properties that map to different GraphQL field names
+- [ ] Queries built with `FieldSpec<T>` + `GraphQLQueryBuilder`
 
 ## Project Guidelines
 

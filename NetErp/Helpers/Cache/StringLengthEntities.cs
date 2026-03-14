@@ -1,5 +1,6 @@
 using Models.Billing;
 using Models.Books;
+using Models.Global;
 using Models.Inventory;
 using System;
 
@@ -13,8 +14,10 @@ namespace NetErp.Helpers.Cache
     public static class StringLengthEntities
     {
         // Billing
-        public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel)];
-        public static readonly Type[] Seller = [typeof(SellerGraphQLModel)];
+        public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
+        public static readonly Type[] Seller = [typeof(SellerGraphQLModel), typeof(AccountingEntityGraphQLModel)];
+        public static readonly Type[] Zone = [typeof(ZoneGraphQLModel)];
+        public static readonly Type[] PriceList = [typeof(PriceListGraphQLModel)];
 
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];

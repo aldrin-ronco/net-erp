@@ -46,7 +46,6 @@
                             IndicatorType="BouncingDot"
                             BusyContent="Please wait..."
                             BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False"
                             Grid.Row="3">
         <Grid h:EnterKeyTraversal.IsEnabled="True">
 
@@ -159,17 +158,12 @@
                            Margin="4 4 0 2" Padding="3"
                            FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                 <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3" Margin="4 0 4 0">
-                    <dxe:SpinEdit x:Name="IdentificationNumber" 
-                              Width="auto" MinWidth="60" 
+                    <dxe:TextEdit x:Name="IdentificationNumber"
+                              Width="auto" MinWidth="60"
                               Padding="3" Margin="0 2 0 2"
-                              MaskType="Numeric"
-                              MinValue="0"
-                              Mask="n0"
-                              AllowDefaultButton="False"
-                              dxe:NumericMaskOptions.AlwaysShowDecimalSeparator="False"
-                              dxe:NumericMaskOptions.HideInsignificantZeros="True"
+                              MaskType="RegEx"
+                              Mask="{Binding IdentificationNumberMask}"
                               FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                              MaxLength="15"
                               VerticalContentAlignment="Center"
                               IsReadOnly="{Binding IsNewRecord, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource SimpleBooleanConverter}}"/>
                     <TextBox Width="20" Margin="6 2 0 2"
@@ -245,10 +239,11 @@
                            Grid.Column="0" Grid.Row="0"
                            Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                            Margin="0 4 4 2"/>
-                        <dxe:TextEdit x:Name="BusinessName" 
+                        <dxe:TextEdit x:Name="BusinessName"
                             CharacterCasing="Upper"
+                            MaxLength="{Binding BusinessNameMaxLength}"
                             Visibility="{Binding CaptureInfoAsPJ, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
-                            Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" 
+                            Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1"
                             Margin="0 0 0 0" Padding="3"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <!--Nombres y Apellidos-->
@@ -260,7 +255,8 @@
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="FirstName"
                             CharacterCasing="Upper"
-                            Grid.Column="0" Grid.Row="3" 
+                            MaxLength="{Binding FirstNameMaxLength}"
+                            Grid.Column="0" Grid.Row="3"
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="0 0 4 0" Padding="3"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -271,9 +267,10 @@
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="4 4 4 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="MiddleName" 
+                        <dxe:TextEdit x:Name="MiddleName"
                             CharacterCasing="Upper"
-                            Grid.Column="1" Grid.Row="3" 
+                            MaxLength="{Binding MiddleNameMaxLength}"
+                            Grid.Column="1" Grid.Row="3"
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="4 0 4 0" Padding="3"
                             FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -283,9 +280,10 @@
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="4 4 4 2"
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxe:TextEdit x:Name="FirstLastName" 
+                        <dxe:TextEdit x:Name="FirstLastName"
                  CharacterCasing="Upper"
-                 Grid.Column="2" Grid.Row="3" 
+                 MaxLength="{Binding FirstLastNameMaxLength}"
+                 Grid.Column="2" Grid.Row="3"
                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                  Margin="4 0 4 0" Padding="3"
                  FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -297,6 +295,7 @@
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="MiddleLastName"
                  CharacterCasing="Upper"
+                 MaxLength="{Binding MiddleLastNameMaxLength}"
                  Grid.Column="3" Grid.Row="3"
                  Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                  Margin="4 0 0 0" Padding="3"
@@ -309,6 +308,7 @@
                            FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="TradeName"
                             CharacterCasing="Upper"
+                            MaxLength="{Binding TradeNameMaxLength}"
                             Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="5"
                             Visibility="{Binding CaptureInfoAsPN, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Margin="0 0 0 0" Padding="3"
@@ -320,7 +320,7 @@
                    Margin="0 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="PrimaryPhone"
-                  MaxLength="10"
+                  MaxLength="{Binding PrimaryPhoneMaxLength}"
                   MaskType="Simple"
                   Mask="000 00 00"
                   Grid.Column="0" Grid.Row="7"
@@ -335,7 +335,7 @@
                    Margin="4 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="SecondaryPhone"
-                  MaxLength="10"
+                  MaxLength="{Binding SecondaryPhoneMaxLength}"
                   Grid.Column="1" Grid.Row="7"
                   MaskType="Simple"
                   Mask="000 00 00"
@@ -349,7 +349,7 @@
                    Margin="4 4 4 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="PrimaryCellPhone"
-                  MaxLength="14"
+                  MaxLength="{Binding PrimaryCellPhoneMaxLength}"
                   MaskType="Simple"
                   Mask="000 000 00 00"
                   Grid.Column="2" Grid.Row="7"
@@ -363,7 +363,7 @@
                    Margin="4 4 0 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="SecondaryCellPhone"
-                  MaxLength="14"
+                  MaxLength="{Binding SecondaryCellPhoneMaxLength}"
                   MaskType="Simple"
                   Mask="000 000 00 00"
                   Grid.Column="3" Grid.Row="7"
@@ -494,6 +494,7 @@
                    Margin="0 4 0 2"
                    FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxe:TextEdit x:Name="Address"
+                     MaxLength="{Binding AddressMaxLength}"
                      Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="15"
                      Margin="0" Padding="3"
                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -551,14 +552,15 @@
                             FontSize="{Binding Source={x:Static config:UICustom.LabelFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
                             <TextBlock Text=" ( Ej: micorreo@gmail.com )" Foreground="Gray"/>
                         </TextBlock>
-                            <TextBox x:Name="EmailDescription" 
-                     Text="{Binding Path=EmailDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                     Grid.Column="0" Grid.Row="1" 
-                     Width="auto" Margin="0 2 4 2" Padding="4" 
+                            <dxe:TextEdit x:Name="EmailDescription"
+                     MaxLength="{Binding EmailDescriptionMaxLength}"
+                     Grid.Column="0" Grid.Row="1"
+                     Width="auto" Margin="0 2 4 2" Padding="4"
                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBox Text="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                     Grid.Column="1" Grid.Row="1" 
-                     Width="auto" Margin="0 2 0 2" Padding="4" 
+                            <dxe:TextEdit EditValue="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     MaxLength="{Binding EmailMaxLength}"
+                     Grid.Column="1" Grid.Row="1"
+                     Width="auto" Margin="0 2 0 2" Padding="4"
                      FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <Button Grid.Column="2" Grid.Row="1" Margin="4 2 4 2" Padding="4" Width="auto" x:Name="AddEmail">
                                 <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None">
@@ -776,7 +778,7 @@
                         <!--Retiene sobre cualquier base-->
 
                         <dxe:CheckEdit  Grid.Row="4" Margin="0 5 0 5"
-                                        IsChecked="{Binding RetainsOnAnyBasis, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        IsChecked="{Binding RetainsAnyBasis, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         Content="¿Este cliente retiene sobre cualquier base?"
                                         Style="{StaticResource BlueCheckedTextStyle}"
                                         FontSize="{Binding Source={x:Static config:UICustom.ControlFontSize}, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -796,6 +798,7 @@
                                    Visibility="{Binding Path=IsActive, Mode=OneWay, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter Invert=True}}"/>
 
                         <dxe:TextEdit x:Name="BlockingReason"
+                                      MaxLength="{Binding BlockingReasonMaxLength}"
                                       Grid.Row="7"
                                       Margin="0 0 0 4" Padding="3"
                                       CharacterCasing="Upper"

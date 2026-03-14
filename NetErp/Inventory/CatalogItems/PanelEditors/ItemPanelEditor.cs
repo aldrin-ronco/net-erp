@@ -121,8 +121,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         }
 
         // MaxLength properties from StringLengthCache
-        public int NameMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(Name));
-        public int ReferenceMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(Reference));
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(ItemGraphQLModel.Name));
+        public int ReferenceMaxLength => _stringLengthCache.GetMaxLength<ItemGraphQLModel>(nameof(ItemGraphQLModel.Reference));
 
         private bool _isActive = true;
         public bool IsActive

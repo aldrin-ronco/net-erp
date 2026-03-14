@@ -38,7 +38,7 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
         #region Properties
 
         // MaxLength properties from StringLengthCache
-        public int NameMaxLength => _stringLengthCache.GetMaxLength<ItemSubCategoryGraphQLModel>(nameof(Name));
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<ItemSubCategoryGraphQLModel>(nameof(ItemSubCategoryGraphQLModel.Name));
 
         private int _id;
         public int Id

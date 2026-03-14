@@ -1,46 +1,49 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using DevExpress.XtraEditors.Filtering;
 using Models.Billing;
-using Models.Books;
 using Models.Global;
-using Ninject.Activation;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Books.DAL.PostgreSQL;
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using static Models.Global.GraphQLResponseTypes;
-using System.Xml.Linq;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Common.Extensions;
 using GraphQL.Client.Http;
 using Extensions.Global;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.Zones.ViewModels
 {
-    public class ZoneDetailViewModel : Screen
+    public class ZoneDetailViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly Dictionary<string, List<string>> _errors = new();
         public ZoneViewModel Context { get; set; }
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<ZoneGraphQLModel>(nameof(ZoneGraphQLModel.Name));
 
         public ZoneDetailViewModel(
             ZoneViewModel context,
-            IRepository<ZoneGraphQLModel> zoneService)
+            IRepository<ZoneGraphQLModel> zoneService,
+            StringLengthCache stringLengthCache)
         {
             Context = context;
             _zoneService = zoneService;
-            NotifyOfPropertyChange(nameof(CanSave));
+            _stringLengthCache = stringLengthCache;
         }
 
-        // Is Busy
+        #region Properties
+
         private bool _isBusy = false;
         public bool IsBusy
         {
@@ -54,31 +57,34 @@ namespace NetErp.Billing.Zones.ViewModels
                 }
             }
         }
-        private bool _canSave;
+
         public bool CanSave
         {
-            get 
-            { 
-                return !string.IsNullOrEmpty(Name) && this.HasChanges(); 
+            get
+            {
+                if (string.IsNullOrEmpty(Name?.Trim())) return false;
+                if (!this.HasChanges()) return false;
+                return _errors.Count <= 0;
             }
         }
+
         public bool IsNewRecord => Id == 0;
 
         private int _id;
-
         public int Id
         {
             get { return _id; }
-            set 
-            { 
-                if(_id != value)
+            set
+            {
+                if (_id != value)
                 {
                     _id = value;
                     NotifyOfPropertyChange(nameof(Id));
-                } 
+                }
             }
         }
-        private string _name;
+
+        private string _name = string.Empty;
         public string Name
         {
             get { return _name; }
@@ -88,6 +94,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -110,8 +117,11 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private ICommand? _goBackCommand;
+        #endregion
 
+        #region Commands
+
+        private ICommand? _goBackCommand;
         public ICommand? GoBackCommand
         {
             get
@@ -122,7 +132,6 @@ namespace NetErp.Billing.Zones.ViewModels
         }
 
         private ICommand? _saveCommand;
-
         public ICommand? SaveCommand
         {
             get
@@ -131,6 +140,41 @@ namespace NetErp.Billing.Zones.ViewModels
                 return _saveCommand;
             }
         }
+
+        #endregion
+
+        #region Methods
+
+        public void SetForNew()
+        {
+            Id = 0;
+            Name = string.Empty;
+            IsActive = true;
+            SeedDefaultValues();
+        }
+
+        public void SetForEdit(ZoneGraphQLModel zone)
+        {
+            Id = zone.Id;
+            Name = zone.Name;
+            IsActive = zone.IsActive;
+            SeedCurrentValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.AcceptChanges();
+        }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.AcceptChanges();
+        }
+
         public async Task SaveAsync()
         {
             try
@@ -150,14 +194,11 @@ namespace NetErp.Billing.Zones.ViewModels
                         ? new ZoneCreateMessage() { CreatedZone = result }
                         : new ZoneUpdateMessage() { UpdatedZone = result }
                 );
-                this.Name = string.Empty;
-                this.IsActive = true;
                 await Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
@@ -178,22 +219,16 @@ namespace NetErp.Billing.Zones.ViewModels
                 if (IsNewRecord)
                 {
                     string query = GetCreateQuery();
-
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                     variables.createResponseData = new ExpandoObject();
-                  
-                    UpsertResponseType<ZoneGraphQLModel> zoneCreated = await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
-                    return zoneCreated;
+                    return await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
                 }
                 else
                 {
                     string query = GetUpdateQuery();
-                    
                     dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                     variables.updateResponseId = Id;
-
-                    UpsertResponseType<ZoneGraphQLModel> updatedZone = await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
-                    return updatedZone;
+                    return await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
                 }
             }
             catch (Exception)
@@ -201,7 +236,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 throw;
             }
         }
-       
+
         public string GetCreateQuery()
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
@@ -219,11 +254,8 @@ namespace NetErp.Billing.Zones.ViewModels
                 .Build();
 
             var parameter = new GraphQLQueryParameter("input", "CreateZoneInput!");
-
             var fragment = new GraphQLQueryFragment("createZone", [parameter], fields, "CreateResponse");
-
             var builder = new GraphQLQueryBuilder([fragment]);
-
             return builder.GetQuery(GraphQLOperations.MUTATION);
         }
 
@@ -255,15 +287,76 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public async Task GoBackAsync()
         {
-            this.Name = string.Empty;
             await Context.ActivateMasterViewAsync();
         }
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
         }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                this.AcceptChanges();
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region Validaciones
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            return _errors[propertyName];
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = new List<string>();
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value?.Trim()))
+                        AddError(propertyName, "El nombre de la zona no puede estar vacío");
+                    break;
+            }
+        }
+
+        #endregion
     }
 }

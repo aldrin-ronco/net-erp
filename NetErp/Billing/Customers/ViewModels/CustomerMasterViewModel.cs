@@ -337,24 +337,12 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             try
             {
-                // ✅ Optimización: Remover de la lista en lugar de recargar todo
-                // Es seguro porque solo estamos eliminando un item visible
-                var deletedCustomer = Customers.FirstOrDefault(c => c.Id == message.DeletedCustomer.DeletedId);
-                if (deletedCustomer != null)
-                {
-                    Customers.Remove(deletedCustomer);
-                    TotalCount--;
-                }
-                else
-                {
-                    // Si no está en la lista visible, recargar para actualizar el TotalCount
-                    await LoadCustomersAsync();
-                }
-
+                await LoadCustomersAsync();
                 _notificationService.ShowSuccess(message.DeletedCustomer.Message);
             }
             catch (Exception)
             {
+
                 throw;
             }
         }
@@ -583,12 +571,15 @@ namespace NetErp.Billing.Customers.ViewModels
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            // Desuscribirse del EventAggregator para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
-            
-            // Limpiar colecciones
-            Customers.Clear();
-            
+            if (close)
+            {
+                // Desuscribirse del EventAggregator para evitar memory leaks
+                Context.EventAggregator.Unsubscribe(this);
+
+                // Limpiar colecciones
+                Customers.Clear();
+            }
+
             return base.OnDeactivateAsync(close, cancellationToken);
         }
     }

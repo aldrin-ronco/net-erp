@@ -30,8 +30,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly ZoneCache _zoneCache;
-
-      
+        private readonly StringLengthCache _stringLengthCache;
 
         private SellerMasterViewModel _sellerMasterViewModel;
         public SellerMasterViewModel SellerMasterViewModel 
@@ -62,7 +61,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             CostCenterCache costCenterCache,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
-            ZoneCache zoneCache)
+            ZoneCache zoneCache,
+            StringLengthCache stringLengthCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -72,6 +72,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             _countryCache = countryCache;
             _identificationTypeCache = identificationTypeCache;
             _zoneCache = zoneCache;
+            _stringLengthCache = stringLengthCache;
             _ = Task.Run(async () => 
             {
                 try
@@ -101,6 +102,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Seller);
                 await ActivateItemAsync(SellerMasterViewModel, new System.Threading.CancellationToken());
             }
             catch (Exception ex)
@@ -115,9 +117,9 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             try
             {
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService,  _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache, _stringLengthCache);
                 await instance.InitializeAsync();
-                instance.CleanUpControls();
+                instance.SetForNew();
                 
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
@@ -141,10 +143,9 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                
-                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService,  _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache);
+                SellerDetailViewModel instance = new SellerDetailViewModel(this, _sellerService, _costCenterCache, _identificationTypeCache, _countryCache, _zoneCache, _stringLengthCache);
                 await instance.InitializeAsync();
-                SellerGraphQLModel seller =  await instance.LoadDataForEditAsync(sellerId);
-                instance.AcceptChanges();
+                await instance.LoadDataForEditAsync(sellerId);
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }
             catch (AsyncException ex)
