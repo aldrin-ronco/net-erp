@@ -456,8 +456,11 @@ namespace NetErp.Billing.Customers.ViewModels
                     this.TrackChange(nameof(SelectedDepartment));
                     if (_selectedDepartment != null)
                     {
-                        SelectedCityId = SelectedDepartment.Cities.FirstOrDefault().Id;
-                        NotifyOfPropertyChange(nameof(SelectedCityId));
+                        if (SelectedDepartment.Cities.Count > 0)
+                        {
+                            SelectedCityId = SelectedDepartment.Cities.First().Id;
+                            NotifyOfPropertyChange(nameof(SelectedCityId));
+                        }
                     }
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
