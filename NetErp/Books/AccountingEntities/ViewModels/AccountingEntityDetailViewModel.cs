@@ -6,29 +6,26 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
+using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
+using Newtonsoft.Json;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using System.Windows.Threading;
-using static Dictionaries.BooksDictionaries;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using static Models.Global.GraphQLResponseTypes;
-using Newtonsoft.Json;
-using Extensions.Global;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using static Dictionaries.BooksDictionaries;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
 {
@@ -36,14 +33,43 @@ namespace NetErp.Books.AccountingEntities.ViewModels
     {
 
 
-        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
+        private readonly StringLengthCache _stringLengthCache;
 
+        private readonly Dictionary<string, List<string>> _errors = [];
+        private List<string> _seedEmails = [];
 
-        Dictionary<string, List<string>> _errors;
-        private List<string> _seedEmails = new List<string>();
+        #region MaxLength Properties
+
+        public int BusinessNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.BusinessName));
+        public int FirstNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstName));
+        public int MiddleNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleName));
+        public int FirstLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstLastName));
+        public int MiddleLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleLastName));
+        public int TradeNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.TradeName));
+        public int AddressMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.Address));
+        public int PrimaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryPhone));
+        public int SecondaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryPhone));
+        public int PrimaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryCellPhone));
+        public int SecondaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryCellPhone));
+        public int IdentificationNumberMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.IdentificationNumber));
+        public string IdentificationNumberMask
+        {
+            get
+            {
+                int max = IdentificationNumberMaxLength;
+                bool allowsLetters = SelectedIdentificationType?.AllowsLetters ?? false;
+                return allowsLetters ? $"[a-zA-Z0-9]{{0,{max}}}" : $"[0-9]{{0,{max}}}";
+            }
+        }
+
+        public int EmailDescriptionMaxLength => _stringLengthCache.GetMaxLength<EmailGraphQLModel>(nameof(EmailGraphQLModel.Description));
+        public int EmailMaxLength => _stringLengthCache.GetMaxLength<EmailGraphQLModel>(nameof(EmailGraphQLModel.Email));
+
+        #endregion
 
         #region Commands
         private ICommand _deleteMailCommand;
@@ -56,13 +82,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
             }
         }
 
@@ -79,20 +105,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         #endregion
 
         #region Propiedades
-        // Context
-        private AccountingEntityViewModel _context;
-        public AccountingEntityViewModel Context
-        {
-            get { return _context; }
-            set
-            {
-                if(_context  != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
 
         // Identity
         private int _id;
@@ -110,34 +122,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private bool _identificationNumberIsFocused;
-        public bool IdentificationNumberIsFocused
-        {
-            get { return _identificationNumberIsFocused; }
-            set 
-            {
-                if(_identificationNumberIsFocused != value)
-                {
-                    _identificationNumberIsFocused = value;
-                    NotifyOfPropertyChange(nameof(IdentificationNumberIsFocused));
-                }
-            }
-        }
-
-        private bool _firstNameIsFocused;
-
-        public bool FirstNameIsFocused
-        {
-            get { return _firstNameIsFocused; }
-            set 
-            {
-                if(_firstNameIsFocused != value)
-                {
-                    _firstNameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(FirstNameIsFocused));
-                }
-            }
-        }
         private int _selectedIndexPage = 0;
         public int SelectedIndexPage
         {
@@ -148,36 +132,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedIndexPage = value;
                     NotifyOfPropertyChange(nameof(SelectedIndexPage));
-                }
-            }
-        }
-
-        private bool _businessNameIsFocused;
-
-        public bool BusinessNameIsFocused
-        {
-            get { return _businessNameIsFocused; }
-            set
-            {
-                if(_businessNameIsFocused != value)
-                {
-                    _businessNameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(BusinessNameIsFocused));
-                }
-            }
-        }
-
-        private bool _emailDescriptionIsFocused;
-
-        public bool EmailDescriptionIsFocused
-        {
-            get { return _emailDescriptionIsFocused; }
-            set 
-            { 
-                if(_emailDescriptionIsFocused != value)
-                {
-                    _emailDescriptionIsFocused = value;
-                    NotifyOfPropertyChange(nameof(EmailDescriptionIsFocused));
                 }
             }
         }
@@ -248,21 +202,6 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-
-        void SetFocus(Expression<Func<object>> expression)
-        {
-            string controlName = expression.GetMemberInfo().Name;
-
-            IdentificationNumberIsFocused = false;
-            FirstNameIsFocused = false;
-            BusinessNameIsFocused = false;
-            EmailDescriptionIsFocused = false;
-
-            IdentificationNumberIsFocused = controlName == nameof(IdentificationNumber);
-            FirstNameIsFocused = controlName == nameof(FirstName);
-            BusinessNameIsFocused = controlName == nameof(BusinessName);
-            EmailDescriptionIsFocused = controlName == nameof(EmailDescription);
-        }
 
         /// <summary>
         /// Si es un nuevo registro
@@ -340,6 +279,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 {
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
+                    NotifyOfPropertyChange(nameof(IdentificationNumberMask));
                     this.TrackChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
@@ -923,37 +863,31 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         #endregion
 
-        protected override void OnViewAttached(object view, object context)
-        {
-            base.OnViewAttached(view, context);
-            ValidateProperties();
-            
-            _ = Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                SelectedIndexPage = 0;
-                string focusTarget = IsNewRecord ? nameof(IdentificationNumber)
-                    : CaptureInfoAsPN ? nameof(FirstName)
-                    : nameof(BusinessName);
-                this.SetFocus(focusTarget);
-            }, DispatcherPriority.Render);
-        }
 
         public AccountingEntityDetailViewModel(
-            AccountingEntityViewModel context,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
+            IEventAggregator eventAggregator,
             IdentificationTypeCache identificationTypeCache,
-            CountryCache countryCache)
+            CountryCache countryCache,
+            StringLengthCache stringLengthCache)
         {
-            _errors = [];
-            Context = context;
-            _accountingEntityService = accountingEntityService;
-            _identificationTypeCache = identificationTypeCache;
-            _countryCache = countryCache;
+            _accountingEntityService = accountingEntityService ?? throw new ArgumentNullException(nameof(accountingEntityService));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
+            _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
 
-            // Inicializar la colección para activar la suscripción al CollectionChanged
             Emails = [];
+        }
 
-            Context.EventAggregator.SubscribeOnUIThread(this);
+        public async Task LoadCachesAsync()
+        {
+            await Task.WhenAll(
+                _identificationTypeCache.EnsureLoadedAsync(),
+                _countryCache.EnsureLoadedAsync());
+
+            IdentificationTypes = _identificationTypeCache.Items;
+            Countries = _countryCache.Items;
         }
 
 
@@ -1024,15 +958,13 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                     return;
                 }
-                if (IsNewRecord)
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityCreateMessage() { CreatedAccountingEntity = result });
-                }
-                else
-                {
-                    await Context.EventAggregator.PublishOnCurrentThreadAsync(new AccountingEntityUpdateMessage() { UpdatedAccountingEntity = result});
-                }
-                await Context.ActivateMasterViewAsync();
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new AccountingEntityCreateMessage { CreatedAccountingEntity = result }
+                        : new AccountingEntityUpdateMessage { UpdatedAccountingEntity = result }
+                );
+
+                await TryCloseAsync(true);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1052,41 +984,29 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         public async Task<UpsertResponseType<AccountingEntityGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            var transformers = new Dictionary<string, Func<object?, object?>>
             {
-                string query;
-
-                var transformers = new Dictionary<string, Func<object?, object?>>
+                [nameof(Emails)] = item =>
                 {
-                    [nameof(Emails)] = item =>
+                    var email = (EmailGraphQLModel)item!;
+                    return new
                     {
-                        var email = (EmailGraphQLModel)item!;
-                        return new
-                        {
-                            description = email.Description,
-                            email = email.Email
-                        };
-                    }
-                };
+                        description = email.Description,
+                        email = email.Email
+                    };
+                }
+            };
 
-                // Use ChangeCollector to build variables from tracked changes
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
+            dynamic variables = ChangeCollector.CollectChanges(this, prefix: IsNewRecord ? "createResponseInput" : "updateResponseData", transformers);
 
-                // Add Id for UPDATE operations
-                if (!IsNewRecord) variables.updateResponseId = Id;
+            if (!IsNewRecord) variables.updateResponseId = Id;
 
-                // Query usando QueryBuilder
-                query = IsNewRecord ? _createQuery.Value : _updateQuery.Value;
+            string query = IsNewRecord ? _createQuery.Value : _updateQuery.Value;
 
-                UpsertResponseType<AccountingEntityGraphQLModel> result = IsNewRecord
-                    ? await _accountingEntityService.CreateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables)
-                    : await _accountingEntityService.UpdateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables);
-                return result;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            UpsertResponseType<AccountingEntityGraphQLModel> result = IsNewRecord
+                ? await _accountingEntityService.CreateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables)
+                : await _accountingEntityService.UpdateAsync<UpsertResponseType<AccountingEntityGraphQLModel>>(query, variables);
+            return result;
         }
 
         private bool HasEmailChanges()
@@ -1138,44 +1058,38 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public void PhoneInputLostFocus(FrameworkElement element)
-        {
-            switch (element.Name.ToLower())
-            {
-                case "primaryphone":
-                    PrimaryPhone = PrimaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "secondaryphone":
-                    SecondaryPhone = SecondaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "primarycellphone":
-                    PrimaryCellPhone = PrimaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-                case "secondarycellphone":
-                    SecondaryCellPhone = SecondaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-                default:
-                    break;
-            }
-        }
-
         #region Validaciones
         public bool HasErrors => _errors.Count > 0;
 
-        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        private static readonly string[] _basicDataFields = [nameof(FirstName), nameof(FirstLastName), nameof(BusinessName), nameof(PrimaryPhone), nameof(SecondaryPhone), nameof(PrimaryCellPhone), nameof(SecondaryCellPhone)];
+
+        public bool HasBasicDataErrors => _basicDataFields.Any(f => _errors.ContainsKey(f));
+        public string BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
+
+        private string GetTabTooltip(string[] fields)
+        {
+            var errors = fields
+                .Where(f => _errors.ContainsKey(f))
+                .SelectMany(f => _errors[f])
+                .ToList();
+            return errors.Count > 0 ? string.Join("\n", errors) : null;
+        }
+
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            if (_basicDataFields.Contains(propertyName))
+            {
+                NotifyOfPropertyChange(nameof(HasBasicDataErrors));
+                NotifyOfPropertyChange(nameof(BasicDataTabTooltip));
+            }
         }
 
-        public void GoBack(object p)
+        public async Task CancelAsync()
         {
-            _ = Task.Run(() => Context.ActivateMasterViewAsync());
-        }
-
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
+            await TryCloseAsync(false);
         }
         public IEnumerable GetErrors(string propertyName)
         {
@@ -1186,7 +1100,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -1268,49 +1182,57 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
         #endregion
 
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+            this.SeedValue(nameof(BusinessName), BusinessName);
+            this.SeedValue(nameof(TradeName), TradeName);
+            this.SeedValue(nameof(FirstName), FirstName);
+            this.SeedValue(nameof(MiddleName), MiddleName);
+            this.SeedValue(nameof(FirstLastName), FirstLastName);
+            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(Address), Address);
+            this.SeedValue(nameof(VerificationDigit), VerificationDigit);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.AcceptChanges();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+            this.SeedValue(nameof(VerificationDigit), VerificationDigit);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.AcceptChanges();
+        }
+
         #region Data Loading and GraphQL Queries
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            if (IsNewRecord)
+            if (!IsNewRecord)
             {
-                // Seed default values for new records
-                this.SeedValue(nameof(SelectedRegime), SelectedRegime);
-                this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
-                this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
-                this.SeedValue(nameof(SelectedCountry), SelectedCountry);
-                this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
-                this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+                _seedEmails = [.. Emails.Select(e => e.Email)];
             }
-            else
-            {
-                // Guardar los emails iniciales para comparación en actualizaciones
-                _seedEmails = Emails.Select(e => e.Email).ToList();
-            }
-            // Accept all changes to reset the tracker
+            ValidateProperties();
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
-
-            // Establecer foco inicial
-            if (IsNewRecord)
-            {
-                _ = this.SetFocus(nameof(IdentificationNumber));
-            }
-            else
-            {
-                if (CaptureInfoAsPN)
-                {
-                    _ = this.SetFocus(nameof(FirstName));
-                }
-                else
-                {
-                    _ = this.SetFocus(nameof(BusinessName));
-                }
-            }
         }
 
-        private static readonly Lazy<string> _accountingEntityByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _accountingEntityByIdQuery = new(() =>
         {
             var accountingEntityFields = FieldSpec<AccountingEntityGraphQLModel>
                 .Create()
@@ -1354,28 +1276,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                     .Field(em => em.Email))
                 .Build();
 
-            var accountingEntityIdParameter = new GraphQLQueryParameter("id", "ID!");
-
-            var accountingEntityFragment = new GraphQLQueryFragment("accountingEntity", [accountingEntityIdParameter], accountingEntityFields, "SingleItemResponse");
-
-            var builder = new GraphQLQueryBuilder([accountingEntityFragment]);
-
-            return builder.GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingEntity",
+                [new("id", "ID!")], accountingEntityFields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        public async Task SetDataForNewAsync()
+        public void SetForNew()
         {
             try
             {
-                // Cargar datos comunes desde los caches individuales
-                await Task.WhenAll(
-                    _identificationTypeCache.EnsureLoadedAsync(),
-                    _countryCache.EnsureLoadedAsync()
-                );
-                IdentificationTypes = _identificationTypeCache.Items;
-                Countries = _countryCache.Items;
-
-                Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
+                Id = 0;
                 SelectedRegime = 'R';
                 VerificationDigit = "";
                 SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode) ?? throw new InvalidOperationException($"No se encontró el tipo de identificación por defecto con código '{Constant.DefaultIdentificationTypeCode}'. Contacte al área de soporte técnico."); // 31 es NIT
@@ -1399,6 +1309,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode) ?? throw new InvalidOperationException($"No se encontró el departamento por defecto con código '{Constant.DefaultDepartmentCode}' en el país '{SelectedCountry.Name}'. Contacte al área de soporte técnico.");
                 CityGraphQLModel selectedCity = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode) ?? throw new InvalidOperationException($"No se encontró la ciudad por defecto con código '{Constant.DefaultCityCode}' en el departamento '{SelectedDepartment.Name}'. Contacte al área de soporte técnico.");
                 SelectedCityId = selectedCity.Id;
+
+                SeedDefaultValues();
             }
             catch (Exception ex)
             {
@@ -1406,29 +1318,19 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        public async Task<AccountingEntityGraphQLModel> LoadDataForEditAsync(int id)
+        public async Task LoadDataForEditAsync(int id)
         {
             try
             {
-                // Cargar datos comunes desde los caches individuales
-                await Task.WhenAll(
-                    _identificationTypeCache.EnsureLoadedAsync(),
-                    _countryCache.EnsureLoadedAsync()
-                );
-                IdentificationTypes = _identificationTypeCache.Items;
-                Countries = _countryCache.Items;
-
-                // Cargar solo el AccountingEntity específico
-                string query = _accountingEntityByIdQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.singleItemResponseId = id;
+                var (fragment, query) = _accountingEntityByIdQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
 
                 AccountingEntityGraphQLModel entity = await _accountingEntityService.FindByIdAsync(query, variables);
 
                 // Poblar el ViewModel con los datos del accounting entity
                 PopulateFromAccountingEntity(entity);
-
-                return entity;
             }
             catch (Exception ex)
             {
@@ -1439,7 +1341,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public void PopulateFromAccountingEntity(AccountingEntityGraphQLModel entity)
         {
             Id = entity.Id;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Id == entity.IdentificationType.Id);
+            SelectedIdentificationType = IdentificationTypes.First(x => x.Id == entity.IdentificationType.Id);
             VerificationDigit = entity.VerificationDigit;
             SelectedRegime = entity.Regime;
             IdentificationNumber = entity.IdentificationNumber;
@@ -1455,24 +1357,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             PrimaryCellPhone = entity.PrimaryCellPhone;
             SecondaryCellPhone = entity.SecondaryCellPhone;
             Address = entity.Address;
-            SelectedCountry = Countries.FirstOrDefault(c => c.Id == entity.Country.Id);
-            SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault(d => d.Id == entity.Department.Id);
+            SelectedCountry = Countries.First(c => c.Id == entity.Country.Id);
+            SelectedDepartment = SelectedCountry?.Departments.First(d => d.Id == entity.Department.Id);
             SelectedCityId = entity.City.Id;
             Emails = entity.Emails is null ? [] : new ObservableCollection<EmailGraphQLModel>(entity.Emails);
 
-            // Seed values to track changes when fields are cleared
-            this.SeedValue(nameof(BusinessName), BusinessName);
-            this.SeedValue(nameof(TradeName), TradeName);
-            this.SeedValue(nameof(FirstName), FirstName);
-            this.SeedValue(nameof(MiddleName), MiddleName);
-            this.SeedValue(nameof(FirstLastName), FirstLastName);
-            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
-            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
-            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
-            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
-            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
-            this.SeedValue(nameof(Address), Address);
-            this.AcceptChanges();
+            SeedCurrentValues();
         }
 
         private static readonly Lazy<string> _createQuery = new(() =>
@@ -1597,17 +1487,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            // 1. Desuscribirse del EventAggregator PRIMERO para evitar memory leaks
-            Context.EventAggregator.Unsubscribe(this);
-
-            // 2. Desuscribirse del CollectionChanged ANTES de limpiar (evita disparar eventos durante limpieza)
-            if (_emails != null)
+            if (close)
             {
-                _emails.CollectionChanged -= Emails_CollectionChanged;
-            }
+                if (_emails != null)
+                    _emails.CollectionChanged -= Emails_CollectionChanged;
 
-            // 3. Limpiar el ChangeTracker para liberar referencias
-            this.AcceptChanges();
+                this.AcceptChanges();
+                Emails?.Clear();
+            }
 
             return base.OnDeactivateAsync(close, cancellationToken);
         }
