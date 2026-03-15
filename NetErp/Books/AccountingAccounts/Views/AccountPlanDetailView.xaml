@@ -17,10 +17,10 @@
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="20" MinWidth="550">
+                CornerRadius="8" Margin="8" MinWidth="550">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -61,7 +61,7 @@
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Clase" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" />
                         <TextBox Text="{Binding Path=Data.Lv1Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              Grid.Row="1" Grid.Column="1"
                              Margin="10 5 10 5" Padding="3"
                              TextAlignment="Center"
@@ -70,7 +70,7 @@
 
                         <TextBox Text="{Binding Path=Data.Lv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              TabIndex="5"
                              IsReadOnly="{Binding Path=Data.IsReadOnlyLv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Grid.Row="1" Grid.Column="2"
@@ -87,7 +87,7 @@
                         <!--Grupo.Code-->
                         <TextBox Text="{Binding Path=Data.Lv2Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Visibility="{Binding Path=Data.Lv2Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              Grid.Row="2" Grid.Column="1"
                              Margin="10 5 10 5" Padding="3"
                              TabIndex="1"
@@ -97,7 +97,7 @@
                         <!--Grupo.Name-->
                         <TextBox Text="{Binding Path=Data.Lv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Visibility="{Binding Path=Data.Lv2Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              TabIndex="6"
                              IsReadOnly="{Binding Path=Data.IsReadOnlyLv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Grid.Row="2" Grid.Column="2"
@@ -114,7 +114,7 @@
                              Visibility="{Binding Path=Data.Lv3Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Grid.Row="3" Grid.Column="1"
                              Margin="10 5 10 5" Padding="3"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              TabIndex="2"
                              TextAlignment="Center"
                              IsReadOnly="True"/>
@@ -126,7 +126,7 @@
                              IsReadOnly="{Binding Path=Data.IsReadOnlyLv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Margin="0 5 10 5" Padding="3"
                              CharacterCasing="Upper"
-                             BorderBrush="LightGray">
+                             BorderBrush="#C8CED6">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv3NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
@@ -138,7 +138,7 @@
                              Visibility="{Binding Path=Data.Lv4Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Grid.Row="4" Grid.Column="1"
                              Margin="10 5 10 5" Padding="3"
-                             BorderBrush="LightGray"
+                             BorderBrush="#C8CED6"
                              TabIndex="3"
                              TextAlignment="Center"
                              IsReadOnly="True"/>
@@ -150,7 +150,7 @@
                              IsReadOnly="{Binding Path=Data.IsReadOnlyLv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              Margin="0 5 10 5" Padding="3"
                              CharacterCasing="Upper"
-                             BorderBrush="LightGray">
+                             BorderBrush="#C8CED6">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv4NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
@@ -167,13 +167,13 @@
                             TabIndex="4"
                             MaxLength="8"
                             Margin="10 5 10 5" Padding="3"
-                            BorderBrush="LightGray"
+                            BorderBrush="#C8CED6"
                             TextAlignment="Center">
                             <TextBox.Style>
                                 <Style TargetType="{x:Type TextBox}">
                                     <Style.Triggers>
                                         <Trigger Property="IsFocused" Value="True">
-                                            <Setter Property="Background" Value="Beige"/>
+                                            <Setter Property="Background" Value="#EBF5FB"/>
                                         </Trigger>
                                     </Style.Triggers>
                                     <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -195,7 +195,7 @@
                              Style="{Binding Path=Data.Lv5NameStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToStyleConverter}}"
                              IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                              CharacterCasing="Upper"
-                             BorderBrush="LightGray">
+                             BorderBrush="#C8CED6">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv5NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
@@ -223,16 +223,18 @@
                                       Increment="0.01"
                                       Mask="f2"
                                       MaskUseAsDisplayFormat="True"
-                                      BorderBrush="LightGray"
+                                      BorderBrush="#C8CED6"
                                       TabIndex="10"
                                       Margin="10 5 10 5"/>
                         <StackPanel Grid.Row="7" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center"
                                     Visibility="{Binding Path=Data.MarginVisibility, Source={StaticResource DataContextProxy}}"
                                     Margin="0 5 10 5">
                             <RadioButton Content="Base 100"
+                                         Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                          IsChecked="{Binding Data.IsMarginBasis100, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
                                          TabIndex="11" Margin="0,0,15,0"/>
                             <RadioButton Content="Base 1000"
+                                         Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                          IsChecked="{Binding Data.IsMarginBasis1000, Mode=TwoWay, Source={StaticResource DataContextProxy}}"
                                          TabIndex="12"/>
                         </StackPanel>
