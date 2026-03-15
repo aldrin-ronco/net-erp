@@ -32,7 +32,7 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="20">
+                CornerRadius="8" Margin="8,0,8,8">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -48,6 +48,7 @@
                                     Visibility="{Binding OriginVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                     Margin="0,0,0,12">
                             <RadioButton Content="Manual"
+                                         Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                          GroupName="SequenceType"
                                          IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                                                      Converter={StaticResource EnumBooleanConverter}, ConverterParameter=M}"/>
@@ -55,6 +56,7 @@
                                     ToolTip="{Binding DianUnavailableReason, Mode=OneWay}"
                                     ToolTipService.ShowOnDisabled="True">
                                 <RadioButton Content="Desde DIAN"
+                                             Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                              GroupName="SequenceType"
                                              IsChecked="{Binding SelectedSequenceOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                                                          Converter={StaticResource EnumBooleanConverter}, ConverterParameter=D}"
@@ -135,6 +137,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Text="No. Autorización" FontSize="13"/>
                                     <dxe:TextEdit Grid.Row="2"
+                                        Style="{StaticResource FocusedHighlightStyle}"
                                         VerticalAlignment="Stretch"
                                         Text="{Binding Number, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -180,6 +183,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Text="Prefijo" FontSize="13"/>
                                     <dxe:TextEdit Grid.Row="2"
+                                        Style="{StaticResource FocusedHighlightStyle}"
                                         VerticalAlignment="Stretch"
                                         Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                         IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -284,6 +288,7 @@
                             <!-- Referencia -->
                             <TextBlock Text="Referencia" FontSize="13" Margin="0,0,0,5"/>
                             <dxe:TextEdit
+                                Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 CharacterCasing="Upper"
                                 x:Name="Reference"
@@ -293,6 +298,7 @@
                             <!-- Clave Técnica -->
                             <TextBlock Text="Clave técnica" FontSize="13" Margin="0,0,0,5"/>
                             <dxe:TextEdit
+                                Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 CharacterCasing="Upper"
                                 IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
@@ -324,7 +330,7 @@
                 </ScrollViewer>
 
                 <!-- Button bar centered -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
