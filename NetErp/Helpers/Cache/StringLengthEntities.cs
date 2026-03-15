@@ -19,6 +19,9 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] Zone = [typeof(ZoneGraphQLModel)];
         public static readonly Type[] PriceList = [typeof(PriceListGraphQLModel)];
 
+        // Books
+        public static readonly Type[] AccountingEntity = [typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
+
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];
     }
