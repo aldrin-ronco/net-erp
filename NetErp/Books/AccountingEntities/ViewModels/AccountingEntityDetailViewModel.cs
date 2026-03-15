@@ -1345,7 +1345,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             VerificationDigit = entity.VerificationDigit;
             SelectedRegime = entity.Regime;
             IdentificationNumber = entity.IdentificationNumber;
-            SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), entity.CaptureType);
+            SelectedCaptureType = Enum.Parse<CaptureTypeEnum>(entity.CaptureType);
             BusinessName = entity.BusinessName;
             TradeName = entity.TradeName;
             FirstName = entity.FirstName;
