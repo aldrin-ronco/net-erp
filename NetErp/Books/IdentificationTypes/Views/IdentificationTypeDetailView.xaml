@@ -7,92 +7,97 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              Background="#EEF1F5"
              d:DesignHeight="300" d:DesignWidth="450">
 
-    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="15" Padding="20" MinWidth="400" MaxWidth="500">
+                CornerRadius="8" Margin="8" MinWidth="400">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: Code label -->
-                <TextBlock Grid.Row="0" Text="Código DIAN (2 dígitos)" Margin="0,0,0,4"/>
+                <!-- Form content -->
+                <StackPanel Grid.Row="0" Margin="30,25,30,20">
 
-                <!-- Row 1: Code field -->
-                <dxe:TextEdit Grid.Row="1"
-                              x:Name="IdentificationTypeCode"
-                              Text="{Binding Path=Code, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                              MaxLength="2"
-                              IsReadOnly="{Binding IsReadOnlyCode}"
-                              BorderBrush="#C8CED6"
-                              MaskType="RegEx"
-                              Mask="[0-9]{1,2}"/>
+                    <!-- Código -->
+                    <TextBlock Text="Código DIAN (2 dígitos)" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit x:Name="IdentificationTypeCode"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  Text="{Binding Path=Code, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  MaxLength="2"
+                                  IsReadOnly="{Binding IsReadOnlyCode}"
+                                  BorderBrush="#C8CED6"
+                                  MaskType="RegEx"
+                                  Mask="[0-9]{1,2}"
+                                  h:FocusBehavior.IsFocused="True"
+                                  Margin="0,0,0,15"/>
 
-                <!-- Row 2: Name label -->
-                <TextBlock Grid.Row="2" Text="Nombre" Margin="0,12,0,4"/>
+                    <!-- Nombre -->
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit x:Name="IdentificationTypeName"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#C8CED6"
+                                  Margin="0,0,0,15"/>
 
-                <!-- Row 3: Name field -->
-                <dxe:TextEdit Grid.Row="3"
-                              x:Name="IdentificationTypeName"
-                              Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                              CharacterCasing="Upper"
-                              BorderBrush="#C8CED6"/>
+                    <!-- Longitud mínima -->
+                    <TextBlock Text="Longitud mínima del documento" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:SpinEdit Value="{Binding Path=MinimumDocumentLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  MinValue="5" MaxValue="15"
+                                  IsFloatValue="False"
+                                  BorderBrush="#C8CED6"
+                                  HorizontalAlignment="Left"
+                                  MinWidth="80"
+                                  Margin="0,0,0,15"/>
 
-                <!-- Row 4: MinimumDocumentLength label -->
-                <TextBlock Grid.Row="4" Text="Longitud mínima del documento" Margin="0,12,0,4"/>
+                    <!-- Permite letras -->
+                    <dxe:CheckEdit Content="Permite letras en el documento"
+                                   Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                   IsChecked="{Binding Path=AllowsLetters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                   Margin="0,0,0,8"/>
 
-                <!-- Row 5: MinimumDocumentLength field -->
-                <dxe:SpinEdit Grid.Row="5"
-                              Value="{Binding Path=MinimumDocumentLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                              MinValue="5"
-                              MaxValue="15"
-                              IsFloatValue="False"
-                              BorderBrush="#C8CED6"
-                              HorizontalAlignment="Left"
-                              MinWidth="80"/>
+                    <!-- Dígito de verificación -->
+                    <dxe:CheckEdit Content="Requiere dígito de verificación"
+                                   Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                   IsChecked="{Binding Path=HasVerificationDigit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                </StackPanel>
 
-                <!-- Row 6: AllowsLetters -->
-                <dxe:CheckEdit Grid.Row="6"
-                               Content="Permite letras en el documento"
-                               IsChecked="{Binding Path=AllowsLetters, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                               Margin="0,12,0,0"/>
-
-                <!-- Row 7: HasVerificationDigit -->
-                <dxe:CheckEdit Grid.Row="7"
-                               Content="Requiere dígito de verificación"
-                               IsChecked="{Binding Path=HasVerificationDigit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                               Margin="0,12,0,0"/>
-
-                <!-- Row 8: Buttons -->
-                <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <!-- Button bar centered -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave}">
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
                     <!-- Cancelar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
