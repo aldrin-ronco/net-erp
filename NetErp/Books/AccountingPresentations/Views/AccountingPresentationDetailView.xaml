@@ -18,12 +18,13 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="15" Padding="20" MaxWidth="500">
+                CornerRadius="8" Margin="8" MaxWidth="500">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -36,20 +37,23 @@
                 </Grid.RowDefinitions>
 
                 <!-- Row 0: Name label -->
-                <TextBlock Grid.Row="0" Text="Nombre de la presentación" Margin="0,0,0,4"/>
+                <TextBlock Grid.Row="0" Text="Nombre de la presentación" FontSize="13" Margin="15,15,15,5"/>
 
                 <!-- Row 1: Name field -->
                 <dxe:TextEdit Grid.Row="1"
                               x:Name="PresentationName"
+                              Style="{StaticResource FocusedHighlightStyle}"
                               Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                               CharacterCasing="Upper"
-                              BorderBrush="#C8CED6"/>
+                              BorderBrush="#C8CED6"
+                              Margin="15,0,15,0"
+                              h:FocusBehavior.IsFocused="True"/>
 
                 <!-- Row 2: Accounting Books grid with checkboxes -->
-                <TextBlock Grid.Row="2" Text="Libros contables asociados" Margin="0,15,0,4"/>
+                <TextBlock Grid.Row="2" Text="Libros contables asociados" FontSize="13" Margin="15,10,15,5"/>
 
                 <dxg:GridControl Grid.Row="3"
-                                 Margin="0,15,0,0"
+                                 Margin="15,0,15,0"
                                  MinHeight="200"
                                  ItemsSource="{Binding AccountingBooks, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                  AutoGenerateColumns="None">
@@ -75,13 +79,13 @@
                 </dxg:GridControl>
 
                 <!-- Row 4: AllowsClosure checkbox -->
-                <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,15,0,0">
-                    <dxe:CheckEdit IsChecked="{Binding AllowsClosure, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-                    <TextBlock Text="Permitir cierre de cuentas" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                </StackPanel>
+                <dxe:CheckEdit Grid.Row="4" Margin="15,10,15,0"
+                               Content="Permitir cierre de cuentas"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding AllowsClosure, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
 
                 <!-- Row 5: Closure accounting book ComboBox -->
-                <StackPanel Grid.Row="5" Margin="0,10,0,0"
+                <StackPanel Grid.Row="5" Margin="15,8,15,0"
                             Visibility="{Binding AllowsClosure, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock Text="Libro para cierre contable" Margin="0,0,0,4"/>
                     <dxe:ComboBoxEdit
@@ -95,20 +99,31 @@
                 </StackPanel>
 
                 <!-- Row 6: Buttons -->
-                <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,15">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave}">
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
                     <!-- Cancelar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
