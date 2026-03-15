@@ -247,15 +247,20 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var detail = new AccountingBookDetailViewModel(_accountingBookService, _eventAggregator);
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo libro contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -264,16 +269,21 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             if (SelectedAccountingBook == null) return;
             try
             {
+                IsBusy = true;
                 var detail = new AccountingBookDetailViewModel(_accountingBookService, _eventAggregator);
                 detail.LoadForEdit(SelectedAccountingBook);
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar libro contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -285,9 +295,11 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = _canDeleteAccountingBookQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedAccountingBook.Id };
-                var validation = await _accountingBookService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingBookQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedAccountingBook.Id)
+                    .Build();
+                var validation = await _accountingBookService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -305,8 +317,10 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 }
 
                 IsBusy = true;
-                string deleteQuery = _deleteAccountingBookQuery.Value;
-                object deleteVars = new { deleteResponseId = SelectedAccountingBook.Id };
+                var (deleteFragment, deleteQuery) = _deleteAccountingBookQuery.Value;
+                var deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedAccountingBook.Id)
+                    .Build();
                 DeleteResponseType deletedBook = await _accountingBookService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedBook.Success)
@@ -350,15 +364,16 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                var (fragment, query) = _loadAccountingBooksQuery.Value;
 
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.page = PageIndex;
-                variables.pageResponsePagination.pageSize = PageSize;
+                dynamic filters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                string query = _loadAccountingBooksQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
+
                 PageType<AccountingBookGraphQLModel> result = await _accountingBookService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -389,26 +404,23 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadAccountingBooksQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadAccountingBooksQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingBookGraphQLModel>>
                 .Create()
-                .SelectList(it => it.Entries, entries => entries
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Name))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingBookFilters");
-            var fragment = new GraphQLQueryFragment("accountingBooksPage", [paginationParam, filtersParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingBooksPage",
+                [new("filters", "AccountingBookFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteAccountingBookQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteAccountingBookQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -417,12 +429,12 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteAccountingBook", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteAccountingBook",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteAccountingBookQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteAccountingBookQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -430,9 +442,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteAccountingBook", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingBook",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion
