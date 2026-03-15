@@ -251,16 +251,21 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var detail = new AccountingPresentationDetailViewModel(_accountingPresentationService, _eventAggregator, _accountingBookCache);
                 await detail.InitializeAsync();
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva presentación contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -269,17 +274,22 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             if (SelectedPresentation == null) return;
             try
             {
+                IsBusy = true;
                 var detail = new AccountingPresentationDetailViewModel(_accountingPresentationService, _eventAggregator, _accountingBookCache);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedPresentation.Id);
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar presentación contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -291,9 +301,11 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = _canDeleteAccountingPresentationQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedPresentation.Id };
-                var validation = await _accountingPresentationService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingPresentationQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedPresentation.Id)
+                    .Build();
+                var validation = await _accountingPresentationService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -311,8 +323,10 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 }
 
                 IsBusy = true;
-                string deleteQuery = _deleteAccountingPresentationQuery.Value;
-                object deleteVars = new { deleteResponseId = SelectedPresentation.Id };
+                var (deleteFragment, deleteQuery) = _deleteAccountingPresentationQuery.Value;
+                var deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedPresentation.Id)
+                    .Build();
                 DeleteResponseType deletedPresentation = await _accountingPresentationService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedPresentation.Success)
@@ -356,15 +370,16 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                var (fragment, query) = _loadAccountingPresentationsQuery.Value;
 
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.page = PageIndex;
-                variables.pageResponsePagination.pageSize = PageSize;
+                dynamic filters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
 
-                string query = _loadAccountingPresentationsQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
+
                 PageType<AccountingPresentationGraphQLModel> result = await _accountingPresentationService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -395,30 +410,27 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadAccountingPresentationsQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadAccountingPresentationsQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingPresentationGraphQLModel>>
                 .Create()
-                .SelectList(it => it.Entries, entries => entries
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Name)
                     .Field(e => e.AllowsClosure)
                     .Select(e => e.ClosureAccountingBook, acc => acc
                         .Field(c => c.Id)
                         .Field(c => c.Name)))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingPresentationFilters");
-            var fragment = new GraphQLQueryFragment("accountingPresentationsPage", [paginationParam, filtersParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingPresentationsPage",
+                [new("filters", "AccountingPresentationFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteAccountingPresentationQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteAccountingPresentationQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -427,12 +439,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteAccountingPresentation", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteAccountingPresentation",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteAccountingPresentationQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteAccountingPresentationQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -440,9 +452,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteAccountingPresentation", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingPresentation",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion
