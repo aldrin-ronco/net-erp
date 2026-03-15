@@ -7,48 +7,63 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              Background="#EEF1F5"
              d:DesignHeight="200" d:DesignWidth="400">
 
-    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="15" Padding="20" MinWidth="380" MaxWidth="500">
+                CornerRadius="8" Margin="8" MinWidth="380">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: Name label -->
-                <TextBlock Grid.Row="0" Text="Nombre del libro contable" Margin="0,0,0,4"/>
+                <!-- Form content -->
+                <StackPanel Grid.Row="0" Margin="30,25,30,20">
 
-                <!-- Row 1: Name field -->
-                <dxe:TextEdit Grid.Row="1"
-                              x:Name="AccountingBookName"
-                              Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                              CharacterCasing="Upper"
-                              BorderBrush="#C8CED6"/>
+                    <!-- Nombre -->
+                    <TextBlock Text="Nombre del libro contable" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:TextEdit x:Name="AccountingBookName"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#C8CED6"
+                                  h:FocusBehavior.IsFocused="True"/>
+                </StackPanel>
 
-                <!-- Row 2: Buttons -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <!-- Button bar centered -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave}">
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
                     <!-- Cancelar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>

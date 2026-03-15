@@ -14,7 +14,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="10">
+            CornerRadius="8" Margin="5">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -25,12 +25,12 @@
             </Grid.RowDefinitions>
 
             <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="20,15,20,5"/>
+            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
             <!-- Row 1: Search box -->
             <dxe:ButtonEdit
                 Grid.Row="1"
-                Margin="20,0,20,0"
+                Margin="10,0,10,0"
                 NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
                 ToolTip="Escribe aqui para buscar"
                 MinHeight="25"
@@ -48,10 +48,10 @@
             <busyIndicator:BusyMask x:Name="BusyIndicator"
                                     IsBusy="{Binding IsBusy}"
                                     IndicatorType="BouncingDot"
-                                    BusyContent="Please wait..."
+                                    BusyContent="Por favor espere..."
                                     BusyContentMargin="0,20,0,0"
                                     Grid.Row="2">
-                <dxg:GridControl Margin="20,10,20,0"
+                <dxg:GridControl Margin="10,6,10,0"
                                  EnableSmartColumnsGeneration="True"
                                  AutoGenerateColumns="None"
                                  SelectedItem="{Binding Path=SelectedAccountingBook, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -76,7 +76,7 @@
 
             <!-- Row 3: Pagination -->
             <uc:GridPaging Grid.Row="3"
-                           Margin="20,10,20,0"
+                           Margin="10,6,10,0"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ChangedIndexCommand="{Binding PaginationCommand}"
@@ -86,7 +86,7 @@
                            ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Row 4: Action buttons centered -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <!-- Nuevo -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                         IsEnabled="{Binding Path=IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
