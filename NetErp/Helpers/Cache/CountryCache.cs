@@ -33,8 +33,8 @@ namespace NetErp.Helpers.Cache
 
             var query = BuildQuery();
             dynamic variables = new ExpandoObject();
-            variables.countriesPagePagination = new ExpandoObject();
-            variables.countriesPagePagination.pageSize = -1;
+            variables.pageResponsePagination = new ExpandoObject();
+            variables.pageResponsePagination.pageSize = -1;
 
             var result = await _service.GetPageAsync(query, variables);
 
