@@ -100,8 +100,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        private int _selectedModuleId;
-        public int SelectedModuleId
+        private int? _selectedModuleId;
+        public int? SelectedModuleId
         {
             get => _selectedModuleId;
             set
@@ -268,7 +268,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             base.OnViewReady(view);
             await _menuModuleCache.EnsureLoadedAsync();
-            Modules = [new MenuModuleGraphQLModel { Id = 0, Name = "MOSTRAR TODOS LOS MODULOS" }, .. _menuModuleCache.Items];
+            Modules = _menuModuleCache.Items;
             await LoadAccountingSourcesAsync();
         }
 
@@ -289,8 +289,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache);
                 await detail.InitializeAsync();
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva fuente contable");
             }
             catch (Exception ex)
@@ -300,6 +302,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
                     $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task EditSourceAsync()
@@ -307,9 +313,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
             if (SelectedAccountingSource == null) return;
             try
             {
+                IsBusy = true;
                 var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedAccountingSource.Id);
+                IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar fuente contable");
             }
             catch (Exception ex)
@@ -318,6 +326,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
                     $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -329,9 +341,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                string query = _canDeleteAccountingSourceQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedAccountingSource.Id };
-                var validation = await _accountingSourceService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingSourceQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedAccountingSource.Id)
+                    .Build();
+                var validation = await _accountingSourceService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -349,8 +363,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 }
 
                 IsBusy = true;
-                string deleteQuery = _deleteAccountingSourceQuery.Value;
-                object deleteVars = new { deleteResponseId = SelectedAccountingSource.Id };
+                var (deleteFragment, deleteQuery) = _deleteAccountingSourceQuery.Value;
+                var deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedAccountingSource.Id)
+                    .Build();
                 DeleteResponseType deletedSource = await _accountingSourceService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedSource.Success)
@@ -394,21 +410,18 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.annulment = false;
-                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
+                var (fragment, query) = _loadAccountingSourcesQuery.Value;
 
-                if (SelectedModuleId != 0)
-                {
-                    variables.pageResponseFilters.menuModuleId = SelectedModuleId;
-                }
+                dynamic filters = new ExpandoObject();
+                filters.annulment = false;
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
+                if (SelectedModuleId.HasValue && SelectedModuleId.Value != 0) filters.menuModuleId = SelectedModuleId.Value;
 
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.page = PageIndex;
-                variables.pageResponsePagination.pageSize = PageSize;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
 
-                string query = _loadAccountingSourcesQuery.Value;
                 PageType<AccountingSourceGraphQLModel> result = await _accountingSourceService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
@@ -439,11 +452,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadAccountingSourcesQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadAccountingSourcesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
                .Create()
-               .SelectList(it => it.Entries, entries => entries
+               .Field(f => f.TotalEntries)
+               .SelectList(f => f.Entries, entries => entries
                    .Field(e => e.Id)
                    .Field(e => e.Code)
                    .Field(e => e.Name)
@@ -453,23 +467,16 @@ namespace NetErp.Books.AccountingSources.ViewModels
                             .Field(c => c.Name)
                             .Select(c => c.MenuModule, dep => dep
                                 .Field(d => d.Id)
-                                .Field(d => d.Name)
-                            )
-                    )
-               )
-               .Field(o => o.PageNumber)
-               .Field(o => o.PageSize)
-               .Field(o => o.TotalPages)
-               .Field(o => o.TotalEntries)
+                                .Field(d => d.Name))))
                .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingSourceFilters");
-            var fragment = new GraphQLQueryFragment("accountingSourcesPage", [paginationParam, filtersParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingSourcesPage",
+                [new("filters", "AccountingSourceFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteAccountingSourceQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteAccountingSourceQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -478,12 +485,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteAccountingSource", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteAccountingSource",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteAccountingSourceQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteAccountingSourceQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -491,9 +498,9 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteAccountingSource", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingSource",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion

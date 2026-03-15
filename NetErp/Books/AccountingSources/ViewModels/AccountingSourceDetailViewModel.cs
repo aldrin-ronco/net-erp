@@ -17,7 +17,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -242,7 +241,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         #region Validation (INotifyDataErrorInfo)
 
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -262,7 +261,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -405,9 +404,10 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = _loadByIdQuery.Value;
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
+            var (fragment, query) = _loadByIdQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
 
             var entity = await _accountingSourceService.FindByIdAsync(query, variables);
             PopulateFromAccountingSource(entity);
@@ -548,7 +548,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         });
 
-        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<AccountingSourceGraphQLModel>
              .Create()
@@ -571,9 +571,9 @@ namespace NetErp.Books.AccountingSources.ViewModels
                         .Field(d => d.Name)))
              .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("accountingSource", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingSource",
+                [new("id", "ID!")], fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion
