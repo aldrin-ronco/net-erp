@@ -338,14 +338,29 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public async Task CreateAuthorizationSequenceAsync()
         {
-            var detail = new AuthorizationSequenceDetailViewModel(
-                _authorizationSequenceService,
-                _dianConfigService,
-                _dianCertService,
-                _eventAggregator,
-                _costCenterCache,
-                _authorizationSequenceTypeCache);
-            await _dialogService.ShowDialogAsync(detail, "Nueva autorización de numeración");
+            try
+            {
+                IsBusy = true;
+                var detail = new AuthorizationSequenceDetailViewModel(
+                    _authorizationSequenceService,
+                    _dianConfigService,
+                    _dianCertService,
+                    _eventAggregator,
+                    _costCenterCache,
+                    _authorizationSequenceTypeCache);
+                IsBusy = false;
+                await _dialogService.ShowDialogAsync(detail, "Nueva autorización de numeración");
+            }
+            catch (Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task EditAuthorizationSequenceAsync()
@@ -383,9 +398,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
 
-                string query = _canDeleteQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedAuthorizationSequence.Id };
-                var validation = await _authorizationSequenceService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedAuthorizationSequence.Id)
+                    .Build();
+                var validation = await _authorizationSequenceService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -436,8 +453,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         private async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-            string query = _deleteQuery.Value;
-            object variables = new { deleteResponseId = id };
+            var (fragment, query) = _deleteQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
             return await _authorizationSequenceService.DeleteAsync<DeleteResponseType>(query, variables);
         }
 
@@ -454,20 +473,19 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                string query = _loadQuery.Value;
+                var (fragment, query) = _loadQuery.Value;
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.page = PageIndex;
-                variables.pageResponsePagination.pageSize = PageSize;
-
-                if (IsActiveFilter) variables.pageResponseFilters.isActive = IsActiveFilter;
+                dynamic filters = new ExpandoObject();
+                if (IsActiveFilter) filters.isActive = true;
                 if (SelectedCostCenter != null && SelectedCostCenter.Id > 0)
-                    variables.pageResponseFilters.costCenterId = SelectedCostCenter.Id;
-                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch)
-                    ? ""
-                    : FilterSearch.Trim().RemoveExtraSpaces();
+                    filters.costCenterId = SelectedCostCenter.Id;
+                if (!string.IsNullOrEmpty(FilterSearch))
+                    filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
+
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
 
                 PageType<AuthorizationSequenceGraphQLModel> result = await _authorizationSequenceService.GetPageAsync(query, variables);
 
@@ -499,11 +517,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
                 .Create()
-                .SelectList(it => it.Entries, entries => entries
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Description)
                     .Field(e => e.IsActive)
@@ -514,20 +533,15 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Select(e => e.AuthorizationSequenceType, cat => cat
                         .Field(c => c.Id)
                         .Field(c => c.Name)))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
-            var fragment = new GraphQLQueryFragment("authorizationSequencesPage", [paginationParam, filtersParam], fields, "PageResponse");
-
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("authorizationSequencesPage",
+                [new("filters", "AuthorizationSequenceFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -536,12 +550,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteAuthorizationSequence", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteAuthorizationSequence",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -549,9 +563,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteAuthorizationSequence", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteAuthorizationSequence",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion

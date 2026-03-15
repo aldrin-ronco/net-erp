@@ -942,9 +942,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = _loadByIdQuery.Value;
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
+            var (fragment, query) = _loadByIdQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
 
             var entity = await _authorizationSequenceService.FindByIdAsync(query, variables);
             Entity = entity;
@@ -1078,7 +1079,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         });
 
-        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<AuthorizationSequenceGraphQLModel>
                 .Create()
@@ -1113,9 +1114,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(c => c.Name))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("authorizationSequence", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("authorizationSequence",
+                [new("id", "ID!")], fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         private static readonly Lazy<string> _dianConfigQuery = new(() =>
