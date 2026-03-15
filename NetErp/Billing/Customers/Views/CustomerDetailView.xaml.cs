@@ -1,24 +1,28 @@
-﻿using System.Windows;
+using NetErp.Billing.Customers.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Billing.Customers.Views
 {
-    /// <summary>
-    /// Lógica de interacción para CustomerDetailView.xaml
-    /// </summary>
     public partial class CustomerDetailView : UserControl
     {
         public CustomerDetailView()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
         }
 
-        private void ToolBar_Loaded(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            ToolBar toolBar = sender as ToolBar;
-            if (toolBar.Template.FindName("OverflowGrid", toolBar) is FrameworkElement overflowGrid)
+            Loaded -= OnLoaded;
+            if (DataContext is CustomerDetailViewModel vm)
             {
-                overflowGrid.Visibility = Visibility.Collapsed;
+                if (vm.IsNewRecord)
+                    IdentificationNumber.Focus();
+                else if (vm.CaptureInfoAsPN)
+                    FirstName.Focus();
+                else
+                    BusinessName.Focus();
             }
         }
     }

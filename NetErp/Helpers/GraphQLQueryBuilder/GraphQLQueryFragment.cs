@@ -50,14 +50,22 @@ namespace NetErp.Helpers.GraphQLQueryBuilder
         // Default variable naming: fragmentCamel (or aliasCamel) + ParamPascal
         private string BuildVariableName(string paramName)
         {
-            string baseName = string.IsNullOrEmpty(Alias) ? Name : Alias;
-            string fragmentCamel = string.IsNullOrEmpty(baseName)
+            return GetVariableName(string.IsNullOrEmpty(Alias) ? Name : Alias, paramName);
+        }
+
+        /// <summary>
+        /// Genera el nombre de variable que el QueryBuilder espera para un parámetro dado.
+        /// Ejemplo: GetVariableName("PageResponse", "pagination") → "pageResponsePagination"
+        /// </summary>
+        public static string GetVariableName(string aliasOrName, string paramName)
+        {
+            string baseCamel = string.IsNullOrEmpty(aliasOrName)
                 ? string.Empty
-                : char.ToLower(baseName[0]) + baseName[1..];
+                : char.ToLower(aliasOrName[0]) + aliasOrName[1..];
             string paramPascal = string.IsNullOrEmpty(paramName)
                 ? string.Empty
                 : char.ToUpper(paramName[0]) + paramName[1..];
-            return fragmentCamel + paramPascal;
+            return baseCamel + paramPascal;
         }
 
         public string GetParameters(bool addBrackets = false, bool escapeDollarSign = false)

@@ -45,10 +45,10 @@ namespace NetErp.Helpers.Cache
             {
                 var query = BuildQuery();
                 dynamic variables = new ExpandoObject();
-                variables.cashDrawersPagePagination = new ExpandoObject();
-                variables.cashDrawersPagePagination.pageSize = -1;
-                variables.cashDrawersPageFilters = new ExpandoObject();
-                variables.cashDrawersPageFilters.isPettyCash = false;
+                variables.pageResponsePagination = new ExpandoObject();
+                variables.pageResponsePagination.pageSize = -1;
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.isPettyCash = false;
 
                 var result = await _service.GetPageAsync(query, variables);
 

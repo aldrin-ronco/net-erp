@@ -35,6 +35,14 @@
             <Style TargetType="dxg:GridControl">
                 <Setter Property="FontFamily" Value="Century Gothic"/>
             </Style>
+            <Style x:Key="FocusedHighlightStyle" TargetType="dxe:TextEdit">
+                <Setter Property="Padding" Value="2"/>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                        <Setter Property="Background" Value="#EBF5FB"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
             <Style TargetType="{x:Type dxe:TextEdit}">
                 <Setter Property="Padding" Value="2"/>
             </Style>
