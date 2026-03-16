@@ -111,8 +111,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public S3Helper S3Helper { get; private set; }
-        public string LocalImageCachePath { get; private set; }
+        public S3Helper? S3Helper { get; private set; }
+        public string LocalImageCachePath { get; private set; } = string.Empty;
+        public bool IsS3Available => S3Helper != null;
 
         private bool _isNewRecord;
         public bool IsNewRecord
@@ -519,14 +520,14 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             ItemEditor.SetForEdit(itemDTO);
             // Download S3 images if needed
-            if (ItemEditor.Images.Count > 0)
+            if (IsS3Available && ItemEditor.Images.Count > 0)
             {
                 foreach (ImageByItemDTO image in ItemEditor.Images)
                 {
                     string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
                     if (!Path.Exists(imagesLocalPath))
                     {
-                        await S3Helper.DownloadFileAsync(imagesLocalPath, image.S3FileName);
+                        await S3Helper!.DownloadFileAsync(imagesLocalPath, image.S3FileName);
                     }
                     System.Windows.Media.Imaging.BitmapImage bitmap = new();
                     bitmap.BeginInit();
@@ -1306,13 +1307,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Refresh();
 
                 // Delete images from S3 and local repository before deleting the item
-                if (ItemEditor.Images != null && ItemEditor.Images.Count > 0)
+                if (IsS3Available && ItemEditor.Images != null && ItemEditor.Images.Count > 0)
                 {
                     foreach (ImageByItemDTO image in ItemEditor.Images)
                     {
                         string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
                         if (Path.Exists(imagesLocalPath)) File.Delete(imagesLocalPath);
-                        await S3Helper.DeleteFileAsync(image.S3FileName);
+                        await S3Helper!.DeleteFileAsync(image.S3FileName);
                     }
                 }
 
@@ -1582,11 +1583,27 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
                 var location = await _s3LocationService.GetSingleItemAsync(query, new { singleItemResponseKey = "product_images" });
 
-                S3Helper = Common.Helpers.S3Helper.FromStorageLocation(location);
+                // Si no existe un S3StorageLocation con la key solicitada, se deshabilita S3
+                if (location is null)
+                {
+                    S3Helper = null;
+                    _notificationService.ShowWarning("No se encontró configuración de almacenamiento S3 para imágenes de productos. La gestión de imágenes estará deshabilitada.");
+                    return;
+                }
 
-                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
                 LocalImageCachePath = Path.Combine(appDir, "cache", location.Bucket, location.Directory);
                 System.IO.Directory.CreateDirectory(LocalImageCachePath);
+
+                // Si la ubicación no tiene AwsS3Config propio, buscar en la configuración global de la empresa
+                if (location.AwsS3Config is null && SessionInfo.DefaultAwsS3Config is null)
+                {
+                    S3Helper = null;
+                    _notificationService.ShowWarning("No se encontró configuración de credenciales AWS S3. La gestión de imágenes estará deshabilitada.");
+                    return;
+                }
+
+                S3Helper = Common.Helpers.S3Helper.FromStorageLocation(location);
             }
             catch (Exception ex)
             {
