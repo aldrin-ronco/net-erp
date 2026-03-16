@@ -73,14 +73,6 @@ namespace NetErp.Helpers.Cache
                             _data[entityKey][field.Column] = field.MaxLength;
                         }
                     }
-
-                    _loadedEntities.Add(entityKey);
-                }
-
-                // Mark requested entities as loaded even if API returned no data for them
-                foreach (var name in entityNames)
-                {
-                    _loadedEntities.Add(name);
                 }
             }
 
@@ -88,6 +80,15 @@ namespace NetErp.Helpers.Cache
             {
                 throw new InvalidOperationException(
                     $"Los siguientes campos no tienen longitud configurada:\n{string.Join("\n", misconfiguredFields)}");
+            }
+
+            // Mark as loaded only after successful validation
+            lock (_lock)
+            {
+                foreach (var name in entityNames)
+                {
+                    _loadedEntities.Add(name);
+                }
             }
         }
 

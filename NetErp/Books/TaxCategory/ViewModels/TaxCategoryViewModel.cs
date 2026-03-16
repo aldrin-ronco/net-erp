@@ -4,13 +4,13 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Extensions.Global;
 using Models.Books;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -29,6 +29,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
         private readonly IRepository<TaxCategoryGraphQLModel> _taxCategoryService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -208,12 +209,14 @@ namespace NetErp.Books.TaxCategory.ViewModels
             IEventAggregator eventAggregator,
             IRepository<TaxCategoryGraphQLModel> taxCategoryService,
             Helpers.Services.INotificationService notificationService,
-            Helpers.IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            StringLengthCache stringLengthCache)
         {
             _eventAggregator = eventAggregator;
             _taxCategoryService = taxCategoryService;
             _notificationService = notificationService;
             _dialogService = dialogService;
+            _stringLengthCache = stringLengthCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -224,16 +227,29 @@ namespace NetErp.Books.TaxCategory.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await LoadTaxCategoriesAsync();
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.TaxCategory);
+                await LoadTaxCategoriesAsync();
+            }
+            catch (Exception ex)
+            {
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+                await TryCloseAsync();
+            }
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -242,25 +258,51 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         public async Task CreateTaxCategoryAsync()
         {
-            var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator);
-            await _dialogService.ShowDialogAsync(detail, "Nueva categoría de impuesto");
+            try
+            {
+                IsBusy = true;
+                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache);
+                detail.SetForNew();
+                IsBusy = false;
+                await _dialogService.ShowDialogAsync(detail, "Nueva categoría de impuesto");
+            }
+            catch (Exception ex)
+            {
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateTaxCategoryAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task EditTaxCategoryAsync()
         {
             if (SelectedTaxCategory == null) return;
-            var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator);
-            detail.TaxCategoryId = SelectedTaxCategory.Id;
-            detail.Code = SelectedTaxCategory.Code;
-            detail.Name = SelectedTaxCategory.Name;
-            detail.Prefix = SelectedTaxCategory.Prefix;
-            detail.UsesPercentage = SelectedTaxCategory.UsesPercentage;
-            detail.GeneratedTaxAccountIsRequired = SelectedTaxCategory.GeneratedTaxAccountIsRequired;
-            detail.GeneratedTaxRefundAccountIsRequired = SelectedTaxCategory.GeneratedTaxRefundAccountIsRequired;
-            detail.DeductibleTaxAccountIsRequired = SelectedTaxCategory.DeductibleTaxAccountIsRequired;
-            detail.DeductibleTaxRefundAccountIsRequired = SelectedTaxCategory.DeductibleTaxRefundAccountIsRequired;
-            detail.AcceptChanges();
-            await _dialogService.ShowDialogAsync(detail, "Editar categoría de impuesto");
+            try
+            {
+                IsBusy = true;
+                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache);
+                detail.SetForEdit(SelectedTaxCategory);
+                IsBusy = false;
+                await _dialogService.ShowDialogAsync(detail, "Editar categoría de impuesto");
+            }
+            catch (Exception ex)
+            {
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditTaxCategoryAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task DeleteTaxCategoryAsync()
@@ -269,52 +311,59 @@ namespace NetErp.Books.TaxCategory.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
-                string query = _canDeleteTaxCategoryQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedTaxCategory.Id };
-                var validation = await _taxCategoryService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteTaxCategoryQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedTaxCategory.Id)
+                    .Build();
+                var validation = await _taxCategoryService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !",
+                    if (ThemedMessageBox.Show("Atención!",
                         "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedTaxCategory = await ExecuteDeleteTaxCategoryAsync(SelectedTaxCategory.Id);
+                DeleteResponseType deletedTaxCategory = await ExecuteDeleteAsync(SelectedTaxCategory.Id);
 
                 if (!deletedTaxCategory.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedTaxCategory.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedTaxCategory.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new TaxCategoryDeleteMessage { DeletedTaxCategory = deletedTaxCategory });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new TaxCategoryDeleteMessage { DeletedTaxCategory = deletedTaxCategory },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteTaxCategoryAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -322,11 +371,20 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        public async Task<DeleteResponseType> ExecuteDeleteTaxCategoryAsync(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-            string query = _deleteTaxCategoryQuery.Value;
-            object variables = new { deleteResponseId = id };
-            return await _taxCategoryService.DeleteAsync<DeleteResponseType>(query, variables);
+            try
+            {
+                var (fragment, query) = _deleteTaxCategoryQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _taxCategoryService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
         #endregion
@@ -339,38 +397,32 @@ namespace NetErp.Books.TaxCategory.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch)
-                    ? ""
-                    : FilterSearch.Trim().RemoveExtraSpaces();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.Page = PageIndex;
-                variables.pageResponsePagination.PageSize = PageSize;
+                var (fragment, query) = _loadTaxCategoriesQuery.Value;
 
-                string query = _loadTaxCategoriesQuery.Value;
+                dynamic filters = new System.Dynamic.ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
+
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
+
                 PageType<TaxCategoryGraphQLModel> result = await _taxCategoryService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                TaxCategories = [.. result.Entries];
+                TaxCategories = new ObservableCollection<TaxCategoryGraphQLModel>(result.Entries);
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadTaxCategoriesAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -382,7 +434,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadTaxCategoriesQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadTaxCategoriesQuery = new(() =>
         {
             var fields = FieldSpec<PageType<TaxCategoryGraphQLModel>>
                 .Create()
@@ -399,14 +451,13 @@ namespace NetErp.Books.TaxCategory.ViewModels
                     .Field(e => e.DeductibleTaxRefundAccountIsRequired))
                 .Build();
 
-            var filtersParameter = new GraphQLQueryParameter("filters", "TaxCategoryFilters");
-            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("taxCategoriesPage", [filtersParameter, paginationParameter], fields, "PageResponse");
-
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("taxCategoriesPage",
+                [new("filters", "TaxCategoryFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteTaxCategoryQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteTaxCategoryQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -415,12 +466,12 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteTaxCategory", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteTaxCategory",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteTaxCategoryQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteTaxCategoryQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -428,9 +479,9 @@ namespace NetErp.Books.TaxCategory.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteTaxCategory", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteTaxCategory",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion

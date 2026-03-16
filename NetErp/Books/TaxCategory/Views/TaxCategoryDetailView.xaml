@@ -3,93 +3,99 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:NetErp.Books.TaxCategory.Views"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="500"
              Background="#EEF1F5">
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="20" MinWidth="420">
-            <Grid>
+                CornerRadius="8" Margin="8,0,8,8" MinWidth="420">
+            <Grid Margin="15,15,15,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Form content -->
-                <StackPanel Grid.Row="0" Margin="30,25,30,20">
+                <StackPanel Grid.Row="0">
 
                     <!-- Código (DIAN) -->
-                    <TextBlock Text="Código (DIAN)" FontSize="13" Margin="0,0,0,5"/>
+                    <TextBlock Text="Código (DIAN)" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:TextEdit Text="{Binding Path=Code, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
                                   x:Name="TaxCategoryCode"
                                   IsReadOnly="{Binding IsCodeReadOnly, Mode=OneWay}"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  MaxLength="{Binding CodeMaxLength}"
+                                  Margin="0,0,0,8"/>
 
                     <!-- Nombre -->
-                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
                                   x:Name="TaxCategoryName"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  MaxLength="{Binding NameMaxLength}"
+                                  Margin="0,0,0,8"/>
 
                     <!-- Prefijo -->
-                    <TextBlock Text="Prefijo" FontSize="13" Margin="0,0,0,5"/>
+                    <TextBlock Text="Prefijo" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:TextEdit Text="{Binding Path=Prefix, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  MaxLength="{Binding PrefixMaxLength}"
+                                  Margin="0,0,0,8"/>
 
                     <!-- Usa Porcentaje -->
                     <dxe:CheckEdit Content="Usa Porcentaje"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,15"
+                                   Margin="0,0,0,6"
                                    IsChecked="{Binding UsesPercentage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Impuesto Generado -->
-                    <TextBlock Text="Impuesto Generado" FontSize="13" Margin="0,0,0,8"/>
+                    <TextBlock Text="Impuesto Generado" FontSize="13" Margin="0,4,0,6"/>
                     <dxe:CheckEdit Content="Cuenta de Operación Requerida"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,5"
+                                   Margin="0,0,0,6"
                                    IsChecked="{Binding GeneratedTaxAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <dxe:CheckEdit Content="Cuenta De Devolución Requerida"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,10"
+                                   Margin="0,0,0,6"
                                    IsReadOnly="{Binding IsReadOnlyGeneratedTaxRefundAccountIsRequired, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                    IsChecked="{Binding GeneratedTaxRefundAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                     <!-- Impuesto Descontable -->
-                    <TextBlock Text="Impuesto Descontable" FontSize="13" Margin="0,0,0,8"/>
+                    <TextBlock Text="Impuesto Descontable" FontSize="13" Margin="0,4,0,6"/>
                     <dxe:CheckEdit Content="Cuenta de Operación Requerida"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,5"
+                                   Margin="0,0,0,6"
                                    IsChecked="{Binding DeductibleTaxAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <dxe:CheckEdit Content="Cuenta De Devolución Requerida"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,0"
                                    IsReadOnly="{Binding IsReadOnlyDeductibleTaxRefundAccountIsRequired, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                    IsChecked="{Binding DeductibleTaxRefundAccountIsRequired, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
                 <!-- Button bar centered -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
