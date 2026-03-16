@@ -18,7 +18,7 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8" MinWidth="400">
+                CornerRadius="8" Margin="8,0,8,8" MinWidth="400">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
