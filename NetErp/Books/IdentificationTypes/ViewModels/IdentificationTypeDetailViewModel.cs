@@ -1,28 +1,30 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
 using Models.Books;
-using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
-    public class IdentificationTypeDetailViewModel : Screen
+    public class IdentificationTypeDetailViewModel : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
         private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -68,6 +70,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _code = value;
                     NotifyOfPropertyChange(nameof(Code));
+                    ValidateProperty(nameof(Code));
                     this.TrackChange(nameof(Code));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -84,6 +87,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _name = value;
                     NotifyOfPropertyChange(nameof(Name));
+                    ValidateProperty(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -132,6 +136,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 {
                     _minimumDocumentLength = value;
                     NotifyOfPropertyChange(nameof(MinimumDocumentLength));
+                    ValidateProperty(nameof(MinimumDocumentLength));
                     this.TrackChange(nameof(MinimumDocumentLength));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -145,12 +150,89 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             get
             {
+                if (HasErrors) return false;
                 if (string.IsNullOrEmpty(Code) || Code.Length != 2) return false;
                 if (string.IsNullOrEmpty(Name)) return false;
                 if (MinimumDocumentLength < 5) return false;
                 if (!this.HasChanges()) return false;
                 return true;
             }
+        }
+
+        #endregion
+
+        #region StringLength Properties
+
+        public int CodeMaxLength => _stringLengthCache.GetMaxLength<IdentificationTypeGraphQLModel>(nameof(IdentificationTypeGraphQLModel.Code));
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<IdentificationTypeGraphQLModel>(nameof(IdentificationTypeGraphQLModel.Name));
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
+        private readonly Dictionary<string, List<string>> _errors = [];
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
+            return _errors[propertyName];
+        }
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = [];
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName)
+        {
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Code):
+                    if (string.IsNullOrEmpty(Code) || Code.Length != 2)
+                        AddError(propertyName, "El código debe tener exactamente 2 dígitos");
+                    break;
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(Name))
+                        AddError(propertyName, "El nombre no puede estar vacío");
+                    break;
+                case nameof(MinimumDocumentLength):
+                    if (MinimumDocumentLength < 5)
+                        AddError(propertyName, "La longitud mínima debe ser al menos 5");
+                    break;
+            }
+        }
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Code));
+            ValidateProperty(nameof(Name));
+            ValidateProperty(nameof(MinimumDocumentLength));
         }
 
         #endregion
@@ -162,7 +244,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             get
             {
-                _saveCommand ??= new AsyncCommand(SaveAsync, () => CanSave);
+                _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
@@ -183,34 +265,29 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         public IdentificationTypeDetailViewModel(
             IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
-            IEventAggregator eventAggregator)
+            IEventAggregator eventAggregator,
+            StringLengthCache stringLengthCache)
         {
             _identificationTypeService = identificationTypeService;
             _eventAggregator = eventAggregator;
+            _stringLengthCache = stringLengthCache;
         }
 
         #endregion
 
-        #region Lifecycle
+        #region SetForNew / SetForEdit
 
-        protected override void OnViewReady(object view)
+        public void SetForNew()
         {
-            base.OnViewReady(view);
-            if (IsNewRecord)
-            {
-                this.SeedValue(nameof(HasVerificationDigit), HasVerificationDigit);
-                this.SeedValue(nameof(AllowsLetters), AllowsLetters);
-                this.SeedValue(nameof(MinimumDocumentLength), MinimumDocumentLength);
-            }
+            this.ClearSeeds();
+            this.SeedValue(nameof(HasVerificationDigit), HasVerificationDigit);
+            this.SeedValue(nameof(AllowsLetters), AllowsLetters);
+            this.SeedValue(nameof(MinimumDocumentLength), MinimumDocumentLength);
             this.AcceptChanges();
-            NotifyOfPropertyChange(nameof(CanSave));
+            ValidateProperties();
         }
 
-        #endregion
-
-        #region Load
-
-        public void LoadForEdit(IdentificationTypeGraphQLModel entity)
+        public void SetForEdit(IdentificationTypeGraphQLModel entity)
         {
             Id = entity.Id;
             Code = entity.Code;
@@ -218,6 +295,14 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             HasVerificationDigit = entity.HasVerificationDigit;
             AllowsLetters = entity.AllowsLetters;
             MinimumDocumentLength = entity.MinimumDocumentLength;
+
+            this.SeedValue(nameof(Code), Code);
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(HasVerificationDigit), HasVerificationDigit);
+            this.SeedValue(nameof(AllowsLetters), AllowsLetters);
+            this.SeedValue(nameof(MinimumDocumentLength), MinimumDocumentLength);
+            this.AcceptChanges();
+            ValidateProperties();
         }
 
         #endregion
@@ -229,61 +314,71 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
+                UpsertResponseType<IdentificationTypeGraphQLModel> result = await ExecuteSaveAsync();
 
-                string[] excludes = IsNewRecord ? [] : [nameof(Code)];
-
-                if (IsNewRecord)
+                if (!result.Success)
                 {
-                    string query = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
-                    UpsertResponseType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
-
-                    if (!result.Success)
-                    {
-                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
-                            title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
-                        return;
-                    }
-
-                    await _eventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeCreateMessage { CreatedIdentificationType = result });
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    return;
                 }
-                else
-                {
-                    string query = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
-                    variables.updateResponseId = Id;
-                    UpsertResponseType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
 
-                    if (!result.Success)
-                    {
-                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
-                            title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
-                        return;
-                    }
-
-                    await _eventAggregator.PublishOnCurrentThreadAsync(new IdentificationTypeUpdateMessage { UpdatedIdentificationType = result });
-                }
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new IdentificationTypeCreateMessage { CreatedIdentificationType = result }
+                        : new IdentificationTypeUpdateMessage { UpdatedIdentificationType = result },
+                    CancellationToken.None);
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<UpsertResponseType<IdentificationTypeGraphQLModel>> ExecuteSaveAsync()
+        {
+            try
+            {
+                string[] excludes = IsNewRecord ? [] : [nameof(Code)];
+
+                if (IsNewRecord)
+                {
+                    var (_, query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
+                    return await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    var (_, query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
+                    variables.updateResponseId = Id;
+                    return await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -296,7 +391,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
                 .Create()
@@ -314,12 +409,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateIdentificationTypeInput!");
-            var fragment = new GraphQLQueryFragment("createIdentificationType", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createIdentificationType",
+                [new("input", "CreateIdentificationTypeInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<IdentificationTypeGraphQLModel>>
                 .Create()
@@ -337,13 +433,10 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateIdentificationTypeInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateIdentificationType", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateIdentificationType",
+                [new("data", "UpdateIdentificationTypeInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion

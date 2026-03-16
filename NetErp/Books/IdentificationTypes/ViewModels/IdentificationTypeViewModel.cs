@@ -4,16 +4,13 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Extensions.Global;
 using Models.Books;
-using Models.Global;
-using NetErp.Helpers;
-using IDialogService = NetErp.Helpers.IDialogService;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -31,7 +28,8 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly IDialogService _dialogService;
+        private readonly Helpers.IDialogService _dialogService;
+        private readonly StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -211,12 +209,14 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             IEventAggregator eventAggregator,
             IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
             Helpers.Services.INotificationService notificationService,
-            IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            StringLengthCache stringLengthCache)
         {
             _eventAggregator = eventAggregator;
             _identificationTypeService = identificationTypeService;
             _notificationService = notificationService;
             _dialogService = dialogService;
+            _stringLengthCache = stringLengthCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -227,16 +227,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
+            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.IdentificationType);
             await LoadIdentificationTypesAsync();
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -248,15 +249,18 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator);
+                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache);
+                detail.SetForNew();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo tipo de documento");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateIdentificationTypeAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -270,16 +274,18 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator);
-                detail.LoadForEdit(SelectedIdentificationType);
+                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache);
+                detail.SetForEdit(SelectedIdentificationType);
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar tipo de documento");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditIdentificationTypeAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -293,7 +299,6 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteIdentificationTypeQuery.Value;
                 var canDeleteVars = new GraphQLVariables()
@@ -304,50 +309,69 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?",
+                    if (ThemedMessageBox.Show("Atención!",
+                        "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                var (deleteFragment, deleteQuery) = _deleteIdentificationTypeQuery.Value;
-                var deleteVars = new GraphQLVariables()
-                    .For(deleteFragment, "id", SelectedIdentificationType.Id)
-                    .Build();
-                DeleteResponseType deletedIdentificationType = await _identificationTypeService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+                DeleteResponseType deletedIdentificationType = await ExecuteDeleteAsync(SelectedIdentificationType.Id);
 
                 if (!deletedIdentificationType.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedIdentificationType.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedIdentificationType.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new IdentificationTypeDeleteMessage { DeletedIdentificationType = deletedIdentificationType });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new IdentificationTypeDeleteMessage { DeletedIdentificationType = deletedIdentificationType },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteIdentificationTypeAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+            try
+            {
+                var (fragment, query) = _deleteIdentificationTypeQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _identificationTypeService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -361,12 +385,11 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadIdentificationTypesQuery.Value;
 
-                dynamic filters = new ExpandoObject();
+                dynamic filters = new System.Dynamic.ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
                 var variables = new GraphQLVariables()
@@ -377,22 +400,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 PageType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                IdentificationTypes = [.. result.Entries];
+                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.Entries);
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadIdentificationTypesAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {

@@ -22,6 +22,7 @@ namespace NetErp.Helpers.Cache
         // Books
         public static readonly Type[] AccountingEntity = [typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
         public static readonly Type[] WithholdingCertificateConfig = [typeof(WithholdingCertificateConfigGraphQLModel)];
+        public static readonly Type[] IdentificationType = [typeof(IdentificationTypeGraphQLModel)];
 
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];
