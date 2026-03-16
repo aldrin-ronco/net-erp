@@ -1,15 +1,12 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Global.CostCenters.DTO;
-using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -18,7 +15,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +31,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
 
@@ -69,6 +66,38 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     _entity = value;
                     NotifyOfPropertyChange(nameof(Entity));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        #endregion
+
+        #region Dialog Size
+
+        private double _dialogWidth = 600;
+        public double DialogWidth
+        {
+            get => _dialogWidth;
+            set
+            {
+                if (_dialogWidth != value)
+                {
+                    _dialogWidth = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        }
+
+        private double _dialogHeight = 500;
+        public double DialogHeight
+        {
+            get => _dialogHeight;
+            set
+            {
+                if (_dialogHeight != value)
+                {
+                    _dialogHeight = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
                 }
             }
         }
@@ -163,16 +192,14 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 if (_selectedAccountingAccountGroupId != value)
                 {
-                    // Si hay cuentas marcadas, confirmar antes de cambiar
                     if (AccountingAccounts.Any(a => a.IsChecked == true))
                     {
-                        var result = ThemedMessageBox.Show("Atención !",
+                        var result = ThemedMessageBox.Show("Atención!",
                             "Al cambiar el grupo se perderá la selección de cuentas actual. ¿Desea continuar?",
                             MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                         if (result == MessageBoxResult.No)
                         {
-                            // Forzar re-notificación para revertir el combo al valor anterior
                             NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
                             return;
                         }
@@ -222,9 +249,16 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         #endregion
 
+        #region StringLength Properties
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<WithholdingCertificateConfigGraphQLModel>(nameof(WithholdingCertificateConfigGraphQLModel.Name));
+        public int DescriptionMaxLength => _stringLengthCache.GetMaxLength<WithholdingCertificateConfigGraphQLModel>(nameof(WithholdingCertificateConfigGraphQLModel.Description));
+
+        #endregion
+
         #region Validation (INotifyDataErrorInfo)
 
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -244,7 +278,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -281,30 +315,6 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             ValidateProperty(nameof(Name), Name);
             ValidateProperty(nameof(Description), Description);
-        }
-
-        #endregion
-
-        #region Focus
-
-        private bool _nameIsFocused;
-        public bool NameIsFocused
-        {
-            get => _nameIsFocused;
-            set
-            {
-                if (_nameIsFocused != value)
-                {
-                    _nameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(NameIsFocused));
-                }
-            }
-        }
-
-        private void SetFocusOnName()
-        {
-            NameIsFocused = false;
-            NameIsFocused = true;
         }
 
         #endregion
@@ -347,13 +357,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        private ICommand? _goBackCommand;
-        public ICommand GoBackCommand
+        private ICommand? _closeCommand;
+        public ICommand CloseCommand
         {
             get
             {
-                _goBackCommand ??= new AsyncCommand(GoBackAsync);
-                return _goBackCommand;
+                _closeCommand ??= new AsyncCommand(CloseAsync);
+                return _closeCommand;
             }
         }
 
@@ -361,58 +371,57 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         #region Constructor
 
-        private int? _editId;
-
         public WithholdingCertificateConfigDetailViewModel(
             WithholdingCertificateConfigViewModel context,
             IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService,
+            IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
-            int? editId = null)
+            StringLengthCache stringLengthCache)
         {
             Context = context;
             _withholdingCertificateConfigService = withholdingCertificateConfigService;
+            _accountingAccountGroupService = accountingAccountGroupService;
             _accountingAccountGroupCache = accountingAccountGroupCache;
-            _accountingAccountGroupService = IoC.Get<IRepository<AccountingAccountGroupGraphQLModel>>();
             _costCenterCache = costCenterCache;
-            _editId = editId;
+            _stringLengthCache = stringLengthCache;
         }
 
         #endregion
 
         #region Lifecycle
 
-        protected override async void OnViewReady(object view)
-        {
-            base.OnViewReady(view);
-            try
-            {
-                IsBusy = true;
-                if (_editId.HasValue)
-                    await LoadDataForEditAsync(_editId.Value);
-                await InitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.OnViewReady \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-            ValidateProperties();
-            this.AcceptChanges();
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(
-                new System.Action(SetFocusOnName),
-                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-        }
-
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-            UnsubscribeAccountingAccountEvents();
+            if (close)
+            {
+                UnsubscribeAccountingAccountEvents();
+            }
             return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region SetForNew / SetForEdit
+
+        public void SetForNew()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Description), Description);
+            this.AcceptChanges();
+            ValidateProperties();
+        }
+
+        public void SetForEdit()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(CostCenterId), CostCenterId);
+            this.SeedValue(nameof(AccountingAccountGroupId), AccountingAccountGroupId);
+            this.SeedValue(nameof(AccountingAccountIds), AccountingAccountIds);
+            this.AcceptChanges();
+            ValidateProperties();
         }
 
         #endregion
@@ -428,7 +437,6 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
             await LoadAccountingAccountGroupsAsync();
 
-            // Cargar grupo desde la entidad (el campo accountingAccountGroup viene directamente del API)
             if (Entity?.AccountingAccountGroup is { Id: > 0 } group)
             {
                 _selectedAccountingAccountGroupId = group.Id;
@@ -446,9 +454,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al cargar grupos de cuentas.\r\n{GetType().Name}.{nameof(LoadAccountingAccountGroupsAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
         }
 
@@ -458,9 +468,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 IsBusy = true;
 
-                string query = _loadGroupByIdQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.singleItemResponseId = groupId;
+                var (fragment, query) = _loadGroupByIdQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", groupId)
+                    .Build();
 
                 var group = await _accountingAccountGroupService.FindByIdAsync(query, variables);
 
@@ -481,9 +492,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al cargar cuentas del grupo.\r\n{GetType().Name}.{nameof(LoadGroupAccountsAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -493,19 +506,19 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         #endregion
 
-        #region Save / Cancel
+        #region Save / Close
 
         public async Task SaveAsync()
         {
             try
             {
                 IsBusy = true;
-                Refresh();
                 UpsertResponseType<WithholdingCertificateConfigGraphQLModel> result = await ExecuteSaveAsync();
+
                 if (!result.Success)
                 {
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -515,24 +528,26 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 await Context.EventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new WithholdingCertificateConfigCreateMessage { CreatedWithholdingCertificateConfig = result }
-                        : new WithholdingCertificateConfigUpdateMessage { UpdatedWithholdingCertificateConfig = result }
-                );
+                        : new WithholdingCertificateConfigUpdateMessage { UpdatedWithholdingCertificateConfig = result },
+                    CancellationToken.None);
 
-                await Context.ActivateMasterViewModelAsync();
+                await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!)!;
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -542,24 +557,31 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
         {
-            if (IsNewRecord)
+            try
             {
-                string query = _createQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                return await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                if (IsNewRecord)
+                {
+                    var (_, query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                    return await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    var (_, query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Entity!.Id;
+                    return await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                string query = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Entity!.Id;
-                return await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
+                throw new AsyncException(innerException: ex);
             }
         }
 
-        public async Task GoBackAsync()
+        public async Task CloseAsync()
         {
-            await Context.ActivateMasterViewModelAsync();
+            await TryCloseAsync(false);
         }
 
         #endregion
@@ -568,9 +590,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task<WithholdingCertificateConfigGraphQLModel> LoadDataForEditAsync(int id)
         {
-            string query = _loadByIdQuery.Value;
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
+            var (fragment, query) = _loadByIdQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
 
             var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
             PopulateFromEntity(certificate);
@@ -583,14 +606,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             Description = entity.Description;
             CostCenterId = entity.CostCenter?.Id;
             Entity = entity;
-            this.AcceptChanges();
         }
 
         #endregion
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadGroupByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadGroupByIdQuery = new(() =>
         {
             var fields = FieldSpec<AccountingAccountGroupGraphQLModel>
                 .Create()
@@ -604,12 +626,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(a => a.Nature))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("accountingAccountGroup", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingAccountGroup",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<WithholdingCertificateConfigGraphQLModel>
                 .Create()
@@ -625,12 +648,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(c => c.Id))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("withholdingCertificate", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("withholdingCertificate",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
                 .Create()
@@ -648,12 +672,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateWithholdingCertificateInput!");
-            var fragment = new GraphQLQueryFragment("createWithholdingCertificate", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createWithholdingCertificate",
+                [new("input", "CreateWithholdingCertificateInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>
                 .Create()
@@ -671,13 +696,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateWithholdingCertificateInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateWithholdingCertificate", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateWithholdingCertificate",
+                [new("data", "UpdateWithholdingCertificateInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion

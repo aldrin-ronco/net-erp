@@ -16,9 +16,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         public IEventAggregator EventAggregator { get; private set; }
 
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
+        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         #endregion
 
@@ -30,7 +33,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             get
             {
                 _withholdingCertificateConfigMasterViewModel ??= new WithholdingCertificateConfigMasterViewModel(
-                    this, _notificationService, _withholdingCertificateConfigService);
+                    this, _notificationService, _dialogService, _withholdingCertificateConfigService,
+                    _accountingAccountGroupService, _accountingAccountGroupCache, _costCenterCache, _stringLengthCache);
                 return _withholdingCertificateConfigMasterViewModel;
             }
         }
@@ -43,16 +47,22 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             IMapper mapper,
             IEventAggregator eventAggregator,
             Helpers.Services.INotificationService notificationService,
+            Helpers.IDialogService dialogService,
             IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService,
+            IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             AccountingAccountGroupCache accountingAccountGroupCache,
-            CostCenterCache costCenterCache)
+            CostCenterCache costCenterCache,
+            StringLengthCache stringLengthCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
             _notificationService = notificationService;
+            _dialogService = dialogService;
             _withholdingCertificateConfigService = withholdingCertificateConfigService;
+            _accountingAccountGroupService = accountingAccountGroupService;
             _accountingAccountGroupCache = accountingAccountGroupCache;
             _costCenterCache = costCenterCache;
+            _stringLengthCache = stringLengthCache;
 
             _ = ActivateMasterViewModelAsync();
         }
@@ -63,22 +73,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task ActivateMasterViewModelAsync()
         {
+            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.WithholdingCertificateConfig);
             await ActivateItemAsync(WithholdingCertificateConfigMasterViewModel, new CancellationToken());
-        }
-
-        public async Task ActivateDetailViewForEdit(WithholdingCertificateConfigGraphQLModel selectedItem)
-        {
-            var instance = new WithholdingCertificateConfigDetailViewModel(
-                this, _withholdingCertificateConfigService, _accountingAccountGroupCache, _costCenterCache,
-                editId: selectedItem.Id);
-            await ActivateItemAsync(instance, new CancellationToken());
-        }
-
-        public async Task ActivateDetailViewForNew()
-        {
-            var instance = new WithholdingCertificateConfigDetailViewModel(
-                this, _withholdingCertificateConfigService, _accountingAccountGroupCache, _costCenterCache);
-            await ActivateItemAsync(instance, new CancellationToken());
         }
 
         #endregion

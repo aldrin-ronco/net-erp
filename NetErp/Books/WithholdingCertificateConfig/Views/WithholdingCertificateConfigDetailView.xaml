@@ -8,18 +8,20 @@
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="#EEF1F5">
 
-    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="10">
-        <busyIndicator:BusyMask x:Name="BusyIndicator"
-                                IsBusy="{Binding IsBusy}"
-                                IndicatorType="BouncingDot"
-                                BusyContent="Please wait..."
-                                BusyContentMargin="0,20,0,0">
-            <Grid Margin="20,15,20,20">
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -32,13 +34,14 @@
 
                 <!-- Row 0: Centro de costo -->
                 <StackPanel Grid.Row="0" Orientation="Vertical">
-                    <TextBlock Text="Centro de costo" Margin="0,0,0,2"/>
+                    <TextBlock Text="Centro de costo" Margin="0,0,0,3"/>
                     <TextBlock Text="Centro de costo del cual se tomarán los datos geográficos (dirección, ciudad, teléfonos) que podrían aparecer en el certificado de retención"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}"
                                       IsTextEditable="False"
                                       DisplayMember="FullName"
                                       ValueMember="Id"
+                                      Padding="2"
                                       BorderBrush="#C8CED6"
                                       NullText="Seleccione un centro de costo"
                                       ShowNullTextForEmptyValue="True"
@@ -48,36 +51,42 @@
                 </StackPanel>
 
                 <!-- Row 1: Nombre -->
-                <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,12,0,0">
-                    <TextBlock Text="Nombre del certificado de retención" Margin="0,0,0,2"/>
+                <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,8,0,0">
+                    <TextBlock Text="Nombre del certificado de retención" Margin="0,0,0,3"/>
                     <TextBlock Text="Nombre que aparecerá como título al imprimir el certificado, por ejemplo: CERTIFICADO DE RETENCIÓN POR COMPRAS"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
                                   BorderBrush="#C8CED6"
-                                  h:FocusBehavior.IsFocused="{Binding NameIsFocused, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  MaxLength="{Binding NameMaxLength}"
                                   x:Name="Name"/>
                 </StackPanel>
 
                 <!-- Row 2: Descripción -->
-                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,12,0,0">
-                    <TextBlock Text="Descripción del certificado de retención" Margin="0,0,0,2"/>
+                <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,8,0,0">
+                    <TextBlock Text="Descripción del certificado de retención" Margin="0,0,0,3"/>
                     <TextBlock Text="Texto descriptivo de uso interno para diferenciar este certificado de otros configurados"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  Padding="3"
                                   BorderBrush="#C8CED6"
+                                  MaxLength="{Binding DescriptionMaxLength}"
                                   x:Name="Description"/>
                 </StackPanel>
 
                 <!-- Row 3: Grupo de cuentas contables -->
-                <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,12,0,0">
-                    <TextBlock Text="Grupo de cuentas contables" Margin="0,0,0,2"/>
+                <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,8,0,0">
+                    <TextBlock Text="Grupo de cuentas contables" Margin="0,0,0,3"/>
                     <TextBlock Text="Grupo de cuentas contables cuyas cuentas estarán disponibles para asociar al certificado de retención"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding Path=AccountingAccountGroups, UpdateSourceTrigger=PropertyChanged}"
                                       IsTextEditable="False"
                                       DisplayMember="Name"
                                       ValueMember="Id"
+                                      Padding="2"
                                       BorderBrush="#C8CED6"
                                       NullText="Seleccione un grupo de cuentas contables"
                                       AllowNullInput="True"
@@ -86,7 +95,7 @@
                 </StackPanel>
 
                 <!-- Row 4: Label cuentas contables -->
-                <TextBlock Grid.Row="4" Text="Cuentas contables del grupo seleccionado" Margin="0,12,0,5"/>
+                <TextBlock Grid.Row="4" Text="Cuentas contables del grupo seleccionado" Margin="0,8,0,5"/>
 
                 <!-- Row 5: Grid de cuentas -->
                 <dxg:GridControl Grid.Row="5" Margin="0,0,0,0"
@@ -141,7 +150,7 @@
                 </dxg:GridControl>
 
                 <!-- Row 6: Action buttons centered -->
-                <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
@@ -149,23 +158,44 @@
                             <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
-                    <!-- Regresar -->
+                    <!-- Cerrar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True"
                             IsEnabled="{Binding Path=IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
                         <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding GoBackCommand}" EventName="Click"/>
+                            <dxmvvm:EventToCommand Command="{Binding CloseCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Navigation/Backward_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Regresar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Cerrar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
-        </busyIndicator:BusyMask>
-    </Border>
+        </Border>
+    </busyIndicator:BusyMask>
 </UserControl>
