@@ -4,25 +4,28 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccountGroups.ViewModels
 {
-    public class AccountingAccountGroupViewModel : Screen
+    public class AccountingAccountGroupViewModel : Screen,
+        IHandle<AccountingAccountGroupUpdateMessage>
     {
         #region Dependencies
 
         private readonly IMapper _autoMapper;
+        private readonly IEventAggregator _eventAggregator;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
@@ -61,8 +64,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
         }
 
-        private AccountingAccountGroupGraphQLModel? _selectedGroup;
-        public AccountingAccountGroupGraphQLModel? SelectedGroup
+        private AccountingAccountGroupGraphQLModel _selectedGroup;
+        public AccountingAccountGroupGraphQLModel SelectedGroup
         {
             get => _selectedGroup;
             set
@@ -229,6 +232,19 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         #endregion
 
+        #region Helpers
+
+        private void NotifyPendingChangesState()
+        {
+            NotifyOfPropertyChange(nameof(HasPendingChanges));
+            NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
+            NotifyOfPropertyChange(nameof(CanSave));
+            NotifyOfPropertyChange(nameof(CanUndo));
+            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
+        }
+
+        #endregion
+
         #region Commands
 
         private ICommand? _addAccountingAccountCommand;
@@ -287,16 +303,19 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         public AccountingAccountGroupViewModel(
             IMapper mapper,
+            IEventAggregator eventAggregator,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             IRepository<AccountingAccountGraphQLModel> accountingAccountService)
         {
             _autoMapper = mapper;
+            _eventAggregator = eventAggregator;
             _notificationService = notificationService;
             _dialogService = dialogService;
             _accountingAccountGroupService = accountingAccountGroupService;
             _accountingAccountService = accountingAccountService;
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -309,6 +328,29 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             await InitializeAsync();
         }
 
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                _eventAggregator.Unsubscribe(this);
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region Message Handlers
+
+        public Task HandleAsync(AccountingAccountGroupUpdateMessage message, CancellationToken cancellationToken)
+        {
+            if (SelectedGroup is null) return Task.CompletedTask;
+            var result = message.UpsertAccountingAccountGroup;
+            SelectedGroup.Accounts = [.. _selectedGroupAccountingAccountsShadow.Select(a => new AccountingAccountGroupDetailGraphQLModel { Id = a.Id, Code = a.Code, Name = a.Name, Nature = a.Nature })];
+            NotifyPendingChangesState();
+            _notificationService.ShowSuccess(result.Message);
+            return Task.CompletedTask;
+        }
+
         #endregion
 
         #region Initialize
@@ -319,35 +361,29 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             {
                 IsBusy = true;
 
-                string accountsQuery = _loadAccountingAccountsQuery.Value;
-                dynamic accountsVariables = new ExpandoObject();
-                accountsVariables.AccountingAccountsPagePagination = new ExpandoObject();
-                accountsVariables.AccountingAccountsPagePagination.pageSize = -1;
-                accountsVariables.AccountingAccountsPageFilters = new ExpandoObject();
-                accountsVariables.AccountingAccountsPageFilters.minCodeLength = 4;
-                accountsVariables.AccountingAccountsPageSort = new[] { new { field = "CODE", direction = "ASC" } };
+                var (accountsFragment, groupsFragment, query) = _initializeQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(accountsFragment, "pagination", new { pageSize = -1 })
+                    .For(accountsFragment, "filters", new { minCodeLength = 4 })
+                    .For(accountsFragment, "sort", new[] { new { field = "CODE", direction = "ASC" } })
+                    .For(groupsFragment, "filters", new { })
+                    .Build();
 
-                PageType<AccountingAccountGraphQLModel> accountsResult = await _accountingAccountService.GetPageAsync(accountsQuery, accountsVariables);
-                AccountingAccounts = _autoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(accountsResult.Entries);
+                var result = await _accountingAccountService.GetDataContextAsync<InitializeContextData>(query, variables);
+
+                AccountingAccounts = _autoMapper.Map<ObservableCollection<AccountingAccountGroupDTO>>(result.AccountingAccountsPage.Entries);
                 foreach (var account in AccountingAccounts) account.Context = this;
 
-                string query = _loadAccountingAccountGroupQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.AccountingAccountGroupsFilters = new ExpandoObject();
-
-                PageType<AccountingAccountGroupGraphQLModel> result = await _accountingAccountGroupService.GetPageAsync(query, variables);
-                Groups = [.. result.Entries];
-                SelectedGroup = Groups.FirstOrDefault();
+                Groups = new ObservableCollection<AccountingAccountGroupGraphQLModel>(result.AccountingAccountGroupsPage.Entries);
+                if (Groups is not null && Groups.Count>0) SelectedGroup = Groups.First();
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!",
-                        text: $"{GetType().Name}.InitializeAsync \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(InitializeAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             finally
             {
@@ -397,13 +433,11 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!",
-                        text: $"{GetType().Name}.OpenFilterDialogAsync \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al abrir el diálogo de filtros.\r\n{GetType().Name}.{nameof(OpenFilterDialogAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
         }
 
@@ -451,11 +485,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             FilterSearch = string.Empty;
             SelectedAccountingAccountCode = string.Empty;
             UpdateMainList();
-            NotifyOfPropertyChange(nameof(HasPendingChanges));
-            NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
-            NotifyOfPropertyChange(nameof(CanSave));
-            NotifyOfPropertyChange(nameof(CanUndo));
-            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
+            NotifyPendingChangesState();
         }
 
         public void DeleteAccountingAccounts()
@@ -470,11 +500,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             NotifyOfPropertyChange(nameof(IsAllChecked));
             FilterSearch = string.Empty;
             UpdateMainList();
-            NotifyOfPropertyChange(nameof(HasPendingChanges));
-            NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
-            NotifyOfPropertyChange(nameof(CanSave));
-            NotifyOfPropertyChange(nameof(CanUndo));
-            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
+            NotifyPendingChangesState();
         }
 
         #endregion
@@ -491,11 +517,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             FilterSearch = string.Empty;
             SelectedAccountingAccountCode = string.Empty;
             UpdateMainList();
-            NotifyOfPropertyChange(nameof(HasPendingChanges));
-            NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
-            NotifyOfPropertyChange(nameof(CanSave));
-            NotifyOfPropertyChange(nameof(CanUndo));
-            NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
+            NotifyPendingChangesState();
         }
 
         #endregion
@@ -504,48 +526,56 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         public async Task SaveAsync()
         {
-            List<int> accountingAccountsIds = [.. _selectedGroupAccountingAccountsShadow.Select(x => x.Id)];
-            await ExecuteSaveAsync(accountingAccountsIds);
-        }
-
-        public async Task ExecuteSaveAsync(List<int> accountingAccountsIds)
-        {
             try
             {
                 IsBusy = true;
+                List<int> accountingAccountsIds = [.. _selectedGroupAccountingAccountsShadow.Select(x => x.Id)];
+                UpsertResponseType<AccountingAccountGroupGraphQLModel> result  = await ExecuteSaveAsync(accountingAccountsIds);
 
-                string query = _updateQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.updateResponseData = new ExpandoObject();
-                variables.updateResponseData.name = SelectedGroup!.Name;
-                variables.updateResponseData.key = SelectedGroup.Key;
-                variables.updateResponseData.accounts = accountingAccountsIds;
-                variables.updateResponseId = SelectedGroup.Id;
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
 
-                await _accountingAccountGroupService.UpdateAsync(query, variables);
-                SelectedGroup.Accounts = _selectedGroupAccountingAccountsShadow
-                    .Select(a => new AccountingAccountGroupDetailGraphQLModel { Id = a.Id, Code = a.Code, Name = a.Name, Nature = a.Nature })
-                    .ToList();
-                NotifyOfPropertyChange(nameof(HasPendingChanges));
-                NotifyOfPropertyChange(nameof(AccountingAccountGroupComboBoxIsEnabled));
-                NotifyOfPropertyChange(nameof(CanSave));
-                NotifyOfPropertyChange(nameof(CanUndo));
-                NotifyOfPropertyChange(nameof(CanOpenFilterDialog));
-                _notificationService.ShowSuccess("La configuración se ha guardado correctamente");
+                await _eventAggregator.PublishOnCurrentThreadAsync(new AccountingAccountGroupUpdateMessage { UpsertAccountingAccountGroup = result }, CancellationToken.None);
+            }
+            catch (AsyncException ex)
+            {
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!",
-                        text: $"{GetType().Name}.ExecuteSaveAsync \r\n{ex.Message}",
-                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
+                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error));
+            } finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<UpsertResponseType<AccountingAccountGroupGraphQLModel>> ExecuteSaveAsync(List<int> accountingAccountsIds)
+        {
+            try
+            {
+                var (fragment, query) = _updateQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "data", new { name = SelectedGroup!.Name, key = SelectedGroup.Key, accounts = accountingAccountsIds })
+                    .For(fragment, "id", SelectedGroup.Id)
+                    .Build();
+                UpsertResponseType<AccountingAccountGroupGraphQLModel> result = await _accountingAccountGroupService.UpdateAsync<UpsertResponseType<AccountingAccountGroupGraphQLModel>>(query, variables);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -553,11 +583,26 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadAccountingAccountGroupQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment AccountsFragment, GraphQLQueryFragment GroupsFragment, string Query)> _initializeQuery = new(() =>
         {
-            var fields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
+            var accountsFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
                 .Create()
-                .SelectList(it => it.Entries, entries => entries
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Code)
+                    .Field(e => e.Name)
+                    .Field(e => e.Nature))
+                .Build();
+
+            var accountsFragment = new GraphQLQueryFragment("AccountingAccountsPage",
+                [new("pagination", "Pagination"), new("filters", "AccountingAccountFilters"), new("sort", "[AccountingAccountSortInput]")],
+                accountsFields, "AccountingAccountsPage");
+
+            var groupsFields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
+                .Create()
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Name)
                     .Field(e => e.Key)
@@ -572,19 +617,17 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                             .Field(a => a.Id)
                             .Field(a => a.Code)
                             .Field(a => a.Name))))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingAccountGroupFilters");
-            var fragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [paginationParam, filtersParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var groupsFragment = new GraphQLQueryFragment("accountingAccountGroupsPage",
+                [new("filters", "AccountingAccountGroupFilters")],
+                groupsFields, "AccountingAccountGroupsPage");
+
+            var query = new GraphQLQueryBuilder([accountsFragment, groupsFragment]).GetQuery();
+            return (accountsFragment, groupsFragment, query);
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingAccountGroupGraphQLModel>>
                 .Create()
@@ -610,30 +653,18 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
                 new("id", "ID!")
             };
             var fragment = new GraphQLQueryFragment("UpdateAccountingAccountGroupWithAccounts", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _loadAccountingAccountsQuery = new(() =>
+        #endregion
+
+        #region Response Types
+
+        private class InitializeContextData
         {
-            var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-                .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Code)
-                    .Field(e => e.Name)
-                    .Field(e => e.Nature))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
-                .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-            var sortParam = new GraphQLQueryParameter("sort", "[AccountingAccountSortInput]");
-            var fragment = new GraphQLQueryFragment("AccountingAccountsPage", [paginationParam, filtersParam, sortParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        });
+            public PageType<AccountingAccountGraphQLModel> AccountingAccountsPage { get; set; } = new();
+            public PageType<AccountingAccountGroupGraphQLModel> AccountingAccountGroupsPage { get; set; } = new();
+        }
 
         #endregion
     }

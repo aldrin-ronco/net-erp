@@ -8,14 +8,16 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
-             d:DesignHeight="350" d:DesignWidth="550">
+             d:DesignHeight="350" d:DesignWidth="550"
+             Background="#EEF1F5">
 
-    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="15" Padding="20"
+                CornerRadius="8" Margin="8,0,8,8" Padding="15"
                 Width="{Binding DialogWidth}"
                 Height="{Binding DialogHeight}">
             <Grid>
@@ -82,7 +84,8 @@
 
                 <!-- Row 3: Close button -->
                 <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
                         <dxmvvm:Interaction.Behaviors>
                             <dxmvvm:EventToCommand Command="{Binding CloseCommand}" EventName="Click"/>
                         </dxmvvm:Interaction.Behaviors>
