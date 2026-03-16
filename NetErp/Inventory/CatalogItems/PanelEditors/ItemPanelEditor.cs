@@ -719,8 +719,8 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
             }
         }
 
-        public bool CanAddImageCmd(object p) => Images != null && Images.Count < 4;
-        public bool CanAddImage => Images != null && Images.Count < 4;
+        public bool CanAddImageCmd(object p) => MasterContext.IsS3Available && Images != null && Images.Count < 4;
+        public bool CanAddImage => MasterContext.IsS3Available && Images != null && Images.Count < 4;
 
         private ICommand _deleteImageCommand;
         public ICommand DeleteImageCommand
@@ -983,14 +983,14 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         private async Task LoadImagesAsync()
         {
-            if (Images.Count > 0)
+            if (MasterContext.IsS3Available && Images.Count > 0)
             {
                 foreach (ImageByItemDTO image in Images)
                 {
                     string imagesLocalPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     if (!Path.Exists(imagesLocalPath))
                     {
-                        await MasterContext.S3Helper.DownloadFileAsync(imagesLocalPath, image.S3FileName);
+                        await MasterContext.S3Helper!.DownloadFileAsync(imagesLocalPath, image.S3FileName);
                     }
                     BitmapImage bitmap = ConvertBitMapImage(imagesLocalPath);
                     image.SourceImage = bitmap;
@@ -1160,13 +1160,13 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
         private async Task HandleS3ImagesAsync()
         {
-            if (Images == null) return;
+            if (Images == null || !MasterContext.IsS3Available) return;
 
             if (IsNewRecord)
             {
                 foreach (ImageByItemDTO image in Images)
                 {
-                    await MasterContext.S3Helper.UploadFileAsync(image.ImagePath, image.S3FileName);
+                    await MasterContext.S3Helper!.UploadFileAsync(image.ImagePath, image.S3FileName);
                     string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     File.Copy(image.ImagePath, destinationPath, true);
                 }
@@ -1183,14 +1183,14 @@ namespace NetErp.Inventory.CatalogItems.PanelEditors
 
                 foreach (ImageByItemDTO image in itemsToDelete)
                 {
-                    await MasterContext.S3Helper.DeleteFileAsync(image.S3FileName);
+                    await MasterContext.S3Helper!.DeleteFileAsync(image.S3FileName);
                     string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     if (Path.Exists(destinationPath)) File.Delete(destinationPath);
                 }
 
                 foreach (ImageByItemDTO image in itemsToAdd)
                 {
-                    await MasterContext.S3Helper.UploadFileAsync(image.ImagePath, image.S3FileName);
+                    await MasterContext.S3Helper!.UploadFileAsync(image.ImagePath, image.S3FileName);
                     string destinationPath = Path.Combine(MasterContext.LocalImageCachePath, image.S3FileName);
                     File.Copy(image.ImagePath, destinationPath, true);
                 }

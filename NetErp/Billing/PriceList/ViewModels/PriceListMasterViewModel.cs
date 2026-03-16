@@ -358,7 +358,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool ShowInventoryQuantity
         {
-            get { return SelectedPriceListDetail != null && SelectedPriceListDetail.CatalogItem.Stock.Any(); }
+            get { return SelectedPriceListDetail != null && SelectedPriceListDetail.CatalogItem.Stocks.Any(); }
         }
 
         public bool CostByStorageInformation
