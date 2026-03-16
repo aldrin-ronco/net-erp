@@ -1,3 +1,5 @@
+using NetErp.Books.WithholdingCertificateConfig.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Books.WithholdingCertificateConfig.Views
@@ -7,6 +9,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.Views
         public WithholdingCertificateConfigDetailView()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            Name.Focus();
         }
     }
 }
