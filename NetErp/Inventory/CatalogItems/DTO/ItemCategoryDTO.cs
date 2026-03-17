@@ -130,7 +130,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
                         {
                             if (_subCategories[0].IsDummyChild) 
                             {
-                                _ = _context.LoadItemsSubCategoriesAsync(this);
+                                _ = _context.LoadItemSubCategoriesAsync(this);
                             }
                         }
                     }

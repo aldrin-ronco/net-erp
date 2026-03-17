@@ -13,6 +13,7 @@ using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
 using System;
@@ -206,11 +207,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemsCategories => SelectedItemType != null && SelectedItemType.Id != 0;
+        public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
 
         private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = new();
 
-        public ObservableCollection<ItemCategoryGraphQLModel> ItemsCategories
+        public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
             get { return _itemsCategories; }
             set
@@ -218,7 +219,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_itemsCategories != value)
                 {
                     _itemsCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsCategories));
+                    NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
         }
@@ -248,7 +249,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = new();
 
-        public ObservableCollection<ItemSubCategoryGraphQLModel> ItemsSubCategories
+        public ObservableCollection<ItemSubCategoryGraphQLModel> ItemSubCategories
         {
             get { return _itemsSubCategories; }
             set
@@ -256,7 +257,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_itemsSubCategories != value)
                 {
                     _itemsSubCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsSubCategories));
+                    NotifyOfPropertyChange(nameof(ItemSubCategories));
                 }
             }
         }
@@ -283,7 +284,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemsSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
+        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
 
         private ObservableCollection<PriceListGraphQLModel> _priceLists = [];
 
@@ -315,12 +316,12 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(SelectedPriceListIsNotActive));
                     NotifyOfPropertyChange(nameof(IsPriceList));
                     NotifyOfPropertyChange(nameof(CanCreatePromotion));
-                    
-                    _cascadeCancellation?.Cancel();
-                    _cascadeCancellation = new CancellationTokenSource();
-                    
-                    if (value != null)
+
+                    if (!_isUpdating && value != null)
                     {
+                        _cascadeCancellation?.Cancel();
+                        _cascadeCancellation = new CancellationTokenSource();
+
                         LoadItemTypes();
                         FilterSearch = "";
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
@@ -440,7 +441,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 viewModel.AutoApplyDiscount = SelectedPriceList.AutoApplyDiscount;
                 viewModel.IsPublic = SelectedPriceList.IsPublic;
                 viewModel.SelectedStorage = SelectedPriceList.Storage is null ? viewModel.Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception($"Invalid null reference") : viewModel.Storages.FirstOrDefault(x => x.Id == SelectedPriceList.Storage.Id) ?? throw new Exception("Invalid null reference");
-                foreach(PaymentMethodGraphQLModel item in SelectedPriceList.PaymentMethods)
+                foreach(PaymentMethodGraphQLModel item in SelectedPriceList.ExcludedPaymentMethods)
                 {
                     PaymentMethodPriceListDTO paymentMethod = viewModel.PaymentMethods.FirstOrDefault(x => x.Id == item.Id) ?? throw new Exception("Invalid nullreference");
                     if (paymentMethod != null)
@@ -572,66 +573,20 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 _isUpdating = true;
-                string query = @"
-                    query ($priceListFilter: PriceListFilterInput) {
-                      catalogs {
-                        id
-                        name
-                        itemsTypes {
-                          id
-                          name
-                          itemsCategories {
-                            id
-                            name
-                            itemsSubCategories: subCategories {
-                              id
-                              name
-                            }
-                          }
-                        }
-                      }
-                      priceLists(filter: $priceListFilter) {
-                        id
-                        name
-                        isTaxable
-                        priceListIncludeTax
-                        useAlternativeFormula
-                        editablePrice
-                        autoApplyDiscount
-                        listUpdateBehaviorOnCostChange
-                        isPublic
-                        isActive
-                        startDate
-                        endDate
-                        archived
-                        parent{
-                            id
-                            name
-                        }
-                        storage {
-                          id
-                          name
-                        }
-                        paymentMethods {
-                          id
-                          name
-                          abbreviation
-                        }
-                      }
-                    }";
+                var (query, catalogsFragment, priceListsFragment) = _initializeQuery.Value;
 
-                dynamic variables = new ExpandoObject();
-                variables.priceListFilter = new ExpandoObject();
-                variables.priceListFilter.archived = new ExpandoObject();
-                variables.priceListFilter.archived.@operator = "=";
-                variables.priceListFilter.archived.value = false;
+                dynamic variables = new GraphQLVariables()
+                    .For(catalogsFragment, "pagination", new { pageSize = -1 })
+                    .For(priceListsFragment, "filters", new { isActive = true })
+                    .For(priceListsFragment, "pagination", new { pageSize = -1 })
+                    .Build();
 
                 PriceListDataContext result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, variables);
 
 
-                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.Catalogs);
+                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceLists);
+                PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceListsPage.Entries);
                 NotifyOfPropertyChange(nameof(ShowAllControls));
                 if(PriceLists is null || PriceLists.Count == 0) return;
                 SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
@@ -675,7 +630,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         id
                         name
                         reference
-                        stock {
+                        stocks {
                           storage {
                             id
                             name
@@ -760,7 +715,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (var item in PriceListDetail)
                 {
                     item.Context = this;
-                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup.SalesPrimaryTax, item.CatalogItem.AccountingGroup.SalesSecondaryTax);
+                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup?.SalesPrimaryTax, item.CatalogItem.AccountingGroup?.SalesSecondaryTax);
                     item.Profit = GetProfit(item);
                 }
 
@@ -783,12 +738,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             return profit;
         }
 
-        private decimal GetIvaValue(TaxGraphQLModel? tax1, TaxGraphQLModel? tax2) 
+        private decimal GetIvaValue(TaxGraphQLModel? tax1, TaxGraphQLModel? tax2)
         {
             if(tax1 is null && tax2 is null) return -1;
 
-            if(tax1 != null && tax1.TaxCategory.Prefix == "IVA") return tax1.Rate;
-            if(tax2 != null && tax2.TaxCategory.Prefix == "IVA") return tax2.Rate;
+            if(tax1?.TaxCategory?.Prefix == "IVA") return tax1.Rate;
+            if(tax2?.TaxCategory?.Prefix == "IVA") return tax2.Rate;
 
             return -1; // No IVA found
         }
@@ -828,22 +783,22 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             _isUpdating = true;
             
-            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemsCategories != null)
+            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
-                ItemsCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemsCategories);
-                ItemsCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemCategory = ItemsCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemCategory can't be null");
+                ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
+                ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
+                SelectedItemCategory = ItemCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemCategory can't be null");
             }
             else
             {
                 // Reset categories when ItemType is "Show All" (Id = 0)
-                ItemsCategories.Clear();
+                ItemCategories.Clear();
                 SelectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
             }
             
             LoadItemSubCategories();
-            NotifyOfPropertyChange(nameof(CanShowItemsCategories));
-            NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
 
@@ -851,20 +806,20 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             _isUpdating = true;
             
-            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemsSubCategories != null)
+            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
             {
-                ItemsSubCategories = new ObservableCollection<ItemSubCategoryGraphQLModel>(SelectedItemCategory.ItemsSubCategories);
-                ItemsSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
-                SelectedItemSubCategory = ItemsSubCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemSubCategory can't be null");
+                ItemSubCategories = new ObservableCollection<ItemSubCategoryGraphQLModel>(SelectedItemCategory.ItemSubCategories);
+                ItemSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
+                SelectedItemSubCategory = ItemSubCategories.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("SelectedItemSubCategory can't be null");
             }
             else
             {
                 // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
-                ItemsSubCategories.Clear();
+                ItemSubCategories.Clear();
                 SelectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
             }
             
-            NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
 
@@ -1125,7 +1080,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     existingPriceList.ListUpdateBehaviorOnCostChange = priceList.ListUpdateBehaviorOnCostChange;
                     existingPriceList.IsPublic = priceList.IsPublic;
                     existingPriceList.IsActive = priceList.IsActive;
-                    existingPriceList.PaymentMethods = priceList.PaymentMethods;
+                    existingPriceList.ExcludedPaymentMethods = priceList.ExcludedPaymentMethods;
                     SelectedPriceList = null;
                     SelectedPriceList = existingPriceList;
                 }
@@ -1231,6 +1186,67 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             return true;
         }
+
+        #endregion
+
+        #region Query Builders
+
+        private static readonly Lazy<(string Query, GraphQLQueryFragment CatalogsFragment, GraphQLQueryFragment PriceListsFragment)> _initializeQuery = new(() =>
+        {
+            var catalogsFields = FieldSpec<PageType<CatalogGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .SelectList(e => e.ItemTypes, it => it
+                        .Field(t => t.Id)
+                        .Field(t => t.Name)
+                        .SelectList(t => t.ItemCategories, ic => ic
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .SelectList(c => c.ItemSubCategories, isc => isc
+                                .Field(s => s.Id)
+                                .Field(s => s.Name)))))
+                .Build();
+
+            var catalogsPaginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var catalogsFragment = new GraphQLQueryFragment("catalogsPage", [catalogsPaginationParam], catalogsFields);
+
+            var priceListsFields = FieldSpec<PageType<PriceListGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.IsTaxable)
+                    .Field(e => e.PriceListIncludeTax)
+                    .Field(e => e.UseAlternativeFormula)
+                    .Field(e => e.EditablePrice)
+                    .Field(e => e.AutoApplyDiscount)
+                    .Field(e => e.ListUpdateBehaviorOnCostChange)
+                    .Field(e => e.IsPublic)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.StartDate)
+                    .Field(e => e.EndDate)
+                    .Field(e => e.Archived)
+                    .Select(e => e.Parent, p => p
+                        .Field(pp => pp.Id)
+                        .Field(pp => pp.Name))
+                    .Select(e => e.Storage, s => s
+                        .Field(ss => ss.Id)
+                        .Field(ss => ss.Name))
+                    .SelectList(e => e.ExcludedPaymentMethods, pm => pm
+                        .Field(p => p.Id)
+                        .Field(p => p.Name)
+                        .Field(p => p.Abbreviation)))
+                .Build();
+
+            var priceListsFiltersParam = new GraphQLQueryParameter("filters", "PriceListFilters");
+            var priceListsPaginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var priceListsFragment = new GraphQLQueryFragment("priceListsPage", [priceListsFiltersParam, priceListsPaginationParam], priceListsFields);
+
+            var query = new GraphQLQueryBuilder([catalogsFragment, priceListsFragment]).GetQuery();
+            return (query, catalogsFragment, priceListsFragment);
+        });
 
         #endregion
     }

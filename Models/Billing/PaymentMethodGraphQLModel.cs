@@ -1,4 +1,5 @@
 ﻿using Models.Books;
+using Models.Global;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,12 @@ namespace Models.Billing
         public string Abbreviation { get; set; } = string.Empty;
         public bool RequiresDocumentNumber { get; set; }
         public bool IsActive { get; set; }
+        public bool IsCredit { get; set; }
         public int DisplayOrder { get; set; }
         public AccountingAccountGraphQLModel AccountingAccount { get; set; } = new();
+        public CompanyGraphQLModel Company { get; set; } = new();
+        public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
+        public DateTime? InsertedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

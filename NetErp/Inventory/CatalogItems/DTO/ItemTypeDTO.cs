@@ -131,7 +131,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
                         {
                             if (_itemsCategories[0].IsDummyChild) 
                             {
-                                _ = _context.LoadItemsCategoriesAsync(this);
+                                _ = _context.LoadItemCategoriesAsync(this);
                             }
                         }
                     }
@@ -142,7 +142,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
 
         private ObservableCollection<ItemCategoryDTO> _itemsCategories = [];
 
-        public ObservableCollection<ItemCategoryDTO> ItemsCategories
+        public ObservableCollection<ItemCategoryDTO> ItemCategories
         {
             get { return _itemsCategories; }
             set 
@@ -150,7 +150,7 @@ namespace NetErp.Inventory.CatalogItems.DTO
                 if(_itemsCategories != value)
                 {
                     _itemsCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsCategories));
+                    NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
         }
