@@ -4,14 +4,13 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Global;
-using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -29,6 +28,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
         private readonly IRepository<DianCertificateGraphQLModel> _dianCertificateService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -231,13 +231,15 @@ namespace NetErp.Global.DianCertificate.ViewModels
             IEventAggregator eventAggregator,
             IRepository<DianCertificateGraphQLModel> dianCertificateService,
             Helpers.Services.INotificationService notificationService,
-            Helpers.IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            JoinableTaskFactory joinableTaskFactory)
         {
             DisplayName = "Certificados DIAN";
             _eventAggregator = eventAggregator;
             _dianCertificateService = dianCertificateService;
             _notificationService = notificationService;
             _dialogService = dialogService;
+            _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -257,24 +259,24 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.OnViewReady: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
-                this.SetFocus(() => FilterSearch);
             }
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -283,8 +285,28 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         public async Task CreateCertificateAsync()
         {
-            var detail = new DianCertificateDetailViewModel(_dianCertificateService, _eventAggregator);
-            await _dialogService.ShowDialogAsync(detail, "Nuevo certificado DIAN");
+            try
+            {
+                IsBusy = true;
+                var detail = new DianCertificateDetailViewModel(_dianCertificateService, _eventAggregator, _joinableTaskFactory);
+                IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.65;
+
+                await _dialogService.ShowDialogAsync(detail, "Nuevo certificado DIAN");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateCertificateAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task DeleteCertificateAsync()
@@ -294,56 +316,76 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 IsBusy = true;
 
-                string query = _canDeleteQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedCertificate.Id };
-                var validation = await _dianCertificateService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedCertificate.Id)
+                    .Build();
+                var validation = await _dianCertificateService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !",
+                    if (ThemedMessageBox.Show("Atención!",
                         "¿Confirma que desea eliminar el certificado seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
-                        "El certificado no puede ser eliminado\r\n\r\n" + validation.Message,
+                    ThemedMessageBox.Show("Atención!",
+                        $"El certificado no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                string deleteQuery = _deleteQuery.Value;
-                object deleteVars = new { deleteResponseId = SelectedCertificate.Id };
-                DeleteResponseType deletedRecord = await _dianCertificateService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+                DeleteResponseType deletedRecord = await ExecuteDeleteAsync(SelectedCertificate.Id);
 
                 if (!deletedRecord.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedRecord.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedRecord.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new DianCertificateDeleteMessage { DeletedCertificate = deletedRecord });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new DianCertificateDeleteMessage { DeletedCertificate = deletedRecord },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al eliminar el registro.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteCertificateAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+            try
+            {
+                var (fragment, query) = _deleteQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _dianCertificateService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -357,21 +399,18 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                string query = _loadQuery.Value;
+                var (fragment, query) = _loadQuery.Value;
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.page = PageIndex;
-                variables.pageResponsePagination.pageSize = PageSize;
+                dynamic filters = new System.Dynamic.ExpandoObject();
+                if (IsValidFilter) filters.isValid = IsValidFilter;
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                if (IsValidFilter) variables.pageResponseFilters.isValid = IsValidFilter;
-                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch)
-                    ? ""
-                    : FilterSearch.Trim().RemoveExtraSpaces();
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { page = PageIndex, pageSize = PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
 
                 PageType<DianCertificateGraphQLModel> result = await _dianCertificateService.GetPageAsync(query, variables);
 
@@ -380,22 +419,16 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 {
                     cert.IsDefault = cert.Id == _defaultCertificateId;
                 }
-                Certificates = [.. result.Entries];
+                Certificates = new ObservableCollection<DianCertificateGraphQLModel>(result.Entries);
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadCertificatesAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -407,9 +440,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
         {
             try
             {
-                string query = _globalConfigQuery.Value;
-                dynamic variables = new ExpandoObject();
-                var context = await _dianCertificateService.GetDataContextAsync<GlobalConfigDianCertificateContext>(query, variables);
+                var (_, query) = _globalConfigQuery.Value;
+                var context = await _dianCertificateService.GetDataContextAsync<GlobalConfigDianCertificateContext>(query, new { });
                 _defaultCertificateId = context?.GlobalConfig?.DefaultDianCertificate?.Id ?? 0;
             }
             catch
@@ -422,10 +454,11 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
             var fields = FieldSpec<PageType<DianCertificateGraphQLModel>>
                 .Create()
+                .Field(o => o.TotalEntries)
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.SerialNumber)
@@ -433,20 +466,15 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     .Field(e => e.Subject)
                     .Field(e => e.ValidFrom)
                     .Field(e => e.ValidTo))
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "DianCertificateFilters");
-            var fragment = new GraphQLQueryFragment("dianCertificatesPage", [paginationParam, filtersParam], fields, "PageResponse");
-
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("dianCertificatesPage",
+                [new("pagination", "Pagination"), new("filters", "DianCertificateFilters")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _globalConfigQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _globalConfigQuery = new(() =>
         {
             var fields = FieldSpec<GlobalConfigDefaultCertificate>
                 .Create()
@@ -455,10 +483,10 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 .Build();
 
             var fragment = new GraphQLQueryFragment("globalConfig", [], fields);
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -467,12 +495,12 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteDianCertificate", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("deleteDianCertificate",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _canDeleteQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -480,9 +508,9 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteDianCertificate", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteDianCertificate",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion

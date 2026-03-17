@@ -7,20 +7,9 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="550"
              Background="#EEF1F5">
-
-    <UserControl.Resources>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
-    </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.65"/>
-    </UserControl.Width>
 
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -28,8 +17,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="20">
-            <Grid>
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}">
+            <Grid Margin="15,15,15,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -37,98 +27,90 @@
 
                 <!-- Form content -->
                 <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="30,25,30,20">
+                    <StackPanel>
 
-                        <!-- File Selection -->
-                        <StackPanel>
-
-                            <!-- File path + browse -->
-                            <TextBlock Text="Archivo del certificado (.p12 / .pfx)" FontSize="13" Margin="0,0,0,5"/>
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <dxe:TextEdit Grid.Column="0"
-                                              Text="{Binding FilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              IsReadOnly="True"
-                                              NullText="Seleccione un archivo .p12 o .pfx"
-                                              BorderBrush="#C8CED6"/>
-                                <Button Grid.Column="1" Content="Examinar..." Padding="12,0" Margin="8,0,0,0"
-                                        Cursor="Hand">
-                                    <dxmvvm:Interaction.Behaviors>
-                                        <dxmvvm:EventToCommand Command="{Binding BrowseCommand}" EventName="Click"/>
-                                    </dxmvvm:Interaction.Behaviors>
-                                </Button>
-                            </Grid>
-
-                            <!-- Password -->
-                            <TextBlock Text="Contraseña del certificado" FontSize="13" Margin="0,0,0,5"/>
-                            <dxe:PasswordBoxEdit
-                                Password="{Binding FilePassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                NullText="Ingrese la contraseña del archivo .p12"
-                                BorderBrush="#C8CED6"
-                                Margin="0,0,0,12"/>
-
-                            <!-- Extract button -->
-                            <Button Margin="0,0,0,20" Padding="8,6"
-                                    HorizontalAlignment="Stretch"
-                                    IsEnabled="{Binding CanExtract, Mode=OneWay}">
+                        <!-- File path + browse -->
+                        <TextBlock Text="Archivo del certificado (.p12 / .pfx)" FontSize="13" Margin="0,0,0,3"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <dxe:TextEdit Grid.Column="0"
+                                          Text="{Binding FilePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsReadOnly="True"
+                                          NullText="Seleccione un archivo .p12 o .pfx"
+                                          BorderBrush="#C8CED6"/>
+                            <Button Grid.Column="1" Content="Examinar..." Padding="12,0" Margin="8,0,0,0"
+                                    Cursor="Hand">
                                 <dxmvvm:Interaction.Behaviors>
-                                    <dxmvvm:EventToCommand Command="{Binding ExtractCommand}" EventName="Click"/>
+                                    <dxmvvm:EventToCommand Command="{Binding BrowseCommand}" EventName="Click"/>
                                 </dxmvvm:Interaction.Behaviors>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Image Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
-                                           Margin="0,0,4,0" Width="16"/>
-                                    <TextBlock Text="Extraer información del certificado" VerticalAlignment="Center"/>
-                                </StackPanel>
                             </Button>
-                        </StackPanel>
+                        </Grid>
+
+                        <!-- Password -->
+                        <TextBlock Text="Contraseña del certificado" FontSize="13" Margin="0,0,0,3"/>
+                        <dxe:PasswordBoxEdit
+                            Password="{Binding FilePassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            NullText="Ingrese la contraseña del archivo .p12"
+                            BorderBrush="#C8CED6"
+                            Margin="0,0,0,8"/>
+
+                        <!-- Extract button -->
+                        <Button Margin="0,0,0,8" Padding="8,6"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding CanExtract, Mode=OneWay}">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Command="{Binding ExtractCommand}" EventName="Click"/>
+                            </dxmvvm:Interaction.Behaviors>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
+                                       Margin="0,0,4,0" Width="16"/>
+                                <TextBlock Text="Extraer información del certificado" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <!-- Certificate Info (visible after extraction) -->
-                        <StackPanel Visibility="{Binding CertificateInfoVisibility, Mode=OneWay}">
+                        <StackPanel>
 
                             <!-- Serial Number -->
-                            <TextBlock Text="No. de serie" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="No. de serie" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:TextEdit Text="{Binding SerialNumber, Mode=OneWay}"
-                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"/>
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
 
                             <!-- Issuer -->
-                            <TextBlock Text="Emisor" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Emisor" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:TextEdit Text="{Binding Issuer, Mode=OneWay}"
-                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,8"
                                           TextWrapping="Wrap" AcceptsReturn="True"
                                           VerticalContentAlignment="Top" MinHeight="25"/>
 
                             <!-- Subject -->
-                            <TextBlock Text="Sujeto" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Sujeto" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:TextEdit Text="{Binding Subject, Mode=OneWay}"
-                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,12"
+                                          IsReadOnly="True" BorderBrush="#C8CED6" Margin="0,0,0,8"
                                           TextWrapping="Wrap" AcceptsReturn="True"
                                           VerticalContentAlignment="Top" MinHeight="25"/>
 
                             <!-- ValidFrom + ValidTo -->
-                            <Grid Margin="0,0,0,12">
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="5"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Válido desde" FontSize="13"/>
-                                <dxe:DateEdit Grid.Row="2" Grid.Column="0"
-                                              EditValue="{Binding ValidFrom, Mode=OneWay}"
-                                              IsReadOnly="True" BorderBrush="#C8CED6"/>
+                                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                    <TextBlock Text="Válido desde" FontSize="13" Margin="0,0,0,3"/>
+                                    <dxe:DateEdit EditValue="{Binding ValidFrom, Mode=OneWay}"
+                                                  IsReadOnly="True" BorderBrush="#C8CED6"/>
+                                </StackPanel>
 
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Válido hasta" FontSize="13"/>
-                                <dxe:DateEdit Grid.Row="2" Grid.Column="2"
-                                              EditValue="{Binding ValidTo, Mode=OneWay}"
-                                              IsReadOnly="True" BorderBrush="#C8CED6"/>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="Válido hasta" FontSize="13" Margin="0,0,0,3"/>
+                                    <dxe:DateEdit EditValue="{Binding ValidTo, Mode=OneWay}"
+                                                  IsReadOnly="True" BorderBrush="#C8CED6"/>
+                                </StackPanel>
                             </Grid>
 
                         </StackPanel>
@@ -136,7 +118,7 @@
                 </ScrollViewer>
 
                 <!-- Button bar centered -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">

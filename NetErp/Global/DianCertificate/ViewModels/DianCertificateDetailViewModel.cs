@@ -1,20 +1,18 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Global;
-using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Dynamic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
@@ -26,6 +24,25 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         private readonly IRepository<DianCertificateGraphQLModel> _dianCertificateService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+
+        #endregion
+
+        #region Dialog Size
+
+        private double _dialogWidth = 600;
+        public double DialogWidth
+        {
+            get => _dialogWidth;
+            set
+            {
+                if (_dialogWidth != value)
+                {
+                    _dialogWidth = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        }
 
         #endregion
 
@@ -55,17 +72,10 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 {
                     _isExtracted = value;
                     NotifyOfPropertyChange(nameof(IsExtracted));
-                    NotifyOfPropertyChange(nameof(CertificateInfoVisibility));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
-
-        #endregion
-
-        #region Visibility
-
-        public Visibility CertificateInfoVisibility => IsExtracted ? Visibility.Visible : Visibility.Collapsed;
 
         #endregion
 
@@ -261,10 +271,12 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         public DianCertificateDetailViewModel(
             IRepository<DianCertificateGraphQLModel> dianCertificateService,
-            IEventAggregator eventAggregator)
+            IEventAggregator eventAggregator,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _dianCertificateService = dianCertificateService;
             _eventAggregator = eventAggregator;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -305,13 +317,13 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
             catch (CryptographicException)
             {
-                ThemedMessageBox.Show("Atención !",
+                ThemedMessageBox.Show("Atención!",
                     "No se pudo abrir el certificado. Verifique que la contraseña sea correcta y que el archivo sea un certificado PKCS#12 válido.",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show("Atención !",
+                ThemedMessageBox.Show("Atención!",
                     $"Error al extraer el certificado: {ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -358,7 +370,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 IsBusy = true;
 
-                string query = _createQuery.Value;
+                var (_, query) = _createQuery.Value;
                 dynamic variables = new ExpandoObject();
                 variables.createResponseInput = new ExpandoObject();
                 variables.createResponseInput.certificatePem = CertificatePem;
@@ -373,32 +385,27 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
                 if (!result.Success)
                 {
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
                     ThemedMessageBox.Show(
                         title: $"{result.Message}!",
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
                     return;
                 }
 
                 await _eventAggregator.PublishOnCurrentThreadAsync(
-                    new DianCertificateCreateMessage { CreatedCertificate = result });
+                    new DianCertificateCreateMessage { CreatedCertificate = result },
+                    CancellationToken.None);
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -415,7 +422,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<DianCertificateGraphQLModel>>
                 .Create()
@@ -433,9 +440,10 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateDianCertificateInput!");
-            var fragment = new GraphQLQueryFragment("createDianCertificate", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createDianCertificate",
+                [new("input", "CreateDianCertificateInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion
