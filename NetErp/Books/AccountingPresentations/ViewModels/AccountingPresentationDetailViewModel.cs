@@ -5,9 +5,8 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
-using Models.Global;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -32,6 +31,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
         private readonly IEventAggregator _eventAggregator;
         private readonly AccountingBookCache _accountingBookCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -255,11 +255,13 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         public AccountingPresentationDetailViewModel(
             IRepository<AccountingPresentationGraphQLModel> accountingPresentationService,
             IEventAggregator eventAggregator,
-            AccountingBookCache accountingBookCache)
+            AccountingBookCache accountingBookCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _accountingPresentationService = accountingPresentationService;
             _eventAggregator = eventAggregator;
             _accountingBookCache = accountingBookCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -376,19 +378,12 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención !",
+                    $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

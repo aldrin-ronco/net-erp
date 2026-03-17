@@ -5,10 +5,8 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
-using Models.Global;
-using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
@@ -27,6 +25,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -165,10 +164,12 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         public AccountingBookDetailViewModel(
             IRepository<AccountingBookGraphQLModel> accountingBookService,
-            IEventAggregator eventAggregator)
+            IEventAggregator eventAggregator,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _accountingBookService = accountingBookService;
             _eventAggregator = eventAggregator;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -223,19 +224,12 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

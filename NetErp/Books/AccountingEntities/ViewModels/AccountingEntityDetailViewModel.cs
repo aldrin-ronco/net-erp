@@ -7,10 +7,9 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
-using Newtonsoft.Json;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -38,6 +37,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         private readonly Dictionary<string, List<string>> _errors = [];
         private List<string> _seedEmails = [];
@@ -869,13 +869,15 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             IEventAggregator eventAggregator,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _accountingEntityService = accountingEntityService ?? throw new ArgumentNullException(nameof(accountingEntityService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
             _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
 
             Emails = [];
         }
@@ -899,8 +901,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "EndRowEditing" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(EndRowEditing)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -918,8 +919,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "RemoveEmail" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(RemoveEmail)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -937,8 +937,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "AddEmail" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(AddEmail)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -966,15 +965,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
             {
@@ -1066,9 +1060,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private static readonly string[] _basicDataFields = [nameof(FirstName), nameof(FirstLastName), nameof(BusinessName), nameof(PrimaryPhone), nameof(SecondaryPhone), nameof(PrimaryCellPhone), nameof(SecondaryCellPhone)];
 
         public bool HasBasicDataErrors => _basicDataFields.Any(f => _errors.ContainsKey(f));
-        public string BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
+        public string? BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
 
-        private string GetTabTooltip(string[] fields)
+        private string? GetTabTooltip(string[] fields)
         {
             var errors = fields
                 .Where(f => _errors.ContainsKey(f))
@@ -1166,7 +1160,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(ValidateProperty)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

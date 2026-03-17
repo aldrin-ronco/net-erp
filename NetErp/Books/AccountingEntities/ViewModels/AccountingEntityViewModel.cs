@@ -4,7 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
 using Models.Suppliers;
@@ -42,6 +42,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -229,7 +230,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             Helpers.IDialogService dialogService,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -238,6 +240,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
             _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -273,7 +276,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache);
+                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -281,9 +284,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateAccountingEntityAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -297,7 +301,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache);
+                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedAccountingEntity.Id);
                 IsBusy = false;
@@ -305,9 +309,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(EditAccountingEntityAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -361,18 +366,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
                 await _eventAggregator.PublishOnUIThreadAsync(new AccountingEntityDeleteMessage { DeletedAccountingEntity = deletedAccountingEntity });
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteAccountingEntityAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -413,9 +412,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadAccountingEntitiesAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

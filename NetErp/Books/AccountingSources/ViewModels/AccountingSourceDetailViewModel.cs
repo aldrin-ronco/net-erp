@@ -1,12 +1,11 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
@@ -32,6 +31,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -355,12 +355,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
             IRepository<AccountingSourceGraphQLModel> accountingSourceService,
             IEventAggregator eventAggregator,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
-            ProcessTypeCache processTypeCache)
+            ProcessTypeCache processTypeCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _accountingSourceService = accountingSourceService;
             _eventAggregator = eventAggregator;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _processTypeCache = processTypeCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -456,19 +458,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al guardar el registro.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {

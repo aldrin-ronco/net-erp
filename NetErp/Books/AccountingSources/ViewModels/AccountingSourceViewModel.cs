@@ -4,11 +4,10 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers;
-using IDialogService = NetErp.Helpers.IDialogService;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -32,10 +31,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly IDialogService _dialogService;
+        private readonly Helpers.IDialogService _dialogService;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
         private readonly MenuModuleCache _menuModuleCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -245,10 +245,11 @@ namespace NetErp.Books.AccountingSources.ViewModels
             IEventAggregator eventAggregator,
             IRepository<AccountingSourceGraphQLModel> accountingSourceService,
             Helpers.Services.INotificationService notificationService,
-            IDialogService dialogService,
+            Helpers.IDialogService dialogService,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             ProcessTypeCache processTypeCache,
-            MenuModuleCache menuModuleCache)
+            MenuModuleCache menuModuleCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
             _accountingSourceService = accountingSourceService;
@@ -257,6 +258,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _processTypeCache = processTypeCache;
             _menuModuleCache = menuModuleCache;
+            _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -290,17 +292,19 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache);
+                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory);
                 await detail.InitializeAsync();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva fuente contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateSourceAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -314,7 +318,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache);
+                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedAccountingSource.Id);
                 IsBusy = false;
@@ -322,10 +326,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditSourceAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -350,13 +356,13 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?",
+                    if (ThemedMessageBox.Show("Atención!", "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -372,24 +378,20 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 if (!deletedSource.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedSource.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedSource.Message}\r\n\r\nVerifique la información e intente más tarde.");
                     return;
                 }
 
                 await _eventAggregator.PublishOnUIThreadAsync(new AccountingSourceDeleteMessage { DeletedAccountingSource = deletedSource });
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteSourceAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -429,18 +431,14 @@ namespace NetErp.Books.AccountingSources.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al cargar las fuentes contables.\r\n{GetType().Name}.{nameof(LoadAccountingSourcesAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
