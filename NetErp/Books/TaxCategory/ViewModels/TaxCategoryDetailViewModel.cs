@@ -25,6 +25,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
         private readonly IRepository<TaxCategoryGraphQLModel> _taxCategoryService;
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -321,11 +322,13 @@ namespace NetErp.Books.TaxCategory.ViewModels
         public TaxCategoryDetailViewModel(
             IRepository<TaxCategoryGraphQLModel> taxCategoryService,
             IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory)
         {
             _taxCategoryService = taxCategoryService;
             _eventAggregator = eventAggregator;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -399,19 +402,21 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

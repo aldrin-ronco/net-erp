@@ -23,12 +23,12 @@ namespace Models.Books
     }
     public class TaxCategoryDeleteMessage
     {
-        public DeleteResponseType DeletedTaxCategory { get; set; }
+        public required DeleteResponseType DeletedTaxCategory { get; set; }
        
     }
 
     public class TaxCategoryUpdateMessage
     {
-        public UpsertResponseType<TaxCategoryGraphQLModel> UpdatedTaxCategory { get; set; }
+        public required UpsertResponseType<TaxCategoryGraphQLModel> UpdatedTaxCategory { get; set; }
     }
 }

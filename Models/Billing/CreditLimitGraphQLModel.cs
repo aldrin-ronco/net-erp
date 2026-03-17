@@ -9,7 +9,7 @@ namespace Models.Billing
     public class CreditLimitGraphQLModel
     {
         public int Id { get; set; }
-        public CustomerGraphQLModel Customer { get; set; }
+        public required CustomerGraphQLModel Customer { get; set; }
         public decimal Limit { get; set; }
         public decimal Used { get; set; }
         public decimal Available { get; set; }
@@ -18,6 +18,6 @@ namespace Models.Billing
 
     public class CreditLimitManagerMessage
     {
-        public IEnumerable<CreditLimitGraphQLModel> ManagedCreditLimits { get; set; }
+        public IEnumerable<CreditLimitGraphQLModel> ManagedCreditLimits { get; set; } = [];
     }
 }
