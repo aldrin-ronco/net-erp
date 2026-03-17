@@ -22,7 +22,7 @@ namespace Models.Inventory
         public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
         public DateTime InsertedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public IEnumerable<ItemCategoryGraphQLModel> ItemsCategories { get; set; }
+        public IEnumerable<ItemCategoryGraphQLModel> ItemCategories { get; set; }
     }
 
     public class ItemTypeCreateMessage

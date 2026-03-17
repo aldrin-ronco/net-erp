@@ -327,7 +327,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
 
         private ObservableCollection<ItemCategoryDTO> _itemsCategories = [];
-        public ObservableCollection<ItemCategoryDTO> ItemsCategories
+        public ObservableCollection<ItemCategoryDTO> ItemCategories
         {
             get => _itemsCategories;
             set
@@ -335,13 +335,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 if (_itemsCategories != value)
                 {
                     _itemsCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsCategories));
+                    NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
         }
 
         private ObservableCollection<ItemSubCategoryDTO> _itemsSubCategories = [];
-        public ObservableCollection<ItemSubCategoryDTO> ItemsSubCategories
+        public ObservableCollection<ItemSubCategoryDTO> ItemSubCategories
         {
             get => _itemsSubCategories;
             set
@@ -349,7 +349,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 if (_itemsSubCategories != value)
                 {
                     _itemsSubCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsSubCategories));
+                    NotifyOfPropertyChange(nameof(ItemSubCategories));
                 }
             }
         }
@@ -1519,17 +1519,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedData);
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
-            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories.Count > 0 && itemTypeDTO.ItemsCategories[0].IsDummyChild)
+            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemCategories.Count > 0 && itemTypeDTO.ItemCategories[0].IsDummyChild)
             {
-                await LoadItemsCategoriesAsync(itemTypeDTO);
+                await LoadItemCategoriesAsync(itemTypeDTO);
                 itemTypeDTO.IsExpanded = true;
             }
             if (!itemTypeDTO.IsExpanded) itemTypeDTO.IsExpanded = true;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
             if (itemCategoryDTO is null) return;
             if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
             {
-                await LoadItemsSubCategoriesAsync(itemCategoryDTO);
+                await LoadItemSubCategoriesAsync(itemCategoryDTO);
                 itemCategoryDTO.IsExpanded = true;
             }
             if (!itemCategoryDTO.IsExpanded) itemCategoryDTO.IsExpanded = true;
@@ -1711,7 +1711,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                             foreach (ItemTypeDTO itemType in catalog.ItemTypes)
                             {
                                 itemType.Context = this;
-                                itemType.ItemsCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
+                                itemType.ItemCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
                             }
                         }
                         SelectedCatalog = Catalogs.First();
@@ -1752,13 +1752,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
-        public async Task LoadItemsCategoriesAsync(ItemTypeDTO itemType)
+        public async Task LoadItemCategoriesAsync(ItemTypeDTO itemType)
         {
             try
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    itemType.ItemsCategories.Remove(itemType.ItemsCategories[0]);
+                    itemType.ItemCategories.Remove(itemType.ItemCategories[0]);
                 });
 
                 string query = GetLoadItemCategoriesQuery();
@@ -1770,9 +1770,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 variables.PageResponseFilters.ItemTypeId = itemType.Id;
 
                 var result = await _itemCategoryService.GetPageAsync(query, variables);
-                ItemsCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(result.Entries);
+                ItemCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(result.Entries);
 
-                if (ItemsCategories.Count == 0)
+                if (ItemCategories.Count == 0)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -1784,11 +1784,11 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        foreach (ItemCategoryDTO itemCategory in ItemsCategories)
+                        foreach (ItemCategoryDTO itemCategory in ItemCategories)
                         {
                             itemCategory.Context = this;
                             itemCategory.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Items = [], Name = "Dummy" });
-                            itemType.ItemsCategories.Add(itemCategory);
+                            itemType.ItemCategories.Add(itemCategory);
                         }
                     });
                 }
@@ -1798,13 +1798,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
                 if (graphQLError != null)
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
                 }
                 else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemsCategoriesAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemCategoriesAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
             }
         }
 
@@ -1834,7 +1834,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
-        public async Task LoadItemsSubCategoriesAsync(ItemCategoryDTO itemCategory)
+        public async Task LoadItemSubCategoriesAsync(ItemCategoryDTO itemCategory)
         {
             try
             {
@@ -1851,9 +1851,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 variables.PageResponseFilters.ItemCategoryId = itemCategory.Id;
 
                 var result = await _itemSubCategoryService.GetPageAsync(query, variables);
-                ItemsSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(result.Entries);
+                ItemSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(result.Entries);
 
-                if (ItemsSubCategories.Count == 0)
+                if (ItemSubCategories.Count == 0)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -1863,7 +1863,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 }
                 else
                 {
-                    foreach (ItemSubCategoryDTO itemSubCategory in ItemsSubCategories)
+                    foreach (ItemSubCategoryDTO itemSubCategory in ItemSubCategories)
                     {
                         itemSubCategory.Context = this;
                         itemSubCategory.Items.Add(new ItemDTO() { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
@@ -1879,7 +1879,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
                         title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(LoadItemsSubCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}",
+                        text: $"{GetType().Name}.{nameof(LoadItemSubCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}",
                         messageBoxButtons: MessageBoxButton.OK,
                         image: MessageBoxImage.Error));
                 }
@@ -1889,7 +1889,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(LoadItemsSubCategoriesAsync)} \r\n{ex.Message}",
+                    text: $"{GetType().Name}.{nameof(LoadItemSubCategoriesAsync)} \r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error));
             }
@@ -2027,7 +2027,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.CreatedItemType.Entity);
             itemTypeDTO.Context = this;
-            itemTypeDTO.ItemsCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, Name = "Dummy", SubCategories = [] });
+            itemTypeDTO.ItemCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, Name = "Dummy", SubCategories = [] });
             if (SelectedCatalog.Id != itemTypeDTO.Catalog.Id) return Task.CompletedTask;
             SelectedCatalog.ItemTypes.Add(itemTypeDTO);
             SelectedItem = itemTypeDTO;
@@ -2072,11 +2072,11 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemCategoryDTO.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Name = "Dummy", Items = [] });
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemCategoryDTO.ItemType.Id);
             if (itemTypeDTO is null) return;
-            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemsCategories.Count > 0 && itemTypeDTO.ItemsCategories[0].IsDummyChild)
+            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemCategories.Count > 0 && itemTypeDTO.ItemCategories[0].IsDummyChild)
             {
-                await LoadItemsCategoriesAsync(itemTypeDTO);
+                await LoadItemCategoriesAsync(itemTypeDTO);
                 itemTypeDTO.IsExpanded = true;
-                ItemCategoryDTO? itemCategory = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemCategoryDTO.Id);
+                ItemCategoryDTO? itemCategory = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemCategoryDTO.Id);
                 if (itemCategory is null) return;
                 SelectedItem = itemCategory;
                 _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
@@ -2085,12 +2085,12 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             if (itemTypeDTO.IsExpanded == false)
             {
                 itemTypeDTO.IsExpanded = true;
-                itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
+                itemTypeDTO.ItemCategories.Add(itemCategoryDTO);
                 SelectedItem = itemCategoryDTO;
                 _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
                 return;
             }
-            itemTypeDTO.ItemsCategories.Add(itemCategoryDTO);
+            itemTypeDTO.ItemCategories.Add(itemCategoryDTO);
             SelectedItem = itemCategoryDTO;
             _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
         }
@@ -2101,10 +2101,10 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
                 {
-                    ItemCategoryDTO? categoryToRemove = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.DeletedItemCategory.DeletedId);
+                    ItemCategoryDTO? categoryToRemove = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.DeletedItemCategory.DeletedId);
                     if (categoryToRemove != null)
                     {
-                        itemTypeDTO.ItemsCategories.Remove(categoryToRemove);
+                        itemTypeDTO.ItemCategories.Remove(categoryToRemove);
                         break;
                     }
                 }
@@ -2118,7 +2118,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTOToUpdate = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.Id);
+            ItemCategoryDTO? itemCategoryDTOToUpdate = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.Id);
             if (itemCategoryDTOToUpdate is null) return Task.CompletedTask;
             itemCategoryDTOToUpdate.Id = message.UpdatedItemCategory.Entity.Id;
             itemCategoryDTOToUpdate.Name = message.UpdatedItemCategory.Entity.Name;
@@ -2133,11 +2133,11 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemSubCategoryDTO.Items.Add(new ItemDTO() { IsDummyChild = true, Name = "Dummy" });
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.Id);
             if (itemCategoryDTO is null) return;
             if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
             {
-                await LoadItemsSubCategoriesAsync(itemCategoryDTO);
+                await LoadItemSubCategoriesAsync(itemCategoryDTO);
                 itemCategoryDTO.IsExpanded = true;
                 ItemSubCategoryDTO? itemSubCategory = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.Id);
                 if (itemSubCategory is null) return;
@@ -2164,7 +2164,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
                 {
-                    foreach (var itemCategoryDTO in itemTypeDTO.ItemsCategories)
+                    foreach (var itemCategoryDTO in itemTypeDTO.ItemCategories)
                     {
                         ItemSubCategoryDTO? subCategoryToRemove = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.DeletedItemSubCategory.DeletedId);
                         if (subCategoryToRemove != null)
@@ -2184,7 +2184,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.Id);
             if (itemCategoryDTO is null) return Task.CompletedTask;
             ItemSubCategoryDTO? itemSubCategoryDTOToUpdate = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.Id);
             if (itemSubCategoryDTOToUpdate is null) return Task.CompletedTask;
@@ -2234,7 +2234,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
                 {
-                    foreach (var itemCategoryDTO in itemTypeDTO.ItemsCategories)
+                    foreach (var itemCategoryDTO in itemTypeDTO.ItemCategories)
                     {
                         foreach (var itemSubCategoryDTO in itemCategoryDTO.SubCategories)
                         {
@@ -2260,7 +2260,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemDTO.Context = this;
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
             if (itemCategoryDTO is null) return;
             ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
             if (itemSubCategoryDTO is null) return;
@@ -2293,7 +2293,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             item.Context = this;
             ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.ItemType.Id);
             if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemsCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.Id);
+            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.Id);
             if (itemCategoryDTO is null) return Task.CompletedTask;
             ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.Id);
             if (itemSubCategoryDTO is null) return Task.CompletedTask;

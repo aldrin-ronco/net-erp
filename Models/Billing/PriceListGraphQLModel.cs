@@ -1,6 +1,7 @@
 ﻿using Models.Global;
 using Models.Inventory;
 using System;
+using static Models.Global.GraphQLResponseTypes;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace Models.Billing
         public bool PriceListIncludeTax { get; set; }
         public bool UseAlternativeFormula { get; set; }
         public StorageGraphQLModel Storage { get; set; } = new();
-        public IEnumerable<PaymentMethodGraphQLModel> PaymentMethods { get; set; } = [];
+        public IEnumerable<PaymentMethodGraphQLModel> ExcludedPaymentMethods { get; set; } = [];
         public bool Archived { get; set; }
         public string FullName 
         {
@@ -55,8 +56,8 @@ namespace Models.Billing
 
     public class PriceListDataContext
     {
-        public ObservableCollection<CatalogGraphQLModel> Catalogs { get; set; } = [];
-        public ObservableCollection<PriceListGraphQLModel> PriceLists { get; set; } = [];
+        public PageType<CatalogGraphQLModel> CatalogsPage { get; set; } = new();
+        public PageType<PriceListGraphQLModel> PriceListsPage { get; set; } = new();
     }
 
     public class PriceListDeleteMessage

@@ -21,7 +21,7 @@
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
 
         <!-- ItemTypeDTO template -->
-        <HierarchicalDataTemplate DataType="{x:Type model:ItemTypeDTO}" ItemsSource="{Binding ItemsCategories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+        <HierarchicalDataTemplate DataType="{x:Type model:ItemTypeDTO}" ItemsSource="{Binding ItemCategories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0" VerticalAlignment="Center" Background="Transparent">
                 <StackPanel.ContextMenu>
                     <ContextMenu>

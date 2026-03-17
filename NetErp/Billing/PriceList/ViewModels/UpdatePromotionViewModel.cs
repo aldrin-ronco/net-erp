@@ -9,6 +9,7 @@ using Models.Global;
 using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
 using Services.Billing.DAL.PostgreSQL;
@@ -243,11 +244,11 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemsCategories => SelectedItemType != null && SelectedItemType.Id != 0;
+        public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
 
         private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = [];
 
-        public ObservableCollection<ItemCategoryGraphQLModel> ItemsCategories
+        public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
             get { return _itemsCategories; }
             set
@@ -255,7 +256,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_itemsCategories != value)
                 {
                     _itemsCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsCategories));
+                    NotifyOfPropertyChange(nameof(ItemCategories));
                 }
             }
         }
@@ -285,7 +286,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = [];
 
-        public ObservableCollection<ItemSubCategoryGraphQLModel> ItemsSubCategories
+        public ObservableCollection<ItemSubCategoryGraphQLModel> ItemSubCategories
         {
             get { return _itemsSubCategories; }
             set
@@ -293,7 +294,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (_itemsSubCategories != value)
                 {
                     _itemsSubCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemsSubCategories));
+                    NotifyOfPropertyChange(nameof(ItemSubCategories));
                 }
             }
         }
@@ -320,7 +321,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public bool CanShowItemsSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
+        public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
 
 
 
@@ -369,24 +370,24 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             _isUpdating = true;
             
-            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemsCategories != null)
+            if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
-                ItemsCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemsCategories);
-                ItemsCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
-                _selectedItemCategory = ItemsCategories.First(x => x.Id == 0);
+                ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
+                ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
+                _selectedItemCategory = ItemCategories.First(x => x.Id == 0);
                 NotifyOfPropertyChange(nameof(SelectedItemCategory));
             }
             else
             {
                 // Reset categories when ItemType is "Show All" (Id = 0)
-                ItemsCategories.Clear();
+                ItemCategories.Clear();
                 _selectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
                 NotifyOfPropertyChange(nameof(SelectedItemCategory));
             }
 
             BuildItemSubCategories();
-            NotifyOfPropertyChange(nameof(CanShowItemsCategories));
-            NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
 
@@ -394,22 +395,22 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             _isUpdating = true;
             
-            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemsSubCategories != null)
+            if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
             {
-                ItemsSubCategories = [.. SelectedItemCategory.ItemsSubCategories];
-                ItemsSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
-                _selectedItemSubCategory = ItemsSubCategories.First(x => x.Id == 0);
+                ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
+                ItemSubCategories.Insert(0, new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" });
+                _selectedItemSubCategory = ItemSubCategories.First(x => x.Id == 0);
                 NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
             }
             else
             {
                 // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
-                ItemsSubCategories.Clear();
+                ItemSubCategories.Clear();
                 _selectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
                 NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
             }
 
-            NotifyOfPropertyChange(nameof(CanShowItemsSubCategories));
+            NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
 
@@ -644,28 +645,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = @"
-                query {
-                  catalogs {
-                    id
-                    name
-                    itemsTypes {
-                      id
-                      name
-                      itemsCategories {
-                        id
-                        name
-                        itemsSubCategories: subCategories {
-                          id
-                          name
-                        }
-                      }
-                    }
-                  }
-                }";
+                var (query, catalogsFragment) = _catalogsQuery.Value;
 
-                var result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, new { });
-                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.Catalogs);
+                dynamic variables = new GraphQLVariables()
+                    .For(catalogsFragment, "pagination", new { pageSize = -1 })
+                    .Build();
+
+                var result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, variables);
+                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
                 var selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 IsInitialized = true;
                 _isUpdating = true;
@@ -1024,5 +1011,34 @@ namespace NetErp.Billing.PriceList.ViewModels
                 }
             }
         }
+
+        #region Query Builders
+
+        private static readonly Lazy<(string Query, GraphQLQueryFragment CatalogsFragment)> _catalogsQuery = new(() =>
+        {
+            var catalogsFields = FieldSpec<PageType<CatalogGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .SelectList(e => e.ItemTypes, it => it
+                        .Field(t => t.Id)
+                        .Field(t => t.Name)
+                        .SelectList(t => t.ItemCategories, ic => ic
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .SelectList(c => c.ItemSubCategories, isc => isc
+                                .Field(s => s.Id)
+                                .Field(s => s.Name)))))
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var catalogsFragment = new GraphQLQueryFragment("catalogsPage", [paginationParam], catalogsFields);
+
+            var query = new GraphQLQueryBuilder([catalogsFragment]).GetQuery();
+            return (query, catalogsFragment);
+        });
+
+        #endregion
     }
 }
