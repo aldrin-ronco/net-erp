@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -25,6 +26,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -266,11 +268,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         public IdentificationTypeDetailViewModel(
             IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
             IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _identificationTypeService = identificationTypeService;
             _eventAggregator = eventAggregator;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -336,19 +340,21 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

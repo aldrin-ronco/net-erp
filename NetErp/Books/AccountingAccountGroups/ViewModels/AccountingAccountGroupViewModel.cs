@@ -5,6 +5,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Books.AccountingAccountGroups.DTO;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -30,6 +31,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -307,7 +309,8 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService)
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _autoMapper = mapper;
             _eventAggregator = eventAggregator;
@@ -315,6 +318,7 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             _dialogService = dialogService;
             _accountingAccountGroupService = accountingAccountGroupService;
             _accountingAccountService = accountingAccountService;
+            _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -379,11 +383,12 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(InitializeAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -433,11 +438,12 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al abrir el diálogo de filtros.\r\n{GetType().Name}.{nameof(OpenFilterDialogAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -542,19 +548,21 @@ namespace NetErp.Books.AccountingAccountGroups.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al realizar operación\r\n{ex.Message}",
+                    text: $"Error al realizar operación.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al realizar operación\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             } finally
             {
                 IsBusy = false;

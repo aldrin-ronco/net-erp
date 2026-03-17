@@ -5,6 +5,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -30,6 +31,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -210,13 +212,15 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
             _identificationTypeService = identificationTypeService;
             _notificationService = notificationService;
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -249,18 +253,19 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache);
+                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo tipo de documento");
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateIdentificationTypeAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -274,18 +279,19 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache);
+                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedIdentificationType);
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar tipo de documento");
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditIdentificationTypeAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -339,19 +345,21 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteIdentificationTypeAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -406,11 +414,12 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadIdentificationTypesAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

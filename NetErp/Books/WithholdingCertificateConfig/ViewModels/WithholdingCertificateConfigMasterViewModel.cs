@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
@@ -32,6 +33,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
 
@@ -217,7 +219,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             Context = context;
             _notificationService = notificationService;
@@ -227,6 +230,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _accountingAccountGroupCache = accountingAccountGroupCache;
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -261,7 +265,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 var detail = new WithholdingCertificateConfigDetailViewModel(
                     Context, _withholdingCertificateConfigService,
                     _accountingAccountGroupService, _accountingAccountGroupCache,
-                    _costCenterCache, _stringLengthCache);
+                    _costCenterCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -276,11 +280,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -297,7 +302,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 var detail = new WithholdingCertificateConfigDetailViewModel(
                     Context, _withholdingCertificateConfigService,
                     _accountingAccountGroupService, _accountingAccountGroupCache,
-                    _costCenterCache, _stringLengthCache);
+                    _costCenterCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.LoadDataForEditAsync(SelectedCertificate.Id);
                 await detail.InitializeAsync();
                 detail.SetForEdit();
@@ -313,11 +318,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -372,19 +378,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -440,11 +448,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadCertificatesAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

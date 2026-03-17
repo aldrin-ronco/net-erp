@@ -46,28 +46,28 @@ namespace Models.Books
     public class AccountingAccountUpdateMasterListMessage
     {
 
-        public List<AccountingAccountGraphQLModel> AccountingAccounts { get; set; }
+        public List<AccountingAccountGraphQLModel> AccountingAccounts { get; set; } = [];
 
     }
     public class CostCenterUpdateMasterListMessage
     {
-        public List<CostCenterGraphQLModel> CostCenters { get; set; }
+        public List<CostCenterGraphQLModel> CostCenters { get; set; } = [];
 
     }
     public class AccountingSourceUpdateMasterListMessage
     {
-        public List<AccountingSourceGraphQLModel> AccountingSources { get; set; }
+        public List<AccountingSourceGraphQLModel> AccountingSources { get; set; } = [];
 
     }
     public class AccountingBookUpdateMasterListMessage
     {
-        public List<AccountingBookGraphQLModel> AccountingBooks { get; set; }
+        public List<AccountingBookGraphQLModel> AccountingBooks { get; set; } = [];
 
     }
     
     public class AccountingAccountDeleteMessage
     {
-        public DeleteResponseType DeletedResponseType { get; set; }
-        public AccountingAccountGraphQLModel DeletedAccountingAccount { get; set; }
+        public required DeleteResponseType DeletedResponseType { get; set; }
+        public required AccountingAccountGraphQLModel DeletedAccountingAccount { get; set; }
     }
 }

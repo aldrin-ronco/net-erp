@@ -19,6 +19,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
@@ -32,6 +33,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
 
@@ -377,7 +379,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             Context = context;
             _withholdingCertificateConfigService = withholdingCertificateConfigService;
@@ -385,6 +388,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _accountingAccountGroupCache = accountingAccountGroupCache;
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -454,11 +458,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al cargar grupos de cuentas.\r\n{GetType().Name}.{nameof(LoadAccountingAccountGroupsAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -492,11 +497,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al cargar cuentas del grupo.\r\n{GetType().Name}.{nameof(LoadGroupAccountsAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -535,19 +541,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

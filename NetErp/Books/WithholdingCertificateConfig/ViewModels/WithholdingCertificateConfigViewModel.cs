@@ -2,6 +2,7 @@ using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
 using Models.Books;
+using Microsoft.VisualStudio.Threading;
 using NetErp.Helpers.Cache;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -34,7 +36,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 _withholdingCertificateConfigMasterViewModel ??= new WithholdingCertificateConfigMasterViewModel(
                     this, _notificationService, _dialogService, _withholdingCertificateConfigService,
-                    _accountingAccountGroupService, _accountingAccountGroupCache, _costCenterCache, _stringLengthCache);
+                    _accountingAccountGroupService, _accountingAccountGroupCache, _costCenterCache, _stringLengthCache, _joinableTaskFactory);
                 return _withholdingCertificateConfigMasterViewModel;
             }
         }
@@ -52,7 +54,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -63,6 +66,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _accountingAccountGroupCache = accountingAccountGroupCache;
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
 
             _ = ActivateMasterViewModelAsync();
         }
