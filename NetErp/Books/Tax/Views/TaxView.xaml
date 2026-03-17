@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:NetErp.Books.Tax.Views"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
@@ -15,7 +14,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="10">
+            CornerRadius="8" Margin="5">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -27,12 +26,12 @@
             </Grid.RowDefinitions>
 
             <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="20,15,20,5"/>
+            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
             <!-- Row 1: Search box -->
             <dxe:ButtonEdit
                 Grid.Row="1"
-                Margin="20,0,20,0"
+                Margin="10,0,10,0"
                 NullText="Escribe por lo menos 2 letras para iniciar la busqueda"
                 ToolTip="Escribe aqui para buscar"
                 MinHeight="25"
@@ -49,7 +48,7 @@
             <!-- Row 2: Active filter -->
             <dxe:CheckEdit Grid.Row="2" Content="Mostrar únicamente impuestos activos"
                            Style="{StaticResource BlueCheckedTextStyle}"
-                           Margin="20,10,20,0"
+                           Margin="10,6,10,0"
                            Padding="2"
                            IsChecked="{Binding ShowOnlyActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
@@ -57,10 +56,10 @@
             <busyIndicator:BusyMask x:Name="BusyIndicator"
                                     IsBusy="{Binding IsBusy}"
                                     IndicatorType="BouncingDot"
-                                    BusyContent="Please wait..."
+                                    BusyContent="Por favor espere..."
                                     BusyContentMargin="0,20,0,0"
                                     Grid.Row="3">
-                <dxg:GridControl Margin="20,10,20,0"
+                <dxg:GridControl Margin="10,6,10,0"
                                  EnableSmartColumnsGeneration="True"
                                  SelectedItem="{Binding Path=SelectedTax, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  ItemsSource="{Binding Path=Taxes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
@@ -101,7 +100,7 @@
 
             <!-- Row 4: Pagination -->
             <uc:GridPaging Grid.Row="4"
-                           Margin="20,10,20,0"
+                           Margin="10,6,10,0"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ChangedIndexCommand="{Binding PaginationCommand}"
@@ -111,7 +110,7 @@
                            ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Row 5: Action buttons centered -->
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <!-- Nuevo -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                         IsEnabled="{Binding Path=IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
@@ -119,7 +118,17 @@
                         <dxmvvm:EventToCommand Command="{Binding CreateTaxCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
@@ -130,7 +139,17 @@
                         <dxmvvm:EventToCommand Command="{Binding EditTaxCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
@@ -141,7 +160,17 @@
                         <dxmvvm:EventToCommand Command="{Binding DeleteTaxCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>

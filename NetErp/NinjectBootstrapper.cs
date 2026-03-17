@@ -100,6 +100,11 @@ namespace NetErp
             _ = kernel.Bind<IWindowManager>().To<WindowManager>().InSingletonScope();
             _ = kernel.Bind<IEventAggregator>().To<EventAggregator>().InSingletonScope();
 
+            // Threading
+            var joinableTaskContext = new Microsoft.VisualStudio.Threading.JoinableTaskContext();
+            _ = kernel.Bind<Microsoft.VisualStudio.Threading.JoinableTaskContext>().ToConstant(joinableTaskContext).InSingletonScope();
+            _ = kernel.Bind<Microsoft.VisualStudio.Threading.JoinableTaskFactory>().ToConstant(joinableTaskContext.Factory).InSingletonScope();
+
             // Entity Caches (individual caches per entity for better maintainability)
             // Cada cache se registra como su tipo concreto (para inyección directa en ViewModels)
             // y como IEntityCache (para limpieza centralizada al salir de empresa)

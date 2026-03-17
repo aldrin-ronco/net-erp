@@ -30,6 +30,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -210,13 +211,15 @@ namespace NetErp.Books.TaxCategory.ViewModels
             IRepository<TaxCategoryGraphQLModel> taxCategoryService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
             _taxCategoryService = taxCategoryService;
             _notificationService = notificationService;
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -234,11 +237,12 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
                 await TryCloseAsync();
             }
         }
@@ -261,18 +265,19 @@ namespace NetErp.Books.TaxCategory.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache);
+                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva categoría de impuesto");
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateTaxCategoryAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -286,18 +291,19 @@ namespace NetErp.Books.TaxCategory.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache);
+                var detail = new TaxCategoryDetailViewModel(_taxCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedTaxCategory);
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar categoría de impuesto");
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditTaxCategoryAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -351,19 +357,21 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
             catch (AsyncException ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteTaxCategoryAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -418,11 +426,12 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
                     title: "Atención!",
                     text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadTaxCategoriesAsync)}: {ex.Message}",
                     messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                    image: MessageBoxImage.Error);
             }
             finally
             {

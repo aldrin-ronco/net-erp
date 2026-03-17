@@ -1,13 +1,10 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
 using Models.Books;
-using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -15,8 +12,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
@@ -31,6 +28,8 @@ namespace NetErp.Books.Tax.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCategoryCache _taxCategoryCache;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -56,7 +55,20 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region Form Properties
 
-        public int Id { get; set; }
+        private int _id;
+        public int Id
+        {
+            get => _id;
+            set
+            {
+                if (_id != value)
+                {
+                    _id = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
 
         private string _name = string.Empty;
         public string Name
@@ -134,6 +146,8 @@ namespace NetErp.Books.Tax.ViewModels
                 {
                     _alternativeFormula = value;
                     NotifyOfPropertyChange(nameof(AlternativeFormula));
+                    this.TrackChange(nameof(AlternativeFormula));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -330,9 +344,15 @@ namespace NetErp.Books.Tax.ViewModels
 
         #endregion
 
+        #region StringLength Properties
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<TaxGraphQLModel>(nameof(TaxGraphQLModel.Name));
+
+        #endregion
+
         #region Validation (INotifyDataErrorInfo)
 
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -352,7 +372,7 @@ namespace NetErp.Books.Tax.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -476,12 +496,16 @@ namespace NetErp.Books.Tax.ViewModels
             IRepository<TaxGraphQLModel> taxService,
             IEventAggregator eventAggregator,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
-            TaxCategoryCache taxCategoryCache)
+            TaxCategoryCache taxCategoryCache,
+            StringLengthCache stringLengthCache,
+            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory)
         {
             _taxService = taxService;
             _eventAggregator = eventAggregator;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _taxCategoryCache = taxCategoryCache;
+            _stringLengthCache = stringLengthCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -497,28 +521,43 @@ namespace NetErp.Books.Tax.ViewModels
 
             AccountingAccountOperations = [.. _auxiliaryAccountingAccountCache.Items];
             AccountingAccountDevolutions = [.. _auxiliaryAccountingAccountCache.Items];
-
             TaxCategories = [.. _taxCategoryCache.Items];
-
-            IsActive = true;
-            Rate = 0;
         }
 
         #endregion
 
-        #region Lifecycle
+        #region SetForNew / SetForEdit
 
-        protected override void OnViewReady(object view)
+        public void SetForNew()
         {
-            base.OnViewReady(view);
-            ValidateProperties();
-            this.AcceptChanges();
-            if (IsNewRecord)
-            {
-                this.SeedValue(nameof(Rate), 0m);
-            }
+            IsActive = true;
+            Rate = 0;
             Formula = "Formula por definir";
             AlternativeFormula = "AlternativeFormula por definir";
+
+            this.ClearSeeds();
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(Rate), Rate);
+            this.SeedValue(nameof(Formula), Formula);
+            this.SeedValue(nameof(AlternativeFormula), AlternativeFormula);
+            this.AcceptChanges();
+            ValidateProperties();
+        }
+
+        public void SetForEdit()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Rate), Rate);
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(Formula), Formula);
+            this.SeedValue(nameof(AlternativeFormula), AlternativeFormula);
+            this.SeedValue(nameof(TaxCategoryId), TaxCategoryId);
+            this.SeedValue(nameof(GeneratedTaxAccountId), GeneratedTaxAccountId);
+            this.SeedValue(nameof(GeneratedTaxRefundAccountId), GeneratedTaxRefundAccountId);
+            this.SeedValue(nameof(DeductibleTaxAccountId), DeductibleTaxAccountId);
+            this.SeedValue(nameof(DeductibleTaxRefundAccountId), DeductibleTaxRefundAccountId);
+            this.AcceptChanges();
+            ValidateProperties();
         }
 
         #endregion
@@ -527,9 +566,10 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            string query = _loadByIdQuery.Value;
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
+            var (fragment, query) = _loadByIdQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
 
             var tax = await _taxService.FindByIdAsync(query, variables);
             PopulateFromTax(tax);
@@ -548,7 +588,6 @@ namespace NetErp.Books.Tax.ViewModels
             DeductibleTaxAccountId = tax.DeductibleTaxAccount?.Id;
             DeductibleTaxRefundAccountId = tax.DeductibleTaxRefundAccount?.Id;
             Id = tax.Id;
-            this.AcceptChanges();
         }
 
         #endregion
@@ -560,12 +599,12 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
                 UpsertResponseType<TaxGraphQLModel> result = await ExecuteSaveAsync();
+
                 if (!result.Success)
                 {
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -575,24 +614,28 @@ namespace NetErp.Books.Tax.ViewModels
                 await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new TaxCreateMessage { CreatedTax = result }
-                        : new TaxUpdateMessage { UpdatedTax = result }
-                );
+                        : new TaxUpdateMessage { UpdatedTax = result },
+                    CancellationToken.None);
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -602,18 +645,25 @@ namespace NetErp.Books.Tax.ViewModels
 
         public async Task<UpsertResponseType<TaxGraphQLModel>> ExecuteSaveAsync()
         {
-            if (IsNewRecord)
+            try
             {
-                string query = _createQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
+                if (IsNewRecord)
+                {
+                    var (_, query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                    return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    var (_, query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                string query = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Id;
-                return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -626,7 +676,7 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -640,12 +690,13 @@ namespace NetErp.Books.Tax.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateTaxInput!");
-            var fragment = new GraphQLQueryFragment("createTax", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createTax",
+                [new("input", "CreateTaxInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<TaxGraphQLModel>>
                 .Create()
@@ -659,16 +710,13 @@ namespace NetErp.Books.Tax.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateTaxInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateTax", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateTax",
+                [new("data", "UpdateTaxInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<TaxGraphQLModel>
                 .Create()
@@ -699,19 +747,11 @@ namespace NetErp.Books.Tax.ViewModels
                     .Field(a => a.Name))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("tax", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("tax",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
-
-        #endregion
-
-        #region Helper
-
-        public new void AcceptChanges()
-        {
-            ViewModelExtensions.AcceptChanges(this);
-        }
 
         #endregion
     }
