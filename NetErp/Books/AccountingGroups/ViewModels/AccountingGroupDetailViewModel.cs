@@ -118,6 +118,9 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                     NotifyOfPropertyChange(nameof(AllowAiu));
                     NotifyOfPropertyChange(nameof(IsVisibleAiu));
                     this.TrackChange(nameof(AllowAiu));
+                    ValidateIntProperty(nameof(SelectedAccountAiuAdministration), SelectedAccountAiuAdministration?.Id);
+                    ValidateIntProperty(nameof(SelectedAccountAiuUnforeseen), SelectedAccountAiuUnforeseen?.Id);
+                    ValidateIntProperty(nameof(SelectedAccountAiuUtility), SelectedAccountAiuUtility?.Id);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -226,6 +229,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 {
                     _selectedAccountAiuAdministration = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuAdministration));
+                    ValidateIntProperty(nameof(SelectedAccountAiuAdministration), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuAdministration));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -243,6 +247,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 {
                     _selectedAccountAiuUnforeseen = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuUnforeseen));
+                    ValidateIntProperty(nameof(SelectedAccountAiuUnforeseen), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuUnforeseen));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -260,6 +265,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 {
                     _selectedAccountAiuUtility = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuUtility));
+                    ValidateIntProperty(nameof(SelectedAccountAiuUtility), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuUtility));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -490,6 +496,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                     break;
                 case nameof(SelectedSalesPrimaryTax):
                     if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un impuesto de venta");
+                    break;
+                case nameof(SelectedAccountAiuAdministration):
+                    if (AllowAiu && (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar una cuenta de administración AIU");
+                    break;
+                case nameof(SelectedAccountAiuUnforeseen):
+                    if (AllowAiu && (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar una cuenta de imprevistos AIU");
+                    break;
+                case nameof(SelectedAccountAiuUtility):
+                    if (AllowAiu && (!value.HasValue || value == 0)) AddError(propertyName, "Debe seleccionar una cuenta de utilidad AIU");
                     break;
             }
         }
