@@ -10,7 +10,6 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:uc="clr-namespace:NetErp.UserControls"
-             xmlns:cal="http://caliburnmicro.com"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
@@ -54,6 +53,10 @@
                               ItemsSource="{Binding Path=CostCenters, Mode=OneWay}"
                               DisplayMember="Name" ValueMember="Id"
                               EditValue="{Binding Path=SelectedCostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              NullText="Mostrar todos los centros de costo"
+                              ShowNullTextForEmptyValue="True"
+                              AllowNullInput="True"
+                              NullValueButtonPlacement="EditBox"
                               BorderBrush="#C8CED6" Padding="2"/>
 
             <!-- Row 3: Active filter -->
@@ -77,8 +80,13 @@
                         <dxg:TableView AllowEditing="False"
                                        AllowCascadeUpdate="False"
                                        EnableSelectedRowAppearance="True"
-                                       ShowGroupPanel="False" AlternateRowBackground="Beige"
-                                       AllowColumnMoving="False">
+                                       ShowGroupPanel="False"
+                                       AlternateRowBackground="Beige"
+                                       AllowColumnMoving="False"
+                                       IsColumnMenuEnabled="False"
+                                       ColumnFilterPopupMode="Disabled"
+                                       AllowSorting="False"
+                                       AllowColumnFiltering="False">
                             <dxg:TableView.RowStyle>
                                 <Style TargetType="dxg:RowControl">
                                     <Style.Triggers>
@@ -100,6 +108,12 @@
                                     Binding="{Binding AccountingEntity.Address, Mode=OneWay}"/>
                     <dxg:GridColumn Header="Información telefónica" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding AccountingEntity.TelephonicInformation, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Estado" HorizontalHeaderContentAlignment="Center" Width="80"
+                                    Binding="{Binding IsActive, Converter={dxmvvm:BooleanToObjectConverter TrueValue='Activo', FalseValue='Inactivo'}}">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings HorizontalContentAlignment="Center"/>
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
 
@@ -123,7 +137,17 @@
                         <dxmvvm:EventToCommand Command="{Binding CreateSellerCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>

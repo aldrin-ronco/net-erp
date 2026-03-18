@@ -17,7 +17,7 @@ namespace Extensions.Sellers
         /// <param name="updatedSeller">BillingSellerDTO instance</param>
         public static void Replace(this ObservableCollection<SellerDTO> sellers, SellerDTO updatedSeller)
         {
-            SellerDTO sellerToReplace = sellers.FirstOrDefault(x => x.Id == updatedSeller.Id);
+            SellerDTO? sellerToReplace = sellers.FirstOrDefault(x => x.Id == updatedSeller.Id);
             if (sellerToReplace != null)
             {
                 int index = sellers.IndexOf(sellerToReplace);

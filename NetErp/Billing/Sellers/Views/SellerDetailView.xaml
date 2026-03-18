@@ -19,19 +19,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
     </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.55"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.85"/>
-    </UserControl.Height>
 
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -39,7 +27,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -269,7 +259,13 @@
                                 <dxe:TextEdit x:Name="Address" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="11"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding AddressMaxLength}"
-                                              Padding="3" BorderBrush="#C8CED6"/>
+                                              Padding="3" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
+
+                                <!-- Vendedor activo -->
+                                <dxe:CheckEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12"
+                                               IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               Content="Vendedor activo"
+                                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
                             </Grid>
                         </dx:DXTabItem>
 
@@ -393,7 +389,7 @@
                         <dx:DXTabItem Header="Otros Datos">
                             <StackPanel Margin="0,8,0,0">
                                 <!-- Zona -->
-                                <TextBlock Text="Zonas" FontSize="13" Margin="0,0,0,5"/>
+                                <TextBlock Text="Zona" FontSize="13" Margin="0,0,0,3"/>
                                 <dxg:LookUpEdit Margin="0,0,0,8" Padding="3"
                                                 AutoPopulateColumns="False"
                                                 IsCaseSensitiveSearch="False"
@@ -424,11 +420,6 @@
                                     </dxg:LookUpEdit.ItemsPanel>
                                 </dxg:LookUpEdit>
 
-                                <!-- Bloquear vendedor -->
-                                <dxe:CheckEdit Margin="0,0,0,6"
-                                               IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={dxmvvm:BooleanNegationConverter}}"
-                                               Content="Bloquear este vendedor"
-                                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
                             </StackPanel>
                         </dx:DXTabItem>
                     </dx:DXTabControl>
