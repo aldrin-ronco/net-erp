@@ -9,6 +9,7 @@ using Models.Global;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Inventory.CatalogItems.ViewModels;
 using System;
 using System.Collections;
@@ -18,13 +19,9 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Xml.Linq;
-using Xceed.Wpf.Toolkit.Primitives;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
@@ -34,7 +31,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
-        private readonly IRepository<StorageGraphQLModel> _storageService;
+        private readonly StorageCache _storageCache;
+        private readonly CostCenterCache _costCenterCache;
 
         private string _name = string.Empty;
 
@@ -278,28 +276,16 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        //TODO:  refactorizar mensaje de error
         public async Task InitializeAsync()
         {
             try
             {
-                string query = @"
-                    query {
-                      storages {
-                        id
-                        name
-                      }
-                      costCenters {
-                        id
-                        name
-                        isTaxable
-                        priceListIncludeTax
-                      }
-                    }
-                ";
-                var result = await _storageService.GetDataContextAsync<InitializeDataContext>(query, new { });
-                Storages = [.. result.Storages];
-                CostCenters = [.. result.CostCenters];
+                await Task.WhenAll(
+                    _storageCache.EnsureLoadedAsync(),
+                    _costCenterCache.EnsureLoadedAsync()
+                );
+                Storages = [.. _storageCache.Items];
+                CostCenters = [.. _costCenterCache.Items];
                 RefreshCostCenters();
                 Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
                 SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("Invalid null reference");
@@ -351,12 +337,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         public CreatePriceListModalViewModel(
             Helpers.IDialogService dialogService,
             IRepository<PriceListGraphQLModel> priceListService,
-            IRepository<StorageGraphQLModel> storageService)
+            StorageCache storageCache,
+            CostCenterCache costCenterCache)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _priceListService = priceListService;
-            _storageService = storageService;
+            _storageCache = storageCache;
+            _costCenterCache = costCenterCache;
         }
 
         protected override void OnViewReady(object view)

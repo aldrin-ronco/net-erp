@@ -13,6 +13,7 @@ using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
 using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
@@ -51,7 +52,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
 
         //Service necesario en ventanas modales
-        private readonly IRepository<StorageGraphQLModel> _storageService;
+        private readonly StorageCache _storageCache;
+        private readonly CostCenterCache _costCenterCache;
         
         public PriceListViewModel Context { get; set; }
         public string MaskN2 { get; set; } = "n2";
@@ -385,7 +387,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, _priceListService, _storageService);
+                var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, _priceListService, _storageCache, _costCenterCache);
                 await viewModel.InitializeAsync();
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
             }
@@ -429,7 +431,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     MainIsBusy = false;
                     return;
                 }
-                var viewModel = new UpdatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, Context.AutoMapper, _priceListService, _storageService);
+                var viewModel = new UpdatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, Context.AutoMapper, _priceListService, _storageCache, _costCenterCache);
                 await viewModel.InitializeAsync();
                 viewModel.SelectedPriceListId = SelectedPriceList.Id;
                 viewModel.Name = SelectedPriceList.Name;
@@ -992,7 +994,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IPriceListCalculatorFactory calculatorFactory,
             Helpers.IDialogService dialogService,
             IRepository<PriceListGraphQLModel> priceListService,
-            IRepository<StorageGraphQLModel> storageService)
+            StorageCache storageCache,
+            CostCenterCache costCenterCache)
         {
             Context = context;
             _priceListDetailService = priceListDetailService;
@@ -1001,7 +1004,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             _calculatorFactory = calculatorFactory;
             _dialogService = dialogService;
             _priceListService = priceListService;
-            _storageService = storageService;
+            _storageCache = storageCache;
+            _costCenterCache = costCenterCache;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
             Messenger.Default.Register<ReturnedDataFromCreatePriceListModalViewMessage<PriceListGraphQLModel>>(this, "CreatePriceList", false, OnCreatePriceList);
             Messenger.Default.Register<ReturnedDataFromUpdatePriceListModalViewMessage<PriceListGraphQLModel>>(this, "UpdatePriceList", false, OnUpdatePriceList);

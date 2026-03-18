@@ -10,6 +10,7 @@ using Models.Billing;
 using Models.Global;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using Ninject.Activation;
 using System;
 using System.Collections;
@@ -33,7 +34,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IMapper _autoMapper;
         Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
-        private readonly IRepository<StorageGraphQLModel> _storageService;
+        private readonly StorageCache _storageCache;
+        private readonly CostCenterCache _costCenterCache;
 
         private string _name;
 
@@ -374,18 +376,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                await Task.WhenAll(
+                    _storageCache.EnsureLoadedAsync(),
+                    _costCenterCache.EnsureLoadedAsync()
+                );
+
+                Storages = [.. _storageCache.Items];
+                CostCenters = [.. _costCenterCache.Items];
+                RefreshCostCenters();
+                Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
+
+                // PaymentMethods se carga por query directa (no tiene cache aún)
                 string query = @"
                     query {
-                      storages {
-                        id
-                        name
-                      }
-                      costCenters {
-                        id
-                        name
-                        isTaxable
-                        priceListIncludeTax
-                      }
                       paymentMethods {
                         id
                         abbreviation
@@ -393,11 +396,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                       }
                     }
                 ";
-                var result = await _storageService.GetDataContextAsync<InitializeDataContext>(query, new { });
-                Storages = [.. result.Storages];
-                CostCenters = [.. result.CostCenters];
-                RefreshCostCenters();
-                Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
+                var result = await _priceListService.GetDataContextAsync<InitializeDataContext>(query, new { });
                 PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(result.PaymentMethods)];
             }
             catch (Exception ex)
@@ -446,13 +445,15 @@ namespace NetErp.Billing.PriceList.ViewModels
             Helpers.IDialogService dialogService, 
             IMapper autoMapper,
             IRepository<PriceListGraphQLModel> priceListService,
-            IRepository<StorageGraphQLModel> storageService)
+            StorageCache storageCache,
+            CostCenterCache costCenterCache)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _autoMapper = autoMapper;
             _priceListService = priceListService;
-            _storageService = storageService;
+            _storageCache = storageCache;
+            _costCenterCache = costCenterCache;
         }
 
         protected override void OnViewReady(object view)
