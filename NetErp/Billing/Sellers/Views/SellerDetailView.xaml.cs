@@ -1,24 +1,26 @@
-﻿using System.Windows;
+using NetErp.Billing.Sellers.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Billing.Sellers.Views
 {
-    /// <summary>
-    /// Lógica de interacción para SellerDetailView.xaml
-    /// </summary>
     public partial class SellerDetailView : UserControl
     {
         public SellerDetailView()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
         }
 
-        private void ToolBar_Loaded(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            ToolBar toolBar = sender as ToolBar;
-            if (toolBar.Template.FindName("OverflowGrid", toolBar) is FrameworkElement overflowGrid)
+            Loaded -= OnLoaded;
+            if (DataContext is SellerDetailViewModel vm)
             {
-                overflowGrid.Visibility = Visibility.Collapsed;
+                if (vm.IsNewRecord)
+                    IdentificationNumber.Focus();
+                else
+                    FirstName.Focus();
             }
         }
     }

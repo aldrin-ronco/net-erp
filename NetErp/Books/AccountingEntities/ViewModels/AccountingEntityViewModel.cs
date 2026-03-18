@@ -252,7 +252,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity);
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity);
+            }
+            catch (StringLengthNotAvailableException ex)
+            {
+                ThemedMessageBox.Show("Atención!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                await TryCloseAsync();
+                return;
+            }
             await LoadAccountingEntitiesAsync();
             this.SetFocus(() => FilterSearch);
         }

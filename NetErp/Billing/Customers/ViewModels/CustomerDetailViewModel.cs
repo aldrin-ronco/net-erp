@@ -123,7 +123,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     _selectedZone = value;
                     NotifyOfPropertyChange(nameof(SelectedZone));
-                    this.TrackChange(nameof(SelectedZone));
+                    this.TrackChange(nameof(SelectedZone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -632,14 +632,18 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(nameof(CaptureInfoAsPJ));
                     if (CaptureInfoAsPN)
                     {
+                        BusinessName = string.Empty;
                         ClearErrors(nameof(BusinessName));
                         ValidateProperty(nameof(FirstName), FirstName);
                         ValidateProperty(nameof(FirstLastName), FirstLastName);
                     }
                     if (CaptureInfoAsPJ)
                     {
+                        FirstName = string.Empty;
+                        MiddleName = string.Empty;
+                        FirstLastName = string.Empty;
+                        MiddleLastName = string.Empty;
                         TradeName = string.Empty;
-                        NotifyOfPropertyChange(nameof(TradeName));
                         ClearErrors(nameof(FirstName));
                         ClearErrors(nameof(FirstLastName));
                         ValidateProperty(nameof(BusinessName), BusinessName);
@@ -941,6 +945,7 @@ namespace NetErp.Billing.Customers.ViewModels
             BlockingReason = customer.BlockingReason;
             RetainsAnyBasis = customer.RetainsAnyBasis;
 
+            SelectedRegime = customer.AccountingEntity.Regime;
             SelectedCaptureType = (CaptureTypeEnum)Enum.Parse(typeof(CaptureTypeEnum), customer.AccountingEntity.CaptureType);
             SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Id == customer.AccountingEntity.IdentificationType.Id);
             FirstName = customer.AccountingEntity.FirstName;
@@ -1394,7 +1399,6 @@ namespace NetErp.Billing.Customers.ViewModels
             switch (propertyName)
             {
                 case nameof(IdentificationNumber):
-                    if (SelectedIdentificationType == null) break;
                     if (string.IsNullOrEmpty(value) || value.Trim().Length < SelectedIdentificationType.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
                     break;
                 case nameof(FirstName):
@@ -1463,6 +1467,11 @@ namespace NetErp.Billing.Customers.ViewModels
                     _emails.CollectionChanged -= Emails_CollectionChanged;
                 }
 
+                _identificationTypes = null!;
+                _countries = null!;
+                _zones = null!;
+                _selectedIdentificationType = null!;
+                _selectedCountry = null!;
                 this.AcceptChanges();
                 Emails?.Clear();
                 WithholdingTypes?.Clear();
