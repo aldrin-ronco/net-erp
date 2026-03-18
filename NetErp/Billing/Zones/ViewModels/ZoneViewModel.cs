@@ -4,7 +4,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
@@ -31,6 +31,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -230,13 +231,15 @@ namespace NetErp.Billing.Zones.ViewModels
             IRepository<ZoneGraphQLModel> zoneService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -248,9 +251,22 @@ namespace NetErp.Billing.Zones.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
-            await LoadZonesAsync();
-            this.SetFocus(() => FilterSearch);
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
+                await LoadZonesAsync();
+                this.SetFocus(() => FilterSearch);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -272,16 +288,17 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva zona");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateZoneAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -295,16 +312,17 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedZone);
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar zona");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -318,7 +336,6 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteZoneQuery.Value;
                 var canDeleteVars = new GraphQLVariables()
@@ -343,37 +360,53 @@ namespace NetErp.Billing.Zones.ViewModels
                 }
 
                 IsBusy = true;
-                var (deleteFragment, deleteQuery) = _deleteZoneQuery.Value;
-                var deleteVars = new GraphQLVariables()
-                    .For(deleteFragment, "id", SelectedZone.Id)
-                    .Build();
-                DeleteResponseType deletedZone = await _zoneService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+                DeleteResponseType deletedZone = await ExecuteDeleteAsync(SelectedZone.Id);
 
                 if (!deletedZone.Success)
                 {
-                    ThemedMessageBox.Show(title: "Atención !",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedZone.Message} \n\n Verifica la información e intenta más tarde.");
+                    ThemedMessageBox.Show(title: "Atención!",
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedZone.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new ZoneDeleteMessage { DeletedZone = deletedZone });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new ZoneDeleteMessage { DeletedZone = deletedZone },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al eliminar el registro.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteZoneAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+            try
+            {
+                var (fragment, query) = _deleteZoneQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _zoneService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -404,9 +437,10 @@ namespace NetErp.Billing.Zones.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

@@ -9,21 +9,20 @@ namespace NetErp.Billing.Zones.DTO
 {
    public class ZoneDTO : Screen
     {
-        private bool _isSelected;
         public bool IsSelected
         {
-            get { return _isSelected; }
+            get;
             set
             {
-                if (_isSelected != value)
+                if (field != value)
                 {
-                    _isSelected = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsSelected));
                 }
             }
         }
         public int Id { get; set; }
-        public string Name { get; set; }
-        public bool IsActive { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public new bool IsActive { get; set; }
     }
 }

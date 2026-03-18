@@ -7,7 +7,6 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="450"
              Background="#EEF1F5">
@@ -18,24 +17,24 @@
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
                 CornerRadius="8" Margin="8,0,8,8" MinWidth="420">
-            <Grid>
+            <Grid Margin="15,15,15,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Form content -->
-                <StackPanel Grid.Row="0" Margin="30,25,30,20">
+                <StackPanel Grid.Row="0">
 
                     <!-- Nombre -->
-                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:TextEdit x:Name="Name"
                                   Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
                                   MaxLength="{Binding NameMaxLength}"
-                                  h:FocusBehavior.IsFocused="True"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  Margin="0,0,0,8"/>
 
                     <!-- Zona activa -->
                     <dxe:CheckEdit Content="Zona activa"
@@ -44,7 +43,7 @@
                 </StackPanel>
 
                 <!-- Button bar centered -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
                         <dxmvvm:Interaction.Behaviors>
