@@ -1,105 +1,164 @@
-﻿<UserControl x:Class="NetErp.Billing.PriceList.Views.CreatePriceListModalView"
+<UserControl x:Class="NetErp.Billing.PriceList.Views.CreatePriceListModalView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:local="clr-namespace:NetErp.Billing.PriceList.Views"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             mc:Ignorable="d" 
-             d:DesignHeight="550" d:DesignWidth="800"
-             d:Background="White" FontFamily="Century Gothic">
+             mc:Ignorable="d"
+             d:DesignHeight="550" d:DesignWidth="500"
+             Background="#EEF1F5">
+
     <UserControl.Resources>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
+        <h:MultiplyConverter x:Key="MultiplyConverter"/>
     </UserControl.Resources>
-    <Grid Height="520" Width="500" Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
-        <!-- Panel de contenido - todos los controles excepto los botones -->
-        <StackPanel Grid.Row="0" Orientation="Vertical">
+    <UserControl.Width>
+        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.35"/>
+    </UserControl.Width>
+    <UserControl.Height>
+        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.75"/>
+    </UserControl.Height>
 
-            <TextBlock Text="Crear nueva lista de precios" HorizontalAlignment="Center" Margin="0 0 0 10" FontWeight="Bold" FontSize="24"/>
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="8,0,8,8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Vertical" Margin="0 0 0 5">
-                <TextBlock Text="Nombre de la lista de precios" Margin="0 0 0 2"/>
-                <dxe:TextEdit Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" CharacterCasing="UPPER" Padding="2">
+            <!-- Form content -->
+            <Grid Grid.Row="0" Margin="15,15,15,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Nombre -->
+                <TextBlock Grid.Row="0" Text="Nombre de la lista de precios" FontSize="13" Margin="0,0,0,5"/>
+                <dxe:TextEdit Grid.Row="1"
+                              Style="{StaticResource FocusedHighlightStyle}"
+                              Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                              CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                              Margin="0,0,0,10">
                     <dxmvvm:Interaction.Behaviors>
                         <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="NameFocus"/>
                     </dxmvvm:Interaction.Behaviors>
                 </dxe:TextEdit>
-            </StackPanel>
 
-            <StackPanel Orientation="Vertical" Margin="0 5 0 15">
-                <TextBlock Text="Bodega para determinar el comportamiento del costo en la lista de precios" Margin="0 0 0 2"/>
-                <dxe:ComboBoxEdit ItemsSource="{Binding Storages, UpdateSourceTrigger=PropertyChanged}" EditValue="{Binding SelectedStorage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                DisplayMember="Name" IsTextEditable="False" Padding="2"/>
-            </StackPanel>
+                <!-- Bodega -->
+                <TextBlock Grid.Row="2" Text="Bodega para el comportamiento del costo" FontSize="13" Margin="0,0,0,5"/>
+                <dxe:ComboBoxEdit Grid.Row="3"
+                                  ItemsSource="{Binding Storages, UpdateSourceTrigger=PropertyChanged}"
+                                  EditValue="{Binding SelectedStorage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  DisplayMember="Name" IsTextEditable="False"
+                                  Padding="2" BorderBrush="#C8CED6" Margin="0,0,0,10"/>
 
-            <dxe:CheckEdit Content="¿Esta lista de precios discrimina impuesto?" Margin="0 5 0 5" Style="{StaticResource BlueCheckedTextStyle}"
-                    IsChecked="{Binding IsTaxable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" FontFamily="Century Gothic"/>
+                <!-- Checkboxes -->
+                <dxe:CheckEdit Grid.Row="4" Content="¿Esta lista de precios discrimina impuesto?"
+                               Margin="0,0,0,6"
+                               IsChecked="{Binding IsTaxable, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
 
-            <!-- Este es el control que se oculta/muestra -->
-            <dxe:CheckEdit Content="¿El precio de venta incluye impuesto?" Margin="0 5 0 5" Style="{StaticResource BlueCheckedTextStyle}"
-                    IsChecked="{Binding PriceListIncludeTax, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" FontFamily="Century Gothic" 
-                    Visibility="{Binding IsTaxable, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+                <dxe:CheckEdit Grid.Row="5" Content="¿El precio de venta incluye impuesto?"
+                               Margin="0,0,0,6"
+                               IsChecked="{Binding PriceListIncludeTax, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               Visibility="{Binding IsTaxable, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0 5 0 5">
-                <RadioButton GroupName="Formula" Content="Calculo por defecto" FontFamily="Century Gothic" Margin="0 0 10 0" Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
-                             IsChecked="{Binding SelectedFormula, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}"/>
-                <RadioButton GroupName="Formula" Content="Calculo alternativo" FontFamily="Century Gothic" Margin="10 0 0 0" Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
-                             IsChecked="{Binding SelectedFormula, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
-            </StackPanel>
+                <!-- Formula -->
+                <Grid Grid.Row="6" Margin="0,4,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Tipo de cálculo" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <RadioButton Grid.Column="1" GroupName="Formula" Content="Por defecto" Margin="0,0,15,0"
+                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                 IsChecked="{Binding SelectedFormula, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, UpdateSourceTrigger=PropertyChanged}"/>
+                    <RadioButton Grid.Column="2" GroupName="Formula" Content="Alternativo"
+                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                 IsChecked="{Binding SelectedFormula, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
 
-            <StackPanel Orientation="Vertical" Margin="0 5 0 5">
-                <StackPanel Orientation="Horizontal" Margin="0 0 0 2">
-                    <Image Source="{dx:DXImage 'Images/Function Library/Information_16x16.png'}" Width="16" Margin="0 0 1 0" VerticalAlignment="Center"/>
-                    <TextBlock FontFamily="Century Gothic" TextWrapping="Wrap">
-                            <Run Text="Si elige esta opción la formula que se utilizará para calcular"/>
-                            <Run Text="el precio de venta" FontWeight="Bold"/>
-                            <Run Text="es: "/>
-                    </TextBlock>
-                </StackPanel>
-                <TextBlock Text="{Binding Formula}" FontFamily="Century Gothic" FontWeight="Bold" Margin="0 2 0 0" HorizontalAlignment="Center"/>
-            </StackPanel>
-        </StackPanel>
-
-        <TextBlock Text="Centros de costos compatibles con esta lista de precios" FontFamily="Century Gothic" Margin="0 30 0 2" Grid.Row="1" HorizontalAlignment="Center" FontWeight="Bold" FontSize="14"/>
-        <dxg:GridControl ItemsSource="{Binding ShadowCostCenters, UpdateSourceTrigger=PropertyChanged}" Grid.Row="2">
-            <dxg:GridControl.View>
-                <dxg:TableView AllowCascadeUpdate="False" 
-                                       AllowPaging="False"
-                                       EnableSelectedRowAppearance="True"
-                                       ShowGroupPanel="False" AlternateRowBackground="Beige" AllowEditing="False">
-                </dxg:TableView>
-            </dxg:GridControl.View>
-
-            <dxg:GridColumn Header="Nombre" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-        </dxg:GridControl>
-
-        <!-- Panel de botones en una fila separada que queda fija -->
-        <StackPanel Grid.Row="3" HorizontalAlignment="Center" Orientation="Horizontal" Margin="0 10 0 0">
-            <Button Margin="0 0 5 0" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Guardar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
-                        <Image Source="{dx:DXImage 'Images/Save/Save_16x16.png'}"/>
+                <!-- Info formula -->
+                <StackPanel Grid.Row="7" Orientation="Vertical" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                        <Image Source="{dx:DXImage 'Images/Function Library/Information_16x16.png'}" Width="16" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11" FontStyle="Italic">
+                            <Run Text="Fórmula para calcular el"/>
+                            <Run Text="precio de venta" FontWeight="Bold"/>
+                        </TextBlock>
                     </StackPanel>
-                </Button.Content>
-            </Button>
-            <Button Command="{Binding CancelCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Cancelar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
-                    <Image Source="{dx:DXImage 'Images/Actions/Cancel_16x16.png'}"/>
+                    <TextBlock Text="{Binding Formula}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
                 </StackPanel>
-            </Button>
-        </StackPanel>
-    </Grid>
+
+                <!-- Grid centros de costo -->
+                <DockPanel Grid.Row="8">
+                    <TextBlock DockPanel.Dock="Top" Text="Centros de costos compatibles" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <dxg:GridControl ItemsSource="{Binding ShadowCostCenters, UpdateSourceTrigger=PropertyChanged}">
+                        <dxg:GridControl.View>
+                            <dxg:TableView AllowCascadeUpdate="False"
+                                           EnableSelectedRowAppearance="True"
+                                           ShowGroupPanel="False" AlternateRowBackground="Beige"
+                                           AllowEditing="False" AllowColumnMoving="False"/>
+                        </dxg:GridControl.View>
+                        <dxg:GridColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                    </dxg:GridControl>
+                </DockPanel>
+            </Grid>
+
+            <!-- Botones -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                <!-- Guardar -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <!-- Cancelar -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        IsCancel="True">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
 </UserControl>

@@ -14,19 +14,19 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class CostCenterCache : IEntityCache<CostCenterGraphQLModel>,
-        IHandle<CostCenterCreateMessage>,
-        IHandle<CostCenterUpdateMessage>,
-        IHandle<CostCenterDeleteMessage>
+    public class StorageCache : IEntityCache<StorageGraphQLModel>,
+        IHandle<StorageCreateMessage>,
+        IHandle<StorageUpdateMessage>,
+        IHandle<StorageDeleteMessage>
     {
-        private readonly IRepository<CostCenterGraphQLModel> _service;
+        private readonly IRepository<StorageGraphQLModel> _service;
         private readonly object _lock = new();
 
-        public ObservableCollection<CostCenterGraphQLModel> Items { get; } = [];
+        public ObservableCollection<StorageGraphQLModel> Items { get; } = [];
         public bool IsInitialized { get; private set; }
 
-        public CostCenterCache(
-            IRepository<CostCenterGraphQLModel> service,
+        public StorageCache(
+            IRepository<StorageGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
@@ -71,7 +71,7 @@ namespace NetErp.Helpers.Cache
             }
         }
 
-        public void Add(CostCenterGraphQLModel item)
+        public void Add(StorageGraphQLModel item)
         {
             lock (_lock)
             {
@@ -80,7 +80,7 @@ namespace NetErp.Helpers.Cache
             }
         }
 
-        public void Update(CostCenterGraphQLModel item)
+        public void Update(StorageGraphQLModel item)
         {
             lock (_lock)
             {
@@ -105,29 +105,29 @@ namespace NetErp.Helpers.Cache
 
         #region IHandle Implementations
 
-        public Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedCostCenter?.Entity != null)
+            if (message.CreatedStorage?.Entity != null)
             {
-                Add(message.CreatedCostCenter.Entity);
+                Add(message.CreatedStorage.Entity);
             }
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(CostCenterUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(StorageUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.UpdatedCostCenter?.Entity != null)
+            if (message.UpdatedStorage?.Entity != null)
             {
-                Update(message.UpdatedCostCenter.Entity);
+                Update(message.UpdatedStorage.Entity);
             }
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(StorageDeleteMessage message, CancellationToken cancellationToken)
         {
-            if (message.DeletedCostCenter?.DeletedId > 0)
+            if (message.DeletedStorage?.DeletedId > 0)
             {
-                Remove(message.DeletedCostCenter.DeletedId.Value);
+                Remove(message.DeletedStorage.DeletedId.Value);
             }
             return Task.CompletedTask;
         }
@@ -138,18 +138,16 @@ namespace NetErp.Helpers.Cache
 
         private string BuildQuery()
         {
-            var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
+            var fields = FieldSpec<PageType<StorageGraphQLModel>>
                 .Create()
                 .SelectList(x => x.Entries, entries => entries
                     .Field(x => x.Id)
                     .Field(x => x.Name)
-                    .Field(x => x.IsTaxable)
-                    .Field(x => x.PriceListIncludeTax)
                 )
                 .Build();
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("costCentersPage", [parameter], fields, "PageResponse");
+            var fragment = new GraphQLQueryFragment("storagesPage", [parameter], fields, "PageResponse");
             var builder = new QueryBuilder([fragment]);
 
             return builder.GetQuery();

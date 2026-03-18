@@ -10,6 +10,7 @@ using NetErp.Billing.CreditLimit.ViewModels;
 using NetErp.Helpers.Services;
 using Common.Services;
 using NetErp.Billing.PriceList.PriceListHelpers;
+using NetErp.Helpers.Cache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
-        private readonly IRepository<StorageGraphQLModel> _storageService;
+        private readonly StorageCache _storageCache;
+        private readonly CostCenterCache _costCenterCache;
 
         private PriceListMasterViewModel _priceListMasterViewModel;
 
@@ -39,7 +41,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get 
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListDetailService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageService);
+                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListDetailService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache);
                 return _priceListMasterViewModel; 
             }
         }
@@ -57,7 +59,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<PriceListGraphQLModel> priceListService,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
-            IRepository<StorageGraphQLModel> storageService)
+            StorageCache storageCache,
+            CostCenterCache costCenterCache)
         {
             AutoMapper = autoMapper;
             EventAggregator = eventAggregator;
@@ -85,7 +88,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     });
                 }
             });
-            _storageService = storageService;
+            _storageCache = storageCache;
+            _costCenterCache = costCenterCache;
         }
 
         public async Task ActivateMasterViewAsync()

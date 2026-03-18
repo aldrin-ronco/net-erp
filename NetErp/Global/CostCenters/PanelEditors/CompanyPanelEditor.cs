@@ -121,7 +121,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
 
             string fieldHeader1 = "Identificación";
             string fieldHeader2 = "Razón social";
-            string fieldData1 = "IdentificationNumber";
+            string fieldData1 = "IdentificationNumberWithVerificationDigit";
             string fieldData2 = "SearchName";
 
             var viewModel = new SearchWithTwoColumnsGridViewModel<AccountingEntityGraphQLModel>(
@@ -141,6 +141,7 @@ namespace NetErp.Global.CostCenters.PanelEditors
                 .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.IdentificationNumber)
+                    .Field(e => e.VerificationDigit)
                     .Field(e => e.SearchName))
                 .Build();
 

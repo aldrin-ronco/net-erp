@@ -111,6 +111,9 @@ namespace NetErp
             _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CostCenterCache>());
 
+            _ = kernel.Bind<StorageCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StorageCache>());
+
             _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<IdentificationTypeCache>());
 
