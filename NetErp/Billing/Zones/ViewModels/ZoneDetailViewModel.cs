@@ -5,7 +5,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -27,6 +27,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private readonly IRepository<ZoneGraphQLModel> _zoneService;
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -64,15 +65,14 @@ namespace NetErp.Billing.Zones.ViewModels
 
         private readonly Dictionary<string, List<string>> _errors = [];
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -80,47 +80,44 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _isActive = true;
         public new bool IsActive
         {
-            get => _isActive;
+            get;
             set
             {
-                if (_isActive != value)
+                if (field != value)
                 {
-                    _isActive = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
                     this.TrackChange(nameof(IsActive));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -145,11 +142,13 @@ namespace NetErp.Billing.Zones.ViewModels
         public ZoneDetailViewModel(
             IRepository<ZoneGraphQLModel> zoneService,
             IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -214,13 +213,13 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
-
                 UpsertResponseType<ZoneGraphQLModel> result = await ExecuteSaveAsync();
+
                 if (!result.Success)
                 {
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -230,24 +229,24 @@ namespace NetErp.Billing.Zones.ViewModels
                 await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new ZoneCreateMessage { CreatedZone = result }
-                        : new ZoneUpdateMessage { UpdatedZone = result }
-                );
+                        : new ZoneUpdateMessage { UpdatedZone = result },
+                    CancellationToken.None);
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al realizar operación.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -257,18 +256,25 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public async Task<UpsertResponseType<ZoneGraphQLModel>> ExecuteSaveAsync()
         {
-            if (IsNewRecord)
+            try
             {
-                string query = _createQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                return await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                if (IsNewRecord)
+                {
+                    var (_, query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                    return await _zoneService.CreateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    var (_, query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    return await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                string query = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Id;
-                return await _zoneService.UpdateAsync<UpsertResponseType<ZoneGraphQLModel>>(query, variables);
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -281,7 +287,7 @@ namespace NetErp.Billing.Zones.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
@@ -296,12 +302,13 @@ namespace NetErp.Billing.Zones.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateZoneInput!");
-            var fragment = new GraphQLQueryFragment("createZone", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createZone",
+                [new("input", "CreateZoneInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<ZoneGraphQLModel>>
                 .Create()
@@ -316,13 +323,10 @@ namespace NetErp.Billing.Zones.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateZoneInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateZone", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateZone",
+                [new("data", "UpdateZoneInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion
