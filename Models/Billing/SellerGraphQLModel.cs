@@ -14,10 +14,9 @@ namespace Models.Billing
     {
         public int Id { get; set; }
         public bool IsActive { get; set; } = true;
-        public  AccountingEntityGraphQLModel AccountingEntity { get; set; }
-        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; }
-        public ZoneGraphQLModel Zone { get; set; }
-        
+        public AccountingEntityGraphQLModel? AccountingEntity { get; set; }
+        public ObservableCollection<CostCenterGraphQLModel> CostCenters { get; set; } = [];
+        public ZoneGraphQLModel? Zone { get; set; }        
     }
 
     public class SellerDTO : SellerGraphQLModel
@@ -27,23 +26,23 @@ namespace Models.Billing
 
     public class SellerCreateMessage
     {
-        public UpsertResponseType<SellerGraphQLModel> CreatedSeller { get; set; }
+        public required UpsertResponseType<SellerGraphQLModel> CreatedSeller { get; set; }
 
     }
 
     public class SellerUpdateMessage
     {
-        public UpsertResponseType<SellerGraphQLModel> UpdatedSeller { get; set; }
+        public required UpsertResponseType<SellerGraphQLModel> UpdatedSeller { get; set; }
 
     }
 
     public class SellerDeleteMessage
     {
-        public DeleteResponseType DeletedSeller { get; set; }
+        public required DeleteResponseType DeletedSeller { get; set; }
     }
     public class SellersByIdDataContext
     {
-        public SellerGraphQLModel Seller { get; set; }
+        public required SellerGraphQLModel Seller { get; set; }
     }
       
 }
