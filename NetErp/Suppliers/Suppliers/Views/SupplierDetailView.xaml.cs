@@ -1,24 +1,28 @@
-﻿using System.Windows;
+using NetErp.Suppliers.Suppliers.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Suppliers.Suppliers.Views
 {
-    /// <summary>
-    /// Lógica de interacción para SupplierDetailView.xaml
-    /// </summary>
     public partial class SupplierDetailView : UserControl
     {
         public SupplierDetailView()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
         }
 
-        private void ToolBar_Loaded(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            ToolBar toolBar = sender as ToolBar;
-            if (toolBar.Template.FindName("OverflowGrid", toolBar) is FrameworkElement overflowGrid)
+            Loaded -= OnLoaded;
+            if (DataContext is SupplierDetailViewModel vm)
             {
-                overflowGrid.Visibility = Visibility.Collapsed;
+                if (vm.IsNewRecord)
+                    IdentificationNumber.Focus();
+                else if (vm.CaptureInfoAsPN)
+                    FirstName.Focus();
+                else
+                    BusinessName.Focus();
             }
         }
     }

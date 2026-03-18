@@ -1486,6 +1486,10 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 if (_emails != null)
                     _emails.CollectionChanged -= Emails_CollectionChanged;
 
+                _identificationTypes = null!;
+                _countries = null!;
+                _selectedIdentificationType = null!;
+                _selectedCountry = null!;
                 this.AcceptChanges();
                 Emails?.Clear();
             }

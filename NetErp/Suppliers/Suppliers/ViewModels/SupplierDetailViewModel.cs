@@ -6,7 +6,7 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
+using AutoMapper;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
@@ -21,6 +21,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -53,13 +54,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
+        private ICommand _cancelCommand;
+        public ICommand CancelCommand
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
+                if (_cancelCommand is null) _cancelCommand = new AsyncCommand(CancelAsync);
+                return _cancelCommand;
             }
         }
 
@@ -68,7 +69,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
+                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
@@ -81,7 +82,34 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         
         private readonly CountryCache _countryCache;
         private readonly IRepository<SupplierGraphQLModel> _supplierService;
-        public SupplierViewModel Context { get; private set; }
+        private readonly IEventAggregator _eventAggregator;
+        private readonly IMapper _mapper;
+        private readonly StringLengthCache _stringLengthCache;
+
+        // MaxLength properties from StringLengthCache
+        public int FirstNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstName));
+        public int MiddleNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleName));
+        public int FirstLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstLastName));
+        public int MiddleLastNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.MiddleLastName));
+        public int BusinessNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.BusinessName));
+        public int TradeNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.TradeName));
+        public int PrimaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryPhone));
+        public int SecondaryPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryPhone));
+        public int PrimaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.PrimaryCellPhone));
+        public int SecondaryCellPhoneMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.SecondaryCellPhone));
+        public int AddressMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.Address));
+        public int IdentificationNumberMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.IdentificationNumber));
+        public int CommercialCodeMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.CommercialCode));
+
+        public string IdentificationNumberMask
+        {
+            get
+            {
+                int max = IdentificationNumberMaxLength;
+                bool allowsLetters = SelectedIdentificationType?.AllowsLetters ?? false;
+                return allowsLetters ? $"[a-zA-Z0-9]{{0,{max}}}" : $"[0-9]{{0,{max}}}";
+            }
+        }
 
         Dictionary<string, List<string>> _errors;
 
@@ -488,6 +516,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     _selectedIdentificationType = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     this.TrackChange(nameof(SelectedIdentificationType));
+                    NotifyOfPropertyChange(nameof(IdentificationNumberMask));
 
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
@@ -946,53 +975,12 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        public void GoBack(object p)
+        public async Task CancelAsync()
         {
-            _ = Task.Run(() => Context.ActivateMasterView());
-            CleanUpControls();
+            await TryCloseAsync(false);
         }
 
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-
-        public void CleanUpControls()
-        {
-            List<WithholdingTypeDTO> retentionList = [];
-            Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
-            SelectedRegime = 'R';
-            IdentificationNumber = string.Empty;
-            VerificationDigit = string.Empty;
-            SelectedIdentificationType = IdentificationTypes.FirstOrDefault(x => x.Code == Constant.DefaultIdentificationTypeCode); // 31 es NIT
-            SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.Undefined;
-            BusinessName = string.Empty;
-            FirstName = string.Empty;
-            MiddleName = string.Empty;
-            FirstLastName = string.Empty;
-            MiddleLastName = string.Empty;
-            PrimaryPhone = string.Empty;
-            SecondaryPhone = string.Empty;
-            PrimaryCellPhone = string.Empty;
-            SecondaryCellPhone = string.Empty;
-            Address = string.Empty;
-            Emails = new ObservableCollection<EmailDTO>();
-            SelectedCountry = Countries.FirstOrDefault(x => x.Code == Constant.DefaultCountryCode); // 169 es el cóodigo de colombia
-            SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode); // 08 es el código del atlántico
-            SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id; // 001 es el Codigo de Barranquilla
-            foreach (WithholdingTypeDTO retention in WithholdingTypes)
-            {
-                retentionList.Add(new WithholdingTypeDTO()
-                {
-                    Id = retention.Id,
-                    Name = retention.Name,
-                    IsSelected = false
-                });
-            }
-            WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
-        }
-
-        public void CleanUpControlsForNew()
+        public void SetForNew()
         {
             List<WithholdingTypeDTO> retentionList = [];
             Id = 0; // Por medio del Id se establece si es un nuevo registro o una actualizacion
@@ -1026,18 +1014,21 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
             WithholdingTypes = new ObservableCollection<WithholdingTypeDTO>(retentionList);
             IdentificationTypes = _identificationTypeCache.Items;
-            this.AcceptChanges();
+            SeedDefaultValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
             this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
             this.SeedValue(nameof(SelectedCountry), SelectedCountry);
             this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
             this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
-
             this.SeedValue(nameof(SelectedCityId), SelectedCityId);
             this.SeedValue(nameof(SelectedRegime), SelectedRegime);
-            this.SeedValue(nameof(WithholdingAppliesOnAnyAmount), false);
-            this.SeedValue(nameof(IsTaxFree), false);
-
-
+            this.SeedValue(nameof(WithholdingAppliesOnAnyAmount), WithholdingAppliesOnAnyAmount);
+            this.SeedValue(nameof(IsTaxFree), IsTaxFree);
+            this.AcceptChanges();
         }
 
 
@@ -1053,12 +1044,12 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                     return;
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new SupplierCreateMessage() { CreatedSupplier = result }
                         : new SupplierUpdateMessage() { UpdatedSupplier = result }
                 );
-                await Context.ActivateMasterView();
+                await TryCloseAsync(true);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1187,23 +1178,24 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         public SupplierDetailViewModel(
-            SupplierViewModel context,
             IRepository<SupplierGraphQLModel> supplierService,
+            IEventAggregator eventAggregator,
             ObservableCollection<AccountingAccountGraphQLModel> accountingAccounts,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
-            WithholdingTypeCache withholdingTypeCache)
+            WithholdingTypeCache withholdingTypeCache,
+            StringLengthCache stringLengthCache,
+            IMapper mapper)
         {
             _errors = new Dictionary<string, List<string>>();
-            Context = context;
+            _eventAggregator = eventAggregator;
+            _mapper = mapper;
             AccountingAccounts = accountingAccounts;
             _supplierService = supplierService;
             _identificationTypeCache = identificationTypeCache;
             _countryCache = countryCache;
             _withholdingTypeCache = withholdingTypeCache;
-
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
+            _stringLengthCache = stringLengthCache;
         }
 
         public async Task InitializeAsync()
@@ -1215,24 +1207,17 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                );
             IdentificationTypes = _identificationTypeCache.Items;
             Countries = _countryCache.Items;
-            WithholdingTypes = Context.AutoMapper.Map<ObservableCollection<WithholdingTypeDTO>>(_withholdingTypeCache.Items);
+            WithholdingTypes = _mapper.Map<ObservableCollection<WithholdingTypeDTO>>(_withholdingTypeCache.Items);
         }
 
         
 
-        protected override void OnViewAttached(object view, object context)
+        protected override void OnViewReady(object view)
         {
-            base.OnViewAttached(view, context);
+            base.OnViewReady(view);
             ValidateProperties();
-            _ = Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                SelectedIndexPage = 0; // Selecciona el primer TAB page
-                _ = IsNewRecord
-                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
-                      : CaptureInfoAsPN
-                          ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render)
-                          : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(BusinessName))), DispatcherPriority.Render);
-            });
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
         public async Task<SupplierGraphQLModel> LoadDataForEditAsync(int id)
         {
@@ -1275,7 +1260,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             SecondaryPhone = supplier.AccountingEntity.SecondaryPhone;
             PrimaryCellPhone = supplier.AccountingEntity.PrimaryCellPhone;
             SecondaryCellPhone = supplier.AccountingEntity.SecondaryCellPhone;
-            Emails = supplier.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : Context.AutoMapper.Map<ObservableCollection<EmailDTO>>(supplier.AccountingEntity.Emails);
+            Emails = supplier.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : _mapper.Map<ObservableCollection<EmailDTO>>(supplier.AccountingEntity.Emails);
             SelectedCountry = Countries.FirstOrDefault(c => c.Id == supplier.AccountingEntity.Country.Id);
             SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(d => d.Id == supplier.AccountingEntity.Department.Id);
             SelectedCityId = supplier.AccountingEntity.City.Id;
@@ -1298,7 +1283,38 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 });
             }
             WithholdingTypes = new System.Collections.ObjectModel.ObservableCollection<WithholdingTypeDTO>(withholdingTypes);
+            SeedCurrentValues();
         }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
+            this.SeedValue(nameof(IdentificationNumber), IdentificationNumber);
+            this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
+            this.SeedValue(nameof(BusinessName), BusinessName);
+            this.SeedValue(nameof(FirstName), FirstName);
+            this.SeedValue(nameof(MiddleName), MiddleName);
+            this.SeedValue(nameof(FirstLastName), FirstLastName);
+            this.SeedValue(nameof(MiddleLastName), MiddleLastName);
+            this.SeedValue(nameof(TradeName), TradeName);
+            this.SeedValue(nameof(CommercialCode), CommercialCode);
+            this.SeedValue(nameof(PrimaryPhone), PrimaryPhone);
+            this.SeedValue(nameof(SecondaryPhone), SecondaryPhone);
+            this.SeedValue(nameof(PrimaryCellPhone), PrimaryCellPhone);
+            this.SeedValue(nameof(SecondaryCellPhone), SecondaryCellPhone);
+            this.SeedValue(nameof(Address), Address);
+            this.SeedValue(nameof(SelectedCountry), SelectedCountry);
+            this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
+            this.SeedValue(nameof(SelectedCityId), SelectedCityId);
+            this.SeedValue(nameof(SelectedRegime), SelectedRegime);
+            this.SeedValue(nameof(IsTaxFree), IsTaxFree);
+            this.SeedValue(nameof(IcaWithholdingRate), IcaWithholdingRate);
+            this.SeedValue(nameof(IcaAccountingAccountId), IcaAccountingAccountId);
+            this.SeedValue(nameof(WithholdingAppliesOnAnyAmount), WithholdingAppliesOnAnyAmount);
+            this.SeedValue(nameof(WithholdingTypeIds), WithholdingTypeIds);
+            this.AcceptChanges();
+        }
+
         public string GetLoadSupplierByIdQuery()
         {
             var supplierFields = FieldSpec<SupplierGraphQLModel>
@@ -1485,5 +1501,19 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         }
 
         #endregion
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                _identificationTypes = null!;
+                _countries = null!;
+                _selectedIdentificationType = null!;
+                _selectedCountry = null!;
+                this.AcceptChanges();
+            }
+
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
     }
 }

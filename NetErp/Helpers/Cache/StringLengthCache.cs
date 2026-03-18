@@ -49,7 +49,13 @@ namespace NetErp.Helpers.Cache
             dynamic variables = new ExpandoObject();
             variables.listResponseEntities = entityNames.ToList();
 
-            var results = await _repository.GetListAsync(query, variables);
+            IEnumerable<EntityStringLengthsGraphQLModel> results = await _repository.GetListAsync(query, variables);
+
+            if (!results.Any())
+            {
+                throw new StringLengthNotAvailableException(entityNames);
+            }
+
             var misconfiguredFields = new List<string>();
 
             lock (_lock)
@@ -182,6 +188,22 @@ namespace NetErp.Helpers.Cache
                 "ListResponse");
 
             return new GraphQLQueryBuilder.GraphQLQueryBuilder([fragment]).GetQuery();
+        }
+    }
+
+    /// <summary>
+    /// Thrown when the API returns an empty response for string length constraints.
+    /// ViewModels should catch this to prevent module access without field length validation.
+    /// </summary>
+    public class StringLengthNotAvailableException : Exception
+    {
+        public string[] RequestedEntities { get; }
+
+        public StringLengthNotAvailableException(string[] entities)
+            : base($"No se pudieron obtener las restricciones de longitud de campos para las entidades solicitadas ({string.Join(", ", entities)}). " +
+                   $"No es posible acceder al módulo en este momento. Por favor, intente nuevamente más tarde o contacte al área de soporte técnico.")
+        {
+            RequestedEntities = entities;
         }
     }
 }

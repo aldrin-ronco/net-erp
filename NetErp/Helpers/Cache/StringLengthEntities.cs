@@ -2,6 +2,7 @@ using Models.Billing;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
+using Models.Suppliers;
 using System;
 
 namespace NetErp.Helpers.Cache
@@ -29,6 +30,9 @@ namespace NetErp.Helpers.Cache
 
         // Global
         public static readonly Type[] Smtp = [typeof(SmtpGraphQLModel)];
+
+        // Suppliers
+        public static readonly Type[] Supplier = [typeof(SupplierGraphQLModel), typeof(AccountingEntityGraphQLModel)];
 
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];

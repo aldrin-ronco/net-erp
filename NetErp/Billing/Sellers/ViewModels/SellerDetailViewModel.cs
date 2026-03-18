@@ -11,7 +11,7 @@ using DevExpress.XtraPrinting.Native;
 using Dictionaries;
 using Extensions.Global;
 using GraphQL.Client.Http;
-using Microsoft.VisualStudio.Threading;
+using AutoMapper;
 using Models.Billing;
 using Models.Books;
 using Models.DTO.Global;
@@ -52,6 +52,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly CountryCache _countryCache;
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly IMapper _mapper;
         #region Commands
 
         private ICommand _deleteMailCommand;
@@ -63,13 +65,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 return _deleteMailCommand;
             }
         }
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
+        private ICommand _cancelCommand;
+        public ICommand CancelCommand
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
+                if (_cancelCommand is null) _cancelCommand = new AsyncCommand(CancelAsync);
+                return _cancelCommand;
             }
         }
 
@@ -78,7 +80,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
+                _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
@@ -91,7 +93,6 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         Dictionary<string, List<string>> _errors;
 
-        public SellerViewModel Context { get; private set; }
 
         // MaxLength properties from StringLengthCache
         public int FirstNameMaxLength => _stringLengthCache.GetMaxLength<AccountingEntityGraphQLModel>(nameof(AccountingEntityGraphQLModel.FirstName));
@@ -412,8 +413,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
-        private ObservableCollection<ZoneDTO> _zones;
-        public ObservableCollection<ZoneDTO> Zones
+        private ObservableCollection<ZoneGraphQLModel> _zones;
+        public ObservableCollection<ZoneGraphQLModel> Zones
         {
             get => _zones;
             set
@@ -660,22 +661,38 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
-        private int? _zoneId;
-
-        public int? ZoneId
+        private ZoneGraphQLModel? _selectedZone;
+        [ExpandoPath("zoneId", SerializeAsId = true)]
+        public ZoneGraphQLModel? SelectedZone
         {
-            get => _zoneId;
+            get => _selectedZone;
             set
             {
-                if (_zoneId != value)
+                if (_selectedZone != value)
                 {
-                    _zoneId = value;
-                    NotifyOfPropertyChange(nameof(ZoneId));
-                    this.TrackChange(nameof(ZoneId));
+                    _selectedZone = value;
+                    NotifyOfPropertyChange(nameof(SelectedZone));
+                    this.TrackChange(nameof(SelectedZone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+        private bool _isActive = true;
+        public new bool IsActive
+        {
+            get => _isActive;
+            set
+            {
+                if (_isActive != value)
+                {
+                    _isActive = value;
+                    NotifyOfPropertyChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
         private string _identificationNumber = string.Empty;
         [ExpandoPath("accountingEntity.identificationNumber")]
         public string IdentificationNumber
@@ -737,19 +754,9 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Methods
 
-        public void GoBack(object p)
+        public async Task CancelAsync()
         {
-            try
-            {
-                _ = Context.ActivateMasterViewAsync();
-            }
-            catch (AsyncException ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
+            await TryCloseAsync(false);
         }
 
         public void EndRowEditing()
@@ -774,6 +781,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 List<CostCenterDTO> costCenters = new List<CostCenterDTO>();
 
                 Id = 0;
+                IsActive = true;
                 IdentificationNumber = string.Empty;
                 SelectedCaptureType = BooksDictionaries.CaptureTypeEnum.PN;
                 FirstName = string.Empty;
@@ -791,7 +799,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(x => x.Code == Constant.DefaultDepartmentCode);
                 SelectedCityId = SelectedDepartment.Cities.FirstOrDefault(x => x.Code == Constant.DefaultCityCode).Id;
 
-                foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
+                foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
                 {
                     costCenters.Add(new CostCenterDTO()
                     {
@@ -801,7 +809,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     });
                 }
 
-                Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items);
+                Zones = _zoneCache.Items;
                 CostCenters = new ObservableCollection<CostCenterDTO>(costCenters);
 
                 SeedDefaultValues();
@@ -815,6 +823,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(IsActive), IsActive);
             this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
             this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
             this.SeedValue(nameof(SelectedCountry), SelectedCountry);
@@ -939,12 +948,12 @@ namespace NetErp.Billing.Sellers.ViewModels
                     ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                     return;
                 }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
+                await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new SellerCreateMessage() { CreatedSeller = result }
                         : new SellerUpdateMessage() { UpdatedSeller = result }
                 );
-                await Context.ActivateMasterViewAsync();
+                await TryCloseAsync(true);
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1057,22 +1066,24 @@ namespace NetErp.Billing.Sellers.ViewModels
         }
 
         public SellerDetailViewModel(
-            SellerViewModel context,
             IRepository<SellerGraphQLModel> sellerService,
-            CostCenterCache costCenterCache,
+            IEventAggregator eventAggregator,
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
             ZoneCache zoneCache,
-            StringLengthCache stringLengthCache)
+            CostCenterCache costCenterCache,
+            StringLengthCache stringLengthCache,
+            IMapper mapper)
         {
-            _zoneCache = zoneCache;
-            _countryCache = countryCache;
+            _sellerService = sellerService;
+            _eventAggregator = eventAggregator;
             _identificationTypeCache = identificationTypeCache;
+            _countryCache = countryCache;
+            _zoneCache = zoneCache;
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
+            _mapper = mapper;
             _errors = new Dictionary<string, List<string>>();
-            Context = context;
-            _sellerService = sellerService;
             Emails = [];
         }
 
@@ -1085,7 +1096,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 _costCenterCache.EnsureLoadedAsync()
                 );
             Countries = _countryCache.Items;
-            Zones = Context.AutoMapper.Map<ObservableCollection<ZoneDTO>>(_zoneCache.Items); 
+            Zones = _zoneCache.Items;
 
             SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC); 
            
@@ -1110,6 +1121,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         public void SetForEdit(SellerGraphQLModel seller)
         {
             Id = seller.Id;
+            IsActive = seller.IsActive;
 
             SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == seller.AccountingEntity.IdentificationType.Code);
             IdentificationNumber = seller.AccountingEntity.IdentificationNumber;
@@ -1121,15 +1133,15 @@ namespace NetErp.Billing.Sellers.ViewModels
             SecondaryPhone = seller.AccountingEntity.SecondaryPhone;
             PrimaryCellPhone = seller.AccountingEntity.PrimaryCellPhone;
             SecondaryCellPhone = seller.AccountingEntity.SecondaryCellPhone;
-            Emails = seller.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : Context.AutoMapper.Map<ObservableCollection<EmailDTO>>(seller.AccountingEntity.Emails);
+            Emails = seller.AccountingEntity.Emails is null ? new ObservableCollection<EmailDTO>() : _mapper.Map<ObservableCollection<EmailDTO>>(seller.AccountingEntity.Emails);
             SelectedCountry = Countries.FirstOrDefault(c => c.Id == seller.AccountingEntity.Country.Id);
             SelectedDepartment = SelectedCountry.Departments.FirstOrDefault(d => d.Id == seller.AccountingEntity.Department.Id);
             SelectedCityId = seller.AccountingEntity.City.Id;
             Address = seller.AccountingEntity.Address;
-            ZoneId = seller.Zone?.Id;
+            SelectedZone = seller.Zone is null ? null : Zones.FirstOrDefault(z => z.Id == seller.Zone.Id);
 
             ObservableCollection<CostCenterDTO> costCentersSelection = new ObservableCollection<CostCenterDTO>();
-            foreach (CostCenterDTO costCenter in Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
+            foreach (CostCenterDTO costCenter in _mapper.Map<ObservableCollection<CostCenterDTO>>(_costCenterCache.Items))
             {
                 bool exist = !(seller.CostCenters is null) && seller.CostCenters.Any(c => c.Id == costCenter.Id);
                 costCentersSelection.Add(new CostCenterDTO()
@@ -1146,6 +1158,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         private void SeedCurrentValues()
         {
+            this.SeedValue(nameof(IsActive), IsActive);
             this.SeedValue(nameof(SelectedIdentificationType), SelectedIdentificationType);
             this.SeedValue(nameof(IdentificationNumber), IdentificationNumber);
             this.SeedValue(nameof(SelectedCaptureType), SelectedCaptureType);
@@ -1161,28 +1174,16 @@ namespace NetErp.Billing.Sellers.ViewModels
             this.SeedValue(nameof(SelectedCountry), SelectedCountry);
             this.SeedValue(nameof(SelectedDepartment), SelectedDepartment);
             this.SeedValue(nameof(SelectedCityId), SelectedCityId);
-            this.SeedValue(nameof(ZoneId), ZoneId);
+            this.SeedValue(nameof(SelectedZone), SelectedZone);
             this.SeedValue(nameof(Regime), Regime);
             this.SeedValue(nameof(SelectedCostCenterIds), SelectedCostCenterIds);
             this.AcceptChanges();
         }
-        protected override void OnViewAttached(object view, object context)
-        {
-            base.OnViewAttached(view, context);
-            ValidateProperties();
-            _ = Application.Current.Dispatcher.BeginInvoke(() =>
-            {
-                SelectedIndexPage = 0; // Selecciona el primer TAB page
-                _ = IsNewRecord
-                      ? Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(IdentificationNumber))), DispatcherPriority.Render)
-                      : Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(nameof(FirstName))), DispatcherPriority.Render);
-            });
-        }
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-          
-           
+            ValidateProperties();
+            this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
         }
         #endregion
@@ -1352,11 +1353,6 @@ namespace NetErp.Billing.Sellers.ViewModels
                 ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
             }
         }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-
         #endregion
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -1374,6 +1370,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
                 CostCenters.CollectionChanged -= CostCenter_CollectionChanged;
 
+                _zones = null!;
+                _countries = null!;
+                _selectedIdentificationType = null!;
+                _selectedCountry = null!;
                 this.AcceptChanges();
                 Emails?.Clear();
                 CostCenters?.Clear();

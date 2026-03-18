@@ -273,7 +273,16 @@ namespace NetErp.Billing.Customers.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
+            }
+            catch (StringLengthNotAvailableException ex)
+            {
+                ThemedMessageBox.Show("Atención!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                await TryCloseAsync();
+                return;
+            }
             await LoadCustomersAsync();
             this.SetFocus(() => FilterSearch);
         }
