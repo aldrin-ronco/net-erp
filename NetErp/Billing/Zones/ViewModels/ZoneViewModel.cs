@@ -11,6 +11,7 @@ using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -420,6 +421,8 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 IsBusy = true;
 
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
                 var (fragment, query) = _loadZonesQuery.Value;
 
                 dynamic filters = new ExpandoObject();
@@ -434,6 +437,8 @@ namespace NetErp.Billing.Zones.ViewModels
 
                 TotalCount = result.TotalEntries;
                 Zones = new ObservableCollection<ZoneGraphQLModel>(result.Entries);
+                stopwatch.Stop();
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (Exception ex)
             {
