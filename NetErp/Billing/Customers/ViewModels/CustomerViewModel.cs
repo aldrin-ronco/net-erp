@@ -47,6 +47,8 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
 
+        private bool _isInitialized;
+
         #endregion
 
         #region Grid Properties
@@ -76,9 +78,14 @@ namespace NetErp.Billing.Customers.ViewModels
                     _customers = value;
                     NotifyOfPropertyChange(nameof(Customers));
                     NotifyOfPropertyChange(nameof(CanDeleteCustomer));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
+
+        public bool HasRecords => _isInitialized && Customers != null && Customers.Count > 0;
+        public bool ShowEmptyState => _isInitialized && (Customers == null || Customers.Count == 0);
 
         private CustomerGraphQLModel? _selectedCustomer;
         public CustomerGraphQLModel? SelectedCustomer
@@ -284,6 +291,9 @@ namespace NetErp.Billing.Customers.ViewModels
                 return;
             }
             await LoadCustomersAsync();
+            _isInitialized = true;
+            NotifyOfPropertyChange(nameof(HasRecords));
+            NotifyOfPropertyChange(nameof(ShowEmptyState));
             this.SetFocus(() => FilterSearch);
         }
 
