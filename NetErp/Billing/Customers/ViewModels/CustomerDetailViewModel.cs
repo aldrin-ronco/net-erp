@@ -1019,25 +1019,6 @@ namespace NetErp.Billing.Customers.ViewModels
             Emails.Remove(emailToDelete);
         }
 
-        public void PhoneInputLostFocus(FrameworkElement element)
-        {
-            switch (element.Name.ToLower())
-            {
-                case "phone1":
-                    PrimaryPhone = PrimaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "phone2":
-                    SecondaryPhone = SecondaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "cellphone1":
-                    PrimaryCellPhone = PrimaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-                case "cellphone2":
-                    SecondaryCellPhone = SecondaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-            }
-        }
-
         public void EndRowEditing()
         {
             NotifyOfPropertyChange(nameof(Emails));
