@@ -38,7 +38,9 @@ namespace NetErp.Billing.Zones.ViewModels
 
         #region Grid Properties
 
-        public bool HasRecords => !ShowEmptyState;
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         public bool ShowEmptyState
         {
@@ -265,7 +267,9 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
                 await LoadZonesAsync();
+                _isInitialized = true;
                 ShowEmptyState = Zones == null || Zones.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)

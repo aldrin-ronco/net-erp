@@ -66,7 +66,9 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             }
         }
 
-        public bool HasRecords => !ShowEmptyState;
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         private bool _showEmptyState;
         public bool ShowEmptyState
@@ -255,7 +257,9 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AwsS3Config);
                 await LoadAwsS3ConfigsAsync();
+                _isInitialized = true;
                 ShowEmptyState = AwsS3Configs == null || AwsS3Configs.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
             }
             catch (Exception ex)
             {

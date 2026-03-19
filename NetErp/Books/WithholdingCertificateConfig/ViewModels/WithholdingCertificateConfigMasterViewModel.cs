@@ -6,6 +6,7 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Models.Books;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -40,6 +41,25 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         #endregion
 
         #region Grid Properties
+
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
+
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
 
         private bool _isBusy;
         public bool IsBusy
@@ -85,6 +105,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
+        private readonly DebouncedAction _searchDebounce = new();
+
         private string _filterSearch = string.Empty;
         public string FilterSearch
         {
@@ -95,7 +117,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadCertificatesAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = _searchDebounce.RunAsync(LoadCertificatesAsync);
                 }
             }
         }
@@ -242,6 +264,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             base.OnViewReady(view);
             await LoadCertificatesAsync();
+            _isInitialized = true;
+            ShowEmptyState = Certificates == null || Certificates.Count == 0;
+            NotifyOfPropertyChange(nameof(HasRecords));
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -517,6 +542,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task HandleAsync(WithholdingCertificateConfigCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadCertificatesAsync();
             _notificationService.ShowSuccess(message.CreatedWithholdingCertificateConfig.Message);
         }
@@ -530,6 +556,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         public async Task HandleAsync(WithholdingCertificateConfigDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadCertificatesAsync();
+            ShowEmptyState = Certificates == null || Certificates.Count == 0;
             SelectedCertificate = null;
             _notificationService.ShowSuccess(message.DeletedWithholdingCertificateConfig.Message);
         }

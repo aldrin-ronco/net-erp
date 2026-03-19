@@ -95,7 +95,9 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public bool HasRecords => !ShowEmptyState;
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         private CustomerGraphQLModel? _selectedCustomer;
         public CustomerGraphQLModel? SelectedCustomer
@@ -298,7 +300,9 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
                 await LoadCustomersAsync();
+                _isInitialized = true;
                 ShowEmptyState = Customers == null || Customers.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)
