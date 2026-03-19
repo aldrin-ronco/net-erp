@@ -49,6 +49,12 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Grid Properties
 
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && Sellers != null && Sellers.Count > 0;
+
+        public bool ShowEmptyState => _isInitialized && (Sellers == null || Sellers.Count == 0);
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -136,6 +142,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _sellers = value;
                     NotifyOfPropertyChange(nameof(Sellers));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
@@ -305,19 +313,24 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Seller);
+                await _costCenterCache.EnsureLoadedAsync();
+                CostCenters = [.. _costCenterCache.Items];
+                await LoadSellersAsync();
+                _isInitialized = true;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                this.SetFocus(() => FilterSearch);
             }
-            catch (StringLengthNotAvailableException ex)
+            catch (Exception ex)
             {
-                ThemedMessageBox.Show("Atención!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
                 await TryCloseAsync();
-                return;
             }
-
-            await _costCenterCache.EnsureLoadedAsync();
-            CostCenters = [.. _costCenterCache.Items];
-
-            await LoadSellersAsync();
-            this.SetFocus(() => FilterSearch);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
