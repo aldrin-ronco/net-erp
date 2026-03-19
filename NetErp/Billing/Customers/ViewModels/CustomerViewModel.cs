@@ -47,8 +47,6 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
-        private bool _isInitialized;
-
         #endregion
 
         #region Grid Properties
@@ -78,14 +76,26 @@ namespace NetErp.Billing.Customers.ViewModels
                     _customers = value;
                     NotifyOfPropertyChange(nameof(Customers));
                     NotifyOfPropertyChange(nameof(CanDeleteCustomer));
-                    NotifyOfPropertyChange(nameof(HasRecords));
-                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
 
-        public bool HasRecords => _isInitialized && Customers != null && Customers.Count > 0;
-        public bool ShowEmptyState => _isInitialized && (Customers == null || Customers.Count == 0);
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
+
+        public bool HasRecords => !ShowEmptyState;
 
         private CustomerGraphQLModel? _selectedCustomer;
         public CustomerGraphQLModel? SelectedCustomer
@@ -286,9 +296,7 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
                 await LoadCustomersAsync();
-                _isInitialized = true;
-                NotifyOfPropertyChange(nameof(HasRecords));
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                ShowEmptyState = Customers == null || Customers.Count == 0;
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)
@@ -551,12 +559,14 @@ namespace NetErp.Billing.Customers.ViewModels
         public async Task HandleAsync(CustomerDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadCustomersAsync();
+            ShowEmptyState = Customers == null || Customers.Count == 0;
             SelectedCustomer = null;
             _notificationService.ShowSuccess(message.DeletedCustomer.Message);
         }
 
         public async Task HandleAsync(CustomerCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadCustomersAsync();
             _notificationService.ShowSuccess(message.CreatedCustomer.Message);
         }

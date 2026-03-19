@@ -58,14 +58,26 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 {
                     _certificates = value;
                     NotifyOfPropertyChange(nameof(Certificates));
-                    NotifyOfPropertyChange(nameof(HasRecords));
-                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
 
-        public bool HasRecords => _isInitialized && Certificates != null && Certificates.Count > 0;
-        public bool ShowEmptyState => _isInitialized && (Certificates == null || Certificates.Count == 0);
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
+
+        public bool HasRecords => !ShowEmptyState;
 
         private DianCertificateGraphQLModel? _selectedCertificate;
         public DianCertificateGraphQLModel? SelectedCertificate
@@ -261,8 +273,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 await LoadDefaultCertificateIdAsync();
                 await LoadCertificatesAsync();
                 _isInitialized = true;
-                NotifyOfPropertyChange(nameof(HasRecords));
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                ShowEmptyState = Certificates == null || Certificates.Count == 0;
             }
             catch (Exception ex)
             {
@@ -526,6 +537,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         public async Task HandleAsync(DianCertificateCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadCertificatesAsync();
             _notificationService.ShowSuccess(message.CreatedCertificate.Message);
         }
@@ -533,6 +545,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
         public async Task HandleAsync(DianCertificateDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadCertificatesAsync();
+            ShowEmptyState = Certificates == null || Certificates.Count == 0;
             SelectedCertificate = null;
             _notificationService.ShowSuccess(message.DeletedCertificate.Message);
         }

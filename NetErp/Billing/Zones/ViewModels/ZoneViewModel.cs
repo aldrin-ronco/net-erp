@@ -38,6 +38,23 @@ namespace NetErp.Billing.Zones.ViewModels
 
         #region Grid Properties
 
+        public bool HasRecords => !ShowEmptyState;
+
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
+
         private bool _isBusy;
         public bool IsBusy
         {
@@ -256,6 +273,7 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
                 await LoadZonesAsync();
+                ShowEmptyState = Zones == null || Zones.Count == 0;
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)
@@ -292,6 +310,13 @@ namespace NetErp.Billing.Zones.ViewModels
                 var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
+                    detail.DialogHeight = parentView.ActualHeight * 0.30;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Nueva zona");
             }
             catch (Exception ex)
@@ -316,13 +341,20 @@ namespace NetErp.Billing.Zones.ViewModels
                 var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedZone);
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
+                    detail.DialogHeight = parentView.ActualHeight * 0.30;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Editar zona");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(EditZoneAsync)}: {ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -444,7 +476,7 @@ namespace NetErp.Billing.Zones.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadZonesAsync)}: {ex.Message}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -507,6 +539,7 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public async Task HandleAsync(ZoneCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadZonesAsync();
             _notificationService.ShowSuccess(message.CreatedZone.Message);
         }
@@ -520,6 +553,7 @@ namespace NetErp.Billing.Zones.ViewModels
         public async Task HandleAsync(ZoneDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadZonesAsync();
+            ShowEmptyState = Zones == null || Zones.Count == 0;
             SelectedZone = null;
             _notificationService.ShowSuccess(message.DeletedZone.Message);
         }

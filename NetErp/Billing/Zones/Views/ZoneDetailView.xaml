@@ -16,7 +16,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8" MinWidth="420">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
             <Grid Margin="15,15,15,5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>

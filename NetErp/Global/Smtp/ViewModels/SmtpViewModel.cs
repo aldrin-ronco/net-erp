@@ -33,8 +33,6 @@ namespace NetErp.Global.Smtp.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
-        private bool _isInitialized;
-
         #endregion
 
         #region Grid Properties
@@ -63,14 +61,26 @@ namespace NetErp.Global.Smtp.ViewModels
                 {
                     _smtps = value;
                     NotifyOfPropertyChange(nameof(Smtps));
-                    NotifyOfPropertyChange(nameof(HasRecords));
-                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
 
-        public bool HasRecords => _isInitialized && Smtps != null && Smtps.Count > 0;
-        public bool ShowEmptyState => _isInitialized && (Smtps == null || Smtps.Count == 0);
+        public bool HasRecords => !ShowEmptyState;
+
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
 
         private SmtpGraphQLModel? _selectedSmtp;
         public SmtpGraphQLModel? SelectedSmtp
@@ -242,9 +252,7 @@ namespace NetErp.Global.Smtp.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Smtp);
                 await LoadSmtpsAsync();
-                _isInitialized = true;
-                NotifyOfPropertyChange(nameof(HasRecords));
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                ShowEmptyState = Smtps == null || Smtps.Count == 0;
             }
             catch (Exception ex)
             {
@@ -505,6 +513,7 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public async Task HandleAsync(SmtpCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadSmtpsAsync();
             _notificationService.ShowSuccess(message.CreatedSmtp.Message);
         }
@@ -518,6 +527,7 @@ namespace NetErp.Global.Smtp.ViewModels
         public async Task HandleAsync(SmtpDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadSmtpsAsync();
+            ShowEmptyState = Smtps == null || Smtps.Count == 0;
             SelectedSmtp = null;
             _notificationService.ShowSuccess(message.DeletedSmtp.Message);
         }
