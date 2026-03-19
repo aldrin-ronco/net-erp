@@ -24,18 +24,25 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
-    public class WithholdingCertificateConfigDetailViewModel : Screen, INotifyDataErrorInfo
+    public class WithholdingCertificateConfigDetailViewModel(
+        WithholdingCertificateConfigViewModel context,
+        IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService,
+        IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
+        AccountingAccountGroupCache accountingAccountGroupCache,
+        CostCenterCache costCenterCache,
+        StringLengthCache stringLengthCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService;
-        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService;
-        private readonly AccountingAccountGroupCache _accountingAccountGroupCache;
-        private readonly CostCenterCache _costCenterCache;
-        private readonly StringLengthCache _stringLengthCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IRepository<WithholdingCertificateConfigGraphQLModel> _withholdingCertificateConfigService = withholdingCertificateConfigService;
+        private readonly IRepository<AccountingAccountGroupGraphQLModel> _accountingAccountGroupService = accountingAccountGroupService;
+        private readonly AccountingAccountGroupCache _accountingAccountGroupCache = accountingAccountGroupCache;
+        private readonly CostCenterCache _costCenterCache = costCenterCache;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
 
-        public WithholdingCertificateConfigViewModel Context { get; set; }
+        public WithholdingCertificateConfigViewModel Context { get; set; } = context;
 
         #endregion
 
@@ -43,29 +50,27 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public bool IsNewRecord => Entity == null || Entity.Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private WithholdingCertificateConfigGraphQLModel? _entity;
         public WithholdingCertificateConfigGraphQLModel? Entity
         {
-            get => _entity;
+            get;
             set
             {
-                if (_entity != value)
+                if (field != value)
                 {
-                    _entity = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Entity));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
@@ -76,81 +81,76 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         #region Dialog Size
 
-        private double _dialogWidth = 600;
         public double DialogWidth
         {
-            get => _dialogWidth;
+            get;
             set
             {
-                if (_dialogWidth != value)
+                if (field != value)
                 {
-                    _dialogWidth = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DialogWidth));
                 }
             }
-        }
+        } = 600;
 
-        private double _dialogHeight = 500;
         public double DialogHeight
         {
-            get => _dialogHeight;
+            get;
             set
             {
-                if (_dialogHeight != value)
+                if (field != value)
                 {
-                    _dialogHeight = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DialogHeight));
                 }
             }
-        }
+        } = 500;
 
         #endregion
 
         #region Form Properties
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _description = string.Empty;
         public string Description
         {
-            get => _description;
+            get;
             set
             {
-                if (_description != value)
+                if (field != value)
                 {
-                    _description = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Description));
                     ValidateProperty(nameof(Description), value);
                     this.TrackChange(nameof(Description));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private int? _costCenterId;
         public int? CostCenterId
         {
-            get => _costCenterId;
+            get;
             set
             {
-                if (_costCenterId != value)
+                if (field != value)
                 {
-                    _costCenterId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenterId));
                     this.TrackChange(nameof(CostCenterId));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -158,41 +158,38 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        private ObservableCollection<CostCenterDTO> _costCenters = [];
         public ObservableCollection<CostCenterDTO> CostCenters
         {
-            get => _costCenters;
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AccountingAccountGroupGraphQLModel> _accountingAccountGroups = [];
         public ObservableCollection<AccountingAccountGroupGraphQLModel> AccountingAccountGroups
         {
-            get => _accountingAccountGroups;
+            get;
             set
             {
-                if (_accountingAccountGroups != value)
+                if (field != value)
                 {
-                    _accountingAccountGroups = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountGroups));
                 }
             }
-        }
+        } = [];
 
-        private int? _selectedAccountingAccountGroupId;
         public int? SelectedAccountingAccountGroupId
         {
-            get => _selectedAccountingAccountGroupId;
+            get;
             set
             {
-                if (_selectedAccountingAccountGroupId != value)
+                if (field != value)
                 {
                     if (AccountingAccounts.Any(a => a.IsChecked == true))
                     {
@@ -207,7 +204,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                         }
                     }
 
-                    _selectedAccountingAccountGroupId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
                     NotifyOfPropertyChange(nameof(AccountingAccountGroupId));
                     this.TrackChange(nameof(AccountingAccountGroupId));
@@ -228,26 +225,24 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         public int? AccountingAccountGroupId => SelectedAccountingAccountGroupId;
 
         [ExpandoPath("AccountingAccountIds")]
-        public List<int> AccountingAccountIds => AccountingAccounts
+        public List<int> AccountingAccountIds => [.. AccountingAccounts
             .Where(f => f.IsChecked == true)
-            .Select(x => x.Id)
-            .ToList();
+            .Select(x => x.Id)];
 
-        private ObservableCollection<AccountingAccountGroupDetailDTO> _accountingAccounts = [];
         public ObservableCollection<AccountingAccountGroupDetailDTO> AccountingAccounts
         {
-            get => _accountingAccounts;
+            get;
             set
             {
-                if (_accountingAccounts != value)
+                if (field != value)
                 {
                     UnsubscribeAccountingAccountEvents();
-                    _accountingAccounts = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
                     SubscribeAccountingAccountEvents();
                 }
             }
-        }
+        } = [];
 
         #endregion
 
@@ -293,22 +288,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
-        private void ValidateProperty(string propertyName, string value)
+        private void ValidateProperty(string propertyName, string? value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty;
             ClearErrors(propertyName);
             switch (propertyName)
             {
                 case nameof(Name):
-                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
                     break;
                 case nameof(Description):
-                    if (string.IsNullOrEmpty(Description)) AddError(propertyName, "La descripción no puede estar vacía");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción no puede estar vacía");
                     break;
             }
         }
@@ -370,26 +364,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         }
 
         #endregion
-
         #region Constructor
-
-        public WithholdingCertificateConfigDetailViewModel(
-            WithholdingCertificateConfigViewModel context,
-            IRepository<WithholdingCertificateConfigGraphQLModel> withholdingCertificateConfigService,
-            IRepository<AccountingAccountGroupGraphQLModel> accountingAccountGroupService,
-            AccountingAccountGroupCache accountingAccountGroupCache,
-            CostCenterCache costCenterCache,
-            StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            Context = context;
-            _withholdingCertificateConfigService = withholdingCertificateConfigService;
-            _accountingAccountGroupService = accountingAccountGroupService;
-            _accountingAccountGroupCache = accountingAccountGroupCache;
-            _costCenterCache = costCenterCache;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
-        }
 
         #endregion
 
@@ -443,7 +418,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
             if (Entity?.AccountingAccountGroup is { Id: > 0 } group)
             {
-                _selectedAccountingAccountGroupId = group.Id;
+                SelectedAccountingAccountGroupId = group.Id;
                 NotifyOfPropertyChange(nameof(SelectedAccountingAccountGroupId));
                 await LoadGroupAccountsAsync(group.Id);
             }
@@ -656,12 +631,12 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 .Field(e => e.Name)
                 .Field(e => e.Description)
                 .Select(e => e.AccountingAccountGroup, group => group
-                    .Field(g => g.Id))
+                    .Field(g => g!.Id))
                 .SelectList(e => e.AccountingAccounts, accounts => accounts
-                    .Field(a => a.Id)
-                    .Field(a => a.Name))
+                    .Field(a => a!.Id)
+                    .Field(a => a!.Name))
                 .Select(e => e.CostCenter, cost => cost
-                    .Field(c => c.Id))
+                    .Field(c => c!.Id))
                 .Build();
 
             var fragment = new GraphQLQueryFragment("withholdingCertificate",
@@ -679,8 +654,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(e => e.Name)
                     .Field(e => e.Description)
                     .Select(e => e.CostCenter, cost => cost
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -703,8 +678,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     .Field(e => e.Name)
                     .Field(e => e.Description)
                     .Select(e => e.CostCenter, cost => cost
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -724,21 +699,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         private void SubscribeAccountingAccountEvents()
         {
-            foreach (var account in _accountingAccounts)
+            foreach (var account in AccountingAccounts)
             {
                 account.PropertyChanged += AccountingAccount_PropertyChanged;
             }
-            _accountingAccounts.CollectionChanged += AccountingAccounts_CollectionChanged;
+            AccountingAccounts.CollectionChanged += AccountingAccounts_CollectionChanged;
         }
 
         private void UnsubscribeAccountingAccountEvents()
         {
-            if (_accountingAccounts == null) return;
-            foreach (var account in _accountingAccounts)
+            if (AccountingAccounts == null) return;
+            foreach (var account in AccountingAccounts)
             {
                 account.PropertyChanged -= AccountingAccount_PropertyChanged;
             }
-            _accountingAccounts.CollectionChanged -= AccountingAccounts_CollectionChanged;
+            AccountingAccounts.CollectionChanged -= AccountingAccounts_CollectionChanged;
         }
 
         private void AccountingAccount_PropertyChanged(object? sender, PropertyChangedEventArgs e)
