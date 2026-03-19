@@ -30,7 +30,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using static Dictionaries.BooksDictionaries;
 using static Models.Global.GraphQLResponseTypes;
-using DevExpress.Data.Extensions;
 
 
 namespace NetErp.Billing.Sellers.ViewModels
@@ -290,12 +289,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             set
             {
-                _primaryCellPhone = value;
-                ValidateProperty(nameof(PrimaryCellPhone), value);
-                NotifyOfPropertyChange(nameof(PrimaryCellPhone));
-                this.TrackChange(nameof(PrimaryCellPhone));
-
-                NotifyOfPropertyChange(nameof(CanSave));
+                if (_primaryCellPhone != value)
+                {
+                    _primaryCellPhone = value;
+                    ValidateProperty(nameof(PrimaryCellPhone), value);
+                    NotifyOfPropertyChange(nameof(PrimaryCellPhone));
+                    this.TrackChange(nameof(PrimaryCellPhone));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
             }
         }
 
@@ -477,12 +478,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(IdentificationNumberMask));
+                    this.TrackChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanSave));
-                    if (IsNewRecord)
-                    {
-                        this.TrackChange(nameof(SelectedIdentificationType));
-                    }
-
 
                     ValidateProperty(nameof(IdentificationNumber), _identificationNumber);
                     if (IsNewRecord)
@@ -517,6 +514,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedCountry));
+                    this.TrackChange(nameof(SelectedCountry));
                     if (field != null && field.Departments.Count > 0)
                     {
                         SelectedDepartment = field.Departments.FirstOrDefault(x => x.CountryId == field.Id);
@@ -538,6 +536,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedDepartment));
+                    this.TrackChange(nameof(SelectedDepartment));
                     if (field != null && field.Cities.Count > 0)
                     {
                         SelectedCityId = field.Cities.First().Id;
@@ -558,26 +557,23 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 if (_emails != value)
                 {
-                    if (_emails != value)
+                    // Desuscribirse del anterior si existe
+                    if (_emails != null)
                     {
-                        // Desuscribirse del anterior si existe
-                        if (_emails != null)
-                        {
-                            _emails.CollectionChanged -= Emails_CollectionChanged!;
-                        }
-
-                        _emails = value;
-
-                        // Suscribirse al nuevo
-                        if (_emails != null)
-                        {
-                            _emails.CollectionChanged += Emails_CollectionChanged!;
-                        }
-
-                        NotifyOfPropertyChange(nameof(Emails));
-                        this.TrackChange(nameof(Emails));
-                        NotifyOfPropertyChange(nameof(CanSave));
+                        _emails.CollectionChanged -= Emails_CollectionChanged!;
                     }
+
+                    _emails = value;
+
+                    // Suscribirse al nuevo
+                    if (_emails != null)
+                    {
+                        _emails.CollectionChanged += Emails_CollectionChanged!;
+                    }
+
+                    NotifyOfPropertyChange(nameof(Emails));
+                    this.TrackChange(nameof(Emails));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -622,9 +618,10 @@ namespace NetErp.Billing.Sellers.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    NotifyOfPropertyChange(() => SelectedCaptureType);
-                    NotifyOfPropertyChange(() => CaptureInfoAsPN);
-                    NotifyOfPropertyChange(() => CaptureInfoAsPJ);
+                    NotifyOfPropertyChange(nameof(SelectedCaptureType));
+                    this.TrackChange(nameof(SelectedCaptureType));
+                    NotifyOfPropertyChange(nameof(CaptureInfoAsPN));
+                    NotifyOfPropertyChange(nameof(CaptureInfoAsPJ));
                     if (CaptureInfoAsPN)
                     {
                         ValidateProperty(nameof(FirstName), FirstName);
@@ -772,10 +769,11 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(EndRowEditing)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -838,26 +836,6 @@ namespace NetErp.Billing.Sellers.ViewModels
             this.AcceptChanges();
         }
 
-        public void PhoneInputLostFocus(FrameworkElement element)
-        {
-            switch (element.Name.ToLower())
-            {
-                case "primaryphone":
-                    PrimaryPhone = PrimaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "secondaryphone":
-                    SecondaryPhone = SecondaryPhone.ToPhoneFormat("### ## ##");
-                    break;
-                case "primarycellphone":
-                    PrimaryCellPhone = PrimaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-                case "secondarycellphone":
-                    SecondaryCellPhone = SecondaryCellPhone.ToPhoneFormat("### ### ## ##");
-                    break;
-                default:
-                    break;
-            }
-        }
         private void ListenCostCenterCheck()
         {
             foreach (var costCenter in CostCenters)
@@ -1034,10 +1012,11 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(AddEmail)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -1051,15 +1030,15 @@ namespace NetErp.Billing.Sellers.ViewModels
                     EmailDTO? emailToDelete = Emails.FirstOrDefault(email => email.Id == SelectedEmail.Id);
                     if (emailToDelete is null) return;
                     Emails.Remove(emailToDelete);
-
                 }
             }
             catch (Exception ex)
             {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(RemoveEmail)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
 
@@ -1275,10 +1254,11 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
             catch (Exception ex)
             {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(ValidateProperty)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>

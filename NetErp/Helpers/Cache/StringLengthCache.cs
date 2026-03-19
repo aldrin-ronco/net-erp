@@ -32,11 +32,24 @@ namespace NetErp.Helpers.Cache
         /// </summary>
         public async Task EnsureEntitiesLoadedAsync(params Type[] modelTypes)
         {
+            // Separate entities that have no string fields — skip API request for these
+            var noStringTypes = modelTypes
+                .Where(t => StringLengthEntities.NoStringFieldEntities.Contains(t))
+                .Select(ResolveEntityName)
+                .ToArray();
+
             string[] entityNames;
 
             lock (_lock)
             {
+                // Mark no-string-field entities as loaded (with zero fields)
+                foreach (var name in noStringTypes)
+                {
+                    _loadedEntities.Add(name);
+                }
+
                 entityNames = modelTypes
+                    .Where(t => !StringLengthEntities.NoStringFieldEntities.Contains(t))
                     .Select(ResolveEntityName)
                     .Where(name => !_loadedEntities.Contains(name))
                     .Distinct()

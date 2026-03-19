@@ -4,6 +4,7 @@ using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
 using System;
+using System.Collections.Generic;
 
 namespace NetErp.Helpers.Cache
 {
@@ -14,6 +15,17 @@ namespace NetErp.Helpers.Cache
     /// </summary>
     public static class StringLengthEntities
     {
+        /// <summary>
+        /// Entities whose database tables have NO varchar/string columns.
+        /// These are excluded from API requests (no point sending them) and
+        /// marked as loaded with zero fields in the cache.
+        ///
+        /// IMPORTANT: If a varchar column is ever added to one of these tables,
+        /// the corresponding type MUST be removed from this list so that
+        /// StringLengthCache starts fetching its constraints from the API.
+        /// </summary>
+        public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel)];
+
         // Billing
         public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
         public static readonly Type[] Seller = [typeof(SellerGraphQLModel), typeof(AccountingEntityGraphQLModel)];
