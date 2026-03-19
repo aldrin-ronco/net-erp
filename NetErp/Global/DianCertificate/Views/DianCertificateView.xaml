@@ -16,57 +16,66 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <!-- Empty State (full area when no records) -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay certificados registrados"
+                               Message="Cree un nuevo certificado DIAN para comenzar"
+                               ContextInfo="Los certificados digitales (firma electrónica) son requeridos para la firma de documentos electrónicos ante la DIAN, como facturación electrónica y nómina electrónica. Aquí puede cargar archivos .p12 o .pfx que contengan su firma digital vigente."
+                               Command="{Binding CreateCommand}"/>
 
-            <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
+            <!-- Content (visible when records exist) -->
+            <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- Row 1: Search box -->
-            <dxe:ButtonEdit
-                Grid.Row="1"
-                Margin="10,0,10,0"
-                NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
-                ToolTip="Escribe aquí para buscar"
-                MinHeight="25"
-                CharacterCasing="Upper"
-                BorderBrush="#C8CED6"
-                AllowDefaultButton="False"
-                h:FocusBehavior.IsFocused="True"
-                Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
-                <dxe:ButtonEdit.Buttons>
-                    <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
-                </dxe:ButtonEdit.Buttons>
-            </dxe:ButtonEdit>
+                <!-- Row 0: Search label -->
+                <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
-            <!-- Row 2: Filter + legend -->
-            <Grid Grid.Row="2" Margin="10,6,10,0">
-                <dxe:CheckEdit Content="Mostrar únicamente certificados vigentes"
-                               Style="{StaticResource BlueCheckedTextStyle}"
-                               Padding="2"
-                               IsChecked="{Binding IsValidFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                               HorizontalAlignment="Left"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Background="#E8F5E9" Width="14" Height="14" CornerRadius="2"
-                            BorderBrush="#A5D6A7" BorderThickness="1" Margin="0,0,5,0"/>
-                    <TextBlock Text="Certificado por defecto" FontSize="11" Foreground="Gray"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </Grid>
+                <!-- Row 1: Search box -->
+                <dxe:ButtonEdit
+                    Grid.Row="1"
+                    Margin="10,0,10,0"
+                    NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
+                    ToolTip="Escribe aquí para buscar"
+                    MinHeight="25"
+                    CharacterCasing="Upper"
+                    BorderBrush="#C8CED6"
+                    AllowDefaultButton="False"
+                    h:FocusBehavior.IsFocused="True"
+                    Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
+                    <dxe:ButtonEdit.Buttons>
+                        <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                    </dxe:ButtonEdit.Buttons>
+                </dxe:ButtonEdit>
 
-            <!-- Row 3: Grid -->
-            <busyIndicator:BusyMask x:Name="BusyIndicator"
-                                    IsBusy="{Binding IsBusy}"
-                                    IndicatorType="BouncingDot"
-                                    BusyContent="Por favor espere..."
-                                    BusyContentMargin="0,20,0,0"
-                                    Grid.Row="3">
+                <!-- Row 2: Filter + legend -->
+                <Grid Grid.Row="2" Margin="10,6,10,0">
+                    <dxe:CheckEdit Content="Mostrar únicamente certificados vigentes"
+                                   Style="{StaticResource BlueCheckedTextStyle}"
+                                   Padding="2"
+                                   IsChecked="{Binding IsValidFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   HorizontalAlignment="Left"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Border Background="#E8F5E9" Width="14" Height="14" CornerRadius="2"
+                                BorderBrush="#A5D6A7" BorderThickness="1" Margin="0,0,5,0"/>
+                        <TextBlock Text="Certificado por defecto" FontSize="11" Foreground="Gray"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 3: Grid -->
+                <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                        IsBusy="{Binding IsBusy}"
+                                        IndicatorType="BouncingDot"
+                                        BusyContent="Por favor espere..."
+                                        BusyContentMargin="0,20,0,0"
+                                        Grid.Row="3">
 
                 <dxg:GridControl Margin="10,6,10,0"
                                  ItemsSource="{Binding Certificates, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -99,12 +108,18 @@
                     </dxg:GridControl.View>
 
                     <dxg:GridColumn Header="No. Serie" HorizontalHeaderContentAlignment="Center" Width="Auto"
-                                    Binding="{Binding SerialNumber}"/>
+                                    Binding="{Binding SerialNumber}">
+                        <dxg:GridColumn.CellDisplayTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Value}" Padding="4,3,4,3"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellDisplayTemplate>
+                    </dxg:GridColumn>
                     <dxg:GridColumn Header="Emisor" HorizontalHeaderContentAlignment="Center" Width="*"
                                     Binding="{Binding Issuer}">
                         <dxg:GridColumn.CellDisplayTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Padding="2"/>
+                                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Padding="4,3,4,3"/>
                             </DataTemplate>
                         </dxg:GridColumn.CellDisplayTemplate>
                     </dxg:GridColumn>
@@ -112,27 +127,31 @@
                                     Binding="{Binding Subject}">
                         <dxg:GridColumn.CellDisplayTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Padding="2"/>
+                                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Padding="4,3,4,3"/>
                             </DataTemplate>
                         </dxg:GridColumn.CellDisplayTemplate>
                     </dxg:GridColumn>
                     <dxg:GridColumn Header="Válido desde" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding ValidFrom, StringFormat='{}{0:yyyy-MM-dd}'}">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:TextEditSettings HorizontalContentAlignment="Center"/>
-                        </dxg:GridColumn.EditSettings>
+                        <dxg:GridColumn.CellDisplayTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Value}" HorizontalAlignment="Center" Padding="4,3,4,3"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellDisplayTemplate>
                     </dxg:GridColumn>
                     <dxg:GridColumn Header="Válido hasta" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding ValidTo, StringFormat='{}{0:yyyy-MM-dd}'}">
-                        <dxg:GridColumn.EditSettings>
-                            <dxe:TextEditSettings HorizontalContentAlignment="Center"/>
-                        </dxg:GridColumn.EditSettings>
+                        <dxg:GridColumn.CellDisplayTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Value}" HorizontalAlignment="Center" Padding="4,3,4,3"/>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellDisplayTemplate>
                     </dxg:GridColumn>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
 
-            <!-- Row 4: Pagination -->
-            <uc:GridPaging Grid.Row="4"
+                <!-- Row 4: Pagination -->
+                <uc:GridPaging Grid.Row="4"
                            Margin="10,6,10,0"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
@@ -142,8 +161,8 @@
                            TotalCount="{Binding TotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-            <!-- Row 5: Action buttons centered -->
-            <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                <!-- Row 5: Action buttons centered -->
+                <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <!-- Nuevo -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                         IsEnabled="{Binding IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
@@ -186,7 +205,8 @@
                         <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>
