@@ -33,6 +33,8 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
+        private bool _isInitialized;
+
         #endregion
 
         #region Grid Properties
@@ -61,9 +63,14 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 {
                     _awsS3Configs = value;
                     NotifyOfPropertyChange(nameof(AwsS3Configs));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
+
+        public bool HasRecords => _isInitialized && AwsS3Configs != null && AwsS3Configs.Count > 0;
+        public bool ShowEmptyState => _isInitialized && (AwsS3Configs == null || AwsS3Configs.Count == 0);
 
         private AwsS3ConfigGraphQLModel? _selectedItem;
         public AwsS3ConfigGraphQLModel? SelectedItem
@@ -235,6 +242,9 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AwsS3Config);
                 await LoadAwsS3ConfigsAsync();
+                _isInitialized = true;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                NotifyOfPropertyChange(nameof(ShowEmptyState));
             }
             catch (Exception ex)
             {

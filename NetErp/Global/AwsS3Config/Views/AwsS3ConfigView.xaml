@@ -16,16 +16,31 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <!-- Initial loading -->
+            <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0"/>
 
-            <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
+            <!-- Empty State -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay configuraciones AWS S3 registradas"
+                               Message="Cree una nueva configuración para comenzar"
+                               ContextInfo="Las configuraciones AWS S3 permiten el almacenamiento de archivos en la nube de Amazon, como documentos electrónicos, respaldos y recursos de la aplicación."
+                               Command="{Binding CreateCommand}"/>
+
+            <!-- Content -->
+            <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Search label -->
+                <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
             <!-- Row 1: Search box -->
             <dxe:ButtonEdit
@@ -150,7 +165,8 @@
                         <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>
