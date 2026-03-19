@@ -16,6 +16,12 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
+            <!-- Initial loading (full area, before data is loaded) -->
+            <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0"/>
+
             <!-- Empty State (full area when no records) -->
             <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                Title="No hay certificados registrados"
