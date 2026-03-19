@@ -15,13 +15,11 @@
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
+        <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                                IndicatorType="BouncingDot"
+                                BusyContent="Por favor espere..."
+                                BusyContentMargin="0,20,0,0">
         <Grid>
-            <!-- Initial loading -->
-            <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
-                                    IndicatorType="BouncingDot"
-                                    BusyContent="Por favor espere..."
-                                    BusyContentMargin="0,20,0,0"/>
-
             <!-- Empty State -->
             <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                Title="No hay servidores SMTP registrados"
@@ -60,14 +58,7 @@
             </dxe:ButtonEdit>
 
             <!-- Row 2: Grid -->
-            <busyIndicator:BusyMask x:Name="BusyIndicator"
-                                    IsBusy="{Binding IsBusy}"
-                                    IndicatorType="BouncingDot"
-                                    BusyContent="Por favor espere..."
-                                    BusyContentMargin="0,20,0,0"
-                                    Grid.Row="2">
-
-                <dxg:GridControl Margin="10,6,10,0"
+                <dxg:GridControl Grid.Row="2" Margin="10,6,10,0"
                                  ItemsSource="{Binding Path=Smtps, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                  SelectedItem="{Binding Path=SelectedSmtp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <dxg:GridControl.View>
@@ -94,7 +85,6 @@
                         </dxg:GridColumn.EditSettings>
                     </dxg:GridColumn>
                 </dxg:GridControl>
-            </busyIndicator:BusyMask>
 
             <!-- Row 3: Pagination -->
             <uc:GridPaging Grid.Row="3"
@@ -175,5 +165,6 @@
                 </StackPanel>
             </Grid>
         </Grid>
+        </busyIndicator:BusyMask>
     </Border>
 </UserControl>
