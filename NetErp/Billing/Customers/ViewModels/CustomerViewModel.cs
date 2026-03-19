@@ -5,10 +5,9 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
-using Models.Global;
 using Models.Suppliers;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
@@ -46,6 +45,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly WithholdingTypeCache _withholdingTypeCache;
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         private bool _isInitialized;
 
@@ -257,7 +257,8 @@ namespace NetErp.Billing.Customers.ViewModels
                                  CountryCache countryCache,
                                  WithholdingTypeCache withholdingTypeCache,
                                  ZoneCache zoneCache,
-                                 StringLengthCache stringLengthCache)
+                                 StringLengthCache stringLengthCache,
+                                 JoinableTaskFactory joinableTaskFactory)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -269,6 +270,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _withholdingTypeCache = withholdingTypeCache ?? throw new ArgumentNullException(nameof(withholdingTypeCache));
             _zoneCache = zoneCache ?? throw new ArgumentNullException(nameof(zoneCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -283,18 +285,22 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
+                await LoadCustomersAsync();
+                _isInitialized = true;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                this.SetFocus(() => FilterSearch);
             }
-            catch (StringLengthNotAvailableException ex)
+            catch (Exception ex)
             {
-                ThemedMessageBox.Show("Atención!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
                 await TryCloseAsync();
-                return;
             }
-            await LoadCustomersAsync();
-            _isInitialized = true;
-            NotifyOfPropertyChange(nameof(HasRecords));
-            NotifyOfPropertyChange(nameof(ShowEmptyState));
-            this.SetFocus(() => FilterSearch);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -316,7 +322,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -324,9 +330,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateCustomerAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -340,7 +347,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedCustomer.Id);
                 IsBusy = false;
@@ -348,9 +355,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(EditCustomerAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -364,7 +372,6 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteCustomerQuery.Value;
                 var canDeleteVars = new GraphQLVariables()
@@ -389,37 +396,53 @@ namespace NetErp.Billing.Customers.ViewModels
                 }
 
                 IsBusy = true;
-                var (deleteFragment, deleteQuery) = _deleteCustomerQuery.Value;
-                var deleteVars = new GraphQLVariables()
-                    .For(deleteFragment, "id", SelectedCustomer.Id)
-                    .Build();
-                DeleteResponseType deletedCustomer = await _customerService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+                DeleteResponseType deletedCustomer = await ExecuteDeleteAsync(SelectedCustomer.Id);
 
                 if (!deletedCustomer.Success)
                 {
-                    ThemedMessageBox.Show(title: "Atención !",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedCustomer.Message} \n\n Verifica la información e intenta más tarde.");
+                    ThemedMessageBox.Show(title: "Atención!",
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedCustomer.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new CustomerDeleteMessage { DeletedCustomer = deletedCustomer });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new CustomerDeleteMessage { DeletedCustomer = deletedCustomer },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al eliminar el registro.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteCustomerAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        {
+            try
+            {
+                var (fragment, query) = _deleteCustomerQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _customerService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -433,8 +456,7 @@ namespace NetErp.Billing.Customers.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadCustomersQuery.Value;
 
@@ -457,9 +479,10 @@ namespace NetErp.Billing.Customers.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadCustomersAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
