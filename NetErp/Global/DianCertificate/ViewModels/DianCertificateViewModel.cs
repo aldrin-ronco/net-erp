@@ -58,9 +58,14 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 {
                     _certificates = value;
                     NotifyOfPropertyChange(nameof(Certificates));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
+
+        public bool HasRecords => !_isInitialized || (Certificates != null && Certificates.Count > 0);
+        public bool ShowEmptyState => _isInitialized && (Certificates == null || Certificates.Count == 0);
 
         private DianCertificateGraphQLModel? _selectedCertificate;
         public DianCertificateGraphQLModel? SelectedCertificate
@@ -256,6 +261,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 await LoadDefaultCertificateIdAsync();
                 await LoadCertificatesAsync();
                 _isInitialized = true;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                NotifyOfPropertyChange(nameof(ShowEmptyState));
             }
             catch (Exception ex)
             {

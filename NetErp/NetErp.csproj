@@ -97,6 +97,7 @@
   <ItemGroup>
     <Resource Include="Global\Resources\Images\QualityLogo.BMP" />
     <Resource Include="Global\Resources\Images\WithoutResponse.png" />
+    <Resource Include="Resources\Images\vecteezy_desert-landscape-404-error-page-concept-illustration-flat_9007135.jpg" />
   </ItemGroup>
 
 </Project>
