@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Global;
+using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
@@ -115,6 +116,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
         }
 
+        private readonly DebouncedAction _searchDebounce = new();
+
         private string _filterSearch = string.Empty;
         public string FilterSearch
         {
@@ -128,7 +131,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = LoadCertificatesAsync();
+                        _ = _searchDebounce.RunAsync(LoadCertificatesAsync);
                     }
                 }
             }

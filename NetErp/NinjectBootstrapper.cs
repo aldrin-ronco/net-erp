@@ -177,36 +177,36 @@ namespace NetErp
             _ = kernel.Bind<StringLengthCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StringLengthCache>());
 
-            _ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope(); //implementado por books, revisar 
-            _ = kernel.Bind<IGenericDataAccess<MeasurementUnitGraphQLModel>>().To<MeasurementUnitService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CatalogGraphQLModel>>().To<CatalogService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemTypeGraphQLModel>>().To<ItemTypeService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemSubCategoryGraphQLModel>>().To<ItemSubCategoryService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ProcessTypeGraphQLModel>>().To<ProcessTypeService>().InSingletonScope(); //implementado por books, revisar 
+            //_ = kernel.Bind<IGenericDataAccess<MeasurementUnitGraphQLModel>>().To<MeasurementUnitService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CatalogGraphQLModel>>().To<CatalogService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ItemTypeGraphQLModel>>().To<ItemTypeService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ItemCategoryGraphQLModel>>().To<ItemCategoryService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ItemSubCategoryGraphQLModel>>().To<ItemSubCategoryService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ItemGraphQLModel>>().To<ItemService>().InSingletonScope();
 
-            _ = kernel.Bind<IGenericDataAccess<AwsS3ConfigGraphQLModel>>().To<AwsS3ConfigService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CompanyGraphQLModel>>().To<CompanyService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CompanyLocationGraphQLModel>>().To<CompanyLocationService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CostCenterGraphQLModel>>().To<CostCenterService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<StorageGraphQLModel>>().To<StorageService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<CashDrawerGraphQLModel>>().To<CashDrawerService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<BankGraphQLModel>>().To<BankService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<BankAccountGraphQLModel>>().To<BankAccountService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<FranchiseGraphQLModel>>().To<FranchiseService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<SmtpGraphQLModel>>().To<SmtpService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<TreasuryConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
-            _ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<AwsS3ConfigGraphQLModel>>().To<AwsS3ConfigService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CompanyGraphQLModel>>().To<CompanyService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CompanyLocationGraphQLModel>>().To<CompanyLocationService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CostCenterGraphQLModel>>().To<CostCenterService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<StorageGraphQLModel>>().To<StorageService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<CashDrawerGraphQLModel>>().To<CashDrawerService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<BankGraphQLModel>>().To<BankService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<BankAccountGraphQLModel>>().To<BankAccountService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<FranchiseGraphQLModel>>().To<FranchiseService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<SmtpGraphQLModel>>().To<SmtpService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ZoneGraphQLModel>>().To<ZoneService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<EmailGraphQLModel>>().To<EmailService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<TreasuryConceptGraphQLModel>>().To<ConceptService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<PriceListGraphQLModel>>().To<PriceListService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
           
-            _ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
+            //_ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
             
             // New GraphQL Infrastructure
             // Nueva estructura de servicios e inyección de dependencias

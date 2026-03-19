@@ -80,6 +80,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
+        private readonly DebouncedAction _searchDebounce = new();
+
         private string _filterSearch = string.Empty;
         public string FilterSearch
         {
@@ -93,7 +95,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = LoadSellersAsync();
+                        _ = _searchDebounce.RunAsync(LoadSellersAsync);
                     }
                 }
             }
