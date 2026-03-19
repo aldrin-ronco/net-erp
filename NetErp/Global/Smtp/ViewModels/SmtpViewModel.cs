@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Global;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -98,6 +99,8 @@ namespace NetErp.Global.Smtp.ViewModels
             }
         }
 
+        private readonly DebouncedAction _searchDebounce = new();
+
         private string _filterSearch = string.Empty;
         public string FilterSearch
         {
@@ -108,7 +111,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadSmtpsAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = _searchDebounce.RunAsync(LoadSmtpsAsync);
                 }
             }
         }

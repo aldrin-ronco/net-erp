@@ -40,58 +40,54 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public bool HasRecords => !ShowEmptyState;
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<ZoneGraphQLModel> _zones = [];
         public ObservableCollection<ZoneGraphQLModel> Zones
         {
-            get => _zones;
+            get;
             set
             {
-                if (_zones != value)
+                if (field != value)
                 {
-                    _zones = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Zones));
                 }
             }
-        }
+        } = [];
 
-        private ZoneGraphQLModel? _selectedZone;
         public ZoneGraphQLModel? SelectedZone
         {
-            get => _selectedZone;
+            get;
             set
             {
-                if (_selectedZone != value)
+                if (field != value)
                 {
-                    _selectedZone = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedZone));
                     NotifyOfPropertyChange(nameof(CanEditZone));
                     NotifyOfPropertyChange(nameof(CanDeleteZone));
@@ -99,95 +95,91 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
+        private readonly DebouncedAction _searchDebounce = new();
+
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = LoadZonesAsync();
+                        _ = _searchDebounce.RunAsync(LoadZonesAsync);
                     }
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _showActiveZonesOnly = true;
         public bool ShowActiveZonesOnly
         {
-            get => _showActiveZonesOnly;
+            get;
             set
             {
-                if (_showActiveZonesOnly != value)
+                if (field != value)
                 {
-                    _showActiveZonesOnly = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowActiveZonesOnly));
                     _ = LoadZonesAsync();
                 }
             }
-        }
+        } = true;
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
 
         #endregion
 
