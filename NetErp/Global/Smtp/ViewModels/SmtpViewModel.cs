@@ -33,6 +33,8 @@ namespace NetErp.Global.Smtp.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
+        private bool _isInitialized;
+
         #endregion
 
         #region Grid Properties
@@ -61,9 +63,14 @@ namespace NetErp.Global.Smtp.ViewModels
                 {
                     _smtps = value;
                     NotifyOfPropertyChange(nameof(Smtps));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
+
+        public bool HasRecords => _isInitialized && Smtps != null && Smtps.Count > 0;
+        public bool ShowEmptyState => _isInitialized && (Smtps == null || Smtps.Count == 0);
 
         private SmtpGraphQLModel? _selectedSmtp;
         public SmtpGraphQLModel? SelectedSmtp
@@ -235,6 +242,9 @@ namespace NetErp.Global.Smtp.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Smtp);
                 await LoadSmtpsAsync();
+                _isInitialized = true;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                NotifyOfPropertyChange(nameof(ShowEmptyState));
             }
             catch (Exception ex)
             {
