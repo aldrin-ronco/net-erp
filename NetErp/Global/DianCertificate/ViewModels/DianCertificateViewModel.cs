@@ -64,7 +64,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
         }
 
-        public bool HasRecords => !_isInitialized || (Certificates != null && Certificates.Count > 0);
+        public bool HasRecords => _isInitialized && Certificates != null && Certificates.Count > 0;
         public bool ShowEmptyState => _isInitialized && (Certificates == null || Certificates.Count == 0);
 
         private DianCertificateGraphQLModel? _selectedCertificate;
