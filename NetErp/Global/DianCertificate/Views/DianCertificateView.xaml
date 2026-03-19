@@ -15,10 +15,6 @@
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
-        <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
-                                IndicatorType="BouncingDot"
-                                BusyContent="Por favor espere..."
-                                BusyContentMargin="0,20,0,0">
         <Grid>
             <!-- Empty State (full area when no records) -->
             <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
@@ -74,7 +70,11 @@
                 </Grid>
 
                 <!-- Row 3: Grid -->
-                <dxg:GridControl Grid.Row="3" Margin="10,6,10,0"
+                <busyIndicator:BusyMask Grid.Row="3" IsBusy="{Binding IsBusy}"
+                                        IndicatorType="BouncingDot"
+                                        BusyContent="Por favor espere..."
+                                        BusyContentMargin="0,20,0,0">
+                <dxg:GridControl Margin="10,6,10,0"
                                  ItemsSource="{Binding Certificates, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                  SelectedItem="{Binding SelectedCertificate, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <dxg:GridControl.View>
@@ -145,6 +145,7 @@
                         </dxg:GridColumn.CellDisplayTemplate>
                     </dxg:GridColumn>
                 </dxg:GridControl>
+                </busyIndicator:BusyMask>
 
                 <!-- Row 4: Pagination -->
                 <uc:GridPaging Grid.Row="4"
@@ -204,6 +205,5 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        </busyIndicator:BusyMask>
     </Border>
 </UserControl>

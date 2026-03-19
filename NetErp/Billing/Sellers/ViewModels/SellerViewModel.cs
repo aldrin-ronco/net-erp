@@ -49,11 +49,22 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Grid Properties
 
-        private bool _isInitialized;
+        public bool HasRecords => !ShowEmptyState;
 
-        public bool HasRecords => _isInitialized && Sellers != null && Sellers.Count > 0;
-
-        public bool ShowEmptyState => _isInitialized && (Sellers == null || Sellers.Count == 0);
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
 
         private bool _isBusy;
         public bool IsBusy
@@ -142,8 +153,6 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     _sellers = value;
                     NotifyOfPropertyChange(nameof(Sellers));
-                    NotifyOfPropertyChange(nameof(HasRecords));
-                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
@@ -316,9 +325,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await _costCenterCache.EnsureLoadedAsync();
                 CostCenters = [.. _costCenterCache.Items];
                 await LoadSellersAsync();
-                _isInitialized = true;
-                NotifyOfPropertyChange(nameof(HasRecords));
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                ShowEmptyState = Sellers == null || Sellers.Count == 0;
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)
@@ -595,6 +602,7 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public async Task HandleAsync(SellerCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadSellersAsync();
             _notificationService.ShowSuccess(message.CreatedSeller.Message);
         }
@@ -608,6 +616,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         public async Task HandleAsync(SellerDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadSellersAsync();
+            ShowEmptyState = Sellers == null || Sellers.Count == 0;
             SelectedSeller = null;
             _notificationService.ShowSuccess(message.DeletedSeller.Message);
         }

@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -58,6 +59,36 @@ namespace NetErp.Billing.Zones.ViewModels
                 return _cancelCommand;
             }
         }
+
+        #endregion
+
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 400;
+
+        public double DialogHeight
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
+                }
+            }
+        } = 250;
 
         #endregion
 
@@ -344,8 +375,8 @@ namespace NetErp.Billing.Zones.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
         private void AddError(string propertyName, string error)

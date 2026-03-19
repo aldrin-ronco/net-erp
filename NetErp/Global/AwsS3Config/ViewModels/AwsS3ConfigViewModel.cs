@@ -33,8 +33,6 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
-        private bool _isInitialized;
-
         #endregion
 
         #region Grid Properties
@@ -63,14 +61,26 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 {
                     _awsS3Configs = value;
                     NotifyOfPropertyChange(nameof(AwsS3Configs));
-                    NotifyOfPropertyChange(nameof(HasRecords));
-                    NotifyOfPropertyChange(nameof(ShowEmptyState));
                 }
             }
         }
 
-        public bool HasRecords => _isInitialized && AwsS3Configs != null && AwsS3Configs.Count > 0;
-        public bool ShowEmptyState => _isInitialized && (AwsS3Configs == null || AwsS3Configs.Count == 0);
+        public bool HasRecords => !ShowEmptyState;
+
+        private bool _showEmptyState;
+        public bool ShowEmptyState
+        {
+            get => _showEmptyState;
+            set
+            {
+                if (_showEmptyState != value)
+                {
+                    _showEmptyState = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
 
         private AwsS3ConfigGraphQLModel? _selectedItem;
         public AwsS3ConfigGraphQLModel? SelectedItem
@@ -242,9 +252,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AwsS3Config);
                 await LoadAwsS3ConfigsAsync();
-                _isInitialized = true;
-                NotifyOfPropertyChange(nameof(HasRecords));
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                ShowEmptyState = AwsS3Configs == null || AwsS3Configs.Count == 0;
             }
             catch (Exception ex)
             {
@@ -497,6 +505,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
         public async Task HandleAsync(AwsS3ConfigCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadAwsS3ConfigsAsync();
             _notificationService.ShowSuccess(message.CreatedAwsS3Config.Message);
         }
@@ -510,6 +519,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         public async Task HandleAsync(AwsS3ConfigDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadAwsS3ConfigsAsync();
+            ShowEmptyState = AwsS3Configs == null || AwsS3Configs.Count == 0;
             SelectedItem = null;
             _notificationService.ShowSuccess(message.DeletedAwsS3Config.Message);
         }

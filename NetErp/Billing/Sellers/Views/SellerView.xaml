@@ -15,10 +15,6 @@
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
-        <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
-                                IndicatorType="BouncingDot"
-                                BusyContent="Por favor espere..."
-                                BusyContentMargin="0,20,0,0">
         <Grid>
             <!-- Empty State -->
             <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
@@ -79,7 +75,13 @@
                                Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
 
                 <!-- Row 4: Grid -->
-                <dxg:GridControl Grid.Row="4" Margin="10,6,10,0"
+                <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                        IsBusy="{Binding IsBusy}"
+                                        IndicatorType="BouncingDot"
+                                        BusyContent="Por favor espere..."
+                                        BusyContentMargin="0,20,0,0"
+                                        Grid.Row="4">
+                <dxg:GridControl Margin="10,6,10,0"
                                      ItemsSource="{Binding Path=Sellers, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                      SelectedItem="{Binding Path=SelectedSeller, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <dxg:GridControl.View>
@@ -121,6 +123,7 @@
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
                 </dxg:GridControl>
+                </busyIndicator:BusyMask>
 
                 <!-- Row 5: Pagination -->
                 <uc:GridPaging Grid.Row="5"
@@ -201,6 +204,5 @@
                 </StackPanel>
             </Grid>
         </Grid>
-        </busyIndicator:BusyMask>
     </Border>
 </UserControl>
