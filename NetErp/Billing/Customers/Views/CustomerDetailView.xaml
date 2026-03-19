@@ -234,7 +234,6 @@
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding PrimaryPhoneMaxLength}"
                                               MaskType="Simple" Mask="000 00 00"
-                                              cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="0,0,4,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
                                 <TextBlock Text="Teléfono Fijo 2" Grid.Column="1" Grid.Row="4" Margin="4,0,4,3" FontSize="13"/>
@@ -242,7 +241,6 @@
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding SecondaryPhoneMaxLength}"
                                               MaskType="Simple" Mask="000 00 00"
-                                              cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="4,0,4,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
                                 <TextBlock Text="Celular 1" Grid.Column="2" Grid.Row="4" Margin="4,0,4,3" FontSize="13"/>
@@ -250,7 +248,6 @@
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding PrimaryCellPhoneMaxLength}"
                                               MaskType="Simple" Mask="000 000 00 00"
-                                              cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="4,0,4,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
                                 <TextBlock Text="Celular 2" Grid.Column="3" Grid.Row="4" Margin="4,0,0,3" FontSize="13"/>
@@ -258,7 +255,6 @@
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding SecondaryCellPhoneMaxLength}"
                                               MaskType="Simple" Mask="000 000 00 00"
-                                              cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="4,0,0,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
                                 <!-- País -->
