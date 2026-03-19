@@ -49,7 +49,9 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         #region Grid Properties
 
-        public bool HasRecords => !ShowEmptyState;
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         private bool _showEmptyState;
         public bool ShowEmptyState
@@ -327,7 +329,9 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await _costCenterCache.EnsureLoadedAsync();
                 CostCenters = [.. _costCenterCache.Items];
                 await LoadSellersAsync();
+                _isInitialized = true;
                 ShowEmptyState = Sellers == null || Sellers.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
                 this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)

@@ -9,33 +9,44 @@
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+            <!-- Empty State -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay certificados de retención registrados"
+                               Message="Cree un nuevo certificado de retención para comenzar"
+                               ContextInfo="Los certificados de retención definen la configuración para generar e imprimir los certificados que acreditan las retenciones practicadas a terceros, asociando las cuentas contables y el centro de costo correspondiente."
+                               Command="{Binding CreateCommand}"/>
 
-            <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
+            <!-- Content -->
+            <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Search label -->
+                <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
             <!-- Row 1: Search box -->
             <dxe:ButtonEdit
                 Grid.Row="1"
                 Margin="10,0,10,0"
-                NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
-                ToolTip="Escribe aqui para buscar"
+                NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
+                ToolTip="Escribe aquí para buscar"
                 MinHeight="25"
                 CharacterCasing="Upper"
                 BorderBrush="#C8CED6"
                 AllowDefaultButton="False"
+                h:FocusBehavior.IsFocused="True"
                 Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
                 <dxe:ButtonEdit.Buttons>
                     <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
@@ -68,10 +79,10 @@
                                        RowMinHeight="23"/>
                     </dxg:GridControl.View>
 
-                    <dxg:GridColumn Header="Nombre" Width="*" HorizontalHeaderContentAlignment="Center"
+                    <dxg:GridColumn Header="Nombre" Width="*" HorizontalHeaderContentAlignment="Left"
                                     Binding="{Binding Name}"/>
 
-                    <dxg:GridColumn Header="Descripción" Width="*" HorizontalHeaderContentAlignment="Center"
+                    <dxg:GridColumn Header="Descripción" Width="*" HorizontalHeaderContentAlignment="Left"
                                     Binding="{Binding Description}"/>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
@@ -152,7 +163,8 @@
                         <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

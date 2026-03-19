@@ -6,25 +6,21 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetErp.Helpers.Cache
 {
-    public class StringLengthCache : IEntityCache
+    public class StringLengthCache(IRepository<EntityStringLengthsGraphQLModel> repository) : IEntityCache
     {
-        private readonly IRepository<EntityStringLengthsGraphQLModel> _repository;
-        private readonly object _lock = new();
+        private readonly IRepository<EntityStringLengthsGraphQLModel> _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        private readonly Lock _lock = new();
 
         // entity (snake_case) → column (snake_case) → maxLength
         private readonly Dictionary<string, Dictionary<string, int>> _data = [];
         private readonly HashSet<string> _loadedEntities = [];
 
         public bool IsInitialized => _loadedEntities.Count > 0;
-
-        public StringLengthCache(IRepository<EntityStringLengthsGraphQLModel> repository)
-        {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        }
 
         /// <summary>
         /// Ensures the specified model types have their string lengths loaded from the API.
@@ -48,12 +44,11 @@ namespace NetErp.Helpers.Cache
                     _loadedEntities.Add(name);
                 }
 
-                entityNames = modelTypes
+                entityNames = [.. modelTypes
                     .Where(t => !StringLengthEntities.NoStringFieldEntities.Contains(t))
                     .Select(ResolveEntityName)
                     .Where(name => !_loadedEntities.Contains(name))
-                    .Distinct()
-                    .ToArray();
+                    .Distinct()];
             }
 
             if (entityNames.Length == 0) return;
@@ -143,10 +138,14 @@ namespace NetErp.Helpers.Cache
 
         /// <summary>
         /// Resolves a GraphQL model type to its snake_case entity name.
+        /// First checks EntityNameOverrides for explicit mappings, then falls back
+        /// to convention: strip "GraphQLModel" suffix and convert to snake_case.
         /// Example: AccountingEntityGraphQLModel → "accounting_entity"
         /// </summary>
         public static string ResolveEntityName(Type type)
         {
+            if (StringLengthEntities.EntityNameOverrides.TryGetValue(type, out var overrideName))
+                return overrideName;
             var name = type.Name.Replace("GraphQLModel", "");
             return ToSnakeCase(name);
         }

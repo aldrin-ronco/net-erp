@@ -8,6 +8,7 @@
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              Background="#EEF1F5">
@@ -21,7 +22,7 @@
                 CornerRadius="8" Margin="8,0,8,8"
                 Width="{Binding DialogWidth}"
                 Height="{Binding DialogHeight}">
-            <Grid Margin="15,15,15,5">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -34,7 +35,7 @@
 
                 <!-- Row 0: Centro de costo -->
                 <StackPanel Grid.Row="0" Orientation="Vertical">
-                    <TextBlock Text="Centro de costo" Margin="0,0,0,3"/>
+                    <TextBlock Text="Centro de costo" Margin="0,0,0,3" FontSize="13"/>
                     <TextBlock Text="Centro de costo del cual se tomarán los datos geográficos (dirección, ciudad, teléfonos) que podrían aparecer en el certificado de retención"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding Path=CostCenters, UpdateSourceTrigger=PropertyChanged}"
@@ -52,7 +53,7 @@
 
                 <!-- Row 1: Nombre -->
                 <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,8,0,0">
-                    <TextBlock Text="Nombre del certificado de retención" Margin="0,0,0,3"/>
+                    <TextBlock Text="Nombre del certificado de retención" Margin="0,0,0,3" FontSize="13"/>
                     <TextBlock Text="Nombre que aparecerá como título al imprimir el certificado, por ejemplo: CERTIFICADO DE RETENCIÓN POR COMPRAS"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -66,7 +67,7 @@
 
                 <!-- Row 2: Descripción -->
                 <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,8,0,0">
-                    <TextBlock Text="Descripción del certificado de retención" Margin="0,0,0,3"/>
+                    <TextBlock Text="Descripción del certificado de retención" Margin="0,0,0,3" FontSize="13"/>
                     <TextBlock Text="Texto descriptivo de uso interno para diferenciar este certificado de otros configurados"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -79,7 +80,7 @@
 
                 <!-- Row 3: Grupo de cuentas contables -->
                 <StackPanel Grid.Row="3" Orientation="Vertical" Margin="0,8,0,0">
-                    <TextBlock Text="Grupo de cuentas contables" Margin="0,0,0,3"/>
+                    <TextBlock Text="Grupo de cuentas contables" Margin="0,0,0,3" FontSize="13"/>
                     <TextBlock Text="Grupo de cuentas contables cuyas cuentas estarán disponibles para asociar al certificado de retención"
                                Foreground="Gray" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,5"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding Path=AccountingAccountGroups, UpdateSourceTrigger=PropertyChanged}"
@@ -95,7 +96,7 @@
                 </StackPanel>
 
                 <!-- Row 4: Label cuentas contables -->
-                <TextBlock Grid.Row="4" Text="Cuentas contables del grupo seleccionado" Margin="0,8,0,5"/>
+                <TextBlock Grid.Row="4" Text="Cuentas contables del grupo seleccionado" Margin="0,8,0,5" FontSize="13"/>
 
                 <!-- Row 5: Grid de cuentas -->
                 <dxg:GridControl Grid.Row="5" Margin="0,0,0,0"

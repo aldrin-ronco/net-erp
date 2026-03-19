@@ -66,7 +66,9 @@ namespace NetErp.Global.Smtp.ViewModels
             }
         }
 
-        public bool HasRecords => !ShowEmptyState;
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         private bool _showEmptyState;
         public bool ShowEmptyState
@@ -255,7 +257,9 @@ namespace NetErp.Global.Smtp.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Smtp);
                 await LoadSmtpsAsync();
+                _isInitialized = true;
                 ShowEmptyState = Smtps == null || Smtps.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
             }
             catch (Exception ex)
             {

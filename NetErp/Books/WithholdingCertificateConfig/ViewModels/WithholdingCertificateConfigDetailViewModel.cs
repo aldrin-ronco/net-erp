@@ -268,8 +268,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -523,6 +523,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
                 if (!result.Success)
                 {
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
                     ThemedMessageBox.Show(
                         text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
@@ -598,14 +599,21 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public async Task<WithholdingCertificateConfigGraphQLModel> LoadDataForEditAsync(int id)
         {
-            var (fragment, query) = _loadByIdQuery.Value;
-            var variables = new GraphQLVariables()
-                .For(fragment, "id", id)
-                .Build();
+            try
+            {
+                var (fragment, query) = _loadByIdQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
 
-            var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
-            PopulateFromEntity(certificate);
-            return certificate;
+                var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
+                PopulateFromEntity(certificate);
+                return certificate;
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
         public void PopulateFromEntity(WithholdingCertificateConfigGraphQLModel entity)

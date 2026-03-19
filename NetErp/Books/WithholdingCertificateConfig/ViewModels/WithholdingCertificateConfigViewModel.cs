@@ -1,11 +1,14 @@
 using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
+using DevExpress.Xpf.Core;
 using Models.Books;
 using Microsoft.VisualStudio.Threading;
 using NetErp.Helpers.Cache;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 {
@@ -67,18 +70,29 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
-
-            _ = ActivateMasterViewModelAsync();
         }
 
         #endregion
 
-        #region Navigation
+        #region Lifecycle
 
-        public async Task ActivateMasterViewModelAsync()
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.WithholdingCertificateConfig);
-            await ActivateItemAsync(WithholdingCertificateConfigMasterViewModel, new CancellationToken());
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.WithholdingCertificateConfig);
+                await ActivateItemAsync(WithholdingCertificateConfigMasterViewModel, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnActivateAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
         }
 
         #endregion

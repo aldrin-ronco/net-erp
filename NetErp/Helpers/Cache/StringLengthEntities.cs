@@ -26,6 +26,20 @@ namespace NetErp.Helpers.Cache
         /// </summary>
         public static readonly HashSet<Type> NoStringFieldEntities = [typeof(SellerGraphQLModel)];
 
+        /// <summary>
+        /// Explicit entity name overrides for models whose class name does not match
+        /// the API entity name by convention (strip "GraphQLModel" + ToSnakeCase).
+        /// Example: WithholdingCertificateConfigGraphQLModel → convention produces
+        /// "withholding_certificate_config" but the API entity is "withholding_certificate".
+        ///
+        /// IMPORTANT: Only add entries here when the convention fails. If the model
+        /// class is renamed to match the convention, remove the override.
+        /// </summary>
+        public static readonly Dictionary<Type, string> EntityNameOverrides = new()
+        {
+            [typeof(WithholdingCertificateConfigGraphQLModel)] = "withholding_certificate"
+        };
+
         // Billing
         public static readonly Type[] Customer = [typeof(CustomerGraphQLModel), typeof(AccountingEntityGraphQLModel), typeof(EmailGraphQLModel)];
         public static readonly Type[] Seller = [typeof(SellerGraphQLModel), typeof(AccountingEntityGraphQLModel)];
