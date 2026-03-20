@@ -930,13 +930,24 @@ namespace NetErp.Global.CostCenters.ViewModels
                 PageType<StorageGraphQLModel> result = await _storageService.GetPageAsync(query, variables);
                 Storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(result.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (Storages.Count > 0)
                 {
-                    foreach (StorageDTO storage in Storages)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        storageDummyDTO.Storages.Add(storage);
-                    }
-                });
+                        foreach (StorageDTO storage in Storages)
+                        {
+                            storageDummyDTO.Storages.Add(storage);
+                        }
+                    });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        storageDummyDTO.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta sede no tiene bodegas registradas");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -978,13 +989,24 @@ namespace NetErp.Global.CostCenters.ViewModels
                 PageType<CostCenterGraphQLModel> result = await _costCenterService.GetPageAsync(query, variables);
                 CostCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (CostCenters.Count > 0)
                 {
-                    foreach (CostCenterDTO costCenter in CostCenters)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        costCenterDummyDTO.CostCenters.Add(costCenter);
-                    }
-                });
+                        foreach (CostCenterDTO costCenter in CostCenters)
+                        {
+                            costCenterDummyDTO.CostCenters.Add(costCenter);
+                        }
+                    });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        costCenterDummyDTO.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta sede no tiene centros de costo registrados");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1023,16 +1045,27 @@ namespace NetErp.Global.CostCenters.ViewModels
                 PageType<CompanyLocationGraphQLModel> source = await _companyLocationService.GetPageAsync(query, variables);
                 Locations = Context.AutoMapper.Map<ObservableCollection<CompanyLocationDTO>>(source.Entries);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                if (Locations.Count > 0)
                 {
-                    foreach (CompanyLocationDTO location in Locations)
+                    Application.Current.Dispatcher.Invoke(() =>
                     {
-                        location.Context = this;
-                        location.DummyItems.Add(new CostCenterDummyDTO(this, location));
-                        location.DummyItems.Add(new StorageDummyDTO(this, location));
-                        company.Locations.Add(location);
-                    }
-                });
+                        foreach (CompanyLocationDTO location in Locations)
+                        {
+                            location.Context = this;
+                            location.DummyItems.Add(new CostCenterDummyDTO(this, location));
+                            location.DummyItems.Add(new StorageDummyDTO(this, location));
+                            company.Locations.Add(location);
+                        }
+                    });
+                }
+                else
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        company.IsExpanded = false;
+                    });
+                    _notificationService.ShowInfo("Esta empresa no tiene sedes registradas");
+                }
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
@@ -1355,7 +1388,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (companyLocationDTO == null) return;
             CostCenterDummyDTO costCenterDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is CostCenterDummyDTO) as CostCenterDummyDTO ?? throw new Exception("");
             if (costCenterDummyDTO == null) return;
-            if(!costCenterDummyDTO.IsExpanded && costCenterDummyDTO.CostCenters[0].IsDummyChild)
+            if(!costCenterDummyDTO.IsExpanded && costCenterDummyDTO.CostCenters.Count > 0 && costCenterDummyDTO.CostCenters[0].IsDummyChild)
             {
                 await LoadCostCentersAsync(companyLocationDTO, costCenterDummyDTO);
                 costCenterDummyDTO.IsExpanded = true;
@@ -1493,7 +1526,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (companyLocationDTO == null) return;
             StorageDummyDTO storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(dummy => dummy is StorageDummyDTO) as StorageDummyDTO ?? throw new Exception("");
             if (storageDummyDTO == null) return;
-            if (!storageDummyDTO.IsExpanded && storageDummyDTO.Storages[0].IsDummyChild)
+            if (!storageDummyDTO.IsExpanded && storageDummyDTO.Storages.Count > 0 && storageDummyDTO.Storages[0].IsDummyChild)
             {
                 await LoadStoragesAsync(companyLocationDTO, storageDummyDTO);
                 storageDummyDTO.IsExpanded = true;
@@ -1568,7 +1601,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             CompanyLocationDTO companyLocationDTO = Context.AutoMapper.Map<CompanyLocationDTO>(message.CreatedCompanyLocation.Entity);
             CompanyDTO companyDTO = Companies.FirstOrDefault(company => company.Id == companyLocationDTO.Company.Id) ?? throw new Exception("");
             if (companyDTO is null) return;
-            if (!companyDTO.IsExpanded && companyDTO.Locations[0].IsDummyChild)
+            if (!companyDTO.IsExpanded && companyDTO.Locations.Count > 0 && companyDTO.Locations[0].IsDummyChild)
             {
                 await LoadCompaniesLocationsAsync(companyDTO);
                 companyDTO.IsExpanded = true;

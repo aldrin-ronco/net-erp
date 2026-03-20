@@ -7,10 +7,9 @@ using DevExpress.Xpf.Core;
 using Models.Billing;
 using Models.Global;
 using NetErp.Billing.PriceList.DTO;
-using NetErp.Global.Modals.ViewModels;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
-using NetErp.Inventory.CatalogItems.ViewModels;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,6 +21,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
@@ -47,6 +47,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
+                    this.TrackChange(nameof(Name));
                 }
             }
         }
@@ -62,6 +63,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _isTaxable = value;
                     NotifyOfPropertyChange(nameof(IsTaxable));
+                    this.TrackChange(nameof(IsTaxable));
                     if (value is false) PriceListIncludeTax = false;
                     RefreshCostCenters();
                 }
@@ -79,6 +81,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _priceListIncludeTax = value;
                     NotifyOfPropertyChange(nameof(PriceListIncludeTax));
+                    this.TrackChange(nameof(PriceListIncludeTax));
                     RefreshCostCenters();
                 }
             }
@@ -95,9 +98,53 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _useAlternativeFormula = value;
                     NotifyOfPropertyChange(nameof(UseAlternativeFormula));
+                    this.TrackChange(nameof(UseAlternativeFormula));
                 }
             }
         }
+
+        private string _costMode = "USE_AVERAGE_COST";
+        public string CostMode
+        {
+            get => _costMode;
+            set
+            {
+                if (_costMode != value)
+                {
+                    _costMode = value;
+                    NotifyOfPropertyChange(nameof(CostMode));
+                    this.TrackChange(nameof(CostMode));
+                }
+            }
+        }
+
+        private PriceListCostModeEnum _selectedCostMode = PriceListCostModeEnum.USE_AVERAGE_COST;
+        public PriceListCostModeEnum SelectedCostMode
+        {
+            get => _selectedCostMode;
+            set
+            {
+                if (_selectedCostMode != value)
+                {
+                    _selectedCostMode = value;
+                    CostMode = value.ToString();
+                    NotifyOfPropertyChange(nameof(SelectedCostMode));
+                    NotifyOfPropertyChange(nameof(ShowStorageSelector));
+                    if (value == PriceListCostModeEnum.USE_AVERAGE_COST)
+                    {
+                        SelectedStorage = null;
+                        ClearErrors(nameof(SelectedStorage));
+                    }
+                    else
+                    {
+                        ValidateStorage();
+                    }
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public bool ShowStorageSelector => SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE;
 
         private ObservableCollection<StorageGraphQLModel> _storages;
 
@@ -146,9 +193,10 @@ namespace NetErp.Billing.PriceList.ViewModels
 
 
 
-        private StorageGraphQLModel _selectedStorage;
+        private StorageGraphQLModel? _selectedStorage;
 
-        public StorageGraphQLModel SelectedStorage
+        [ExpandoPath("storageId", SerializeAsId = true)]
+        public StorageGraphQLModel? SelectedStorage
         {
             get { return _selectedStorage; }
             set
@@ -157,9 +205,23 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedStorage = value;
                     NotifyOfPropertyChange(nameof(SelectedStorage));
+                    this.TrackChange(nameof(SelectedStorage));
+                    ValidateStorage();
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
+
+        // Hidden defaults - seeded for ChangeCollector, not shown in UI
+        public bool EditablePrice { get; set; } = true;
+
+        [ExpandoPath("isActive")]
+        public bool IsActiveFlag { get; set; } = true;
+
+        public bool AutoApplyDiscount { get; set; }
+        public bool IsPublic { get; set; } = true;
+        public bool AllowNewUsersAccess { get; set; } = true;
+        public string ListUpdateBehaviorOnCostChange { get; set; } = "UPDATE_PROFIT_MARGIN";
 
         private string _selectedFormula = "D";
 
@@ -207,52 +269,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = @"
-                    mutation ($data: CreatePriceListInput!) {
-                      CreateResponse: createPriceList(data: $data) {
-                        id
-                        name
-                        editablePrice
-                        isActive
-                        autoApplyDiscount
-                        isPublic
-                        allowNewUsersAccess
-                        listUpdateBehaviorOnCostChange
-                        parent{
-                            id
-                            name
-                        }
-                        isTaxable
-                        priceListIncludeTax
-                        useAlternativeFormula
-                        storage {
-                          id
-                          name
-                        }
-                        paymentMethods{
-                          id
-                          name
-                          abbreviation
-                        }
-                      }
-                    }
-                    ";
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Data.Name = Name.Trim().RemoveExtraSpaces(); //capture the name from the UI
-                variables.Data.EditablePrice = true; //static value
-                variables.Data.IsActive = true; //static value
-                variables.Data.AutoApplyDiscount = true; //static value
-                variables.Data.IsPublic = true; //static value
-                variables.Data.AllowNewUsersAccess = true; //static value
-                variables.Data.ListUpdateBehaviorOnCostChange = "UPDATE_PROFIT_MARGIN"; //static value
-                variables.Data.ParentId = 0; //static value
-                variables.Data.StartDate = null; //static value
-                variables.Data.EndDate = null; //static value
-                variables.Data.IsTaxable = IsTaxable; //capture the value from the UI
-                variables.Data.PriceListIncludeTax = IsTaxable && PriceListIncludeTax; //capture the value from the UI
-                variables.Data.UseAlternativeFormula = UseAlternativeFormula; //capture the value from the UI
-                variables.Data.StorageId = SelectedStorage.Id; //capture the value from the UI
+                string query = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 var result = await _priceListService.CreateAsync(query, variables);
 
                 Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
@@ -272,7 +290,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                return _errors.Count <= 0;
+                if (_errors.Count > 0) return false;
+                if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null) return false;
+                return true;
             }
         }
 
@@ -287,13 +307,40 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Storages = [.. _storageCache.Items];
                 CostCenters = [.. _costCenterCache.Items];
                 RefreshCostCenters();
-                Storages.Insert(0, new StorageGraphQLModel { Id = 0, Name = "COSTO PROMEDIO" });
-                SelectedStorage = Storages.FirstOrDefault(x => x.Id == 0) ?? throw new Exception("Invalid null reference");
             }
             catch (Exception ex)
             {
                 throw new AsyncException(innerException: ex);
             }
+        }
+
+        public void SetForNew()
+        {
+            Name = string.Empty;
+            IsTaxable = false;
+            PriceListIncludeTax = false;
+            UseAlternativeFormula = false;
+            SelectedCostMode = PriceListCostModeEnum.USE_AVERAGE_COST;
+            SelectedStorage = null;
+            SeedDefaultValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            // UI properties
+            this.SeedValue(nameof(IsTaxable), IsTaxable);
+            this.SeedValue(nameof(PriceListIncludeTax), PriceListIncludeTax);
+            this.SeedValue(nameof(UseAlternativeFormula), UseAlternativeFormula);
+            this.SeedValue(nameof(CostMode), CostMode);
+            // Hidden defaults
+            this.SeedValue(nameof(EditablePrice), EditablePrice);
+            this.SeedValue(nameof(IsActiveFlag), IsActiveFlag);
+            this.SeedValue(nameof(AutoApplyDiscount), AutoApplyDiscount);
+            this.SeedValue(nameof(IsPublic), IsPublic);
+            this.SeedValue(nameof(AllowNewUsersAccess), AllowNewUsersAccess);
+            this.SeedValue(nameof(ListUpdateBehaviorOnCostChange), ListUpdateBehaviorOnCostChange);
+            this.AcceptChanges();
         }
 
         private bool _nameFocus;
@@ -389,6 +436,13 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        private void ValidateStorage()
+        {
+            ClearErrors(nameof(SelectedStorage));
+            if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null)
+                AddError(nameof(SelectedStorage), "Debe seleccionar una bodega");
+        }
+
         private void ValidateProperty(string propertyName, string value)
         {
             if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
@@ -410,6 +464,43 @@ namespace NetErp.Billing.PriceList.ViewModels
                 });
             }
         }
+
+        private static readonly Lazy<string> _createQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "priceList", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.EditablePrice)
+                    .Field(f => f.IsActive)
+                    .Field(f => f.AutoApplyDiscount)
+                    .Field(f => f.IsPublic)
+                    .Field(f => f.AllowNewUsersAccess)
+                    .Field(f => f.ListUpdateBehaviorOnCostChange)
+                    .Field(f => f.IsTaxable)
+                    .Field(f => f.PriceListIncludeTax)
+                    .Field(f => f.UseAlternativeFormula)
+                    .Field(f => f.CostMode)
+                    .Select(f => f.Parent, p => p.Field(x => x.Id).Field(x => x.Name))
+                    .Select(f => f.Storage, s => s.Field(x => x.Id).Field(x => x.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreatePriceListInput!");
+            var fragment = new GraphQLQueryFragment("createPriceList", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
+    }
+
+    public enum PriceListCostModeEnum
+    {
+        USE_AVERAGE_COST,
+        COST_BY_STORAGE
     }
 
     public class InitializeDataContext
@@ -423,6 +514,4 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         public TModel? ReturnedData { get; set; }
     }
-
-
 }

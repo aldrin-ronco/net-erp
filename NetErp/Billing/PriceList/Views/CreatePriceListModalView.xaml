@@ -15,6 +15,8 @@
     <UserControl.Resources>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
         <h:MultiplyConverter x:Key="MultiplyConverter"/>
+        <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
     <UserControl.Width>
@@ -60,13 +62,32 @@
                     </dxmvvm:Interaction.Behaviors>
                 </dxe:TextEdit>
 
-                <!-- Bodega -->
-                <TextBlock Grid.Row="2" Text="Bodega para el comportamiento del costo" FontSize="13" Margin="0,0,0,5"/>
-                <dxe:ComboBoxEdit Grid.Row="3"
-                                  ItemsSource="{Binding Storages, UpdateSourceTrigger=PropertyChanged}"
-                                  EditValue="{Binding SelectedStorage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                  DisplayMember="Name" IsTextEditable="False"
-                                  Padding="2" BorderBrush="#C8CED6" Margin="0,0,0,10"/>
+                <!-- Modo de costo -->
+                <Grid Grid.Row="2" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Modo de costo" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <RadioButton Grid.Column="1" Content="Costo promedio" GroupName="CostMode" Margin="0,0,15,0"
+                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                 IsChecked="{Binding SelectedCostMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=USE_AVERAGE_COST, UpdateSourceTrigger=PropertyChanged}"/>
+                    <RadioButton Grid.Column="2" Content="Por bodega" GroupName="CostMode"
+                                 Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                 IsChecked="{Binding SelectedCostMode, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=COST_BY_STORAGE, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <!-- Bodega (visible solo cuando CostMode = COST_BY_STORAGE) -->
+                <StackPanel Grid.Row="3" Margin="0,0,0,10"
+                            Visibility="{Binding ShowStorageSelector, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Bodega" FontSize="13" Margin="0,0,0,5"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding Storages}"
+                                      SelectedItem="{Binding SelectedStorage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, ValidatesOnDataErrors=True}"
+                                      DisplayMember="Name" IsTextEditable="False"
+                                      NullText="Seleccione una bodega..."
+                                      Padding="2" BorderBrush="#C8CED6"/>
+                </StackPanel>
 
                 <!-- Checkboxes -->
                 <dxe:CheckEdit Grid.Row="4" Content="¿Esta lista de precios discrimina impuesto?"

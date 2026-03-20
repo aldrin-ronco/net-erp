@@ -738,7 +738,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             foreach (var item in PriceListDetail)
             {
-                if (ShadowItems.Contains(item.CatalogItem.Id))
+                if (ShadowItems.Contains(item.Item.Id))
                 {
                     item.IsChecked = true;
                 }
@@ -788,7 +788,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         ItemId = itemId
                     };
                     promotionItems.Add(promotionItem);
-                    PriceListDetail.Remove(PriceListDetail.Where(x => x.CatalogItem.Id == itemId).FirstOrDefault() ?? throw new Exception("No se encontró el elemento en la lista"));
+                    PriceListDetail.Remove(PriceListDetail.Where(x => x.Item.Id == itemId).FirstOrDefault() ?? throw new Exception("No se encontró el elemento en la lista"));
                     ShadowItems.Remove(itemId);
                 }
 
