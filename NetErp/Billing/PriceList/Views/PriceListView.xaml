@@ -6,5 +6,5 @@
              xmlns:local="clr-namespace:NetErp.Billing.PriceList.Views"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <ContentControl x:Name="ActiveItem"/>
+    <ContentControl x:Name="ActiveItem" Focusable="False"/>
 </UserControl>

@@ -212,9 +212,9 @@
                              AllowSorting="False" AllowColumnFiltering="False"/>
                     </dxg:GridControl.View>
 
-                    <dxg:GridColumn Binding="{Binding CatalogItem.Code, UpdateSourceTrigger=PropertyChanged}" Header="Código"/>
-                    <dxg:GridColumn Binding="{Binding CatalogItem.Name}" Header="Nombre del producto" Width="*"/>
-                    <dxg:GridColumn Binding="{Binding CatalogItem.Reference}" Header="Referencia"/>
+                    <dxg:GridColumn Binding="{Binding Item.Code, UpdateSourceTrigger=PropertyChanged}" Header="Código"/>
+                    <dxg:GridColumn Binding="{Binding Item.Name}" Header="Nombre del producto" Width="*"/>
+                    <dxg:GridColumn Binding="{Binding Item.Reference}" Header="Referencia"/>
 
                     <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.HeaderTemplate>

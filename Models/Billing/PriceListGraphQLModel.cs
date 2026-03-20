@@ -26,10 +26,16 @@ namespace Models.Billing
         public bool IsTaxable { get; set; }
         public bool PriceListIncludeTax { get; set; }
         public bool UseAlternativeFormula { get; set; }
-        public StorageGraphQLModel Storage { get; set; } = new();
+        public string CostMode { get; set; } = "USE_AVERAGE_COST";
+        public StorageGraphQLModel? Storage { get; set; }
         public IEnumerable<PaymentMethodGraphQLModel> ExcludedPaymentMethods { get; set; } = [];
         public bool Archived { get; set; }
-        public string FullName 
+        public CompanyGraphQLModel? Company { get; set; }
+        public SystemAccountGraphQLModel? CreatedBy { get; set; }
+        public IEnumerable<PriceListDetailGraphQLModel> Details { get; set; } = [];
+        public DateTime InsertedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string FullName
         {
             get
             {
@@ -40,18 +46,6 @@ namespace Models.Billing
                 return Name;
             }
         }
-    }
-
-    public class PriceListDetailGraphQLModel
-    {
-        public ItemGraphQLModel CatalogItem { get; set; } = new();
-        public MeasurementUnitGraphQLModel Measurement { get; set; } = new();
-        public decimal? Cost { get; set; }
-        public decimal? ProfitMargin { get; set; }
-        public decimal? Price { get; set; }
-        public decimal? MinimumPrice { get; set; }
-        public decimal? DiscountMargin { get; set; }
-        public decimal? Quantity { get; set; }
     }
 
     public class PriceListDataContext

@@ -361,7 +361,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool ShowInventoryQuantity
         {
-            get { return SelectedPriceListDetail != null && SelectedPriceListDetail.CatalogItem.Stocks.Any(); }
+            get { return SelectedPriceListDetail != null && SelectedPriceListDetail.Item.Stocks.Any(); }
         }
 
         public bool CostByStorageInformation
@@ -389,6 +389,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 var viewModel = new CreatePriceListModalViewModel<PriceListGraphQLModel>(_dialogService, _priceListService, _storageCache, _costCenterCache);
                 await viewModel.InitializeAsync();
+                viewModel.SetForNew();
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
             }
             catch (AsyncException ex)
@@ -487,55 +488,45 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                if (SelectedPriceList is null) return;
                 MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedPriceList.Name}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                 if (result != MessageBoxResult.Yes) return;
                 IsBusy = true;
                 int id = SelectedPriceList.Id;
-                string query;
 
-                query = @"
-                    query($id: Int!){
-                      CanDeleteModel: canDeletePriceList(id: $id){
-                        canDelete
-                        message
-                      }
-                    }";
-
-                dynamic variables = new ExpandoObject();
-                variables.id = id;
-
-                var validation = await _priceListService.CanDeleteAsync(query, variables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeletePriceListQuery.Value;
+                var canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", id)
+                    .Build();
+                var validation = await _priceListService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
-                    query = @"
-                    mutation($id: Int!){
-                      DeleteResponse: deletePriceList(id: $id){
-                        id
-                      }
-                    }";
-                    variables = new ExpandoObject();
-                    variables.id = id;
-                    PriceListGraphQLModel deletedPriceList = await _priceListService.DeleteAsync(query, variables);
-                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = deletedPriceList });
-                    return;
+                    var (deleteFragment, deleteQuery) = _deletePriceListQuery.Value;
+                    var deleteVars = new GraphQLVariables()
+                        .For(deleteFragment, "id", id)
+                        .Build();
+                    DeleteResponseType deletedPriceList = await _priceListService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+
+                    if (!deletedPriceList.Success)
+                    {
+                        ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedPriceList.Message}");
+                        return;
+                    }
+
+                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = SelectedPriceList });
                 }
                 else
                 {
-                    query = @"
-                    mutation($id: Int!, $data: UpdatePriceListInput!){
-                      UpdateResponse: updatePriceList(id: $id, data: $data){
-                        id
-                      }
-                    }";
+                    // Si no se puede eliminar, se archiva
+                    var (archiveFragment, archiveQuery) = _archivePriceListQuery.Value;
+                    dynamic archiveVars = new ExpandoObject();
+                    archiveVars.UpdateResponseId = id;
+                    archiveVars.UpdateResponseData = new ExpandoObject();
+                    archiveVars.UpdateResponseData.archived = true;
+                    await _priceListService.UpdateAsync(archiveQuery, archiveVars);
 
-                    variables = new ExpandoObject();
-                    variables.id = id;
-                    variables.data = new ExpandoObject();
-                    variables.data.Archived = true;
-                    PriceListGraphQLModel deletedPriceList = await _priceListService.UpdateAsync(query, variables);
-                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = deletedPriceList });
-                    return;
+                    Messenger.Default.Send(message: new PriceListDeleteMessage() { DeletedPriceList = SelectedPriceList });
                 }
             }
             catch (Exception ex)
@@ -717,7 +708,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 foreach (var item in PriceListDetail)
                 {
                     item.Context = this;
-                    item.IVA = GetIvaValue(item.CatalogItem.AccountingGroup?.SalesPrimaryTax, item.CatalogItem.AccountingGroup?.SalesSecondaryTax);
+                    item.IVA = GetIvaValue(item.Item.AccountingGroup?.SalesPrimaryTax, item.Item.AccountingGroup?.SalesSecondaryTax);
                     item.Profit = GetProfit(item);
                 }
 
@@ -835,17 +826,17 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             var operation = new PriceListUpdateOperation
             {
-                CatalogItemId = priceListDetail.CatalogItem.Id,
+                ItemId = priceListDetail.Item.Id,
                 NewPrice = priceListDetail.Price,
                 NewDiscountMargin = priceListDetail.DiscountMargin,
                 NewMinimumPrice = priceListDetail.MinimumPrice,
                 NewProfitMargin = priceListDetail.ProfitMargin,
                 PriceListId = SelectedPriceList.Id,
-                ItemName = priceListDetail.CatalogItem.Name
+                ItemName = priceListDetail.Item.Name
             };
 
             // Guardar el mapeo de operación a ítem
-            _operationItemMapping[operation.OperationId] = priceListDetail.CatalogItem.Id;
+            _operationItemMapping[operation.OperationId] = priceListDetail.Item.Id;
 
             // Encolar la operación
             _ = _backgroundQueueService.EnqueueOperationAsync(operation);
@@ -946,7 +937,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             if (_operationItemMapping.TryGetValue(message.OperationId, out int itemId))
             {
                 // Buscar el ítem correspondiente
-                var item = PriceListDetail.FirstOrDefault(i => i.CatalogItem.Id == itemId);
+                var item = PriceListDetail.FirstOrDefault(i => i.Item.Id == itemId);
                 if (item != null)
                 {
                     // Actualizar estado visual
@@ -1195,6 +1186,45 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Query Builders
 
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeletePriceListQuery = new(() =>
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("canDeletePriceList",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deletePriceListQuery = new(() =>
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("deletePriceList",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _archivePriceListQuery = new(() =>
+        {
+            var fields = FieldSpec<PriceListGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("updatePriceList",
+                [new("data", "UpdatePriceListInput!"), new("id", "ID!")], fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
         private static readonly Lazy<(string Query, GraphQLQueryFragment CatalogsFragment, GraphQLQueryFragment PriceListsFragment)> _initializeQuery = new(() =>
         {
             var catalogsFields = FieldSpec<PageType<CatalogGraphQLModel>>
@@ -1258,7 +1288,7 @@ namespace NetErp.Billing.PriceList.ViewModels
     public class PriceListUpdateOperation : IDataOperation
     {
         // Propiedades de la operación
-        public int CatalogItemId { get; set; }
+        public int ItemId { get; set; }
         public decimal NewPrice { get; set; }
         public decimal NewDiscountMargin { get; set; }
         public decimal NewProfitMargin { get; set; }
@@ -1270,7 +1300,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             data = new
             {
-                catalogItemId = CatalogItemId,
+                catalogItemId = ItemId,
                 price = NewPrice,
                 discountMargin = NewDiscountMargin,
                 profitMargin = NewProfitMargin,
@@ -1281,8 +1311,8 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public Type ResponseType => typeof(PriceListDetailGraphQLModel);
         public Guid OperationId { get; set; } = Guid.NewGuid();
-        public string DisplayName => !string.IsNullOrEmpty(ItemName) ? ItemName : $"Producto #{CatalogItemId}";
-        public int Id => CatalogItemId;
+        public string DisplayName => !string.IsNullOrEmpty(ItemName) ? ItemName : $"Producto #{ItemId}";
+        public int Id => ItemId;
 
         public BatchOperationInfo GetBatchInfo()
         {

@@ -11,7 +11,7 @@ namespace NetErp.Billing.PriceList.DTO
     public class PriceListDetailDTO : PropertyChangedBase
     {
         private ItemGraphQLModel _catalogItem = new();
-        public ItemGraphQLModel CatalogItem
+        public ItemGraphQLModel Item
         {
             get { return _catalogItem; }
             set
@@ -19,21 +19,7 @@ namespace NetErp.Billing.PriceList.DTO
                 if (_catalogItem != value)
                 {
                     _catalogItem = value;
-                    NotifyOfPropertyChange(nameof(CatalogItem));
-                }
-            }
-        }
-
-        private MeasurementUnitGraphQLModel _measurement = new();
-        public MeasurementUnitGraphQLModel Measurement
-        {
-            get { return _measurement; }
-            set
-            {
-                if (_measurement != value)
-                {
-                    _measurement = value;
-                    NotifyOfPropertyChange(nameof(Measurement));
+                    NotifyOfPropertyChange(nameof(Item));
                 }
             }
         }
@@ -261,8 +247,8 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _isChecked = value; 
                     NotifyOfPropertyChange(nameof(IsChecked));
-                    if(value) UpdatePromotionContext?.AddItemsToShadowList(CatalogItem.Id);
-                    else UpdatePromotionContext?.RemoveItemsFromShadowList(CatalogItem.Id);
+                    if(value) UpdatePromotionContext?.AddItemsToShadowList(Item.Id);
+                    else UpdatePromotionContext?.RemoveItemsFromShadowList(Item.Id);
                 }
             }
         }

@@ -73,6 +73,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             _priceListService = priceListService;
             _itemService = itemService;
             _tempRecordService = tempRecordService;
+            _storageCache = storageCache;
+            _costCenterCache = costCenterCache;
             _ = Task.Run(async () =>
             {
                 try
@@ -88,8 +90,6 @@ namespace NetErp.Billing.PriceList.ViewModels
                     });
                 }
             });
-            _storageCache = storageCache;
-            _costCenterCache = costCenterCache;
         }
 
         public async Task ActivateMasterViewAsync()

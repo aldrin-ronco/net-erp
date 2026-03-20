@@ -31,8 +31,7 @@
                     IsBusy="{Binding MainIsBusy}"
                     IndicatorType="BouncingDot"
                     BusyContent="Please wait..."
-                    BusyContentMargin="0,20,0,0"
-                    IsBusyAtStartup="False">
+                    BusyContentMargin="0,20,0,0">
         <Grid>
             
             <Grid Visibility="{Binding ShowAllControls, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
@@ -241,7 +240,6 @@
                     IndicatorType="BouncingDot"
                     BusyContent="Please wait..."
                     BusyContentMargin="0,20,0,0"
-                    IsBusyAtStartup="False"
                     Grid.Row="3" Margin="0 5 0 0">
 
                     <dxg:GridControl ItemsSource="{Binding PriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -287,10 +285,10 @@
                             </dxg:GridColumn.CellTemplate>
                         </dxg:GridColumn>-->
 
-                        <dxg:GridColumn Header="Nombre del producto" Width="*" Binding="{Binding CatalogItem.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxg:GridColumn Header="Referencia" HorizontalHeaderContentAlignment="Center" Binding="{Binding CatalogItem.Reference, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:GridColumn Header="Nombre del producto" Width="*" Binding="{Binding Item.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                        <dxg:GridColumn Header="Referencia" HorizontalHeaderContentAlignment="Center" Binding="{Binding Item.Reference, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxg:GridColumn Header="Stock" HorizontalHeaderContentAlignment="Center" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"/>
-                        <dxg:GridColumn Header= "UND" Binding="{Binding Measurement.Abbreviation, UpdateSourceTrigger=PropertyChanged}" Width="auto"/>
+                        <dxg:GridColumn Header= "UND" Binding="{Binding Item.MeasurementUnit.Abbreviation, UpdateSourceTrigger=PropertyChanged}" Width="auto"/>
                         <dxg:GridColumn Header="Costo" HorizontalHeaderContentAlignment="Center" Binding="{Binding Cost, UpdateSourceTrigger=PropertyChanged}"/>
                         <dxg:GridColumn Header="IVA" Width="auto" Binding="{Binding IVA, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource IvaValueConverter}}"/>
                         <dxg:GridColumn Header="%Util" Width="45" HorizontalHeaderContentAlignment="Center" Binding="{Binding ProfitMargin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ReadOnly="{Binding SelectedPriceListIsNotActive, UpdateSourceTrigger=PropertyChanged}">
@@ -426,7 +424,7 @@
                 <Border Grid.Row="6" Margin="0,10,0,0" BorderThickness="1" BorderBrush="#DDDDDD" Visibility="{Binding ShowInventoryQuantity, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="STOCK POR BODEGA" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" Margin="0 4 0 0"/>
-                        <ItemsControl ItemsSource="{Binding SelectedPriceListDetail.CatalogItem.Stocks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <ItemsControl ItemsSource="{Binding SelectedPriceListDetail.Item.Stocks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal"/>
