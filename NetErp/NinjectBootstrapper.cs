@@ -144,6 +144,9 @@ namespace NetErp
             _ = kernel.Bind<ZoneCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ZoneCache>());
 
+            _ = kernel.Bind<AwsS3ConfigCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AwsS3ConfigCache>());
+
             _ = kernel.Bind<NotAnnulledAccountingSourceCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<NotAnnulledAccountingSourceCache>());
 
