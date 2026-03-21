@@ -1,4 +1,4 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using Models.Books;
@@ -22,16 +22,16 @@ namespace NetErp.Helpers.Cache
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _service;
         private readonly object _lock = new();
 
-        public ObservableCollection<AccountingAccountGroupGraphQLModel> Items { get; } = [];
+        private readonly ObservableCollection<AccountingAccountGroupGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<AccountingAccountGroupGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
-
-        ObservableCollection<AccountingAccountGroupGraphQLModel> IEntityCache<AccountingAccountGroupGraphQLModel>.Items => throw new NotImplementedException();
 
         public CtasRestVtasAccountingAccountGroupCache(
             IRepository<AccountingAccountGroupGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
+            Items = new ReadOnlyObservableCollection<AccountingAccountGroupGraphQLModel>(_items);
             eventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -51,10 +51,10 @@ namespace NetErp.Helpers.Cache
 
                 lock (_lock)
                 {
-                    Items.Clear();
+                    _items.Clear();
                     foreach (var item in result.Entries)
                     {
-                        Items.Add(item);
+                        _items.Add(item);
                     }
                     IsInitialized = true;
                 }
@@ -69,7 +69,7 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                Items.Clear();
+                _items.Clear();
                 IsInitialized = false;
             }
         }
@@ -78,8 +78,8 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                if (!Items.Any(x => x.Id == item.Id))
-                    Items.Add(item);
+                if (!_items.Any(x => x.Id == item.Id))
+                    _items.Add(item);
             }
         }
 
@@ -87,11 +87,11 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var existing = Items.FirstOrDefault(x => x.Id == item.Id);
+                var existing = _items.FirstOrDefault(x => x.Id == item.Id);
                 if (existing != null)
                 {
-                    var index = Items.IndexOf(existing);
-                    Items[index] = item;
+                    var index = _items.IndexOf(existing);
+                    _items[index] = item;
                 }
             }
         }
@@ -100,17 +100,17 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var item = Items.FirstOrDefault(x => x.Id == id);
+                var item = _items.FirstOrDefault(x => x.Id == id);
                 if (item != null)
-                    Items.Remove(item);
+                    _items.Remove(item);
             }
         }
 
         #region IHandle Implementations
 
-       
 
-        
+
+
 
         public Task HandleAsync(AccountingAccountGroupUpdateMessage message, CancellationToken cancellationToken)
         {
@@ -119,7 +119,7 @@ namespace NetErp.Helpers.Cache
             if (accountingAccountGroup != null)
             {
                 bool isVTAS = !string.IsNullOrEmpty(accountingAccountGroup.Key) && accountingAccountGroup.Key == "CTAS_RETS_VTAS";
-                var existing = Items.FirstOrDefault(x => x.Id == accountingAccountGroup.Id);
+                var existing = _items.FirstOrDefault(x => x.Id == accountingAccountGroup.Id);
 
                 if (isVTAS)
                 {
@@ -171,7 +171,7 @@ namespace NetErp.Helpers.Cache
             var builder = new QueryBuilder([accountingAccountGroupFragment]);
             return builder.GetQuery();
 
-           
+
         }
 
         Task IEntityCache<AccountingAccountGroupGraphQLModel>.EnsureLoadedAsync()
@@ -179,9 +179,9 @@ namespace NetErp.Helpers.Cache
             throw new NotImplementedException();
         }
 
-       
 
-       
+
+
 
         #endregion
     }

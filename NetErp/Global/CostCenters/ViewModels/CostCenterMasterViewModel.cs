@@ -132,12 +132,12 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         #region "CostCenter"
 
-        private ObservableCollection<CountryGraphQLModel> _countries;
+        private ReadOnlyObservableCollection<CountryGraphQLModel> _countries;
 
-        public ObservableCollection<CountryGraphQLModel> Countries
+        public ReadOnlyObservableCollection<CountryGraphQLModel> Countries
         {
             get { return _countries; }
-            set 
+            set
             {
                 if (_countries != value)
                 {

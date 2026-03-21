@@ -26,7 +26,8 @@ namespace NetErp.Helpers.Cache
         private readonly IRepository<CashDrawerGraphQLModel> _service;
         private readonly object _lock = new();
 
-        public ObservableCollection<CashDrawerGraphQLModel> Items { get; } = [];
+        private readonly ObservableCollection<CashDrawerGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<CashDrawerGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
 
         public MajorCashDrawerCache(
@@ -35,6 +36,7 @@ namespace NetErp.Helpers.Cache
         {
             _service = service;
             eventAggregator.SubscribeOnUIThread(this);
+            Items = new ReadOnlyObservableCollection<CashDrawerGraphQLModel>(_items);
         }
 
         public async Task EnsureLoadedAsync()
@@ -54,10 +56,10 @@ namespace NetErp.Helpers.Cache
 
                 lock (_lock)
                 {
-                    Items.Clear();
+                    _items.Clear();
                     foreach (var item in result.Entries)
                     {
-                        Items.Add(item);
+                        _items.Add(item);
                     }
                     IsInitialized = true;
                 }
@@ -72,7 +74,7 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                Items.Clear();
+                _items.Clear();
                 IsInitialized = false;
             }
         }
@@ -81,8 +83,8 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                if (!Items.Any(x => x.Id == item.Id))
-                    Items.Add(item);
+                if (!_items.Any(x => x.Id == item.Id))
+                    _items.Add(item);
             }
         }
 
@@ -90,11 +92,11 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var existing = Items.FirstOrDefault(x => x.Id == item.Id);
+                var existing = _items.FirstOrDefault(x => x.Id == item.Id);
                 if (existing != null)
                 {
-                    var index = Items.IndexOf(existing);
-                    Items[index] = item;
+                    var index = _items.IndexOf(existing);
+                    _items[index] = item;
                 }
             }
         }
@@ -103,9 +105,9 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var item = Items.FirstOrDefault(x => x.Id == id);
+                var item = _items.FirstOrDefault(x => x.Id == id);
                 if (item != null)
-                    Items.Remove(item);
+                    _items.Remove(item);
             }
         }
 
@@ -130,7 +132,7 @@ namespace NetErp.Helpers.Cache
                 if (!updatedCashDrawer.IsPettyCash)
                 {
                     // Si es caja general, actualizar o agregar
-                    var existing = Items.FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
+                    var existing = _items.FirstOrDefault(x => x.Id == updatedCashDrawer.Id);
                     if (existing != null)
                         Update(updatedCashDrawer);
                     else

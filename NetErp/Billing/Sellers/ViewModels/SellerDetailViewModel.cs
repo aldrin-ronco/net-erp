@@ -433,7 +433,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 }
             }
         }
-        public ObservableCollection<ZoneGraphQLModel>? Zones
+        public ReadOnlyObservableCollection<ZoneGraphQLModel>? Zones
         {
             get;
             set
@@ -490,7 +490,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        public ObservableCollection<CountryGraphQLModel>? Countries
+        public ReadOnlyObservableCollection<CountryGraphQLModel>? Countries
         {
             get;
             set

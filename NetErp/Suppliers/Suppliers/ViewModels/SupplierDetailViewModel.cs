@@ -475,8 +475,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
             }
         }
-        private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
+        private ReadOnlyObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
+        public ReadOnlyObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
         {
             get => _identificationTypes;
             set
@@ -489,8 +489,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
             }
         }
-        private ObservableCollection<CountryGraphQLModel> _countries;
-        public ObservableCollection<CountryGraphQLModel> Countries
+        private ReadOnlyObservableCollection<CountryGraphQLModel> _countries;
+        public ReadOnlyObservableCollection<CountryGraphQLModel> Countries
         {
             get => _countries;
             set
