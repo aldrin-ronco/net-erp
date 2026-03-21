@@ -6,7 +6,6 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,11 +19,31 @@ namespace NetErp.Helpers.Cache
         IHandle<BankAccountDeleteMessage>
     {
         private readonly IRepository<BankAccountGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private readonly ObservableCollection<BankAccountGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<BankAccountGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<BankAccountGraphQLModel>>
+                .Create()
+                .SelectList(x => x.Entries, entries => entries
+                    .Field(x => x.Id)
+                    .Field(x => x.Description)
+                )
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "BankAccountFilters");
+            var fragment = new GraphQLQueryFragment("bankAccountsPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
+
+        private static readonly string[] value = ["A", "C"];
 
         public BankAccountCache(
             IRepository<BankAccountGraphQLModel> service,
@@ -41,12 +60,11 @@ namespace NetErp.Helpers.Cache
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.types = new[] { "A", "C" };
+                var (fragment, query) = _loadQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { Types = value })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -136,28 +154,6 @@ namespace NetErp.Helpers.Cache
                 Remove(message.DeletedBankAccount.DeletedId.Value);
             }
             return Task.CompletedTask;
-        }
-
-        #endregion
-
-        #region Query Builder
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<BankAccountGraphQLModel>>
-                .Create()
-                .SelectList(x => x.Entries, entries => entries
-                    .Field(x => x.Id)
-                    .Field(x => x.Description)
-                )
-                .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "BankAccountFilters");
-            var fragment = new GraphQLQueryFragment("bankAccountsPage", [paginationParam, filtersParam], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
         }
 
         #endregion

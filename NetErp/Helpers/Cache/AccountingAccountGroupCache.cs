@@ -5,7 +5,6 @@ using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,11 +17,31 @@ namespace NetErp.Helpers.Cache
         IHandle<AccountingAccountGroupUpdateMessage>
     {
         private readonly IRepository<AccountingAccountGroupGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private readonly ObservableCollection<AccountingAccountGroupGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<AccountingAccountGroupGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
+                .Create()
+                .Field(o => o.TotalEntries)
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Key)
+                    .SelectList(e => e.Accounts, accounts => accounts
+                        .Field(a => a.Id)))
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [paginationParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         public AccountingAccountGroupCache(
             IRepository<AccountingAccountGroupGraphQLModel> service,
@@ -39,10 +58,10 @@ namespace NetErp.Helpers.Cache
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
+                var (fragment, query) = _loadQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -118,28 +137,6 @@ namespace NetErp.Helpers.Cache
                     Add(accountingAccountGroup);
             }
             return Task.CompletedTask;
-        }
-
-        #endregion
-
-        #region Query Builder
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<AccountingAccountGroupGraphQLModel>>
-                .Create()
-                .Field(o => o.TotalEntries)
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Key)
-                    .SelectList(e => e.Accounts, accounts => accounts
-                        .Field(a => a.Id)))
-                .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("accountingAccountGroupsPage", [paginationParam], fields, "PageResponse");
-            return new QueryBuilder([fragment]).GetQuery();
         }
 
         #endregion

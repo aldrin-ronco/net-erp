@@ -4,11 +4,8 @@ using Common.Interfaces;
 using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
@@ -22,11 +19,34 @@ namespace NetErp.Helpers.Cache
          IHandle<AccountingSourceDeleteMessage>
     {
         private readonly IRepository<AccountingSourceGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
+
         private readonly ObservableCollection<AccountingSourceGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<AccountingSourceGraphQLModel> Items { get; }
-
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                )
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "AccountingSourceFilters");
+            var fragment = new GraphQLQueryFragment("accountingSourcesPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
+
         public NotAnnulledAccountingSourceCache(
             IRepository<AccountingSourceGraphQLModel> service,
             IEventAggregator eventAggregator)
@@ -36,34 +56,16 @@ namespace NetErp.Helpers.Cache
             eventAggregator.SubscribeOnUIThread(this);
         }
 
-        public void Add(AccountingSourceGraphQLModel item)
-        {
-            lock (_lock)
-            {
-                if (!_items.Any(x => x.Id == item.Id))
-                    _items.Add(item);
-            }
-        }
-
-        public void Clear()
-        {
-            lock (_lock)
-            {
-                _items.Clear();
-                IsInitialized = false;
-            }
-        }
-
         public async Task EnsureLoadedAsync()
         {
             if (IsInitialized) return;
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.annulment = false;
+                var (fragment, query) = _loadQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "filters", new { Annulment = false })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -82,35 +84,22 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<AccountingSourceGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
 
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingSourceFilters");
-            var fragment = new GraphQLQueryFragment("accountingSourcesPage", [paginationParam, filtersParam], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-        public void Remove(int id)
+        public void Clear()
         {
             lock (_lock)
             {
-                var item = _items.FirstOrDefault(x => x.Id == id);
-                if (item != null)
-                    _items.Remove(item);
+                _items.Clear();
+                IsInitialized = false;
+            }
+        }
+
+        public void Add(AccountingSourceGraphQLModel item)
+        {
+            lock (_lock)
+            {
+                if (!_items.Any(x => x.Id == item.Id))
+                    _items.Add(item);
             }
         }
 
@@ -127,20 +116,30 @@ namespace NetErp.Helpers.Cache
             }
         }
 
+        public void Remove(int id)
+        {
+            lock (_lock)
+            {
+                var item = _items.FirstOrDefault(x => x.Id == id);
+                if (item != null)
+                    _items.Remove(item);
+            }
+        }
+
+        #region IHandle Implementations
+
         public Task HandleAsync(AccountingSourceDeleteMessage message, CancellationToken cancellationToken)
         {
             if (message.DeletedAccountingSource?.DeletedId > 0)
             {
                 Remove(message.DeletedAccountingSource.DeletedId.Value);
             }
-
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(AccountingSourceCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedAccountingSource != null
-               )
+            if (message.CreatedAccountingSource != null)
             {
                 Add(message.CreatedAccountingSource.Entity);
             }
@@ -153,18 +152,16 @@ namespace NetErp.Helpers.Cache
 
             if (entity != null)
             {
-
                 var existing = _items.FirstOrDefault(x => x.Id == entity.Id);
-
 
                 if (existing != null)
                     Update(entity);
                 else
                     Add(entity);
-
-
             }
             return Task.CompletedTask;
         }
+
+        #endregion
     }
 }

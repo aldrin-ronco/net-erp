@@ -6,7 +6,6 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,11 +22,30 @@ namespace NetErp.Helpers.Cache
         IHandle<AccountingAccountDeleteMessage>
     {
         private readonly IRepository<AccountingAccountGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private readonly ObservableCollection<AccountingAccountGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<AccountingAccountGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
+                .Create()
+                .SelectList(x => x.Entries, entries => entries
+                    .Field(x => x.Id)
+                    .Field(x => x.Code)
+                    .Field(x => x.Name)
+                )
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
+            var fragment = new GraphQLQueryFragment("AccountingAccountsPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         public AuxiliaryAccountingAccountCache(
             IRepository<AccountingAccountGraphQLModel> service,
@@ -44,12 +62,11 @@ namespace NetErp.Helpers.Cache
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.onlyAuxiliaryAccounts = true;
+                var (fragment, query) = _loadQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { OnlyAuxiliaryAccounts = true })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -161,29 +178,6 @@ namespace NetErp.Helpers.Cache
                 Remove(message.DeletedAccountingAccount.Id);
             }
             return Task.CompletedTask;
-        }
-
-        #endregion
-
-        #region Query Builder
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
-                .Create()
-                .SelectList(x => x.Entries, entries => entries
-                    .Field(x => x.Id)
-                    .Field(x => x.Code)
-                    .Field(x => x.Name)
-                )
-                .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-            var fragment = new GraphQLQueryFragment("AccountingAccountsPage", [paginationParam, filtersParam], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
         }
 
         #endregion
