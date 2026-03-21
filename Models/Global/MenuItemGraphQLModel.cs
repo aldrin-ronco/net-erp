@@ -1,3 +1,5 @@
+using static Models.Global.GraphQLResponseTypes;
+
 namespace Models.Global
 {
     public class MenuItemGraphQLModel
@@ -9,5 +11,21 @@ namespace Models.Global
         public int DisplayOrder { get; set; }
         public bool IsLockable { get; set; }
         public bool IsActive { get; set; } = true;
+        public MenuItemGroupGraphQLModel? MenuItemGroup { get; set; }
+    }
+
+    public class MenuItemCreateMessage
+    {
+        public required UpsertResponseType<MenuItemGraphQLModel> CreatedMenuItem { get; set; }
+    }
+
+    public class MenuItemUpdateMessage
+    {
+        public required UpsertResponseType<MenuItemGraphQLModel> UpdatedMenuItem { get; set; }
+    }
+
+    public class MenuItemDeleteMessage
+    {
+        public required DeleteResponseType DeletedMenuItem { get; set; }
     }
 }
