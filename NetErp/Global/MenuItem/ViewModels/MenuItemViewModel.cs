@@ -29,7 +29,6 @@ namespace NetErp.Global.MenuItem.ViewModels
 
         private readonly IEventAggregator _eventAggregator;
         private readonly IRepository<MenuItemGraphQLModel> _menuItemService;
-        private readonly IRepository<MenuItemGroupGraphQLModel> _menuItemGroupService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly MenuModuleCache _menuModuleCache;
@@ -301,7 +300,6 @@ namespace NetErp.Global.MenuItem.ViewModels
         public MenuItemViewModel(
             IEventAggregator eventAggregator,
             IRepository<MenuItemGraphQLModel> menuItemService,
-            IRepository<MenuItemGroupGraphQLModel> menuItemGroupService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             MenuModuleCache menuModuleCache,
@@ -310,7 +308,6 @@ namespace NetErp.Global.MenuItem.ViewModels
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _menuItemService = menuItemService ?? throw new ArgumentNullException(nameof(menuItemService));
-            _menuItemGroupService = menuItemGroupService ?? throw new ArgumentNullException(nameof(menuItemGroupService));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _menuModuleCache = menuModuleCache ?? throw new ArgumentNullException(nameof(menuModuleCache));
@@ -454,7 +451,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 IsBusy = true;
                 MenuItemDetailViewModel detail = new(
-                    _menuItemService, _menuItemGroupService, _eventAggregator,
+                    _menuItemService, _eventAggregator,
                     _menuModuleCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.InitializeAsync();
                 detail.SetForNew();
@@ -488,7 +485,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 IsBusy = true;
                 MenuItemDetailViewModel detail = new(
-                    _menuItemService, _menuItemGroupService, _eventAggregator,
+                    _menuItemService, _eventAggregator,
                     _menuModuleCache, _stringLengthCache, _joinableTaskFactory);
                 await detail.InitializeAsync();
                 detail.SetForEdit(SelectedMenuItem);

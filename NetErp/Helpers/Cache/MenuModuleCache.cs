@@ -80,6 +80,11 @@ namespace NetErp.Helpers.Cache
               .SelectList(it => it.Entries, entries => entries
                   .Field(e => e.Id)
                   .Field(e => e.Name)
+                  .Field(e => e.DisplayOrder)
+                  .SelectList(e => e.MenuItemGroups, groups => groups
+                      .Field(g => g.Id)
+                      .Field(g => g.Name)
+                      .Field(g => g.DisplayOrder))
               )
               .Field(o => o.PageNumber)
               .Field(o => o.PageSize)
