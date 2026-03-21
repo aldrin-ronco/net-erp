@@ -1,50 +1,93 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Inventory;
-using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
 {
-    public class MeasurementUnitDetailViewModel : Screen, INotifyDataErrorInfo
+    public class MeasurementUnitDetailViewModel(
+        IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
+        IEventAggregator eventAggregator,
+        StringLengthCache stringLengthCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
-        private readonly IEventAggregator _eventAggregator;
+        private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
+        private readonly IEventAggregator _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+
+        #endregion
+
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 500;
+
+        public double DialogHeight
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
+                }
+            }
+        } = 400;
+
+        #endregion
+
+        #region MaxLength Properties
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<MeasurementUnitGraphQLModel>(nameof(MeasurementUnitGraphQLModel.Name));
+        public int AbbreviationMaxLength => _stringLengthCache.GetMaxLength<MeasurementUnitGraphQLModel>(nameof(MeasurementUnitGraphQLModel.Abbreviation));
+        public int TypeMaxLength => _stringLengthCache.GetMaxLength<MeasurementUnitGraphQLModel>(nameof(MeasurementUnitGraphQLModel.Type));
+        public int DianCodeMaxLength => _stringLengthCache.GetMaxLength<MeasurementUnitGraphQLModel>(nameof(MeasurementUnitGraphQLModel.DianCode));
 
         #endregion
 
         #region State
 
-        public bool IsNewRecord => MeasurementUnitId == 0;
+        public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -61,159 +104,83 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region Form Properties
 
-        private int _measurementUnitId;
-        public int MeasurementUnitId
+        public int Id
         {
-            get => _measurementUnitId;
+            get;
             set
             {
-                if (_measurementUnitId != value)
+                if (field != value)
                 {
-                    _measurementUnitId = value;
-                    NotifyOfPropertyChange(nameof(MeasurementUnitId));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _abbreviation = string.Empty;
         public string Abbreviation
         {
-            get => _abbreviation;
+            get;
             set
             {
-                if (_abbreviation != value)
+                if (field != value)
                 {
-                    _abbreviation = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Abbreviation));
                     ValidateProperty(nameof(Abbreviation), value);
                     this.TrackChange(nameof(Abbreviation));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _type = string.Empty;
         public string Type
         {
-            get => _type;
+            get;
             set
             {
-                if (_type != value)
+                if (field != value)
                 {
-                    _type = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Type));
                     ValidateProperty(nameof(Type), value);
                     this.TrackChange(nameof(Type));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _dianCode = string.Empty;
         public string DianCode
         {
-            get => _dianCode;
+            get;
             set
             {
-                if (_dianCode != value)
+                if (field != value)
                 {
-                    _dianCode = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DianCode));
                     ValidateProperty(nameof(DianCode), value);
                     this.TrackChange(nameof(DianCode));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-
-        #endregion
-
-        #region Validation (INotifyDataErrorInfo)
-
-        private readonly Dictionary<string, List<string>> _errors = new();
-
-        public bool HasErrors => _errors.Count > 0;
-
-        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
-
-        public IEnumerable GetErrors(string? propertyName)
-        {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
-        }
-
-        private void RaiseErrorsChanged(string propertyName)
-        {
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
-        }
-
-        private void AddError(string propertyName, string error)
-        {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
-
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty;
-            ClearErrors(propertyName);
-            switch (propertyName)
-            {
-                case nameof(Name):
-                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
-                    break;
-                case nameof(Abbreviation):
-                    if (string.IsNullOrEmpty(Abbreviation)) AddError(propertyName, "La abreviación no puede estar vacía");
-                    break;
-                case nameof(Type):
-                    if (string.IsNullOrEmpty(Type)) AddError(propertyName, "El tipo no puede estar vacío");
-                    break;
-                case nameof(DianCode):
-                    if (string.IsNullOrEmpty(DianCode)) AddError(propertyName, "El código DIAN no puede estar vacío");
-                    break;
-            }
-        }
-
-        private void ValidateProperties()
-        {
-            ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Abbreviation), Abbreviation);
-            ValidateProperty(nameof(Type), Type);
-            ValidateProperty(nameof(DianCode), DianCode);
-        }
+        } = string.Empty;
 
         #endregion
 
@@ -251,25 +218,52 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #endregion
 
-        #region Constructor
-
-        public MeasurementUnitDetailViewModel(
-            IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
-            IEventAggregator eventAggregator)
-        {
-            _measurementUnitService = measurementUnitService;
-            _eventAggregator = eventAggregator;
-        }
-
-        #endregion
-
         #region Lifecycle
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.SetFocus(() => Name);
             ValidateProperties();
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        #endregion
+
+        #region SetForNew / SetForEdit
+
+        public void SetForNew()
+        {
+            Id = 0;
+            Name = string.Empty;
+            Abbreviation = string.Empty;
+            Type = string.Empty;
+            DianCode = string.Empty;
+            SeedDefaultValues();
+        }
+
+        public void SetForEdit(MeasurementUnitGraphQLModel entity)
+        {
+            Id = entity.Id;
+            Name = entity.Name;
+            Abbreviation = entity.Abbreviation;
+            Type = entity.Type;
+            DianCode = entity.DianCode;
+            SeedCurrentValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.AcceptChanges();
+        }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Abbreviation), Abbreviation);
+            this.SeedValue(nameof(Type), Type);
+            this.SeedValue(nameof(DianCode), DianCode);
             this.AcceptChanges();
         }
 
@@ -282,12 +276,13 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
                 UpsertResponseType<MeasurementUnitGraphQLModel> result = await ExecuteSaveAsync();
+
                 if (!result.Success)
                 {
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -297,24 +292,24 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
                         ? new MeasurementUnitCreateMessage { CreatedMeasurementUnit = result }
-                        : new MeasurementUnitUpdateMessage { UpdatedMeasurementUnit = result }
-                );
+                        : new MeasurementUnitUpdateMessage { UpdatedMeasurementUnit = result },
+                    CancellationToken.None);
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al realizar operación.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -324,18 +319,25 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         public async Task<UpsertResponseType<MeasurementUnitGraphQLModel>> ExecuteSaveAsync()
         {
-            if (IsNewRecord)
+            try
             {
-                string query = _createQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                return await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
+                if (IsNewRecord)
+                {
+                    (GraphQLQueryFragment _, string query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                    return await _measurementUnitService.CreateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    (GraphQLQueryFragment _, string query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    return await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                string query = _updateQuery.Value;
-                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = MeasurementUnitId;
-                return await _measurementUnitService.UpdateAsync<UpsertResponseType<MeasurementUnitGraphQLModel>>(query, variables);
+                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -348,7 +350,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
                 .Create()
@@ -365,12 +367,13 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateMeasurementUnitInput!");
-            var fragment = new GraphQLQueryFragment("createMeasurementUnit", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createMeasurementUnit",
+                [new("input", "CreateMeasurementUnitInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<MeasurementUnitGraphQLModel>>
                 .Create()
@@ -387,22 +390,81 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateMeasurementUnitInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateMeasurementUnit", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateMeasurementUnit",
+                [new("data", "UpdateMeasurementUnitInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion
 
-        #region Helper
+        #region Validation (INotifyDataErrorInfo)
 
-        public new void AcceptChanges()
+        private readonly Dictionary<string, List<string>> _errors = [];
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
         {
-            ViewModelExtensions.AcceptChanges(this);
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
+        }
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
+
+        private void AddError(string propertyName, string error)
+        {
+            if (!_errors.ContainsKey(propertyName))
+                _errors[propertyName] = [];
+
+            if (!_errors[propertyName].Contains(error))
+            {
+                _errors[propertyName].Add(error);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ClearErrors(string propertyName)
+        {
+            if (_errors.ContainsKey(propertyName))
+            {
+                _errors.Remove(propertyName);
+                RaiseErrorsChanged(propertyName);
+            }
+        }
+
+        private void ValidateProperty(string propertyName, string value)
+        {
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            ClearErrors(propertyName);
+            switch (propertyName)
+            {
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
+                    break;
+                case nameof(Abbreviation):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La abreviación no puede estar vacía");
+                    break;
+                case nameof(Type):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El tipo no puede estar vacío");
+                    break;
+                case nameof(DianCode):
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El código DIAN no puede estar vacío");
+                    break;
+            }
+        }
+
+        private void ValidateProperties()
+        {
+            ValidateProperty(nameof(Name), Name);
+            ValidateProperty(nameof(Abbreviation), Abbreviation);
+            ValidateProperty(nameof(Type), Type);
+            ValidateProperty(nameof(DianCode), DianCode);
         }
 
         #endregion

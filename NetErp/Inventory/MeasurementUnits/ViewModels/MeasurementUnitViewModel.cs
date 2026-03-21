@@ -1,13 +1,13 @@
-using AutoMapper;
 using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Inventory;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
@@ -31,48 +31,65 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         private readonly IRepository<MeasurementUnitGraphQLModel> _measurementUnitService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
-        public bool IsBusy
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
+
+        public bool ShowEmptyState
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<MeasurementUnitGraphQLModel> _measurementUnits = [];
         public ObservableCollection<MeasurementUnitGraphQLModel> MeasurementUnits
         {
-            get => _measurementUnits;
+            get;
             set
             {
-                if (_measurementUnits != value)
+                if (field != value)
                 {
-                    _measurementUnits = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(MeasurementUnits));
                 }
             }
-        }
+        } = [];
 
-        private MeasurementUnitGraphQLModel? _selectedMeasurementUnit;
         public MeasurementUnitGraphQLModel? SelectedMeasurementUnit
         {
-            get => _selectedMeasurementUnit;
+            get;
             set
             {
-                if (_selectedMeasurementUnit != value)
+                if (field != value)
                 {
-                    _selectedMeasurementUnit = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedMeasurementUnit));
                     NotifyOfPropertyChange(nameof(CanEditMeasurementUnit));
                     NotifyOfPropertyChange(nameof(CanDeleteMeasurementUnit));
@@ -80,76 +97,77 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
+        private readonly DebouncedAction _searchDebounce = new();
+
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadMeasurementUnitsAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadMeasurementUnitsAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
 
         #endregion
 
@@ -207,17 +225,21 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         #region Constructor
 
         public MeasurementUnitViewModel(
-            IMapper mapper,
             IEventAggregator eventAggregator,
             IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
             Helpers.Services.INotificationService notificationService,
-            Helpers.IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
-            _eventAggregator = eventAggregator;
-            _measurementUnitService = measurementUnitService;
-            _notificationService = notificationService;
-            _dialogService = dialogService;
-            _eventAggregator.SubscribeOnPublishedThread(this);
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _joinableTaskFactory = joinableTaskFactory;
+
+            _eventAggregator.SubscribeOnUIThread(this);
         }
 
         #endregion
@@ -227,16 +249,35 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await LoadMeasurementUnitsAsync();
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MeasurementUnit);
+                await LoadMeasurementUnitsAsync();
+                _isInitialized = true;
+                ShowEmptyState = MeasurementUnits == null || MeasurementUnits.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                this.SetFocus(() => FilterSearch);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
+                MeasurementUnits.Clear();
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -245,21 +286,63 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         public async Task CreateMeasurementUnitAsync()
         {
-            var detail = new MeasurementUnitDetailViewModel(_measurementUnitService, _eventAggregator);
-            await _dialogService.ShowDialogAsync(detail, "Nueva unidad de medida");
+            try
+            {
+                IsBusy = true;
+                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                detail.SetForNew();
+                IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
+                    detail.DialogHeight = parentView.ActualHeight * 0.55;
+                }
+
+                await _dialogService.ShowDialogAsync(detail, "Nueva unidad de medida");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateMeasurementUnitAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task EditMeasurementUnitAsync()
         {
             if (SelectedMeasurementUnit == null) return;
-            var detail = new MeasurementUnitDetailViewModel(_measurementUnitService, _eventAggregator);
-            detail.MeasurementUnitId = SelectedMeasurementUnit.Id;
-            detail.Name = SelectedMeasurementUnit.Name;
-            detail.Abbreviation = SelectedMeasurementUnit.Abbreviation;
-            detail.Type = SelectedMeasurementUnit.Type;
-            detail.DianCode = SelectedMeasurementUnit.DianCode;
-            detail.AcceptChanges();
-            await _dialogService.ShowDialogAsync(detail, "Editar unidad de medida");
+            try
+            {
+                IsBusy = true;
+                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                detail.SetForEdit(SelectedMeasurementUnit);
+                IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
+                    detail.DialogHeight = parentView.ActualHeight * 0.55;
+                }
+
+                await _dialogService.ShowDialogAsync(detail, "Editar unidad de medida");
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(EditMeasurementUnitAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task DeleteMeasurementUnitAsync()
@@ -268,52 +351,57 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
-                string query = _canDeleteMeasurementUnitQuery.Value;
-                object variables = new { canDeleteResponseId = SelectedMeasurementUnit.Id };
-                var validation = await _measurementUnitService.CanDeleteAsync(query, variables);
+                (GraphQLQueryFragment canDeleteFragment, string canDeleteQuery) = _canDeleteQuery.Value;
+                dynamic canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedMeasurementUnit.Id)
+                    .Build();
+                CanDeleteType validation = await _measurementUnitService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !",
+                    if (ThemedMessageBox.Show("Atención!",
                         "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         "El registro no puede ser eliminado" + (char)13 + (char)13 + validation.Message,
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedMeasurementUnit = await Task.Run(() => ExecuteDeleteMeasurementUnitAsync(SelectedMeasurementUnit.Id));
+                DeleteResponseType deletedMeasurementUnit = await ExecuteDeleteAsync(SelectedMeasurementUnit.Id);
 
                 if (!deletedMeasurementUnit.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedMeasurementUnit.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedMeasurementUnit.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new MeasurementUnitDeleteMessage { DeletedMeasurementUnit = deletedMeasurementUnit });
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new MeasurementUnitDeleteMessage { DeletedMeasurementUnit = deletedMeasurementUnit },
+                    CancellationToken.None);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
+            catch (AsyncException ex)
             {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"Error al eliminar el registro.\r\n{ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteMeasurementUnitAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -321,11 +409,20 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        public async Task<DeleteResponseType> ExecuteDeleteMeasurementUnitAsync(int id)
+        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-            string query = _deleteMeasurementUnitQuery.Value;
-            object variables = new { deleteResponseId = id };
-            return await _measurementUnitService.DeleteAsync<DeleteResponseType>(query, variables);
+            try
+            {
+                (GraphQLQueryFragment fragment, string query) = _deleteQuery.Value;
+                dynamic variables = new GraphQLVariables()
+                    .For(fragment, "id", id)
+                    .Build();
+                return await _measurementUnitService.DeleteAsync<DeleteResponseType>(query, variables);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
         }
 
         #endregion
@@ -338,38 +435,31 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.name = string.IsNullOrEmpty(FilterSearch)
-                    ? ""
-                    : FilterSearch.Trim().RemoveExtraSpaces();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.Page = PageIndex;
-                variables.pageResponsePagination.PageSize = PageSize;
+                (GraphQLQueryFragment fragment, string query) = _loadQuery.Value;
 
-                string query = _loadMeasurementUnitsQuery.Value;
+                dynamic filters = new ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
+
+                dynamic variables = new GraphQLVariables()
+                    .For(fragment, "filters", filters)
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .Build();
+
                 PageType<MeasurementUnitGraphQLModel> result = await _measurementUnitService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                MeasurementUnits = [.. result.Entries];
+                MeasurementUnits = new ObservableCollection<MeasurementUnitGraphQLModel>(result.Entries);
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadMeasurementUnitsAsync)}: {ex.Message}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -381,12 +471,12 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _loadMeasurementUnitsQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
             var fields = FieldSpec<PageType<MeasurementUnitGraphQLModel>>
                 .Create()
-                .Field(it => it.TotalEntries)
-                .SelectList(it => it.Entries, entries => entries
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Abbreviation)
                     .Field(e => e.Name)
@@ -394,14 +484,26 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                     .Field(e => e.DianCode))
                 .Build();
 
-            var filtersParameter = new GraphQLQueryParameter("filters", "MeasurementUnitFilters");
-            var paginationParameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("measurementUnitsPage", [filtersParameter, paginationParameter], fields, "PageResponse");
-
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("measurementUnitsPage",
+                [new("filters", "MeasurementUnitFilters"), new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _deleteMeasurementUnitQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteQuery = new(() =>
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("canDeleteMeasurementUnit",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteQuery = new(() =>
         {
             var fields = FieldSpec<DeleteResponseType>
                 .Create()
@@ -410,22 +512,9 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteMeasurementUnit", [parameter], fields, alias: "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        });
-
-        private static readonly Lazy<string> _canDeleteMeasurementUnitQuery = new(() =>
-        {
-            var fields = FieldSpec<CanDeleteType>
-                .Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteMeasurementUnit", [parameter], fields, alias: "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("deleteMeasurementUnit",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion
@@ -434,6 +523,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         public async Task HandleAsync(MeasurementUnitCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadMeasurementUnitsAsync();
             _notificationService.ShowSuccess(message.CreatedMeasurementUnit.Message);
         }
@@ -447,6 +537,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         public async Task HandleAsync(MeasurementUnitDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadMeasurementUnitsAsync();
+            ShowEmptyState = MeasurementUnits == null || MeasurementUnits.Count == 0;
             SelectedMeasurementUnit = null;
             _notificationService.ShowSuccess(message.DeletedMeasurementUnit.Message);
         }

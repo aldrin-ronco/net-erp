@@ -32,16 +32,16 @@ namespace Models.Inventory
     public class MeasurementUnitCreateMessage
     {
 
-        public UpsertResponseType<MeasurementUnitGraphQLModel> CreatedMeasurementUnit { get; set; } = new();
+        public required UpsertResponseType<MeasurementUnitGraphQLModel> CreatedMeasurementUnit { get; set; }
 
     }
     public class MeasurementUnitDeleteMessage
     {
-        public DeleteResponseType DeletedMeasurementUnit { get; set; }
+        public required DeleteResponseType DeletedMeasurementUnit { get; set; }
     }
 
     public class MeasurementUnitUpdateMessage
     {
-        public UpsertResponseType<MeasurementUnitGraphQLModel> UpdatedMeasurementUnit { get; set; } = new();
+        public required UpsertResponseType<MeasurementUnitGraphQLModel> UpdatedMeasurementUnit { get; set; } 
     }
 }

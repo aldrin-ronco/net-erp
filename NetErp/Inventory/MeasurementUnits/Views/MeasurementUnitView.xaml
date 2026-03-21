@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:local="clr-namespace:NetErp.Inventory.MeasurementUnits.Views"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
@@ -21,8 +20,17 @@
     </UserControl.Resources>
 
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="10">
+            CornerRadius="8" Margin="5">
         <Grid>
+            <!-- Empty State -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay unidades de medida registradas"
+                               Message="Cree una nueva unidad de medida para comenzar"
+                               ContextInfo="Las unidades de medida definen las magnitudes utilizadas para cuantificar productos e insumos en el inventario, como kilogramos, litros, unidades, metros, entre otros."
+                               Command="{Binding CreateMeasurementUnitCommand}"/>
+
+            <!-- Content -->
+            <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -32,14 +40,14 @@
             </Grid.RowDefinitions>
 
             <!-- Row 0: Search label -->
-            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="20,15,20,5"/>
+            <TextBlock Grid.Row="0" Text="¿Qué desea buscar?" Margin="10,10,10,3"/>
 
             <!-- Row 1: Search box -->
             <dxe:ButtonEdit
                 Grid.Row="1"
-                Margin="20,0,20,0"
-                NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
-                ToolTip="Escribe aqui para buscar"
+                Margin="10,0,10,0"
+                NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
+                ToolTip="Escribe aquí para buscar"
                 MinHeight="25"
                 CharacterCasing="Upper"
                 BorderBrush="#C8CED6"
@@ -55,35 +63,40 @@
             <busyIndicator:BusyMask x:Name="BusyIndicator"
                                     IsBusy="{Binding IsBusy}"
                                     IndicatorType="BouncingDot"
-                                    BusyContent="Please wait..."
+                                    BusyContent="Por favor espere..."
                                     BusyContentMargin="0,20,0,0"
                                     Grid.Row="2">
 
-                <dxg:GridControl Margin="20,10,20,0"
+                <dxg:GridControl Margin="10,6,10,0"
                                  ItemsSource="{Binding Path=MeasurementUnits, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                  SelectedItem="{Binding Path=SelectedMeasurementUnit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <dxg:GridControl.View>
                         <dxg:TableView AllowEditing="False"
                                        AllowCascadeUpdate="False"
                                        EnableSelectedRowAppearance="True"
-                                       ShowGroupPanel="False" AlternateRowBackground="Beige"
-                                       AllowColumnMoving="False"/>
+                                       ShowGroupPanel="False"
+                                       AlternateRowBackground="Beige"
+                                       AllowColumnMoving="False"
+                                       IsColumnMenuEnabled="False"
+                                       ColumnFilterPopupMode="Disabled"
+                                       AllowSorting="False"
+                                       AllowColumnFiltering="False"/>
                     </dxg:GridControl.View>
 
                     <dxg:GridColumn Header="Abreviación" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding Abbreviation}"/>
-                    <dxg:GridColumn Header="Nombre" HorizontalHeaderContentAlignment="Center" Width="*"
+                    <dxg:GridColumn Header="Nombre" HorizontalHeaderContentAlignment="Left" Width="*"
                                     Binding="{Binding Name}"/>
                     <dxg:GridColumn Header="Tipo" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding Type, Converter={StaticResource MeasurementUnitTypeConverter}}"/>
-                    <dxg:GridColumn Header="Código DIAN" HorizontalHeaderContentAlignment="Center" MinWidth="110"
+                    <dxg:GridColumn Header="Código DIAN" HorizontalHeaderContentAlignment="Center" Width="Auto"
                                     Binding="{Binding DianCode}"/>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
 
             <!-- Row 3: Pagination -->
             <uc:GridPaging Grid.Row="3"
-                           Margin="20,10,20,0"
+                           Margin="10,6,10,0"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ChangedIndexCommand="{Binding PaginationCommand}"
@@ -93,7 +106,7 @@
                            ResponseTime="{Binding ResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Row 4: Action buttons centered -->
-            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <!-- Nuevo -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                         IsEnabled="{Binding Path=IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
@@ -101,7 +114,17 @@
                         <dxmvvm:EventToCommand Command="{Binding CreateMeasurementUnitCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
@@ -112,7 +135,17 @@
                         <dxmvvm:EventToCommand Command="{Binding EditMeasurementUnitCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
@@ -123,11 +156,22 @@
                         <dxmvvm:EventToCommand Command="{Binding DeleteMeasurementUnitCommand}" EventName="Click"/>
                     </dxmvvm:Interaction.Behaviors>
                     <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Button>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>
