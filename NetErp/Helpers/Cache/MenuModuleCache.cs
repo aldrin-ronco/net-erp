@@ -5,8 +5,8 @@ using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
@@ -16,10 +16,37 @@ namespace NetErp.Helpers.Cache
     public class MenuModuleCache : IEntityCache<MenuModuleGraphQLModel>
     {
         private readonly IRepository<MenuModuleGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private readonly ObservableCollection<MenuModuleGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<MenuModuleGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<MenuModuleGraphQLModel>>
+              .Create()
+              .SelectList(it => it.Entries, entries => entries
+                  .Field(e => e.Id)
+                  .Field(e => e.Name)
+                  .Field(e => e.DisplayOrder)
+                  .SelectList(e => e.MenuItemGroups, groups => groups
+                      .Field(g => g.Id)
+                      .Field(g => g.Name)
+                      .Field(g => g.DisplayOrder))
+              )
+              .Field(o => o.PageNumber)
+              .Field(o => o.PageSize)
+              .Field(o => o.TotalPages)
+              .Field(o => o.TotalEntries)
+              .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "MenuModuleFilters");
+            var fragment = new GraphQLQueryFragment("menuModulesPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         public MenuModuleCache(
            IRepository<MenuModuleGraphQLModel> service,
@@ -54,8 +81,8 @@ namespace NetErp.Helpers.Cache
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
+                var (_, query) = _loadQuery.Value;
+                dynamic variables = new System.Dynamic.ExpandoObject();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -73,33 +100,6 @@ namespace NetErp.Helpers.Cache
             {
                 throw new AsyncException(innerException: ex);
             }
-        }
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<MenuModuleGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-                  .Field(e => e.DisplayOrder)
-                  .SelectList(e => e.MenuItemGroups, groups => groups
-                      .Field(g => g.Id)
-                      .Field(g => g.Name)
-                      .Field(g => g.DisplayOrder))
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "MenuModuleFilters");
-            var fragment = new GraphQLQueryFragment("menuModulesPage", [paginationParam, filtersParam], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
         }
 
         public void Remove(int id)

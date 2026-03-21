@@ -4,11 +4,8 @@ using Common.Interfaces;
 using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
@@ -20,51 +17,51 @@ namespace NetErp.Helpers.Cache
         IHandle<TaxCreateMessage>,
         IHandle<TaxUpdateMessage>,
         IHandle<TaxDeleteMessage>
-
-
     {
         private readonly IRepository<TaxGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private readonly ObservableCollection<TaxGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<TaxGraphQLModel> Items { get; }
-
         public bool IsInitialized { get; private set; }
-        public TaxCache(IRepository<TaxGraphQLModel> service, IEventAggregator eventAggregator) {
-        _service = service;
-        eventAggregator.SubscribeOnUIThread(this);
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<TaxGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                )
+                .Field(o => o.PageNumber)
+                .Field(o => o.PageSize)
+                .Field(o => o.TotalPages)
+                .Field(o => o.TotalEntries)
+                .Build();
+
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var filtersParam = new GraphQLQueryParameter("filters", "TaxFilters");
+            var fragment = new GraphQLQueryFragment("taxesPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
+
+        public TaxCache(IRepository<TaxGraphQLModel> service, IEventAggregator eventAggregator)
+        {
+            _service = service;
+            eventAggregator.SubscribeOnUIThread(this);
             Items = new ReadOnlyObservableCollection<TaxGraphQLModel>(_items);
-
         }
 
-
-
-        public void Add(TaxGraphQLModel item)
-        {
-            lock (_lock)
-            {
-                if (!_items.Any(x => x.Id == item.Id))
-                    _items.Add(item);
-            }
-        }
-
-        public void Clear()
-        {
-            lock (_lock)
-            {
-                _items.Clear();
-                IsInitialized = false;
-            }
-        }
         public async Task EnsureLoadedAsync()
         {
             if (IsInitialized) return;
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-
+                var (fragment, query) = _loadQuery.Value;
+                dynamic variables = new GraphQLVariables().Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -83,31 +80,24 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
-        private string BuildQuery()
+
+        public void Add(TaxGraphQLModel item)
         {
-            var fields = FieldSpec<PageType<TaxGraphQLModel>>
-              .Create()
-              .SelectList(it => it.Entries, entries => entries
-                  .Field(e => e.Id)
-                  .Field(e => e.Name)
-                  
-              )
-              .Field(o => o.PageNumber)
-              .Field(o => o.PageSize)
-              .Field(o => o.TotalPages)
-              .Field(o => o.TotalEntries)
-              .Build();
-
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "TaxFilters");
-            var fragment = new GraphQLQueryFragment("taxesPage", [paginationParam, filtersParam], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
+            lock (_lock)
+            {
+                if (!_items.Any(x => x.Id == item.Id))
+                    _items.Add(item);
+            }
         }
 
-       
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _items.Clear();
+                IsInitialized = false;
+            }
+        }
 
         public void Remove(int id)
         {
@@ -132,10 +122,11 @@ namespace NetErp.Helpers.Cache
             }
         }
 
+        #region IHandle Implementations
+
         public Task HandleAsync(TaxCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedTax != null
-                )
+            if (message.CreatedTax != null)
             {
                 Add(message.CreatedTax.Entity);
             }
@@ -148,16 +139,11 @@ namespace NetErp.Helpers.Cache
 
             if (entity != null)
             {
-
                 var existing = _items.FirstOrDefault(x => x.Id == entity.Id);
-
-
                 if (existing != null)
                     Update(entity);
                 else
                     Add(entity);
-
-
             }
             return Task.CompletedTask;
         }
@@ -168,8 +154,9 @@ namespace NetErp.Helpers.Cache
             {
                 Remove(message.DeletedTax.DeletedId.Value);
             }
-
             return Task.CompletedTask;
         }
+
+        #endregion
     }
 }

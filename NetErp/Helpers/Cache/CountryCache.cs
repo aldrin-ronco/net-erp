@@ -3,9 +3,10 @@ using Common.Interfaces;
 using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 
@@ -14,11 +15,39 @@ namespace NetErp.Helpers.Cache
     public class CountryCache : IEntityCache<CountryGraphQLModel>
     {
         private readonly IRepository<CountryGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         private readonly ObservableCollection<CountryGraphQLModel> _items = [];
         public ReadOnlyObservableCollection<CountryGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<CountryGraphQLModel>>
+                .Create()
+                .SelectList(x => x.Entries, entries => entries
+                    .Field(x => x.Id)
+                    .Field(x => x.Name)
+                    .Field(x => x.Code)
+                    .SelectList(x => x.Departments, depts => depts
+                        .Field(d => d.Id)
+                        .Field(d => d.Name)
+                        .Field(d => d.Code)
+                        .SelectList(d => d.Cities, cities => cities
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
+                            .Field(c => c.Code)
+                        )
+                    )
+                )
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("countriesPage", [parameter], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         public CountryCache(
             IRepository<CountryGraphQLModel> service,
@@ -33,10 +62,10 @@ namespace NetErp.Helpers.Cache
         {
             if (IsInitialized) return;
 
-            var query = BuildQuery();
-            dynamic variables = new ExpandoObject();
-            variables.pageResponsePagination = new ExpandoObject();
-            variables.pageResponsePagination.pageSize = -1;
+            var (fragment, query) = _loadQuery.Value;
+            var variables = new GraphQLVariables()
+                .For(fragment, "pagination", new { PageSize = -1 })
+                .Build();
 
             var result = await _service.GetPageAsync(query, variables);
 
@@ -91,37 +120,5 @@ namespace NetErp.Helpers.Cache
                     _items.Remove(item);
             }
         }
-
-        #region Query Builder
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<CountryGraphQLModel>>
-                .Create()
-                .SelectList(x => x.Entries, entries => entries
-                    .Field(x => x.Id)
-                    .Field(x => x.Name)
-                    .Field(x => x.Code)
-                    .SelectList(x => x.Departments, depts => depts
-                        .Field(d => d.Id)
-                        .Field(d => d.Name)
-                        .Field(d => d.Code)
-                        .SelectList(d => d.Cities, cities => cities
-                            .Field(c => c.Id)
-                            .Field(c => c.Name)
-                            .Field(c => c.Code)
-                        )
-                    )
-                )
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("countriesPage", [parameter], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-
-        #endregion
     }
 }
