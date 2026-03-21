@@ -98,7 +98,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public ObservableCollection<ZoneGraphQLModel> Zones
+        public ReadOnlyObservableCollection<ZoneGraphQLModel> Zones
         {
             get;
             set
@@ -109,7 +109,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(nameof(Zones));
                 }
             }
-        } = [];
+        } = new([]);
 
         [ExpandoPath("zoneId", SerializeAsId = true)]
         public ZoneGraphQLModel? SelectedZone
@@ -355,7 +355,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         } = [];
 
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
+        public ReadOnlyObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
         {
             get;
             set
@@ -366,7 +366,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     NotifyOfPropertyChange(nameof(IdentificationTypes));
                 }
             }
-        } = [];
+        } = new([]);
 
         [ExpandoPath("accountingEntity.identificationTypeId", SerializeAsId = true)]
         public IdentificationTypeGraphQLModel? SelectedIdentificationType
@@ -386,7 +386,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        public ObservableCollection<CountryGraphQLModel>? Countries
+        public ReadOnlyObservableCollection<CountryGraphQLModel>? Countries
         {
             get;
             set

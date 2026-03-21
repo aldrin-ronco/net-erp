@@ -28,9 +28,10 @@ namespace NetErp.Helpers.Cache
     public interface IEntityCache<T> : IEntityCache where T : class
     {
         /// <summary>
-        /// Colección de items cacheados
+        /// Colección de items cacheados (solo lectura para consumidores externos).
+        /// Usar los métodos Add/Update/Remove para modificar el cache.
         /// </summary>
-        ObservableCollection<T> Items { get; }
+        ReadOnlyObservableCollection<T> Items { get; }
 
         /// <summary>
         /// Asegura que los datos estén cargados. Si no están inicializados, los carga.

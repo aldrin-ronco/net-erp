@@ -236,8 +236,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// <summary>
         /// Tipos de Documentos
         /// </summary>
-        private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
-        public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
+        private ReadOnlyObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes;
+        public ReadOnlyObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
         {
             get { return _identificationTypes; }
             set
@@ -709,8 +709,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// <summary>
         /// Paises
         /// </summary>
-        private ObservableCollection<CountryGraphQLModel> _countries;
-        public ObservableCollection<CountryGraphQLModel> Countries
+        private ReadOnlyObservableCollection<CountryGraphQLModel> _countries;
+        public ReadOnlyObservableCollection<CountryGraphQLModel> Countries
         {
             get => _countries;
             set

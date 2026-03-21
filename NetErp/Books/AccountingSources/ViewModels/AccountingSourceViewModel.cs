@@ -116,8 +116,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
             }
         }
 
-        private ObservableCollection<MenuModuleGraphQLModel> _modules = [];
-        public ObservableCollection<MenuModuleGraphQLModel> Modules
+        private ReadOnlyObservableCollection<MenuModuleGraphQLModel> _modules = new([]);
+        public ReadOnlyObservableCollection<MenuModuleGraphQLModel> Modules
         {
             get => _modules;
             set
