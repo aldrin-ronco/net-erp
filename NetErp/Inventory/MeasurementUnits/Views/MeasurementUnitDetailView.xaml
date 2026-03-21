@@ -8,67 +8,71 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:h="clr-namespace:NetErp.Helpers"
-             xmlns:local="clr-namespace:NetErp.Inventory.MeasurementUnits.Views"
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="500"
              Background="#EEF1F5">
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
+                            BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="20" MinWidth="420">
-            <Grid>
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Form content -->
-                <StackPanel Grid.Row="0" Margin="30,25,30,20">
-
-                    <!-- Title -->
-                    <TextBlock Text="Información de Unidad de Medida"
-                               FontSize="16" FontWeight="Bold"
-                               Margin="0,0,0,20"/>
+                <StackPanel Grid.Row="0">
 
                     <!-- Nombre -->
-                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,5"/>
-                    <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:TextEdit x:Name="Name"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
-                                  x:Name="MeasurementUnitName"
-                                  h:FocusBehavior.IsFocused="True"
+                                  Padding="3"
+                                  MaxLength="{Binding NameMaxLength}"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  Margin="0,0,0,8"/>
 
                     <!-- Abreviación -->
-                    <TextBlock Text="Abreviación" FontSize="13" Margin="0,0,0,5"/>
-                    <dxe:TextEdit Text="{Binding Path=Abbreviation, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <TextBlock Text="Abreviación" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:TextEdit x:Name="Abbreviation"
+                                  Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
+                                  Padding="3"
+                                  MaxLength="{Binding AbbreviationMaxLength}"
                                   BorderBrush="#C8CED6"
-                                  Margin="0,0,0,15"/>
+                                  Margin="0,0,0,8"/>
 
                     <!-- Tipo -->
-                    <TextBlock Text="Tipo" FontSize="13" Margin="0,0,0,5"/>
+                    <TextBlock Text="Tipo" FontSize="13" Margin="0,0,0,3"/>
                     <dxe:ComboBoxEdit
                         ItemsSource="{Binding MeasurementUnitTypes}"
                         EditValue="{Binding Type, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         DisplayMember="Value"
                         ValueMember="Key"
                         IsTextEditable="False"
+                        Padding="2"
                         BorderBrush="#C8CED6"
-                        Margin="0,0,0,15"/>
+                        Margin="0,0,0,8"/>
 
                     <!-- Código DIAN -->
-                    <TextBlock Text="Código DIAN" FontSize="13" Margin="0,0,0,5"/>
-                    <dxe:TextEdit Text="{Binding Path=DianCode, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <TextBlock Text="Código DIAN" FontSize="13" Margin="0,0,0,3"/>
+                    <dxe:TextEdit x:Name="DianCode"
+                                  Style="{StaticResource FocusedHighlightStyle}"
+                                  Padding="3"
+                                  MaxLength="{Binding DianCodeMaxLength}"
                                   BorderBrush="#C8CED6"
                                   Margin="0,0,0,0"/>
                 </StackPanel>
 
                 <!-- Button bar centered -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,20">
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
