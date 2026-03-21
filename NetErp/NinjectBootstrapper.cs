@@ -274,6 +274,7 @@ namespace NetErp
             _ = kernel.Bind<IRepository<ModuleGraphQLModel>>().To<GraphQLRepository<ModuleGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<MenuModuleGraphQLModel>>().To<GraphQLRepository<MenuModuleGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<MenuItemGraphQLModel>>().To<GraphQLRepository<MenuItemGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<MenuItemGroupGraphQLModel>>().To<GraphQLRepository<MenuItemGroupGraphQLModel>>().InSingletonScope();
 
 
             // Treasury module repositories

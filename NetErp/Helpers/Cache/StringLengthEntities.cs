@@ -64,5 +64,8 @@ namespace NetErp.Helpers.Cache
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];
         public static readonly Type[] MeasurementUnit = [typeof(MeasurementUnitGraphQLModel)];
+
+        // Global
+        public static readonly Type[] MenuItem = [typeof(MenuItemGraphQLModel)];
     }
 }
