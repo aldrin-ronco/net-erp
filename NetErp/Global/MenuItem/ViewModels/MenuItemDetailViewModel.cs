@@ -23,7 +23,6 @@ namespace NetErp.Global.MenuItem.ViewModels
 {
     public class MenuItemDetailViewModel(
         IRepository<MenuItemGraphQLModel> menuItemService,
-        IRepository<MenuItemGroupGraphQLModel> menuItemGroupService,
         IEventAggregator eventAggregator,
         MenuModuleCache menuModuleCache,
         StringLengthCache stringLengthCache,
@@ -32,7 +31,6 @@ namespace NetErp.Global.MenuItem.ViewModels
         #region Dependencies
 
         private readonly IRepository<MenuItemGraphQLModel> _menuItemService = menuItemService ?? throw new ArgumentNullException(nameof(menuItemService));
-        private readonly IRepository<MenuItemGroupGraphQLModel> _menuItemGroupService = menuItemGroupService ?? throw new ArgumentNullException(nameof(menuItemGroupService));
         private readonly IEventAggregator _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
         private readonly MenuModuleCache _menuModuleCache = menuModuleCache ?? throw new ArgumentNullException(nameof(menuModuleCache));
         private readonly StringLengthCache _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
@@ -311,13 +309,15 @@ namespace NetErp.Global.MenuItem.ViewModels
             await _menuModuleCache.EnsureLoadedAsync();
             Modules = new ObservableCollection<MenuModuleGraphQLModel>(_menuModuleCache.Items);
 
-            (GraphQLQueryFragment fragment, string query) = _loadGroupsQuery.Value;
-            dynamic variables = new GraphQLVariables()
-                .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
-                .Build();
-
-            PageType<MenuItemGroupGraphQLModel> result = await _menuItemGroupService.GetPageAsync(query, variables);
-            _allGroups = [.. result.Entries.OrderBy(g => g.DisplayOrder)];
+            _allGroups = [.. _menuModuleCache.Items
+                .SelectMany(m => m.MenuItemGroups.Select(g => new MenuItemGroupGraphQLModel
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    DisplayOrder = g.DisplayOrder,
+                    MenuModule = m
+                }))
+                .OrderBy(g => g.DisplayOrder)];
         }
 
         private void UpdateGroupsForSelectedModule()
@@ -471,25 +471,6 @@ namespace NetErp.Global.MenuItem.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadGroupsQuery = new(() =>
-        {
-            var fields = FieldSpec<PageType<MenuItemGroupGraphQLModel>>
-                .Create()
-                .Field(f => f.TotalEntries)
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.DisplayOrder)
-                    .Select(e => e.MenuModule, m => m
-                        .Field(m => m!.Id)
-                        .Field(m => m!.Name)))
-                .Build();
-
-            var fragment = new GraphQLQueryFragment("menuItemGroupsPage",
-                [new("pagination", "Pagination")],
-                fields, "PageResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
