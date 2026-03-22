@@ -102,7 +102,7 @@ namespace NetErp.Helpers.Services
         /// <summary>
         /// Collection of interactive actions available for this notification.
         /// </summary>
-        public List<NotificationAction> Actions { get; set; } = new();
+        public List<NotificationAction> Actions { get; set; } = [];
         
         /// <summary>
         /// Indicates whether this notification has interactive actions available.
@@ -110,35 +110,32 @@ namespace NetErp.Helpers.Services
         /// </summary>
         public bool IsInteractive => Actions.Count > 0;
 
-        private string _message;
         public string Message
         {
-            get { return _message; }
+            get;
             set
             {
-                _message = value;
+                field = value;
                 NotifyOfPropertyChange();
             }
         }
 
-        private string _title;
         public string Title
         {
-            get { return _title; }
+            get;
             set
             {
-                _title = value;
+                field = value;
                 NotifyOfPropertyChange();
             }
         }
 
-        private NotificationType _type;
         public NotificationType Type
         {
-            get { return _type; }
+            get;
             set
             {
-                _type = value;
+                field = value;
                 NotifyOfPropertyChange();
             }
         }
@@ -185,9 +182,9 @@ namespace NetErp.Helpers.Services
         /// <param name="type">The type of notification which determines styling</param>
         public NotificationItem(string message, string title, NotificationType type)
         {
-            _message = message;
-            _title = title;
-            _type = type;
+            Message = message;
+            Title = title;
+            Type = type;
         }
     }
     /// <summary>
@@ -261,13 +258,18 @@ namespace NetErp.Helpers.Services
     /// It automatically handles memory management by cleaning up timer references and removing notifications.
     /// All notifications are logged using the configured ILogger for debugging and audit purposes.
     /// </remarks>
-    public class NotificationService : INotificationService
+    /// <remarks>
+    /// Initializes a new instance of the NotificationService with dependency injection.
+    /// </remarks>
+    /// <param name="logger">Logger instance for recording notification events</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
+    public class NotificationService(ILogger<NotificationService> logger) : INotificationService
     {
         /// <summary>
         /// Global collection of active notifications shared across the application.
         /// This collection is thread-safe and can be bound to UI controls for display.
         /// </summary>
-        private static readonly ObservableCollection<NotificationItem> _notifications = new();
+        private static readonly ObservableCollection<NotificationItem> _notifications = [];
         
         /// <summary>
         /// Public accessor for the global notifications collection.
@@ -275,17 +277,7 @@ namespace NetErp.Helpers.Services
         /// </summary>
         public static ObservableCollection<NotificationItem> GlobalNotifications => _notifications;
 
-        private readonly ILogger<NotificationService> _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the NotificationService with dependency injection.
-        /// </summary>
-        /// <param name="logger">Logger instance for recording notification events</param>
-        /// <exception cref="ArgumentNullException">Thrown when logger is null</exception>
-        public NotificationService(ILogger<NotificationService> logger)
-        {
-            _logger = logger;
-        }
+        private readonly ILogger<NotificationService> _logger = logger;
 
         /// <summary>
         /// Displays a success notification with green styling and automatic dismissal.
@@ -296,7 +288,7 @@ namespace NetErp.Helpers.Services
         public void ShowSuccess(string message, string title = "Éxito", int durationMs = 3000)
         {
             ShowNotification(message, title, NotificationType.Success, durationMs);
-            _logger.LogInformation($"Success: {title} - {message}");
+            _logger.LogInformation("Success: {Title} - {Message}", title, message);
         }
 
         /// <summary>
@@ -308,7 +300,7 @@ namespace NetErp.Helpers.Services
         public void ShowError(string message, string title = "Error", int durationMs = 3000)
         {
             ShowNotification(message, title, NotificationType.Error, durationMs);
-            _logger.LogError($"Error: {title} - {message}");
+            _logger.LogError("Error: {Title} - {Message}", title, message);
         }
 
         /// <summary>
@@ -320,7 +312,7 @@ namespace NetErp.Helpers.Services
         public void ShowWarning(string message, string title = "Advertencia", int durationMs = 3000)
         {
             ShowNotification(message, title, NotificationType.Warning, durationMs);
-            _logger.LogWarning($"Warning: {title} - {message}");
+            _logger.LogWarning("Warning: {Title} - {Message}", title, message);
         }
 
         /// <summary>
@@ -332,7 +324,7 @@ namespace NetErp.Helpers.Services
         public void ShowInfo(string message, string title = "Información", int durationMs = 3000)
         {
             ShowNotification(message, title, NotificationType.Info, durationMs);
-            _logger.LogInformation($"Info: {title} - {message}");
+            _logger.LogInformation("Info: {Title} - {Message}", title, message);
         }
 
         /// <summary>
@@ -344,7 +336,7 @@ namespace NetErp.Helpers.Services
         public void ShowQuestion(string message, List<NotificationAction> actions, string title = "Pregunta")
         {
             ShowInteractiveNotification(message, title, NotificationType.Question, actions);
-            _logger.LogInformation($"Question: {title} - {message}");
+            _logger.LogInformation("Question: {Title} - {Message}", title, message);
         }
 
         /// <summary>
@@ -451,10 +443,7 @@ namespace NetErp.Helpers.Services
         {
             Execute.OnUIThread(() =>
             {
-                if (_notifications.Contains(notification))
-                {
-                    _notifications.Remove(notification);
-                }
+                _notifications.Remove(notification);
             });
         }
 

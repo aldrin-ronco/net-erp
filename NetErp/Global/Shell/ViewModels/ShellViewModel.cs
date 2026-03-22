@@ -88,10 +88,10 @@ namespace NetErp.Global.Shell.ViewModels
             _entityCaches = entityCaches ?? throw new ArgumentNullException(nameof(entityCaches));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
-            Task.Run(() => ActivateLoginView());
+            _ = Task.Run(ActivateLoginViewAsync);
         }
 
-        public async Task ActivateLoginView()
+        public async Task ActivateLoginViewAsync()
         {
 
             // Crear LoginViewModel con Constructor Injection
@@ -144,6 +144,7 @@ namespace NetErp.Global.Shell.ViewModels
             _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
             SessionInfo.DefaultAwsS3Config = null;
+            SessionInfo.DatabaseId = string.Empty;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -156,6 +157,7 @@ namespace NetErp.Global.Shell.ViewModels
             _mainMenuViewModel = null;
             SessionInfo.CurrentCompany = null;
             SessionInfo.DefaultAwsS3Config = null;
+            SessionInfo.DatabaseId = string.Empty;
 
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)

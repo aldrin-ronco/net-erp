@@ -35,110 +35,102 @@ namespace NetErp.Login.ViewModels
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
 
-        private SystemAccountGraphQLModel _currentAccount = new();
-        private ObservableCollection<LoginOrganizationDTO> _organizationGroups = [];
-        private ObservableCollection<LoginOrganizationDTO> _filteredOrganizationGroups = [];
-        private LoginCompanyInfoDTO? _selectedCompany;
         private LoginTicketGraphQLModel _accessTicket = new();
-        private string _searchText = string.Empty;
+
         public SystemAccountGraphQLModel CurrentAccount
         {
-            get { return _currentAccount; }
+            get;
             set
             {
-                if (_currentAccount != value)
+                if (field != value)
                 {
-                    _currentAccount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CurrentAccount));
                     NotifyOfPropertyChange(nameof(WelcomeMessage));
                 }
             }
-        }
+        } = new();
 
         public ObservableCollection<LoginOrganizationDTO> OrganizationGroups
         {
-            get { return _organizationGroups; }
+            get;
             set
             {
-                if (_organizationGroups != value)
+                if (field != value)
                 {
-                    _organizationGroups = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(OrganizationGroups));
                 }
             }
-        }
+        } = [];
 
         public ObservableCollection<LoginOrganizationDTO> FilteredOrganizationGroups
         {
-            get { return _filteredOrganizationGroups; }
+            get;
             set
             {
-                if (_filteredOrganizationGroups != value)
+                if (field != value)
                 {
-                    _filteredOrganizationGroups = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilteredOrganizationGroups));
                 }
             }
-        }
+        } = [];
 
         public string SearchText
         {
-            get { return _searchText; }
+            get;
             set
             {
-                if (_searchText != value)
+                if (field != value)
                 {
-                    _searchText = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SearchText));
                     ApplyFilter();
                 }
             }
-        }
+        } = string.Empty;
 
         public LoginCompanyInfoDTO? SelectedCompany
         {
-            get { return _selectedCompany; }
+            get;
             set
             {
-                if (_selectedCompany != value)
+                if (field != value)
                 {
-                    _selectedCompany = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCompany));
                     NotifyOfPropertyChange(nameof(CanContinue));
                 }
             }
         }
 
-        private bool _isBusy;
-
         public bool IsBusy
         {
-            get { return _isBusy; }
-            set 
+            get;
+            set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                     NotifyOfPropertyChange(nameof(CanContinue));
                 }
             }
         }
 
-        private string _busyContent;
-
         public string BusyContent
         {
-            get { return _busyContent; }
-            set 
+            get;
+            set
             {
-                if(_busyContent != value)
+                if (field != value)
                 {
-                    _busyContent = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(BusyContent));
                 }
             }
-        }
+        } = string.Empty;
 
 
 
@@ -191,9 +183,9 @@ namespace NetErp.Login.ViewModels
                                 CompanyName = company.Company.FullName,
                                 Role = company.Role,
                                 OrganizationName = g.Key.Name,
-                                OriginalData = company
+                                OriginalData = company,
+                                OnSelectionChanged = (selected) => SelectedCompany = selected
                             };
-                            dto.OnSelectionChanged = (selected) => SelectedCompany = selected;
                             return dto;
                         })
                     )
@@ -244,13 +236,13 @@ namespace NetErp.Login.ViewModels
             SelectedCompany = null;
         }
 
-        private ICommand _continueCommand;
+        private ICommand? _continueCommand;
 
         public ICommand ContinueCommand
         {
             get
             {
-                if (_continueCommand is null) _continueCommand = new AsyncCommand(ContinueAsync);
+                _continueCommand ??= new AsyncCommand(ContinueAsync);
                 return _continueCommand;
             }
         }
@@ -264,8 +256,8 @@ namespace NetErp.Login.ViewModels
                 IsBusy = true;
                 CompanyGraphQLModel currentCompany;
 
-                // Enviar temporalmente el database-id basado en la referencia seleccionada
-                SessionInfo.PendingCompanyReference = SelectedCompany!.OriginalData.Company.Reference;
+                // Establecer database-id de la organización para los requests a la API principal
+                SessionInfo.DatabaseId = SelectedCompany!.OriginalData.Company.Organization.DatabaseId;
 
                 if (string.IsNullOrEmpty(SessionInfo.SessionId))
                 {
@@ -279,28 +271,30 @@ namespace NetErp.Login.ViewModels
                     SessionInfo.SessionId = result.SessionId;
                 }
 
-                BusyContent = "Verificando información...";
-                //Para este punto sí o sí debe haber una empresa seleccionada
-                CompanyGraphQLModel? resolvedCompany = await GetCompanyByReferenceAsync(SelectedCompany!.OriginalData.Company);
-
+                LoginCompanyInfoGraphQLModel loginCompany = SelectedCompany!.OriginalData.Company;
                 bool needsSeeds;
 
-                if(resolvedCompany is null)
+                if (loginCompany.TenantCompanyId.HasValue)
                 {
+                    // Empresa ya existe en la API principal — usar el ID directamente
+                    currentCompany = new CompanyGraphQLModel
+                    {
+                        Id = loginCompany.TenantCompanyId.Value
+                    };
+                    needsSeeds = string.Equals(loginCompany.SeedStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
+                }
+                else
+                {
+                    // Empresa nueva — crear en la API principal
                     BusyContent = "Dejando todo listo...";
-                    UpsertResponseType<CompanyGraphQLModel> createdCompany = await CreateCompanyAsync(SelectedCompany!.OriginalData.Company);
+                    UpsertResponseType<CompanyGraphQLModel> createdCompany = await CreateCompanyAsync(loginCompany);
                     if (!createdCompany.Success)
                     {
                         ThemedMessageBox.Show(text: $"No fue posible acceder a la compañía seleccionada. \n\n {createdCompany.Errors.ToUserMessage()} \n\n Intenta nuevamente o comunícate con soporte técnico.", title: "Error de acceso", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
                         return;
                     }
                     currentCompany = createdCompany.Entity;
-                    needsSeeds = true;
-                }
-                else
-                {
-                    currentCompany = resolvedCompany;
-                    needsSeeds = string.Equals(SelectedCompany!.OriginalData.Company.SeedStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
+                    needsSeeds = string.Equals(loginCompany.SeedStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
                 }
 
                 SessionInfo.CurrentCompany = currentCompany;
@@ -311,7 +305,7 @@ namespace NetErp.Login.ViewModels
                     BusyContent = "Configurando la empresa...";
                     var seedProgress = new Progress<string>(message => BusyContent = message);
                     CompanySeedResultModel seedResult = await _companySeedService.RunSeedsAsync(
-                        SessionInfo.LoginCompanyId, currentCompany.Id, seedProgress);
+                        SessionInfo.LoginCompanyId, seedProgress);
 
                     if (!seedResult.Success)
                     {
@@ -326,8 +320,6 @@ namespace NetErp.Login.ViewModels
                         return;
                     }
                 }
-                SessionInfo.PendingCompanyReference = null;
-
                 // Publicar mensaje de empresa seleccionada para navegación
                 await _eventAggregator.PublishOnUIThreadAsync(new CompanySelectedMessage
                 {
@@ -343,91 +335,36 @@ namespace NetErp.Login.ViewModels
             }
             finally
             {
-                // Limpia el pending; desde este punto el flujo superior establecerá CurrentCompany.
-                SessionInfo.PendingCompanyReference = null;
                 IsBusy = false;
             }
         }
 
-        public string GetCompanyByReferenceQuery()
-        {
-            var fields = FieldSpec<PageType<CompanyGraphQLModel>>
-            .Create()
-            .SelectList(it => it.Entries, entries => entries
-                .Field(e => e.Id)
-                .Field(e => e.InsertedAt)
-                .Field(e => e.UpdatedAt)
-                .Field(e => e.Reference)
-                .Field(e => e.Status)
-                .Select(e => e.CompanyEntity, entity => entity
-                    .Field(e => e.Id)
-                    .Field(e => e.BusinessName)
-                    .Field(e => e.IdentificationNumber)))
-            .Build();
-
-            var parameters = new GraphQLQueryParameter("filters", "CompanyFilters");
-
-            var fragment = new GraphQLQueryFragment("companiesPage", [parameters], fields, "PageResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-
-        public async Task<CompanyGraphQLModel?> GetCompanyByReferenceAsync(LoginCompanyInfoGraphQLModel company)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(company.Reference)) throw new Exception($"Company reference is null or empty");
-
-                dynamic variables = new ExpandoObject();
-                variables.filters = new ExpandoObject();
-                variables.pageResponseFilters = new ExpandoObject();
-                variables.pageResponseFilters.reference = company.Reference;
-
-                string query = GetCompanyByReferenceQuery();
-
-                PageType<CompanyGraphQLModel> response = await _companyService.GetPageAsync(query, variables);
-
-                if (response.Entries.Count > 1) throw new Exception("Company reference must be unique");
-
-                return response.Entries.FirstOrDefault();
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-        }
-
-        public string GetCreateCompanyQuery()
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createCompanyQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<CompanyGraphQLModel>>
-            .Create()
-            .Select(selector: f => f.Entity, overrideName: "company", alias: "entity", nested: entity => entity
-                .Field(e => e.Id)
-                .Field(e => e.InsertedAt)
-                .Field(e => e.UpdatedAt)
-                .Field(e => e.Reference)
-                .Field(e => e.Status)
-                .Select(f => f.CompanyEntity, sq => sq
+                .Create()
+                .Select(selector: f => f.Entity, overrideName: "company", alias: "entity", nested: entity => entity
                     .Field(e => e.Id)
-                    .Field(e => e.BusinessName)
-                    .Field(e => e.IdentificationNumber)))
-            .Field(e => e.Success)
-            .Field(e => e.Message)
-            .SelectList(f => f.Errors, sq => sq
-                .Field(f => f.Fields)
-                .Field(f => f.Message))
-            .Build();
+                    .Field(e => e.InsertedAt)
+                    .Field(e => e.UpdatedAt)
+                    .Field(e => e.Reference)
+                    .Field(e => e.Status)
+                    .Select(f => f.CompanyEntity, sq => sq
+                        .Field(e => e.Id)
+                        .Field(e => e.BusinessName)
+                        .Field(e => e.IdentificationNumber)))
+                .Field(e => e.Success)
+                .Field(e => e.Message)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
 
-            var parameters = new GraphQLQueryParameter("input", "CreateCompanyInput!");
-
-            var fragment = new GraphQLQueryFragment("createCompany", [parameters], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+            var fragment = new GraphQLQueryFragment("createCompany",
+                [new("input", "CreateCompanyInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
 
         public async Task<UpsertResponseType<CompanyGraphQLModel>> CreateCompanyAsync(LoginCompanyInfoGraphQLModel company)
         {
@@ -435,8 +372,7 @@ namespace NetErp.Login.ViewModels
             {
                 CompanyContextData response = await GetCompanyContextDataAsync(cityCode: company.City.Code, departmentCode: company.Department.Code, countryCode: company.Country.Code, identificationTypeCode: company.IdentificationType.Code, currencyCode: company.DefaultCurrency.Code);
 
-                //bloque de validación
-                if (response.Country is null) throw new Exception($"No country found with code {company.Country.Code}");
+                if(response.Country is null) throw new Exception($"No country found with code {company.Country.Code}");
                 if(response.Department is null) throw new Exception($"No department found with code {company.Country.Code} - {company.Department.Code}");
                 if(response.City is null) throw new Exception($"No city found with code {company.Country.Code} - {company.Department.Code} - {company.City.Code}");
                 if(response.IdentificationType is null) throw new Exception($"No identification type found with code {company.IdentificationType.Code}");
@@ -468,8 +404,7 @@ namespace NetErp.Login.ViewModels
                 variables.createResponseInput.accountingEntity.cityId = response.City.Id; 
                 variables.createResponseInput.accountingEntity.identificationTypeId = response.IdentificationType.Id;
 
-
-                string query = GetCreateCompanyQuery();
+                (GraphQLQueryFragment _, string query) = _createCompanyQuery.Value;
 
                 UpsertResponseType<CompanyGraphQLModel> result = await _companyService.CreateAsync<UpsertResponseType<CompanyGraphQLModel>>(query, variables);
 
@@ -482,49 +417,34 @@ namespace NetErp.Login.ViewModels
             }
         }
 
-        public string GetCompanyContextDataQuery()
+        private static readonly Lazy<string> _companyContextDataQuery = new(() =>
         {
-            var cityFields = FieldSpec<CityGraphQLModel>
-            .Create()
-            .Field(e => e.Id)
-            .Field(e => e.Code).Build();
+            var cityFields = FieldSpec<CityGraphQLModel>.Create()
+                .Field(e => e.Id).Field(e => e.Code).Build();
+            var departmentFields = FieldSpec<DepartmentGraphQLModel>.Create()
+                .Field(e => e.Id).Field(e => e.Code).Build();
+            var countryFields = FieldSpec<CountryGraphQLModel>.Create()
+                .Field(e => e.Id).Field(e => e.Code).Build();
+            var identificationTypeFields = FieldSpec<IdentificationTypeGraphQLModel>.Create()
+                .Field(e => e.Id).Field(e => e.Code).Build();
+            var currencyFields = FieldSpec<CurrencyGraphQLModel>.Create()
+                .Field(e => e.Id).Field(e => e.Code).Build();
 
-            var departmentFields = FieldSpec<DepartmentGraphQLModel>
-                .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Code).Build();
+            var cityFragment = new GraphQLQueryFragment("cityByCodes",
+                [new("cityCode", "String!"), new("departmentCode", "String!"), new("countryCode", "String!")],
+                cityFields, "City");
+            var departmentFragment = new GraphQLQueryFragment("departmentByCodes",
+                [new("departmentCode", "String!"), new("countryCode", "String!")],
+                departmentFields, "Department");
+            var countryFragment = new GraphQLQueryFragment("countryByCode",
+                [new("code", "String!")], countryFields, "Country");
+            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypeByCode",
+                [new("code", "String!")], identificationTypeFields, "IdentificationType");
+            var currencyFragment = new GraphQLQueryFragment("currencyByCode",
+                [new("code", "String!")], currencyFields, "Currency");
 
-            var countryField = FieldSpec<CountryGraphQLModel>
-                .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Code).Build();
-
-            var identificationTypeFields = FieldSpec<IdentificationTypeGraphQLModel>
-                .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Code).Build();
-
-            var currencyFields = FieldSpec<CurrencyGraphQLModel>
-                .Create()
-                .Field(e => e.Id)
-                .Field(e => e.Code).Build();
-
-            var cityParameters = new List<GraphQLQueryParameter> { new("cityCode", "String!"), new("departmentCode", "String!"), new("countryCode", "String!") };
-            var departmentParameters = new List<GraphQLQueryParameter> { new("departmentCode", "String!"), new("countryCode", "String!") };
-            var countryParameters = new GraphQLQueryParameter("code", "String!");
-            var identificationTypeParameters = new GraphQLQueryParameter("code", "String!");
-            var currencyParameters = new GraphQLQueryParameter("code", "String!");
-
-            var cityFragment = new GraphQLQueryFragment("cityByCodes", cityParameters, cityFields, "City");
-            var departmentFragment = new GraphQLQueryFragment("departmentByCodes", departmentParameters, departmentFields, "Department");
-            var countryFragment = new GraphQLQueryFragment("countryByCode", [countryParameters], countryField, "Country");
-            var identificationTypeFragment = new GraphQLQueryFragment("identificationTypeByCode", [identificationTypeParameters], identificationTypeFields, "IdentificationType");
-            var currencyFragment = new GraphQLQueryFragment("currencyByCode", [currencyParameters], currencyFields, "Currency");
-
-            var builder = new GraphQLQueryBuilder([cityFragment, departmentFragment, countryFragment, identificationTypeFragment, currencyFragment]);
-
-            return builder.GetQuery();
-        }
+            return new GraphQLQueryBuilder([cityFragment, departmentFragment, countryFragment, identificationTypeFragment, currencyFragment]).GetQuery();
+        });
 
         public async Task<CompanyContextData> GetCompanyContextDataAsync(string cityCode, string departmentCode, string countryCode, string identificationTypeCode, string currencyCode)
         {
@@ -539,7 +459,7 @@ namespace NetErp.Login.ViewModels
                 variables.countryCode = countryCode;
                 variables.identificationTypeCode = identificationTypeCode;
                 variables.currencyCode = currencyCode;
-                string query = GetCompanyContextDataQuery();
+                string query = _companyContextDataQuery.Value;
 
                 CompanyContextData response = await _countryService.GetDataContextAsync<CompanyContextData>(query, variables);
 
@@ -558,13 +478,13 @@ namespace NetErp.Login.ViewModels
             SelectedCompany = company;
         }
 
-        private ICommand _onCompanyDoubleClickCommand;
+        private ICommand? _onCompanyDoubleClickCommand;
 
         public ICommand OnCompanyDoubleClickCommand
         {
             get
             {
-                if (_onCompanyDoubleClickCommand is null) _onCompanyDoubleClickCommand = new DelegateCommand<LoginCompanyInfoDTO>(OnCompanyDoubleClick);
+                _onCompanyDoubleClickCommand ??= new DelegateCommand<LoginCompanyInfoDTO>(OnCompanyDoubleClick);
                 return _onCompanyDoubleClickCommand;
             }
         }

@@ -1,0 +1,3181 @@
+schema {
+  mutation: RootMutationType
+  subscription: RootSubscriptionType
+  query: RootQueryType
+}
+
+type RootQueryType {
+  "Get paginated list of servers with sorting"
+  serversPage(pagination: Pagination, filters: ServerFilters, sort: [ServerSortInput]): ServerPage
+
+  "Get a single server by ID"
+  server(
+    "Server ID"
+    id: ID!
+  ): Server
+
+  "Get encrypted server configuration bundle (iv||ciphertext||tag base64) by company reference"
+  serverConfigEncryptedByCompanyReference(
+    "Company reference"
+    reference: String!
+  ): String
+
+  "Get all API keys with pagination, filters, and sorting"
+  apiKeysPage(
+    "Pagination parameters"
+    pagination: Pagination
+
+    "Filter parameters"
+    filters: ApiKeyFilters
+
+    "Sort parameters"
+    sort: [ApiKeySortInput]
+  ): ApiKeyPage
+
+  "Get a single API key by ID"
+  apiKey(
+    "API key ID"
+    id: ID!
+  ): ApiKey
+
+  "Get paginated list of organizations with optional filters and sorting"
+  organizationsPage(
+    "Pagination parameters"
+    pagination: Pagination
+
+    "Filter parameters"
+    filters: OrganizationFilters
+
+    "Sort parameters"
+    sort: [OrganizationSortInput]
+  ): OrganizationPage
+
+  "Get a single organization by ID"
+  organization(
+    "Organization ID"
+    id: ID!
+  ): Organization
+
+  "Get a paginated list of accounts with optional filters and sorting"
+  accountsPage(
+    "Pagination parameters"
+    pagination: Pagination
+
+    "Filter options for accounts"
+    filters: AccountFilters
+
+    "Sort options for accounts"
+    sort: [AccountSortInput]
+  ): AccountPage
+
+  "Get a specific account by ID"
+  account(
+    "Account ID"
+    id: ID!
+  ): Account
+
+  "Get a paginated list of companies with optional filters and sorting"
+  companiesPage(
+    "Pagination parameters"
+    pagination: Pagination
+
+    "Filter options for companies"
+    filters: CompanyFilters
+
+    "Sort options for companies"
+    sort: [CompanySortInput]
+  ): CompanyPage
+
+  "Get a specific company by ID"
+  company(
+    "Company ID"
+    id: ID!
+  ): Company
+
+  "Get a specific company by reference"
+  companyByReference(
+    "Company reference"
+    reference: String!
+  ): Company
+
+  "Get paginated list of collaborators"
+  collaboratorsPage(
+    "Pagination parameters"
+    pagination: Pagination
+
+    "Filters for collaborators"
+    filters: CollaboratorFilters
+
+    "Sorting parameters"
+    sort: [CollaboratorSortInput!]
+  ): CollaboratorPage
+
+  "Get a single collaborator by composite key"
+  collaborator(
+    "Composite key input: account_id + company_id"
+    input: GetCollaboratorInput!
+  ): Collaborator
+
+  "Get a paginated list of countries with optional filters and sorting"
+  countriesPage(pagination: Pagination, filters: CountryFilters, sort: [CountrySortInput]): CountryPage
+
+  "Get a specific country by ID"
+  country(id: ID!): Country
+
+  "Get a paginated list of departments with optional filters and sorting"
+  departmentsPage(pagination: Pagination, filters: DepartmentFilters, sort: [DepartmentSortInput]): DepartmentPage
+
+  "Get a specific department by ID"
+  department(id: ID!): Department
+
+  "Get a paginated list of cities with optional filters and sorting"
+  citiesPage(pagination: Pagination, filters: CityFilters, sort: [CitySortInput]): CityPage
+
+  "Get a specific city by ID"
+  city(id: ID!): City
+
+  "Get a paginated list of identification types with optional filters and sorting"
+  identificationTypesPage(
+    pagination: Pagination, filters: IdentificationTypeFilters, sort: [IdentificationTypeSortInput]
+  ): IdentificationTypePage
+
+  "Get a specific identification type by ID"
+  identificationType(id: ID!): IdentificationType
+
+  currenciesPage(pagination: Pagination, filters: CurrencyFilters, sort: [CurrencySortInput]): CurrencyPage
+
+  currency(id: ID!): Currency
+
+  "Get a paginated list of business types with optional filters and sorting"
+  businessTypesPage(pagination: Pagination, filters: BusinessTypeFilters, sort: [BusinessTypeSortInput]): BusinessTypePage
+
+  "Get a specific business type by ID"
+  businessType(id: ID!): BusinessType
+
+  menuModulesPage(pagination: Pagination, filters: MenuModuleFilters, sort: [MenuModuleSortInput]): MenuModulePage
+
+  menuModule(id: ID!): MenuModule
+
+  "Get a paginated list of menu items with optional filters and sorting"
+  menuItemsPage(pagination: Pagination, filters: MenuItemFilters, sort: [MenuItemSortInput]): MenuItemPage
+
+  "Get a specific menu item by ID"
+  menuItem(id: ID!): MenuItem
+
+  menuItemGroupsPage(pagination: Pagination, filters: MenuItemGroupFilters, sort: [MenuItemGroupSortInput]): MenuItemGroupPage
+
+  menuItemGroup(id: ID!): MenuItemGroup
+
+  "Get a paginated list of business type modules with optional filters and sorting"
+  businessTypeModulesPage(
+    pagination: Pagination, filters: BusinessTypeModuleFilters, sort: [BusinessTypeModuleSortInput]
+  ): BusinessTypeModulePage
+
+  "Get a specific business type module by ID"
+  businessTypeModule(id: ID!): BusinessTypeModule
+}
+
+type RootSubscriptionType {
+  "Subscribe to provisioning logs for a given organization ID or 'all'"
+  provisionLog(orgId: ID!): ProvisionLogEvent
+
+  "Subscribe to all company seeds events (file results + pipeline) by API company ID"
+  companySeedFileResult(companyId: ID!): CompanySeedFileEvent
+}
+
+type RootMutationType {
+  "Create a new server"
+  createServer(
+    "Server data"
+    input: CreateServerInput!
+  ): CreateServerPayload
+
+  "Update an existing server"
+  updateServer(
+    "Server ID"
+    id: ID!
+
+    "Server data to update"
+    input: UpdateServerInput!
+  ): UpdateServerPayload
+
+  "Delete a server"
+  deleteServer(
+    "Server ID"
+    id: ID!
+  ): DeleteServerPayload
+
+  "Create a new API key"
+  createApiKey(
+    "API key creation parameters"
+    input: CreateApiKeyInput!
+  ): CreateApiKeyPayload
+
+  "Update an existing API key"
+  updateApiKey(
+    "API key ID"
+    id: ID!
+
+    "API key update parameters"
+    input: UpdateApiKeyInput!
+  ): UpdateApiKeyPayload
+
+  "Delete an API key"
+  deleteApiKey(
+    "API key ID"
+    id: ID!
+  ): DeleteApiKeyPayload
+
+  "Create a new organization"
+  createOrganization(
+    "Organization creation data"
+    input: CreateOrganizationInput!
+  ): CreateOrganizationPayload
+
+  "Update an existing organization"
+  updateOrganization(
+    "Organization ID"
+    id: ID!
+
+    "Organization update data"
+    input: UpdateOrganizationInput!
+  ): UpdateOrganizationPayload
+
+  "Delete an organization"
+  deleteOrganization(
+    "Organization ID"
+    id: ID!
+  ): DeleteOrganizationPayload
+
+  "Provision the organization's database (create DB, apply schema and seeds on first run)"
+  provisionOrganizationDatabase(
+    "Provisioning trigger input"
+    input: ProvisionOrganizationDatabaseInput!
+  ): ProvisionOrganizationDatabasePayload
+
+  "Unprovision the organization's database (terminate connections, drop DB, reset status)"
+  unprovisionOrganizationDatabase(
+    "Unprovision trigger input"
+    input: UnprovisionOrganizationDatabaseInput!
+  ): UnprovisionOrganizationDatabasePayload
+
+  "Create a new account"
+  createAccount(
+    "Account data for creation"
+    input: CreateAccountInput!
+  ): CreateAccountPayload
+
+  "Update an existing account (email cannot be changed)"
+  updateAccount(
+    "Account ID"
+    id: ID!
+
+    "Account data for update"
+    input: UpdateAccountInput!
+  ): UpdateAccountPayload
+
+  "Delete an account"
+  deleteAccount(
+    "Account ID"
+    id: ID!
+  ): DeleteAccountPayload
+
+  "Login with email and password"
+  loginAccount(
+    "Login credentials"
+    input: LoginAccountInput!
+  ): LoginAccountPayload
+
+  "Validate access ticket (internal ERP API use)"
+  validateTicket(
+    "Ticket validation input"
+    input: ValidateTicketInput!
+  ): ValidateTicketPayload
+
+  "Validate ERP session id from X-Session-ID header"
+  validateSession(
+    "Optional input for session validation (falls back to X-Session-ID header)"
+    input: ValidateSessionInput
+  ): ValidateSessionPayload
+
+  "Create a new company"
+  createCompany(
+    "Company creation input"
+    input: CreateCompanyInput!
+  ): CreateCompanyPayload
+
+  "Update an existing company"
+  updateCompany(
+    "Company ID"
+    id: ID!
+
+    "Company update input"
+    input: UpdateCompanyInput!
+  ): UpdateCompanyPayload
+
+  "Delete a company"
+  deleteCompany(
+    "Company ID"
+    id: ID!
+  ): DeleteCompanyPayload
+
+  "Run company-specific seeds (post-provision). Executes NNN_*.sql files under priv\/sql\/company_seeds\/."
+  runCompanySeeds(
+    "Company ID (API)"
+    companyId: ID!
+  ): RunCompanySeedsPayload
+
+  "Create a new collaborator"
+  createCollaborator(
+    "Collaborator creation input"
+    input: CreateCollaboratorInput!
+  ): CreateCollaboratorPayload
+
+  "Delete a collaborator"
+  deleteCollaborator(
+    "Composite key input: account_id + company_id"
+    input: DeleteCollaboratorInput!
+  ): DeleteCollaboratorPayload
+
+  "Delete all collaborators of a company"
+  deleteCollaboratorsByCompany(
+    "Company ID whose collaborators will be deleted"
+    companyId: Int!
+  ): DeleteCollaboratorsByCompanyPayload
+
+  "Create a new country"
+  createCountry(input: CreateCountryInput!): CreateCountryPayload
+
+  "Update an existing country"
+  updateCountry(id: ID!, input: UpdateCountryInput!): UpdateCountryPayload
+
+  "Delete a country"
+  deleteCountry(id: ID!): DeleteCountryPayload
+
+  "Create a new department"
+  createDepartment(input: CreateDepartmentInput!): CreateDepartmentPayload
+
+  "Update an existing department"
+  updateDepartment(id: ID!, input: UpdateDepartmentInput!): UpdateDepartmentPayload
+
+  "Delete a department"
+  deleteDepartment(id: ID!): DeleteDepartmentPayload
+
+  "Create a new city"
+  createCity(input: CreateCityInput!): CreateCityPayload
+
+  "Update an existing city"
+  updateCity(id: ID!, input: UpdateCityInput!): UpdateCityPayload
+
+  "Delete a city"
+  deleteCity(id: ID!): DeleteCityPayload
+
+  "Create a new identification type"
+  createIdentificationType(input: CreateIdentificationTypeInput!): CreateIdentificationTypePayload
+
+  "Update an existing identification type"
+  updateIdentificationType(id: ID!, input: UpdateIdentificationTypeInput!): UpdateIdentificationTypePayload
+
+  "Delete an identification type"
+  deleteIdentificationType(id: ID!): DeleteIdentificationTypePayload
+
+  createCurrency(input: CreateCurrencyInput!): CreateCurrencyPayload
+
+  updateCurrency(id: ID!, input: UpdateCurrencyInput!): UpdateCurrencyPayload
+
+  deleteCurrency(id: ID!): DeleteCurrencyPayload
+
+  "Create a new business type"
+  createBusinessType(input: CreateBusinessTypeInput!): CreateBusinessTypePayload
+
+  "Update an existing business type"
+  updateBusinessType(id: ID!, input: UpdateBusinessTypeInput!): UpdateBusinessTypePayload
+
+  "Delete a business type"
+  deleteBusinessType(id: ID!): DeleteBusinessTypePayload
+
+  createMenuModule(input: CreateMenuModuleInput!): CreateMenuModulePayload
+
+  updateMenuModule(id: ID!, input: UpdateMenuModuleInput!): UpdateMenuModulePayload
+
+  deleteMenuModule(id: ID!): DeleteMenuModulePayload
+
+  "Create a new menu item"
+  createMenuItem(input: CreateMenuItemInput!): CreateMenuItemPayload
+
+  "Update an existing menu item"
+  updateMenuItem(id: ID!, input: UpdateMenuItemInput!): UpdateMenuItemPayload
+
+  "Delete a menu item"
+  deleteMenuItem(id: ID!): DeleteMenuItemPayload
+
+  "Bulk create menu items for a menu item group"
+  bulkCreateMenuItems(input: BulkCreateMenuItemsInput!): BulkCreateMenuItemsPayload
+
+  "Bulk update display_order for multiple menu items"
+  bulkUpdateMenuItemOrder(inputs: [BulkUpdateMenuItemOrderInput!]!): BulkUpdateMenuItemOrderPayload
+
+  createMenuItemGroup(input: CreateMenuItemGroupInput!): CreateMenuItemGroupPayload
+
+  updateMenuItemGroup(id: ID!, input: UpdateMenuItemGroupInput!): UpdateMenuItemGroupPayload
+
+  deleteMenuItemGroup(id: ID!): DeleteMenuItemGroupPayload
+
+  bulkUpdateMenuItemGroupOrder(inputs: [BulkUpdateMenuItemGroupOrderInput!]!): BulkUpdateMenuItemGroupOrderPayload
+
+  "Create a new business type module association"
+  createBusinessTypeModule(input: CreateBusinessTypeModuleInput!): CreateBusinessTypeModulePayload
+
+  "Update an existing business type module"
+  updateBusinessTypeModule(id: ID!, input: UpdateBusinessTypeModuleInput!): UpdateBusinessTypeModulePayload
+
+  "Delete a business type module"
+  deleteBusinessTypeModule(id: ID!): DeleteBusinessTypeModulePayload
+}
+
+"Pagination input"
+input Pagination {
+  "Page number (default: 1)"
+  page: Int
+
+  "Items per page (default: 10)"
+  pageSize: Int
+}
+
+"Company seeds event (file results and pipeline-level events on a single channel)"
+type CompanySeedFileEvent {
+  type: String!
+  status: String!
+  file: String
+  durationMs: Int
+  erpCompanyId: Int
+  error: String
+  message: String
+}
+
+"Log level for provisioning events"
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+"Provisioning log event"
+type ProvisionLogEvent {
+  timestamp: IsoDatetime!
+  level: LogLevel!
+  message: String!
+}
+
+"Business type to menu module association"
+type BusinessTypeModule {
+  "Unique identifier"
+  id: ID!
+
+  "Associated business type"
+  businessType: BusinessType!
+
+  "Associated menu module"
+  menuModule: MenuModule!
+
+  "Display order within the business type"
+  displayOrder: Int!
+
+  "Menu items under this business type module"
+  menuItems: [MenuItem!]!
+
+  "When the record was created"
+  insertedAt: IsoDatetime!
+
+  "When the record was last updated"
+  updatedAt: IsoDatetime!
+}
+
+"Paginated business type modules response"
+type BusinessTypeModulePage {
+  "List of business type modules for current page"
+  entries: [BusinessTypeModule!]!
+
+  "Total number of entries across all pages"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Filters for querying business type modules"
+input BusinessTypeModuleFilters {
+  "Filter by business type ID"
+  businessTypeId: Int
+
+  "Filter by menu module ID"
+  menuModuleId: Int
+}
+
+"Business type module sort fields"
+enum BusinessTypeModuleSortField {
+  DISPLAY_ORDER
+  BUSINESS_TYPE_ID
+  MENU_MODULE_ID
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for business type modules"
+input BusinessTypeModuleSortInput {
+  "Field to sort by"
+  field: BusinessTypeModuleSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Input for creating a new business type module"
+input CreateBusinessTypeModuleInput {
+  "Business type ID (required)"
+  businessTypeId: Int!
+
+  "Menu module ID (required)"
+  menuModuleId: Int!
+
+  "Display order (defaults to 0)"
+  displayOrder: Int
+}
+
+"Input for updating an existing business type module"
+input UpdateBusinessTypeModuleInput {
+  "Display order"
+  displayOrder: Int
+}
+
+"Response payload for business type module creation"
+type CreateBusinessTypeModulePayload {
+  "The created business type module"
+  businessTypeModule: BusinessTypeModule
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for business type module updates"
+type UpdateBusinessTypeModulePayload {
+  "The updated business type module"
+  businessTypeModule: BusinessTypeModule
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for business type module deletion"
+type DeleteBusinessTypeModulePayload {
+  "Whether the deletion was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "ID of the deleted business type module (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Menu item group entity"
+type MenuItemGroup {
+  id: ID!
+  businessTypeModule: BusinessTypeModule!
+  name: String!
+  displayOrder: Int!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated menu item groups response"
+type MenuItemGroupPage {
+  entries: [MenuItemGroup!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying menu item groups"
+input MenuItemGroupFilters {
+  businessTypeModuleId: Int
+}
+
+"Menu item group sort fields"
+enum MenuItemGroupSortField {
+  BUSINESS_TYPE_MODULE_ID
+  BTM_DISPLAY_ORDER
+  NAME
+  DISPLAY_ORDER
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for menu item groups"
+input MenuItemGroupSortInput {
+  field: MenuItemGroupSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new menu item group"
+input CreateMenuItemGroupInput {
+  businessTypeModuleId: Int!
+  name: String!
+  displayOrder: Int
+}
+
+"Input for updating an existing menu item group"
+input UpdateMenuItemGroupInput {
+  name: String
+  displayOrder: Int
+}
+
+"Response payload for menu item group creation"
+type CreateMenuItemGroupPayload {
+  menuItemGroup: MenuItemGroup
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu item group updates"
+type UpdateMenuItemGroupPayload {
+  menuItemGroup: MenuItemGroup
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu item group deletion"
+type DeleteMenuItemGroupPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Input for a single menu item group order update"
+input BulkUpdateMenuItemGroupOrderInput {
+  id: ID!
+  displayOrder: Int!
+}
+
+"Response payload for bulk menu item group order update"
+type BulkUpdateMenuItemGroupOrderPayload {
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Menu item entity"
+type MenuItem {
+  id: ID!
+  menuItemGroup: MenuItemGroup!
+  name: String!
+  itemKey: String!
+  icon: String
+  displayOrder: Int!
+  isLockable: Boolean!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated menu items response"
+type MenuItemPage {
+  entries: [MenuItem!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying menu items"
+input MenuItemFilters {
+  menuItemGroupId: Int
+  businessTypeModuleId: Int
+  businessTypeId: Int
+  menuModuleId: Int
+  itemKey: String
+  name: String
+  nameContains: String
+  isLockable: Boolean
+  matching: String
+}
+
+"Menu item sort fields"
+enum MenuItemSortField {
+  MENU_ITEM_GROUP_ID
+  NAME
+  ITEM_KEY
+  ICON
+  DISPLAY_ORDER
+  MENU_ITEM_GROUP_DISPLAY_ORDER
+  BTM_DISPLAY_ORDER
+  IS_LOCKABLE
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for menu items"
+input MenuItemSortInput {
+  field: MenuItemSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new menu item"
+input CreateMenuItemInput {
+  menuItemGroupId: Int!
+  name: String!
+  itemKey: String!
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+}
+
+"Input for updating an existing menu item"
+input UpdateMenuItemInput {
+  menuItemGroupId: Int
+  name: String
+  itemKey: String
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+}
+
+"Response payload for menu item creation"
+type CreateMenuItemPayload {
+  menuItem: MenuItem
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu item updates"
+type UpdateMenuItemPayload {
+  menuItem: MenuItem
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu item deletion"
+type DeleteMenuItemPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Input for a single menu item in bulk creation"
+input BulkCreateMenuItemInput {
+  name: String!
+  itemKey: String!
+  icon: String
+  displayOrder: Int
+  isLockable: Boolean
+}
+
+"Input for bulk creating menu items"
+input BulkCreateMenuItemsInput {
+  menuItemGroupId: Int!
+  items: [BulkCreateMenuItemInput!]!
+}
+
+"Response payload for bulk menu item creation"
+type BulkCreateMenuItemsPayload {
+  menuItems: [MenuItem!]
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Input for a single menu item order update"
+input BulkUpdateMenuItemOrderInput {
+  id: ID!
+  displayOrder: Int!
+}
+
+"Response payload for bulk menu item order update"
+type BulkUpdateMenuItemOrderPayload {
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Menu module entity"
+type MenuModule {
+  id: ID!
+  name: String!
+  code: String!
+  icon: String
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated menu modules response"
+type MenuModulePage {
+  entries: [MenuModule!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying menu modules"
+input MenuModuleFilters {
+  name: String
+  nameContains: String
+  matching: String
+}
+
+"Menu module sort fields"
+enum MenuModuleSortField {
+  NAME
+  ICON
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for menu modules"
+input MenuModuleSortInput {
+  field: MenuModuleSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new menu module"
+input CreateMenuModuleInput {
+  name: String!
+  code: String!
+  icon: String
+}
+
+"Input for updating an existing menu module"
+input UpdateMenuModuleInput {
+  name: String
+  icon: String
+}
+
+"Response payload for menu module creation"
+type CreateMenuModulePayload {
+  menuModule: MenuModule
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu module updates"
+type UpdateMenuModulePayload {
+  menuModule: MenuModule
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for menu module deletion"
+type DeleteMenuModulePayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Business type status enum"
+enum BusinessTypeStatus {
+  "Active"
+  ACTIVE
+
+  "Suspended"
+  SUSPENDED
+
+  "Archived"
+  ARCHIVED
+}
+
+"Business type entity"
+type BusinessType {
+  "Unique identifier"
+  id: ID!
+
+  "Business type code"
+  code: String!
+
+  "Business type name"
+  name: String!
+
+  "Business type description"
+  description: String
+
+  "Business type status"
+  status: BusinessTypeStatus!
+
+  "When the record was created"
+  insertedAt: IsoDatetime!
+
+  "When the record was last updated"
+  updatedAt: IsoDatetime!
+}
+
+"Paginated business types response"
+type BusinessTypePage {
+  "List of business types for current page"
+  entries: [BusinessType!]!
+
+  "Total number of entries across all pages"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Business type filters for queries"
+input BusinessTypeFilters {
+  "Filter by exact code"
+  code: String
+
+  "Filter by exact name"
+  name: String
+
+  "Filter by name (partial match)"
+  nameContains: String
+
+  "Search across code and name"
+  matching: String
+
+  "Filter by status"
+  status: BusinessTypeStatus
+}
+
+"Business type sort fields"
+enum BusinessTypeSortField {
+  CODE
+  NAME
+  STATUS
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Business type sort input"
+input BusinessTypeSortInput {
+  "Field to sort by"
+  field: BusinessTypeSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Input for creating a new business type"
+input CreateBusinessTypeInput {
+  "Unique code"
+  code: String!
+
+  "Name"
+  name: String!
+
+  "Description"
+  description: String
+
+  "Status (defaults to active)"
+  status: BusinessTypeStatus
+}
+
+"Input for updating an existing business type"
+input UpdateBusinessTypeInput {
+  "Name"
+  name: String
+
+  "Description"
+  description: String
+
+  "Status"
+  status: BusinessTypeStatus
+}
+
+"Response payload for business type creation"
+type CreateBusinessTypePayload {
+  "The created business type"
+  businessType: BusinessType
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for business type updates"
+type UpdateBusinessTypePayload {
+  "The updated business type"
+  businessType: BusinessType
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for business type deletion"
+type DeleteBusinessTypePayload {
+  "Whether the deletion was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "ID of the deleted business type (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Currency entity"
+type Currency {
+  id: ID!
+  code: String!
+  name: String!
+  symbol: String!
+  minorUnits: Int!
+  isActive: Boolean!
+  createdBy: Account
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated currencies response"
+type CurrencyPage {
+  entries: [Currency!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying currencies"
+input CurrencyFilters {
+  code: String
+  name: String
+  nameContains: String
+  matching: String
+  isActive: Boolean
+  minorUnits: Int
+  createdById: ID
+}
+
+"Currency sort fields"
+enum CurrencySortField {
+  CODE
+  NAME
+  SYMBOL
+  MINOR_UNITS
+  IS_ACTIVE
+  CREATED_BY_ID
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for currencies"
+input CurrencySortInput {
+  field: CurrencySortField!
+  direction: SortDirection
+}
+
+"Input for creating a new currency"
+input CreateCurrencyInput {
+  code: String!
+  name: String!
+  symbol: String
+  minorUnits: Int
+  isActive: Boolean
+  createdById: ID!
+}
+
+"Input for updating an existing currency"
+input UpdateCurrencyInput {
+  code: String
+  name: String
+  symbol: String
+  minorUnits: Int
+  isActive: Boolean
+  createdById: ID
+}
+
+"Response payload for currency creation"
+type CreateCurrencyPayload {
+  currency: Currency
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for currency updates"
+type UpdateCurrencyPayload {
+  currency: Currency
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for currency deletion"
+type DeleteCurrencyPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Identification Type entity"
+type IdentificationType {
+  id: ID!
+  code: String!
+  name: String!
+  hasVerificationDigit: Boolean!
+  minimumDocumentLength: Int!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated identification types response"
+type IdentificationTypePage {
+  entries: [IdentificationType!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying identification types"
+input IdentificationTypeFilters {
+  code: String
+  name: String
+  nameContains: String
+  matching: String
+  hasVerificationDigit: Boolean
+  minimumDocumentLength: Int
+}
+
+"Identification type sort fields"
+enum IdentificationTypeSortField {
+  CODE
+  NAME
+  HAS_VERIFICATION_DIGIT
+  MINIMUM_DOCUMENT_LENGTH
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for identification types"
+input IdentificationTypeSortInput {
+  field: IdentificationTypeSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new identification type"
+input CreateIdentificationTypeInput {
+  code: String!
+  name: String!
+  hasVerificationDigit: Boolean
+  minimumDocumentLength: Int
+}
+
+"Input for updating an existing identification type"
+input UpdateIdentificationTypeInput {
+  code: String
+  name: String
+  hasVerificationDigit: Boolean
+  minimumDocumentLength: Int
+}
+
+"Response payload for identification type creation"
+type CreateIdentificationTypePayload {
+  identificationType: IdentificationType
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for identification type updates"
+type UpdateIdentificationTypePayload {
+  identificationType: IdentificationType
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for identification type deletion"
+type DeleteIdentificationTypePayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Department entity"
+type Department {
+  id: ID!
+  code: String!
+  name: String!
+  country: Country!
+  cities: [City]
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated departments response"
+type DepartmentPage {
+  entries: [Department!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying departments"
+input DepartmentFilters {
+  code: String
+  name: String
+  nameContains: String
+  countryId: ID
+  matching: String
+}
+
+"Department sort fields"
+enum DepartmentSortField {
+  CODE
+  NAME
+  COUNTRY_ID
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for departments"
+input DepartmentSortInput {
+  field: DepartmentSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new department"
+input CreateDepartmentInput {
+  code: String!
+  name: String!
+  countryId: ID!
+}
+
+"Input for updating an existing department"
+input UpdateDepartmentInput {
+  code: String
+  name: String
+  countryId: ID
+}
+
+"Response payload for department creation"
+type CreateDepartmentPayload {
+  department: Department
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for department updates"
+type UpdateDepartmentPayload {
+  department: Department
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for department deletion"
+type DeleteDepartmentPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"City entity"
+type City {
+  id: ID!
+  code: String!
+  name: String!
+  department: Department!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+"Paginated cities response"
+type CityPage {
+  entries: [City!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying cities"
+input CityFilters {
+  code: String
+  name: String
+  nameContains: String
+  departmentId: ID
+  matching: String
+}
+
+"City sort fields"
+enum CitySortField {
+  CODE
+  NAME
+  DEPARTMENT_ID
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for cities"
+input CitySortInput {
+  field: CitySortField!
+  direction: SortDirection
+}
+
+"Input for creating a new city"
+input CreateCityInput {
+  code: String!
+  name: String!
+  departmentId: ID!
+}
+
+"Input for updating an existing city"
+input UpdateCityInput {
+  code: String
+  name: String
+  departmentId: ID
+}
+
+"Response payload for city creation"
+type CreateCityPayload {
+  city: City
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for city updates"
+type UpdateCityPayload {
+  city: City
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for city deletion"
+type DeleteCityPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Country entity"
+type Country {
+  id: ID!
+
+  code: String!
+
+  name: String!
+
+  "Departments belonging to this country"
+  departments: [Department]
+
+  insertedAt: IsoDatetime!
+
+  updatedAt: IsoDatetime!
+}
+
+"Paginated countries response"
+type CountryPage {
+  entries: [Country!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+"Filters for querying countries"
+input CountryFilters {
+  "Filter by country code"
+  code: String
+
+  "Filter by exact name"
+  name: String
+
+  "Filter by partial name match"
+  nameContains: String
+
+  "Global search over code and name"
+  matching: String
+}
+
+"Country sort fields"
+enum CountrySortField {
+  CODE
+  NAME
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Sort input for countries"
+input CountrySortInput {
+  field: CountrySortField!
+  direction: SortDirection
+}
+
+"Input for creating a new country"
+input CreateCountryInput {
+  code: String!
+  name: String!
+}
+
+"Input for updating an existing country"
+input UpdateCountryInput {
+  code: String
+  name: String
+}
+
+"Response payload for country creation"
+type CreateCountryPayload {
+  country: Country
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for country updates"
+type UpdateCountryPayload {
+  country: Country
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+"Response payload for country deletion"
+type DeleteCountryPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"A collaboration relationship between an account and a company"
+type Collaborator {
+  "Creation timestamp in Colombian timezone"
+  insertedAt: IsoDatetime!
+
+  "Last update timestamp in Colombian timezone"
+  updatedAt: IsoDatetime!
+
+  "Associated account (the collaborator)"
+  account: Account!
+
+  "Associated company"
+  company: Company!
+
+  "Account who invited this collaborator"
+  inviter: Account!
+}
+
+"Input for creating a new collaborator"
+input CreateCollaboratorInput {
+  "Account ID (required)"
+  accountId: Int!
+
+  "Company ID (required)"
+  companyId: Int!
+
+  "Account ID of the inviter (required)"
+  invitedBy: Int!
+}
+
+"Input for fetching a collaborator by composite key"
+input GetCollaboratorInput {
+  "Account ID (required)"
+  accountId: Int!
+
+  "Company ID (required)"
+  companyId: Int!
+}
+
+"Input for deleting a collaborator (composite key)"
+input DeleteCollaboratorInput {
+  "Account ID (required)"
+  accountId: Int!
+
+  "Company ID (required)"
+  companyId: Int!
+}
+
+"Filters for querying collaborators"
+input CollaboratorFilters {
+  "Filter by account ID"
+  accountId: Int
+
+  "Filter by company ID"
+  companyId: Int
+
+  "Filter by inviter account ID"
+  invitedBy: Int
+
+  "Global search term (currently not implemented for collaborators)"
+  matching: String
+}
+
+"Paginated list of collaborators"
+type CollaboratorPage {
+  "List of collaborators for current page"
+  entries: [Collaborator!]!
+
+  "Total number of entries across all pages"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Payload returned when creating a collaborator"
+type CreateCollaboratorPayload {
+  "The created collaborator"
+  collaborator: Collaborator
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success or error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Payload returned when deleting a collaborator"
+type DeleteCollaboratorPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success or error message"
+  message: String
+
+  "ID of the deleted collaborator"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Payload returned when deleting all collaborators of a company"
+type DeleteCollaboratorsByCompanyPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success or error message with count"
+  message: String
+
+  "Company ID as reference of the bulk deletion"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Available fields for sorting collaborators"
+enum CollaboratorSortField {
+  "Sort by account ID"
+  ACCOUNT_ID
+
+  "Sort by company ID"
+  COMPANY_ID
+
+  "Sort by inviter account ID"
+  INVITED_BY
+
+  "Sort by creation timestamp"
+  INSERTED_AT
+
+  "Sort by last update timestamp"
+  UPDATED_AT
+}
+
+"Sort input for collaborators"
+input CollaboratorSortInput {
+  "Field to sort by"
+  field: CollaboratorSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Company status enum"
+enum CompanyStatus {
+  "Setup in progress"
+  SETUP_IN_PROGRESS
+
+  "Active"
+  ACTIVE
+
+  "Read-only mode"
+  READ_ONLY
+
+  "Inactive"
+  INACTIVE
+
+  "Archived"
+  ARCHIVED
+}
+
+"Tax regime type"
+enum TaxRegime {
+  "Responsable de IVA (VAT Responsible)"
+  R
+
+  "No responsable de IVA (Non-VAT Responsible)"
+  N
+}
+
+"Company seeds status"
+enum CompanySeedStatus {
+  "Seeds pending to run"
+  PENDING
+
+  "Seeds already applied"
+  APPLIED
+}
+
+"Capture type for accounting entity"
+enum CaptureType {
+  "Persona Natural (Natural Person)"
+  PN
+
+  "Persona Jurídica (Legal Entity)"
+  PJ
+}
+
+"Company entity"
+type Company {
+  "Unique identifier"
+  id: ID!
+
+  "Colombian identification number"
+  identificationNumber: String!
+
+  "Identification verification digit"
+  verificationDigit: String!
+
+  "Company-specific seeds status"
+  seedStatus: CompanySeedStatus
+
+  "Company ID in the tenant database (null when not seeded)"
+  tenantCompanyId: Int
+
+  "Capture type: PN (natural person) or PJ (legal entity)"
+  captureType: CaptureType
+
+  "Business name (for legal entities)"
+  businessName: String
+
+  "First name (for natural person)"
+  firstName: String
+
+  "Middle name (for natural person)"
+  middleName: String
+
+  "First last name (for natural person)"
+  firstLastName: String
+
+  "Middle last name (for natural person)"
+  middleLastName: String
+
+  "Primary phone"
+  primaryPhone: String
+
+  "Secondary phone"
+  secondaryPhone: String
+
+  "Primary cell phone"
+  primaryCellPhone: String
+
+  "Secondary cell phone"
+  secondaryCellPhone: String
+
+  "Address"
+  address: String
+
+  "Tax regime: VAT responsible or non-VAT responsible"
+  regime: TaxRegime
+
+  "Computed full name depending on capture type"
+  fullName: String
+
+  "Trade name"
+  tradeName: String
+
+  "Normalized name for search"
+  searchName: String
+
+  "Concatenated phones for quick display\/search"
+  telephonicInformation: String
+
+  "Client reference identifier for record matching"
+  reference: String
+
+  "Company status"
+  status: CompanyStatus!
+
+  "Associated organization"
+  organization: Organization!
+
+  "Associated country"
+  country: Country
+
+  "Associated department"
+  department: Department
+
+  "Associated city"
+  city: City
+
+  "Default currency"
+  defaultCurrency: Currency!
+
+  "Associated business type"
+  businessType: BusinessType
+
+  "Associated identification type"
+  identificationType: IdentificationType
+
+  "Company collaborators"
+  collaborators: [Collaborator!]!
+
+  "When the company was created"
+  insertedAt: IsoDatetime!
+
+  "When the company was last updated"
+  updatedAt: IsoDatetime!
+}
+
+"Paginated companies response"
+type CompanyPage {
+  "List of companies for current page"
+  entries: [Company!]!
+
+  "Total number of entries across all pages"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Input for creating a new company"
+input CreateCompanyInput {
+  "Colombian identification number"
+  identificationNumber: String!
+
+  "Identification verification digit"
+  verificationDigit: String!
+
+  "Capture type: PN\/PJ"
+  captureType: CaptureType!
+
+  "Business name (required for PJ)"
+  businessName: String
+
+  firstName: String
+
+  middleName: String
+
+  firstLastName: String
+
+  middleLastName: String
+
+  primaryPhone: String
+
+  secondaryPhone: String
+
+  primaryCellPhone: String
+
+  secondaryCellPhone: String
+
+  address: String
+
+  regime: TaxRegime
+
+  tradeName: String
+
+  "Company status (defaults to active)"
+  status: CompanyStatus
+
+  "Organization ID"
+  organizationId: ID!
+
+  "Default currency ID"
+  defaultCurrencyId: ID!
+
+  "Business type ID"
+  businessTypeId: ID!
+
+  "Country ID"
+  countryId: ID
+
+  "Department ID"
+  departmentId: ID
+
+  "City ID"
+  cityId: ID
+
+  "Identification type ID"
+  identificationTypeId: ID!
+}
+
+"Input for updating a company"
+input UpdateCompanyInput {
+  "Colombian identification number"
+  identificationNumber: String
+
+  "Identification verification digit"
+  verificationDigit: String
+
+  captureType: CaptureType
+
+  businessName: String
+
+  firstName: String
+
+  middleName: String
+
+  firstLastName: String
+
+  middleLastName: String
+
+  primaryPhone: String
+
+  secondaryPhone: String
+
+  primaryCellPhone: String
+
+  secondaryCellPhone: String
+
+  address: String
+
+  regime: TaxRegime
+
+  tradeName: String
+
+  "Company status"
+  status: CompanyStatus
+
+  "Default currency ID"
+  defaultCurrencyId: ID
+
+  "Business type ID"
+  businessTypeId: ID
+
+  "Country ID"
+  countryId: ID
+
+  "Department ID"
+  departmentId: ID
+
+  "City ID"
+  cityId: ID
+
+  "Identification Type ID"
+  identificationTypeId: ID
+}
+
+"Company filters for queries"
+input CompanyFilters {
+  "Filter by status"
+  status: CompanyStatus
+
+  "Filter by capture type (PN\/PJ)"
+  captureType: CaptureType
+
+  "Filter by account ID"
+  accountId: ID
+
+  "Filter by server ID"
+  serverId: ID
+
+  "Filter by organization ID"
+  organizationId: ID
+
+  "Filter by business type ID"
+  businessTypeId: ID
+
+  "Filter by identification number (partial match)"
+  identificationContains: String
+
+  "Filter by full name (partial match)"
+  fullNameContains: String
+
+  "Global search across search_name and identification number"
+  matching: String
+}
+
+"Company sort fields"
+enum CompanySortField {
+  IDENTIFICATION_NUMBER
+  FULL_NAME
+  CAPTURE_TYPE
+  STATUS
+  BUSINESS_TYPE_ID
+  COUNTRY_ID
+  DEPARTMENT_ID
+  CITY_ID
+  INSERTED_AT
+  UPDATED_AT
+}
+
+"Company sort input"
+input CompanySortInput {
+  "Field to sort by"
+  field: CompanySortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Response payload for company creation"
+type CreateCompanyPayload {
+  "The created company"
+  company: Company
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for company updates"
+type UpdateCompanyPayload {
+  "The updated company"
+  company: Company
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for company deletion"
+type DeleteCompanyPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "ID of the deleted company (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response for running company-specific seeds"
+type RunCompanySeedsPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "Company ID in the tenant database"
+  tenantCompanyId: Int
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Account status values"
+enum AccountStatus {
+  "Account is active and operational"
+  ACTIVE
+
+  "Account is suspended due to administrative action"
+  SUSPENDED
+
+  "Account is pending verification (email, documents, etc.)"
+  PENDING_VERIFICATION
+
+  "Account is archived (permanently disabled but data preserved)"
+  ARCHIVED
+}
+
+"A user account in the system"
+type Account {
+  "Unique identifier"
+  id: ID!
+
+  "Email address (unique identifier)"
+  email: String!
+
+  "First name (stored in uppercase)"
+  firstName: String!
+
+  "Middle name (stored in uppercase)"
+  middleName: String
+
+  "First last name (stored in uppercase)"
+  firstLastName: String!
+
+  "Middle last name (stored in uppercase)"
+  middleLastName: String
+
+  "Auto-generated full name from name components"
+  fullName: String!
+
+  "Profession or job title (stored in uppercase)"
+  profession: String
+
+  "Account status"
+  status: AccountStatus!
+
+  "Profile photo URL"
+  photoUrl: String
+
+  "Birth year (nullable)"
+  birthYear: Int
+
+  "Birth month (nullable)"
+  birthMonth: Int
+
+  "Birth day (nullable)"
+  birthDay: Int
+
+  "Whether the account has API admin privileges"
+  isApiAdmin: Boolean!
+
+  "Account creation timestamp"
+  insertedAt: IsoDatetime!
+
+  "Account last update timestamp"
+  updatedAt: IsoDatetime!
+
+  "Organizations owned by this account"
+  organizations: [Organization]
+}
+
+"Input for creating a new account"
+input CreateAccountInput {
+  "Email address (required, must be unique)"
+  email: String!
+
+  "First name (required)"
+  firstName: String!
+
+  "Middle name (optional)"
+  middleName: String
+
+  "First last name (required)"
+  firstLastName: String!
+
+  "Middle last name (optional)"
+  middleLastName: String
+
+  "Profession or job title (optional)"
+  profession: String
+
+  "Account status (optional, defaults to active)"
+  status: AccountStatus
+
+  "Profile photo URL (optional)"
+  photoUrl: String
+
+  "Birth year (optional)"
+  birthYear: Int
+
+  "Birth month (optional)"
+  birthMonth: Int
+
+  "Birth day (optional)"
+  birthDay: Int
+
+  "API admin flag (defaults to false)"
+  isApiAdmin: Boolean
+
+  "Account password (required, min 8 characters)"
+  password: String!
+}
+
+"Input for updating an existing account (email cannot be changed)"
+input UpdateAccountInput {
+  "First name"
+  firstName: String
+
+  "Middle name"
+  middleName: String
+
+  "First last name"
+  firstLastName: String
+
+  "Middle last name"
+  middleLastName: String
+
+  "Profession or job title"
+  profession: String
+
+  "Account status"
+  status: AccountStatus
+
+  "Profile photo URL"
+  photoUrl: String
+
+  "Birth year"
+  birthYear: Int
+
+  "Birth month"
+  birthMonth: Int
+
+  "Birth day"
+  birthDay: Int
+
+  "API admin flag"
+  isApiAdmin: Boolean
+}
+
+"Filters for querying accounts"
+input AccountFilters {
+  "Filter by account status (single status)"
+  status: AccountStatus
+
+  "Filter by multiple account statuses"
+  statuses: [AccountStatus]
+
+  "Filter by API admin flag"
+  isApiAdmin: Boolean
+
+  "Filter by exact email match"
+  email: String
+
+  "Filter by partial email match (case insensitive)"
+  emailContains: String
+
+  "Filter by profession containing the given text (case insensitive)"
+  profession: String
+
+  "Global search across full_name, email and profession (case insensitive)"
+  matching: String
+}
+
+"Paginated list of accounts"
+type AccountPage {
+  "List of accounts for current page"
+  entries: [Account!]!
+
+  "Total number of entries across all pages"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Payload returned when creating an account"
+type CreateAccountPayload {
+  "The created account"
+  account: Account
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Payload returned when updating an account"
+type UpdateAccountPayload {
+  "The updated account"
+  account: Account
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Payload returned when deleting an account"
+type DeleteAccountPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "ID of the deleted account (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Fields available for sorting accounts"
+enum AccountSortField {
+  "Sort by email address"
+  EMAIL
+
+  "Sort by first name"
+  FIRST_NAME
+
+  "Sort by first last name"
+  FIRST_LAST_NAME
+
+  "Sort by full name"
+  FULL_NAME
+
+  "Sort by profession"
+  PROFESSION
+
+  "Sort by account status"
+  STATUS
+
+  "Sort by creation date"
+  INSERTED_AT
+
+  "Sort by last update date"
+  UPDATED_AT
+}
+
+"Sort configuration for accounts"
+input AccountSortInput {
+  "Field to sort by"
+  field: AccountSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Role of account in relation to a company"
+enum CompanyRole {
+  "Account owns the organization containing this company"
+  OWNER
+
+  "Account is added as collaborator in this specific company"
+  COLLABORATOR
+}
+
+"Company information with account's role"
+type CompanyWithRole {
+  "Company information"
+  company: Company!
+
+  "Account's role in this company (owner or collaborator)"
+  role: CompanyRole!
+}
+
+"Input for account login"
+input LoginAccountInput {
+  "Account email address"
+  email: String!
+
+  "Account password"
+  password: String!
+}
+
+"Payload returned when logging in an account"
+type LoginAccountPayload {
+  "The authenticated account"
+  account: Account
+
+  "Companies accessible by this account with their roles"
+  companies: [CompanyWithRole!]
+
+  "Access ticket information"
+  accessTicket: AccessTicket
+
+  "Whether the login was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Access ticket information"
+type AccessTicket {
+  "Global access ticket for any accessible company"
+  ticket: String!
+
+  "Ticket expiration time"
+  expiresAt: IsoDatetime!
+}
+
+"Input for ticket validation"
+input ValidateTicketInput {
+  "Ticket to validate"
+  ticket: String!
+}
+
+"Payload returned when validating a ticket"
+type ValidateTicketPayload {
+  "Authenticated account"
+  account: Account
+
+  "ERP session identifier created by Auth API after ticket validation"
+  sessionId: String
+
+  "ERP session expiration time"
+  expiresAt: IsoDatetime
+
+  "Validation success"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "Validation errors"
+  errors: [FieldError!]
+}
+
+"Response for session validation"
+type ValidateSessionPayload {
+  "Authenticated account if session is valid"
+  account: Account
+
+  "Whether the validation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "Validation errors"
+  errors: [FieldError!]
+
+  "Session expiration time if valid"
+  expiresAt: IsoDatetime
+
+  "Client platform provided in X-Platform header"
+  platform: String
+
+  "Client device identifier provided in X-Device-ID header"
+  deviceId: String
+}
+
+"Optional input for session validation (falls back to X-Session-ID header)"
+input ValidateSessionInput {
+  "Session ID to validate; if omitted, uses X-Session-ID header"
+  sessionId: String
+}
+
+"Organization status enum"
+enum OrganizationStatus {
+  "Organization is active and operational"
+  ACTIVE
+
+  "Organization is temporarily suspended"
+  SUSPENDED
+
+  "Organization is archived for historical purposes"
+  ARCHIVED
+}
+
+"Database provisioning status for organization"
+enum DbProvisionStatus {
+  "Database not provisioned yet"
+  NOT_PROVISIONED
+
+  "Database created on server"
+  DATABASE_CREATED
+
+  "Base schema DDL applied successfully"
+  SCHEMA_APPLIED
+
+  "Seed scripts applied successfully"
+  SEEDS_APPLIED
+
+  "Provisioning fully finished"
+  PROVISION_FINISHED
+
+  "Database provisioning failed"
+  FAILED
+}
+
+"Organization entity"
+type Organization {
+  "Organization ID"
+  id: ID!
+
+  "Organization name"
+  name: String!
+
+  "Organization database ID"
+  databaseId: String
+
+  "Auto-generated database name"
+  databaseName: String!
+
+  "Organization status"
+  status: OrganizationStatus!
+
+  "Database provisioning status"
+  dbProvisionStatus: DbProvisionStatus
+
+  "When the tenant database was provisioned"
+  dbProvisionedAt: IsoDatetime
+
+  "Whether to use connection pool (default: false)"
+  useConnectionPool: Boolean
+
+  "Protection switch to prevent accidental unprovisioning (default: true)"
+  unprovisionProtectionEnabled: Boolean
+
+  "Creation timestamp"
+  insertedAt: IsoDatetime!
+
+  "Last update timestamp"
+  updatedAt: IsoDatetime!
+
+  "Owning account"
+  account: Account!
+
+  "Server assigned to this organization"
+  server: Server!
+
+  "Companies under this organization"
+  companies(
+    "Sort configuration for related companies"
+    sort: [CompanySortInput]
+  ): [Company!]!
+}
+
+"Paginated organizations result"
+type OrganizationPage {
+  "List of organizations"
+  entries: [Organization!]!
+
+  "Total number of organizations"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Organization filter input"
+input OrganizationFilters {
+  "Filter by owning account ID"
+  accountId: ID
+
+  "Filter by assigned server ID"
+  serverId: ID
+
+  "Filter by organization name (case insensitive partial match)"
+  name: String
+
+  "Filter by organization status"
+  status: OrganizationStatus
+
+  "Search across name fields (case insensitive partial match)"
+  matching: String
+}
+
+"Organization input for create operations"
+input CreateOrganizationInput {
+  "Owning account ID"
+  accountId: ID!
+
+  "Assigned server ID"
+  serverId: ID!
+
+  "Organization name"
+  name: String!
+
+  "Database name (optional, auto-generated from name if not provided)"
+  databaseName: String
+
+  "Organization status (defaults to active)"
+  status: OrganizationStatus
+
+  "Whether to use connection pool (default: false)"
+  useConnectionPool: Boolean
+}
+
+"Organization input for update operations"
+input UpdateOrganizationInput {
+  "Owning account ID"
+  accountId: ID
+
+  "Organization name"
+  name: String
+
+  "Database name (optional, auto-generated from name if not provided)"
+  databaseName: String
+
+  "Organization status"
+  status: OrganizationStatus
+
+  "Whether to use connection pool"
+  useConnectionPool: Boolean
+
+  "Enable\/disable unprovision protection switch"
+  unprovisionProtectionEnabled: Boolean
+}
+
+"Response payload for organization creation"
+type CreateOrganizationPayload {
+  "The created organization"
+  organization: Organization
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Human-readable message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for organization updates"
+type UpdateOrganizationPayload {
+  "The updated organization"
+  organization: Organization
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Human-readable message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Response payload for organization deletion"
+type DeleteOrganizationPayload {
+  "Whether the deletion was successful"
+  success: Boolean!
+
+  "Human-readable message"
+  message: String
+
+  "ID of the deleted organization (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Input for triggering organization DB provisioning"
+input ProvisionOrganizationDatabaseInput {
+  "Organization ID"
+  id: ID!
+}
+
+"Response for organization DB provisioning"
+type ProvisionOrganizationDatabasePayload {
+  "The organization after provisioning state update"
+  organization: Organization
+
+  "Whether the provisioning succeeded"
+  success: Boolean!
+
+  "Human-readable message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Input for triggering organization DB unprovisioning (drop DB)"
+input UnprovisionOrganizationDatabaseInput {
+  "Organization ID"
+  id: ID!
+}
+
+"Response for organization DB unprovisioning"
+type UnprovisionOrganizationDatabasePayload {
+  "The organization after unprovision state update"
+  organization: Organization
+
+  "Whether the unprovisioning succeeded"
+  success: Boolean!
+
+  "Human-readable message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]
+}
+
+"Fields available for sorting organizations"
+enum OrganizationSortField {
+  "Sort by organization name"
+  NAME
+
+  "Sort by organization status"
+  STATUS
+
+  "Sort by creation date"
+  INSERTED_AT
+
+  "Sort by last update date"
+  UPDATED_AT
+}
+
+"Sort configuration for organizations"
+input OrganizationSortInput {
+  "Field to sort by"
+  field: OrganizationSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"API Key entity"
+type ApiKey {
+  "Unique identifier"
+  id: ID!
+
+  "Name of the API key"
+  name: String!
+
+  "Whether the API key is active"
+  active: Boolean!
+
+  "Audience this API key targets (ERP or CPANEL)"
+  audience: ApiKeyAudience!
+
+  "When the API key expires"
+  expiresAt: IsoDatetime
+
+  "When the API key was last used"
+  lastUsedAt: IsoDatetime
+
+  "Number of times the API key has been used"
+  usageCount: Int!
+
+  "When the API key was created"
+  insertedAt: IsoDatetime!
+
+  "When the API key was last updated"
+  updatedAt: IsoDatetime!
+
+  "Account that owns this API key"
+  owner: Account
+}
+
+"API Key audience"
+enum ApiKeyAudience {
+  "Key intended for ERP operations"
+  ERP
+
+  "Key intended for CPanel operations"
+  CPANEL
+}
+
+"Input for creating a new API key"
+input CreateApiKeyInput {
+  "Name of the API key"
+  name: String!
+
+  "Whether the API key should be active (default: true)"
+  active: Boolean
+
+  "Owner account ID for this API key"
+  ownerId: ID
+
+  "Audience for the API key (defaults to ERP)"
+  audience: ApiKeyAudience
+
+  "Optional expiration date"
+  expiresAt: IsoDatetime
+}
+
+"Input for updating an API key"
+input UpdateApiKeyInput {
+  "Name of the API key"
+  name: String
+
+  "Whether the API key should be active"
+  active: Boolean
+
+  "Owner account ID for this API key"
+  ownerId: ID
+
+  "Audience for the API key"
+  audience: ApiKeyAudience
+
+  "Optional expiration date"
+  expiresAt: IsoDatetime
+}
+
+"Response payload for API key creation"
+type CreateApiKeyPayload {
+  "The created API key"
+  apiKey: ApiKey
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "The generated API key value (only returned on creation)"
+  key: String
+
+  "List of validation errors"
+  errors: [FieldError!]!
+}
+
+"Response payload for API key updates"
+type UpdateApiKeyPayload {
+  "The updated API key"
+  apiKey: ApiKey
+
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "List of validation errors"
+  errors: [FieldError!]!
+}
+
+"Response payload for API key deletion"
+type DeleteApiKeyPayload {
+  "Whether the operation was successful"
+  success: Boolean!
+
+  "Success\/error message"
+  message: String
+
+  "ID of the deleted API key (when successful)"
+  deletedId: ID
+
+  "List of validation errors"
+  errors: [FieldError!]!
+}
+
+"API Key filters for queries"
+input ApiKeyFilters {
+  "Filter by name (partial match)"
+  name: String
+
+  "Filter by active status"
+  active: Boolean
+
+  "Filter by audience (ERP or CPANEL)"
+  audience: ApiKeyAudience
+
+  "Filter by owner account ID"
+  ownerId: ID
+
+  "Filter by matching name (partial match)"
+  matching: String
+
+  "Alias of matching: searches by name"
+  search: String
+}
+
+"Fields available for sorting API keys"
+enum ApiKeySortField {
+  "Sort by API key name"
+  NAME
+
+  "Sort by active status"
+  ACTIVE
+
+  "Sort by usage count"
+  USAGE_COUNT
+
+  "Sort by last used date"
+  LAST_USED_AT
+
+  "Sort by creation date"
+  INSERTED_AT
+
+  "Sort by last update date"
+  UPDATED_AT
+}
+
+"Sort configuration for API keys"
+input ApiKeySortInput {
+  "Field to sort by"
+  field: ApiKeySortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Paginated API keys response"
+type ApiKeyPage {
+  "List of API keys"
+  entries: [ApiKey!]!
+
+  "Total number of entries"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of entries per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Server status enumeration"
+enum ServerStatus {
+  "Server is active and operational"
+  ACTIVE
+
+  "Server is suspended due to administrative action"
+  SUSPENDED
+
+  "Server is archived for historical purposes"
+  ARCHIVED
+}
+
+"Server entity"
+type Server {
+  "Server ID"
+  id: ID!
+
+  "Server name"
+  name: String!
+
+  "Server host"
+  host: String!
+
+  "Server port"
+  port: Int!
+
+  "Server port for pool connections"
+  poolPort: Int
+
+  "Server username"
+  username: String!
+
+  "Server status"
+  status: ServerStatus
+
+  "Whether SSL is enabled for connections"
+  sslEnabled: Boolean
+
+  "CA certificate in Base64 (optional)"
+  sslCaCertB64: String
+
+  "Connection pool size"
+  poolSize: Int
+
+  "Connection timeout"
+  timeout: Int
+
+  "Creation timestamp"
+  insertedAt: IsoDatetime!
+
+  "Last update timestamp"
+  updatedAt: IsoDatetime!
+}
+
+"Server filters input"
+input ServerFilters {
+  "Filter by server name (partial match)"
+  name: String
+
+  "Filter by host (partial match)"
+  host: String
+
+  "Filter by server status"
+  status: ServerStatus
+
+  "Search in both name and host fields"
+  matching: String
+
+  "Alias of matching: searches in name and host"
+  search: String
+
+  "Filter by SSL enabled flag"
+  sslEnabled: Boolean
+
+  "Filter by connection pool size"
+  poolSize: Int
+
+  "Filter by pool connection port"
+  poolPort: Int
+
+  "Filter by timeout"
+  timeout: Int
+}
+
+"Paginated server response"
+type ServerPage {
+  "List of servers for current page"
+  entries: [Server!]!
+
+  "Total number of servers matching filter"
+  totalEntries: Int!
+
+  "Current page number"
+  pageNumber: Int!
+
+  "Number of items per page"
+  pageSize: Int!
+
+  "Total number of pages"
+  totalPages: Int!
+}
+
+"Server input for creation"
+input CreateServerInput {
+  "Server name"
+  name: String!
+
+  "Server host"
+  host: String!
+
+  "Server port"
+  port: Int!
+
+  "Server port for pool connections"
+  poolPort: Int
+
+  "Server username"
+  username: String!
+
+  "Server password"
+  password: String!
+
+  "Server status (defaults to active)"
+  status: ServerStatus
+
+  "Enable SSL for connections"
+  sslEnabled: Boolean
+
+  "CA certificate in Base64 (optional)"
+  sslCaCertB64: String
+
+  "Connection pool size"
+  poolSize: Int
+
+  "Connection timeout"
+  timeout: Int
+}
+
+"Server input for updates"
+input UpdateServerInput {
+  "Server name"
+  name: String
+
+  "Server host"
+  host: String
+
+  "Server port"
+  port: Int
+
+  "Server port for pool connections"
+  poolPort: Int
+
+  "Server username"
+  username: String
+
+  "Server password"
+  password: String
+
+  "Server status"
+  status: ServerStatus
+
+  "Enable SSL for connections"
+  sslEnabled: Boolean
+
+  "CA certificate in Base64 (optional)"
+  sslCaCertB64: String
+
+  "Connection pool size"
+  poolSize: Int
+
+  "Connection timeout"
+  timeout: Int
+}
+
+"Server creation response"
+type CreateServerPayload {
+  "Created server"
+  server: Server
+
+  "Operation success status"
+  success: Boolean!
+
+  "Response message"
+  message: String
+
+  "Validation errors"
+  errors: [FieldError!]!
+}
+
+"Server update response"
+type UpdateServerPayload {
+  "Updated server"
+  server: Server
+
+  "Operation success status"
+  success: Boolean!
+
+  "Response message"
+  message: String
+
+  "Validation errors"
+  errors: [FieldError!]!
+}
+
+"Server deletion response"
+type DeleteServerPayload {
+  "Operation success status"
+  success: Boolean!
+
+  "Response message"
+  message: String
+
+  "ID of deleted server"
+  deletedId: ID
+
+  "Validation errors"
+  errors: [FieldError!]!
+}
+
+"Fields available for sorting servers"
+enum ServerSortField {
+  "Sort by server name"
+  NAME
+
+  "Sort by server host"
+  HOST
+
+  "Sort by server port"
+  PORT
+
+  "Sort by server pool port"
+  POOL_PORT
+
+  "Sort by server username"
+  USERNAME
+
+  "Sort by server status"
+  STATUS
+
+  "Sort by SSL enabled"
+  SSL_ENABLED
+
+  "Sort by connection pool size"
+  POOL_SIZE
+
+  "Sort by connection timeout"
+  TIMEOUT
+
+  "Sort by creation date"
+  INSERTED_AT
+
+  "Sort by last update date"
+  UPDATED_AT
+}
+
+"Sort configuration for servers"
+input ServerSortInput {
+  "Field to sort by"
+  field: ServerSortField!
+
+  "Sort direction (defaults to ASC)"
+  direction: SortDirection
+}
+
+"Field error for validation responses"
+type FieldError {
+  "Field name with error"
+  field: String!
+
+  "Error message"
+  message: String!
+}
+
+"Sort direction for ordering results"
+enum SortDirection {
+  "Ascending order (A-Z, 0-9, oldest first)"
+  ASC
+
+  "Descending order (Z-A, 9-0, newest first)"
+  DESC
+}
+
+"ISO8601 DateTime with timezone offset"
+scalar IsoDatetime

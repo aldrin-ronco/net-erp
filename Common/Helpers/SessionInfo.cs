@@ -16,9 +16,8 @@ namespace Common.Helpers
         public static string ComputerName { get; set; } = string.Empty;
 
         public static string SessionId { get; set; } = string.Empty;
+        public static string DatabaseId { get; set; } = string.Empty;
         public static CompanyGraphQLModel? CurrentCompany { get; set; }
-        // Cuando aún no se ha establecido CurrentCompany, pero necesitamos enviar database-id
-        public static string? PendingCompanyReference { get; set; }
         public static int LoginCompanyId { get; set; }
         public static string ApiKey {  get; set; } = "ak_z3J419SUU9qcv4imiin7JgTa5lSbnbo5tDDpiY4CFHE"; //TODO modificar la lógica de asignación y extracción de este campo
         public static AwsS3ConfigGraphQLModel? DefaultAwsS3Config { get; set; }

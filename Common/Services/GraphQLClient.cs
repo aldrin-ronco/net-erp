@@ -17,7 +17,7 @@ namespace Common.Services
         private readonly GraphQLHttpClient _client;
         private string? _lastSessionId;
         private string? _lastCompanyId;
-        private string? _lastCompanyRef;
+        private string? _lastDatabaseId;
         public GraphQLClient()
         {
             //Configuración para el certificado SSL
@@ -96,19 +96,26 @@ namespace Common.Services
                 _lastSessionId = currentSessionId;
             }
 
-            // database-id y company-id: solo cuando hay compañía seleccionada
-            // database-id y company-id
+            // database-id: viene de Organization.DatabaseId del login
+            var currentDatabaseId = SessionInfo.DatabaseId;
+            if (!string.IsNullOrWhiteSpace(currentDatabaseId))
+            {
+                if (_lastDatabaseId != currentDatabaseId)
+                {
+                    SetHeader(headers, "database-id", currentDatabaseId);
+                    _lastDatabaseId = currentDatabaseId;
+                }
+            }
+            else
+            {
+                if (headers.Contains("database-id")) headers.Remove("database-id");
+                _lastDatabaseId = null;
+            }
+
+            // company-id: viene de CurrentCompany.Id (tenant company id)
             if (SessionInfo.CurrentCompany != null)
             {
-                var currentCompanyRef = SessionInfo.CurrentCompany.Reference;
                 var currentCompanyId = SessionInfo.CurrentCompany.Id.ToString();
-
-                if (_lastCompanyRef != currentCompanyRef)
-                {
-                    SetHeader(headers, "database-id", currentCompanyRef);
-                    _lastCompanyRef = currentCompanyRef;
-                }
-
                 if (_lastCompanyId != currentCompanyId)
                 {
                     SetHeader(headers, "company-id", currentCompanyId);
@@ -117,21 +124,6 @@ namespace Common.Services
             }
             else
             {
-                // Si no hay compañía seleccionada, enviar database-id si existe PendingCompanyReference
-                var pendingRef = SessionInfo.PendingCompanyReference;
-                if (!string.IsNullOrWhiteSpace(pendingRef))
-                {
-                    if (_lastCompanyRef != pendingRef)
-                    {
-                        SetHeader(headers, "database-id", pendingRef);
-                        _lastCompanyRef = pendingRef;
-                    }
-                }
-                else
-                {
-                    if (headers.Contains("database-id")) headers.Remove("database-id");
-                    _lastCompanyRef = null;
-                }
 
                 // Nunca enviar company-id sin CurrentCompany
                 if (headers.Contains("company-id")) headers.Remove("company-id");

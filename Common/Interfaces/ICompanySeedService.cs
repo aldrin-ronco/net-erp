@@ -9,7 +9,6 @@ namespace Common.Interfaces
     {
         Task<CompanySeedResultModel> RunSeedsAsync(
             int companyId,
-            int erpCompanyId,
             IProgress<string> progress,
             CancellationToken cancellationToken = default);
     }
