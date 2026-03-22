@@ -21,57 +21,50 @@ namespace NetErp.Login.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly ISQLiteEmailStorageService _emailStorageService;
 
-         private string _email = Debugger.IsAttached ? "cmedrano@qtsolutions.com.co" : string.Empty; //solo para desarrollo
-        private string _password = Debugger.IsAttached ? "Ingenier01#" : string.Empty; // solo para desarrollo
-        private bool _isLoading = false;
-        private string _loginButtonText = "INICIAR SESIÓN";
-        
         // Propiedades para autocompletar emails
-        private ObservableCollection<string> _savedEmails = new();
+        private ObservableCollection<string> _savedEmails = [];
         private string _emailFilter = string.Empty;
-        
-        public ObservableCollection<string> FilteredEmails { get; } = new();
+
+        public ObservableCollection<string> FilteredEmails { get; } = [];
 
         public string Email
         {
-            get { return _email; }
+            get;
             set
             {
-                if (_email != value)
+                if (field != value)
                 {
-                    _email = value;
+                    field = value;
                     NotifyOfPropertyChange();
                     NotifyOfPropertyChange(nameof(CanLogin));
-                    
-                    // Actualizar filtro para autocompletar
                     _emailFilter = value;
                     UpdateFilteredEmails();
                 }
             }
-        }
+        } = Debugger.IsAttached ? "cmedrano@qtsolutions.com.co" : string.Empty;
 
         public string Password
         {
-            get { return _password; }
+            get;
             set
             {
-                if (_password != value)
+                if (field != value)
                 {
-                    _password = value;
+                    field = value;
                     NotifyOfPropertyChange();
                     NotifyOfPropertyChange(nameof(CanLogin));
                 }
             }
-        }
+        } = Debugger.IsAttached ? "Ingenier01#" : string.Empty;
 
         public bool IsLoading
         {
-            get { return _isLoading; }
+            get;
             set
             {
-                if (_isLoading != value)
+                if (field != value)
                 {
-                    _isLoading = value;
+                    field = value;
                     NotifyOfPropertyChange();
                     NotifyOfPropertyChange(nameof(CanLogin));
                     LoginButtonText = value ? "AUTENTICANDO..." : "INICIAR SESIÓN";
@@ -81,16 +74,16 @@ namespace NetErp.Login.ViewModels
 
         public string LoginButtonText
         {
-            get { return _loginButtonText; }
+            get;
             set
             {
-                if (_loginButtonText != value)
+                if (field != value)
                 {
-                    _loginButtonText = value;
+                    field = value;
                     NotifyOfPropertyChange();
                 }
             }
-        }
+        } = "INICIAR SESIÓN";
 
         public bool CanLogin => !IsLoading && 
                                !string.IsNullOrWhiteSpace(Email) && 

@@ -21,7 +21,6 @@ namespace Common.Services
 
         public async Task<CompanySeedResultModel> RunSeedsAsync(
             int companyId,
-            int erpCompanyId,
             IProgress<string> progress,
             CancellationToken cancellationToken = default)
         {
@@ -87,7 +86,7 @@ namespace Common.Services
                 progress.Report("Ejecutando la configuración de la empresa...");
 
                 // Launch mutation in background
-                mutationTask = Task.Run(() => RunMutationAsync(baseUrl, companyId, erpCompanyId, ct), ct);
+                mutationTask = Task.Run(() => RunMutationAsync(baseUrl, companyId, ct), ct);
 
                 // Listen for subscription events
                 bool finished = false;
@@ -250,7 +249,7 @@ namespace Common.Services
         }
 
         private static async Task<MutationResult?> RunMutationAsync(
-            string baseUrl, int companyId, int erpCompanyId, CancellationToken ct)
+            string baseUrl, int companyId, CancellationToken ct)
         {
             using var handler = new HttpClientHandler
             {
@@ -261,8 +260,8 @@ namespace Common.Services
 
             var mutationBody = new
             {
-                query = "mutation ($companyId: ID!, $erpCompanyId: ID!) { runCompanySeeds(companyId: $companyId, erpCompanyId: $erpCompanyId) { success message errors { field message } } }",
-                variables = new { companyId = companyId.ToString(), erpCompanyId = erpCompanyId.ToString() }
+                query = "mutation ($companyId: ID!) { runCompanySeeds(companyId: $companyId) { success message errors { field message } } }",
+                variables = new { companyId = companyId.ToString() }
             };
 
             string json = JsonConvert.SerializeObject(mutationBody);

@@ -16,13 +16,13 @@ namespace Common.Services
         private readonly GraphQLHttpClient _client;
         public LoginService()
         {
-            //TODO Configuración para el certificado SSL
+            //TODO Configuraciï¿½n para el certificado SSL
             var handler = new HttpClientHandler()
             {
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
             _client = new GraphQLHttpClient(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-            //TODO configuración estatica de momento
+            //TODO configuraciï¿½n estatica de momento
             _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde");
             _client.HttpClient.DefaultRequestHeaders.Add("x-platform", "PC");
             _client.HttpClient.DefaultRequestHeaders.Add("x-api-key", SessionInfo.ApiKey);
@@ -56,6 +56,7 @@ namespace Common.Services
                             address
                             businessName
                             captureType
+                            tenantCompanyId
                             seedStatus
                             defaultCurrency{
                                 code
@@ -92,6 +93,7 @@ namespace Common.Services
                             organization {
                               id
                               name
+                              databaseId
                             }
                             updatedAt
                             insertedAt

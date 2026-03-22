@@ -37,6 +37,7 @@ namespace Models.Login
         public string TelephonicInformation { get; set; } = string.Empty;
         public CurrencyGraphQLModel DefaultCurrency { get; set; } = new();
         public LoginOrganizationGraphQLModel Organization { get; set; } = new();
+        public int? TenantCompanyId { get; set; }
         public string SeedStatus {  get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } 
         public DateTime InsertedAt { get; set; }

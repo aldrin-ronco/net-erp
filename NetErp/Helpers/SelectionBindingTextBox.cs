@@ -21,140 +21,77 @@ namespace NetErp.Helpers
 
         private bool changeFromUI;
         public SelectionBindingTextBox()
-
             : base()
-
         {
-
             this.SelectionChanged += this.OnSelectionChanged;
-
         }
+
         public int BindableSelectionStart
-
         {
-
             get
-
             {
-
                 return (int)this.GetValue(BindableSelectionStartProperty);
-
             }
-
-
-
             set
-
             {
-
                 this.SetValue(BindableSelectionStartProperty, value);
-
             }
-
         }
+
         public int BindableSelectionLength
-
         {
-
             get
-
             {
-
                 return (int)this.GetValue(BindableSelectionLengthProperty);
-
             }
-
-
 
             set
-
             {
-
                 this.SetValue(BindableSelectionLengthProperty, value);
-
             }
-
         }
+
         private static void OnBindableSelectionStartChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
 
         {
-
             var textBox = dependencyObject as SelectionBindingTextBox;
-
-
-
-            if (!textBox.changeFromUI)
-
+            if (textBox?.changeFromUI ?? false)
             {
-
-                int newValue = (int)args.NewValue;
-
-                textBox.SelectionStart = newValue;
-
-            }
-
-            else
-
-            {
-
                 textBox.changeFromUI = false;
-
             }
-
+            else
+            {
+                int newValue = (int)args.NewValue;
+                textBox?.SelectionStart = newValue;
+            }
         }
+
         private static void OnBindableSelectionLengthChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
-
         {
-
             var textBox = dependencyObject as SelectionBindingTextBox;
-
-
-
-            if (!textBox.changeFromUI)
-
+            if (!textBox?.changeFromUI ?? false)
             {
-
                 int newValue = (int)args.NewValue;
-
-                textBox.SelectionLength = newValue;
-
+                textBox?.SelectionLength = newValue;
             }
-
             else
-
             {
-
-                textBox.changeFromUI = false;
-
+                textBox?.changeFromUI = false;
             }
-
         }
+
         private void OnSelectionChanged(object sender, RoutedEventArgs e)
-
         {
-
             if (this.BindableSelectionStart != this.SelectionStart)
-
             {
-
                 this.changeFromUI = true;
-
                 this.BindableSelectionStart = this.SelectionStart;
-
             }
-
-
-
             if (this.BindableSelectionLength != this.SelectionLength)
-
             {
-
                 this.changeFromUI = true;
-
                 this.BindableSelectionLength = this.SelectionLength;
-
             }
-
         }
     }
 }
