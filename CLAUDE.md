@@ -151,6 +151,76 @@ GraphQL API endpoints configured in `Common.Helpers.ConnectionConfig`:
   }
   ```
 
+**⚠️ Caliburn.Micro Screen Lifecycle — When to Use Each Method**:
+
+The lifecycle methods execute in this order when a Screen is activated for the first time:
+`Constructor` → `OnInitializedAsync` → `OnActivatedAsync` → `OnViewAttached` → `OnViewReady`
+
+On subsequent activations (e.g., switching back to a tab):
+`OnActivatedAsync` only.
+
+| Method | When it runs | What to do here | What NOT to do here |
+|---|---|---|---|
+| **Constructor** | Once, at DI resolution | Assign dependencies (`_service = service`), subscribe to events (`_eventAggregator.SubscribeOnUIThread(this)`) | **NEVER** run async logic, `Task.Run`, or access UI. Causes race conditions (e.g., fields assigned after `Task.Run` are null). |
+| **OnInitializedAsync** | Once, first activation only | Load initial data that doesn't change often: caches (`EnsureLoadedAsync`), combo box sources, catalogs. This is the async equivalent of a "first-time setup". | Don't put data that needs refreshing on every tab switch. |
+| **OnActivatedAsync** | Every activation (including first) | Refresh data that may have changed while the tab was inactive. Guard with `if (IsInitialized)` to skip on first activation (already handled by `OnInitializedAsync`). | Don't duplicate `OnInitializedAsync` work. |
+| **OnViewReady** | Once, after the View is fully rendered | Set initial focus (`this.SetFocus(...)`), run initial validations (`ValidateProperties()`), call `AcceptChanges()`. For dialog-based detail views, this is where validation + CanSave notification happens. | Don't load data here — the view is already visible, so the user sees a blank screen while data loads. |
+| **OnViewAttached** | Once, when View is attached to ViewModel | Rarely needed. Only use if you need a reference to the View object itself. | Don't use for focus management (use `OnViewReady` or code-behind `Loaded` event instead). |
+| **OnDeactivateAsync** | Every deactivation or close | If `close == true`: unsubscribe events, clear collections, dispose resources. If `close == false`: do nothing (tab is just hidden, not destroyed). | Don't clean up on `close == false` — it destroys state when switching tabs. |
+
+**Best practice examples:**
+
+```csharp
+// ✅ CORRECT: Constructor only assigns dependencies
+public MyViewModel(IRepository<T> service, IEventAggregator eventAggregator, SomeCache cache)
+{
+    _service = service;
+    _cache = cache;
+    _eventAggregator = eventAggregator;
+    _eventAggregator.SubscribeOnUIThread(this);
+}
+
+// ✅ CORRECT: OnInitializedAsync loads initial data (runs once)
+protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+{
+    await _cache.EnsureLoadedAsync();
+    Combos = [.. _cache.Items];
+    await LoadDataAsync();
+    await base.OnInitializedAsync(cancellationToken);
+}
+
+// ✅ CORRECT: OnActivatedAsync refreshes on re-entry (skips first time)
+protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
+{
+    if (IsInitialized) await LoadDataAsync(); // refresh only on re-entry
+    await base.OnActivatedAsync(cancellationToken);
+}
+
+// ✅ CORRECT: OnViewReady for focus and validation
+protected override void OnViewReady(object view)
+{
+    base.OnViewReady(view);
+    ValidateProperties();
+    this.AcceptChanges();
+    NotifyOfPropertyChange(nameof(CanSave));
+}
+```
+
+```csharp
+// ❌ WRONG: Async logic in constructor causes race conditions
+public MyViewModel(IRepository<T> service, SomeCache cache)
+{
+    _service = service;
+    _ = Task.Run(async () => await LoadDataAsync()); // ← NEVER DO THIS
+    _cache = cache; // ← may be null when Task.Run accesses it
+}
+```
+
+**For dialog-based detail views** (opened via `IDialogService.ShowDialogAsync`):
+- Focus management goes in the **View's code-behind** via `Loaded` event, not in the ViewModel
+- `OnViewReady` handles `ValidateProperties()` + `AcceptChanges()` + `NotifyOfPropertyChange(nameof(CanSave))`
+- `SetForNew()` / `SetForEdit()` are called **before** `ShowDialogAsync`, not in lifecycle methods
+
 **Key Services** (registered in `NinjectBootstrapper.cs`):
 - `INotificationService` - In-app notifications
 - `IBackgroundQueueService` - Async task processing (use with explicit instructions)

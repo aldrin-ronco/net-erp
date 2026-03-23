@@ -202,7 +202,7 @@
                         IsBusyAtStartup="False"
                         Grid.Row="2" Margin="0 5 0 0">
                 
-                <dxg:GridControl ItemsSource="{Binding PriceListDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                <dxg:GridControl ItemsSource="{Binding PriceListItems, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl.View>
                         <dxg:TableView
                              AllowCascadeUpdate="False" 

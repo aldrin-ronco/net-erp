@@ -23,7 +23,7 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
-        private readonly IRepository<PriceListDetailGraphQLModel> _priceListDetailService;
+        private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly IBackgroundQueueService _backgroundQueueService;
         private readonly INotificationService _notificationService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
@@ -34,6 +34,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
+        private readonly PaymentMethodCache _paymentMethodCache;
 
         private PriceListMasterViewModel _priceListMasterViewModel;
 
@@ -41,7 +42,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get 
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListDetailService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache);
+                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache);
                 return _priceListMasterViewModel; 
             }
         }
@@ -50,7 +51,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public PriceListViewModel(
             IMapper autoMapper, 
             IEventAggregator eventAggregator,
-            IRepository<PriceListDetailGraphQLModel> priceListDetailService,
+            IRepository<PriceListItemGraphQLModel> priceListItemService,
             IBackgroundQueueService backgroundQueueService,
             INotificationService notificationService,
             NetErp.Helpers.IDialogService dialogService,
@@ -60,11 +61,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
             StorageCache storageCache,
-            CostCenterCache costCenterCache)
+            CostCenterCache costCenterCache,
+            PaymentMethodCache paymentMethodCache)
         {
             AutoMapper = autoMapper;
             EventAggregator = eventAggregator;
-            _priceListDetailService = priceListDetailService;
+            _priceListItemService = priceListItemService;
             _backgroundQueueService = backgroundQueueService;
             _notificationService = notificationService;
             _dialogService = dialogService;
@@ -75,6 +77,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _tempRecordService = tempRecordService;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
+            _paymentMethodCache = paymentMethodCache;
             _ = Task.Run(async () =>
             {
                 try
@@ -109,7 +112,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListDetailService, _dialogService, _parallelBatchProcessor, _itemService, _tempRecordService, _priceListService);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _parallelBatchProcessor, _itemService, _tempRecordService, _priceListService);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
                 instance.StartDate = promotion.StartDate;

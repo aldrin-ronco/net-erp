@@ -29,13 +29,14 @@ using static Models.Global.GraphQLResponseTypes;
 namespace NetErp.Billing.PriceList.ViewModels
 {
     public class UpdatePromotionViewModel: Screen,
+                IHandle<PriceListPromotionUpdateMessage>,
                 IHandle<PromotionTempRecordResponseMessage>,
                 IHandle<ParallelBatchCompletedMessage>,
                 IHandle<CriticalSystemErrorMessage>
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
-        private readonly IRepository<PriceListDetailGraphQLModel> _priceListDetailService;
+        private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly IParallelBatchProcessor _parallelBatchProcessor;
         private readonly IRepository<ItemGraphQLModel> _itemService;
@@ -49,7 +50,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         public UpdatePromotionViewModel(
             PriceListViewModel context,
             Helpers.Services.INotificationService notificationService,
-            IRepository<PriceListDetailGraphQLModel> priceListDetailService,
+            IRepository<PriceListItemGraphQLModel> priceListItemService,
             Helpers.IDialogService dialogService,
             IParallelBatchProcessor parallelBatchProcessor,
             IRepository<ItemGraphQLModel> itemService,
@@ -58,30 +59,22 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             Context = context;
             _notificationService = notificationService;
-            _priceListDetailService = priceListDetailService;
+            _priceListItemService = priceListItemService;
             _dialogService = dialogService;
             _parallelBatchProcessor = parallelBatchProcessor;
             _itemService = itemService;
             _tempRecordService = tempRecordService;
             _priceListServiceForModal = priceListServiceForModal;
             Context.EventAggregator.SubscribeOnUIThread(this);
-            Messenger.Default.Register<ReturnedDataFromUpdatePromotionModalViewMessage<PriceListGraphQLModel>>(this, "UpdatePromotion", false, OnUpdatePromotion);
         }
 
-        public void OnUpdatePromotion(ReturnedDataFromUpdatePromotionModalViewMessage<PriceListGraphQLModel> message)
+        public Task HandleAsync(PriceListPromotionUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.ReturnedData is null) return;
-            if (message.ReturnedData is PriceListGraphQLModel priceList)
-            {
-                Name = priceList.Name;
-                StartDate = priceList.StartDate;
-                EndDate = priceList.EndDate;
-                _notificationService.ShowSuccess("Promoción actualizada correctamente", "Éxito");
-            }
-            else
-            {
-                _notificationService.ShowError("No se pudo actualizar la promoción", "Error");
-            }
+            Name = message.UpdatedPromotion.Entity.Name;
+            StartDate = message.UpdatedPromotion.Entity.StartDate;
+            EndDate = message.UpdatedPromotion.Entity.EndDate;
+            _notificationService.ShowSuccess(message.UpdatedPromotion.Message);
+            return Task.CompletedTask;
         }
 
         private ICommand _goBackCommand;
@@ -154,16 +147,16 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<PriceListDetailDTO> _priceListDetail = [];
-        public ObservableCollection<PriceListDetailDTO> PriceListDetail
+        private ObservableCollection<PriceListItemDTO> _priceListItems = [];
+        public ObservableCollection<PriceListItemDTO> PriceListItems
         {
-            get { return _priceListDetail; }
+            get { return _priceListItems; }
             set
             {
-                if (_priceListDetail != value)
+                if (_priceListItems != value)
                 {
-                    _priceListDetail = value;
-                    NotifyOfPropertyChange(nameof(PriceListDetail));
+                    _priceListItems = value;
+                    NotifyOfPropertyChange(nameof(PriceListItems));
                 }
             }
         }
@@ -504,7 +497,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionModalViewModel<PriceListGraphQLModel> instance = new(_dialogService, _priceListServiceForModal);
+                UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal);
                 instance.Id = Id;
                 instance.Name = Name;
                 instance.MinimumDate = StartDate;
@@ -536,7 +529,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                _activeModal = new(Context, _dialogService, _priceListDetailService, _itemService, _tempRecordService, _parallelBatchProcessor);
+                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _tempRecordService, _parallelBatchProcessor);
                 MainIsBusy = true;
                 _activeModal.PromotionId = Id;
                 await _activeModal.InitializeAsync();
@@ -569,7 +562,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 stopwatch.Start();
 
                 string query = @"
-                    query ($filter: PriceListDetailFilterInput) {
+                    query ($filter: PriceListItemsFilterInput) {
                       PageResponse: priceListDetailPage(filter: $filter) {
                         count
                         rows {
@@ -618,14 +611,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.filter.filterSearch.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
                 variables.filter.filterSearch.exclude = true;
 
-                PageType<PriceListDetailGraphQLModel> result = await _priceListDetailService.GetPageAsync(query, variables);
+                PageType<PriceListItemGraphQLModel> result = await _priceListItemService.GetPageAsync(query, variables);
                 TotalCount = result.Count;
-                PriceListDetail = [.. Context.AutoMapper.Map<ObservableCollection<PriceListDetailDTO>>(result.Rows)];
+                PriceListItems = [.. Context.AutoMapper.Map<ObservableCollection<PriceListItemDTO>>(result.Rows)];
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                foreach (var item in PriceListDetail)
+                foreach (var item in PriceListItems)
                 {
                     item.UpdatePromotionContext = this;
                 }
@@ -651,7 +644,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .For(catalogsFragment, "pagination", new { pageSize = -1 })
                     .Build();
 
-                var result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, variables);
+                var result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
                 Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
                 var selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 IsInitialized = true;
@@ -701,7 +694,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                if (PriceListDetail is null || PriceListDetail.Count == 0) return false;
+                if (PriceListItems is null || PriceListItems.Count == 0) return false;
                 return _itemsHeaderIsChecked;
             }
             set
@@ -710,7 +703,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _itemsHeaderIsChecked = value;
                     NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
-                    foreach (var item in PriceListDetail)
+                    foreach (var item in PriceListItems)
                     {
                         item.IsChecked = value;
                     }
@@ -736,7 +729,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public void VerifyItemsInShadowList()
         {
-            foreach (var item in PriceListDetail)
+            foreach (var item in PriceListItems)
             {
                 if (ShadowItems.Contains(item.Item.Id))
                 {
@@ -788,11 +781,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                         ItemId = itemId
                     };
                     promotionItems.Add(promotionItem);
-                    PriceListDetail.Remove(PriceListDetail.Where(x => x.Item.Id == itemId).FirstOrDefault() ?? throw new Exception("No se encontró el elemento en la lista"));
+                    PriceListItems.Remove(PriceListItems.Where(x => x.Item.Id == itemId).FirstOrDefault() ?? throw new Exception("No se encontró el elemento en la lista"));
                     ShadowItems.Remove(itemId);
                 }
 
-                _ = _parallelBatchProcessor.ProcessBatchAsync(query, promotionItems, typeof(PriceListDetailGraphQLModel), 10);
+                _ = _parallelBatchProcessor.ProcessBatchAsync(query, promotionItems, typeof(PriceListItemGraphQLModel), 10);
                 NotifyOfPropertyChange(nameof(CanDelete));
             }
             catch (Exception ex)
@@ -828,7 +821,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
                 string query = @"
                 mutation($id: Int!){
-                  Data: clearPriceListDetail(id: $id){
+                  Data: clearPriceListItems(id: $id){
                     success
                     message
                   }
@@ -837,14 +830,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 IsBusy = true;
                 dynamic variables = new ExpandoObject();
                 variables.Id = Id;
-                var response = await _priceListDetailService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
+                var response = await _priceListItemService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
 
                 if (!response.Data.Success)
                 {
                     _notificationService.ShowError("Error al limpiar la promoción");
                     throw new Exception(response.Data.Message);
                 }
-                PriceListDetail.Clear();
+                PriceListItems.Clear();
                 ShadowItems.Clear();
                 NotifyOfPropertyChange(nameof(CanDelete));
                 _notificationService.ShowSuccess("Promoción limpiada correctamente");
@@ -916,7 +909,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             // Manejar errores críticos de ParallelBatchProcessor para ambos tipos (padre maneja comunicación con usuario)
             if (message.ServiceName == nameof(ParallelBatchProcessor) && 
-                (message.ResponseType == typeof(PriceListDetailGraphQLModel) || message.ResponseType == typeof(TempRecordGraphQLModel)))
+                (message.ResponseType == typeof(PriceListItemGraphQLModel) || message.ResponseType == typeof(TempRecordGraphQLModel)))
             {
                 await Execute.OnUIThreadAsync(async () =>
                 {

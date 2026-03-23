@@ -32,7 +32,7 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
             };
         }
-        public void RecalculateProductValues(PriceListDetailDTO priceListDetail, string modifiedProperty, PriceListGraphQLModel priceList)
+        public void RecalculateProductValues(PriceListItemDTO priceListDetail, string modifiedProperty, PriceListGraphQLModel priceList)
         {
             FormulaVariables = new Dictionary<string, decimal>
             {
@@ -49,47 +49,46 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
             switch (modifiedProperty)
             {
-                case nameof(PriceListDetailDTO.ProfitMargin):
+                case nameof(PriceListItemDTO.ProfitMargin):
                     CalculateFromProfitMargin(priceListDetail, priceList);
                     break;
-                case nameof(PriceListDetailDTO.Price):
+                case nameof(PriceListItemDTO.Price):
                     CalculateFromPrice(priceListDetail, priceList);
                     break;
-                case nameof(PriceListDetailDTO.DiscountMargin):
+                case nameof(PriceListItemDTO.DiscountMargin):
                     CalculateFromDiscountMargin(priceListDetail);
                     break;
-                case nameof(PriceListDetailDTO.MinimumPrice):
+                case nameof(PriceListItemDTO.MinimumPrice):
                     CalculateFromMinimumPrice(priceListDetail);
                     break;
             }
         }
 
-        public void CalculateFromDiscountMargin(PriceListDetailDTO priceListDetail)
+        public void CalculateFromDiscountMargin(PriceListItemDTO priceListDetail)
         {
             decimal discountValue = priceListDetail.Price * (priceListDetail.DiscountMargin / 100);
             decimal priceWithDiscount = priceListDetail.Price - discountValue;
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.MinimumPrice), priceWithDiscount);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.MinimumPrice), priceWithDiscount);
         }
 
-        public void CalculateFromMinimumPrice(PriceListDetailDTO priceListDetail)
+        public void CalculateFromMinimumPrice(PriceListItemDTO priceListDetail)
         {
             decimal discountMargin = (1 - priceListDetail.MinimumPrice / priceListDetail.Price) * 100;
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.DiscountMargin), discountMargin);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.DiscountMargin), discountMargin);
         }
 
-        public void CalculateFromPrice(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList)
+        public void CalculateFromPrice(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
             decimal ivaMargin = ExtractIvaMargin(priceListDetail, priceList);
             decimal discountValue = priceListDetail.Price * (priceListDetail.DiscountMargin / 100);
             decimal priceWithDiscount = priceListDetail.Price - discountValue;
             decimal profit = (priceListDetail.Price / (1 + (ivaMargin / 100))) - priceListDetail.Cost;
             decimal profitMargin = (1 - ((priceListDetail.Cost * (1 +(ivaMargin / 100))) / priceListDetail.Price)) * 100;
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.ProfitMargin), profitMargin);
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.Profit), profit);
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.MinimumPrice), priceWithDiscount);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.ProfitMargin), profitMargin);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.MinimumPrice), priceWithDiscount);
         }
 
-        public void CalculateFromProfitMargin(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList)
+        public void CalculateFromProfitMargin(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
             decimal ivaMargin = ExtractIvaMargin(priceListDetail, priceList);
             decimal priceWithTax = (priceListDetail.Cost * (1 + (ivaMargin/100))) / (1 - (priceListDetail.ProfitMargin / 100));
@@ -99,12 +98,11 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             decimal discountValue = priceWithTax * (priceListDetail.DiscountMargin / 100);
             decimal priceWithDiscount = priceWithTax - discountValue;
             decimal profit = priceWithTax - (priceListDetail.Cost + ivaValue);
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.Price), priceWithTax);
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.MinimumPrice), priceWithDiscount);
-            priceListDetail.UpdatePropertySilently(nameof(PriceListDetailDTO.Profit), profit);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.Price), priceWithTax);
+            priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.MinimumPrice), priceWithDiscount);
         }
 
-        public decimal ExtractIvaMargin(PriceListDetailDTO priceListDetail, PriceListGraphQLModel priceList)
+        public decimal ExtractIvaMargin(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
             if (!priceList.IsTaxable || !priceList.PriceListIncludeTax) return 0;
 
@@ -117,7 +115,7 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
             return 0;
         }
 
-        public TaxGraphQLModel? GetIvaTax(PriceListDetailDTO priceListDetail)
+        public TaxGraphQLModel? GetIvaTax(PriceListItemDTO priceListDetail)
         {
             TaxGraphQLModel? sellTax1 = priceListDetail.Item.AccountingGroup.SalesPrimaryTax;
             TaxGraphQLModel? sellTax2 = priceListDetail.Item.AccountingGroup.SalesSecondaryTax;
