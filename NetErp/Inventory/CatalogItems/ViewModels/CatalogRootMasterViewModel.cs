@@ -2030,6 +2030,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             itemTypeDTO.ItemCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, Name = "Dummy", SubCategories = [] });
             if (SelectedCatalog.Id != itemTypeDTO.Catalog.Id) return Task.CompletedTask;
             SelectedCatalog.ItemTypes.Add(itemTypeDTO);
+            IsNewRecord = false;
             SelectedItem = itemTypeDTO;
             NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
             _notificationService.ShowSuccess(message.CreatedItemType.Message);
@@ -2067,6 +2068,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task HandleAsync(ItemCategoryCreateMessage message, CancellationToken cancellationToken)
         {
+            IsNewRecord = false;
             ItemCategoryDTO itemCategoryDTO = Context.AutoMapper.Map<ItemCategoryDTO>(message.CreatedItemCategory.Entity);
             itemCategoryDTO.Context = this;
             itemCategoryDTO.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Name = "Dummy", Items = [] });
@@ -2128,6 +2130,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         public async Task HandleAsync(ItemSubCategoryCreateMessage message, CancellationToken cancellationToken)
         {
+            IsNewRecord = false;
             ItemSubCategoryDTO itemSubCategoryDTO = Context.AutoMapper.Map<ItemSubCategoryDTO>(message.CreatedItemSubCategory.Entity);
             itemSubCategoryDTO.Context = this;
             itemSubCategoryDTO.Items.Add(new ItemDTO() { IsDummyChild = true, Name = "Dummy" });
