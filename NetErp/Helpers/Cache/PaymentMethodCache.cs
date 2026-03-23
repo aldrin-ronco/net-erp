@@ -6,7 +6,6 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
-using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,16 +16,36 @@ namespace NetErp.Helpers.Cache
     public class PaymentMethodCache : IEntityCache<PaymentMethodGraphQLModel>
     {
         private readonly IRepository<PaymentMethodGraphQLModel> _service;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
-        public ObservableCollection<PaymentMethodGraphQLModel> Items { get; } = [];
+        private readonly ObservableCollection<PaymentMethodGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<PaymentMethodGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<PaymentMethodGraphQLModel>>
+                .Create()
+                .SelectList(x => x.Entries, entries => entries
+                    .Field(x => x.Id)
+                    .Field(x => x.Name)
+                    .Field(x => x.Abbreviation)
+                )
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("paymentMethodsPage", [parameter], fields, "PageResponse");
+            var query = new QueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         public PaymentMethodCache(
             IRepository<PaymentMethodGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
+            Items = new ReadOnlyObservableCollection<PaymentMethodGraphQLModel>(_items);
         }
 
         public async Task EnsureLoadedAsync()
@@ -35,19 +54,19 @@ namespace NetErp.Helpers.Cache
 
             try
             {
-                var query = BuildQuery();
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
+                var (fragment, query) = _loadQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
                 lock (_lock)
                 {
-                    Items.Clear();
+                    _items.Clear();
                     foreach (var item in result.Entries)
                     {
-                        Items.Add(item);
+                        _items.Add(item);
                     }
                     IsInitialized = true;
                 }
@@ -62,7 +81,7 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                Items.Clear();
+                _items.Clear();
                 IsInitialized = false;
             }
         }
@@ -71,8 +90,8 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                if (!Items.Any(x => x.Id == item.Id))
-                    Items.Add(item);
+                if (!_items.Any(x => x.Id == item.Id))
+                    _items.Add(item);
             }
         }
 
@@ -80,11 +99,11 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var existing = Items.FirstOrDefault(x => x.Id == item.Id);
+                var existing = _items.FirstOrDefault(x => x.Id == item.Id);
                 if (existing != null)
                 {
-                    var index = Items.IndexOf(existing);
-                    Items[index] = item;
+                    var index = _items.IndexOf(existing);
+                    _items[index] = item;
                 }
             }
         }
@@ -93,32 +112,10 @@ namespace NetErp.Helpers.Cache
         {
             lock (_lock)
             {
-                var item = Items.FirstOrDefault(x => x.Id == id);
+                var item = _items.FirstOrDefault(x => x.Id == id);
                 if (item != null)
-                    Items.Remove(item);
+                    _items.Remove(item);
             }
         }
-
-        #region Query Builder
-
-        private string BuildQuery()
-        {
-            var fields = FieldSpec<PageType<PaymentMethodGraphQLModel>>
-                .Create()
-                .SelectList(x => x.Entries, entries => entries
-                    .Field(x => x.Id)
-                    .Field(x => x.Name)
-                    .Field(x => x.Abbreviation)
-                )
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("paymentMethodsPage", [parameter], fields, "PageResponse");
-            var builder = new QueryBuilder([fragment]);
-
-            return builder.GetQuery();
-        }
-
-        #endregion
     }
 }
