@@ -17,6 +17,7 @@
             </Grid.RowDefinitions>
             <TextBlock Text="Nombre del catálogo" Grid.Row="0" Margin="5 5 0 5"/>
             <dxe:TextEdit x:Name="NameTextEdit" Grid.Row="1" Margin="5 0 0 5"
+                          Style="{StaticResource FocusedHighlightStyle}"
                           CharacterCasing="Upper"
                           MaxLength="{Binding NameMaxLength}"
                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
