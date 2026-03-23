@@ -174,6 +174,9 @@ namespace NetErp
             _ = kernel.Bind<ItemSizeCategoryCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemSizeCategoryCache>());
 
+            _ = kernel.Bind<CollaboratorCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CollaboratorCache>());
+
             _ = kernel.Bind<StringLengthCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StringLengthCache>());
 
@@ -301,6 +304,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<EmailGraphQLModel>>().To<GraphQLRepository<EmailGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<SmtpGraphQLModel>>().To<GraphQLRepository<SmtpGraphQLModel>>().InSingletonScope();
             
+            // Auth API client (singleton — shared by LoginService, CollaboratorCache, etc.)
+            _ = kernel.Bind<IAuthApiClient>().To<AuthApiClient>().InSingletonScope();
+
             // Login service
             _ = kernel.Bind<ILoginService>().To<LoginService>().InSingletonScope();
             _ = kernel.Bind<ICompanySeedService>().To<CompanySeedService>().InSingletonScope();

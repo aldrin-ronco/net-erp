@@ -1,202 +1,153 @@
 using Amazon.Runtime.Internal;
-using Common.Helpers;
 using Common.Interfaces;
 using GraphQL;
-using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.Newtonsoft;
 using Models.Login;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Common.Services
 {
-    public class LoginService : ILoginService
+    public class LoginService(IAuthApiClient authApiClient) : ILoginService
     {
-        private readonly GraphQLHttpClient _client;
-        public LoginService()
-        {
-            //TODO Configuraci�n para el certificado SSL
-            var handler = new HttpClientHandler()
-            {
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-            };
-            _client = new GraphQLHttpClient(ConnectionConfig.LoginAPIUrl, new NewtonsoftJsonSerializer(), httpClient: new HttpClient(handler));
-            //TODO configuraci�n estatica de momento
-            _client.HttpClient.DefaultRequestHeaders.Add("x-device-id", "pc12345abcde");
-            _client.HttpClient.DefaultRequestHeaders.Add("x-platform", "PC");
-            _client.HttpClient.DefaultRequestHeaders.Add("x-api-key", SessionInfo.ApiKey);
-        }
+        private readonly IAuthApiClient _authApiClient = authApiClient;
+
         public async Task<LoginGraphQLModel> AuthenticateAsync(string email, string password)
         {
-            try
-            {    
-                var query = @"
-                    mutation ($input: LoginAccountInput!) {
-                      loginAccount(input: $input) {
-                        account {
+            string query = @"
+                mutation ($input: LoginAccountInput!) {
+                  loginAccount(input: $input) {
+                    account {
+                      id
+                      email
+                      firstName
+                      middleName
+                      firstLastName
+                      middleLastName
+                      insertedAt
+                      updatedAt
+                    }
+                    accessTicket {
+                      expiresAt
+                      ticket
+                    }
+                    companies {
+                      company {
+                        id
+                        reference
+                        status
+                        address
+                        businessName
+                        captureType
+                        tenantCompanyId
+                        seedStatus
+                        defaultCurrency{
+                            code
+                        }
+                        country {
+                          code
+                        }
+                        department {
+                          code
+                        }
+                        city {
+                          code
+                        }
+                        firstLastName
+                        firstName
+                        fullName
+                        identificationNumber
+                        identificationType {
+                          code
+                        }
+                        middleLastName
+                        middleName
+                        primaryCellPhone
+                        secondaryCellPhone
+                        primaryPhone
+                        secondaryPhone
+                        regime
+                        searchName
+                        tradeName
+                        verificationDigit
+                        telephonicInformation
+                        updatedAt
+                        insertedAt
+                        organization {
                           id
-                          email
-                          firstName
-                          middleName
-                          firstLastName
-                          middleLastName
-                          insertedAt
-                          updatedAt
+                          name
+                          databaseId
                         }
-                        accessTicket {
-                          expiresAt
-                          ticket
-                        }
-                        companies {
-                          company {
-                            id
-                            reference
-                            status
-                            address
-                            businessName
-                            captureType
-                            tenantCompanyId
-                            seedStatus
-                            defaultCurrency{
-                                code
-                            }
-                            country {
-                              code
-                            }
-                            department {
-                              code
-                            }
-                            city {
-                              code
-                            }
-                            firstLastName
-                            firstName
-                            fullName
-                            identificationNumber
-                            identificationType {
-                              code
-                            }
-                            middleLastName
-                            middleName
-                            primaryCellPhone
-                            secondaryCellPhone
-                            primaryPhone
-                            secondaryPhone
-                            regime
-                            searchName
-                            tradeName
-                            verificationDigit
-                            telephonicInformation
-                            updatedAt
-                            insertedAt
-                            organization {
-                              id
-                              name
-                              databaseId
-                            }
-                            updatedAt
-                            insertedAt
-                          }
-                          role
-                        }
-                        success
-                        message
-                        errors {
-                          field
-                          message
-                        }
+                        updatedAt
+                        insertedAt
                       }
+                      role
                     }
-
-                    ";
-
-                var variables = new
-                {
-                    input = new
-                    {
-                        email,
-                        password
+                    success
+                    message
+                    errors {
+                      field
+                      message
                     }
-                };
+                  }
+                }";
 
-                GraphQLResponse<LoginResponseType> result = await _client.SendMutationAsync<LoginResponseType>(new GraphQLRequest()
-                {
-                    Query = query,
-                    Variables = variables
-                });
-
-                if (result.Errors != null)
-                {
-                    GraphQL.GraphQLError error = result.Errors[0];
-                    Map? extensions = error.Extensions;
-                    if (extensions != null && extensions.TryGetValue("message", out object? value))
-                    {
-                        throw new Exception(value.ToString());
-                    }
-                    throw new Exception(error.Message);
-                }
-
-                return result.Data.LoginAccount;
-            }
-            catch (Exception)
+            GraphQLResponse<LoginResponseType> result = await _authApiClient.SendMutationAsync<LoginResponseType>(new GraphQLRequest()
             {
-                throw;
+                Query = query,
+                Variables = new { input = new { email, password } }
+            });
+
+            if (result.Errors != null)
+            {
+                GraphQLError error = result.Errors[0];
+                Map? extensions = error.Extensions;
+                if (extensions != null && extensions.TryGetValue("message", out object? value))
+                {
+                    throw new Exception(value.ToString());
+                }
+                throw new Exception(error.Message);
             }
+
+            return result.Data.LoginAccount;
         }
 
         public async Task<LoginValidateTicketGraphQLModel> RedeemTicketAsync(string accessTicket)
         {
-            try
+            string query = @"
+                mutation ($input: ValidateTicketInput!) {
+                  validateTicket(input: $input) {
+                    account {
+                      id
+                      email
+                    }
+                    sessionId
+                    success
+                    message
+                    errors {
+                      field
+                      message
+                    }
+                  }
+                }";
+
+            GraphQLResponse<RedeemTicketResponseType> result = await _authApiClient.SendMutationAsync<RedeemTicketResponseType>(new GraphQLRequest()
             {
-                var query = @"
-                    mutation ($input: ValidateTicketInput!) {
-                      validateTicket(input: $input) {
-                        account {
-                          id
-                          email
-                        }
-                        sessionId
-                        success
-                        message
-                        errors {
-                          field
-                          message
-                        }
-                      }
-                    }";
+                Query = query,
+                Variables = new { input = new { ticket = accessTicket } }
+            });
 
-                var variables = new
+            if (result.Errors != null)
+            {
+                GraphQLError error = result.Errors[0];
+                Map? extensions = error.Extensions;
+                if (extensions != null && extensions.TryGetValue("message", out object? value))
                 {
-                    input = new
-                    {
-                        ticket = accessTicket
-                    }
-                };
-
-                GraphQLResponse<RedeemTicketResponseType> result = await _client.SendMutationAsync<RedeemTicketResponseType>(new GraphQLRequest()
-                {
-                    Query = query,
-                    Variables = variables
-                });
-
-                if (result.Errors != null)
-                {
-                    GraphQL.GraphQLError error = result.Errors[0];
-                    Map? extensions = error.Extensions;
-                    if (extensions != null && extensions.TryGetValue("message", out object? value))
-                    {
-                        throw new Exception(value.ToString());
-                    }
-                    throw new Exception(error.Message);
+                    throw new Exception(value.ToString());
                 }
+                throw new Exception(error.Message);
+            }
 
-                return result.Data.ValidateTicket;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return result.Data.ValidateTicket;
         }
 
         private class LoginResponseType

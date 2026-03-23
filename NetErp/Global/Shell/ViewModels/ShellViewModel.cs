@@ -145,6 +145,7 @@ namespace NetErp.Global.Shell.ViewModels
             SessionInfo.CurrentCompany = null;
             SessionInfo.DefaultAwsS3Config = null;
             SessionInfo.DatabaseId = string.Empty;
+            SessionInfo.LoginCompanyId = 0;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -158,6 +159,7 @@ namespace NetErp.Global.Shell.ViewModels
             SessionInfo.CurrentCompany = null;
             SessionInfo.DefaultAwsS3Config = null;
             SessionInfo.DatabaseId = string.Empty;
+            SessionInfo.LoginCompanyId = 0;
 
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
