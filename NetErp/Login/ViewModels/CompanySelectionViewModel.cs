@@ -300,6 +300,9 @@ namespace NetErp.Login.ViewModels
                 SessionInfo.CurrentCompany = currentCompany;
                 SessionInfo.LoginCompanyId = SelectedCompany.OriginalData.Company.Id;
 
+                // Actualizar snapshot del login para que ReturnToCompanySelection tenga datos correctos
+                loginCompany.TenantCompanyId = currentCompany.Id;
+
                 if (needsSeeds)
                 {
                     BusyContent = "Configurando la empresa...";
@@ -319,6 +322,7 @@ namespace NetErp.Login.ViewModels
                             icon: MessageBoxImage.Error);
                         return;
                     }
+                    loginCompany.SeedStatus = "APPLIED";
                 }
                 // Publicar mensaje de empresa seleccionada para navegación
                 await _eventAggregator.PublishOnUIThreadAsync(new CompanySelectedMessage
