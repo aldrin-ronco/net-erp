@@ -15,6 +15,7 @@ namespace Models.Inventory
         public StorageGraphQLModel Storage { get; set; } = new();
         public decimal Quantity { get; set; }
         public decimal Cost { get; set; }
+        public decimal AverageCost { get; set; }
         public DateTime InsertedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

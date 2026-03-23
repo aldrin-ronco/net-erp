@@ -54,8 +54,23 @@ namespace Models.Billing
         public PageType<PriceListGraphQLModel> PriceListsPage { get; set; } = new();
     }
 
+    public class PriceListCreateMessage
+    {
+        public UpsertResponseType<PriceListGraphQLModel> CreatedPriceList { get; set; } = new();
+    }
+
+    public class PriceListUpdateMessage
+    {
+        public UpsertResponseType<PriceListGraphQLModel> UpdatedPriceList { get; set; } = new();
+    }
+
     public class PriceListDeleteMessage
     {
         public PriceListGraphQLModel DeletedPriceList { get; set; } = new();
+    }
+
+    public class PriceListPromotionUpdateMessage
+    {
+        public UpsertResponseType<PriceListGraphQLModel> UpdatedPromotion { get; set; } = new();
     }
 }

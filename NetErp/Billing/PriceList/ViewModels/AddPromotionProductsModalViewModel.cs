@@ -35,7 +35,7 @@ namespace NetErp.Billing.PriceList.ViewModels
     public class AddPromotionProductsModalViewModel : Screen
     {
         private readonly Helpers.IDialogService _dialogService;
-        private readonly IRepository<PriceListDetailGraphQLModel> _priceListDetailService;
+        private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IParallelBatchProcessor _parallelBatchProcessor;
@@ -44,14 +44,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         public AddPromotionProductsModalViewModel(
             PriceListViewModel context, 
             Helpers.IDialogService dialogService,
-            IRepository<PriceListDetailGraphQLModel> priceListDetailService,
+            IRepository<PriceListItemGraphQLModel> priceListItemService,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
             IParallelBatchProcessor parallelBatchProcessor)
         {
             Context = context;
             _dialogService = dialogService;
-            _priceListDetailService = priceListDetailService;
+            _priceListItemService = priceListItemService;
             _itemService = itemService;
             _tempRecordService = tempRecordService;
             _parallelBatchProcessor = parallelBatchProcessor;
@@ -821,7 +821,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .For(catalogsFragment, "pagination", new { pageSize = -1 })
                     .Build();
 
-                var result = await _priceListDetailService.GetDataContextAsync<PriceListDataContext>(query, variables);
+                var result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
                 Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
                 var selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 IsInitialized = true;

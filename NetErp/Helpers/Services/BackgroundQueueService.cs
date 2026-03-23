@@ -154,6 +154,12 @@ namespace NetErp.Helpers.Services
         /// </summary>
         /// <returns>The critical error message, or empty string if no critical error exists</returns>
         string GetCriticalErrorMessage();
+
+        /// <summary>
+        /// Resetea el estado de error crítico, permitiendo al servicio aceptar operaciones nuevamente.
+        /// Debe ser llamado después de que el problema subyacente haya sido resuelto.
+        /// </summary>
+        void ResetCriticalError();
     }
 
     /// <summary>
@@ -372,66 +378,50 @@ namespace NetErp.Helpers.Services
         /// </summary>
         /// <param name="batch">The batch of operations to process</param>
         /// <param name="retryCount">Current retry attempt (0-based)</param>
-        private async Task ProcessBatchWithRetry(List<IDataOperation> batch, int retryCount = 0)
+        private async Task ProcessBatchWithRetry(List<IDataOperation> batch)
         {
-            try
+            for (int retryCount = 0; retryCount <= MaxRetries; retryCount++)
             {
-                // Si no hay conectividad, enviamos todo a la cola de reintentos
-                if (!await _networkService.IsConnectedAsync())
+                try
                 {
-                    _logger.LogWarning("Sin conexión a Internet. Moviendo batch a cola de reintentos.");
-                    foreach (var op in batch)
+                    if (!await _networkService.IsConnectedAsync())
                     {
-                        await _retryQueue.Writer.WriteAsync(op, _cts.Token);
+                        _logger.LogWarning("Sin conexión a Internet. Moviendo batch a cola de reintentos.");
+                        foreach (var op in batch)
+                        {
+                            await _retryQueue.Writer.WriteAsync(op, _cts.Token);
+                        }
+                        return;
                     }
-                    return;
+
+                    await ProcessBatch(batch);
+                    return; // Éxito — salir del loop
                 }
-
-                await ProcessBatch(batch);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error procesando batch. Reintento {RetryCount}/{MaxRetries}", retryCount, MaxRetries);
-
-                // Verificar si es un error irrecuperable
-                bool isRecoverable = IsRecoverableError(ex);
-                
-                if (!isRecoverable)
+                catch (Exception ex)
                 {
-                    // Error irrecuperable - parar el servicio
-                    _serviceHasCriticalError = true;
-                    _criticalErrorMessage = $"Critical error in batch processing: {ex.Message}";
-                    
-                    _logger.LogCritical("Servicio pausado debido a error irrecuperable: {ErrorMessage}", ex.Message);
-                    
-                    // El mensaje crítico ya fue enviado desde ProcessOperationBatch
-                    return; // No continuar con reintentos
-                }
+                    _logger.LogError(ex, "Error procesando batch. Intento {RetryCount}/{MaxRetries}", retryCount + 1, MaxRetries);
 
-                // Error recuperable - lógica normal de reintentos
-                if (retryCount < MaxRetries)
-                {
-                    // Esperamos antes de reintentar
-                    await Task.Delay(RetryDelay);
-                    await ProcessBatchWithRetry(batch, retryCount + 1);
-                }
-                else
-                {
-                    _logger.LogWarning("Batch fallido después de {MaxRetries} reintentos (error recuperable). Moviendo a cola de reintentos.", MaxRetries);
+                    if (!IsRecoverableError(ex))
+                    {
+                        _serviceHasCriticalError = true;
+                        _criticalErrorMessage = $"Error crítico en procesamiento: {ex.Message}";
+                        _logger.LogCritical("Servicio pausado debido a error irrecuperable: {ErrorMessage}", ex.Message);
+                        return;
+                    }
 
-                    // Solo para errores recuperables, movemos a la cola de reintentos
+                    if (retryCount < MaxRetries)
+                    {
+                        await Task.Delay(RetryDelay);
+                        continue; // Reintentar
+                    }
+
+                    // Agotados los reintentos — mover a cola de reintentos
+                    _logger.LogWarning("Batch fallido después de {MaxRetries} reintentos. Moviendo a cola de reintentos.", MaxRetries);
                     foreach (var op in batch)
                     {
-                        // Notificamos el fallo temporal
                         await _eventAggregator.PublishOnUIThreadAsync(
-                            new OperationCompletedMessage(
-                                op.OperationId,
-                                false,
-                                op.DisplayName,
-                                ex
-                            )
+                            new OperationCompletedMessage(op.OperationId, false, op.DisplayName, ex)
                         );
-
                         await _retryQueue.Writer.WriteAsync(op, _cts.Token);
                     }
                 }
@@ -581,17 +571,14 @@ namespace NetErp.Helpers.Services
                 bool isIrrecoverable = !IsRecoverableError(ex);
                 if (isIrrecoverable && responseType != null)
                 {
-                    // Send critical message to block the affected module
-                    string userMessage = $"A critical system error has been detected that prevents continuation.\n\n" +
-                                       $"Error: {ex.Message}\n\n" +
-                                       $"Please contact technical support.";
-                    
                     await _eventAggregator.PublishOnUIThreadAsync(
                         new CriticalSystemErrorMessage(
                             responseType,
                             nameof(BackgroundQueueService),
-                            ex.Message, 
-                            userMessage
+                            ex.Message,
+                            $"El servicio de procesamiento en segundo plano ha detectado un error crítico.\n\n" +
+                            $"Detalle: {ex.Message}\n\n" +
+                            $"Comuníquese con soporte técnico."
                         )
                     );
                 }
@@ -655,31 +642,32 @@ namespace NetErp.Helpers.Services
         /// </summary>
         /// <param name="ex">The exception to classify</param>
         /// <returns>True if the error is recoverable and should be retried, false for critical errors</returns>
+        /// <summary>
+        /// Clasifica errores por tipo de excepción.
+        /// Solo los errores de infraestructura del servicio (reflexión, configuración) son irrecuperables.
+        /// Los errores de red, API o datos se consideran recuperables y se reintentan.
+        /// </summary>
         private bool IsRecoverableError(Exception ex)
         {
-            // Network/connectivity errors - recoverable
-            if (ex is HttpRequestException || 
-                ex is TaskCanceledException ||
-                ex is TimeoutException ||
-                ex.Message.Contains("network", StringComparison.OrdinalIgnoreCase) ||
-                ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
-                ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            // Code/reflection/configuration errors - unrecoverable
-            if (ex is InvalidOperationException ||
-                ex is ArgumentException ||
-                ex is NotSupportedException ||
+            // Errores de infraestructura del servicio — irrecuperables
+            // Indican un problema de configuración o código, no de red/datos
+            if (ex is System.Reflection.TargetInvocationException ||
                 ex is System.Reflection.TargetParameterCountException ||
-                ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
-                ex.Message.Contains("method", StringComparison.OrdinalIgnoreCase))
+                ex is MissingMethodException ||
+                ex is MissingMemberException ||
+                ex is NotSupportedException)
             {
                 return false;
             }
 
-            // By default, consider unknown errors as recoverable
+            // InvalidOperationException solo es irrecuperable si viene del propio servicio
+            // (ej: "Repository for type X not found", "Method Y not found")
+            if (ex is InvalidOperationException && ex.Source == typeof(BackgroundQueueService).Assembly.GetName().Name)
+            {
+                return false;
+            }
+
+            // Todo lo demás es recuperable: errores de red, API, GraphQL, datos, timeouts
             return true;
         }
 
@@ -700,6 +688,14 @@ namespace NetErp.Helpers.Services
         public string GetCriticalErrorMessage()
         {
             return _criticalErrorMessage;
+        }
+
+        /// <inheritdoc/>
+        public void ResetCriticalError()
+        {
+            _serviceHasCriticalError = false;
+            _criticalErrorMessage = string.Empty;
+            _logger.LogInformation("Estado de error crítico reseteado. El servicio acepta operaciones nuevamente.");
         }
 
         /// <summary>

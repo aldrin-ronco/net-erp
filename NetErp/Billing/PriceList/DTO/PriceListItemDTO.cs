@@ -1,4 +1,6 @@
 ﻿using Caliburn.Micro;
+using Models.Billing;
+using Models.Books;
 using Models.Inventory;
 using NetErp.Billing.PriceList.ViewModels;
 using System.Buffers;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace NetErp.Billing.PriceList.DTO
 {
-    public class PriceListDetailDTO : PropertyChangedBase
+    public class PriceListItemDTO : PropertyChangedBase
     {
         private ItemGraphQLModel _catalogItem = new();
         public ItemGraphQLModel Item
@@ -34,6 +36,7 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _cost = value;
                     NotifyOfPropertyChange(nameof(Cost));
+                    NotifyOfPropertyChange(nameof(Profit));
                 }
             }
         }
@@ -48,23 +51,19 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _profitMargin = value;
                     NotifyOfPropertyChange(nameof(ProfitMargin));
+                    NotifyOfPropertyChange(nameof(Profit));
                     if (!_suppressNotifications) Context?.AddModifiedProduct(this, nameof(ProfitMargin));
                 }
             }
         }
 
-        private decimal _profit;
-
         public decimal Profit
         {
-            get { return _profit; }
-            set
+            get
             {
-                if (_profit != value)
-                {
-                    _profit = value;
-                    NotifyOfPropertyChange(nameof(Profit));
-                }
+                if (Cost == 0) return 0;
+                decimal priceWithoutDiscount = Cost / (1 - ProfitMargin / 100);
+                return priceWithoutDiscount - Cost;
             }
         }
 
@@ -184,7 +183,7 @@ namespace NetErp.Billing.PriceList.DTO
             });
         }
 
-        public PriceListDetailDTO()
+        public PriceListItemDTO()
         {
         }
 
@@ -203,9 +202,6 @@ namespace NetErp.Billing.PriceList.DTO
                     case nameof(MinimumPrice):
                         MinimumPrice = (decimal)value;
                         break;
-                    case nameof(Profit):
-                        Profit = (decimal)value;
-                        break;
                     case nameof(ProfitMargin):
                         ProfitMargin = (decimal)value;
                         break;
@@ -220,17 +216,16 @@ namespace NetErp.Billing.PriceList.DTO
             }
         }
 
-        private decimal _iva;
         public decimal IVA
         {
-            get { return _iva; }
-            set
+            get
             {
-                if (_iva != value)
-                {
-                    _iva = value;
-                    NotifyOfPropertyChange(nameof(IVA));
-                }
+                if (Item?.AccountingGroup is null) return -1;
+                var primaryTax = Item.AccountingGroup.SalesPrimaryTax;
+                var secondaryTax = Item.AccountingGroup.SalesSecondaryTax;
+                if (primaryTax?.TaxCategory?.Prefix == "IVA") return primaryTax.Rate;
+                if (secondaryTax?.TaxCategory?.Prefix == "IVA") return secondaryTax.Rate;
+                return -1;
             }
         }
 
@@ -254,6 +249,21 @@ namespace NetErp.Billing.PriceList.DTO
         }
 
 
+        public void ResolveCost(PriceListGraphQLModel priceList)
+        {
+            if (Item?.Stocks is null || !Item.Stocks.Any()) return;
+
+            if (priceList.CostMode == "COST_BY_STORAGE" && priceList.Storage != null)
+            {
+                var stock = Item.Stocks.FirstOrDefault(s => s.Storage?.Id == priceList.Storage.Id);
+                if (stock != null) Cost = stock.Cost;
+            }
+            else // USE_AVERAGE_COST
+            {
+                var stockWithAvg = Item.Stocks.FirstOrDefault();
+                if (stockWithAvg != null) Cost = stockWithAvg.AverageCost;
+            }
+        }
     }
 
     public enum OperationStatus

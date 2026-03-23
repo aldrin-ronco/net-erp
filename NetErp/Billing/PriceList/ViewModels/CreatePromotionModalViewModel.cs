@@ -7,6 +7,7 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Models.Billing;
 using NetErp.Helpers;
+using static Models.Global.GraphQLResponseTypes;
 using Ninject;
 using Services.Billing.DAL.PostgreSQL;
 using System;
@@ -23,10 +24,11 @@ using System.Windows.Threading;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class CreatePromotionModalViewModel<TModel>: Screen, INotifyDataErrorInfo
+    public class CreatePromotionModalViewModel : Screen, INotifyDataErrorInfo
     {
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IEventAggregator _eventAggregator;
         Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
 
@@ -154,9 +156,15 @@ namespace NetErp.Billing.PriceList.ViewModels
                 variables.Data.PriceListIncludeTax = true; //capture the value from the UI
                 variables.Data.UseAlternativeFormula = false; //capture the value from the UI
                 variables.Data.StorageId = 0; //capture the value from the UI
-                var result = await _priceListService.CreateAsync(query, variables);
+                var result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
-                Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(new PriceListCreateMessage { CreatedPriceList = result });
                 await _dialogService.CloseDialogAsync(this, true);
             }
             catch (Exception ex)
@@ -206,12 +214,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 		public CreatePromotionModalViewModel(
-			Helpers.IDialogService dialogService, 
+			Helpers.IDialogService dialogService,
+			IEventAggregator eventAggregator,
 			PriceListGraphQLModel parentPriceList,
 			IRepository<PriceListGraphQLModel> priceListService)
 		{
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
+            _eventAggregator = eventAggregator;
             ParentPriceList = parentPriceList;
             _priceListService = priceListService;
         }

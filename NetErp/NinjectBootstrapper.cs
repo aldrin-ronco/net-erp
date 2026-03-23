@@ -114,6 +114,9 @@ namespace NetErp
             _ = kernel.Bind<StorageCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StorageCache>());
 
+            _ = kernel.Bind<PaymentMethodCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<PaymentMethodCache>());
+
             _ = kernel.Bind<IdentificationTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<IdentificationTypeCache>());
 
@@ -216,8 +219,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<MeasurementUnitGraphQLModel>>().To<GraphQLRepository<MeasurementUnitGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CreditLimitGraphQLModel>>().To<GraphQLRepository<CreditLimitGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CustomerGraphQLModel>>().To<GraphQLRepository<CustomerGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<PriceListDetailGraphQLModel>>().To<GraphQLRepository<PriceListDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PriceListItemGraphQLModel>>().To<GraphQLRepository<PriceListItemGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<PriceListGraphQLModel>>().To<GraphQLRepository<PriceListGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<PaymentMethodGraphQLModel>>().To<GraphQLRepository<PaymentMethodGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<StorageGraphQLModel>>().To<GraphQLRepository<StorageGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<ItemGraphQLModel>>().To<GraphQLRepository<ItemGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<TempRecordGraphQLModel>>().To<GraphQLRepository<TempRecordGraphQLModel>>().InSingletonScope();
@@ -440,7 +444,7 @@ namespace NetErp
                     .ForMember(dest => dest.AccountingAccountCode, opt => opt.MapFrom(src => src.AccountingAccount.Code))
                     .ForMember(dest => dest.AccountingAccountName, opt => opt.MapFrom(src => src.AccountingAccount.Name));
                 _ = cfg.CreateMap<AccountingAccountGroupDetailGraphQLModel, AccountingAccountGroupDetailDTO>();
-                _ = cfg.CreateMap<PriceListDetailGraphQLModel, PriceListDetailDTO>();
+                _ = cfg.CreateMap<PriceListItemGraphQLModel, PriceListItemDTO>();
                 _ = cfg.CreateMap<PaymentMethodGraphQLModel, PaymentMethodPriceListDTO>();
                 _ = cfg.CreateMap<ParameterGraphQLModel, DynamicControlModel>();
                 _ = cfg.CreateMap<ItemGraphQLModel, PromotionCatalogItemDTO>();

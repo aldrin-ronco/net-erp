@@ -25,10 +25,11 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
-    public class CreatePriceListModalViewModel<TModel> : Screen, INotifyDataErrorInfo
+    public class CreatePriceListModalViewModel : Screen, INotifyDataErrorInfo
     {
 
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IEventAggregator _eventAggregator;
         Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly StorageCache _storageCache;
@@ -271,9 +272,15 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 string query = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                var result = await _priceListService.CreateAsync(query, variables);
+                var result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
-                Messenger.Default.Send(message: new ReturnedDataFromCreatePriceListModalViewMessage<TModel>() { ReturnedData = result }, token: "CreatePriceList");
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                    return;
+                }
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(new PriceListCreateMessage { CreatedPriceList = result });
                 await _dialogService.CloseDialogAsync(this, true);
             }
             catch (Exception ex)
@@ -383,12 +390,14 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public CreatePriceListModalViewModel(
             Helpers.IDialogService dialogService,
+            IEventAggregator eventAggregator,
             IRepository<PriceListGraphQLModel> priceListService,
             StorageCache storageCache,
             CostCenterCache costCenterCache)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
+            _eventAggregator = eventAggregator;
             _priceListService = priceListService;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
@@ -501,17 +510,5 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         USE_AVERAGE_COST,
         COST_BY_STORAGE
-    }
-
-    public class InitializeDataContext
-    {
-        public IEnumerable<StorageGraphQLModel> Storages { get; set; } = [];
-        public IEnumerable<CostCenterGraphQLModel> CostCenters { get; set; } = [];
-        public IEnumerable<PaymentMethodGraphQLModel> PaymentMethods { get; set; } = [];
-    }
-
-    public class ReturnedDataFromCreatePriceListModalViewMessage<TModel>
-    {
-        public TModel? ReturnedData { get; set; }
     }
 }
