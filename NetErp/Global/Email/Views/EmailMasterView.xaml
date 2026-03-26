@@ -106,7 +106,7 @@
 
                     <dxg:GridColumn Header="Smtp" HorizontalHeaderContentAlignment="Center" Width="*"
                                     VisibleIndex="2"
-                                    Binding="{Binding Smtp, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Binding="{Binding Smtp.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     AllowSorting="False"/>
 
                 <dxg:GridColumn HorizontalHeaderContentAlignment="Center" Width="30" AllowSorting="False">

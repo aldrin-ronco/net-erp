@@ -100,21 +100,22 @@
                     <!-- Descripción -->
                     <TextBlock Text="Descripción" Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     <dxe:TextEdit Grid.Row="3" Width="300"
-                                  Text="{Binding EmailDescription, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   CharacterCasing="Upper"
                                   Margin="0 0 0 30"/> 
 
                     <!-- Correo Electrónico -->
                     <TextBlock Text="Correo electrónico" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     <dxe:TextEdit Grid.Row="5" Width="300"
-                                  Text="{Binding EmailEmail, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                  Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   Margin="0 0 0 30"/>
 
                     <!-- Contraseña -->
                     <TextBlock Text="Contraseña" Grid.Row="6" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     <dxe:PasswordBoxEdit Grid.Row="7" Width="300"
-                                         Password="{Binding EmailPassword, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                         ShowPasswordButtonVisibility="Auto"
+                                         NullText="{Binding PasswordPlaceholder}"
+                                         Password="{Binding Password, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                         ShowPasswordButtonVisibility="Always"
                                          Margin="0 0 0 30"/>
                 </Grid>
             </Grid>

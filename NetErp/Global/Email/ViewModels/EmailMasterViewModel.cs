@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
@@ -18,6 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.EmailGraphQLModel;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Email.ViewModels
 {
@@ -138,77 +140,66 @@ namespace NetErp.Global.Email.ViewModels
         {
             try
             {
+
                 IsBusy = true;
-                string query;
-                query = @"
-                query($filter: EmailFilterInput!){
-                  ListResponse: emails(filter: $filter){
-                    id
-                    description
-                    password
-                    email
-                    smtp{
-                      id
-                      name
-                      host
-                      port
-                    }
-                   }                  
-                }";
 
                 dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                variables.pageResponseFilters = new ExpandoObject();
+                variables.pageResponseFilters.matching = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
 
-                variables.filter.and = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
+                string query = GetLoadEmailQuery();
 
-                variables.filter.and[0].isCorporate = new ExpandoObject();
-                variables.filter.and[0].isCorporate.@operator = "=";
-                variables.filter.and[0].isCorporate.value = true;
-
-
-                variables.filter.and[1].or = new ExpandoObject[]
-                {
-                    new(),
-                    new()
-                };
-
-                variables.filter.and[1].or[0].email = new ExpandoObject();
-                variables.filter.and[1].or[0].email.@operator = "like";
-                variables.filter.and[1].or[0].email.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.and[1].or[1].description = new ExpandoObject();
-                variables.filter.and[1].or[1].description.@operator = "like";
-                variables.filter.and[1].or[1].description.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-
-                var result = await _emailService.GetListAsync(query, variables);
-                Emails = new ObservableCollection<EmailGraphQLModel>(result);       
+                PageType<EmailGraphQLModel> result = await _emailService.GetPageAsync(query, variables);
+                this.Emails = [.. result.Entries];
             }
             catch (GraphQLHttpRequestException exGraphQL)
             {
                 GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{currentMethod.Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
                 IsBusy = false;
             }
+
+          
+        }
+        public string GetLoadEmailQuery()
+        {
+            var EmailFields = FieldSpec<PageType<EmailGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.Email)
+                   .Select(e => e.Smtp, acc => acc 
+                   .Field (x => x.Name)
+                   .Field(x => x.Host)
+                   .Field(x => x.Port)
+                   .Field(x => x.Id)
+                   )
+
+                    )
+                .Build();
+
+            var EmailParameters = new GraphQLQueryParameter("filters", "EmailFilters");
+
+            var EmailFragment = new GraphQLQueryFragment("emailsPage", [EmailParameters], EmailFields, "PageResponse");
+
+            var builder = new GraphQLQueryBuilder([EmailFragment]);
+
+            return builder.GetQuery();
         }
         public async Task EditEmail() 
         {
             try
             {
                 IsBusy = true;
-                await Context.ActivateDetailViewForEdit(SelectedItem ?? new());
+                if(SelectedItem != null)   await Context.ActivateDetailViewForEditAsync(SelectedItem.Id);
             }
             catch (Exception ex)
             {
@@ -226,62 +217,50 @@ namespace NetErp.Global.Email.ViewModels
         {
             try
             {
-                IsBusy = true;
-                string id = SelectedItem!.Id;
 
-                string query = @"query($id:String!){
-                  CanDeleteModel: canDeleteEmail(id: $id){
-                    canDelete
-                    message
-                  }
-                }";
-                var variables = new
-                {
-                    Id = id
-                };
+                this.IsBusy = true;
+                this.Refresh();
+
+                string query = GetCanDeleteEmailQuery();
+
+                object variables = new { canDeleteResponseId = SelectedItem.Id };
+
                 var validation = await _emailService.CanDeleteAsync(query, variables);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar el registro {SelectedItem.Description}?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
+                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "El registro no puede ser eliminado" +
-                    (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
+                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
-                this.IsBusy = true;
 
-                Refresh();
+                IsBusy = true;
+                DeleteResponseType deletedEmail = await Task.Run(() => this.ExecuteDeleteEmailAsync(SelectedItem.Id));
 
-                EmailGraphQLModel deletedEmail = await ExecuteDeleteEmailAsync(id);
+                if (!deletedEmail.Success)
+                {
+                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedEmail.Message} \n\n Verifica la información e intenta más tarde.");
+                    return;
+                }
 
-                await Context.EventAggregator.PublishOnUIThreadAsync(new EmailDeleteMessage() { DeleteEmail = deletedEmail });
+                await Context.EventAggregator.PublishOnUIThreadAsync(new EmailDeleteMessage { DeletedEmail = deletedEmail });
 
                 NotifyOfPropertyChange(nameof(CanDeleteEmail));
             }
-
             catch (GraphQLHttpRequestException exGraphQL)
             {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
+                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteCustomer" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
             }
             finally
             {
@@ -293,7 +272,7 @@ namespace NetErp.Global.Email.ViewModels
             try
             {
                 IsBusy = true;
-                await Context.ActivateDetailViewForNew();
+                await Context.ActivateDetailViewForNewAsync();
             }
             catch (Exception ex)
             {
@@ -308,35 +287,67 @@ namespace NetErp.Global.Email.ViewModels
                 IsBusy = false;
             }
         }
-        public async Task<EmailGraphQLModel> ExecuteDeleteEmailAsync(string id)
+        public async Task<DeleteResponseType> ExecuteDeleteEmailAsync(int id)
         {
             try
             {
-                string query = @"mutation($id:String!){
-                  DeleteResponse: deleteEmail(id: $id){
-                    id
-                    description
-                    email
-                  }
-                }";
 
-                object variables = new { Id = id };
-                var result = await _emailService.DeleteAsync(query, variables);
-                return result;
+                string query = GetDeleteEmailQuery();
+
+                object variables = new
+                {
+                    deleteResponseId = id
+                };
+
+                // Eliminar registros
+                DeleteResponseType deletedRecord = await _emailService.DeleteAsync<DeleteResponseType>(query, variables);
+                return deletedRecord;
             }
             catch (Exception)
             {
                 throw;
             }
         }
+        public string GetDeleteEmailQuery()
+        {
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
 
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("deleteEmail", [parameter], fields, alias: "DeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+        }
+        public string GetCanDeleteEmailQuery()
+        {
+            var fields = FieldSpec<CanDeleteType>
+                .Create()
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("id", "ID!");
+
+            var fragment = new GraphQLQueryFragment("canDeleteEmail", [parameter], fields, alias: "CanDeleteResponse");
+
+            var builder = new GraphQLQueryBuilder([fragment]);
+
+            return builder.GetQuery();
+        }
 
         public async Task HandleAsync(EmailUpdateMessage message, CancellationToken cancellationToken)
         {
             try
             {
                 await LoadEmailsAsync();
-                _notificationService.ShowSuccess("Correo corporativo actualizado correctamente.");
+                _notificationService.ShowSuccess(message.UpdatedEmail.Message);
                 return;
             }
             catch (Exception)
@@ -350,7 +361,7 @@ namespace NetErp.Global.Email.ViewModels
             try
             {
                 await LoadEmailsAsync();
-                _notificationService.ShowSuccess("Correo corporativo creado correctamente.");
+                _notificationService.ShowSuccess(message.CreatedEmail.Message);
                 return;
             }
             catch (Exception)
@@ -364,7 +375,7 @@ namespace NetErp.Global.Email.ViewModels
             try
             {
                 await LoadEmailsAsync();
-                _notificationService.ShowSuccess("Correo corporativo eliminado correctamente.");
+                _notificationService.ShowSuccess(message.DeletedEmail.Message);
                 return;
             }
             catch (Exception)
