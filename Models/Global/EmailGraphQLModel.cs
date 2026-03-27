@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace Models.Global
 {
     public class EmailGraphQLModel
     {
-        public string Id { set; get; }
+        public int Id { set; get; }
         public string Description { set; get; } = string.Empty;
         public string Email { set; get; } = string.Empty;
         public string Password { set; get; } = string.Empty;
@@ -23,19 +24,18 @@ namespace Models.Global
 
         public class EmailDeleteMessage
         {
-            public EmailGraphQLModel DeleteEmail;
 
-            public EmailGraphQLModel DeletedEmail { set; get; } = new EmailGraphQLModel();
+            public DeleteResponseType DeletedEmail { set; get; } = new();
         }
 
         public class EmailCreateMessage
         {
-            public EmailGraphQLModel CreatedEmail { set; get; } = new EmailGraphQLModel();
+            public UpsertResponseType<EmailGraphQLModel> CreatedEmail { set; get; } = new();
         }
 
         public class EmailUpdateMessage
         {
-            public EmailGraphQLModel UpdatedEmail { set; get; } = new EmailGraphQLModel();
+            public UpsertResponseType<EmailGraphQLModel> UpdatedEmail { set; get; } = new();
         }         
 
     }

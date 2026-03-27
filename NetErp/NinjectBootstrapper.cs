@@ -186,6 +186,10 @@ namespace NetErp
             _ = kernel.Bind<StringLengthCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StringLengthCache>());
 
+            _ = kernel.Bind<SmtpCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<SmtpCache>());
+            
+
             //_ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             //_ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();
             //_ = kernel.Bind<IGenericDataAccess<SellerGraphQLModel>>().To<SellerService>().InSingletonScope();
@@ -214,9 +218,9 @@ namespace NetErp
             //_ = kernel.Bind<IGenericDataAccess<PriceListDetailGraphQLModel>>().To<PriceListDetailService>().InSingletonScope();
             //_ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceGraphQLModel>>().To<AuthorizationSequenceService>().InSingletonScope();
             //_ = kernel.Bind<IGenericDataAccess<AuthorizationSequenceTypeGraphQLModel>>().To<AuthorizationSequenceTypeService>().InSingletonScope();
-          
+
             //_ = kernel.Bind<IGenericDataAccess<ParameterGraphQLModel>>().To<ParameterService>().InSingletonScope();
-            
+
             // New GraphQL Infrastructure
             // Nueva estructura de servicios e inyección de dependencias
             // IRepository reemplaza IGenericDataAccess
