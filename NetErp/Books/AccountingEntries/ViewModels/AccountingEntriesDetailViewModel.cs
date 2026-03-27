@@ -43,6 +43,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         IHandle<AccountingAccountDeleteMessage>,
         IHandle<CostCenterCreateMessage>
     {
+        private readonly IGraphQLClient _graphQLClient;
         private readonly CostCenterCache _costCenterCache;
         private readonly AccountingBookCache _accountingBookCache;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
@@ -865,12 +866,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-               _costCenterCache.EnsureLoadedAsync(),
-               _accountingBookCache.EnsureLoadedAsync(),
-                _notAnnulledAccountingSourceCache.EnsureLoadedAsync(),
-                _auxiliaryAccountingAccountCache.EnsureLoadedAsync()
-               );
+            await CacheBatchLoader.LoadAsync(
+               _graphQLClient, default,
+               _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _auxiliaryAccountingAccountCache);
             CostCenters = [.. _costCenterCache.Items];
             this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
@@ -884,8 +882,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             
         }
 
-        public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context, 
-            IRepository<AccountingEntryGraphQLModel>accountingEntryMasterService, 
+        public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context,
+            IRepository<AccountingEntryGraphQLModel>accountingEntryMasterService,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
             IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
             IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
@@ -893,7 +891,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
-             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache)
+             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+             IGraphQLClient graphQLClient)
         {
             this.Context = context;
             _costCenterCache = costCenterCache;
@@ -905,6 +904,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
             this._accountingAccountService = accountingAccountService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _graphQLClient = graphQLClient;
 
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
             

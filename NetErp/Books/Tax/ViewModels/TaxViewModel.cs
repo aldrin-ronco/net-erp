@@ -29,6 +29,7 @@ namespace NetErp.Books.Tax.ViewModels
         private readonly IRepository<TaxGraphQLModel> _taxService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCategoryCache _taxCategoryCache;
         private readonly StringLengthCache _stringLengthCache;
@@ -232,7 +233,8 @@ namespace NetErp.Books.Tax.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             TaxCategoryCache taxCategoryCache,
             StringLengthCache stringLengthCache,
-            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory)
+            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _eventAggregator = eventAggregator;
             _taxService = taxService;
@@ -242,6 +244,7 @@ namespace NetErp.Books.Tax.ViewModels
             _taxCategoryCache = taxCategoryCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -287,7 +290,7 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory);
+                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -314,7 +317,7 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory);
+                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedTax.Id);
                 detail.SetForEdit();

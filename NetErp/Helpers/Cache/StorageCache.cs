@@ -3,6 +3,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json.Linq;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
@@ -13,7 +14,7 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class StorageCache : IEntityCache<StorageGraphQLModel>,
+    public class StorageCache : IEntityCache<StorageGraphQLModel>, IBatchLoadableCache,
         IHandle<StorageCreateMessage>,
         IHandle<StorageUpdateMessage>,
         IHandle<StorageDeleteMessage>
@@ -79,6 +80,31 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
+
+        #region IBatchLoadableCache
+
+        public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
+
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
+        {
+            variables.For(batchFragment, "pagination", new { PageSize = -1 });
+        }
+
+        public void PopulateFromBatchResponse(JToken data)
+        {
+            var page = data.ToObject<PageType<StorageGraphQLModel>>();
+            if (page == null) return;
+
+            lock (_lock)
+            {
+                _items.Clear();
+                foreach (var item in page.Entries)
+                    _items.Add(item);
+                IsInitialized = true;
+            }
+        }
+
+        #endregion
 
         public void Clear()
         {

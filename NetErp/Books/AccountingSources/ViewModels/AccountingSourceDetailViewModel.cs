@@ -29,6 +29,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
@@ -356,13 +357,15 @@ namespace NetErp.Books.AccountingSources.ViewModels
             IEventAggregator eventAggregator,
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             ProcessTypeCache processTypeCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _accountingSourceService = accountingSourceService;
             _eventAggregator = eventAggregator;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _processTypeCache = processTypeCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
         }
 
         #endregion
@@ -371,10 +374,9 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-                _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
-                _processTypeCache.EnsureLoadedAsync()
-            );
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient, default,
+                _auxiliaryAccountingAccountCache, _processTypeCache);
 
             AuxiliaryAccountingAccounts = [.. _auxiliaryAccountingAccountCache.Items];
             ProcessTypes = [.. _processTypeCache.Items];

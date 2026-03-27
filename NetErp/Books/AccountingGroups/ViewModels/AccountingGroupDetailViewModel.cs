@@ -27,6 +27,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         private readonly IRepository<AccountingGroupGraphQLModel> _accountingGroupService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCache _taxCache;
         private readonly StringLengthCache _stringLengthCache;
@@ -560,7 +561,8 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             TaxCache taxCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _accountingGroupService = accountingGroupService;
             _eventAggregator = eventAggregator;
@@ -568,6 +570,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             _taxCache = taxCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
         }
 
         #endregion
@@ -576,9 +579,9 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-                _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
-                _taxCache.EnsureLoadedAsync());
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient, default,
+                _auxiliaryAccountingAccountCache, _taxCache);
 
             AuxiliaryAccounts = [.. _auxiliaryAccountingAccountCache.Items];
             PurchasePrimaryTaxes = [.. _taxCache.Items];

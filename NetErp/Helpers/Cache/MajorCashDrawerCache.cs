@@ -3,6 +3,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using Models.Treasury;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json.Linq;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
@@ -17,7 +18,7 @@ namespace NetErp.Helpers.Cache
     /// Cache para cajas generales (no caja menor).
     /// Solo incluye CashDrawers donde IsPettyCash = false.
     /// </summary>
-    public class MajorCashDrawerCache : IEntityCache<CashDrawerGraphQLModel>,
+    public class MajorCashDrawerCache : IEntityCache<CashDrawerGraphQLModel>, IBatchLoadableCache,
         IHandle<TreasuryCashDrawerCreateMessage>,
         IHandle<TreasuryCashDrawerUpdateMessage>,
         IHandle<TreasuryCashDrawerDeleteMessage>
@@ -85,6 +86,32 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
+
+        #region IBatchLoadableCache
+
+        public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
+
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
+        {
+            variables.For(batchFragment, "pagination", new { PageSize = -1 });
+            variables.For(batchFragment, "filters", new { isPettyCash = false });
+        }
+
+        public void PopulateFromBatchResponse(JToken data)
+        {
+            var page = data.ToObject<PageType<CashDrawerGraphQLModel>>();
+            if (page == null) return;
+
+            lock (_lock)
+            {
+                _items.Clear();
+                foreach (var item in page.Entries)
+                    _items.Add(item);
+                IsInitialized = true;
+            }
+        }
+
+        #endregion
 
         public void Clear()
         {

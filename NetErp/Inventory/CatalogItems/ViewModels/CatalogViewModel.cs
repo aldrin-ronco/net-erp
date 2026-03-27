@@ -26,6 +26,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
 
         // Caches
+        private readonly IGraphQLClient _graphQLClient;
         private readonly MeasurementUnitCache _measurementUnitCache;
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
@@ -52,7 +53,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _itemBrandCache,
                     _accountingGroupCache,
                     _itemSizeCategoryCache,
-                    _stringLengthCache);
+                    _stringLengthCache,
+                    _graphQLClient);
                 return _catalogRootMasterViewModel;
             }
         }
@@ -87,7 +89,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
             ItemSizeCategoryCache itemSizeCategoryCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            IGraphQLClient graphQLClient)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -104,6 +107,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
             _stringLengthCache = stringLengthCache;
+            _graphQLClient = graphQLClient;
             Task.Run(ActivateMasterView);
         }
 

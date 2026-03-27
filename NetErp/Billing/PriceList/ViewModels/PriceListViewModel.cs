@@ -32,6 +32,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
@@ -42,14 +43,14 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get 
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache);
+                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _graphQLClient);
                 return _priceListMasterViewModel; 
             }
         }
 
 
         public PriceListViewModel(
-            IMapper autoMapper, 
+            IMapper autoMapper,
             IEventAggregator eventAggregator,
             IRepository<PriceListItemGraphQLModel> priceListItemService,
             IBackgroundQueueService backgroundQueueService,
@@ -62,7 +63,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<TempRecordGraphQLModel> tempRecordService,
             StorageCache storageCache,
             CostCenterCache costCenterCache,
-            PaymentMethodCache paymentMethodCache)
+            PaymentMethodCache paymentMethodCache,
+            IGraphQLClient graphQLClient)
         {
             AutoMapper = autoMapper;
             EventAggregator = eventAggregator;
@@ -78,6 +80,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _graphQLClient = graphQLClient;
         }
 
         protected override async void OnViewReady(object view)

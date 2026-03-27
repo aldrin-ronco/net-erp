@@ -32,6 +32,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IEventAggregator _eventAggregator;
         Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
 
@@ -308,10 +309,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                await Task.WhenAll(
-                    _storageCache.EnsureLoadedAsync(),
-                    _costCenterCache.EnsureLoadedAsync()
-                );
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, default,
+                    _storageCache, _costCenterCache);
                 Storages = [.. _storageCache.Items];
                 CostCenters = [.. _costCenterCache.Items];
                 RefreshCostCenters();
@@ -394,7 +394,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IEventAggregator eventAggregator,
             IRepository<PriceListGraphQLModel> priceListService,
             StorageCache storageCache,
-            CostCenterCache costCenterCache)
+            CostCenterCache costCenterCache,
+            IGraphQLClient graphQLClient)
         {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
@@ -402,6 +403,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _priceListService = priceListService;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
+            _graphQLClient = graphQLClient;
         }
 
         protected override void OnViewReady(object view)

@@ -28,6 +28,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly NetErp.Helpers.IDialogService _dialogService;
         private readonly INotificationService _notificationService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly BankAccountCache _bankAccountCache;
@@ -52,7 +53,8 @@ namespace NetErp.Treasury.Masters.ViewModels
                         _auxiliaryAccountingAccountCache,
                         _costCenterCache,
                         _bankAccountCache,
-                        _majorCashDrawerCache);
+                        _majorCashDrawerCache,
+                        _graphQLClient);
                 return _treasuryRootMasterViewModel;
             }
         }
@@ -71,7 +73,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             CostCenterCache costCenterCache,
             BankAccountCache bankAccountCache,
-            MajorCashDrawerCache majorCashDrawerCache)
+            MajorCashDrawerCache majorCashDrawerCache,
+            IGraphQLClient graphQLClient)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
@@ -87,6 +90,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             _costCenterCache = costCenterCache;
             _bankAccountCache = bankAccountCache;
             _majorCashDrawerCache = majorCashDrawerCache;
+            _graphQLClient = graphQLClient;
             _ = Task.Run(ActivateMasterView);
         }
 

@@ -30,6 +30,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
         private readonly IRepository<AccountingGroupGraphQLModel> _accountingGroupService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCache _taxCache;
         private readonly StringLengthCache _stringLengthCache;
@@ -217,7 +218,8 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             TaxCache taxCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _eventAggregator = eventAggregator;
             _accountingGroupService = accountingGroupService;
@@ -227,6 +229,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             _taxCache = taxCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -274,7 +277,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 IsBusy = true;
                 var detail = new AccountingGroupDetailViewModel(
                     _accountingGroupService, _eventAggregator, _auxiliaryAccountingAccountCache,
-                    _taxCache, _stringLengthCache, _joinableTaskFactory);
+                    _taxCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -307,7 +310,7 @@ namespace NetErp.Books.AccountingGroups.ViewModels
                 IsBusy = true;
                 var detail = new AccountingGroupDetailViewModel(
                     _accountingGroupService, _eventAggregator, _auxiliaryAccountingAccountCache,
-                    _taxCache, _stringLengthCache, _joinableTaskFactory);
+                    _taxCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedItem.Id);
                 detail.SetForEdit();

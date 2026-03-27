@@ -77,6 +77,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         #endregion
 
         #region Properties
+        private readonly IGraphQLClient _graphQLClient;
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly WithholdingTypeCache _withholdingTypeCache;
         
@@ -1185,7 +1186,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             CountryCache countryCache,
             WithholdingTypeCache withholdingTypeCache,
             StringLengthCache stringLengthCache,
-            IMapper mapper)
+            IMapper mapper,
+            IGraphQLClient graphQLClient)
         {
             _errors = new Dictionary<string, List<string>>();
             _eventAggregator = eventAggregator;
@@ -1196,15 +1198,14 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _countryCache = countryCache;
             _withholdingTypeCache = withholdingTypeCache;
             _stringLengthCache = stringLengthCache;
+            _graphQLClient = graphQLClient;
         }
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-                   _identificationTypeCache.EnsureLoadedAsync(),
-                   _countryCache.EnsureLoadedAsync(),
-                   _withholdingTypeCache.EnsureLoadedAsync()
-               );
+            await CacheBatchLoader.LoadAsync(
+                   _graphQLClient, default,
+                   _identificationTypeCache, _countryCache, _withholdingTypeCache);
             IdentificationTypes = _identificationTypeCache.Items;
             Countries = _countryCache.Items;
             WithholdingTypes = _mapper.Map<ObservableCollection<WithholdingTypeDTO>>(_withholdingTypeCache.Items);
