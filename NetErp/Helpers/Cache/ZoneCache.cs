@@ -3,6 +3,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using Models.Billing;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,7 +14,7 @@ using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 
 namespace NetErp.Helpers.Cache
 {
-    public class ZoneCache : IEntityCache<ZoneGraphQLModel>,
+    public class ZoneCache : IEntityCache<ZoneGraphQLModel>, IBatchLoadableCache,
         IHandle<ZoneCreateMessage>,
         IHandle<ZoneUpdateMessage>,
         IHandle<ZoneDeleteMessage>
@@ -83,6 +84,33 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
+
+        #region IBatchLoadableCache
+
+        public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
+
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
+        {
+            variables.For(batchFragment, "pagination", new { PageSize = -1 });
+        }
+
+        public void PopulateFromBatchResponse(JToken data)
+        {
+            var page = data.ToObject<PageType<ZoneGraphQLModel>>();
+            if (page == null) return;
+
+            lock (_lock)
+            {
+                _items.Clear();
+                foreach (var item in page.Entries)
+                {
+                    _items.Add(item);
+                }
+                IsInitialized = true;
+            }
+        }
+
+        #endregion
 
         public void Clear()
         {

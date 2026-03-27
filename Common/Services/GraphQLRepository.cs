@@ -104,5 +104,17 @@ namespace Common.Services
             var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TResponse>>(query, variables, cancellationToken);
             return response.DeleteResponse;
         }
+
+        public async Task<TModel> BatchAsync(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TModel>>(query, variables, cancellationToken);
+            return response.SingleItemResponse;
+        } 
+
+        public async Task<TResponse> BatchAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default)
+        {
+            var response = await _client.ExecuteMutationAsync<SingleItemResponseType<TResponse>>(query, variables, cancellationToken);
+            return response.SingleItemResponse;
+        }
     }
 }

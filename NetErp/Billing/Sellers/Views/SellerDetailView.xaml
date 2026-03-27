@@ -261,10 +261,11 @@
                                               MaxLength="{Binding AddressMaxLength}"
                                               Padding="3" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
 
-                                <!-- Vendedor activo -->
+                                <!-- Vendedor activo (solo visible en edición) -->
                                 <dxe:CheckEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="12"
                                                IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                Content="Vendedor activo"
+                                               Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"
                                                Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
                             </Grid>
                         </dx:DXTabItem>
@@ -292,6 +293,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
                                             <GridViewColumn Width="auto" Header="Centro de Costo" DisplayMemberBinding="{Binding Path=Name, Mode=OneWay}"/>
+                                            <GridViewColumn Width="auto" Header="Agrupación" DisplayMemberBinding="{Binding Path=CompanyLocation.Name, Mode=OneWay}"/>
                                         </GridView>
                                     </ListView.View>
                                 </ListView>

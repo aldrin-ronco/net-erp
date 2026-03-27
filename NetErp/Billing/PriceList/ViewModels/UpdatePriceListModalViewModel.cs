@@ -15,10 +15,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -53,8 +55,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     _name = value;
                     ValidateProperty(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(Name));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(Name));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -70,8 +72,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _isTaxable = value;
                     NotifyOfPropertyChange(nameof(IsTaxable));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(IsTaxable));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     if (value is false) PriceListIncludeTax = false;
                     RefreshCostCenters();
                 }
@@ -89,8 +91,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _priceListIncludeTax = value;
                     NotifyOfPropertyChange(nameof(PriceListIncludeTax));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(PriceListIncludeTax));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     RefreshCostCenters();
                 }
             }
@@ -107,8 +109,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _useAlternativeFormula = value;
                     NotifyOfPropertyChange(nameof(UseAlternativeFormula));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(UseAlternativeFormula));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -124,8 +126,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _costMode = value;
                     NotifyOfPropertyChange(nameof(CostMode));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(CostMode));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -170,8 +172,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _editablePrice = value;
                     NotifyOfPropertyChange(nameof(EditablePrice));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(EditablePrice));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -187,8 +189,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _autoApplyDiscount = value;
                     NotifyOfPropertyChange(nameof(AutoApplyDiscount));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(AutoApplyDiscount));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -204,8 +206,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _isPublic = value;
                     NotifyOfPropertyChange(nameof(IsPublic));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(IsPublic));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -222,8 +224,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _isActiveFlag = value;
                     NotifyOfPropertyChange(nameof(IsActiveFlag));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(IsActiveFlag));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -284,9 +286,16 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _paymentMethods = value;
                     NotifyOfPropertyChange(nameof(PaymentMethods));
+                    NotifyOfPropertyChange(nameof(ExcludedPaymentMethodIds));
+                    this.TrackChange(nameof(ExcludedPaymentMethodIds));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    ListenPaymentMethodCheck();
                 }
             }
         }
+
+        [ExpandoPath("excludedPaymentMethodIds")]
+        public List<int> ExcludedPaymentMethodIds => PaymentMethods.Where(p => !p.IsChecked).Select(p => p.Id).ToList();
 
         private StorageGraphQLModel? _selectedStorage;
 
@@ -300,8 +309,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedStorage = value;
                     NotifyOfPropertyChange(nameof(SelectedStorage));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(SelectedStorage));
+                    NotifyOfPropertyChange(nameof(CanSave));
                     ValidateStorage();
                 }
             }
@@ -318,8 +327,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedListUpdateBehaviorOnCostChange = value;
                     NotifyOfPropertyChange(nameof(SelectedListUpdateBehaviorOnCostChange));
-                    NotifyOfPropertyChange(nameof(CanSave));
                     this.TrackChange(nameof(SelectedListUpdateBehaviorOnCostChange));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
@@ -516,6 +525,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             this.SeedValue(nameof(CostMode), CostMode);
             this.SeedValue(nameof(SelectedStorage), SelectedStorage);
             this.SeedValue(nameof(SelectedListUpdateBehaviorOnCostChange), SelectedListUpdateBehaviorOnCostChange);
+            this.SeedValue(nameof(ExcludedPaymentMethodIds), ExcludedPaymentMethodIds);
             this.AcceptChanges();
         }
 
@@ -530,10 +540,6 @@ namespace NetErp.Billing.PriceList.ViewModels
                 string query = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
-
-                // Excluded payment methods - always send (inverse logic: unchecked = excluded)
-                // Added manually because it's a computed list, not a simple tracked property
-                variables.updateResponseDataExcludedPaymentMethodIds = PaymentMethods?.Where(p => !p.IsChecked).Select(p => p.Id).ToList();
 
                 var result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
@@ -578,6 +584,39 @@ namespace NetErp.Billing.PriceList.ViewModels
             ShadowCostCenters = [.. CostCenters.Where(x => x.IsTaxable == IsTaxable && x.PriceListIncludeTax == PriceListIncludeTax)];
         }
 
+        private void ListenPaymentMethodCheck()
+        {
+            foreach (var pm in PaymentMethods)
+                pm.PropertyChanged += PaymentMethod_PropertyChanged!;
+
+            PaymentMethods.CollectionChanged += PaymentMethod_CollectionChanged!;
+        }
+
+        private void PaymentMethod_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PaymentMethodPriceListDTO.IsChecked))
+            {
+                this.TrackChange(nameof(ExcludedPaymentMethodIds));
+                NotifyOfPropertyChange(nameof(CanSave));
+            }
+        }
+
+        private void PaymentMethod_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (PaymentMethodPriceListDTO p in e.NewItems)
+                    p.PropertyChanged += PaymentMethod_PropertyChanged!;
+            }
+            if (e.OldItems != null)
+            {
+                foreach (PaymentMethodPriceListDTO p in e.OldItems)
+                    p.PropertyChanged -= PaymentMethod_PropertyChanged!;
+            }
+            this.TrackChange(nameof(ExcludedPaymentMethodIds));
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
         #endregion
 
         #region Lifecycle
@@ -588,6 +627,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                foreach (var pm in PaymentMethods)
+                    pm.PropertyChanged -= PaymentMethod_PropertyChanged!;
+                PaymentMethods.CollectionChanged -= PaymentMethod_CollectionChanged!;
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion

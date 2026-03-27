@@ -11,7 +11,7 @@ using System.Xml.Linq;
 
 namespace NetErp.Global.CostCenters.DTO
 {
-    public class CostCenterDTO : Screen, ICloneable, ICostCentersItems
+    public class CostCenterDTO : PropertyChangedBase, ICloneable, ICostCentersItems
     {
         private int _id;
         public int Id
@@ -401,6 +401,7 @@ namespace NetErp.Global.CostCenters.DTO
                 }
             }
         }
+
         public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; }
         public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; }
 

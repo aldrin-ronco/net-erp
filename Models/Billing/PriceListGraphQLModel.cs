@@ -66,11 +66,11 @@ namespace Models.Billing
 
     public class PriceListDeleteMessage
     {
-        public PriceListGraphQLModel DeletedPriceList { get; set; } = new();
+        public DeleteResponseType DeletedPriceList { get; set; } = new();
     }
 
-    public class PriceListPromotionUpdateMessage
+    public class PriceListArchiveMessage
     {
-        public UpsertResponseType<PriceListGraphQLModel> UpdatedPromotion { get; set; } = new();
+        public UpsertResponseType<PriceListGraphQLModel> ArchivedPriceList { get; set; } = new();
     }
 }

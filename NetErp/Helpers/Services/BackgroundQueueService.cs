@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using Common.Interfaces;
 using Microsoft.Extensions.Logging;
+using Models.Global;
 using NetErp.Helpers.Messages;
 using System;
 using System.Collections.Generic;
@@ -88,7 +89,14 @@ namespace NetErp.Helpers.Services
         /// Takes the collection of extracted items and builds the complete variables
         /// object that will be sent with the BatchQuery.
         /// </summary>
-        public Func<IEnumerable<object>, object> BuildBatchVariables { get; set; } 
+        public Func<IEnumerable<object>, object> BuildBatchVariables { get; set; }
+
+        /// <summary>
+        /// Delegate que ejecuta la mutación batch y retorna la respuesta normalizada.
+        /// Recibe (query, variables, cancellationToken) y retorna BatchResultGraphQLModel.
+        /// El servicio valida success/errors de la respuesta para diferenciar errores de negocio de errores de infraestructura.
+        /// </summary>
+        public Func<string, object, CancellationToken, Task<BatchResultGraphQLModel>> ExecuteBatchAsync { get; set; } = null!;
     }
 
     /// <summary>
@@ -219,9 +227,9 @@ namespace NetErp.Helpers.Services
         private readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
         
         /// <summary>Flag indicating if the service has encountered a critical error</summary>
-        private bool _serviceHasCriticalError = false;
+        private volatile bool _serviceHasCriticalError = false;
         /// <summary>Message describing the current critical error</summary>
-        private string _criticalErrorMessage = string.Empty;
+        private volatile string _criticalErrorMessage = string.Empty;
 
         /// <summary>Storage for pending operations indexed by entity ID for deduplication</summary>
         private readonly Dictionary<int, IDataOperation> _pendingOperationsById = new();
@@ -411,18 +419,26 @@ namespace NetErp.Helpers.Services
 
                     if (retryCount < MaxRetries)
                     {
+                        // Notificar que se está reintentando
+                        foreach (var op in batch)
+                        {
+                            await _eventAggregator.PublishOnUIThreadAsync(
+                                new OperationCompletedMessage(op.OperationId, false, op.DisplayName, ex, isRetrying: true,
+                                    errorDetail: $"Reintentando ({retryCount + 1}/{MaxRetries})...")
+                            );
+                        }
                         await Task.Delay(RetryDelay);
-                        continue; // Reintentar
+                        continue;
                     }
 
-                    // Agotados los reintentos — mover a cola de reintentos
-                    _logger.LogWarning("Batch fallido después de {MaxRetries} reintentos. Moviendo a cola de reintentos.", MaxRetries);
+                    // Agotados los reintentos — notificar fallo definitivo, no reintentar más
+                    _logger.LogWarning("Batch fallido después de {MaxRetries} reintentos.", MaxRetries);
                     foreach (var op in batch)
                     {
                         await _eventAggregator.PublishOnUIThreadAsync(
-                            new OperationCompletedMessage(op.OperationId, false, op.DisplayName, ex)
+                            new OperationCompletedMessage(op.OperationId, false, op.DisplayName, ex,
+                                errorDetail: $"No se pudo guardar después de {MaxRetries} intentos. {ex.Message}")
                         );
-                        await _retryQueue.Writer.WriteAsync(op, _cts.Token);
                     }
                 }
             }
@@ -435,62 +451,40 @@ namespace NetErp.Helpers.Services
         /// <param name="batch">The batch of operations to process</param>
         private async Task ProcessBatch(List<IDataOperation> batch)
         {
-            try
+            // Eliminar duplicados dentro del mismo batch (quedarse con el más reciente por Id)
+            var distinctBatch = batch.GroupBy(op => op.Id).Select(g => g.Last()).ToList();
+
+            // Agrupar por ResponseType para no mezclar datos de distintos módulos
+            var groupedByType = distinctBatch.GroupBy(op => op.ResponseType);
+
+            // Procesar cada grupo de tipo en paralelo
+            var typeTasks = groupedByType.Select(async typeGroup =>
             {
-                // Remove duplicates within the same batch based on operation ID
-                var distinctBatch = batch.GroupBy(op => op.Id).Select(g => g.Last()).ToList();
+                var operations = typeGroup.ToList();
+                var responseType = typeGroup.Key;
 
-                // Group operations by response type for repository resolution
-                var groupedOperations = distinctBatch.GroupBy(op => op.ResponseType);
+                // Dentro de cada tipo, agrupar por tipo de operación (cada tipo puede tener su propia query)
+                var operationGroups = operations.GroupBy(op => op.GetType());
 
-                // Create parallel processing tasks for each response type group
-                var groupTasks = groupedOperations.Select(async group =>
+                var operationTasks = operationGroups.Select(async opGroup =>
                 {
-                    var operations = group.ToList();
-                    var responseType = group.Key;
+                    var opsOfSameType = opGroup.ToList();
+                    var batchInfo = opsOfSameType.First().GetBatchInfo();
 
-                    // Resolve the repository service for this response type
-                    var repositoryType = typeof(IRepository<>).MakeGenericType(responseType);
-                    var repository = _serviceProvider.GetService(repositoryType);
-                    
-                    if (repository == null)
+                    // Dividir en sub-batches si excede el tamaño máximo
+                    for (int i = 0; i < opsOfSameType.Count; i += MaxBatchSize)
                     {
-                        _logger.LogError("Could not obtain repository for type {ResponseTypeName}", responseType.Name);
-                        throw new InvalidOperationException($"Repository for type {responseType.Name} not found in service provider");
+                        var batchSize = Math.Min(MaxBatchSize, opsOfSameType.Count - i);
+                        var batchToProcess = opsOfSameType.GetRange(i, batchSize);
+
+                        await ProcessOperationBatch(batchToProcess, batchInfo, responseType);
                     }
-
-                    // Group by operation type for optimal batch processing
-                    var typeGroups = operations.GroupBy(op => op.GetType());
-
-                    // Process each operation type group in parallel
-                    var typeGroupTasks = typeGroups.Select(async typeGroup =>
-                    {
-                        var opsOfSameType = typeGroup.ToList();
-
-                        // All operations of the same type share the same batch configuration
-                        var batchInfo = opsOfSameType.First().GetBatchInfo();
-
-                        // Split large groups into manageable batch sizes
-                        for (int i = 0; i < opsOfSameType.Count; i += MaxBatchSize)
-                        {
-                            var batchSize = Math.Min(MaxBatchSize, opsOfSameType.Count - i);
-                            var batchToProcess = opsOfSameType.GetRange(i, batchSize);
-
-                            await ProcessOperationBatch(batchToProcess, batchInfo, repositoryType, repository, responseType);
-                        }
-                    });
-
-                    await Task.WhenAll(typeGroupTasks);
                 });
 
-                // Wait for all response type groups to complete processing
-                await Task.WhenAll(groupTasks);
-            }
-            catch
-            {
-                // Re-throw so retry mechanism can handle it
-                throw;
-            }
+                await Task.WhenAll(operationTasks);
+            });
+
+            await Task.WhenAll(typeTasks);
         }
 
         /// <summary>
@@ -505,44 +499,40 @@ namespace NetErp.Helpers.Services
         private async Task ProcessOperationBatch(
             List<IDataOperation> batch,
             BatchOperationInfo batchInfo,
-            Type repositoryType,
-            object repository,
             Type responseType)
         {
             try
             {
-                // Extract and format elements for the batch
                 var batchItems = batch.Select(op => batchInfo.ExtractBatchItem(op.Variables)).ToList();
-
-                // Build variables for the complete batch
                 var batchVariables = batchInfo.BuildBatchVariables(batchItems);
 
-                // Get the batch query
-                var batchQuery = batchInfo.BatchQuery;
+                var response = await batchInfo.ExecuteBatchAsync(batchInfo.BatchQuery, batchVariables, _cts.Token);
 
-                string methodName = "SendMutationListAsync";
-                // Method is SendMutationListAsync for processing batches in IRepository
-                var mutationMethod = repositoryType.GetMethod(methodName);
-                if (mutationMethod == null)
+                if (!response.Success)
                 {
-                    _logger.LogError("Method {MethodName} not found in {repositoryTypeName}", methodName, repositoryType.Name);
-                    throw new InvalidOperationException($"Method {methodName} not found on {repositoryType.Name}");
-                }
+                    // Error de negocio — la API procesó pero rechazó. NO reintentar.
+                    var errorMsg = response.Message ?? "Error de negocio en operación batch";
+                    _logger.LogWarning("Batch rechazado por el servidor: {Message}", errorMsg);
 
-                // Invoke the batch operation
-                var taskObj = mutationMethod.Invoke(
-                    repository,
-                    [batchQuery, batchVariables, _cts.Token]
-                );
-                
-                if (taskObj == null)
-                {
-                    _logger.LogError("Method invocation {MethodName} returned null", methodName);
-                    throw new InvalidOperationException("Method invocation returned null");
-                }
+                    foreach (var op in batch)
+                    {
+                        await _eventAggregator.PublishOnUIThreadAsync(
+                            new OperationCompletedMessage(
+                                op.OperationId,
+                                false,
+                                op.DisplayName,
+                                errorDetail: errorMsg
+                            )
+                        );
 
-                // Wait for the task to complete
-                await (Task)taskObj;
+                        lock (_lockObject)
+                        {
+                            _pendingOperationsById.Remove(op.Id);
+                            _completedOperationsTimestamp[op.Id] = DateTime.UtcNow;
+                        }
+                    }
+                    return;
+                }
 
                 // Notify success to all elements in the batch
                 foreach (var op in batch)

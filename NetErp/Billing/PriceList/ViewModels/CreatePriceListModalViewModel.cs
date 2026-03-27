@@ -299,6 +299,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 if (_errors.Count > 0) return false;
                 if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null) return false;
+                if (!this.HasChanges()) return false;
                 return true;
             }
         }

@@ -23,9 +23,10 @@
         <Grid.Resources>
             <Style x:Key="TabItemStyle" TargetType="dx:DXTabItem">
                 <Setter Property="Header" Value="{Binding DisplayName}"/>
-                <Setter Property="AllowHide" Value="true"/>
+                <Setter Property="AllowHide" Value="True"/>
                 <Setter Property="Content" Value="{Binding}"/>
                 <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Focusable" Value="False"/>
             </Style>
         </Grid.Resources>
         <Grid.RowDefinitions>
@@ -64,8 +65,7 @@
                                 IsBusy="{Binding IsBusy}"
                                 IndicatorType="BouncingDot"
                                 BusyContent="Cargando módulo..."
-                                BusyContentMargin="0,20,0,0"
-                                IsBusyAtStartup="False">
+                                BusyContentMargin="0,20,0,0">
             <dx:DXTabControl     x:Name="Items"
                                  Background="Transparent"
                                  TabContentCacheMode="CacheTabsOnSelecting"

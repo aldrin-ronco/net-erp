@@ -78,14 +78,13 @@ namespace NetErp.Billing.PriceList.DTO
 		public bool IsChecked
 		{
 			get { return _isChecked; }
-			set 
+			set
 			{
                 if (_isChecked != value)
                 {
-					_isChecked = value; 
+					_isChecked = value;
                     NotifyOfPropertyChange(nameof(IsChecked));
-					Context.NotifyOfPropertyChange(nameof(Context.CanAddItemList));
-                    Context.NotifyOfPropertyChange(nameof(Context.CanRemoveAddedItemList));
+					Context?.ToggleItemSelection(Id, value);
                 }
 			}
 		}

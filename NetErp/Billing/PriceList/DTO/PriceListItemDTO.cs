@@ -4,7 +4,7 @@ using Models.Books;
 using Models.Inventory;
 using NetErp.Billing.PriceList.ViewModels;
 using System.Buffers;
-using System.Drawing;
+using System.Windows.Media;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -142,12 +142,32 @@ namespace NetErp.Billing.PriceList.DTO
                 {
                     _status = value;
                     NotifyOfPropertyChange();
+                    NotifyOfPropertyChange(nameof(StatusIndicator));
+                    NotifyOfPropertyChange(nameof(StatusTooltip));
 
-                    // Si pasa a guardado, programar un cambio a Unchanged tras un tiempo
                     if (value == OperationStatus.Saved)
                     {
+                        StatusTooltip = null;
                         ScheduleResetStatus();
                     }
+                    else if (value == OperationStatus.Unchanged)
+                    {
+                        StatusTooltip = null;
+                    }
+                }
+            }
+        }
+
+        private string? _statusTooltip;
+        public string? StatusTooltip
+        {
+            get => _statusTooltip;
+            set
+            {
+                if (_statusTooltip != value)
+                {
+                    _statusTooltip = value;
+                    NotifyOfPropertyChange(nameof(StatusTooltip));
                 }
             }
         }
@@ -160,6 +180,7 @@ namespace NetErp.Billing.PriceList.DTO
                 return Status switch
                 {
                     OperationStatus.Pending => Brushes.Orange,
+                    OperationStatus.Retrying => Brushes.DarkOrange,
                     OperationStatus.Saved => Brushes.Green,
                     OperationStatus.Failed => Brushes.Red,
                     _ => Brushes.Transparent
@@ -271,6 +292,7 @@ namespace NetErp.Billing.PriceList.DTO
         Unchanged,
         Pending,
         Saved,
-        Failed
+        Failed,
+        Retrying
     }
 }
