@@ -1,26 +1,23 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
 using Models.Billing;
 using NetErp.Helpers;
-using static Models.Global.GraphQLResponseTypes;
-using Ninject;
-using Services.Billing.DAL.PostgreSQL;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Dynamic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
@@ -32,52 +29,81 @@ namespace NetErp.Billing.PriceList.ViewModels
         Dictionary<string, List<string>> _errors;
         public DateTime MinimumDate { get; set; } = DateTime.Now;
 
-		private string _Name = string.Empty;
+        private string _name = string.Empty;
 
-		public string Name
-		{
-			get { return _Name; }
-			set 
-			{
-				if (_Name != value) 
-				{ 
-					_Name = value;
-                    ValidateProperty(nameof(Name), _Name);
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    ValidateProperty(nameof(Name), _name);
                     NotifyOfPropertyChange(nameof(Name));
+                    this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
-			}
-		}
+            }
+        }
 
-		private DateTime _startDate = DateTime.Now;
+        private DateTime _startDate = DateTime.Now;
 
-		public DateTime StartDate
-		{
-			get { return _startDate; }
-			set 
-			{
-				if (_startDate != value) 
-				{
-					_startDate = value; 
-					NotifyOfPropertyChange(nameof(StartDate));
-					EndDate = StartDate;
-				}
-			}
-		}
+        public DateTime StartDate
+        {
+            get { return _startDate; }
+            set
+            {
+                if (_startDate != value)
+                {
+                    _startDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+                    NotifyOfPropertyChange(nameof(StartDate));
+                    this.TrackChange(nameof(StartDate));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                    EndDate = _startDate;
+                }
+            }
+        }
 
-		private DateTime _endDate = DateTime.Now;
-		public DateTime EndDate
-		{
-			get { return _endDate; }
-			set
-			{
-				if( _endDate != value)
-				{
-					_endDate = value;
-					NotifyOfPropertyChange(nameof(EndDate));
-				}
-			}
-		}
+        private DateTime _endDate = DateTime.Now;
+
+        public DateTime EndDate
+        {
+            get { return _endDate; }
+            set
+            {
+                if (_endDate != value)
+                {
+                    _endDate = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+                    NotifyOfPropertyChange(nameof(EndDate));
+                    this.TrackChange(nameof(EndDate));
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        // Propiedades heredadas del padre — se asignan en SetForNew()
+        public bool EditablePrice { get; set; }
+
+        [ExpandoPath("isActive")]
+        public bool IsActiveFlag { get; set; }
+
+        public bool AutoApplyDiscount { get; set; }
+        public bool IsPublic { get; set; }
+        public bool AllowNewUsersAccess { get; set; }
+        public string ListUpdateBehaviorOnCostChange { get; set; } = string.Empty;
+        public bool IsTaxable { get; set; }
+        public bool PriceListIncludeTax { get; set; }
+        public bool UseAlternativeFormula { get; set; }
+        public string CostMode { get; set; } = string.Empty;
+
+        [ExpandoPath("storageId")]
+        public int? StorageId { get; set; }
+
+        [ExpandoPath("parentId")]
+        public int ParentId { get; set; }
+
+        public PriceListGraphQLModel ParentPriceList { get; set; }
 
         private ICommand _cancelCommand;
 
@@ -110,53 +136,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = @"
-                    mutation ($data: CreatePriceListInput!) {
-                      CreateResponse: createPriceList(data: $data) {
-                        id
-                        name
-                        editablePrice
-                        isActive
-                        autoApplyDiscount
-                        isPublic
-                        allowNewUsersAccess
-                        listUpdateBehaviorOnCostChange
-                        parent{
-                            id
-                            name
-                        }
-                        isTaxable
-                        priceListIncludeTax
-                        useAlternativeFormula
-                        storage {
-                          id
-                          name
-                        }
-                        paymentMethods{
-                          id
-                          name
-                          abbreviation
-                        }
-                      }
-                    }
-                    ";
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Data.Name = Name.Trim().RemoveExtraSpaces(); //capture the name from the UI
-                variables.Data.EditablePrice = true; //static value
-                variables.Data.IsActive = true; //static value
-                variables.Data.AutoApplyDiscount = true; //static value
-                variables.Data.IsPublic = true; //static value
-                variables.Data.AllowNewUsersAccess = true; //static value
-                variables.Data.ListUpdateBehaviorOnCostChange = "UPDATE_PROFIT_MARGIN"; //static value
-                variables.Data.ParentId = ParentPriceList.Id; //static value
-                variables.Data.StartDate = DateTimeHelper.DateTimeKindUTC(StartDate);
-                variables.Data.EndDate = DateTimeHelper.DateTimeKindUTC(EndDate);
-                variables.Data.IsTaxable = true; //capture the value from the UI
-                variables.Data.PriceListIncludeTax = true; //capture the value from the UI
-                variables.Data.UseAlternativeFormula = false; //capture the value from the UI
-                variables.Data.StorageId = 0; //capture the value from the UI
-                var result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
+                string query = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
@@ -171,7 +153,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 await Execute.OnUIThreadAsync(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atenci\u00f3n!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return Task.CompletedTask;
                 });
             }
@@ -181,7 +163,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get
             {
-                return _errors.Count <= 0;
+                return _errors.Count <= 0 && this.HasChanges();
             }
         }
 
@@ -196,8 +178,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public PriceListGraphQLModel ParentPriceList { get; set; }
-
         void SetFocus(Expression<Func<object>> propertyExpression)
         {
             string controlName = propertyExpression.GetMemberInfo().Name;
@@ -211,14 +191,61 @@ namespace NetErp.Billing.PriceList.ViewModels
             base.OnViewReady(view);
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
             ValidateProperty(nameof(Name), Name);
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
-		public CreatePromotionModalViewModel(
-			Helpers.IDialogService dialogService,
-			IEventAggregator eventAggregator,
-			PriceListGraphQLModel parentPriceList,
-			IRepository<PriceListGraphQLModel> priceListService)
-		{
+        public void SetForNew()
+        {
+            Name = string.Empty;
+            StartDate = DateTime.Now;
+            EndDate = DateTime.Now;
+            ParentId = ParentPriceList.Id;
+
+            // Heredar configuración de la lista de precios padre
+            EditablePrice = ParentPriceList.EditablePrice;
+            IsActiveFlag = true;
+            AutoApplyDiscount = ParentPriceList.AutoApplyDiscount;
+            IsPublic = ParentPriceList.IsPublic;
+            AllowNewUsersAccess = ParentPriceList.AllowNewUsersAccess;
+            ListUpdateBehaviorOnCostChange = ParentPriceList.ListUpdateBehaviorOnCostChange;
+            IsTaxable = ParentPriceList.IsTaxable;
+            PriceListIncludeTax = ParentPriceList.PriceListIncludeTax;
+            UseAlternativeFormula = ParentPriceList.UseAlternativeFormula;
+            CostMode = ParentPriceList.CostMode;
+            StorageId = ParentPriceList.Storage?.Id;
+
+            SeedDefaultValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            // UI properties
+            this.SeedValue(nameof(StartDate), StartDate);
+            this.SeedValue(nameof(EndDate), EndDate);
+            // Hidden defaults
+            this.SeedValue(nameof(EditablePrice), EditablePrice);
+            this.SeedValue(nameof(IsActiveFlag), IsActiveFlag);
+            this.SeedValue(nameof(AutoApplyDiscount), AutoApplyDiscount);
+            this.SeedValue(nameof(IsPublic), IsPublic);
+            this.SeedValue(nameof(AllowNewUsersAccess), AllowNewUsersAccess);
+            this.SeedValue(nameof(ListUpdateBehaviorOnCostChange), ListUpdateBehaviorOnCostChange);
+            this.SeedValue(nameof(IsTaxable), IsTaxable);
+            this.SeedValue(nameof(PriceListIncludeTax), PriceListIncludeTax);
+            this.SeedValue(nameof(UseAlternativeFormula), UseAlternativeFormula);
+            this.SeedValue(nameof(CostMode), CostMode);
+            this.SeedValue(nameof(StorageId), StorageId);
+            this.SeedValue(nameof(ParentId), ParentId);
+            this.AcceptChanges();
+        }
+
+        public CreatePromotionModalViewModel(
+            Helpers.IDialogService dialogService,
+            IEventAggregator eventAggregator,
+            PriceListGraphQLModel parentPriceList,
+            IRepository<PriceListGraphQLModel> priceListService)
+        {
             _errors = new Dictionary<string, List<string>>();
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
@@ -270,7 +297,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 switch (propertyName)
                 {
                     case nameof(Name):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
+                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vac\u00edo");
                         break;
                 }
             }
@@ -278,9 +305,40 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 Execute.OnUIThread(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atenci\u00f3n!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                 });
             }
         }
+
+        private static readonly Lazy<string> _createQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "priceList", nested: sq => sq
+                    .Field(f => f.Id)
+                    .Field(f => f.Name)
+                    .Field(f => f.EditablePrice)
+                    .Field(f => f.IsActive)
+                    .Field(f => f.AutoApplyDiscount)
+                    .Field(f => f.IsPublic)
+                    .Field(f => f.AllowNewUsersAccess)
+                    .Field(f => f.ListUpdateBehaviorOnCostChange)
+                    .Field(f => f.IsTaxable)
+                    .Field(f => f.PriceListIncludeTax)
+                    .Field(f => f.UseAlternativeFormula)
+                    .Field(f => f.CostMode)
+                    .Select(f => f.Parent, p => p.Field(x => x.Id).Field(x => x.Name))
+                    .Select(f => f.Storage, s => s.Field(x => x.Id).Field(x => x.Name)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("input", "CreatePriceListInput!");
+            var fragment = new GraphQLQueryFragment("createPriceList", [parameter], fields, "CreateResponse");
+            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+        });
     }
 }

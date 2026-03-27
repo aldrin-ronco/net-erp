@@ -197,7 +197,7 @@
                                        Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
 
                         <dxe:CheckEdit Content="¿Lista de precios activa?" Margin="0,0,0,12"
-                                       IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       IsChecked="{Binding IsActiveFlag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
 
                         <TextBlock Text="Cuando el costo cambie quiero..." FontSize="13" Margin="0,0,0,5"/>

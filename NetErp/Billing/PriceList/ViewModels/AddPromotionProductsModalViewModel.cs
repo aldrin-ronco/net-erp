@@ -1,30 +1,22 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.UI;
 using DevExpress.Xpf.Core;
-using Microsoft.Extensions.Logging.Abstractions;
 using Models.Billing;
-using Models.Global;
 using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
-using NetErp.Billing.PriceList.Views;
 using NetErp.Helpers;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Models.Global;
 using NetErp.Helpers.Messages;
-using NetErp.Helpers.Services;
-using Newtonsoft.Json;
-using Ninject.Activation;
-using Services.Billing.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -37,61 +29,64 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly IRepository<ItemGraphQLModel> _itemService;
-        private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
-        private readonly IParallelBatchProcessor _parallelBatchProcessor;
+        private const int BatchSize = 50;
         public PriceListViewModel Context { get; set; }
-        
+
         public AddPromotionProductsModalViewModel(
-            PriceListViewModel context, 
+            PriceListViewModel context,
             Helpers.IDialogService dialogService,
             IRepository<PriceListItemGraphQLModel> priceListItemService,
-            IRepository<ItemGraphQLModel> itemService,
-            IRepository<TempRecordGraphQLModel> tempRecordService,
-            IParallelBatchProcessor parallelBatchProcessor)
+            IRepository<ItemGraphQLModel> itemService)
         {
             Context = context;
             _dialogService = dialogService;
             _priceListItemService = priceListItemService;
             _itemService = itemService;
-            _tempRecordService = tempRecordService;
-            _parallelBatchProcessor = parallelBatchProcessor;
-            
-            AddedItems.CollectionChanged += (s, e) =>
-            {
-                NotifyOfPropertyChange(nameof(AddedItemsHeaderIsChecked));
-            };
+
             Items.CollectionChanged += (s, e) =>
             {
                 NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
             };
-            AddedItemsShadowListIds.CollectionChanged += (s, e) =>
-            {
-                NotifyOfPropertyChange(nameof(CanSave));
-            };
-            Context.EventAggregator.SubscribeOnUIThread(this);
         }
-        public new bool IsInitialized { get; set; } = false;
 
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                _cascadeCancellation?.Cancel();
+                _cascadeCancellation?.Dispose();
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        public new bool IsInitialized { get; set; } = false;
 
         public int PromotionId { get; set; } = 0;
 
-        //Lista creada para poder controlar que el usuario no se quede sin guardar cambios
+        #region SelectedItemIds — local in-memory set of checked item IDs
 
-        private ObservableCollection<int> _addedItemsShadowListIds = [];
+        public HashSet<int> SelectedItemIds { get; } = [];
 
-        public ObservableCollection<int> AddedItemsShadowListIds
+        public int SelectedCount => SelectedItemIds.Count;
+
+        /// <summary>
+        /// Called by PromotionCatalogItemDTO when IsChecked changes.
+        /// Adds or removes the item from the local selection set.
+        /// </summary>
+        public void ToggleItemSelection(int itemId, bool isChecked)
         {
-            get { return _addedItemsShadowListIds; }
-            set
-            {
-                if (_addedItemsShadowListIds != null)
-                {
-                    _addedItemsShadowListIds = value;
-                    NotifyOfPropertyChange(nameof(AddedItemsShadowListIds));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                }
-            }
+            if (isChecked)
+                SelectedItemIds.Add(itemId);
+            else
+                SelectedItemIds.Remove(itemId);
+
+            NotifyOfPropertyChange(nameof(SelectedCount));
+            NotifyOfPropertyChange(nameof(CanSave));
         }
+
+        #endregion
+
+        #region Items Grid
 
         private ObservableCollection<PromotionCatalogItemDTO> _items = [];
 
@@ -108,9 +103,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private PromotionCatalogItemDTO _selectedItem = new();
+        private PromotionCatalogItemDTO? _selectedItem;
 
-        public PromotionCatalogItemDTO SelectedItem
+        public PromotionCatalogItemDTO? SelectedItem
         {
             get { return _selectedItem; }
             set
@@ -123,36 +118,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<PromotionCatalogItemDTO> _addedItems = [];
+        #endregion
 
-        public ObservableCollection<PromotionCatalogItemDTO> AddedItems
-        {
-            get { return _addedItems; }
-            set
-            {
-                if (_addedItems != value)
-                {
-                    _addedItems = value;
-                    NotifyOfPropertyChange(nameof(AddedItems));
-                }
-            }
-        }
-
-        private PromotionCatalogItemDTO _selectedAddedItem = new();
-
-        public PromotionCatalogItemDTO SelectedAddedItem
-        {
-            get { return _selectedAddedItem; }
-            set
-            {
-                if (_selectedAddedItem != value)
-                {
-                    _selectedAddedItem = value;
-                    NotifyOfPropertyChange(nameof(SelectedAddedItem));
-                }
-            }
-        }
-
+        #region Cascade Dropdowns
 
         private ObservableCollection<CatalogGraphQLModel> _catalogs = [];
 
@@ -183,8 +151,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemTypes();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -221,8 +190,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -261,8 +231,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         BuildItemSubCategories();
                         if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
@@ -299,8 +270,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null && IsInitialized)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
-                        
+
                         _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
@@ -309,14 +281,14 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemSubCategories => SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemCategory != null && SelectedItemCategory.Id != 0;
 
-        // Bandera para actualizaciones silentes
+        #endregion
+
+        #region Cascade Build Methods
+
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
         private CancellationTokenSource _cascadeCancellation = new();
 
-        // Obsolete methods removed - replaced by individual dropdown logic
-
-        // Reload data method with cancellation support
         private async Task ReloadDataAsync(CancellationToken cancellationToken)
         {
             try
@@ -336,7 +308,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        // Métodos de construcción de listas
         private void BuildItemTypes()
         {
             if (SelectedCatalog?.ItemTypes == null) return;
@@ -353,7 +324,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemCategories()
         {
             _isUpdating = true;
-            
+
             if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
                 ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
@@ -363,7 +334,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             else
             {
-                // Reset categories when ItemType is "Show All" (Id = 0)
                 ItemCategories.Clear();
                 _selectedItemCategory = new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" };
                 NotifyOfPropertyChange(nameof(SelectedItemCategory));
@@ -378,7 +348,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private void BuildItemSubCategories()
         {
             _isUpdating = true;
-            
+
             if (SelectedItemCategory != null && SelectedItemCategory.Id != 0 && SelectedItemCategory.ItemSubCategories != null)
             {
                 ItemSubCategories = [.. SelectedItemCategory.ItemSubCategories];
@@ -388,7 +358,6 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             else
             {
-                // Reset subcategories when Category is "Show All" (Id = 0) or ItemType is "Show All"
                 ItemSubCategories.Clear();
                 _selectedItemSubCategory = new ItemSubCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS SUBCATEGORÍAS DE PRODUCTOS >>" };
                 NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
@@ -397,6 +366,10 @@ namespace NetErp.Billing.PriceList.ViewModels
             NotifyOfPropertyChange(nameof(CanShowItemSubCategories));
             _isUpdating = false;
         }
+
+        #endregion
+
+        #region Busy / Filter / Header Check
 
         private bool _isBusy;
 
@@ -413,89 +386,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _itemsGridIsBusy;
-
-        public bool ItemsGridIsBusy
-        {
-            get { return _itemsGridIsBusy; }
-            set
-            {
-                if (_itemsGridIsBusy != value)
-                {
-                    _itemsGridIsBusy = value;
-                    NotifyOfPropertyChange(nameof(ItemsGridIsBusy));
-                }
-            }
-        }
-
-        private bool _addedItemsGridIsBusy;
-
-        public bool AddedItemsGridIsBusy
-        {
-            get { return _addedItemsGridIsBusy; }
-            set
-            {
-                if (_addedItemsGridIsBusy != value)
-                {
-                    _addedItemsGridIsBusy = value;
-                    NotifyOfPropertyChange(nameof(AddedItemsGridIsBusy));
-                }
-            }
-        }
-
-        private string _itemsFilterSearch = "";
-        public string ItemsFilterSearch
-        {
-            get { return _itemsFilterSearch; }
-            set
-            {
-                if (_itemsFilterSearch != value)
-                {
-                    _itemsFilterSearch = value;
-                    NotifyOfPropertyChange(nameof(ItemsFilterSearch));
-                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-                    if (string.IsNullOrEmpty(value) || value.Length >= 2)
-                    {
-                        ItemsPageIndex = 1;
-                        if (IsInitialized) _ = Task.Run(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadItemsAsync();
-                            IsBusy = false;
-                            _ = this.SetFocus(nameof(ItemsFilterSearch));
-                        });
-                    }
-                }
-            }
-        }
-
-        private string _addedItemsFilterSearch = "";
-        public string AddedItemsFilterSearch
-        {
-            get { return _addedItemsFilterSearch; }
-            set
-            {
-                if (_addedItemsFilterSearch != value)
-                {
-                    _addedItemsFilterSearch = value;
-                    NotifyOfPropertyChange(nameof(AddedItemsFilterSearch));
-                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
-                    if (string.IsNullOrEmpty(value) || value.Length >= 2)
-                    {
-                        AddedItemsPageIndex = 1;
-                        if (IsInitialized) _ = Task.Run(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadTempAddedItemsPromotionAsync();
-                            IsBusy = false;
-                            _ = this.SetFocus(nameof(AddedItemsFilterSearch));
-                        });
-                    }
-                }
-            }
-        }
-
         private bool _mainIsBusy;
+
         public bool MainIsBusy
         {
             get { return _mainIsBusy; }
@@ -505,6 +397,26 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _mainIsBusy = value;
                     NotifyOfPropertyChange(nameof(MainIsBusy));
+                }
+            }
+        }
+
+        private string _filterSearch = "";
+
+        public string FilterSearch
+        {
+            get { return _filterSearch; }
+            set
+            {
+                if (_filterSearch != value)
+                {
+                    _filterSearch = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+                    if (string.IsNullOrEmpty(value) || value.Length >= 2)
+                    {
+                        PageIndex = 1;
+                        if (IsInitialized) _ = LoadItemsAsync();
+                    }
                 }
             }
         }
@@ -532,284 +444,67 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private bool _addedItemsHeaderIsChecked;
+        #endregion
 
-        public bool AddedItemsHeaderIsChecked
-        {
-            get
-            {
-                if (AddedItems is null || AddedItems.Count == 0) return false;
-                return _addedItemsHeaderIsChecked;
-            }
-            set
-            {
-                if (_addedItemsHeaderIsChecked != value)
-                {
-                    _addedItemsHeaderIsChecked = value;
-                    NotifyOfPropertyChange(nameof(AddedItemsHeaderIsChecked));
-                    foreach (var item in AddedItems)
-                    {
-                        item.IsChecked = value;
-                    }
-                }
-            }
-        }
+        #region CanSave
 
+        public bool CanSave => SelectedItemIds.Count > 0;
 
+        #endregion
+
+        #region Load Items
 
         public async Task LoadItemsAsync()
         {
             try
             {
-                ItemsGridIsBusy = true;
-                // Iniciar cronometro
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                IsBusy = true;
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                string query = @"
-                    query($filter: ItemPromotionFilterInput){
-                      PageResponse: promotionItemPage(filter: $filter){
-                        count
-                        rows{
-                          id
-                          name
-                          reference
-                          code
-                          subCategory{
-                            id
-                            name
-                            itemCategory{
-                              id
-                              name
-                              itemType{
-                                id
-                                name
-                                catalog{
-                                  id
-                                  name
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
+                var (fragment, query) = _loadItemsQuery.Value;
 
-                //Propiedades excluidas
-                variables.filter.priceListId = new ExpandoObject();
-                variables.filter.priceListId.@operator = "=";
-                variables.filter.priceListId.value = PromotionId;
-                variables.filter.priceListId.exclude = true;
-
-                variables.filter.userId = new ExpandoObject();
-                variables.filter.userId.@operator = "=";
-                variables.filter.userId.value = 1;
-                variables.filter.userId.exclude = true;
-
-                variables.filter.tableName = new ExpandoObject();
-                variables.filter.tableName.@operator = "=";
-                variables.filter.tableName.value = TempRecordTableName.InventoryItem;
-                variables.filter.tableName.exclude = true;
-
-                variables.filter.type = new ExpandoObject();
-                variables.filter.type.@operator = "=";
-                variables.filter.type.value = TempRecordType.PromotionItem;
-                variables.filter.type.exclude = true;
-
-
-                //Propiedades incluidas - todas van dentro del AND
-                var andFilters = new List<dynamic>();
-
-                // Filtro obligatorio: catalogId
-                dynamic catalogFilter = new ExpandoObject();
-                catalogFilter.catalogId = new ExpandoObject();
-                catalogFilter.catalogId.@operator = "=";
-                catalogFilter.catalogId.value = SelectedCatalog != null ? SelectedCatalog.Id : throw new Exception("SelectedCatalog can't be null");
-                andFilters.Add(catalogFilter);
-
-                // Filtro obligatorio: isActive
-                dynamic activeFilter = new ExpandoObject();
-                activeFilter.isActive = new ExpandoObject();
-                activeFilter.isActive.@operator = "=";
-                activeFilter.isActive.value = true;
-                andFilters.Add(activeFilter);
-
-                // Filtros condicionales de dropdowns
-                if (SelectedItemType != null && SelectedItemType.Id != 0)
-                {
-                    dynamic itemTypeFilter = new ExpandoObject();
-                    itemTypeFilter.itemTypeId = new ExpandoObject();
-                    itemTypeFilter.itemTypeId.@operator = "=";
-                    itemTypeFilter.itemTypeId.value = SelectedItemType.Id;
-                    andFilters.Add(itemTypeFilter);
-                }
-
-                if (SelectedItemCategory != null && SelectedItemCategory.Id != 0)
-                {
-                    dynamic categoryFilter = new ExpandoObject();
-                    categoryFilter.itemCategoryId = new ExpandoObject();
-                    categoryFilter.itemCategoryId.@operator = "=";
-                    categoryFilter.itemCategoryId.value = SelectedItemCategory.Id;
-                    andFilters.Add(categoryFilter);
-                }
-
+                dynamic filters = new ExpandoObject();
+                filters.isActive = true;
                 if (SelectedItemSubCategory != null && SelectedItemSubCategory.Id != 0)
-                {
-                    dynamic subCategoryFilter = new ExpandoObject();
-                    subCategoryFilter.itemSubCategoryId = new ExpandoObject();
-                    subCategoryFilter.itemSubCategoryId.@operator = "=";
-                    subCategoryFilter.itemSubCategoryId.value = SelectedItemSubCategory.Id;
-                    andFilters.Add(subCategoryFilter);
-                }
+                    filters.subCategoryId = SelectedItemSubCategory.Id;
+                if (!string.IsNullOrEmpty(FilterSearch))
+                    filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                // Filtro OR para búsqueda de texto (name OR reference OR code)
-                if (!string.IsNullOrEmpty(ItemsFilterSearch))
-                {
-                    dynamic searchFilter = new ExpandoObject();
-                    
-                    dynamic nameFilter = new ExpandoObject();
-                    nameFilter.name = new ExpandoObject();
-                    nameFilter.name.@operator = "like";
-                    nameFilter.name.value = ItemsFilterSearch.Trim().RemoveExtraSpaces();
-
-                    dynamic referenceFilter = new ExpandoObject();
-                    referenceFilter.reference = new ExpandoObject();
-                    referenceFilter.reference.@operator = "like";
-                    referenceFilter.reference.value = ItemsFilterSearch.Trim().RemoveExtraSpaces();
-                    
-                    dynamic codeFilter = new ExpandoObject();
-                    codeFilter.code = new ExpandoObject();
-                    codeFilter.code.@operator = "like";
-                    codeFilter.code.value = ItemsFilterSearch.Trim().RemoveExtraSpaces();
-                    
-                    searchFilter.or = new[] { nameFilter, referenceFilter, codeFilter };
-                    andFilters.Add(searchFilter);
-                }
-
-                // Convertir a array dinámico del tamaño exacto
-                variables.filter.and = andFilters.ToArray();
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
 
                 var result = await _itemService.GetPageAsync(query, variables);
-                Items = new ObservableCollection<PromotionCatalogItemDTO>(Context.AutoMapper.Map<ObservableCollection<PromotionCatalogItemDTO>>(result.Rows));
-                ItemsTotalCount = result.Count;
+                Items = new ObservableCollection<PromotionCatalogItemDTO>(Context.AutoMapper.Map<ObservableCollection<PromotionCatalogItemDTO>>(result.Entries));
+                TotalCount = result.TotalEntries;
 
                 stopwatch.Stop();
-                ItemsResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+                ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
                 foreach (var item in Items)
                 {
                     item.Context = this;
+                    item.IsChecked = SelectedItemIds.Contains(item.Id);
                 }
             }
             catch (Exception ex)
             {
                 await Execute.OnUIThreadAsync(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return Task.CompletedTask;
                 });
             }
             finally
             {
-                ItemsGridIsBusy = false;
+                IsBusy = false;
             }
         }
 
-        public async Task LoadTempAddedItemsPromotionAsync()
-        {
-            try
-            {
-                AddedItemsGridIsBusy = true;
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+        #endregion
 
-                string query = @"
-                query ($filter: ItemPromotionFilterInput) {
-                  PageResponse: promotionAddedTempItemPage(filter: $filter) {
-                    count
-                    rows {
-                      id
-                      name
-                      reference
-                      code
-                      subCategory {
-                        id
-                        name
-                        itemCategory {
-                          id
-                          name
-                          itemType {
-                            id
-                            name
-                            catalog {
-                              id
-                              name
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-
-                variables.filter.or = new ExpandoObject[]
-                {
-                    new(),
-                    new(),
-                    new()
-                };
-
-                variables.filter.or[0].name = new ExpandoObject();
-                variables.filter.or[0].name.@operator = "like";
-                variables.filter.or[0].name.value = AddedItemsFilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.or[1].reference = new ExpandoObject();
-                variables.filter.or[1].reference.@operator = "like";
-                variables.filter.or[1].reference.value = AddedItemsFilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.or[2].code = new ExpandoObject();
-                variables.filter.or[2].code.@operator = "like";
-                variables.filter.or[2].code.value = AddedItemsFilterSearch.Trim().RemoveExtraSpaces();
-
-                variables.filter.userId = new ExpandoObject();
-                variables.filter.userId.@operator = "=";
-                variables.filter.userId.value = 1;
-                variables.filter.userId.exclude = true;
-
-                variables.filter.tableName = new ExpandoObject();
-                variables.filter.tableName.@operator = "=";
-                variables.filter.tableName.value = TempRecordTableName.InventoryItem;
-                variables.filter.tableName.exclude = true;
-
-                variables.filter.type = new ExpandoObject();
-                variables.filter.type.@operator = "=";
-                variables.filter.type.value = TempRecordType.PromotionItem;
-                variables.filter.type.exclude = true;
-
-                var result = await _itemService.GetPageAsync(query, variables);
-                AddedItems = new ObservableCollection<PromotionCatalogItemDTO>(Context.AutoMapper.Map<ObservableCollection<PromotionCatalogItemDTO>>(result.Rows));
-                AddedItemsTotalCount = result.Count;
-
-                stopwatch.Stop();
-                AddedItemsResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                AddedItemsGridIsBusy = false;
-            }
-        }
+        #region Initialize
 
         public async Task InitializeAsync()
         {
@@ -838,396 +533,157 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        public async Task AddItemAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                    mutation($data: CreateTempRecordInput!){
-                      CreateResponse: createTempRecord(data: $data){
-                        id
-                        recordId
-                        tableName
-                        userId
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.tableName = TempRecordTableName.InventoryItem;
-                variables.data.recordId = SelectedItem.Id;
-                variables.data.userId = 1; // Cambiar por el ID del usuario actual
-                variables.data.type = TempRecordType.PromotionItem;
-                _ = await _tempRecordService.CreateAsync(query, variables);
-                SelectedItem.IsChecked = false;
-                AddedItems.Add(SelectedItem);
-                AddedItemsShadowListIds.Add(SelectedItem.Id);
-                Items.Remove(SelectedItem);
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+        #endregion
 
-        public async Task RemoveItemAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                    mutation($data: DeleteTempRecordInput!){
-                      DeleteResponse: deleteTempRecord(data: $data){
-                        id
-                        recordId
-                        tableName
-                        userId
-                      }
-                    }
-                ";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.tableName = TempRecordTableName.InventoryItem;
-                variables.data.recordId = SelectedAddedItem.Id;
-                variables.data.userId = 1; // Cambiar por el ID del usuario actual
-                variables.data.type = TempRecordType.PromotionItem;
-                _ = await _tempRecordService.DeleteAsync(query, variables);
-                SelectedAddedItem.IsChecked = false;
-                Items.Add(SelectedAddedItem);
-                AddedItemsShadowListIds.Remove(SelectedAddedItem.Id);
-                AddedItems.Remove(SelectedAddedItem);
-                NotifyOfPropertyChange(nameof(CanRemoveAddedItemList));
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-        }
+        #region Save / Cancel Commands
 
-
-        public bool CanAddItemList
-        {
-            get
-            {
-                if (Items is null || Items.Count == 0) return false;
-                return Items.Any(item => item.IsChecked);
-            }
-        }
-
-        public bool CanRemoveAddedItemList
-        {
-            get
-            {
-                if (AddedItems is null || AddedItems.Count == 0) return false;
-                return AddedItems.Any(item => item.IsChecked);
-            }
-        }
-
-        public bool CanSave
-        {
-            get
-            {
-                if (AddedItemsShadowListIds is null || AddedItemsShadowListIds.Count == 0) return false;
-                return AddedItemsShadowListIds.Count > 0;
-            }
-        }
-
-        private ICommand _addItemListCommand;
-
-        public ICommand AddItemListCommand
-        {
-            get
-            {
-                if (_addItemListCommand is null) _addItemListCommand = new AsyncCommand(AddItemListAsync);
-                return _addItemListCommand;
-            }
-        }
-
-        public async Task AddItemListAsync()
-        {
-            var checkedItems = Items.Where(item => item.IsChecked).ToList();
-            if (checkedItems.Count == 0) return;
-
-            List<object> tempRecords = [];
-            IsBusy = true;
-
-            string query = @"
-            mutation($data: [CreateTempRecordInput!]!){
-              ListResponse: createTempRecordList(data: $data){
-                id
-                recordId
-                tableName
-                userId
-              }
-            }";
-
-            try
-            {
-                foreach (var item in checkedItems)
-                {
-                    object tempRecord = new
-                    {
-                        RecordId = item.Id,
-                        TableName = TempRecordTableName.InventoryItem,
-                        UserId = 1,
-                        Type = TempRecordType.PromotionItem
-                    };
-                    tempRecords.Add(tempRecord);
-                }
-                foreach (var item in checkedItems)
-                {
-                    item.IsChecked = false;
-                    Items.Remove(item);
-                    AddedItems.Add(item);
-                    AddedItemsShadowListIds.Add(item.Id);
-                }
-                ItemsHeaderIsChecked = false;
-                _ = _parallelBatchProcessor.ProcessBatchAsync(query, tempRecords, typeof(TempRecordGraphQLModel), 10);
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private ICommand _removeItemListCommand;
-
-        public ICommand RemoveItemListCommand
-        {
-            get
-            {
-                if (_removeItemListCommand is null) _removeItemListCommand = new AsyncCommand(RemoveItemListAsync);
-                return _removeItemListCommand;
-            }
-        }
-
-        public async Task RemoveItemListAsync()
-        {
-            var checkedItems = AddedItems.Where(item => item.IsChecked).ToList();
-            if (checkedItems.Count == 0) return;
-
-            List<object> tempRecords = [];
-            IsBusy = true;
-
-            string query = @"
-            mutation($data: [DeleteTempRecordInput!]!){
-              ListResponse: deleteTempRecordList(data: $data){
-                id
-                recordId
-                tableName
-                userId
-              }
-            }";
-
-            try
-            {
-                foreach (var item in checkedItems)
-                {
-                    object tempRecord = new
-                    {
-                        RecordId = item.Id,
-                        TableName = TempRecordTableName.InventoryItem,
-                        UserId = 1,
-                        Type = TempRecordType.PromotionItem
-                    };
-                    tempRecords.Add(tempRecord);
-                }
-                foreach (var item in checkedItems)
-                {
-                    item.IsChecked = false;
-                    AddedItems.Remove(item);
-                    AddedItemsShadowListIds.Remove(item.Id);
-                    Items.Add(item);
-                }
-                AddedItemsHeaderIsChecked = false;
-                _ = _parallelBatchProcessor.ProcessBatchAsync(query, tempRecords, typeof(TempRecordGraphQLModel), 10);
-
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private ICommand _cancelCommand;
-
-        public ICommand CancelCommand
-        {
-            get
-            {
-                if (_cancelCommand == null) _cancelCommand = new AsyncCommand(Cancel);
-                return _cancelCommand;
-            }
-        }
-
-        public async Task Cancel()
-        {
-            await _dialogService.CloseDialogAsync(this, true);
-        }
-
-        private ICommand _saveCommand;
+        private ICommand? _saveCommand;
 
         public ICommand SaveCommand
         {
             get
             {
-                if (_saveCommand == null) _saveCommand = new AsyncCommand(SaveAsync);
+                _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
 
         public async Task SaveAsync()
         {
+            if (SelectedItemIds.Count == 0) return;
+
+            var confirmation = ThemedMessageBox.Show("Confirme...",
+                $"¿Confirma agregar {SelectedItemIds.Count} productos a la promoción?",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirmation != MessageBoxResult.Yes) return;
+
             try
             {
-                IsBusy = true;
-                SuccessResponseDataWrapper result = await ExecuteSaveAsync();
-                await Context.EventAggregator.PublishOnUIThreadAsync(new PromotionTempRecordResponseMessage() { Response = result.Data });
+                MainIsBusy = true;
+
+                var allItems = SelectedItemIds.Select(id => new
+                {
+                    itemId = id,
+                    price = 0m,
+                    discountMargin = 0m,
+                    profitMargin = 0m,
+                    minimumPrice = 0m
+                }).ToList();
+
+                string query = _batchUpdatePricesQuery.Value;
+                int totalAdded = 0;
+                int totalFailed = 0;
+                var failedMessages = new List<string>();
+
+                // Batching secuencial — bloques de BatchSize para no saturar el pool de conexiones
+                for (int i = 0; i < allItems.Count; i += BatchSize)
+                {
+                    var batch = allItems.Skip(i).Take(BatchSize).ToList();
+                    var variables = new { input = new { priceListId = PromotionId, items = batch } };
+
+                    var batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
+
+                    if (batchResult.Success)
+                    {
+                        totalAdded += batch.Count;
+                    }
+                    else
+                    {
+                        totalFailed += batch.Count;
+                        failedMessages.Add(batchResult.Message ?? "Error desconocido");
+                    }
+                }
+
+                SelectedItemIds.Clear();
+                NotifyOfPropertyChange(nameof(SelectedCount));
+                NotifyOfPropertyChange(nameof(CanSave));
+
+                if (totalFailed > 0 && totalAdded > 0)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Procesamiento parcial",
+                        text: $"Productos agregados: {totalAdded}\n" +
+                              $"Productos con error: {totalFailed}\n\n" +
+                              $"Detalle: {string.Join("\n", failedMessages)}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Warning);
+                }
+                else if (totalFailed > 0 && totalAdded == 0)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Error en el procesamiento",
+                        text: $"No se pudo agregar ningún producto.\n\n" +
+                              $"Detalle: {string.Join("\n", failedMessages)}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    return;
+                }
+
+                await Context.EventAggregator.PublishOnUIThreadAsync(
+                    new PromotionTempRecordResponseMessage
+                    {
+                        Response = new SuccessResponseModel { Success = true, Message = $"{totalAdded} productos agregados correctamente" }
+                    });
                 await _dialogService.CloseDialogAsync(this, true);
             }
-            catch (AsyncException ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
             catch (Exception ex)
             {
                 await Execute.OnUIThreadAsync(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return Task.CompletedTask;
                 });
             }
             finally
             {
-                IsBusy = false;
+                MainIsBusy = false;
             }
         }
 
-        public async Task<SuccessResponseDataWrapper> ExecuteSaveAsync()
+        private ICommand? _cancelCommand;
+
+        public ICommand CancelCommand
         {
-            try
+            get
             {
-                string query = @"
-                  mutation($data: SaveAddedPromotionItemInput!){
-                      Data: saveAddedPromotionItems(data: $data){
-                        success
-                        message
-                      }
-                    }  
-                ";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.promotionId = PromotionId;
-                variables.data.userId = 1; // Cambiar por el ID del usuario actual
-                variables.data.tableName = TempRecordTableName.InventoryItem;
-                variables.data.type = TempRecordType.PromotionItem;
-
-                SuccessResponseDataWrapper result = await _tempRecordService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
-                if (!result.Data.Success)
-                {
-                    throw new Exception(result.Data.Message);
-                }
-                AddedItems.Clear();
-                AddedItemsShadowListIds.Clear();
-                return result;
-            }
-            catch (Exception ex)
-            {
-
-                throw new AsyncException(innerException: ex);
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
             }
         }
 
-        public async Task ClearTempRecordsAsync()
+        public async Task CancelAsync()
         {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                    mutation($data: ClearTempRecordInput!){
-                      Data: clearTempRecords(data: $data){
-                        success
-                        message
-                      }
-                    }";
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.tableName = TempRecordTableName.InventoryItem;
-                variables.data.type = TempRecordType.PromotionItem;
-                variables.data.userId = 1; // Cambiar por el ID del usuario actual
-                var result = await _tempRecordService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
-                if (!result.Data.Success)
-                {
-                    throw new Exception(result.Data.Message);
-                }
-                AddedItems.Clear();
-                AddedItemsShadowListIds.Clear();
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
-            finally
-            {
-                IsBusy = false;
-            }
+            await _dialogService.CloseDialogAsync(this, true);
         }
+
+        #endregion
+
+        #region CanCloseAsync
 
         public override async Task<bool> CanCloseAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                if (AddedItemsShadowListIds is null || AddedItemsShadowListIds.Count == 0 || _parallelBatchProcessor.HasCriticalError()) return await base.CanCloseAsync(cancellationToken);
+                if (SelectedItemIds.Count == 0)
+                    return await base.CanCloseAsync(cancellationToken);
+
                 var result = ThemedMessageBox.Show("Confirmar cierre",
-                    "¿Confirma que desea guardar los cambios?",
+                    $"Tiene {SelectedItemIds.Count} productos seleccionados sin guardar.\n¿Desea guardar los cambios antes de cerrar?",
                     MessageBoxButton.YesNoCancel,
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Cancel)
-                {
                     return false;
-                }
 
                 if (result == MessageBoxResult.Yes)
-                {
                     await SaveAsync();
-                }
 
+                // If No, just discard selections and close
                 if (result == MessageBoxResult.No)
                 {
-                    await ClearTempRecordsAsync();
+                    SelectedItemIds.Clear();
+                    NotifyOfPropertyChange(nameof(SelectedCount));
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
 
                 return await base.CanCloseAsync(cancellationToken);
@@ -1252,222 +708,94 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        #region ItemsPagination
+        #endregion
 
+        #region Pagination
 
-        private string _itemsResponseTime;
-        public string ItemsResponseTime
+        private string _responseTime = "";
+
+        public string ResponseTime
         {
-            get { return _itemsResponseTime; }
+            get { return _responseTime; }
             set
             {
-                if (_itemsResponseTime != value)
+                if (_responseTime != value)
                 {
-                    _itemsResponseTime = value;
-                    NotifyOfPropertyChange(() => ItemsResponseTime);
+                    _responseTime = value;
+                    NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
         }
 
+        private int _pageIndex = 1;
 
-        /// <summary>
-        /// PageIndex
-        /// </summary>
-        private int _itemsPageIndex = 1; // DefaultPageIndex = 1
-        public int ItemsPageIndex
+        public int PageIndex
         {
-            get { return _itemsPageIndex; }
+            get { return _pageIndex; }
             set
             {
-                if (_itemsPageIndex != value)
+                if (_pageIndex != value)
                 {
-                    _itemsPageIndex = value;
-                    NotifyOfPropertyChange(() => ItemsPageIndex);
+                    _pageIndex = value;
+                    NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
         }
 
-        /// <summary>
-        /// PageSize
-        /// </summary>
-        private int _itemsPageSize = 50; // Default PageSize 50
-        public int ItemsPageSize
+        private int _pageSize = 50;
+
+        public int PageSize
         {
-            get { return _itemsPageSize; }
+            get { return _pageSize; }
             set
             {
-                if (_itemsPageSize != value)
+                if (_pageSize != value)
                 {
-                    _itemsPageSize = value;
-                    NotifyOfPropertyChange(() => ItemsPageSize);
+                    _pageSize = value;
+                    NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
         }
 
-        /// <summary>
-        /// TotalCount
-        /// </summary>
-        private int _itemsTotalCount = 0;
-        public int ItemsTotalCount
+        private int _totalCount = 0;
+
+        public int TotalCount
         {
-            get { return _itemsTotalCount; }
+            get { return _totalCount; }
             set
             {
-                if (_itemsTotalCount != value)
+                if (_totalCount != value)
                 {
-                    _itemsTotalCount = value;
-                    NotifyOfPropertyChange(() => ItemsTotalCount);
+                    _totalCount = value;
+                    NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        /// <summary>
-        /// PaginationCommand para controlar evento
-        /// </summary>
-        private ICommand _itemsPaginationCommand;
-        public ICommand ItemsPaginationCommand
+        private ICommand? _paginationCommand;
+
+        public ICommand PaginationCommand
         {
             get
             {
-                if (_itemsPaginationCommand == null) this._itemsPaginationCommand = new AsyncCommand(ExecuteChangeIndexItemsPaginationAsync, CanExecuteChangeIndexItemsPagination);
-                return _itemsPaginationCommand;
+                _paginationCommand ??= new AsyncCommand(ExecuteChangeIndexPaginationAsync, CanExecuteChangeIndexPagination);
+                return _paginationCommand;
             }
         }
 
-        private async Task ExecuteChangeIndexItemsPaginationAsync()
+        private async Task ExecuteChangeIndexPaginationAsync()
         {
             IsBusy = true;
             await LoadItemsAsync();
             IsBusy = false;
         }
 
-        private bool CanExecuteChangeIndexItemsPagination()
+        private bool CanExecuteChangeIndexPagination()
         {
             return true;
         }
 
         #endregion
-
-        #region AddedItemsPagination
-
-
-        private string _addedItemsResponseTime;
-        public string AddedItemsResponseTime
-        {
-            get { return _addedItemsResponseTime; }
-            set
-            {
-                if (_addedItemsResponseTime != value)
-                {
-                    _addedItemsResponseTime = value;
-                    NotifyOfPropertyChange(() => AddedItemsResponseTime);
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// PageIndex
-        /// </summary>
-        private int _addedItemsPageIndex = 1; // DefaultPageIndex = 1
-        public int AddedItemsPageIndex
-        {
-            get { return _addedItemsPageIndex; }
-            set
-            {
-                if (_addedItemsPageIndex != value)
-                {
-                    _addedItemsPageIndex = value;
-                    NotifyOfPropertyChange(() => AddedItemsPageIndex);
-                }
-            }
-        }
-
-        /// <summary>
-        /// PageSize
-        /// </summary>
-        private int _addedItemsPageSize = 50; // Default PageSize 50
-        public int AddedItemsPageSize
-        {
-            get { return _addedItemsPageSize; }
-            set
-            {
-                if (_addedItemsPageSize != value)
-                {
-                    _addedItemsPageSize = value;
-                    NotifyOfPropertyChange(() => AddedItemsPageSize);
-                }
-            }
-        }
-
-        /// <summary>
-        /// TotalCount
-        /// </summary>
-        private int _addedItemsTotalCount = 0;
-        public int AddedItemsTotalCount
-        {
-            get { return _addedItemsTotalCount; }
-            set
-            {
-                if (_addedItemsTotalCount != value)
-                {
-                    _addedItemsTotalCount = value;
-                    NotifyOfPropertyChange(() => AddedItemsTotalCount);
-                }
-            }
-        }
-
-        /// <summary>
-        /// PaginationCommand para controlar evento
-        /// </summary>
-        private ICommand _addedItemsPaginationCommand;
-        public ICommand AddedItemsPaginationCommand
-        {
-            get
-            {
-                if (_addedItemsPaginationCommand == null) this._addedItemsPaginationCommand = new AsyncCommand(ExecuteChangeIndexAddedItemsPaginationAsync, CanExecuteChangeIndexAddedItemsPagination);
-                return _addedItemsPaginationCommand;
-            }
-        }
-
-        private async Task ExecuteChangeIndexAddedItemsPaginationAsync()
-        {
-            IsBusy = true;
-            await LoadItemsAsync();
-            IsBusy = false;
-        }
-
-        private bool CanExecuteChangeIndexAddedItemsPagination()
-        {
-            return true;
-        }
-
-        #endregion
-
-        protected override void OnViewReady(object view)
-        {
-            if (_parallelBatchProcessor.HasCriticalError())
-            {
-                string criticalErrorMessage = _parallelBatchProcessor.GetCriticalErrorMessage();
-                string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
-                                   $"Error: {criticalErrorMessage}\n\n" +
-                                   $"Por favor, comuníquese con el área de soporte técnico.";
-
-                ThemedMessageBox.Show(
-                    title: "Error Crítico del Sistema",
-                    text: userMessage,
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error
-                );
-
-                // Bloquear la vista
-                MainIsBusy = true;
-
-
-                return; // No continuar con la inicialización
-            }
-            base.OnViewReady(view);
-        }
 
         #region Query Builders
 
@@ -1495,6 +823,35 @@ namespace NetErp.Billing.PriceList.ViewModels
             var query = new GraphQLQueryBuilder([catalogsFragment]).GetQuery();
             return (query, catalogsFragment);
         });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadItemsQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Reference)
+                    .Field(e => e.Code))
+                .Build();
+
+            var filterParam = new GraphQLQueryParameter("filters", "ItemFilters");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("itemsPage", [filterParam, paginationParam], fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<string> _batchUpdatePricesQuery = new(() => @"
+            mutation ($input: BatchUpdatePriceListPricesInput!) {
+              SingleItemResponse: batchUpdatePriceListPrices(input: $input) {
+                success
+                message
+                totalAffected
+                affectedIds
+                errors { fields message }
+              }
+            }");
 
         #endregion
     }

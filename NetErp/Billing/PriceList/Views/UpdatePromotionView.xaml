@@ -16,8 +16,9 @@
              d:DesignHeight="450" d:DesignWidth="800"
              d:Background="White">
     
-    <Grid>
-        <Grid>
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="5">
+        <Grid Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
@@ -63,11 +64,11 @@
 
                         <dxb:BarItemSeparator/>
 
-                        <dxb:BarButtonItem  Glyph="{dx:DXImage 'Images/Actions/Clear_16x16.png'}" 
-                        LargeGlyph="{dx:DXImage 'Images/Actions/Clear_32x32.png'}"    
+                        <dxb:BarButtonItem  Glyph="{dx:DXImage 'Images/Actions/Clear_16x16.png'}"
+                        LargeGlyph="{dx:DXImage 'Images/Actions/Clear_32x32.png'}"
                         Content="Eliminar TODO"
                         RibbonStyle="Large"
-                        IsEnabled="{Binding CanPerformDataOperations, UpdateSourceTrigger=PropertyChanged}"
+                        IsEnabled="{Binding CanClearPromotion, UpdateSourceTrigger=PropertyChanged}"
                         Hint="Eliminar TODOS los productos"
                         Command="{Binding Path=ClearPromotionCommand}"/>
 
@@ -87,13 +88,17 @@
 
             </dxr:RibbonControl>
 
+            <StackPanel Grid.Row="1" Visibility="{Binding IsPromotionNotActive, UpdateSourceTrigger=PropertyChanged, Converter={dxmvvm:BooleanToVisibilityConverter}}" Background="Red">
+                <TextBlock Text="ESTA PROMOCIÓN NO ESTÁ ACTIVA" HorizontalAlignment="Center" Foreground="White" FontSize="10" FontWeight="SemiBold"/>
+            </StackPanel>
+
             <busyIndicator:BusyMask x:Name="DataControlsBusyIndicator"
                             IsBusy="{Binding HasCriticalError}"
                             IndicatorType="BouncingDot"
                             BusyContent="Módulo bloqueado por error crítico. Use el botón Regresar para salir."
                             BusyContentMargin="0,20,0,0"
                             IsBusyAtStartup="False"
-                            Grid.Row="1" Grid.RowSpan="4">
+                            Grid.Row="2" Grid.RowSpan="3">
             <Grid Margin="0 5 0 5" Grid.Row="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
@@ -154,41 +159,41 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0 0 10 10" Grid.ColumnSpan="2">
-                    <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <TextBlock Text="Buscar" Margin="0 0 0 2"/>
                     <dxe:TextEdit   x:Name="FilterSearch" Padding="2"
-                        Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
-                        FontFamily="Century Gothic"
+                        Style="{StaticResource FocusedHighlightStyle}"
+                        BorderBrush="#C8CED6"
+                        Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}"
                         NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
                         ShowNullTextForEmptyValue="True"
                         ShowNullTextIfFocused="True"
-                        EditValuePostMode="Delayed"
                         CharacterCasing="Upper"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="1" Margin="0 0 10 10">
-                    <TextBlock Text="Catalogo de productos" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <TextBlock Text="Catalogo de productos" Margin="0 0 0 2"/>
                     <dxe:ComboBoxEdit   ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
-                            IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+                            IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
 
 
                 <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="1" Margin="10 0 10 0">
-                    <TextBlock Text="Tipo de producto" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <TextBlock Text="Tipo de producto" Margin="0 0 0 2"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
-                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+                  IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1" Margin="10 0 10 0" Visibility="{Binding CanShowItemCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                    <TextBlock Text="Linea/Categoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <TextBlock Text="Linea/Categoria" Margin="0 0 0 2"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
-                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+                  IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="1" Margin="10 0 0 0" Visibility="{Binding CanShowItemSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                    <TextBlock Text="Sublinea/Subcategoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
+                    <TextBlock Text="Sublinea/Subcategoria" Margin="0 0 0 2"/>
                     <dxe:ComboBoxEdit ItemsSource="{Binding ItemSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
-                  IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
+                  IsTextEditable="False" DisplayMember="Name" Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
 
@@ -220,7 +225,8 @@
                         <dxg:GridColumn.HeaderTemplate>
                             <DataTemplate>
                                 <dxe:CheckEdit VerticalAlignment="Center"
-                          HorizontalAlignment="Center" 
+                          HorizontalAlignment="Center"
+                          ToolTip="Seleccionar / deseleccionar todos"
                           IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </DataTemplate>
                         </dxg:GridColumn.HeaderTemplate>
@@ -249,5 +255,5 @@
             </Grid>
             </busyIndicator:BusyMask>
         </Grid>
-    </Grid>
+    </Border>
 </UserControl>

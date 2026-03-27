@@ -44,6 +44,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IGraphQLClient _graphQLClient;
 
         #endregion
 
@@ -299,7 +300,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             ZoneCache zoneCache,
             StringLengthCache stringLengthCache,
             Helpers.IDialogService dialogService,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -312,6 +314,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -365,7 +368,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -397,7 +400,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSeller.Id);
                 IsBusy = false;

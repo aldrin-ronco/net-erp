@@ -44,6 +44,7 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly IMapper _mapper;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IGraphQLClient _graphQLClient;
 
         #region Commands
 
@@ -808,7 +809,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                     {
                         Id = costCenter.Id,
                         Name = costCenter.Name,
-                        IsSelected = false
+                        IsSelected = false,
+                        CompanyLocation = costCenter.CompanyLocation
                     });
                 }
 
@@ -1051,7 +1053,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             CostCenterCache costCenterCache,
             StringLengthCache stringLengthCache,
             IMapper mapper,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _sellerService = sellerService;
             _eventAggregator = eventAggregator;
@@ -1062,22 +1065,27 @@ namespace NetErp.Billing.Sellers.ViewModels
             _stringLengthCache = stringLengthCache;
             _mapper = mapper;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
             _errors = [];
             Emails = [];
         }
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-                _countryCache.EnsureLoadedAsync(),
-                _zoneCache.EnsureLoadedAsync(),
-                _identificationTypeCache.EnsureLoadedAsync(),
-                _costCenterCache.EnsureLoadedAsync()
-                );
-            Countries = _countryCache.Items;
-            Zones = _zoneCache.Items;
+            try
+            {
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, default,
+                    _countryCache, _zoneCache, _identificationTypeCache, _costCenterCache);
+                Countries = _countryCache.Items;
+                Zones = _zoneCache.Items;
 
-            SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC);
+                SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == Constant.IdentificationTypeCodeCC);
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
 
         }
         public async Task LoadDataForEditAsync(int id)
@@ -1127,7 +1135,8 @@ namespace NetErp.Billing.Sellers.ViewModels
                 {
                     Id = costCenter.Id,
                     Name = costCenter.Name,
-                    IsSelected = exist
+                    IsSelected = exist,
+                    CompanyLocation = costCenter.CompanyLocation
                 });
             }
             CostCenters = costCentersSelection;

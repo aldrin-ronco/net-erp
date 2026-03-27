@@ -10,15 +10,19 @@ namespace NetErp.Helpers.Messages
     {
         public Guid OperationId { get; }
         public bool Success { get; }
+        public bool IsRetrying { get; }
         public Exception? Exception { get; }
         public string DisplayName { get; }
+        public string? ErrorDetail { get; }
 
-        public OperationCompletedMessage(Guid operationId, bool success, string displayName, Exception? exception = null)
+        public OperationCompletedMessage(Guid operationId, bool success, string displayName, Exception? exception = null, bool isRetrying = false, string? errorDetail = null)
         {
             OperationId = operationId;
             Success = success;
             Exception = exception;
             DisplayName = displayName;
+            IsRetrying = isRetrying;
+            ErrorDetail = errorDetail;
         }
     }
 

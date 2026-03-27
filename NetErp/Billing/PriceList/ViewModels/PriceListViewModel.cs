@@ -78,21 +78,23 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
-            _ = Task.Run(async () =>
+        }
+
+        protected override async void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            try
             {
-                try
-                {
-                    await ActivateMasterViewAsync();
-                }
-                catch (AsyncException ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
+                await ActivateMasterViewAsync();
+            }
+            catch (AsyncException ex)
+            {
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(OnViewReady)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
         }
 
         public async Task ActivateMasterViewAsync()
@@ -112,9 +114,10 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _parallelBatchProcessor, _itemService, _tempRecordService, _priceListService);
+                UpdatePromotionViewModel instance = new(this, _notificationService, _priceListItemService, _dialogService, _itemService, _tempRecordService, _priceListService);
                 instance.Id = promotion.Id;
                 instance.Name = promotion.Name;
+                instance.IsPromotionActive = promotion.IsActive;
                 instance.StartDate = promotion.StartDate;
                 instance.EndDate = promotion.EndDate;
                 await instance.InitializeAsync();

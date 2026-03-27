@@ -147,5 +147,8 @@ namespace Common.Interfaces
         Task<TResponse> CreateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
         Task<TResponse> UpdateAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
         Task<TResponse> DeleteAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
+
+        Task<TModel> BatchAsync(string query, object variables, CancellationToken cancellationToken = default);
+        Task<TResponse> BatchAsync<TResponse>(string query, object variables, CancellationToken cancellationToken = default);
     }
 }

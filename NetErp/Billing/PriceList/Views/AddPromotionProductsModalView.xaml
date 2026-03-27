@@ -1,303 +1,214 @@
-﻿<UserControl x:Class="NetErp.Billing.PriceList.Views.AddPromotionProductsModalView"
+<UserControl x:Class="NetErp.Billing.PriceList.Views.AddPromotionProductsModalView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NetErp.Billing.PriceList.Views"
-             xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm" 
-             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:uc="clr-namespace:NetErp.UserControls" 
-             xmlns:cal="http://caliburnmicro.com"
-             mc:Ignorable="d" 
-             d:DesignHeight="1000" d:DesignWidth="1500"
-             d:Background="White" FontFamily="Century Gothic" >
-    <busyIndicator:BusyMask IsBusy="{Binding MainIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
-                            BusyContent="Por favor espere...">
-        <Grid Margin="10" Height="700" Width="1200">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
-        
-        <Grid Grid.Row="0" Margin="0 0 0 5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1400"
+             Background="#EEF1F5">
 
+    <UserControl.Resources>
+        <h:MultiplyConverter x:Key="MultiplyConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <UserControl.Width>
+        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.75"/>
+    </UserControl.Width>
+    <UserControl.Height>
+        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
+                 Converter="{StaticResource MultiplyConverter}" ConverterParameter="0.85"/>
+    </UserControl.Height>
+
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="8,0,8,8">
+        <Grid Margin="15">
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-            </Grid.RowDefinitions>
-
-
-            <StackPanel Orientation="Vertical" Grid.Column="0" Grid.Row="0" Margin="0 0 10 10">
-                <TextBlock Text="Catalogo de productos" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                <dxe:ComboBoxEdit   ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged}"
-                IsTextEditable="False" DisplayMember="Name" Padding="2"/>
-            </StackPanel>
-
-
-
-            <StackPanel Orientation="Vertical" Grid.Column="1" Grid.Row="0" Margin="10 0 10 0">
-                <TextBlock Text="Tipo de producto" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged}"
-      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
-            </StackPanel>
-
-            <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="0" Margin="10 0 10 0" Visibility="{Binding CanShowItemCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                <TextBlock Text="Linea/Categoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                <dxe:ComboBoxEdit ItemsSource="{Binding ItemCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged}"
-      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
-            </StackPanel>
-
-            <StackPanel Orientation="Vertical" Grid.Column="3" Grid.Row="0" Margin="10 0 0 0" Visibility="{Binding CanShowItemSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
-                <TextBlock Text="Sublinea/Subcategoria" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                <dxe:ComboBoxEdit ItemsSource="{Binding ItemSubCategories, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged}"
-      IsTextEditable="False" DisplayMember="Name" FontFamily="Century Gothic" Padding="2"/>
-            </StackPanel>
-
-
-        </Grid>
-
-        <Grid Grid.Row="1" Margin="0 5 0 0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Catalogo de productos" Grid.Row="0"  FontWeight="Bold" HorizontalAlignment="Center" Margin="0 0 0 5" FontSize="24"/>
-
-            <Grid Grid.Row="1">
+            <!-- Row 0: Filters -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2.5*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0 0 5 0">
-                    <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                    <dxe:TextEdit   x:Name="FilterSearch" Padding="2"
-                                    Text="{Binding ItemsFilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
-                                    FontFamily="Century Gothic"
-                                    NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
-                                    ShowNullTextForEmptyValue="True"
-                                    ShowNullTextIfFocused="True"
-                                    EditValuePostMode="Delayed"
-                                    CharacterCasing="Upper"/>
+
+                <!-- Catalogo -->
+                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="Catalogo" FontSize="13" Margin="0,0,0,4"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding Catalogs, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding SelectedCatalog, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name" IsTextEditable="False"
+                                      Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
-                <Button Margin="5 0 0 0" Grid.Column="2" Height="30" VerticalAlignment="Bottom" IsEnabled="{Binding CanAddItemList, UpdateSourceTrigger=PropertyChanged}"
-                        Command="{Binding AddItemListCommand}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Agregar seleccionados" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 2 0"/>
-                            <Image Source="{dx:DXImage 'Images/Actions/Fill_16x16.png'}" Stretch="None" Margin="2 0 0 0"/>
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
-             </Grid>
-
-            <busyIndicator:BusyMask Grid.Row="2" Margin="0 10 0 0" IsBusy="{Binding ItemsGridIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
-                                    BusyContent="Por favor espere...">
-                <dxg:GridControl ItemsSource="{Binding Items, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-                    <dxg:GridControl.View>
-                        <dxg:TableView
-                         AllowCascadeUpdate="False" 
-                         EnableSelectedRowAppearance="True"
-                         ShowGroupPanel="False" AlternateRowBackground="Beige"
-                         AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
-                         AllowSorting="False" AllowColumnFiltering="False" AllowResizing="False"/>
-                    </dxg:GridControl.View>
-
-                    <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                    <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
-
-                    <dxg:GridColumn Width="30">
-                        <dxg:GridColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button
-                            BorderThickness="0"
-                            Padding="3"
-                            Margin="3"
-                            Width="auto" Height="auto"
-                            cal:Message.Attach="[Event Click] = [Action AddItemAsync]">
-                                    <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/Icon Builder/Actions_AddCircled.svg', Size='16,16'}"/>
-                                    </Button.Content>
-                                </Button>
-                            </DataTemplate>
-                        </dxg:GridColumn.CellTemplate>
-                    </dxg:GridColumn>
-
-                    <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
-                        <dxg:GridColumn.HeaderTemplate>
-                            <DataTemplate>
-                                <dxe:CheckEdit VerticalAlignment="Center"
-                              HorizontalAlignment="Center" 
-                              IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </DataTemplate>
-                        </dxg:GridColumn.HeaderTemplate>
-                        <dxg:GridColumn.CellTemplate>
-                            <DataTemplate>
-                                <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
-                              HorizontalAlignment="Center"
-                              IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            </DataTemplate>
-                        </dxg:GridColumn.CellTemplate>
-                    </dxg:GridColumn>
-                </dxg:GridControl>
-            </busyIndicator:BusyMask>
-
-            <uc:GridPaging Grid.Row="3"
-               HorizontalAlignment="Stretch"
-               VerticalAlignment="Center"
-               ChangedIndexCommand="{Binding ItemsPaginationCommand}" 
-               PageIndex="{Binding ItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-               PageSize="{Binding ItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-               TotalCount="{Binding ItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-               ResponseTime="{Binding ItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 10"/>
-
-        </Grid>
-
-
-        <Grid Grid.Row="2" Margin="0 5 0 5" >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="auto"/>
-            </Grid.RowDefinitions>
-
-            <TextBlock Text="Productos agregados" FontWeight="Bold" HorizontalAlignment="Center" FontSize="24"/>
-
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2.5*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0 0 5 0">
-                    <TextBlock Text="Buscar" FontFamily="Century Gothic" Margin="0 0 0 2"/>
-                    <dxe:TextEdit Padding="2"
-                        Text="{Binding AddedItemsFilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}" 
-                        FontFamily="Century Gothic"
-                        NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
-                        ShowNullTextForEmptyValue="True"
-                        ShowNullTextIfFocused="True"
-                        EditValuePostMode="Delayed"
-                        CharacterCasing="Upper"/>
+                <!-- Tipo de producto -->
+                <StackPanel Orientation="Vertical" Grid.Column="1" Margin="8,0,8,0">
+                    <TextBlock Text="Tipo de producto" FontSize="13" Margin="0,0,0,4"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemTypes, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding SelectedItemType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name" IsTextEditable="False"
+                                      Padding="2" BorderBrush="#C8CED6"/>
                 </StackPanel>
 
-                <Button Margin="5 0 0 0" Grid.Column="2" Height="30" VerticalAlignment="Bottom" IsEnabled="{Binding CanRemoveAddedItemList, UpdateSourceTrigger=PropertyChanged}"
-                        Command="{Binding RemoveItemListCommand}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Eliminar seleccionados" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0 0 2 0"/>
-                            <Image Source="{dx:DXImage 'Images/Actions/Up2_16x16.png'}" Stretch="None" Margin="2 0 0 0"/>
-                        </StackPanel>
-                    </Button.Content>
-                </Button>
+                <!-- Categoria -->
+                <StackPanel Orientation="Vertical" Grid.Column="2" Margin="8,0,8,0"
+                            Visibility="{Binding CanShowItemCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Categoria" FontSize="13" Margin="0,0,0,4"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemCategories, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding SelectedItemCategory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name" IsTextEditable="False"
+                                      Padding="2" BorderBrush="#C8CED6"/>
+                </StackPanel>
+
+                <!-- Subcategoria -->
+                <StackPanel Orientation="Vertical" Grid.Column="3" Margin="8,0,0,0"
+                            Visibility="{Binding CanShowItemSubCategories, UpdateSourceTrigger=PropertyChanged, Converter={dx:BooleanToVisibilityConverter}}">
+                    <TextBlock Text="Subcategoria" FontSize="13" Margin="0,0,0,4"/>
+                    <dxe:ComboBoxEdit ItemsSource="{Binding ItemSubCategories, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedItem="{Binding SelectedItemSubCategory, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      DisplayMember="Name" IsTextEditable="False"
+                                      Padding="2" BorderBrush="#C8CED6"/>
+                </StackPanel>
             </Grid>
 
-            <busyIndicator:BusyMask Grid.Row="2" Margin="0 10 0 0" IsBusy="{Binding AddedItemsGridIsBusy, UpdateSourceTrigger=PropertyChanged}" IndicatorType="Cupertino"
-                                    BusyContent="Por favor espere...">
-                <dxg:GridControl ItemsSource="{Binding AddedItems, UpdateSourceTrigger=PropertyChanged}" SelectedItem="{Binding SelectedAddedItem, UpdateSourceTrigger=PropertyChanged}">
+            <!-- Row 1: Search + Counter -->
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Search ButtonEdit -->
+                <dxe:TextEdit x:Name="FilterSearchEdit" Grid.Column="0"
+                              Style="{StaticResource FocusedHighlightStyle}"
+                              NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
+                              ShowNullTextForEmptyValue="True"
+                              ShowNullTextIfFocused="True"
+                              Padding="3"
+                              CharacterCasing="Upper"
+                              BorderBrush="#C8CED6"
+                              Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}"/>
+
+                <!-- Selected count -->
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0" FontSize="13">
+                    <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
+                    <Run Text="productos seleccionados"/>
+                </TextBlock>
+            </Grid>
+
+            <!-- Row 2: Grid inside BusyMask -->
+            <busyIndicator:BusyMask Grid.Row="2"
+                                    IsBusy="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0">
+                <dxg:GridControl ItemsSource="{Binding Items, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <dxg:GridControl.View>
-                        <dxg:TableView
-                         AllowCascadeUpdate="False" 
-                         EnableSelectedRowAppearance="True"
-                         ShowGroupPanel="False" AlternateRowBackground="Beige"
-                         AllowColumnMoving="False" ColumnFilterPopupMode="Disabled"
-                         AllowColumnFiltering="False" AllowSorting="True"/>
+                        <dxg:TableView AllowCascadeUpdate="False"
+                                       EnableSelectedRowAppearance="True"
+                                       ShowGroupPanel="False"
+                                       AlternateRowBackground="Beige"
+                                       AllowEditing="False"
+                                       AllowColumnMoving="False"
+                                       ColumnFilterPopupMode="Disabled"
+                                       AllowSorting="False"
+                                       AllowColumnFiltering="False"
+                                       AllowResizing="False"/>
                     </dxg:GridControl.View>
 
-                    <dxg:GridColumn Header="Catalogo" Binding="{Binding SubCategory.ItemCategory.ItemType.Catalog.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Linea/Categoría" Binding="{Binding SubCategory.ItemCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Sub línea/Sub categoría" Binding="{Binding SubCategory.Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Código" Binding="{Binding Code, UpdateSourceTrigger=PropertyChanged}"/>
-                    <dxg:GridColumn Header="Nombre del producto" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                    <dxg:GridColumn Header="Referencia" Binding="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"/>
+                    <dxg:GridColumn Header="Codigo" FieldName="Code"/>
+                    <dxg:GridColumn Header="Nombre del producto" FieldName="Name" Width="*"/>
+                    <dxg:GridColumn Header="Referencia" FieldName="Reference"/>
 
-                    <dxg:GridColumn Width="30">
-                        <dxg:GridColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button
-                                    BorderThickness="0"
-                                    Padding="3"
-                                    Margin="3"
-                                    Width="auto" Height="auto"
-                                    cal:Message.Attach="[Event Click] = [Action RemoveItemAsync]">
-                                    <Button.Content>
-                                        <Image Source="{dx:SvgImageSource Uri='pack://application:,,,/DevExpress.Images.v25.2;component/SvgImages/Icon Builder/Actions_Delete.svg', Size='16,16'}"/>
-                                    </Button.Content>
-                                </Button>
-                            </DataTemplate>
-                        </dxg:GridColumn.CellTemplate>
-                    </dxg:GridColumn>
-
-                    <dxg:GridColumn Width="30" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
+                    <!-- Checkbox column with header select-all -->
+                    <dxg:GridColumn Width="40" Header="{Binding}" HorizontalHeaderContentAlignment="Center">
                         <dxg:GridColumn.HeaderTemplate>
                             <DataTemplate>
                                 <dxe:CheckEdit VerticalAlignment="Center"
-                              HorizontalAlignment="Center" 
-                              IsChecked="{Binding AddedItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                               HorizontalAlignment="Center"
+                                               ToolTip="Seleccionar / deseleccionar todos"
+                                               IsChecked="{Binding ItemsHeaderIsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </DataTemplate>
                         </dxg:GridColumn.HeaderTemplate>
                         <dxg:GridColumn.CellTemplate>
                             <DataTemplate>
                                 <dxe:CheckEdit Margin="4" VerticalAlignment="Center"
-                              HorizontalAlignment="Center"
-                              IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                               HorizontalAlignment="Center"
+                                               IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </DataTemplate>
                         </dxg:GridColumn.CellTemplate>
                     </dxg:GridColumn>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
 
+            <!-- Row 3: Pagination -->
             <uc:GridPaging Grid.Row="3"
-               HorizontalAlignment="Stretch"
-               VerticalAlignment="Center"
-               ChangedIndexCommand="{Binding AddedItemsPaginationCommand}" 
-               PageIndex="{Binding AddedItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-               PageSize="{Binding AddedItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-               TotalCount="{Binding AddedItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-               ResponseTime="{Binding AddedItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0 0 0 10"/>
-        </Grid>
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Center"
+                           Margin="0,5,0,5"
+                           ChangedIndexCommand="{Binding ItemsPaginationCommand}"
+                           PageIndex="{Binding ItemsPageIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           PageSize="{Binding ItemsPageSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           TotalCount="{Binding ItemsTotalCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                           ResponseTime="{Binding ItemsResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 5">
-            <Button Margin="0 0 5 0" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Guardar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
-                        <Image Source="{dx:DXImage 'Images/Save/Save_16x16.png'}"/>
+            <!-- Row 4: Bottom buttons -->
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,5">
+                <!-- Guardar -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.4"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock HorizontalAlignment="Center" Margin="0,4,0,0">
+                            <Run Text="Guardar"/>
+                            <Run Text="("/>
+                            <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
+                            <Run Text=")"/>
+                        </TextBlock>
                     </StackPanel>
-                </Button.Content>
-            </Button>
-            <Button Command="{Binding CancelCommand}">
-                <Button.Content>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Cancelar" FontFamily="Century Gothic" Margin="0 0 5 0"/>
-                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_16x16.png'}"/>
+                </Button>
+                <!-- Cancelar -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        IsCancel="True">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                     </StackPanel>
-                </Button.Content>
-            </Button>
-        </StackPanel>
-        
+                </Button>
+            </StackPanel>
         </Grid>
-    </busyIndicator:BusyMask>
+    </Border>
 </UserControl>

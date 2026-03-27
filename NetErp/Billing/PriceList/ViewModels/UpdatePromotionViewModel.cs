@@ -29,30 +29,27 @@ using static Models.Global.GraphQLResponseTypes;
 namespace NetErp.Billing.PriceList.ViewModels
 {
     public class UpdatePromotionViewModel: Screen,
-                IHandle<PriceListPromotionUpdateMessage>,
+                IHandle<PriceListUpdateMessage>,
                 IHandle<PromotionTempRecordResponseMessage>,
-                IHandle<ParallelBatchCompletedMessage>,
                 IHandle<CriticalSystemErrorMessage>
     {
 
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<PriceListItemGraphQLModel> _priceListItemService;
         private readonly Helpers.IDialogService _dialogService;
-        private readonly IParallelBatchProcessor _parallelBatchProcessor;
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
         public PriceListViewModel Context { get; set; }
-        
+
         // Referencia al modal activo para poder cerrarlo en caso de error crítico
         private AddPromotionProductsModalViewModel _activeModal;
-        
+
         public UpdatePromotionViewModel(
             PriceListViewModel context,
             Helpers.Services.INotificationService notificationService,
             IRepository<PriceListItemGraphQLModel> priceListItemService,
             Helpers.IDialogService dialogService,
-            IParallelBatchProcessor parallelBatchProcessor,
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
             IRepository<PriceListGraphQLModel> priceListServiceForModal)
@@ -61,19 +58,19 @@ namespace NetErp.Billing.PriceList.ViewModels
             _notificationService = notificationService;
             _priceListItemService = priceListItemService;
             _dialogService = dialogService;
-            _parallelBatchProcessor = parallelBatchProcessor;
             _itemService = itemService;
             _tempRecordService = tempRecordService;
             _priceListServiceForModal = priceListServiceForModal;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
-        public Task HandleAsync(PriceListPromotionUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(PriceListUpdateMessage message, CancellationToken cancellationToken)
         {
-            Name = message.UpdatedPromotion.Entity.Name;
-            StartDate = message.UpdatedPromotion.Entity.StartDate;
-            EndDate = message.UpdatedPromotion.Entity.EndDate;
-            _notificationService.ShowSuccess(message.UpdatedPromotion.Message);
+            Name = message.UpdatedPriceList.Entity.Name;
+            IsPromotionActive = message.UpdatedPriceList.Entity.IsActive;
+            StartDate = message.UpdatedPriceList.Entity.StartDate;
+            EndDate = message.UpdatedPriceList.Entity.EndDate;
+            _notificationService.ShowSuccess(message.UpdatedPriceList.Message);
             return Task.CompletedTask;
         }
 
@@ -134,6 +131,23 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public int Id { get; set; }
 
+        private bool _isPromotionActive;
+        public bool IsPromotionActive
+        {
+            get => _isPromotionActive;
+            set
+            {
+                if (_isPromotionActive != value)
+                {
+                    _isPromotionActive = value;
+                    NotifyOfPropertyChange(nameof(IsPromotionActive));
+                    NotifyOfPropertyChange(nameof(IsPromotionNotActive));
+                }
+            }
+        }
+
+        public bool IsPromotionNotActive => !IsPromotionActive;
+
         public async Task GoBackAsync()
         {
             try
@@ -142,9 +156,19 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             catch (Exception ex)
             {
-
                 throw new AsyncException(innerException: ex);
             }
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                Context.EventAggregator.Unsubscribe(this);
+                _cascadeCancellation?.Cancel();
+                _cascadeCancellation?.Dispose();
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         private ObservableCollection<PriceListItemDTO> _priceListItems = [];
@@ -190,6 +214,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
                         
                         BuildItemTypes();
@@ -228,6 +253,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
                         
                         BuildItemCategories();
@@ -268,6 +294,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
                         
                         BuildItemSubCategories();
@@ -306,6 +333,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (!_isUpdating && value != null && IsInitialized)
                     {
                         _cascadeCancellation?.Cancel();
+                        _cascadeCancellation?.Dispose();
                         _cascadeCancellation = new CancellationTokenSource();
                         
                         _ = ReloadDataAsync(_cascadeCancellation.Token);
@@ -433,17 +461,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _filterSearch = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 3 caracteres digitados
+                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 2 caracteres digitados
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
                         PageIndex = 1;
-                        if (IsInitialized) _ = Task.Run(async () =>
-                        {
-                            IsBusy = true;
-                            await LoadProducts();
-                            IsBusy = false;
-                            _ = this.SetFocus(nameof(FilterSearch));
-                        });
+                        if (IsInitialized) _ = LoadProducts();
                     }
                 }
             }
@@ -474,7 +496,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     _hasCriticalError = value;
                     NotifyOfPropertyChange(nameof(HasCriticalError));
                     NotifyOfPropertyChange(nameof(CanPerformDataOperations));
-                    NotifyOfPropertyChange(nameof(CanDelete)); // Actualizar CanDelete también
+                    NotifyOfPropertyChange(nameof(CanDelete));
+                    NotifyOfPropertyChange(nameof(CanClearPromotion));
                 }
             }
         }
@@ -498,11 +521,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             try
             {
                 UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal);
-                instance.Id = Id;
-                instance.Name = Name;
-                instance.MinimumDate = StartDate;
-                instance.StartDate = StartDate;
-                instance.EndDate = EndDate;
+                instance.SetForEdit(new PriceListGraphQLModel
+                {
+                    Id = Id,
+                    Name = Name,
+                    IsActive = IsPromotionActive,
+                    StartDate = StartDate,
+                    EndDate = EndDate
+                });
                 await _dialogService.ShowDialogAsync(instance, "Editar promoción");
             }
             catch (Exception ex)
@@ -529,7 +555,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService, _tempRecordService, _parallelBatchProcessor);
+                _activeModal = new(Context, _dialogService, _priceListItemService, _itemService);
                 MainIsBusy = true;
                 _activeModal.PromotionId = Id;
                 await _activeModal.InitializeAsync();
@@ -558,62 +584,31 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                string query = @"
-                    query ($filter: PriceListItemsFilterInput) {
-                      PageResponse: priceListDetailPage(filter: $filter) {
-                        count
-                        rows {
-                          catalogItem {
-                            id
-                            name
-                            code
-                            reference
-                          }
-                        }
-                      }
-                    }
-                    ";
-                dynamic variables = new ExpandoObject();
-                variables.filter = new ExpandoObject();
-                variables.filter.catalogId = new ExpandoObject();
-                variables.filter.catalogId.@operator = "=";
-                variables.filter.catalogId.value = SelectedCatalog != null ? SelectedCatalog.Id : throw new Exception("SelectedCatalog can't be null");
+                var (fragment, query) = _loadPromotionItemsQuery.Value;
 
-                variables.filter.priceListId = new ExpandoObject();
-                variables.filter.priceListId.@operator = "=";
-                variables.filter.priceListId.value = Id;
-                variables.filter.priceListId.exclude = true;
-
+                dynamic filters = new ExpandoObject();
+                if (SelectedCatalog != null && SelectedCatalog.Id != 0)
+                    filters.catalogId = SelectedCatalog.Id;
                 if (SelectedItemType != null && SelectedItemType.Id != 0)
-                {
-                    variables.filter.itemTypeId = new ExpandoObject();
-                    variables.filter.itemTypeId.@operator = "=";
-                    variables.filter.itemTypeId.value = SelectedItemType.Id;
-                }
+                    filters.itemTypeId = SelectedItemType.Id;
                 if (SelectedItemCategory != null && SelectedItemCategory.Id != 0)
-                {
-                    variables.filter.itemCategoryId = new ExpandoObject();
-                    variables.filter.itemCategoryId.@operator = "=";
-                    variables.filter.itemCategoryId.value = SelectedItemCategory.Id;
-                }
+                    filters.itemCategoryId = SelectedItemCategory.Id;
                 if (SelectedItemSubCategory != null && SelectedItemSubCategory.Id != 0)
-                {
-                    variables.filter.itemSubCategoryId = new ExpandoObject();
-                    variables.filter.itemSubCategoryId.@operator = "=";
-                    variables.filter.itemSubCategoryId.value = SelectedItemSubCategory.Id;
-                }
+                    filters.itemSubCategoryId = SelectedItemSubCategory.Id;
+                if (!string.IsNullOrEmpty(FilterSearch))
+                    filters.filterSearch = FilterSearch.Trim().RemoveExtraSpaces();
 
-                variables.filter.filterSearch = new ExpandoObject();
-                variables.filter.filterSearch.@operator = "like";
-                variables.filter.filterSearch.value = string.IsNullOrEmpty(FilterSearch) ? "" : FilterSearch.Trim().RemoveExtraSpaces();
-                variables.filter.filterSearch.exclude = true;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "priceListId", Id)
+                    .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                    .For(fragment, "filters", filters)
+                    .Build();
 
                 PageType<PriceListItemGraphQLModel> result = await _priceListItemService.GetPageAsync(query, variables);
-                TotalCount = result.Count;
-                PriceListItems = [.. Context.AutoMapper.Map<ObservableCollection<PriceListItemDTO>>(result.Rows)];
+                TotalCount = result.TotalEntries;
+                PriceListItems = [.. Context.AutoMapper.Map<ObservableCollection<PriceListItemDTO>>(result.Entries)];
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
@@ -628,7 +623,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             {
                 await Execute.OnUIThreadAsync(() =>
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(LoadProducts)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return Task.CompletedTask;
                 });
             }
@@ -680,13 +675,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         }
 
 
-        public bool CanDelete
-        {
-            get
-            {
-                return ShadowItems != null && ShadowItems.Count > 0 && CanPerformDataOperations;
-            }
-        }
+        public bool CanDelete => ShadowItems != null && ShadowItems.Count > 0 && CanPerformDataOperations;
+
+        public bool CanClearPromotion => PriceListItems != null && PriceListItems.Count > 0 && CanPerformDataOperations;
 
         private bool _itemsHeaderIsChecked;
 
@@ -719,12 +710,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 ShadowItems.Add(itemId);
             }
             NotifyOfPropertyChange(nameof(CanDelete));
+            NotifyOfPropertyChange(nameof(CanClearPromotion));
         }
 
         public void RemoveItemsFromShadowList(int itemId)
         {
             ShadowItems.Remove(itemId);
             NotifyOfPropertyChange(nameof(CanDelete));
+            NotifyOfPropertyChange(nameof(CanClearPromotion));
         }
 
         public void VerifyItemsInShadowList()
@@ -748,45 +741,71 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        private const int DeleteBatchSize = 50;
+
+        private static readonly Lazy<string> _batchDeleteQuery = new(() => @"
+            mutation ($input: BatchDeletePriceListPricesInput!) {
+              SingleItemResponse: batchDeletePriceListPrices(input: $input) {
+                success
+                message
+                totalAffected
+                affectedIds
+                errors { fields message }
+              }
+            }");
+
         public async Task DeleteListAsync()
         {
             try
             {
                 MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar los registros seleccionados?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                 if (result != MessageBoxResult.Yes) return;
-                _notificationService.ShowInfo("Eliminando productos de la promoción...");
 
                 if (ShadowItems.Count == 0) return;
 
-                List<object> promotionItems = [];
                 IsBusy = true;
+                var itemIds = ShadowItems.ToList();
+                string query = _batchDeleteQuery.Value;
+                int totalDeleted = 0;
+                var failedMessages = new List<string>();
 
-                string query = @"
-                mutation($data: [DeletePromotionItemInput!]!){
-                  ListResponse: deletePromotionItemList(data: $data){
-                    catalogItem {
-                    id
-                    name
-                    code
-                    reference
-                    }
-                  }
-                }";
-
-                foreach (var itemId in ShadowItems.ToList())
+                for (int i = 0; i < itemIds.Count; i += DeleteBatchSize)
                 {
-                    object promotionItem = new
+                    var batch = itemIds.Skip(i).Take(DeleteBatchSize).ToList();
+                    var variables = new { input = new { priceListId = Id, itemIds = batch } };
+
+                    var batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
+
+                    if (batchResult.Success)
                     {
-                        PriceListId = Id,
-                        ItemId = itemId
-                    };
-                    promotionItems.Add(promotionItem);
-                    PriceListItems.Remove(PriceListItems.Where(x => x.Item.Id == itemId).FirstOrDefault() ?? throw new Exception("No se encontró el elemento en la lista"));
-                    ShadowItems.Remove(itemId);
+                        foreach (var itemId in batch)
+                        {
+                            var item = PriceListItems.FirstOrDefault(x => x.Item.Id == itemId);
+                            if (item != null) PriceListItems.Remove(item);
+                            ShadowItems.Remove(itemId);
+                        }
+                        totalDeleted += batch.Count;
+                    }
+                    else
+                    {
+                        failedMessages.Add(batchResult.Message ?? "Error desconocido");
+                    }
                 }
 
-                _ = _parallelBatchProcessor.ProcessBatchAsync(query, promotionItems, typeof(PriceListItemGraphQLModel), 10);
+                _itemsHeaderIsChecked = false;
+                NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
                 NotifyOfPropertyChange(nameof(CanDelete));
+                NotifyOfPropertyChange(nameof(CanClearPromotion));
+
+                if (failedMessages.Count > 0)
+                {
+                    _notificationService.ShowWarning(
+                        $"Eliminados: {totalDeleted}. Con error: {itemIds.Count - totalDeleted}.\n{string.Join("\n", failedMessages)}");
+                }
+                else
+                {
+                    _notificationService.ShowSuccess($"{totalDeleted} productos eliminados correctamente");
+                }
             }
             catch (Exception ex)
             {
@@ -812,6 +831,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
+        private static readonly Lazy<string> _purgeQuery = new(() => @"
+            mutation ($priceListId: ID!) {
+              SingleItemResponse: purgePriceListPrices(priceListId: $priceListId) {
+                success
+                message
+                totalAffected
+                affectedIds
+                errors { fields message }
+              }
+            }");
+
         public async Task ClearPromotionAsync()
         {
             try
@@ -819,27 +849,22 @@ namespace NetErp.Billing.PriceList.ViewModels
                 MessageBoxResult result = ThemedMessageBox.Show(title: "Confirme...", text: $"¿Confirma que desea eliminar TODOS los registros?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
                 if (result != MessageBoxResult.Yes) return;
 
-                string query = @"
-                mutation($id: Int!){
-                  Data: clearPriceListItems(id: $id){
-                    success
-                    message
-                  }
-                }  ";
-
                 IsBusy = true;
-                dynamic variables = new ExpandoObject();
-                variables.Id = Id;
-                var response = await _priceListItemService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
+                var variables = new { priceListId = Id };
+                var batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(_purgeQuery.Value, variables);
 
-                if (!response.Data.Success)
+                if (!batchResult.Success)
                 {
-                    _notificationService.ShowError("Error al limpiar la promoción");
-                    throw new Exception(response.Data.Message);
+                    _notificationService.ShowError(batchResult.Message ?? "Error al limpiar la promoción");
+                    return;
                 }
+
                 PriceListItems.Clear();
                 ShadowItems.Clear();
+                _itemsHeaderIsChecked = false;
+                NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
                 NotifyOfPropertyChange(nameof(CanDelete));
+                NotifyOfPropertyChange(nameof(CanClearPromotion));
                 _notificationService.ShowSuccess("Promoción limpiada correctamente");
             }
             catch (Exception ex)
@@ -859,84 +884,31 @@ namespace NetErp.Billing.PriceList.ViewModels
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            if (_parallelBatchProcessor.HasCriticalError())
-            {
-                string criticalErrorMessage = _parallelBatchProcessor.GetCriticalErrorMessage();
-                string userMessage = $"Se ha detectado un error crítico en el sistema que impide continuar.\n\n" +
-                                   $"Error: {criticalErrorMessage}\n\n" +
-                                   $"Por favor, comuníquese con el área de soporte técnico.";
-
-                // Activar estado de error crítico para bloqueo granular
-                HasCriticalError = true;
-
-                ThemedMessageBox.Show(
-                    title: "Error Crítico del Sistema",
-                    text: userMessage,
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error
-                );
-
-                // Mostrar notificación adicional
-                _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
-
-                return; // No continuar con la inicialización
-            }
             this.SetFocus(nameof(FilterSearch));
         }
 
         public async Task HandleAsync(PromotionTempRecordResponseMessage message, CancellationToken cancellationToken)
         {
             IsBusy = true;
+            ShadowItems.Clear();
             await LoadProducts();
+            _itemsHeaderIsChecked = false;
+            NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
+            NotifyOfPropertyChange(nameof(CanDelete));
+            NotifyOfPropertyChange(nameof(CanClearPromotion));
             IsBusy = false;
             _notificationService.ShowSuccess(message.Response.Message);
         }
 
-        public Task HandleAsync(ParallelBatchCompletedMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CriticalSystemErrorMessage message, CancellationToken cancellationToken)
         {
-            if(message.IsSuccess)
+            if (message.ResponseType == typeof(PriceListItemGraphQLModel) || message.ResponseType == typeof(TempRecordGraphQLModel))
             {
-                _notificationService.ShowSuccess("Productos eliminados correctamente");
-            }
-            else
-            {
-                _notificationService.ShowError($"Error al eliminar productos: {(message.Exception is null ? "" : message.Exception.Message)}");
+                IsBusy = false;
+                HasCriticalError = true;
+                _notificationService.ShowError(message.UserMessage, durationMs: 10000);
             }
             return Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(CriticalSystemErrorMessage message, CancellationToken cancellationToken)
-        {
-            // Manejar errores críticos de ParallelBatchProcessor para ambos tipos (padre maneja comunicación con usuario)
-            if (message.ServiceName == nameof(ParallelBatchProcessor) && 
-                (message.ResponseType == typeof(PriceListItemGraphQLModel) || message.ResponseType == typeof(TempRecordGraphQLModel)))
-            {
-                await Execute.OnUIThreadAsync(async () =>
-                {
-                    IsBusy = false; // Desbloquear UI que pueda estar en estado busy
-                    
-                    // Si es un error de TempRecord (modal), cerrar cualquier modal abierto primero
-                    if (message.ResponseType == typeof(TempRecordGraphQLModel))
-                    {
-                        // Cerrar modal si está abierto (buscar ventanas modales activas)
-                        await _dialogService.CloseDialogAsync(_activeModal, null);
-
-                    }
-                    
-                    // Activar estado de error crítico para bloqueo granular
-                    HasCriticalError = true;
-                    
-                    ThemedMessageBox.Show(
-                        title: "Error Crítico del Sistema",
-                        text: message.UserMessage,
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error
-                    );
-
-                    _notificationService.ShowError("Módulo bloqueado debido a error crítico. Contacte soporte técnico.", "Sistema Bloqueado");
-                    return;
-                });
-            }
         }
 
         private string _responseTime;
@@ -1030,6 +1002,26 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             var query = new GraphQLQueryBuilder([catalogsFragment]).GetQuery();
             return (query, catalogsFragment);
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadPromotionItemsQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<PriceListItemGraphQLModel>>
+                .Create()
+                .Field(f => f.TotalEntries)
+                .SelectList(f => f.Entries, entries => entries
+                    .Select(e => e.Item, item => item
+                        .Field(i => i.Id)
+                        .Field(i => i.Name)
+                        .Field(i => i.Code)
+                        .Field(i => i.Reference)))
+                .Build();
+
+            var filterParam = new GraphQLQueryParameter("filters", "PriceListItemCatalogFilters");
+            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
+            var priceListIdParam = new GraphQLQueryParameter("priceListId", "ID!");
+            var fragment = new GraphQLQueryFragment("priceListItemCatalogPage", [filterParam, paginationParam, priceListIdParam], fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion

@@ -73,12 +73,14 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
         public void CalculateFromMinimumPrice(PriceListItemDTO priceListDetail)
         {
+            if (priceListDetail.Price == 0) return;
             decimal discountMargin = (1 - priceListDetail.MinimumPrice / priceListDetail.Price) * 100;
             priceListDetail.UpdatePropertySilently(nameof(PriceListItemDTO.DiscountMargin), discountMargin);
         }
 
         public void CalculateFromPrice(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
+            if (priceListDetail.Price == 0) return;
             decimal ivaMargin = ExtractIvaMargin(priceListDetail, priceList);
             decimal discountValue = priceListDetail.Price * (priceListDetail.DiscountMargin / 100);
             decimal priceWithDiscount = priceListDetail.Price - discountValue;
@@ -90,6 +92,7 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
         public void CalculateFromProfitMargin(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
+            if (priceListDetail.ProfitMargin == 100m) return;
             decimal ivaMargin = ExtractIvaMargin(priceListDetail, priceList);
             decimal priceWithTax = (priceListDetail.Cost * (1 + (ivaMargin/100))) / (1 - (priceListDetail.ProfitMargin / 100));
             FormulaVariables["PRECIO_SIN_DCTO"] = priceWithTax;
@@ -105,6 +108,7 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
         public decimal ExtractIvaMargin(PriceListItemDTO priceListDetail, PriceListGraphQLModel priceList)
         {
             if (!priceList.IsTaxable || !priceList.PriceListIncludeTax) return 0;
+            if (priceListDetail.Item?.AccountingGroup is null) return 0;
 
             TaxGraphQLModel sellTax1 = priceListDetail.Item.AccountingGroup.SalesPrimaryTax;
             TaxGraphQLModel sellTax2 = priceListDetail.Item.AccountingGroup.SalesSecondaryTax;
@@ -117,6 +121,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
         public TaxGraphQLModel? GetIvaTax(PriceListItemDTO priceListDetail)
         {
+            if (priceListDetail.Item?.AccountingGroup is null) return null;
+
             TaxGraphQLModel? sellTax1 = priceListDetail.Item.AccountingGroup.SalesPrimaryTax;
             TaxGraphQLModel? sellTax2 = priceListDetail.Item.AccountingGroup.SalesSecondaryTax;
 
@@ -134,7 +140,8 @@ namespace NetErp.Billing.PriceList.PriceListHelpers
 
             string formula = Regex.Replace(ivaTax.AlternativeFormula, pattern, m => FormulaVariables[m.Value].ToString(CultureInfo.InvariantCulture));
 
-            return Convert.ToDecimal(new DataTable().Compute(formula, null), CultureInfo.InvariantCulture);
+            using var dt = new DataTable();
+            return Convert.ToDecimal(dt.Compute(formula, null), CultureInfo.InvariantCulture);
         }
 
     }

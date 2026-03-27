@@ -3,6 +3,7 @@ using Common.Interfaces;
 using Models.Books;
 using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json.Linq;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
@@ -13,7 +14,7 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class IdentificationTypeCache : IEntityCache<IdentificationTypeGraphQLModel>,
+    public class IdentificationTypeCache : IEntityCache<IdentificationTypeGraphQLModel>, IBatchLoadableCache,
         IHandle<IdentificationTypeCreateMessage>,
         IHandle<IdentificationTypeUpdateMessage>,
         IHandle<IdentificationTypeDeleteMessage>
@@ -76,6 +77,33 @@ namespace NetErp.Helpers.Cache
                 IsInitialized = true;
             }
         }
+
+        #region IBatchLoadableCache
+
+        public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
+
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
+        {
+            variables.For(batchFragment, "pagination", new { PageSize = -1 });
+        }
+
+        public void PopulateFromBatchResponse(JToken data)
+        {
+            var page = data.ToObject<PageType<IdentificationTypeGraphQLModel>>();
+            if (page == null) return;
+
+            lock (_lock)
+            {
+                _items.Clear();
+                foreach (var item in page.Entries)
+                {
+                    _items.Add(item);
+                }
+                IsInitialized = true;
+            }
+        }
+
+        #endregion
 
         public void Clear()
         {
