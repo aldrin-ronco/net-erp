@@ -46,6 +46,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IGraphQLClient _graphQLClient;
 
         #endregion
 
@@ -272,7 +273,8 @@ namespace NetErp.Billing.Customers.ViewModels
                                  WithholdingTypeCache withholdingTypeCache,
                                  ZoneCache zoneCache,
                                  StringLengthCache stringLengthCache,
-                                 JoinableTaskFactory joinableTaskFactory)
+                                 JoinableTaskFactory joinableTaskFactory,
+                                 IGraphQLClient graphQLClient)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -285,6 +287,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _zoneCache = zoneCache ?? throw new ArgumentNullException(nameof(zoneCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -336,7 +339,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -361,7 +364,7 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedCustomer.Id);
                 IsBusy = false;

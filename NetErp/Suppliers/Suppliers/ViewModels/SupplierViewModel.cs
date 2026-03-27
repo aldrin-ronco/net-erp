@@ -37,6 +37,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         private readonly Helpers.IDialogService _dialogService;
 
         // Caches
+        private readonly IGraphQLClient _graphQLClient;
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly WithholdingTypeCache _withholdingTypeCache;
@@ -243,7 +244,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             CountryCache countryCache,
             WithholdingTypeCache withholdingTypeCache,
             StringLengthCache stringLengthCache,
-            Helpers.IDialogService dialogService)
+            Helpers.IDialogService dialogService,
+            IGraphQLClient graphQLClient)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -254,6 +256,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _withholdingTypeCache = withholdingTypeCache ?? throw new ArgumentNullException(nameof(withholdingTypeCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -289,7 +292,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper);
+                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -313,7 +316,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper);
+                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSupplier.Id);
                 IsBusy = false;

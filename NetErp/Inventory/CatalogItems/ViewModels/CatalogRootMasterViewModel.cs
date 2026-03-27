@@ -60,6 +60,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
 
         // Caches
+        private readonly IGraphQLClient _graphQLClient;
         private readonly MeasurementUnitCache _measurementUnitCache;
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
@@ -389,7 +390,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
             ItemSizeCategoryCache itemSizeCategoryCache,
-            StringLengthCache stringLengthCache)
+            StringLengthCache stringLengthCache,
+            IGraphQLClient graphQLClient)
         {
             Context = context;
             _catalogService = catalogService;
@@ -405,6 +407,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
             _stringLengthCache = stringLengthCache;
+            _graphQLClient = graphQLClient;
 
             // Initialize PanelEditors
             CatalogEditor = new CatalogPanelEditor(this, _catalogService, _stringLengthCache);
@@ -1615,12 +1618,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             try
             {
-                await Task.WhenAll(
-                    _measurementUnitCache.EnsureLoadedAsync(),
-                    _itemBrandCache.EnsureLoadedAsync(),
-                    _accountingGroupCache.EnsureLoadedAsync(),
-                    _itemSizeCategoryCache.EnsureLoadedAsync()
-                );
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, default,
+                    _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache);
 
                 MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(_measurementUnitCache.Items);
                 ItemBrands = Context.AutoMapper.Map<ObservableCollection<ItemBrandDTO>>(_itemBrandCache.Items);

@@ -3,6 +3,7 @@ using Common.Helpers;
 using Common.Interfaces;
 using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -13,7 +14,7 @@ using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 
 namespace NetErp.Helpers.Cache
 {
-    public class AccountingBookCache : IEntityCache<AccountingBookGraphQLModel>,
+    public class AccountingBookCache : IEntityCache<AccountingBookGraphQLModel>, IBatchLoadableCache,
         IHandle<AccountingBookCreateMessage>,
         IHandle<AccountingBookUpdateMessage>,
         IHandle<AccountingBookDeleteMessage>
@@ -82,6 +83,28 @@ namespace NetErp.Helpers.Cache
                 throw new AsyncException(innerException: ex);
             }
         }
+
+        #region IBatchLoadableCache
+
+        public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
+
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment) { }
+
+        public void PopulateFromBatchResponse(JToken data)
+        {
+            var page = data.ToObject<PageType<AccountingBookGraphQLModel>>();
+            if (page == null) return;
+
+            lock (_lock)
+            {
+                _items.Clear();
+                foreach (var item in page.Entries)
+                    _items.Add(item);
+                IsInitialized = true;
+            }
+        }
+
+        #endregion
 
         public void Clear()
         {

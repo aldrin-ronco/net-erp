@@ -35,6 +35,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IMapper _autoMapper;
         private readonly Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
@@ -439,7 +440,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<PriceListGraphQLModel> priceListService,
             StorageCache storageCache,
             CostCenterCache costCenterCache,
-            PaymentMethodCache paymentMethodCache)
+            PaymentMethodCache paymentMethodCache,
+            IGraphQLClient graphQLClient)
         {
             _errors = [];
             _dialogService = dialogService;
@@ -449,6 +451,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _graphQLClient = graphQLClient;
         }
 
         #endregion
@@ -459,11 +462,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                await Task.WhenAll(
-                    _storageCache.EnsureLoadedAsync(),
-                    _costCenterCache.EnsureLoadedAsync(),
-                    _paymentMethodCache.EnsureLoadedAsync()
-                );
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, default,
+                    _storageCache, _costCenterCache, _paymentMethodCache);
 
                 Storages = [.. _storageCache.Items];
                 CostCenters = [.. _costCenterCache.Items];

@@ -49,6 +49,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
 
+        private readonly IGraphQLClient _graphQLClient;
         private readonly CostCenterCache _costCenterCache;
         private readonly AccountingBookCache _accountingBookCache;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
@@ -703,7 +704,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
-             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache)
+             NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
+             IGraphQLClient graphQLClient)
         {
             this.Context = context;
             _notificationService = notificationService;
@@ -713,6 +715,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _costCenterCache = costCenterCache;
             _accountingBookCache = accountingBookCache;
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
+            _graphQLClient = graphQLClient;
             // Validaciones
             this._errors = new Dictionary<string, List<string>>();
 
@@ -726,11 +729,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(
-               _costCenterCache.EnsureLoadedAsync(),
-               _accountingBookCache.EnsureLoadedAsync(),
-                _notAnnulledAccountingSourceCache.EnsureLoadedAsync()
-               );
+            await CacheBatchLoader.LoadAsync(
+               _graphQLClient, default,
+               _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache);
             CostCenters =[.. _costCenterCache.Items];
             this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;

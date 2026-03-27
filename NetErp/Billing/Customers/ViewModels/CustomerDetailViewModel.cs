@@ -43,6 +43,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly IMapper _autoMapper;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IGraphQLClient _graphQLClient;
 
         #endregion
 
@@ -797,7 +798,8 @@ namespace NetErp.Billing.Customers.ViewModels
             ZoneCache zoneCache,
             StringLengthCache stringLengthCache,
             IMapper autoMapper,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -808,6 +810,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _autoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
 
             Emails = [];
         }
@@ -834,11 +837,9 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public async Task LoadCachesAsync()
         {
-            await Task.WhenAll(
-                _identificationTypeCache.EnsureLoadedAsync(),
-                _countryCache.EnsureLoadedAsync(),
-                _withholdingTypeCache.EnsureLoadedAsync(),
-                _zoneCache.EnsureLoadedAsync());
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient, default,
+                _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache);
 
             IdentificationTypes = _identificationTypeCache.Items;
             Countries = _countryCache.Items;

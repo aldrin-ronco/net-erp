@@ -52,6 +52,7 @@ namespace NetErp.Treasury.Masters.ViewModels
         private readonly IRepository<FranchiseGraphQLModel> _franchiseService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly BankAccountCache _bankAccountCache;
@@ -1656,12 +1657,9 @@ namespace NetErp.Treasury.Masters.ViewModels
             try
             {
                 // Ensure all caches are loaded
-                await Task.WhenAll(
-                    _auxiliaryAccountingAccountCache.EnsureLoadedAsync(),
-                    _costCenterCache.EnsureLoadedAsync(),
-                    _bankAccountCache.EnsureLoadedAsync(),
-                    _majorCashDrawerCache.EnsureLoadedAsync()
-                );
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, default,
+                    _auxiliaryAccountingAccountCache, _costCenterCache, _bankAccountCache, _majorCashDrawerCache);
 
                 // Cuentas contables auxiliares
                 CashDrawerAccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
@@ -1713,7 +1711,8 @@ namespace NetErp.Treasury.Masters.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             CostCenterCache costCenterCache,
             BankAccountCache bankAccountCache,
-            MajorCashDrawerCache majorCashDrawerCache)
+            MajorCashDrawerCache majorCashDrawerCache,
+            IGraphQLClient graphQLClient)
         {
             _companyLocationService = companyLocationService;
             _costCenterService = costCenterService;
@@ -1727,6 +1726,7 @@ namespace NetErp.Treasury.Masters.ViewModels
             _costCenterCache = costCenterCache;
             _bankAccountCache = bankAccountCache;
             _majorCashDrawerCache = majorCashDrawerCache;
+            _graphQLClient = graphQLClient;
 
             DummyItems = [
             new CashDrawerDummyDTO() {

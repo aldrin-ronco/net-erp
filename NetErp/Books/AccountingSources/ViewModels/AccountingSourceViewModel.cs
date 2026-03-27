@@ -32,6 +32,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private readonly IRepository<AccountingSourceGraphQLModel> _accountingSourceService;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
         private readonly MenuModuleCache _menuModuleCache;
@@ -249,7 +250,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             ProcessTypeCache processTypeCache,
             MenuModuleCache menuModuleCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient)
         {
             _eventAggregator = eventAggregator;
             _accountingSourceService = accountingSourceService;
@@ -259,6 +261,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             _processTypeCache = processTypeCache;
             _menuModuleCache = menuModuleCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _graphQLClient = graphQLClient;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -292,7 +295,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory);
+                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva fuente contable");
@@ -318,7 +321,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory);
+                var detail = new AccountingSourceDetailViewModel(_accountingSourceService, _eventAggregator, _auxiliaryAccountingAccountCache, _processTypeCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedAccountingSource.Id);
                 IsBusy = false;

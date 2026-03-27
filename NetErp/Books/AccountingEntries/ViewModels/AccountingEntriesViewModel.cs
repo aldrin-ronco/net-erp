@@ -30,6 +30,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
     {
 
 
+        private readonly IGraphQLClient _graphQLClient;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
@@ -57,7 +58,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache);
+                if (_accountingEntriesMasterViewModel == null) this._accountingEntriesMasterViewModel = new AccountingEntriesMasterViewModel(this, _notificationService, this._accountingEntryMasterService, this._accountingEntryDraftMasterService, this._accountingEntityService, _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _graphQLClient);
                 return _accountingEntriesMasterViewModel;
             }
         }
@@ -74,7 +75,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
-             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache
+             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+             IGraphQLClient graphQLClient
                                           )
         {
             this.EventAggregator = eventAggregator;
@@ -89,6 +91,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _accountingBookCache = accountingBookCache;
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _graphQLClient = graphQLClient;
 
             _ = this.ActivateMasterViewAsync();
             
@@ -115,7 +118,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this._accountingEntryDraftMasterService,
                 this._accountingEntryDraftDetailService,
                 this._accountingAccountService,
-                this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache );
+                this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
             // Header
             instance.SelectedAccountingEntryDraftMaster = null;
             instance.DraftMasterId = 0;
@@ -152,7 +155,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 object variables;
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
