@@ -486,7 +486,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                             .Field(c => c.Id)
                             .Field(c => c.Email)
                             .Field(c => c.Description)
-                            .Field(c => c.isElectronicInvoiceRecipient))))
+                            .Field(c => c.IsElectronicInvoiceRecipient))))
                 .Field(o => o.PageNumber)
                 .Field(o => o.PageSize)
                 .Field(o => o.TotalPages)

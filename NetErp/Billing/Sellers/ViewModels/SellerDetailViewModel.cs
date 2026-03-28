@@ -1304,7 +1304,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                         .Field(x => x.Id)
                         .Field(x => x.Description)
                         .Field(x => x.Email)
-                        .Field(x => x.isElectronicInvoiceRecipient)))
+                        .Field(x => x.IsElectronicInvoiceRecipient)))
                 .SelectList(e => e.CostCenters!, acc => acc
                     .Field(c => c.Id)
                     .Field(c => c.Name))
