@@ -7,7 +7,6 @@
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:uc="clr-namespace:NetErp.UserControls"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
@@ -27,15 +26,14 @@
             <!-- Content -->
             <busyIndicator:BusyMask x:Name="BusyIndicator"
                                     Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                IsBusy="{Binding IsBusy}"
-                                IndicatorType="BouncingDot"
-                                BusyContent="Por favor espere..."
-                                BusyContentMargin="0,20,0,0"
-                                IsBusyAtStartup="False">
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0"
+                                    IsBusyAtStartup="False">
 
             <Grid Margin="10">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -82,7 +80,29 @@
                                           NullValueButtonPlacement="EditBox"
                                           ShowNullValueButtonOnFocusOnly="False"
                                           Padding="2"
-                                          BorderBrush="#C8CED6"/>
+                                          BorderBrush="#C8CED6">
+                            <dxe:ComboBoxEdit.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                        <Setter Property="Foreground" Value="Red"/>
+                                                        <Setter Property="Opacity" Value="0.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </dxe:ComboBoxEdit.ItemTemplate>
+                        </dxe:ComboBoxEdit>
+                        <dxe:CheckEdit Content="Mostrar únicamente perfiles activos"
+                                       IsChecked="{Binding ShowActiveProfilesOnly, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Style="{StaticResource BlueCheckedTextStyle}"
+                                       Padding="2"
+                                       Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2"
@@ -116,8 +136,8 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Row 2: Menu Tree (visible when profile selected) -->
-                <Border Grid.Row="2"
+                <!-- Row 1: Menu Tree (visible when profile selected) -->
+                <Border Grid.Row="1"
                         BorderBrush="#C8CED6" BorderThickness="1"
                         CornerRadius="4"
                         Visibility="{Binding HasProfileSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
@@ -185,8 +205,8 @@
                     </dxg:TreeListControl>
                 </Border>
 
-                <!-- Row 3: Action Buttons -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                <!-- Row 2: Action Buttons -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
 
                     <!-- Nuevo -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"

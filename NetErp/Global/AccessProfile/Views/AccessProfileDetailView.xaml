@@ -52,12 +52,13 @@
                                   BorderBrush="#C8CED6"
                                   Margin="0,0,0,8"/>
 
-                    <!-- Activo -->
+                    <!-- Activo (solo en edición) -->
                     <dxe:CheckEdit Content="Activo"
                                    IsChecked="{Binding ProfileIsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                    Style="{StaticResource BlueCheckedTextStyle}"
                                    Padding="2"
-                                   Margin="0,0,0,6"/>
+                                   Margin="0,0,0,6"
+                                   Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
 
                 </StackPanel>
 

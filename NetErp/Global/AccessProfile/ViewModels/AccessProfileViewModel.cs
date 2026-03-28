@@ -134,6 +134,20 @@ namespace NetErp.Global.AccessProfile.ViewModels
 
         public bool HasProfileSelected => SelectedProfile is not null;
         public bool HasModuleFilterSelected => SelectedModuleFilter is not null;
+
+        public bool ShowActiveProfilesOnly
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowActiveProfilesOnly));
+                    _ = LoadProfilesAsync();
+                }
+            }
+        } = true;
         public bool CanCreateProfile => !IsEditing;
         public bool CanCloneProfile => SelectedProfile is not null && !IsEditing;
         public bool CanEditProfileHeader => SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
@@ -374,8 +388,11 @@ namespace NetErp.Global.AccessProfile.ViewModels
 
                 var (fragment, query) = _loadProfilesQuery.Value;
 
+                dynamic filters = new ExpandoObject();
+                if (ShowActiveProfilesOnly) filters.isActive = true;
+
                 ExpandoObject variables = new GraphQLVariables()
-                    .For(fragment, "filters", new { })
+                    .For(fragment, "filters", filters)
                     .Build();
 
                 PageType<AccessProfileGraphQLModel> result = await _accessProfileService.GetPageAsync(query, variables);
