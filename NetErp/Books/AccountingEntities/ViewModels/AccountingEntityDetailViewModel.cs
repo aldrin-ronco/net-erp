@@ -72,7 +72,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         #endregion
 
         #region Commands
-        private ICommand _deleteMailCommand;
+        private ICommand? _deleteMailCommand;
         public ICommand DeleteMailCommand
         {
             get
@@ -92,7 +92,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private ICommand _saveCommand;
+        private ICommand? _saveCommand;
         public ICommand SaveCommand
         {
             get
@@ -253,8 +253,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         /// <summary>
         /// Selected Email
         /// </summary>
-        private EmailGraphQLModel _selectedEmail;
-        public EmailGraphQLModel SelectedEmail
+        private EmailGraphQLModel? _selectedEmail;
+        public EmailGraphQLModel? SelectedEmail
         {
             get { return _selectedEmail; }
             set
@@ -292,7 +292,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         // Emails (Lista de emails del tercero)
-        private ObservableCollection<EmailGraphQLModel> _emails;
+        private ObservableCollection<EmailGraphQLModel> _emails = [];
         public ObservableCollection<EmailGraphQLModel> Emails
         {
             get { return _emails; }
@@ -329,7 +329,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         /// Descripcion de Email (Para agregar)
-        private string _emailDescription;
+        private string _emailDescription = string.Empty;
         public string EmailDescription
         {
             get 
@@ -349,7 +349,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         }
 
         /// Email (Para agregar)
-        private string _email;
+        private string _email = string.Empty;
         public string Email
         {
             get 

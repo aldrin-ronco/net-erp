@@ -44,7 +44,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
     {
         #region Commands
 
-        private ICommand _deleteMailCommand;
+        private ICommand? _deleteMailCommand;
         public ICommand DeleteMailCommand
         {
             get
@@ -54,7 +54,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ICommand _cancelCommand;
+        private ICommand? _cancelCommand;
         public ICommand CancelCommand
         {
             get
@@ -64,7 +64,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ICommand _saveCommand;
+        private ICommand? _saveCommand;
         public ICommand SaveCommand
         {
             get
@@ -701,7 +701,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public bool CanRemoveEmail(object p) => true;
         public bool CanAddEmail => !string.IsNullOrEmpty(Email) && !string.IsNullOrEmpty(EmailDescription) && Email.IsValidEmail();
 
-        private string _emailDescription;
+        private string _emailDescription = string.Empty;
         public string EmailDescription
         {
             get
@@ -721,7 +721,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private string _email;
+        private string _email = string.Empty;
         public string Email
         {
             get
@@ -754,7 +754,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         // Desuscribirse del anterior si existe
                         if (_emails != null)
                         {
-                            _emails.CollectionChanged -= Emails_CollectionChanged;
+                            _emails.CollectionChanged -= Emails_CollectionChanged!;
                         }
 
                         _emails = value;
@@ -762,7 +762,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                         // Suscribirse al nuevo
                         if (_emails != null)
                         {
-                            _emails.CollectionChanged += Emails_CollectionChanged;
+                            _emails.CollectionChanged += Emails_CollectionChanged!;
                         }
 
                         NotifyOfPropertyChange(nameof(Emails));
@@ -788,8 +788,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         }
 
-        private EmailDTO _selectedEmail;
-        public EmailDTO SelectedEmail
+        private EmailDTO? _selectedEmail;
+        public EmailDTO? SelectedEmail
         {
             get => _selectedEmail;
             set
@@ -1364,7 +1364,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                                    .Field(x => x.Id)
                                    .Field(x => x.Description)
                                    .Field(x => x.Email)
-                                   .Field(x => x.isElectronicInvoiceRecipient)
+                                   .Field(x => x.IsElectronicInvoiceRecipient)
                                    )
                            )
                  .Select(e => e.IcaAccountingAccount, acc => acc

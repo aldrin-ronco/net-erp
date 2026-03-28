@@ -14,9 +14,10 @@ namespace Models.Global
         public string Description { set; get; } = string.Empty;
         public string Email { set; get; } = string.Empty;
         public string Password { set; get; } = string.Empty;
+        public bool IsActive { set; get; } = true;
         public bool IsCorporate { set; get; } = true;
-        public bool isElectronicInvoiceRecipient { set; get; } = false;
-        public SmtpGraphQLModel Smtp { get; set; }
+        public bool IsElectronicInvoiceRecipient { set; get; } = false;
+        public SmtpGraphQLModel? Smtp { get; set; }
         public override string ToString()
         {
             return Description;
@@ -24,18 +25,17 @@ namespace Models.Global
 
         public class EmailDeleteMessage
         {
-
-            public DeleteResponseType DeletedEmail { set; get; } = new();
+            public required DeleteResponseType DeletedEmail { set; get; }
         }
 
         public class EmailCreateMessage
         {
-            public UpsertResponseType<EmailGraphQLModel> CreatedEmail { set; get; } = new();
+            public required UpsertResponseType<EmailGraphQLModel> CreatedEmail { set; get; }
         }
 
         public class EmailUpdateMessage
         {
-            public UpsertResponseType<EmailGraphQLModel> UpdatedEmail { set; get; } = new();
+            public required UpsertResponseType<EmailGraphQLModel> UpdatedEmail { set; get; }
         }         
 
     }
