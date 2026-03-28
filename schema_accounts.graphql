@@ -20,6 +20,12 @@ type RootQueryType {
     reference: String!
   ): String
 
+  "Get encrypted server configuration bundle (iv||ciphertext||tag base64) by organization database_id"
+  serverConfigEncryptedByDatabaseId(
+    "Organization database_id"
+    databaseId: String!
+  ): String
+
   "Get all API keys with pagination, filters, and sorting"
   apiKeysPage(
     "Pagination parameters"
@@ -173,6 +179,20 @@ type RootQueryType {
 
   "Get a specific business type module by ID"
   businessTypeModule(id: ID!): BusinessTypeModule
+
+  "Get paginated list of accounting plans"
+  accountingPlansPage(pagination: Pagination, filters: AccountingPlanFilters, sort: [AccountingPlanSortInput!]): AccountingPlanPage
+
+  "Get a single accounting plan by ID"
+  accountingPlan(id: ID!): AccountingPlan
+
+  "Get paginated list of accounting plan accounts"
+  accountingPlanAccountsPage(
+    pagination: Pagination, filters: AccountingPlanAccountFilters, sort: [AccountingPlanAccountSortInput!]
+  ): AccountingPlanAccountPage
+
+  "Get a single accounting plan account by ID"
+  accountingPlanAccount(id: ID!): AccountingPlanAccount
 }
 
 type RootSubscriptionType {
@@ -431,6 +451,33 @@ type RootMutationType {
 
   "Delete a business type module"
   deleteBusinessTypeModule(id: ID!): DeleteBusinessTypeModulePayload
+
+  "Create a new accounting plan"
+  createAccountingPlan(input: CreateAccountingPlanInput!): CreateAccountingPlanPayload
+
+  "Update an existing accounting plan"
+  updateAccountingPlan(id: ID!, input: UpdateAccountingPlanInput!): UpdateAccountingPlanPayload
+
+  "Delete an accounting plan"
+  deleteAccountingPlan(id: ID!): DeleteAccountingPlanPayload
+
+  "Create a new accounting plan account"
+  createAccountingPlanAccount(input: CreateAccountingPlanAccountInput!): CreateAccountingPlanAccountPayload
+
+  "Update an existing accounting plan account"
+  updateAccountingPlanAccount(id: ID!, input: UpdateAccountingPlanAccountInput!): UpdateAccountingPlanAccountPayload
+
+  "Batch create accounting plan accounts (single round trip)"
+  createAccountingPlanAccountsBatch(
+    "Accounting plan ID"
+    accountingPlanId: Int!
+
+    "List of accounts to create"
+    entries: [BatchAccountingPlanAccountInput!]!
+  ): CreateAccountingPlanAccountsBatchPayload
+
+  "Delete an accounting plan account"
+  deleteAccountingPlanAccount(id: ID!): DeleteAccountingPlanAccountPayload
 }
 
 "Pagination input"
@@ -466,6 +513,219 @@ type ProvisionLogEvent {
   timestamp: IsoDatetime!
   level: LogLevel!
   message: String!
+}
+
+"Account entry within an accounting plan (PUC)"
+type AccountingPlanAccount {
+  id: ID!
+  code: String!
+  name: String!
+  nature: String!
+  margin: Decimal
+  marginBasis: Int
+  accountingPlan: AccountingPlan!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+type AccountingPlanAccountPage {
+  entries: [AccountingPlanAccount!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+input AccountingPlanAccountFilters {
+  "Filter by accounting plan"
+  accountingPlanId: Int
+
+  "Filter by exact code"
+  code: String
+
+  "Filter by code prefix"
+  codeStartsWith: String
+
+  "Filter by nature (D or C)"
+  nature: String
+
+  "Search across name and code"
+  matching: String
+}
+
+enum AccountingPlanAccountSortField {
+  CODE
+  NAME
+  NATURE
+  INSERTED_AT
+  UPDATED_AT
+}
+
+input AccountingPlanAccountSortInput {
+  field: AccountingPlanAccountSortField!
+  direction: SortDirection
+}
+
+"Input for creating an accounting plan account"
+input CreateAccountingPlanAccountInput {
+  accountingPlanId: Int!
+  code: String!
+  name: String!
+  nature: String!
+  margin: Decimal
+  marginBasis: Int
+}
+
+"Input for updating an accounting plan account"
+input UpdateAccountingPlanAccountInput {
+  code: String
+  name: String
+  nature: String
+  margin: Decimal
+  marginBasis: Int
+}
+
+type CreateAccountingPlanAccountPayload {
+  accountingPlanAccount: AccountingPlanAccount
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+type UpdateAccountingPlanAccountPayload {
+  accountingPlanAccount: AccountingPlanAccount
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+type DeleteAccountingPlanAccountPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
+}
+
+"Single entry for batch account creation"
+input BatchAccountingPlanAccountInput {
+  code: String!
+  name: String!
+  nature: String!
+  margin: Decimal
+  marginBasis: Int
+}
+
+"Validation error for a batch entry"
+type BatchEntryError {
+  index: Int!
+  errors: [FieldError!]!
+}
+
+type CreateAccountingPlanAccountsBatchPayload {
+  accountingPlanAccounts: [AccountingPlanAccount!]
+  success: Boolean!
+  message: String
+  insertedCount: Int
+  entryErrors: [BatchEntryError!]
+  errors: [FieldError!]
+}
+
+"Accounting plan status enum"
+enum AccountingPlanStatus {
+  "Plan is active and available"
+  ACTIVE
+
+  "Plan is temporarily suspended"
+  SUSPENDED
+
+  "Plan is archived"
+  ARCHIVED
+}
+
+"Accounting plan (PUC) template"
+type AccountingPlan {
+  id: ID!
+  name: String!
+  code: String!
+  description: String
+  status: AccountingPlanStatus!
+  insertedAt: IsoDatetime!
+  updatedAt: IsoDatetime!
+}
+
+type AccountingPlanPage {
+  entries: [AccountingPlan!]!
+  totalEntries: Int!
+  pageNumber: Int!
+  pageSize: Int!
+  totalPages: Int!
+}
+
+input AccountingPlanFilters {
+  "Filter by exact name"
+  name: String
+
+  "Filter by name (partial match)"
+  nameContains: String
+
+  "Filter by exact code"
+  code: String
+
+  "Filter by status"
+  status: AccountingPlanStatus
+
+  "Global search across name, code, description"
+  matching: String
+}
+
+enum AccountingPlanSortField {
+  NAME
+  CODE
+  STATUS
+  INSERTED_AT
+  UPDATED_AT
+}
+
+input AccountingPlanSortInput {
+  field: AccountingPlanSortField!
+  direction: SortDirection
+}
+
+"Input for creating a new accounting plan"
+input CreateAccountingPlanInput {
+  name: String!
+  code: String!
+  description: String
+  status: AccountingPlanStatus
+}
+
+"Input for updating an accounting plan"
+input UpdateAccountingPlanInput {
+  name: String
+  code: String
+  description: String
+  status: AccountingPlanStatus
+}
+
+type CreateAccountingPlanPayload {
+  accountingPlan: AccountingPlan
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+type UpdateAccountingPlanPayload {
+  accountingPlan: AccountingPlan
+  success: Boolean!
+  message: String
+  errors: [FieldError!]
+}
+
+type DeleteAccountingPlanPayload {
+  success: Boolean!
+  message: String
+  deletedId: ID
+  errors: [FieldError!]
 }
 
 "Business type to menu module association"
@@ -1416,6 +1676,9 @@ type Country {
 
   name: String!
 
+  "ISO 3166-1 alpha-2 code (e.g. CO, ES, SV)"
+  isoCode: String!
+
   "Departments belonging to this country"
   departments: [Department]
 
@@ -1444,7 +1707,10 @@ input CountryFilters {
   "Filter by partial name match"
   nameContains: String
 
-  "Global search over code and name"
+  "Filter by ISO 3166-1 alpha-2 code"
+  isoCode: String
+
+  "Global search over code, name, and iso_code"
   matching: String
 }
 
@@ -1465,13 +1731,21 @@ input CountrySortInput {
 "Input for creating a new country"
 input CreateCountryInput {
   code: String!
+
   name: String!
+
+  "ISO 3166-1 alpha-2 code (e.g. CO, ES, SV)"
+  isoCode: String!
 }
 
 "Input for updating an existing country"
 input UpdateCountryInput {
   code: String
+
   name: String
+
+  "ISO 3166-1 alpha-2 code (e.g. CO, ES, SV)"
+  isoCode: String
 }
 
 "Response payload for country creation"
@@ -1556,6 +1830,9 @@ input CollaboratorFilters {
 
   "Filter by inviter account ID"
   invitedBy: Int
+
+  "Include company owner as first entry (default true, requires company_id filter)"
+  includeOwner: Boolean
 
   "Global search term (currently not implemented for collaborators)"
   matching: String
@@ -1788,6 +2065,9 @@ type Company {
   "Associated identification type"
   identificationType: IdentificationType
 
+  "Associated accounting plan"
+  accountingPlan: AccountingPlan
+
   "Company collaborators"
   collaborators: [Collaborator!]!
 
@@ -1875,6 +2155,9 @@ input CreateCompanyInput {
 
   "Identification type ID"
   identificationTypeId: ID!
+
+  "Accounting plan ID"
+  accountingPlanId: ID
 }
 
 "Input for updating a company"
@@ -1931,6 +2214,9 @@ input UpdateCompanyInput {
 
   "Identification Type ID"
   identificationTypeId: ID
+
+  "Accounting plan ID"
+  accountingPlanId: ID
 }
 
 "Company filters for queries"
@@ -2504,6 +2790,9 @@ type Organization {
   "Server assigned to this organization"
   server: Server!
 
+  "Country of the organization"
+  country: Country!
+
   "Companies under this organization"
   companies(
     "Sort configuration for related companies"
@@ -2537,6 +2826,9 @@ input OrganizationFilters {
   "Filter by assigned server ID"
   serverId: ID
 
+  "Filter by country ID"
+  countryId: ID
+
   "Filter by organization name (case insensitive partial match)"
   name: String
 
@@ -2555,6 +2847,9 @@ input CreateOrganizationInput {
   "Assigned server ID"
   serverId: ID!
 
+  "Country ID"
+  countryId: ID!
+
   "Organization name"
   name: String!
 
@@ -2572,6 +2867,9 @@ input CreateOrganizationInput {
 input UpdateOrganizationInput {
   "Owning account ID"
   accountId: ID
+
+  "Country ID"
+  countryId: ID
 
   "Organization name"
   name: String
@@ -3179,3 +3477,10 @@ enum SortDirection {
 
 "ISO8601 DateTime with timezone offset"
 scalar IsoDatetime
+
+"""
+The `Decimal` scalar type represents signed double-precision fractional
+values parsed by the `Decimal` library. The Decimal appears in a JSON
+response as a string to preserve precision.
+"""
+scalar Decimal

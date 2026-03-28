@@ -314,6 +314,9 @@ namespace NetErp
             // Email module repositories
             _ = kernel.Bind<IRepository<EmailGraphQLModel>>().To<GraphQLRepository<EmailGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<SmtpGraphQLModel>>().To<GraphQLRepository<SmtpGraphQLModel>>().InSingletonScope();
+
+            // AccessProfile module repositories
+            _ = kernel.Bind<IRepository<AccessProfileGraphQLModel>>().To<GraphQLRepository<AccessProfileGraphQLModel>>().InSingletonScope();
             
             // Auth API client (singleton — shared by LoginService, CollaboratorCache, etc.)
             _ = kernel.Bind<IAuthApiClient>().To<AuthApiClient>().InSingletonScope();

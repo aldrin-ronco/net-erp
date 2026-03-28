@@ -1,0 +1,319 @@
+<UserControl x:Class="NetErp.Global.AccessProfile.Views.AccessProfileView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:uc="clr-namespace:NetErp.UserControls"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="5">
+        <Grid>
+
+            <!-- Empty State -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay perfiles de acceso registrados"
+                               Message="Cree un nuevo perfil de acceso para comenzar"
+                               ContextInfo="Los perfiles de acceso determinan a qué opciones del menú puede acceder cada colaborador del sistema."
+                               Command="{Binding CreateProfileCommand}"/>
+
+            <!-- Content -->
+            <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                    Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                IsBusy="{Binding IsBusy}"
+                                IndicatorType="BouncingDot"
+                                BusyContent="Por favor espere..."
+                                BusyContentMargin="0,20,0,0"
+                                IsBusyAtStartup="False">
+
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Profile Selector + Filters -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                            <Button Background="Transparent" BorderThickness="0"
+                                    Padding="0" Cursor="Hand" Margin="0,0,6,0"
+                                    VerticalAlignment="Center"
+                                    IsEnabled="{Binding CanEditProfileHeader}"
+                                    Command="{Binding EditProfileHeaderCommand}"
+                                    ToolTip="Editar datos del perfil">
+                                <Image Source="{dx:DXImage 'Images/Setup/Properties_16x16.png'}" Width="16" Height="16">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </Button>
+                            <TextBlock Text="Perfil de acceso" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <dxe:ComboBoxEdit ItemsSource="{Binding Profiles}"
+                                          SelectedItem="{Binding SelectedProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMember="Name"
+                                          IsTextEditable="False"
+                                          AllowNullInput="True"
+                                          NullText="Seleccione un perfil de acceso"
+                                          NullValueButtonPlacement="EditBox"
+                                          ShowNullValueButtonOnFocusOnly="False"
+                                          Padding="2"
+                                          BorderBrush="#C8CED6"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2"
+                                Visibility="{Binding HasProfileSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Filtrar por módulo" FontSize="13" Margin="0,0,0,3"/>
+                        <dxe:ComboBoxEdit ItemsSource="{Binding ModuleFilters}"
+                                          SelectedItem="{Binding SelectedModuleFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMember="Name"
+                                          IsTextEditable="False"
+                                          AllowNullInput="True"
+                                          NullText="Todos los módulos"
+                                          NullValueButtonPlacement="EditBox"
+                                          ShowNullValueButtonOnFocusOnly="False"
+                                          Padding="2"
+                                          BorderBrush="#C8CED6"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4"
+                                Visibility="{Binding HasModuleFilterSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <TextBlock Text="Filtrar por grupo" FontSize="13" Margin="0,0,0,3"/>
+                        <dxe:ComboBoxEdit ItemsSource="{Binding GroupFilters}"
+                                          SelectedItem="{Binding SelectedGroupFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMember="Name"
+                                          IsTextEditable="False"
+                                          AllowNullInput="True"
+                                          NullText="Todos los grupos"
+                                          NullValueButtonPlacement="EditBox"
+                                          ShowNullValueButtonOnFocusOnly="False"
+                                          Padding="2"
+                                          BorderBrush="#C8CED6"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Menu Tree (visible when profile selected) -->
+                <Border Grid.Row="2"
+                        BorderBrush="#C8CED6" BorderThickness="1"
+                        CornerRadius="4"
+                        Visibility="{Binding HasProfileSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+
+                    <dxg:TreeListControl x:Name="MenuTreeList"
+                                         ItemsSource="{Binding DisplayTreeNodes}">
+                        <dxg:TreeListControl.Columns>
+                            <dxg:TreeListColumn FieldName="Name" Header="Opción del menú" Width="*">
+                                <dxg:TreeListColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="6,3,4,3">
+                                            <!-- Icono estado (solo lectura, solo items) -->
+                                            <Image Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                   Visibility="{Binding RowData.Row.IsItem, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                        <Setter Property="ToolTip" Value="Sin acceso"/>
+                                                        <Setter Property="Opacity" Value="0.3"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding RowData.Row.IsChecked}" Value="True">
+                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
+                                                                <Setter Property="ToolTip" Value="Con acceso"/>
+                                                                <Setter Property="Opacity" Value="1.0"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                            <TextBlock Text="{Binding RowData.Row.DisplayName}" VerticalAlignment="Center"
+                                                       FontWeight="{Binding RowData.Row.NodeFontWeight}"
+                                                       FontSize="{Binding RowData.Row.NodeFontSize}"
+                                                       Foreground="{Binding RowData.Row.NodeForeground}"
+                                                       Padding="0,1,0,1"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </dxg:TreeListColumn.CellTemplate>
+                            </dxg:TreeListColumn>
+
+                            <!-- Columna checkbox (modo edición) -->
+                            <dxg:TreeListColumn FieldName="IsChecked" Header="Acceso" Width="80"
+                                                HorizontalHeaderContentAlignment="Center"
+                                                Visible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <dxg:TreeListColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <dxe:CheckEdit IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                       HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </dxg:TreeListColumn.CellTemplate>
+                            </dxg:TreeListColumn>
+                        </dxg:TreeListControl.Columns>
+                        <dxg:TreeListControl.View>
+                            <dxg:TreeListView x:Name="MenuTreeView"
+                                              AllowEditing="False"
+                                              ShowIndicator="False"
+                                              ShowColumnHeaders="True"
+                                              AlternateRowBackground="Transparent"
+                                              ChildNodesPath="Children"
+                                              TreeDerivationMode="ChildNodesSelector"
+                                              RowMinHeight="28"/>
+                        </dxg:TreeListControl.View>
+                    </dxg:TreeListControl>
+                </Border>
+
+                <!-- Row 3: Action Buttons -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+
+                    <!-- Nuevo -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCreateProfile}"
+                            Command="{Binding CreateProfileCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Copiar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCloneProfile}"
+                            Command="{Binding CloneProfileCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Edit/Copy_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Copiar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Editar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanEditProfile}"
+                            Command="{Binding EditProfileCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Guardar (solo en modo edición) -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSaveMenuChanges}"
+                            Command="{Binding SaveMenuChangesCommand}"
+                            Visibility="{Binding IsEditing, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Deshacer (solo en modo edición) -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            Command="{Binding UndoCommand}"
+                            Visibility="{Binding IsEditing, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Eliminar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanDeleteProfile}"
+                            Command="{Binding DeleteProfileCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
+
+            </Grid>
+        </busyIndicator:BusyMask>
+
+        </Grid>
+    </Border>
+</UserControl>
