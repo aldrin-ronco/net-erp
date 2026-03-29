@@ -29,6 +29,8 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly IRepository<CountryGraphQLModel> _countryService;
         private readonly IRepository<GlobalConfigGraphQLModel> _globalConfigService;
         private readonly IEnumerable<IEntityCache> _entityCaches;
+        private readonly IAuthApiClient _authApiClient;
+        private readonly IAdminRecentCompanyService _recentCompanyService;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private SystemAccountGraphQLModel? _currentAccount;
@@ -74,7 +76,9 @@ namespace NetErp.Global.Shell.ViewModels
             IRepository<CompanyGraphQLModel> companyService,
             IRepository<CountryGraphQLModel> countryService,
             IRepository<GlobalConfigGraphQLModel> globalConfigService,
-            IEnumerable<IEntityCache> entityCaches)
+            IEnumerable<IEntityCache> entityCaches,
+            IAuthApiClient authApiClient,
+            IAdminRecentCompanyService recentCompanyService)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -86,6 +90,8 @@ namespace NetErp.Global.Shell.ViewModels
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
             _globalConfigService = globalConfigService ?? throw new ArgumentNullException(nameof(globalConfigService));
             _entityCaches = entityCaches ?? throw new ArgumentNullException(nameof(entityCaches));
+            _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
+            _recentCompanyService = recentCompanyService ?? throw new ArgumentNullException(nameof(recentCompanyService));
 
             _eventAggregator.SubscribeOnPublishedThread(this);
             _ = Task.Run(ActivateLoginViewAsync);
@@ -124,7 +130,7 @@ namespace NetErp.Global.Shell.ViewModels
             _availableCompanies = message.Companies;
 
             // Login exitoso - navegar a CompanySelection
-            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService);
+            var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService, _authApiClient, _recentCompanyService);
             companySelectionViewModel.Initialize(message.Account, message.Companies, message.AccessTicket);
             await ActivateItemAsync(companySelectionViewModel, cancellationToken);
         }
@@ -146,6 +152,7 @@ namespace NetErp.Global.Shell.ViewModels
             SessionInfo.DefaultAwsS3Config = null;
             SessionInfo.DatabaseId = string.Empty;
             SessionInfo.LoginCompanyId = 0;
+            SessionInfo.IsSystemAdmin = false;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
             await ActivateItemAsync(loginViewModel, cancellationToken);
@@ -164,7 +171,7 @@ namespace NetErp.Global.Shell.ViewModels
             // Volver a la selección de empresa si tenemos los datos almacenados
             if (_currentAccount != null && _availableCompanies != null)
             {
-                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService);
+                var companySelectionViewModel = new NetErp.Login.ViewModels.CompanySelectionViewModel(_notificationService, _eventAggregator, _loginService, _companySeedService, _companyService, _countryService, _authApiClient, _recentCompanyService);
                 companySelectionViewModel.Initialize(_currentAccount, _availableCompanies, _accessTicket);
                 await ActivateItemAsync(companySelectionViewModel, cancellationToken);
             }

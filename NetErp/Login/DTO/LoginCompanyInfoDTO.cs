@@ -31,7 +31,18 @@ namespace NetErp.Login.DTO
             }
         }
         
-        public string RoleDisplay => $"Rol: {Role}";
+        public string LastAccessedAt { get; set; } = string.Empty;
+
+        public string LastAccessedDisplay => string.IsNullOrEmpty(LastAccessedAt)
+            ? string.Empty
+            : System.DateTime.TryParse(LastAccessedAt, null, System.Globalization.DateTimeStyles.RoundtripKind, out System.DateTime parsed)
+                ? $"Último acceso: {parsed.ToLocalTime():dd/MM/yyyy hh:mm tt}"
+                : string.Empty;
+
+        public bool HasLastAccessed => !string.IsNullOrEmpty(LastAccessedAt);
+
+        public string RoleDisplay => $"Rol: {Role.Replace("_", " ")}";
+        public string RoleForeground => Role == "SYSTEM_ADMIN" ? "#c62828" : "#1976d2";
         public string CompanyInfo => $"{CompanyName} - {RoleDisplay}";
     }
 }

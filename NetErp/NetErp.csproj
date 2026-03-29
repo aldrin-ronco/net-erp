@@ -98,6 +98,7 @@
     <Resource Include="Global\Resources\Images\QualityLogo.BMP" />
     <Resource Include="Global\Resources\Images\WithoutResponse.png" />
     <Resource Include="Resources\Images\vecteezy_desert-landscape-404-error-page-concept-illustration-flat_9007135.jpg" />
+    <Resource Include="Resources\Images\vecteezy_no-result-data-document-or-file-not-found-concept_12903861.jpg" />
   </ItemGroup>
 
 </Project>

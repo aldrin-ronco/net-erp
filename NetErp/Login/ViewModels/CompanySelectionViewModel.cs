@@ -34,6 +34,10 @@ namespace NetErp.Login.ViewModels
         private readonly ICompanySeedService _companySeedService;
         private readonly IRepository<CompanyGraphQLModel> _companyService;
         private readonly IRepository<CountryGraphQLModel> _countryService;
+        private readonly IAuthApiClient _authApiClient;
+        private readonly IAdminRecentCompanyService _recentCompanyService;
+        private readonly NetErp.Helpers.DebouncedAction _adminSearchDebounce = new();
+        private bool _showingRecents;
 
         private LoginTicketGraphQLModel _accessTicket = new();
 
@@ -73,6 +77,8 @@ namespace NetErp.Login.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(FilteredOrganizationGroups));
+                    NotifyOfPropertyChange(nameof(ShowAdminEmptyState));
+                    NotifyOfPropertyChange(nameof(ShowRecentLabel));
                 }
             }
         } = [];
@@ -138,13 +144,57 @@ namespace NetErp.Login.ViewModels
 
         public string WelcomeMessage => $"Bienvenido {CurrentAccount.FirstName} {CurrentAccount.FirstLastName}";
 
+        public bool IsAdminMode
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsAdminMode));
+                    NotifyOfPropertyChange(nameof(IsRegularMode));
+                    NotifyOfPropertyChange(nameof(SubtitleMessage));
+                    NotifyOfPropertyChange(nameof(ShowAdminEmptyState));
+                }
+            }
+        }
+
+        public bool ShowAdminEmptyState => IsAdminMode && FilteredOrganizationGroups.Count == 0;
+        public bool ShowRecentLabel => IsAdminMode && _showingRecents && FilteredOrganizationGroups.Count > 0;
+
+        public bool IsRegularMode => !IsAdminMode;
+
+        public string SubtitleMessage => IsAdminMode
+            ? "Busca la empresa a la que deseas acceder"
+            : "Selecciona la empresa con la que deseas trabajar";
+
+        public string AdminSearchText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(AdminSearchText));
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        _ = _adminSearchDebounce.RunAsync(SearchCompaniesAsync);
+                    }
+                }
+            }
+        } = string.Empty;
+
         public CompanySelectionViewModel(
             INotificationService notificationService,
             IEventAggregator eventAggregator,
             ILoginService loginService,
             ICompanySeedService companySeedService,
             IRepository<CompanyGraphQLModel> companyService,
-            IRepository<CountryGraphQLModel> countryService)
+            IRepository<CountryGraphQLModel> countryService,
+            IAuthApiClient authApiClient,
+            IAdminRecentCompanyService recentCompanyService)
         {
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -152,6 +202,8 @@ namespace NetErp.Login.ViewModels
             _companySeedService = companySeedService ?? throw new ArgumentNullException(nameof(companySeedService));
             _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
             _countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
+            _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
+            _recentCompanyService = recentCompanyService ?? throw new ArgumentNullException(nameof(recentCompanyService));
 
             DisplayName = "Selección de Empresa";
         }
@@ -160,7 +212,17 @@ namespace NetErp.Login.ViewModels
         {
             CurrentAccount = account;
             _accessTicket = accessTicket;
-            GroupCompaniesByOrganization(companies);
+            IsAdminMode = account.IsSystemAdmin;
+
+            if (!IsAdminMode)
+            {
+                GroupCompaniesByOrganization(companies);
+                _ = LoadAccessDatesAsync();
+            }
+            else
+            {
+                _ = LoadRecentCompaniesAsync();
+            }
         }
 
         private void GroupCompaniesByOrganization(List<LoginCompanyGraphQLModel> companies)
@@ -299,6 +361,15 @@ namespace NetErp.Login.ViewModels
 
                 SessionInfo.CurrentCompany = currentCompany;
                 SessionInfo.LoginCompanyId = SelectedCompany.OriginalData.Company.Id;
+                SessionInfo.IsSystemAdmin = IsAdminMode;
+
+                string companyJson = Newtonsoft.Json.JsonConvert.SerializeObject(loginCompany);
+                await _recentCompanyService.SaveRecentCompanyAsync(
+                    CurrentAccount.Id,
+                    loginCompany.Id,
+                    companyJson,
+                    loginCompany.FullName,
+                    loginCompany.Organization?.Name ?? "");
 
                 // Actualizar snapshot del login para que ReturnToCompanySelection tenga datos correctos
                 loginCompany.TenantCompanyId = currentCompany.Id;
@@ -474,6 +545,192 @@ namespace NetErp.Login.ViewModels
 
                 throw;
             }
+        }
+
+        private async Task LoadAccessDatesAsync()
+        {
+            try
+            {
+                List<AdminRecentCompanyEntry> entries = await _recentCompanyService.GetRecentCompaniesAsync(CurrentAccount.Id);
+                foreach (AdminRecentCompanyEntry entry in entries)
+                {
+                    LoginCompanyInfoDTO? dto = FilteredOrganizationGroups
+                        .SelectMany(g => g.Companies)
+                        .FirstOrDefault(c => c.CompanyId == entry.CompanyId);
+                    if (dto != null)
+                        dto.LastAccessedAt = entry.LastAccessedAt;
+                }
+            }
+            catch { /* Non-critical — dates are informational only */ }
+        }
+
+        private async Task LoadRecentCompaniesAsync()
+        {
+            try
+            {
+                List<AdminRecentCompanyEntry> entries = await _recentCompanyService.GetRecentCompaniesAsync(CurrentAccount.Id);
+
+                if (entries.Count == 0)
+                {
+                    FilteredOrganizationGroups = [];
+                    _showingRecents = false;
+                    return;
+                }
+
+                List<LoginCompanyGraphQLModel> recentCompanies = [];
+                foreach (AdminRecentCompanyEntry entry in entries)
+                {
+                    try
+                    {
+                        LoginCompanyInfoGraphQLModel companyInfo = Newtonsoft.Json.JsonConvert.DeserializeObject<LoginCompanyInfoGraphQLModel>(entry.CompanyData)!;
+                        recentCompanies.Add(new LoginCompanyGraphQLModel
+                        {
+                            Company = companyInfo,
+                            Role = "SYSTEM_ADMIN"
+                        });
+                    }
+                    catch { /* Skip entries that fail to deserialize */ }
+                }
+
+                if (recentCompanies.Count > 0)
+                {
+                    _showingRecents = true;
+                    GroupCompaniesByOrganization(recentCompanies);
+
+                    foreach (AdminRecentCompanyEntry entry in entries)
+                    {
+                        LoginCompanyInfoDTO? dto = FilteredOrganizationGroups
+                            .SelectMany(g => g.Companies)
+                            .FirstOrDefault(c => c.CompanyId == entry.CompanyId);
+                        if (dto != null)
+                            dto.LastAccessedAt = entry.LastAccessedAt;
+                    }
+                }
+                else
+                {
+                    _showingRecents = false;
+                    FilteredOrganizationGroups = [];
+                }
+            }
+            catch
+            {
+                _showingRecents = false;
+                FilteredOrganizationGroups = [];
+            }
+        }
+
+        public async Task SearchCompaniesAsync()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(AdminSearchText))
+                {
+                    await LoadRecentCompaniesAsync();
+                    return;
+                }
+                _showingRecents = false;
+
+                IsBusy = true;
+                BusyContent = "Buscando empresas...";
+
+                GraphQL.GraphQLResponse<AdminCompanySearchResponse> result = await _authApiClient.SendQueryAsync<AdminCompanySearchResponse>(
+                    new GraphQL.GraphQLRequest
+                    {
+                        Query = _adminSearchQuery.Value,
+                        Variables = new
+                        {
+                            filters = new { matching = AdminSearchText.Trim() },
+                            pagination = new { pageSize = 50 }
+                        }
+                    });
+
+                if (result.Errors != null && result.Errors.Length > 0)
+                {
+                    ThemedMessageBox.Show(
+                        text: $"Error al buscar empresas.\n\n{result.Errors[0].Message}",
+                        title: "Error de búsqueda",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    FilteredOrganizationGroups = [];
+                    return;
+                }
+
+                List<LoginCompanyGraphQLModel> wrappedResults = [.. result.Data.CompaniesPage.Entries.Select(companyInfo =>
+                    new LoginCompanyGraphQLModel
+                    {
+                        Company = companyInfo,
+                        Role = "SYSTEM_ADMIN"
+                    })];
+
+                GroupCompaniesByOrganization(wrappedResults);
+            }
+            catch (Exception ex)
+            {
+                ThemedMessageBox.Show(
+                    text: $"Error al buscar empresas.\n\n{ex.GetErrorMessage()}",
+                    title: "Error",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    icon: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private static readonly Lazy<string> _adminSearchQuery = new(() => @"
+            query ($filters: CompanyFilters, $pagination: Pagination) {
+                companiesPage(filters: $filters, pagination: $pagination) {
+                    entries {
+                        id
+                        reference
+                        status
+                        address
+                        businessName
+                        captureType
+                        tenantCompanyId
+                        seedStatus
+                        defaultCurrency { code }
+                        country { code }
+                        department { code }
+                        city { code }
+                        firstLastName
+                        firstName
+                        fullName
+                        identificationNumber
+                        identificationType { code }
+                        middleLastName
+                        middleName
+                        primaryCellPhone
+                        secondaryCellPhone
+                        primaryPhone
+                        secondaryPhone
+                        regime
+                        searchName
+                        tradeName
+                        verificationDigit
+                        telephonicInformation
+                        updatedAt
+                        insertedAt
+                        organization {
+                            id
+                            name
+                            databaseId
+                        }
+                    }
+                    totalEntries
+                }
+            }");
+
+        private class AdminCompanySearchResponse
+        {
+            public AdminCompanyPageGraphQLModel CompaniesPage { get; set; } = new();
+        }
+
+        private class AdminCompanyPageGraphQLModel
+        {
+            public List<LoginCompanyInfoGraphQLModel> Entries { get; set; } = [];
+            public int TotalEntries { get; set; }
         }
 
         public void SelectCompany(LoginCompanyInfoDTO company)

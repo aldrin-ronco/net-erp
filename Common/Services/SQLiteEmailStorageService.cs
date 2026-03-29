@@ -18,7 +18,7 @@ namespace Common.Services
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string appFolder = Path.Combine(appData, "NetErp");
             Directory.CreateDirectory(appFolder);
-            _dbPath = Path.Combine(appFolder, "emails.db");
+            _dbPath = Path.Combine(appFolder, "neterp.db");
             InitializeDatabase();
         }
 

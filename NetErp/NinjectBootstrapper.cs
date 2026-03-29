@@ -326,6 +326,7 @@ namespace NetErp
             _ = kernel.Bind<ICompanySeedService>().To<CompanySeedService>().InSingletonScope();
             //Servicio SQLite usado para almacenar los correos electrónicos guardados localmente para autocompletar en el inicio de sesión
             _ = kernel.Bind<ISQLiteEmailStorageService>().To<SQLiteEmailStorageService>().InSingletonScope();
+            _ = kernel.Bind<IAdminRecentCompanyService>().To<AdminRecentCompanyService>().InSingletonScope();
             
             _ = kernel.Bind<IBackgroundQueueService>().To<BackgroundQueueService>().InSingletonScope();
             _ = kernel.Bind<INetworkConnectivityService>().To<NetworkConnectivityService>().InSingletonScope();
