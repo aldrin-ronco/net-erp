@@ -23,6 +23,7 @@ namespace Common.Services
                       middleName
                       firstLastName
                       middleLastName
+                      isSystemAdmin
                       insertedAt
                       updatedAt
                     }

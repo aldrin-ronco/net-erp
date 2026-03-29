@@ -143,15 +143,17 @@
                            HorizontalAlignment="Center"
                            Margin="0,0,0,8"/>
 
-                    <TextBlock Text="Selecciona la empresa con la que deseas trabajar" 
-                           FontSize="14" 
+                    <TextBlock Text="{Binding SubtitleMessage}"
+                           FontSize="14"
                            Foreground="#6c757d"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,15"/>
 
-                    <!-- Search TextEdit with Icon -->
-                    <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center">
-                        <dxe:TextEdit Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                    <!-- Search: Regular mode (filter local list) -->
+                    <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center"
+                          Visibility="{Binding IsRegularMode, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <dxe:TextEdit x:Name="RegularSearchBox"
+                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                   NullText="BUSCAR POR ORGANIZACIÓN O EMPRESA..."
                                   FontSize="14"
                                   CharacterCasing="Upper"
@@ -161,8 +163,31 @@
                                   Padding="35,8,12,8"
                                   VerticalContentAlignment="Center"/>
 
-                        <TextBlock Text="🔍" 
-                               FontSize="16" 
+                        <TextBlock Text="🔍"
+                               FontSize="16"
+                               Foreground="#6c757d"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="12,0,0,0"
+                               IsHitTestVisible="False"/>
+                    </Grid>
+
+                    <!-- Search: Admin mode (query API) -->
+                    <Grid MaxWidth="400" MinWidth="350" HorizontalAlignment="Center"
+                          Visibility="{Binding IsAdminMode, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <dxe:TextEdit x:Name="AdminSearchBox"
+                                  Text="{Binding AdminSearchText, UpdateSourceTrigger=PropertyChanged, Delay=500}"
+                                  NullText="BUSCAR POR NIT O NOMBRE DE EMPRESA..."
+                                  FontSize="14"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#ced4da"
+                                  Background="White"
+                                  CornerRadius="6"
+                                  Padding="35,8,12,8"
+                                  VerticalContentAlignment="Center"/>
+
+                        <TextBlock Text="🔍"
+                               FontSize="16"
                                Foreground="#6c757d"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"
@@ -172,8 +197,39 @@
                 </StackPanel>
             </Border>
 
+            <!-- Empty State (admin sin resultados) -->
+            <Grid Grid.Row="1"
+                  Visibility="{Binding ShowAdminEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="8*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="8*"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Column="1" Grid.Row="1"
+                        Background="White"
+                        CornerRadius="8"
+                        Padding="40,30">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Image Source="pack://application:,,,/NetErp;component/Resources/Images/vecteezy_no-result-data-document-or-file-not-found-concept_12903861.jpg"
+                               Width="180" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                        <TextBlock Text="Buscar empresa"
+                                   FontSize="20" FontWeight="SemiBold" Foreground="#2c3e50"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="Escribe el nombre o NIT de la empresa en el campo de búsqueda para comenzar"
+                                   FontSize="14" Foreground="#6c757d"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   TextWrapping="Wrap" MaxWidth="400"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
             <!-- Lista de organizaciones y empresas -->
-            <ScrollViewer Grid.Row="1" 
+            <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="30,20"
@@ -182,7 +238,13 @@
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       Focusable="False">
-                <ItemsControl ItemsSource="{Binding FilteredOrganizationGroups}" Focusable="False">
+                <StackPanel>
+                    <TextBlock Text="Empresas recientes"
+                               FontSize="16" FontWeight="SemiBold" Foreground="#6c757d"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,15"
+                               Visibility="{Binding ShowRecentLabel, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+                    <ItemsControl ItemsSource="{Binding FilteredOrganizationGroups}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,0,0,25"
@@ -235,7 +297,6 @@
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="auto"/>
-                                                            <ColumnDefinition Width="auto"/>
                                                         </Grid.ColumnDefinitions>
 
                                                         <!-- Company Info -->
@@ -245,28 +306,21 @@
                                                                    FontWeight="SemiBold" 
                                                                    Foreground="#2c3e50"/>
 
-                                                            <TextBlock Text="{Binding RoleDisplay}" 
-                                                                   FontSize="12" 
-                                                                   Foreground="#6c757d"
+                                                            <TextBlock Text="{Binding RoleDisplay}"
+                                                                   FontSize="12"
+                                                                   Foreground="{Binding RoleForeground}"
                                                                    Margin="0,2,0,0"/>
+
+                                                            <TextBlock Text="{Binding LastAccessedDisplay}"
+                                                                   FontSize="11"
+                                                                   Foreground="#868e96"
+                                                                   FontStyle="Italic"
+                                                                   Margin="0,2,0,0"
+                                                                   Visibility="{Binding HasLastAccessed, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
                                                         </StackPanel>
 
-                                                        <!-- Role Badge -->
-                                                        <Border Grid.Column="1"
-                                                            Background="#e3f2fd"
-                                                            BorderBrush="#2196f3"
-                                                            BorderThickness="1"
-                                                            CornerRadius="15"
-                                                            Padding="10"
-                                                            Margin="10,0">
-                                                            <TextBlock Text="{Binding Role}" 
-                                                                   FontSize="11" 
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="#1976d2"/>
-                                                        </Border>
-
                                                         <!-- Selection Indicator -->
-                                                        <RadioButton Grid.Column="2"
+                                                        <RadioButton Grid.Column="1"
                                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                                                  GroupName="CompanySelection"
                                                                  VerticalAlignment="Center"
@@ -280,7 +334,8 @@
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    </ItemsControl>
+                </StackPanel>
             </ScrollViewer>
 
             <!-- Footer con botones de acción -->

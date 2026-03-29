@@ -17,6 +17,7 @@ namespace Models.Global
         public string FullName { get; set; } = string.Empty;
         public string PhotoUrl {  get; set; } = string.Empty;
         public string Profession {  get; set; } = string.Empty;
+        public bool IsSystemAdmin { get; set; }
         public DateTime InsertedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }

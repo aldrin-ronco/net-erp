@@ -2391,6 +2391,9 @@ type Account {
   "Whether the account has API admin privileges"
   isApiAdmin: Boolean!
 
+  "Whether the account has system admin privileges"
+  isSystemAdmin: Boolean!
+
   "Account creation timestamp"
   insertedAt: IsoDatetime!
 
