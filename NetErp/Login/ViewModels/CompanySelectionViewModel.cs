@@ -361,6 +361,7 @@ namespace NetErp.Login.ViewModels
 
                 SessionInfo.CurrentCompany = currentCompany;
                 SessionInfo.LoginCompanyId = SelectedCompany.OriginalData.Company.Id;
+                SessionInfo.LoginAccountId = CurrentAccount.Id;
                 SessionInfo.IsSystemAdmin = IsAdminMode;
 
                 string companyJson = Newtonsoft.Json.JsonConvert.SerializeObject(loginCompany);

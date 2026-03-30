@@ -83,7 +83,18 @@ namespace NetErp.Helpers.Cache
                             firstLastName
                             middleLastName
                             fullName
+                            profession
+                            photoUrl
                         }
+                        company {
+                            organization {
+                                account { id }
+                            }
+                        }
+                        inviter {
+                            fullName
+                        }
+                        insertedAt
                     }
                     totalEntries
                 }

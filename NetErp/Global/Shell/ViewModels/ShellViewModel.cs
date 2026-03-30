@@ -152,6 +152,7 @@ namespace NetErp.Global.Shell.ViewModels
             SessionInfo.DefaultAwsS3Config = null;
             SessionInfo.DatabaseId = string.Empty;
             SessionInfo.LoginCompanyId = 0;
+            SessionInfo.LoginAccountId = 0;
             SessionInfo.IsSystemAdmin = false;
             SessionInfo.SessionId = string.Empty;
             var loginViewModel = new LoginViewModel(_loginService, _notificationService, _eventAggregator, _emailStorageService);
