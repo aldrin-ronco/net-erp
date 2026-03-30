@@ -188,6 +188,12 @@ namespace NetErp
 
             _ = kernel.Bind<SmtpCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<SmtpCache>());
+
+            _ = kernel.Bind<EmailCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<EmailCache>());
+
+            _ = kernel.Bind<AccessProfileCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccessProfileCache>());
             
 
             //_ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
@@ -317,6 +323,9 @@ namespace NetErp
 
             // AccessProfile module repositories
             _ = kernel.Bind<IRepository<AccessProfileGraphQLModel>>().To<GraphQLRepository<AccessProfileGraphQLModel>>().InSingletonScope();
+
+            // Account module repositories
+            _ = kernel.Bind<IRepository<AccountGraphQLModel>>().To<GraphQLRepository<AccountGraphQLModel>>().InSingletonScope();
             
             // Auth API client (singleton — shared by LoginService, CollaboratorCache, etc.)
             _ = kernel.Bind<IAuthApiClient>().To<AuthApiClient>().InSingletonScope();
