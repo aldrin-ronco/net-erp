@@ -13,56 +13,56 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
-    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-            CornerRadius="8" Margin="5">
-        <Grid>
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False">
 
-            <!-- Empty State -->
-            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                               Title="No hay colaboradores registrados"
-                               Message="Invite un nuevo colaborador para comenzar"
-                               ContextInfo="Los colaboradores son usuarios que tienen acceso al sistema para gestionar la información de esta empresa."
-                               Command="{Binding InviteCollaboratorCommand}"
-                               ButtonText="Invitar"/>
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="5">
+            <Grid>
 
-            <!-- Content -->
-            <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <!-- Empty State -->
+                <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                   Title="No hay colaboradores registrados"
+                                   Message="Invite un nuevo colaborador para comenzar"
+                                   ContextInfo="Los colaboradores son usuarios que tienen acceso al sistema para gestionar la información de esta empresa."
+                                   Command="{Binding InviteCollaboratorCommand}"
+                                   ButtonText="Invitar"/>
 
-                <!-- Row 0: Search Label -->
-                <TextBlock Grid.Row="0" Text="¿Qué colaborador desea buscar?" Margin="10,10,10,3"/>
+                <!-- Content -->
+                <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <!-- Row 1: Search Field -->
-                <dxe:ButtonEdit Grid.Row="1"
-                                Margin="10,0,10,0"
-                                MinHeight="25"
-                                NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
-                                ToolTip="Escribe aquí para buscar"
-                                CharacterCasing="Upper"
-                                BorderBrush="#C8CED6"
-                                AllowDefaultButton="False"
-                                h:FocusBehavior.IsFocused="True"
-                                Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
-                    <dxe:ButtonEdit.Buttons>
-                        <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
-                    </dxe:ButtonEdit.Buttons>
-                </dxe:ButtonEdit>
+                    <!-- Row 0: Search Label -->
+                    <TextBlock Grid.Row="0" Text="¿Qué colaborador desea buscar?" Margin="10,10,10,3"/>
 
-                <!-- Row 2: BusyMask + Grid -->
-                <busyIndicator:BusyMask x:Name="BusyIndicator"
-                                        Grid.Row="2"
-                                        IsBusy="{Binding IsBusy}"
-                                        IndicatorType="BouncingDot"
-                                        BusyContent="Por favor espere..."
-                                        BusyContentMargin="0,20,0,0"
-                                        IsBusyAtStartup="False">
+                    <!-- Row 1: Search Field -->
+                    <dxe:ButtonEdit Grid.Row="1"
+                                    Margin="10,0,10,0"
+                                    MinHeight="25"
+                                    NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
+                                    ToolTip="Escribe aquí para buscar"
+                                    CharacterCasing="Upper"
+                                    BorderBrush="#C8CED6"
+                                    AllowDefaultButton="False"
+                                    h:FocusBehavior.IsFocused="True"
+                                    Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
+                        <dxe:ButtonEdit.Buttons>
+                            <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
+                        </dxe:ButtonEdit.Buttons>
+                    </dxe:ButtonEdit>
 
-                    <dxg:GridControl Margin="10,6,10,0"
+                    <!-- Row 2: Grid -->
+                    <dxg:GridControl Grid.Row="2"
+                                     Margin="10,6,10,0"
                                      ItemsSource="{Binding FilteredCollaborators}"
                                      SelectedItem="{Binding SelectedItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <dxg:GridControl.View>
@@ -118,75 +118,75 @@
                             </dxg:GridColumn.CellTemplate>
                         </dxg:GridColumn>
                     </dxg:GridControl>
-                </busyIndicator:BusyMask>
 
-                <!-- Row 3: Action Buttons -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                    <!-- Row 3: Action Buttons -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
 
-                    <!-- Invitar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding IsBusy, Converter={dxmvvm:BooleanNegationConverter}}"
-                            Command="{Binding InviteCollaboratorCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Invitar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
+                        <!-- Invitar -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding IsBusy, Converter={dxmvvm:BooleanNegationConverter}}"
+                                Command="{Binding InviteCollaboratorCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Invitar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
 
-                    <!-- Editar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanEditCollaborator}"
-                            Command="{Binding EditCollaboratorCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
+                        <!-- Editar -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding CanEditCollaborator}"
+                                Command="{Binding EditCollaboratorCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
 
-                    <!-- Eliminar -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanDeleteCollaborator}"
-                            Command="{Binding DeleteCollaboratorCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
-                                <Image.Style>
-                                    <Style TargetType="Image">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Image.Style>
-                            </Image>
-                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
+                        <!-- Eliminar -->
+                        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                                IsEnabled="{Binding CanDeleteCollaborator}"
+                                Command="{Binding DeleteCollaboratorCommand}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
 
-                </StackPanel>
+                    </StackPanel>
+
+                </Grid>
 
             </Grid>
-
-        </Grid>
-    </Border>
+        </Border>
+    </busyIndicator:BusyMask>
 </UserControl>

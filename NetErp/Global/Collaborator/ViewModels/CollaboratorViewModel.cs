@@ -219,6 +219,7 @@ namespace NetErp.Global.Collaborator.ViewModels
             base.OnViewReady(view);
             try
             {
+                IsBusy = true;
                 await Task.WhenAll(
                     _collaboratorCache.EnsureLoadedAsync(),
                     _emailCache.EnsureLoadedAsync(),
