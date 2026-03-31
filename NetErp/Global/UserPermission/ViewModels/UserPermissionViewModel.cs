@@ -5,28 +5,33 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Global;
-using NetErp.Global.CompanyPermissionDefault.DTO;
+using Models.Login;
+using NetErp.Global.UserPermission.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
-namespace NetErp.Global.CompanyPermissionDefault.ViewModels
+namespace NetErp.Global.UserPermission.ViewModels
 {
-    public class CompanyPermissionDefaultViewModel : Screen
+    public class UserPermissionViewModel : Screen
     {
         #region Dependencies
 
         private readonly IRepository<MenuModuleGraphQLModel> _menuModuleService;
         private readonly IRepository<PermissionDefinitionGraphQLModel> _permissionDefinitionService;
         private readonly IRepository<CompanyPermissionDefaultGraphQLModel> _companyPermDefaultService;
+        private readonly IRepository<UserPermissionGraphQLModel> _userPermissionService;
+        private readonly CollaboratorCache _collaboratorCache;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
@@ -34,16 +39,20 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 
         #region Constructor
 
-        public CompanyPermissionDefaultViewModel(
+        public UserPermissionViewModel(
             IRepository<MenuModuleGraphQLModel> menuModuleService,
             IRepository<PermissionDefinitionGraphQLModel> permissionDefinitionService,
             IRepository<CompanyPermissionDefaultGraphQLModel> companyPermDefaultService,
+            IRepository<UserPermissionGraphQLModel> userPermissionService,
+            CollaboratorCache collaboratorCache,
             Helpers.Services.INotificationService notificationService,
             JoinableTaskFactory joinableTaskFactory)
         {
             _menuModuleService = menuModuleService;
             _permissionDefinitionService = permissionDefinitionService;
             _companyPermDefaultService = companyPermDefaultService;
+            _userPermissionService = userPermissionService;
+            _collaboratorCache = collaboratorCache;
             _notificationService = notificationService;
             _joinableTaskFactory = joinableTaskFactory;
         }
@@ -65,9 +74,42 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         }
 
-        public ObservableCollection<PermissionTreeNodeDTO> TreeNodes { get; set; } = [];
+        public ObservableCollection<CollaboratorGraphQLModel> Collaborators
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Collaborators));
+                }
+            }
+        } = [];
 
-        public ObservableCollection<PermissionTreeNodeDTO> DisplayTreeNodes
+        public CollaboratorGraphQLModel? SelectedCollaborator
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedCollaborator));
+                    NotifyOfPropertyChange(nameof(HasCollaboratorSelected));
+                    if (value != null)
+                        _ = LoadUserPermissionsAsync(value.Account.Id);
+                    else
+                        ClearTree();
+                }
+            }
+        }
+
+        public bool HasCollaboratorSelected => SelectedCollaborator is not null;
+
+        public ObservableCollection<UserPermissionTreeNodeDTO> TreeNodes { get; set; } = [];
+
+        public ObservableCollection<UserPermissionTreeNodeDTO> DisplayTreeNodes
         {
             get;
             set
@@ -80,7 +122,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         } = [];
 
-        public ObservableCollection<PermissionTreeNodeDTO> ModuleFilters
+        public ObservableCollection<UserPermissionTreeNodeDTO> ModuleFilters
         {
             get;
             set
@@ -93,7 +135,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         } = [];
 
-        public ObservableCollection<PermissionTreeNodeDTO> GroupFilters
+        public ObservableCollection<UserPermissionTreeNodeDTO> GroupFilters
         {
             get;
             set
@@ -106,7 +148,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         } = [];
 
-        public PermissionTreeNodeDTO? SelectedModuleFilter
+        public UserPermissionTreeNodeDTO? SelectedModuleFilter
         {
             get;
             set
@@ -123,7 +165,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         }
 
-        public PermissionTreeNodeDTO? SelectedGroupFilter
+        public UserPermissionTreeNodeDTO? SelectedGroupFilter
         {
             get;
             set
@@ -143,7 +185,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         {
             get
             {
-                foreach (PermissionTreeNodeDTO node in _allPermissionNodes)
+                foreach (UserPermissionTreeNodeDTO node in _allPermissionNodes)
                 {
                     if (node.HasChanged) return true;
                 }
@@ -160,7 +202,9 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         private List<MenuModuleGraphQLModel> _fullMenuHierarchy = [];
         private List<PermissionDefinitionGraphQLModel> _allPermissionDefinitions = [];
         private List<CompanyPermissionDefaultGraphQLModel> _allCompanyDefaults = [];
-        private List<PermissionTreeNodeDTO> _allPermissionNodes = [];
+        private List<UserPermissionGraphQLModel> _currentUserPermissions = [];
+        private List<UserPermissionTreeNodeDTO> _allPermissionNodes = [];
+        private bool _isInitialized;
 
         #endregion
 
@@ -196,19 +240,19 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             try
             {
                 IsBusy = true;
+                await _collaboratorCache.EnsureLoadedAsync();
                 await LoadMenuHierarchyAsync();
                 await LoadPermissionDefinitionsAsync();
                 await LoadCompanyPermissionDefaultsAsync();
-                BuildTree();
-                ModuleFilters = [.. TreeNodes];
-                ApplyTreeFilter();
+                Collaborators = [.. _collaboratorCache.Items.OrderBy(c => c.Account.FullName)];
+                _isInitialized = true;
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -226,6 +270,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 TreeNodes.Clear();
                 DisplayTreeNodes.Clear();
                 _allPermissionNodes.Clear();
+                Collaborators.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -270,6 +315,41 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             _allCompanyDefaults = [.. result.Entries];
         }
 
+        private async Task LoadUserPermissionsAsync(int accountId)
+        {
+            try
+            {
+                IsBusy = true;
+
+                var (fragment, query) = _userPermissionsQuery.Value;
+
+                dynamic filters = new ExpandoObject();
+                filters.accountId = accountId;
+
+                ExpandoObject variables = new GraphQLVariables()
+                    .For(fragment, "filters", filters)
+                    .For(fragment, "pagination", new { pageSize = -1 })
+                    .Build();
+
+                PageType<UserPermissionGraphQLModel> result = await _userPermissionService.GetPageAsync(query, variables);
+                _currentUserPermissions = [.. result.Entries];
+
+                BuildTree();
+                ModuleFilters = [.. TreeNodes];
+                SelectedModuleFilter = null;
+                ApplyTreeFilter();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadUserPermissionsAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         #endregion
 
         #region Tree Building
@@ -279,33 +359,35 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             TreeNodes.Clear();
             _allPermissionNodes.Clear();
 
-            // Index permission definitions by menuItem.Id
             Dictionary<int, List<PermissionDefinitionGraphQLModel>> permsByMenuItem = _allPermissionDefinitions
                 .Where(pd => pd.MenuItem != null)
                 .GroupBy(pd => pd.MenuItem!.Id)
                 .ToDictionary(g => g.Key, g => g.OrderBy(pd => pd.DisplayOrder).ToList());
 
-            // Index company defaults by permissionDefinition.Id
             Dictionary<int, CompanyPermissionDefaultGraphQLModel> companyDefaultsByPermId = _allCompanyDefaults
                 .Where(cd => cd.PermissionDefinition != null)
                 .ToDictionary(cd => cd.PermissionDefinition!.Id);
 
+            Dictionary<int, UserPermissionGraphQLModel> userPermsByPermId = _currentUserPermissions
+                .Where(up => up.PermissionDefinition != null)
+                .ToDictionary(up => up.PermissionDefinition!.Id);
+
             foreach (MenuModuleGraphQLModel module in _fullMenuHierarchy.OrderBy(m => m.DisplayOrder))
             {
-                PermissionTreeNodeDTO moduleNode = new()
+                UserPermissionTreeNodeDTO moduleNode = new()
                 {
                     Id = module.Id,
                     Name = module.Name,
-                    NodeType = PermissionTreeNodeType.Module
+                    NodeType = UserPermissionTreeNodeType.Module
                 };
 
                 foreach (MenuItemGroupGraphQLModel group in module.MenuItemGroups.OrderBy(g => g.DisplayOrder))
                 {
-                    PermissionTreeNodeDTO groupNode = new()
+                    UserPermissionTreeNodeDTO groupNode = new()
                     {
                         Id = group.Id,
                         Name = group.Name,
-                        NodeType = PermissionTreeNodeType.Group,
+                        NodeType = UserPermissionTreeNodeType.Group,
                         Parent = moduleNode
                     };
 
@@ -314,39 +396,38 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                         if (!item.IsActive) continue;
                         if (!permsByMenuItem.TryGetValue(item.Id, out List<PermissionDefinitionGraphQLModel>? permsForItem)) continue;
 
-                        PermissionTreeNodeDTO itemNode = new()
+                        UserPermissionTreeNodeDTO itemNode = new()
                         {
                             Id = item.Id,
                             Name = item.Name,
-                            NodeType = PermissionTreeNodeType.Item,
+                            NodeType = UserPermissionTreeNodeType.Item,
                             Parent = groupNode
                         };
 
-                        // Group permissions by type (ACTION / FIELD)
-                        var actionPerms = permsForItem.Where(p => p.PermissionType == "ACTION").ToList();
-                        var fieldPerms = permsForItem.Where(p => p.PermissionType == "FIELD").ToList();
+                        List<PermissionDefinitionGraphQLModel> actionPerms = permsForItem.Where(p => p.PermissionType == "ACTION").ToList();
+                        List<PermissionDefinitionGraphQLModel> fieldPerms = permsForItem.Where(p => p.PermissionType == "FIELD").ToList();
 
                         if (actionPerms.Count > 0)
                         {
-                            PermissionTreeNodeDTO actionGroupNode = new()
+                            UserPermissionTreeNodeDTO actionGroupNode = new()
                             {
                                 Name = "Acciones",
-                                NodeType = PermissionTreeNodeType.PermissionTypeGroup,
+                                NodeType = UserPermissionTreeNodeType.PermissionTypeGroup,
                                 Parent = itemNode
                             };
-                            AddPermissionNodes(actionGroupNode, actionPerms, companyDefaultsByPermId);
+                            AddPermissionNodes(actionGroupNode, actionPerms, companyDefaultsByPermId, userPermsByPermId);
                             itemNode.Children.Add(actionGroupNode);
                         }
 
                         if (fieldPerms.Count > 0)
                         {
-                            PermissionTreeNodeDTO fieldGroupNode = new()
+                            UserPermissionTreeNodeDTO fieldGroupNode = new()
                             {
                                 Name = "Campos obligatorios",
-                                NodeType = PermissionTreeNodeType.PermissionTypeGroup,
+                                NodeType = UserPermissionTreeNodeType.PermissionTypeGroup,
                                 Parent = itemNode
                             };
-                            AddPermissionNodes(fieldGroupNode, fieldPerms, companyDefaultsByPermId);
+                            AddPermissionNodes(fieldGroupNode, fieldPerms, companyDefaultsByPermId, userPermsByPermId);
                             itemNode.Children.Add(fieldGroupNode);
                         }
 
@@ -363,40 +444,54 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         }
 
         private void AddPermissionNodes(
-            PermissionTreeNodeDTO parentNode,
+            UserPermissionTreeNodeDTO parentNode,
             List<PermissionDefinitionGraphQLModel> perms,
-            Dictionary<int, CompanyPermissionDefaultGraphQLModel> companyDefaultsByPermId)
+            Dictionary<int, CompanyPermissionDefaultGraphQLModel> companyDefaultsByPermId,
+            Dictionary<int, UserPermissionGraphQLModel> userPermsByPermId)
         {
             foreach (PermissionDefinitionGraphQLModel permDef in perms)
             {
-                companyDefaultsByPermId.TryGetValue(permDef.Id, out CompanyPermissionDefaultGraphQLModel? compDefault);
+                // Resolve effective default: company → system
+                string effectiveDefault = permDef.SystemDefault;
+                if (companyDefaultsByPermId.TryGetValue(permDef.Id, out CompanyPermissionDefaultGraphQLModel? compDefault))
+                    effectiveDefault = compDefault.DefaultValue;
 
-                PermissionDefaultValue? companyValue = compDefault?.DefaultValue switch
+                // Resolve user permission
+                userPermsByPermId.TryGetValue(permDef.Id, out UserPermissionGraphQLModel? userPerm);
+
+                UserPermissionValue? userValue = userPerm?.Value switch
                 {
-                    "ALLOWED" => PermissionDefaultValue.Allowed,
-                    "DENIED" => PermissionDefaultValue.Denied,
-                    "REQUIRED" => PermissionDefaultValue.Required,
-                    "OPTIONAL" => PermissionDefaultValue.Optional,
+                    "ALLOWED" => UserPermissionValue.Allowed,
+                    "DENIED" => UserPermissionValue.Denied,
+                    "REQUIRED" => UserPermissionValue.Required,
+                    "OPTIONAL" => UserPermissionValue.Optional,
                     _ => null
                 };
 
-                PermissionTreeNodeDTO permNode = new()
+                DateTime? expiresAt = null;
+                if (!string.IsNullOrEmpty(userPerm?.ExpiresAt) &&
+                    DateTime.TryParse(userPerm.ExpiresAt, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsed))
+                    expiresAt = parsed;
+
+                UserPermissionTreeNodeDTO permNode = new()
                 {
                     Id = permDef.Id,
                     Name = permDef.Name,
                     Code = permDef.Code,
                     PermissionType = permDef.PermissionType,
-                    SystemDefault = permDef.SystemDefault,
-                    CompanyPermissionDefaultId = compDefault?.Id,
-                    CompanyDefaultValue = companyValue,
-                    OriginalCompanyDefaultValue = companyValue,
-                    NodeType = PermissionTreeNodeType.Permission,
+                    EffectiveDefault = effectiveDefault,
+                    UserPermissionId = userPerm?.Id,
+                    UserValue = userValue,
+                    OriginalUserValue = userValue,
+                    ExpiresAt = expiresAt,
+                    OriginalExpiresAt = expiresAt,
+                    NodeType = UserPermissionTreeNodeType.Permission,
                     Parent = parentNode
                 };
 
                 permNode.PropertyChanged += (_, e) =>
                 {
-                    if (e.PropertyName == nameof(PermissionTreeNodeDTO.HasChanged))
+                    if (e.PropertyName == nameof(UserPermissionTreeNodeDTO.HasChanged))
                     {
                         NotifyOfPropertyChange(nameof(HasChanges));
                         NotifyOfPropertyChange(nameof(CanSave));
@@ -406,6 +501,15 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 parentNode.Children.Add(permNode);
                 _allPermissionNodes.Add(permNode);
             }
+        }
+
+        private void ClearTree()
+        {
+            TreeNodes.Clear();
+            DisplayTreeNodes = [];
+            _allPermissionNodes.Clear();
+            NotifyOfPropertyChange(nameof(HasChanges));
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         #endregion
@@ -432,20 +536,20 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 
             if (SelectedGroupFilter is not null)
             {
-                PermissionTreeNodeDTO moduleWrapper = new()
+                UserPermissionTreeNodeDTO moduleWrapper = new()
                 {
                     Id = SelectedModuleFilter.Id,
                     Name = SelectedModuleFilter.Name,
-                    NodeType = PermissionTreeNodeType.Module
+                    NodeType = UserPermissionTreeNodeType.Module
                 };
-                PermissionTreeNodeDTO groupWrapper = new()
+                UserPermissionTreeNodeDTO groupWrapper = new()
                 {
                     Id = SelectedGroupFilter.Id,
                     Name = SelectedGroupFilter.Name,
-                    NodeType = PermissionTreeNodeType.Group,
+                    NodeType = UserPermissionTreeNodeType.Group,
                     Parent = moduleWrapper
                 };
-                foreach (PermissionTreeNodeDTO item in SelectedGroupFilter.Children)
+                foreach (UserPermissionTreeNodeDTO item in SelectedGroupFilter.Children)
                     groupWrapper.Children.Add(item);
                 moduleWrapper.Children.Add(groupWrapper);
                 DisplayTreeNodes = [moduleWrapper];
@@ -470,58 +574,76 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 var (_, updateQuery) = _updateMutation.Value;
                 var (_, deleteQuery) = _deleteMutation.Value;
 
-                foreach (PermissionTreeNodeDTO node in _allPermissionNodes)
+                int accountId = SelectedCollaborator!.Account.Id;
+
+                foreach (UserPermissionTreeNodeDTO node in _allPermissionNodes)
                 {
                     if (!node.HasChanged) continue;
 
-                    if (node.OriginalCompanyDefaultValue == null && node.CompanyDefaultValue != null)
+                    if (node.OriginalUserValue == null && node.UserValue != null)
                     {
-                        // CREATE: was "not set", now has a value
-                        string valueStr = ToGraphQLValue(node.CompanyDefaultValue.Value);
+                        // CREATE
+                        string valueStr = ToGraphQLValue(node.UserValue.Value);
                         dynamic variables = new ExpandoObject();
-                        variables.createResponseInput = new { permissionDefinitionId = node.Id, defaultValue = valueStr };
-                        UpsertResponseType<CompanyPermissionDefaultGraphQLModel> result =
-                            await _companyPermDefaultService.CreateAsync<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>(createQuery, variables);
+                        variables.createResponseInput = new
+                        {
+                            accountId,
+                            permissionDefinitionId = node.Id,
+                            value = valueStr,
+                            expiresAt = node.ExpiresAt == null
+                            ? null
+                            : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
+                        };
+                        UpsertResponseType<UserPermissionGraphQLModel> result =
+                            await _userPermissionService.CreateAsync<UpsertResponseType<UserPermissionGraphQLModel>>(createQuery, variables);
                         if (!result.Success)
                         {
-                            ThemedMessageBox.Show("Atención !", $"Error al crear default '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ThemedMessageBox.Show("Atención !", $"Error al crear permiso '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
                             return;
                         }
-                        node.CompanyPermissionDefaultId = result.Entity.Id;
+                        node.UserPermissionId = result.Entity.Id;
                     }
-                    else if (node.OriginalCompanyDefaultValue != null && node.CompanyDefaultValue != null)
+                    else if (node.OriginalUserValue != null && node.UserValue != null)
                     {
-                        // UPDATE: changed value
-                        string valueStr = ToGraphQLValue(node.CompanyDefaultValue.Value);
+                        // UPDATE
+                        string valueStr = ToGraphQLValue(node.UserValue.Value);
                         dynamic variables = new ExpandoObject();
-                        variables.updateResponseId = node.CompanyPermissionDefaultId;
-                        variables.updateResponseData = new { defaultValue = valueStr };
-                        UpsertResponseType<CompanyPermissionDefaultGraphQLModel> result =
-                            await _companyPermDefaultService.UpdateAsync<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>(updateQuery, variables);
+                        variables.updateResponseId = node.UserPermissionId;
+                        variables.updateResponseData = new
+                        {
+                            value = valueStr,
+                            expiresAt = node.ExpiresAt == null
+                            ? null
+                            : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
+                        };
+                        UpsertResponseType<UserPermissionGraphQLModel> result =
+                            await _userPermissionService.UpdateAsync<UpsertResponseType<UserPermissionGraphQLModel>>(updateQuery, variables);
                         if (!result.Success)
                         {
-                            ThemedMessageBox.Show("Atención !", $"Error al actualizar default '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ThemedMessageBox.Show("Atención !", $"Error al actualizar permiso '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
                             return;
                         }
                     }
-                    else if (node.OriginalCompanyDefaultValue != null && node.CompanyDefaultValue == null)
+                    else if (node.OriginalUserValue != null && node.UserValue == null)
                     {
-                        // DELETE: was set, now "not set"
+                        // DELETE
                         dynamic variables = new ExpandoObject();
-                        variables.deleteResponseId = node.CompanyPermissionDefaultId;
-                        DeleteResponseType result = await _companyPermDefaultService.DeleteAsync<DeleteResponseType>(deleteQuery, variables);
+                        variables.deleteResponseId = node.UserPermissionId;
+                        DeleteResponseType result = await _userPermissionService.DeleteAsync<DeleteResponseType>(deleteQuery, variables);
                         if (!result.Success)
                         {
-                            ThemedMessageBox.Show("Atención !", $"Error al eliminar default '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ThemedMessageBox.Show("Atención !", $"Error al eliminar permiso '{node.Name}'.\n\n{result.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
                             return;
                         }
-                        node.CompanyPermissionDefaultId = null;
+                        node.UserPermissionId = null;
+                        node.ExpiresAt = null;
                     }
 
-                    node.OriginalCompanyDefaultValue = node.CompanyDefaultValue;
+                    node.OriginalUserValue = node.UserValue;
+                    node.OriginalExpiresAt = node.ExpiresAt;
                 }
 
-                _notificationService.ShowSuccess("Valores predeterminados actualizados correctamente");
+                _notificationService.ShowSuccess("Permisos del usuario actualizados correctamente");
                 NotifyOfPropertyChange(nameof(HasChanges));
                 NotifyOfPropertyChange(nameof(CanSave));
             }
@@ -538,16 +660,19 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 
         private void UndoChanges()
         {
-            foreach (PermissionTreeNodeDTO node in _allPermissionNodes)
-                node.CompanyDefaultValue = node.OriginalCompanyDefaultValue;
+            foreach (UserPermissionTreeNodeDTO node in _allPermissionNodes)
+            {
+                node.UserValue = node.OriginalUserValue;
+                node.ExpiresAt = node.OriginalExpiresAt;
+            }
         }
 
-        private static string ToGraphQLValue(PermissionDefaultValue value) => value switch
+        private static string ToGraphQLValue(UserPermissionValue value) => value switch
         {
-            PermissionDefaultValue.Allowed => "ALLOWED",
-            PermissionDefaultValue.Denied => "DENIED",
-            PermissionDefaultValue.Required => "REQUIRED",
-            PermissionDefaultValue.Optional => "OPTIONAL",
+            UserPermissionValue.Allowed => "ALLOWED",
+            UserPermissionValue.Denied => "DENIED",
+            UserPermissionValue.Required => "REQUIRED",
+            UserPermissionValue.Optional => "OPTIONAL",
             _ => "ALLOWED"
         };
 
@@ -615,11 +740,29 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _userPermissionsQuery = new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<PageType<UserPermissionGraphQLModel>>
+                .Create()
+                .SelectList(it => it.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Value)
+                    .Field(e => e.ExpiresAt)
+                    .Select(e => e.PermissionDefinition, pd => pd
+                        .Field(p => p!.Id)))
+                .Build();
+
+            GraphQLQueryParameter filters = new("filters", "UserPermissionFilters");
+            GraphQLQueryParameter pagination = new("pagination", "Pagination");
+            GraphQLQueryFragment fragment = new("userPermissionsPage", [filters, pagination], fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createMutation = new(() =>
         {
-            Dictionary<string, object> fields = FieldSpec<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>
+            Dictionary<string, object> fields = FieldSpec<UpsertResponseType<UserPermissionGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "companyPermissionDefault", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "userPermission", nested: sq => sq
                     .Field(e => e.Id))
                 .Field(f => f.Success)
                 .Field(f => f.Message)
@@ -627,17 +770,17 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                     .Field(e => e.Message))
                 .Build();
 
-            GraphQLQueryFragment fragment = new("createCompanyPermissionDefault",
-                [new("input", "CreateCompanyPermissionDefaultInput!")],
+            GraphQLQueryFragment fragment = new("createUserPermission",
+                [new("input", "CreateUserPermissionInput!")],
                 fields, "CreateResponse");
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateMutation = new(() =>
         {
-            Dictionary<string, object> fields = FieldSpec<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>
+            Dictionary<string, object> fields = FieldSpec<UpsertResponseType<UserPermissionGraphQLModel>>
                 .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "companyPermissionDefault", nested: sq => sq
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "userPermission", nested: sq => sq
                     .Field(e => e.Id))
                 .Field(f => f.Success)
                 .Field(f => f.Message)
@@ -645,8 +788,8 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                     .Field(e => e.Message))
                 .Build();
 
-            GraphQLQueryFragment fragment = new("updateCompanyPermissionDefault",
-                [new("id", "ID!"), new("data", "UpdateCompanyPermissionDefaultInput!")],
+            GraphQLQueryFragment fragment = new("updateUserPermission",
+                [new("id", "ID!"), new("data", "UpdateUserPermissionInput!")],
                 fields, "UpdateResponse");
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
@@ -659,7 +802,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            GraphQLQueryFragment fragment = new("deleteCompanyPermissionDefault",
+            GraphQLQueryFragment fragment = new("deleteUserPermission",
                 [new("id", "ID!")],
                 fields, "DeleteResponse");
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
