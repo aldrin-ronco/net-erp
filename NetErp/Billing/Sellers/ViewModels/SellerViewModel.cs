@@ -7,16 +7,19 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
-using NetErp.Helpers;
 using Models.Books;
 using Models.Global;
 using NetErp.Billing.Zones.DTO;
 using NetErp.Global.CostCenters.DTO;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -264,6 +267,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 return _editSellerCommand;
             }
         }
+
 
         private ICommand? _deleteSellerCommand;
         public ICommand DeleteSellerCommand
