@@ -24,6 +24,7 @@
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -66,8 +67,14 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Row 1: TreeListControl -->
-                <Border Grid.Row="1" BorderBrush="#C8CED6" BorderThickness="1" CornerRadius="4">
+                <!-- Row 1: Context message -->
+                <TextBlock Grid.Row="1"
+                           Text="Establezca los valores predeterminados de permisos para esta empresa. Los permisos que no se configuren aquí heredarán el valor por defecto del sistema."
+                           Foreground="Gray" FontSize="11" FontStyle="Italic"
+                           TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+                <!-- Row 2: TreeListControl -->
+                <Border Grid.Row="2" BorderBrush="#C8CED6" BorderThickness="1" CornerRadius="4">
                     <dxg:TreeListControl x:Name="PermissionTreeList"
                                          ItemsSource="{Binding DisplayTreeNodes}">
                         <dxg:TreeListControl.Columns>
@@ -168,8 +175,8 @@
                     </dxg:TreeListControl>
                 </Border>
 
-                <!-- Row 2: Action Buttons -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                <!-- Row 3: Action Buttons -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
 
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
