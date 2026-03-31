@@ -324,9 +324,10 @@ namespace NetErp
             // AccessProfile module repositories
             _ = kernel.Bind<IRepository<AccessProfileGraphQLModel>>().To<GraphQLRepository<AccessProfileGraphQLModel>>().InSingletonScope();
 
-            // PermissionDefinition / CompanyPermissionDefault module repositories
+            // PermissionDefinition / CompanyPermissionDefault / UserPermission module repositories
             _ = kernel.Bind<IRepository<PermissionDefinitionGraphQLModel>>().To<GraphQLRepository<PermissionDefinitionGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<CompanyPermissionDefaultGraphQLModel>>().To<GraphQLRepository<CompanyPermissionDefaultGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<UserPermissionGraphQLModel>>().To<GraphQLRepository<UserPermissionGraphQLModel>>().InSingletonScope();
 
             // Account module repositories
             _ = kernel.Bind<IRepository<AccountGraphQLModel>>().To<GraphQLRepository<AccountGraphQLModel>>().InSingletonScope();
