@@ -14,7 +14,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="AWSSDK.S3" Version="4.0.19.1" />
+	  <PackageReference Include="AWSSDK.S3" Version="4.0.19.4" />
 	  <PackageReference Include="ChilkatDnCore" Version="11.3.0" />
 	  <PackageReference Include="DevExpress.Wpf.Core" Version="25.2.5" />
 	  <PackageReference Include="GraphQL.Client" Version="6.1.0" />
