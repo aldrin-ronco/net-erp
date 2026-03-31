@@ -56,6 +56,7 @@ namespace NetErp.Helpers.Cache
 
         // Global
         public static readonly Type[] AccessProfile = [typeof(AccessProfileGraphQLModel)];
+        public static readonly Type[] PermissionDefinition = [typeof(PermissionDefinitionGraphQLModel)];
         public static readonly Type[] Email = [typeof(EmailGraphQLModel), typeof(SmtpGraphQLModel)];
         public static readonly Type[] Smtp = [typeof(SmtpGraphQLModel)];
         public static readonly Type[] AwsS3Config = [typeof(AwsS3ConfigGraphQLModel)];

@@ -20,33 +20,20 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Collaborator.ViewModels
 {
-    public class CollaboratorDetailViewModel : Screen
+    public class CollaboratorDetailViewModel(
+        IRepository<AccountGraphQLModel> accountService,
+        AccessProfileCache accessProfileCache,
+        EmailCache emailCache,
+        CostCenterCache costCenterCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen
     {
         #region Dependencies
 
-        private readonly IRepository<AccountGraphQLModel> _accountService;
-        private readonly AccessProfileCache _accessProfileCache;
-        private readonly EmailCache _emailCache;
-        private readonly CostCenterCache _costCenterCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
-
-        #endregion
-
-        #region Constructor
-
-        public CollaboratorDetailViewModel(
-            IRepository<AccountGraphQLModel> accountService,
-            AccessProfileCache accessProfileCache,
-            EmailCache emailCache,
-            CostCenterCache costCenterCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _accountService = accountService;
-            _accessProfileCache = accessProfileCache;
-            _emailCache = emailCache;
-            _costCenterCache = costCenterCache;
-            _joinableTaskFactory = joinableTaskFactory;
-        }
+        private readonly IRepository<AccountGraphQLModel> _accountService = accountService;
+        private readonly AccessProfileCache _accessProfileCache = accessProfileCache;
+        private readonly EmailCache _emailCache = emailCache;
+        private readonly CostCenterCache _costCenterCache = costCenterCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
 
         #endregion
 
