@@ -18,6 +18,7 @@ using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Models.Global;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingEntities.ViewModels
@@ -31,7 +32,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         IHandle<SellerCreateMessage>,
         IHandle<SellerUpdateMessage>,
         IHandle<SupplierCreateMessage>,
-        IHandle<SupplierUpdateMessage>
+        IHandle<SupplierUpdateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -42,6 +44,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -170,10 +173,19 @@ namespace NetErp.Books.AccountingEntities.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingEntity.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingEntity.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingEntity.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditAccountingEntity => SelectedAccountingEntity != null;
-        public bool CanDeleteAccountingEntity => SelectedAccountingEntity != null;
+        public bool CanCreateAccountingEntity => HasCreatePermission && !IsBusy;
+        public bool CanEditAccountingEntity => HasEditPermission && SelectedAccountingEntity != null;
+        public bool CanDeleteAccountingEntity => HasDeletePermission && SelectedAccountingEntity != null;
 
         #endregion
 
@@ -231,6 +243,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             IdentificationTypeCache identificationTypeCache,
             CountryCache countryCache,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -240,6 +253,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _identificationTypeCache = identificationTypeCache ?? throw new ArgumentNullException(nameof(identificationTypeCache));
             _countryCache = countryCache ?? throw new ArgumentNullException(nameof(countryCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
 
             _eventAggregator.SubscribeOnUIThread(this);
@@ -254,7 +268,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             base.OnViewReady(view);
             try
             {
-                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity);
+                await Task.WhenAll(
+                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity),
+                    _permissionCache.EnsureLoadedAsync());
             }
             catch (StringLengthNotAvailableException ex)
             {
@@ -262,6 +278,12 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 await TryCloseAsync();
                 return;
             }
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateAccountingEntity));
+            NotifyOfPropertyChange(nameof(CanEditAccountingEntity));
+            NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
             await LoadAccountingEntitiesAsync();
             this.SetFocus(() => FilterSearch);
         }
@@ -513,6 +535,17 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         public Task HandleAsync(SellerUpdateMessage message, CancellationToken cancellationToken) => LoadAccountingEntitiesAsync();
         public Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken) => LoadAccountingEntitiesAsync();
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken) => LoadAccountingEntitiesAsync();
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateAccountingEntity));
+            NotifyOfPropertyChange(nameof(CanEditAccountingEntity));
+            NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
+            return Task.CompletedTask;
+        }
 
         #endregion
     }
