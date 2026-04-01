@@ -24,7 +24,11 @@ namespace NetErp.Global.UserPermission.DTO
         Optional
     }
 
-    public record UserPermissionValueOption(UserPermissionValue Value, string Display);
+    public record UserPermissionValueOption(UserPermissionValue Value, string Display)
+    {
+        public bool IsPositive => Value is UserPermissionValue.Allowed or UserPermissionValue.Optional;
+    }
+    public record PermissionTypeOption(string Value, string Display);
 
     public class UserPermissionTreeNodeDTO : PropertyChangedBase
     {
@@ -66,6 +70,21 @@ namespace NetErp.Global.UserPermission.DTO
             UserPermissionTreeNodeType.Item => ItemBrush,
             UserPermissionTreeNodeType.PermissionTypeGroup => PermTypeBrush,
             _ => PermissionBrush
+        };
+
+        private static readonly SolidColorBrush ModuleBgBrush = new((Color)ColorConverter.ConvertFromString("#F0F0F0"));
+        private static readonly SolidColorBrush GroupBgBrush = new((Color)ColorConverter.ConvertFromString("#F5F5F5"));
+        private static readonly SolidColorBrush ItemBgBrush = new((Color)ColorConverter.ConvertFromString("#FAFAFA"));
+        private static readonly SolidColorBrush PermTypeGroupBgBrush = new((Color)ColorConverter.ConvertFromString("#FDFDFD"));
+        private static readonly SolidColorBrush TransparentBrush = Brushes.Transparent;
+
+        public SolidColorBrush NodeBackground => NodeType switch
+        {
+            UserPermissionTreeNodeType.Module => ModuleBgBrush,
+            UserPermissionTreeNodeType.Group => GroupBgBrush,
+            UserPermissionTreeNodeType.Item => ItemBgBrush,
+            UserPermissionTreeNodeType.PermissionTypeGroup => PermTypeGroupBgBrush,
+            _ => TransparentBrush
         };
 
         // Permission-level properties

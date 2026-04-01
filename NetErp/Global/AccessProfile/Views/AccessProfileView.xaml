@@ -148,34 +148,36 @@
                             <dxg:TreeListColumn FieldName="Name" Header="Opción del menú" Width="*">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Margin="6,3,4,3">
-                                            <!-- Icono estado (solo lectura, solo items) -->
-                                            <Image Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
-                                                   Visibility="{Binding RowData.Row.IsItem, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                                                <Image.Style>
-                                                    <Style TargetType="Image">
-                                                        <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
-                                                        <Setter Property="ToolTip" Value="Sin acceso"/>
-                                                        <Setter Property="Opacity" Value="0.3"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding RowData.Row.IsChecked}" Value="True">
-                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
-                                                                <Setter Property="ToolTip" Value="Con acceso"/>
-                                                                <Setter Property="Opacity" Value="1.0"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Image.Style>
-                                            </Image>
-                                            <TextBlock Text="{Binding RowData.Row.DisplayName}" VerticalAlignment="Center"
-                                                       FontWeight="{Binding RowData.Row.NodeFontWeight}"
-                                                       FontSize="{Binding RowData.Row.NodeFontSize}"
-                                                       Foreground="{Binding RowData.Row.NodeForeground}"
-                                                       Padding="0,1,0,1"/>
-                                        </StackPanel>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <StackPanel Orientation="Horizontal" Margin="6,3,4,3">
+                                                <!-- Icono estado (solo lectura, solo items) -->
+                                                <Image Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                       Visibility="{Binding RowData.Row.IsItem, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                            <Setter Property="ToolTip" Value="Sin acceso"/>
+                                                            <Setter Property="Opacity" Value="0.3"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RowData.Row.IsChecked}" Value="True">
+                                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
+                                                                    <Setter Property="ToolTip" Value="Con acceso"/>
+                                                                    <Setter Property="Opacity" Value="1.0"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                                <TextBlock Text="{Binding RowData.Row.DisplayName}" VerticalAlignment="Center"
+                                                           FontWeight="{Binding RowData.Row.NodeFontWeight}"
+                                                           FontSize="{Binding RowData.Row.NodeFontSize}"
+                                                           Foreground="{Binding RowData.Row.NodeForeground}"
+                                                           Padding="0,1,0,1"/>
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -186,8 +188,10 @@
                                                 Visible="{Binding DataContext.IsEditing, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <dxe:CheckEdit IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                       HorizontalAlignment="Center"/>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <dxe:CheckEdit IsChecked="{Binding RowData.Row.IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                           HorizontalAlignment="Center"/>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
