@@ -28,6 +28,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         private readonly IRepository<PermissionDefinitionGraphQLModel> _permissionDefinitionService;
         private readonly IRepository<CompanyPermissionDefaultGraphQLModel> _companyPermDefaultService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -39,12 +40,14 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             IRepository<PermissionDefinitionGraphQLModel> permissionDefinitionService,
             IRepository<CompanyPermissionDefaultGraphQLModel> companyPermDefaultService,
             Helpers.Services.INotificationService notificationService,
+            IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory)
         {
             _menuModuleService = menuModuleService;
             _permissionDefinitionService = permissionDefinitionService;
             _companyPermDefaultService = companyPermDefaultService;
             _notificationService = notificationService;
+            _eventAggregator = eventAggregator;
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -524,6 +527,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 _notificationService.ShowSuccess("Valores predeterminados actualizados correctamente");
                 NotifyOfPropertyChange(nameof(HasChanges));
                 NotifyOfPropertyChange(nameof(CanSave));
+                await _eventAggregator.PublishOnCurrentThreadAsync(new CompanyPermissionDefaultChangedMessage());
             }
             catch (Exception ex)
             {

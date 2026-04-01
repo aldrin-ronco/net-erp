@@ -34,6 +34,7 @@ namespace NetErp.Global.UserPermission.ViewModels
         private readonly CollaboratorCache _collaboratorCache;
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IDialogService _dialogService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -48,6 +49,7 @@ namespace NetErp.Global.UserPermission.ViewModels
             CollaboratorCache collaboratorCache,
             Helpers.Services.INotificationService notificationService,
             IDialogService dialogService,
+            IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory)
         {
             _menuModuleService = menuModuleService;
@@ -57,6 +59,7 @@ namespace NetErp.Global.UserPermission.ViewModels
             _collaboratorCache = collaboratorCache;
             _notificationService = notificationService;
             _dialogService = dialogService;
+            _eventAggregator = eventAggregator;
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -602,7 +605,7 @@ namespace NetErp.Global.UserPermission.ViewModels
         {
             if (SelectedModuleFilter is null)
             {
-                DisplayTreeNodes = TreeNodes;
+                DisplayTreeNodes = [.. TreeNodes];
                 return;
             }
 
@@ -718,6 +721,7 @@ namespace NetErp.Global.UserPermission.ViewModels
                 _notificationService.ShowSuccess("Permisos del usuario actualizados correctamente");
                 NotifyOfPropertyChange(nameof(HasChanges));
                 NotifyOfPropertyChange(nameof(CanSave));
+                await _eventAggregator.PublishOnCurrentThreadAsync(new UserPermissionChangedMessage());
             }
             catch (Exception ex)
             {
@@ -754,7 +758,7 @@ namespace NetErp.Global.UserPermission.ViewModels
             {
                 IsBusy = true;
                 await Task.Yield();
-                BatchUserPermissionViewModel batchVm = new(_userPermissionService, _joinableTaskFactory);
+                BatchUserPermissionViewModel batchVm = new(_userPermissionService, _eventAggregator, _joinableTaskFactory);
                 batchVm.SetData(_fullMenuHierarchy, _allPermissionDefinitions, _collaboratorCache.Items);
                 IsBusy = false;
 

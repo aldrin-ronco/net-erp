@@ -24,6 +24,7 @@ namespace NetErp.Global.UserPermission.ViewModels
         #region Dependencies
 
         private readonly IRepository<UserPermissionGraphQLModel> _userPermissionService;
+        private readonly IEventAggregator _eventAggregator;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -32,9 +33,11 @@ namespace NetErp.Global.UserPermission.ViewModels
 
         public BatchUserPermissionViewModel(
             IRepository<UserPermissionGraphQLModel> userPermissionService,
+            IEventAggregator eventAggregator,
             JoinableTaskFactory joinableTaskFactory)
         {
             _userPermissionService = userPermissionService;
+            _eventAggregator = eventAggregator;
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -605,6 +608,7 @@ namespace NetErp.Global.UserPermission.ViewModels
                         return;
                     }
 
+                    await _eventAggregator.PublishOnCurrentThreadAsync(new UserPermissionChangedMessage());
                     await TryCloseAsync(true);
                 }
                 else
@@ -640,6 +644,7 @@ namespace NetErp.Global.UserPermission.ViewModels
                         return;
                     }
 
+                    await _eventAggregator.PublishOnCurrentThreadAsync(new UserPermissionChangedMessage());
                     await TryCloseAsync(true);
                 }
             }
