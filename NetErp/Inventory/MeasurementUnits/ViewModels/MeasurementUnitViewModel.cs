@@ -16,6 +16,7 @@ using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Models.Global;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
@@ -23,7 +24,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
     public class MeasurementUnitViewModel : Screen,
         IHandle<MeasurementUnitCreateMessage>,
         IHandle<MeasurementUnitUpdateMessage>,
-        IHandle<MeasurementUnitDeleteMessage>
+        IHandle<MeasurementUnitDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -32,6 +34,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -171,10 +174,19 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.MeasurementUnit.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.MeasurementUnit.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.MeasurementUnit.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditMeasurementUnit => SelectedMeasurementUnit != null;
-        public bool CanDeleteMeasurementUnit => SelectedMeasurementUnit != null;
+        public bool CanCreateMeasurementUnit => HasCreatePermission && !IsBusy;
+        public bool CanEditMeasurementUnit => HasEditPermission && SelectedMeasurementUnit != null;
+        public bool CanDeleteMeasurementUnit => HasDeletePermission && SelectedMeasurementUnit != null;
 
         #endregion
 
@@ -230,6 +242,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -237,6 +250,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
 
             _eventAggregator.SubscribeOnUIThread(this);
@@ -251,7 +265,15 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             base.OnViewReady(view);
             try
             {
-                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MeasurementUnit);
+                await Task.WhenAll(
+                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MeasurementUnit),
+                    _permissionCache.EnsureLoadedAsync());
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateMeasurementUnit));
+                NotifyOfPropertyChange(nameof(CanEditMeasurementUnit));
+                NotifyOfPropertyChange(nameof(CanDeleteMeasurementUnit));
                 await LoadMeasurementUnitsAsync();
                 _isInitialized = true;
                 ShowEmptyState = MeasurementUnits == null || MeasurementUnits.Count == 0;
@@ -540,6 +562,17 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             ShowEmptyState = MeasurementUnits == null || MeasurementUnits.Count == 0;
             SelectedMeasurementUnit = null;
             _notificationService.ShowSuccess(message.DeletedMeasurementUnit.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateMeasurementUnit));
+            NotifyOfPropertyChange(nameof(CanEditMeasurementUnit));
+            NotifyOfPropertyChange(nameof(CanDeleteMeasurementUnit));
+            return Task.CompletedTask;
         }
 
         #endregion
