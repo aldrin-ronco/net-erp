@@ -19,6 +19,7 @@ using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Models.Global;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.Customers.ViewModels
@@ -29,7 +30,8 @@ namespace NetErp.Billing.Customers.ViewModels
         IHandle<CustomerUpdateMessage>,
         IHandle<AccountingEntityUpdateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SupplierUpdateMessage>
+        IHandle<SupplierUpdateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -45,6 +47,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly WithholdingTypeCache _withholdingTypeCache;
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
 
@@ -210,10 +213,19 @@ namespace NetErp.Billing.Customers.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditCustomer => SelectedCustomer != null;
-        public bool CanDeleteCustomer => SelectedCustomer != null;
+        public bool CanCreateCustomer => HasCreatePermission && !IsBusy;
+        public bool CanEditCustomer => HasEditPermission && SelectedCustomer != null;
+        public bool CanDeleteCustomer => HasDeletePermission && SelectedCustomer != null;
 
         #endregion
 
@@ -273,6 +285,7 @@ namespace NetErp.Billing.Customers.ViewModels
                                  WithholdingTypeCache withholdingTypeCache,
                                  ZoneCache zoneCache,
                                  StringLengthCache stringLengthCache,
+                                 PermissionCache permissionCache,
                                  JoinableTaskFactory joinableTaskFactory,
                                  IGraphQLClient graphQLClient)
         {
@@ -286,6 +299,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _withholdingTypeCache = withholdingTypeCache ?? throw new ArgumentNullException(nameof(withholdingTypeCache));
             _zoneCache = zoneCache ?? throw new ArgumentNullException(nameof(zoneCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
 
@@ -301,7 +315,15 @@ namespace NetErp.Billing.Customers.ViewModels
             base.OnViewReady(view);
             try
             {
-                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
+                await Task.WhenAll(
+                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer),
+                    _permissionCache.EnsureLoadedAsync());
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateCustomer));
+                NotifyOfPropertyChange(nameof(CanEditCustomer));
+                NotifyOfPropertyChange(nameof(CanDeleteCustomer));
                 await LoadCustomersAsync();
                 _isInitialized = true;
                 ShowEmptyState = Customers == null || Customers.Count == 0;
@@ -599,6 +621,17 @@ namespace NetErp.Billing.Customers.ViewModels
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
             return LoadCustomersAsync();
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateCustomer));
+            NotifyOfPropertyChange(nameof(CanEditCustomer));
+            NotifyOfPropertyChange(nameof(CanDeleteCustomer));
+            return Task.CompletedTask;
         }
 
         #endregion
