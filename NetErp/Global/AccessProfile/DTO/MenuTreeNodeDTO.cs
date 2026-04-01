@@ -49,6 +49,16 @@ namespace NetErp.Global.AccessProfile.DTO
             _ => ItemBrush
         };
 
+        private static readonly SolidColorBrush ModuleBgBrush = new((Color)ColorConverter.ConvertFromString("#F0F0F0"));
+        private static readonly SolidColorBrush GroupBgBrush = new((Color)ColorConverter.ConvertFromString("#F5F5F5"));
+
+        public SolidColorBrush NodeBackground => NodeType switch
+        {
+            MenuTreeNodeType.Module => ModuleBgBrush,
+            MenuTreeNodeType.Group => GroupBgBrush,
+            _ => Brushes.Transparent
+        };
+
         private bool _isChecked;
         private bool _propagating;
 
