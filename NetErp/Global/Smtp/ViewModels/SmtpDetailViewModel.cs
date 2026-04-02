@@ -12,6 +12,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -30,19 +31,35 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #endregion
 
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 420;
+
+        #endregion
+
         #region State
 
         public bool IsNewRecord => SmtpId == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -52,64 +69,60 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #region Form Properties
 
-        private int _smtpId;
         public int SmtpId
         {
-            get => _smtpId;
+            get;
             set
             {
-                if (_smtpId != value)
+                if (field != value)
                 {
-                    _smtpId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SmtpId));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _host = string.Empty;
         public string Host
         {
-            get => _host;
+            get;
             set
             {
-                if (_host != value)
+                if (field != value)
                 {
-                    _host = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Host));
                     ValidateProperty(nameof(Host), value);
                     this.TrackChange(nameof(Host));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _port;
         public int Port
         {
-            get => _port;
+            get;
             set
             {
-                if (_port != value)
+                if (field != value)
                 {
-                    _port = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Port));
                     this.TrackChange(nameof(Port));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -136,7 +149,7 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return Enumerable.Empty<string>();
             return _errors[propertyName];
         }
 
@@ -243,6 +256,9 @@ namespace NetErp.Global.Smtp.ViewModels
         public void SetForNew()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Host), Host);
+            this.SeedValue(nameof(Port), Port);
             this.AcceptChanges();
             ValidateProperties();
         }
@@ -291,21 +307,12 @@ namespace NetErp.Global.Smtp.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }

@@ -4,9 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d"
              d:DesignHeight="350" d:DesignWidth="500"
@@ -17,8 +17,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8" MinWidth="420">
-            <Grid Margin="15,15,15,5">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -29,7 +30,7 @@
 
                     <!-- Name -->
                     <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,3"/>
-                    <dxe:TextEdit Text="{Binding Path=Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <dxe:TextEdit Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   Style="{StaticResource FocusedHighlightStyle}"
                                   CharacterCasing="Upper"
                                   Padding="3"
@@ -40,7 +41,7 @@
 
                     <!-- Host -->
                     <TextBlock Text="Host" FontSize="13" Margin="0,0,0,3"/>
-                    <dxe:TextEdit Text="{Binding Path=Host, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <dxe:TextEdit Text="{Binding Host, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   Style="{StaticResource FocusedHighlightStyle}"
                                   Padding="3"
                                   BorderBrush="#C8CED6"
@@ -49,7 +50,7 @@
 
                     <!-- Port -->
                     <TextBlock Text="Puerto" FontSize="13" Margin="0,0,0,3"/>
-                    <dxe:SpinEdit Value="{Binding Path=Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                    <dxe:SpinEdit Value="{Binding Port, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                   EditValueType="{x:Type sys:Int32}"
                                   IsFloatValue="False"
                                   MaskType="Numeric" Mask="d"
@@ -65,17 +66,15 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding SaveCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -86,12 +85,20 @@
                     </Button>
                     <!-- Cancelar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsCancel="True">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsCancel="True"
+                            Command="{Binding CancelCommand}">
                         <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
                             <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
