@@ -27,7 +27,8 @@
                                Title="No hay unidades de medida registradas"
                                Message="Cree una nueva unidad de medida para comenzar"
                                ContextInfo="Las unidades de medida definen las magnitudes utilizadas para cuantificar productos e insumos en el inventario, como kilogramos, litros, unidades, metros, entre otros."
-                               Command="{Binding CreateMeasurementUnitCommand}"/>
+                               Command="{Binding CreateMeasurementUnitCommand}"
+                               HasPermission="{Binding HasCreatePermission}"/>
 
             <!-- Content -->
             <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
