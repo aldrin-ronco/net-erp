@@ -31,6 +31,7 @@ namespace NetErp.Global.Shell.ViewModels
         private readonly IEnumerable<IEntityCache> _entityCaches;
         private readonly IAuthApiClient _authApiClient;
         private readonly IAdminRecentCompanyService _recentCompanyService;
+        private readonly Helpers.Cache.PermissionCache _permissionCache;
 
         private MainMenuViewModel? _mainMenuViewModel;
         private SystemAccountGraphQLModel? _currentAccount;
@@ -78,7 +79,8 @@ namespace NetErp.Global.Shell.ViewModels
             IRepository<GlobalConfigGraphQLModel> globalConfigService,
             IEnumerable<IEntityCache> entityCaches,
             IAuthApiClient authApiClient,
-            IAdminRecentCompanyService recentCompanyService)
+            IAdminRecentCompanyService recentCompanyService,
+            Helpers.Cache.PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -92,6 +94,7 @@ namespace NetErp.Global.Shell.ViewModels
             _entityCaches = entityCaches ?? throw new ArgumentNullException(nameof(entityCaches));
             _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
             _recentCompanyService = recentCompanyService ?? throw new ArgumentNullException(nameof(recentCompanyService));
+            _permissionCache = permissionCache;
 
             _eventAggregator.SubscribeOnPublishedThread(this);
             _ = Task.Run(ActivateLoginViewAsync);
@@ -137,9 +140,11 @@ namespace NetErp.Global.Shell.ViewModels
 
         public async Task HandleAsync(CompanySelectedMessage message, CancellationToken cancellationToken)
         {
-            // Empresa seleccionada - cargar configuración global AWS y navegar al MainMenu
-            await LoadGlobalAwsConfigAsync();
-            // Los caches individuales se cargan bajo demanda (lazy loading) via EnsureLoadedAsync()
+            // Empresa seleccionada - cargar configuración global AWS y permisos, luego navegar al MainMenu
+            // TODO: LoadGlobalAwsConfigAsync no se debe cargar aqui    
+            await Task.WhenAll(
+                LoadGlobalAwsConfigAsync(),
+                _permissionCache.EnsureLoadedAsync());
             await ActivateItemAsync(MainMenuViewModel, cancellationToken);
         }
 

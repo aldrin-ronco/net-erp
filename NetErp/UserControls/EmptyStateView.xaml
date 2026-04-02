@@ -30,12 +30,23 @@
                 </Style>
             </TextBlock.Style>
         </TextBlock>
-        <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                Command="{Binding Command, RelativeSource={RelativeSource AncestorType=UserControl}}"
+        <Button x:Name="ActionButton"
+                Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                Click="OnActionButtonClick"
                 Visibility="{Binding ButtonVisible, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center">
                 <Image Source="{Binding ButtonIcon, RelativeSource={RelativeSource AncestorType=UserControl}, TargetNullValue={dx:DXImage 'Images/Actions/New_32x32.png'}}"
-                       Width="32" Height="32" HorizontalAlignment="Center"/>
+                       Width="32" Height="32" HorizontalAlignment="Center">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.7"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
                 <TextBlock Text="{Binding ButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            HorizontalAlignment="Center" Margin="0,4,0,0"/>
             </StackPanel>

@@ -285,9 +285,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await Task.WhenAll(
-                _menuModuleCache.EnsureLoadedAsync(),
-                _permissionCache.EnsureLoadedAsync());
+            await _menuModuleCache.EnsureLoadedAsync();
             Modules = _menuModuleCache.Items;
             NotifyOfPropertyChange(nameof(HasCreatePermission));
             NotifyOfPropertyChange(nameof(HasEditPermission));

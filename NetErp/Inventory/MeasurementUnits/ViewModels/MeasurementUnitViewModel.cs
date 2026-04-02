@@ -265,9 +265,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             base.OnViewReady(view);
             try
             {
-                await Task.WhenAll(
-                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MeasurementUnit),
-                    _permissionCache.EnsureLoadedAsync());
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MeasurementUnit);
                 NotifyOfPropertyChange(nameof(HasCreatePermission));
                 NotifyOfPropertyChange(nameof(HasEditPermission));
                 NotifyOfPropertyChange(nameof(HasDeletePermission));

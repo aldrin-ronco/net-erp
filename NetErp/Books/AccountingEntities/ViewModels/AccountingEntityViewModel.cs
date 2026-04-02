@@ -268,9 +268,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             base.OnViewReady(view);
             try
             {
-                await Task.WhenAll(
-                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity),
-                    _permissionCache.EnsureLoadedAsync());
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity);
             }
             catch (StringLengthNotAvailableException ex)
             {

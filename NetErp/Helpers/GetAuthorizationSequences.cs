@@ -45,8 +45,8 @@ namespace NetErp.Helpers
 
         private static AuthorizationSequenceResponse GetSequencesFromXml(string xmlString)
         {
-            AuthorizationSequenceResponse result = new AuthorizationSequenceResponse();
-            XmlDocument xDoc = new XmlDocument();
+            AuthorizationSequenceResponse result = new();
+            XmlDocument xDoc = new();
             xDoc.LoadXml(xmlString);
             XmlNamespaceManager namespaces = new XmlNamespaceManager(xDoc.NameTable);
             namespaces.AddNamespace("s", "http://www.w3.org/2003/05/soap-envelope");
@@ -55,7 +55,7 @@ namespace NetErp.Helpers
 
             namespaces.AddNamespace("i", "http://www.w3.org/2001/XMLSchema-instance");
 
-            XmlNode responseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
+            XmlNode? responseList = xDoc.SelectSingleNode("//b:ResponseList", namespaces);
             bool isNil = responseList?.Attributes?["i:nil"]?.Value == "true";
 
             if (responseList != null && !isNil && responseList.HasChildNodes)
@@ -63,15 +63,17 @@ namespace NetErp.Helpers
                 ObservableCollection<AuthorizationSequenceGraphQLModel> authorizationSequences = [];
                 foreach (XmlNode item in responseList.ChildNodes)
                 {
-                    AuthorizationSequenceGraphQLModel sec = new AuthorizationSequenceGraphQLModel();
-                    sec.Number = item.SelectSingleNode("c:ResolutionNumber", namespaces)?.InnerText ?? string.Empty;
-                    sec.Prefix = item.SelectSingleNode("c:Prefix", namespaces)?.InnerText ?? string.Empty;
-                    sec.StartRange = int.Parse(item.SelectSingleNode("c:FromNumber", namespaces)?.InnerText ?? "0");
-                    sec.EndRange = int.Parse(item.SelectSingleNode("c:ToNumber", namespaces)?.InnerText ?? "0");
-                    sec.StartDate = GetDateOnly(item.SelectSingleNode("c:ValidDateFrom", namespaces)?.InnerText ?? "");
-                    sec.EndDate = GetDateOnly(item.SelectSingleNode("c:ValidDateTo", namespaces)?.InnerText ?? "");
-                    sec.TechnicalKey = item.SelectSingleNode("c:TechnicalKey", namespaces)?.InnerText ?? string.Empty;
-                    sec.Description = $"AUTORIZACION DIAN No. {sec.Number} de {sec.StartDate}, prefijo: {sec.Prefix} del {sec.StartDate} al {sec.EndRange}";
+                    AuthorizationSequenceGraphQLModel sec = new()
+                    {
+                        Number = item.SelectSingleNode("c:ResolutionNumber", namespaces)?.InnerText ?? string.Empty,
+                        Prefix = item.SelectSingleNode("c:Prefix", namespaces)?.InnerText ?? string.Empty,
+                        StartRange = int.Parse(item.SelectSingleNode("c:FromNumber", namespaces)?.InnerText ?? "0"),
+                        EndRange = int.Parse(item.SelectSingleNode("c:ToNumber", namespaces)?.InnerText ?? "0"),
+                        StartDate = GetDateOnly(item.SelectSingleNode("c:ValidDateFrom", namespaces)?.InnerText ?? ""),
+                        EndDate = GetDateOnly(item.SelectSingleNode("c:ValidDateTo", namespaces)?.InnerText ?? ""),
+                        TechnicalKey = item.SelectSingleNode("c:TechnicalKey", namespaces)?.InnerText ?? string.Empty
+                    };
+                    sec.Description = $"AUTORIZACION DIAN No. {sec.Number} de {sec.StartDate}, prefijo: {sec.Prefix} del {sec.StartRange} al {sec.EndRange}";
                     authorizationSequences.Add(sec);
                 }
                 result.Status = true;
@@ -81,8 +83,8 @@ namespace NetErp.Helpers
             else
             {
                 result.Status = false;
-                XmlNode operationDesc = xDoc.SelectSingleNode("//b:OperationDescription", namespaces);
-                XmlNode fail = xDoc.SelectSingleNode("//s:Reason", namespaces);
+                XmlNode? operationDesc = xDoc.SelectSingleNode("//b:OperationDescription", namespaces);
+                XmlNode? fail = xDoc.SelectSingleNode("//s:Reason", namespaces);
                 result.Message = operationDesc?.InnerText ?? fail?.InnerText ?? "Respuesta inesperada de la DIAN";
                 return result;
             }
@@ -112,7 +114,7 @@ namespace NetErp.Helpers
             string wsuCreated = DateTime.Now.AddHours(5).ToString("yyyy-MM-dd'T'HH:mm:ss.000Z");
             string wsuExpires = DateTime.Now.AddHours(22).ToString("yyyy-MM-dd'T'HH:mm:ss.000Z");
 
-            StringBuilder sbXml = new StringBuilder();
+            StringBuilder sbXml = new();
             string base64Cert = GetB64Certificate(certificatePem);
 
             string template = $@"<soap:Envelope xmlns:soap=""http://www.w3.org/2003/05/soap-envelope"" xmlns:wcf=""http://wcf.dian.colombia"">
@@ -137,7 +139,7 @@ namespace NetErp.Helpers
             byte[] pfxBytes = netCert.Export(X509ContentType.Pfx, "temp");
             string pfxBase64 = Convert.ToBase64String(pfxBytes);
 
-            Pfx pfx = new Pfx();
+            Pfx pfx = new();
             bool success = pfx.LoadPfxEncoded(pfxBase64, "base64", "temp");
             if (!success)
             {
@@ -146,18 +148,22 @@ namespace NetErp.Helpers
 
             Cert cert = pfx.GetCert(0);
 
-            Xml refXml = new Xml();
-            refXml.Tag = "wsse:SecurityTokenReference";
+            Xml refXml = new()
+            {
+                Tag = "wsse:SecurityTokenReference"
+            };
             refXml.UpdateAttrAt("wsse:Reference", true, "URI", "#X509-E18C26835F9A7946EA15544903040561");
             refXml.UpdateAttrAt("wsse:Reference", true, "ValueType", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3");
             refXml.EmitXmlDecl = false;
             Debug.WriteLine(refXml.GetXml());
 
-            XmlDSigGen gen = new XmlDSigGen();
-            gen.SigLocation = "soap:Envelope|soap:Header|wsse:Security";
-            gen.SigId = "SIG-E18C26835F9A7946EA15544903041175";
-            gen.KeyInfoId = "KI-E18C26835F9A7946EA15544903040902";
-            gen.SignedInfoPrefixList = "wsa soap wcf";
+            XmlDSigGen gen = new()
+            {
+                SigLocation = "soap:Envelope|soap:Header|wsse:Security",
+                SigId = "SIG-E18C26835F9A7946EA15544903041175",
+                KeyInfoId = "KI-E18C26835F9A7946EA15544903040902",
+                SignedInfoPrefixList = "wsa soap wcf"
+            };
             gen.AddSameDocRef("id-E18C26835F9A7946EA15544903041014", "sha256", "EXCL_C14N", "soap wcf", "");
             gen.KeyInfoType = "Custom";
             refXml.EmitCompact = true;
@@ -175,19 +181,14 @@ namespace NetErp.Helpers
 
         private static string SendToDian(string request, string wsdlUrl)
         {
-            Http loHttp = new Http();
+            Http loHttp = new();
             loHttp.SetRequestHeader("Content-Type", "application/soap+xml");
-            var loResp = loHttp.PostXml(wsdlUrl, request, "utf-8");
-
-            if (loResp == null)
-            {
-                throw new InvalidOperationException(
+            var loResp = loHttp.PostXml(wsdlUrl, request, "utf-8") ?? throw new InvalidOperationException(
                     "No se recibió respuesta de la DIAN." + Environment.NewLine +
                     "1. Verifique que su conexión a internet no presenta inconvenientes" + Environment.NewLine +
                     "2. Intente más tarde a que se restablezcan los servicios de la DIAN");
-            }
 
-            Xml loRespXml = new Xml();
+            Xml loRespXml = new();
             loRespXml.LoadXml(loResp.BodyStr);
             string responseXml = loRespXml.GetXml();
             Debug.WriteLine("=== DIAN RESPONSE ===");
