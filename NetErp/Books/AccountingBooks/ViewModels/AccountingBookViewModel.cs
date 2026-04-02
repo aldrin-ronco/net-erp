@@ -6,7 +6,11 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
+using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using Extensions.Global;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -21,7 +25,8 @@ namespace NetErp.Books.AccountingBooks.ViewModels
     public class AccountingBookViewModel : Screen,
         IHandle<AccountingBookCreateMessage>,
         IHandle<AccountingBookUpdateMessage>,
-        IHandle<AccountingBookDeleteMessage>
+        IHandle<AccountingBookDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -30,48 +35,48 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly DebouncedAction _searchDebounce = new();
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<AccountingBookGraphQLModel> _accountingBooks = [];
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooks
         {
-            get => _accountingBooks;
+            get;
             set
             {
-                if (_accountingBooks != value)
+                if (field != value)
                 {
-                    _accountingBooks = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingBooks));
                 }
             }
-        }
+        } = [];
 
-        private AccountingBookGraphQLModel? _selectedAccountingBook;
         public AccountingBookGraphQLModel? SelectedAccountingBook
         {
-            get => _selectedAccountingBook;
+            get;
             set
             {
-                if (_selectedAccountingBook != value)
+                if (field != value)
                 {
-                    _selectedAccountingBook = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingBook));
                     NotifyOfPropertyChange(nameof(CanEditBook));
                     NotifyOfPropertyChange(nameof(CanDeleteBook));
@@ -79,83 +84,95 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadAccountingBooksAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadAccountingBooksAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingBook.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingBook.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingBook.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditBook => SelectedAccountingBook != null;
-        public bool CanDeleteBook => SelectedAccountingBook != null;
+        public bool CanCreateBook => HasCreatePermission && !IsBusy;
+        public bool CanEditBook => HasEditPermission && SelectedAccountingBook != null;
+        public bool CanDeleteBook => HasDeletePermission && SelectedAccountingBook != null;
 
         #endregion
 
@@ -210,13 +227,17 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             IRepository<AccountingBookGraphQLModel> accountingBookService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache,
+            StringLengthCache stringLengthCache)
         {
             _eventAggregator = eventAggregator;
             _accountingBookService = accountingBookService;
             _notificationService = notificationService;
             _dialogService = dialogService;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
+            _stringLengthCache = stringLengthCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -227,16 +248,42 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await LoadAccountingBooksAsync();
+            try
+            {
+                IsBusy = true;
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingBook);
+                await LoadAccountingBooksAsync();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateBook));
+            NotifyOfPropertyChange(nameof(CanEditBook));
+            NotifyOfPropertyChange(nameof(CanDeleteBook));
+            this.SetFocus(() => FilterSearch);
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -248,16 +295,17 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingBookDetailViewModel(_accountingBookService, _eventAggregator, _joinableTaskFactory);
+                AccountingBookDetailViewModel detail = new(_accountingBookService, _eventAggregator, _joinableTaskFactory, _stringLengthCache);
+                detail.SetForNew();
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo libro contable");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditBookAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(CreateBookAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -271,17 +319,17 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingBookDetailViewModel(_accountingBookService, _eventAggregator, _joinableTaskFactory);
-                detail.LoadForEdit(SelectedAccountingBook);
+                AccountingBookDetailViewModel detail = new(_accountingBookService, _eventAggregator, _joinableTaskFactory, _stringLengthCache);
+                detail.SetForEdit(SelectedAccountingBook);
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.40;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar libro contable");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateBookAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(EditBookAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -295,24 +343,24 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingBookQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedAccountingBook.Id)
                     .Build();
-                var validation = await _accountingBookService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _accountingBookService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?",
+                    if (ThemedMessageBox.Show("Atención!",
+                        "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -320,7 +368,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
                 IsBusy = true;
                 var (deleteFragment, deleteQuery) = _deleteAccountingBookQuery.Value;
-                var deleteVars = new GraphQLVariables()
+                ExpandoObject deleteVars = new GraphQLVariables()
                     .For(deleteFragment, "id", SelectedAccountingBook.Id)
                     .Build();
                 DeleteResponseType deletedBook = await _accountingBookService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
@@ -328,7 +376,8 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                 if (!deletedBook.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedBook.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedBook.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
@@ -337,9 +386,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteBookAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeleteBookAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -356,16 +403,14 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadAccountingBooksQuery.Value;
 
                 dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -380,9 +425,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadAccountingBooksAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadAccountingBooksAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -458,6 +501,17 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             await LoadAccountingBooksAsync();
             SelectedAccountingBook = null;
             _notificationService.ShowSuccess(message.DeletedAccountingBook.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateBook));
+            NotifyOfPropertyChange(nameof(CanEditBook));
+            NotifyOfPropertyChange(nameof(CanDeleteBook));
+            return Task.CompletedTask;
         }
 
         #endregion

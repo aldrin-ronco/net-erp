@@ -1,3 +1,5 @@
+using NetErp.Books.AccountingBooks.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Books.AccountingBooks.Views
@@ -7,10 +9,13 @@ namespace NetErp.Books.AccountingBooks.Views
         public AccountingBookDetailView()
         {
             InitializeComponent();
-            Loaded += (s, e) =>
-            {
-                if (AccountingBookName != null) AccountingBookName.Focus();
-            };
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            AccountingBookName.Focus();
         }
     }
 }
