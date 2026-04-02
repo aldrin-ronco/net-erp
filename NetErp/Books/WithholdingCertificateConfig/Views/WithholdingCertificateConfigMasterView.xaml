@@ -21,7 +21,8 @@
                                Title="No hay certificados de retención registrados"
                                Message="Cree un nuevo certificado de retención para comenzar"
                                ContextInfo="Los certificados de retención definen la configuración para generar e imprimir los certificados que acreditan las retenciones practicadas a terceros, asociando las cuentas contables y el centro de costo correspondiente."
-                               Command="{Binding CreateCommand}"/>
+                               Command="{Binding CreateCommand}"
+                               HasPermission="{Binding HasCreatePermission}"/>
 
             <!-- Content -->
             <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">

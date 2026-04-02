@@ -23,7 +23,8 @@
                                Title="No hay autorizaciones de numeración registradas"
                                Message="Cree una nueva autorización de numeración para comenzar"
                                ContextInfo="Las autorizaciones de numeración definen los rangos y consecutivos autorizados para facturación electrónica por centro de costo."
-                               Command="{Binding CreateCommand}"/>
+                               Command="{Binding CreateCommand}"
+                               HasPermission="{Binding HasCreatePermission}"/>
 
             <!-- Content -->
             <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">

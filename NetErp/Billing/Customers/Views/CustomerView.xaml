@@ -22,7 +22,8 @@
                                Title="No hay clientes registrados"
                                Message="Cree un nuevo cliente para comenzar"
                                ContextInfo="Los clientes son los terceros a quienes se les facturan productos o servicios. Aquí puede gestionar su información de contacto, identificación, límites de crédito y configuración tributaria."
-                               Command="{Binding CreateCustomerCommand}"/>
+                               Command="{Binding CreateCustomerCommand}"
+                               HasPermission="{Binding HasCreatePermission}"/>
 
             <!-- Content -->
             <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
