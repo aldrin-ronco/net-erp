@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Dynamic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
@@ -436,7 +437,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al cargar grupos de cuentas.\r\n{GetType().Name}.{nameof(LoadAccountingAccountGroupsAsync)}: {ex.Message}",
+                    text: $"Error al cargar grupos de cuentas.\r\n{GetType().Name}.{nameof(LoadAccountingAccountGroupsAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -449,11 +450,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = true;
 
                 var (fragment, query) = _loadGroupByIdQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "id", groupId)
                     .Build();
 
-                var group = await _accountingAccountGroupService.FindByIdAsync(query, variables);
+                AccountingAccountGroupGraphQLModel group = await _accountingAccountGroupService.FindByIdAsync(query, variables);
 
                 ObservableCollection<AccountingAccountGroupDetailDTO> acgd =
                     Context.AutoMapper.Map<ObservableCollection<AccountingAccountGroupDetailDTO>>(group.Accounts);
@@ -475,7 +476,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al cargar cuentas del grupo.\r\n{GetType().Name}.{nameof(LoadGroupAccountsAsync)}: {ex.Message}",
+                    text: $"Error al cargar cuentas del grupo.\r\n{GetType().Name}.{nameof(LoadGroupAccountsAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -515,23 +516,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -539,27 +527,20 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    var (_, query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                    return await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    var (_, query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = Entity!.Id;
-                    return await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
-                }
+                var (_, query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _withholdingCertificateConfigService.CreateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw new AsyncException(innerException: ex);
+                var (_, query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Entity!.Id;
+                return await _withholdingCertificateConfigService.UpdateAsync<UpsertResponseType<WithholdingCertificateConfigGraphQLModel>>(query, variables);
             }
         }
 
@@ -577,11 +558,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             try
             {
                 var (fragment, query) = _loadByIdQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "id", id)
                     .Build();
 
-                var certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
+                WithholdingCertificateConfigGraphQLModel certificate = await _withholdingCertificateConfigService.FindByIdAsync(query, variables);
                 PopulateFromEntity(certificate);
                 return certificate;
             }

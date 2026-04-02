@@ -1,5 +1,6 @@
 using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Models.Books;
@@ -27,6 +28,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
@@ -39,7 +41,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             {
                 _withholdingCertificateConfigMasterViewModel ??= new WithholdingCertificateConfigMasterViewModel(
                     this, _notificationService, _dialogService, _withholdingCertificateConfigService,
-                    _accountingAccountGroupService, _accountingAccountGroupCache, _costCenterCache, _stringLengthCache, _joinableTaskFactory);
+                    _accountingAccountGroupService, _accountingAccountGroupCache, _costCenterCache, _stringLengthCache, _joinableTaskFactory, _permissionCache);
                 return _withholdingCertificateConfigMasterViewModel;
             }
         }
@@ -58,7 +60,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -70,6 +73,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
         }
 
         #endregion
@@ -88,7 +92,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnActivateAsync)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnActivateAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
