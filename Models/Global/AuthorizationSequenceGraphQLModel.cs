@@ -32,38 +32,34 @@ namespace Models.Global
 
         public AuthorizationSequenceTypeGraphQLModel? AuthorizationSequenceType { get; set; }
         public CostCenterGraphQLModel? CostCenter { get; set; }
-        public CostCenterGraphQLModel? AuthorizationSequenceByCostCenter { get; set; }
-        
-
+        public CostCenterGraphQLModel? AuthorizationSequenceByCostCenter { get; set; }        
     }
 
 
     public class AuthorizationSequenceCreateMessage
-    {
-        
-        public UpsertResponseType<AuthorizationSequenceGraphQLModel> CreatedAuthorizationSequence { get; set; }
+    {        
+        public required UpsertResponseType<AuthorizationSequenceGraphQLModel> CreatedAuthorizationSequence { get; set; }
     }
     public class AuthorizationSequenceDeleteMessage
     {
-        public DeleteResponseType DeletedAuthorizationSequence { get; set; }
+        public required DeleteResponseType DeletedAuthorizationSequence { get; set; }
     }
 
     public class AuthorizationSequenceUpdateMessage
     {
-        public UpsertResponseType<AuthorizationSequenceGraphQLModel> UpdatedAuthorizationSequence { get; set; }
+        public required UpsertResponseType<AuthorizationSequenceGraphQLModel> UpdatedAuthorizationSequence { get; set; }
     }
     public class AuthorizationSequenceDetailDataContext
     {
-        
-        public PageType<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; }
-        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
+        public PageType<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes { get; set; } = new();
+        public PageType<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; } = new();
     }
    
     public class AuthorizationSequenceResponse
     {
-        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; }
+        public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences { get; set; } = [];
         public bool Status { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 
 }

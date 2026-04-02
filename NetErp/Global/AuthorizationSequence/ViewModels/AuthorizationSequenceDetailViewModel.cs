@@ -1,12 +1,11 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Global;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
@@ -36,20 +35,20 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly CostCenterCache _costCenterCache;
         private readonly AuthorizationSequenceTypeCache _authorizationSequenceTypeCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
         #region State
 
-        private AuthorizationSequenceGraphQLModel? _entity;
         public AuthorizationSequenceGraphQLModel? Entity
         {
-            get => _entity;
+            get;
             set
             {
-                if (_entity != value)
+                if (field != value)
                 {
-                    _entity = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Entity));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                     NotifyOfPropertyChange(nameof(OriginVisibility));
@@ -62,61 +61,70 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private DianSoftwareConfigGraphQLModel? _dianConfig;
         private DianCertificateGraphQLModel? _dianCertificate;
 
-        private bool _isDianAvailable = false;
         public bool IsDianAvailable
         {
-            get => _isDianAvailable;
+            get;
             set
             {
-                if (_isDianAvailable != value)
+                if (field != value)
                 {
-                    _isDianAvailable = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsDianAvailable));
                 }
             }
         }
 
-        private string _dianUnavailableReason = "Verificando disponibilidad DIAN...";
         public string DianUnavailableReason
         {
-            get => _dianUnavailableReason;
+            get;
             set
             {
-                if (_dianUnavailableReason != value)
+                if (field != value)
                 {
-                    _dianUnavailableReason = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DianUnavailableReason));
                 }
             }
-        }
+        } = "Verificando disponibilidad DIAN...";
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 600;
+
         #endregion
 
         #region Sequence Origin
 
-        private SequenceOriginEnum _selectedSequenceOrigin;
         public SequenceOriginEnum SelectedSequenceOrigin
         {
-            get => _selectedSequenceOrigin;
+            get;
             set
             {
-                if (_selectedSequenceOrigin != value)
+                if (field != value)
                 {
-                    _selectedSequenceOrigin = value;
+                    field = value;
                     Origin = value == SequenceOriginEnum.D ? "DIAN" : "MANUAL";
                     NotifyOfPropertyChange(nameof(SelectedSequenceOrigin));
                     NotifyOfPropertyChange(nameof(Lv1Visibility));
@@ -152,82 +160,77 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public Visibility ReliefVisibility => LoadOrphan ? Visibility.Visible : Visibility.Collapsed;
 
-        public bool LoadOrphan => _entity != null
-            && (_entity.CostCenter?.FeCashDefaultAuthorizationSequence?.Id == Entity!.Id || _entity.CostCenter?.FeCreditDefaultAuthorizationSequence?.Id == Entity!.Id)
-            && (_entity.EndRange - _entity.CurrentInvoiceNumber) <= 50;
+        public bool LoadOrphan => Entity != null
+            && (Entity.CostCenter?.FeCashDefaultAuthorizationSequence?.Id == Entity.Id || Entity.CostCenter?.FeCreditDefaultAuthorizationSequence?.Id == Entity.Id)
+            && (Entity.EndRange - Entity.CurrentInvoiceNumber) <= 50;
 
         #endregion
 
         #region ComboBox Sources
 
-        private ObservableCollection<CostCenterGraphQLModel> _costCenters = [];
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
-            get => _costCenters;
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _authorizationSequenceTypes = [];
         public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AuthorizationSequenceTypes
         {
-            get => _authorizationSequenceTypes;
+            get;
             set
             {
-                if (_authorizationSequenceTypes != value)
+                if (field != value)
                 {
-                    _authorizationSequenceTypes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AuthorizationSequenceTypes));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AuthorizationSequenceTypeGraphQLModel> _availableAuthorizationSequenceTypes = [];
         public ObservableCollection<AuthorizationSequenceTypeGraphQLModel> AvailableAuthorizationSequenceTypes
         {
-            get => _availableAuthorizationSequenceTypes;
+            get;
             set
             {
-                if (_availableAuthorizationSequenceTypes != value)
+                if (field != value)
                 {
-                    _availableAuthorizationSequenceTypes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AvailableAuthorizationSequenceTypes));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AuthorizationSequenceGraphQLModel> _authorizationSequences = [];
         public ObservableCollection<AuthorizationSequenceGraphQLModel> AuthorizationSequences
         {
-            get => _authorizationSequences;
+            get;
             set
             {
-                if (_authorizationSequences != value)
+                if (field != value)
                 {
-                    _authorizationSequences = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AuthorizationSequences));
                     NotifyOfPropertyChange(nameof(Lv1Visibility));
                     NotifyOfPropertyChange(nameof(AuthorizationsVisibility));
                     NotifyOfPropertyChange(nameof(FieldsVisibility));
                 }
             }
-        }
+        } = [];
 
-        private AuthorizationSequenceGraphQLModel? _selectedDianAuthorization;
         public AuthorizationSequenceGraphQLModel? SelectedDianAuthorization
         {
-            get => _selectedDianAuthorization;
+            get;
             set
             {
-                if (_selectedDianAuthorization != value)
+                if (field != value)
                 {
-                    _selectedDianAuthorization = value;
+                    field = value;
                     if (value != null) SetSelectedAuthorizationSequence(value);
                     if (value == null) ClearValues();
                     NotifyOfPropertyChange(nameof(SelectedDianAuthorization));
@@ -237,29 +240,27 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private ObservableCollection<AuthorizationSequenceGraphQLModel> _orphanAuthorizationSequences = [];
         public ObservableCollection<AuthorizationSequenceGraphQLModel> OrphanAuthorizationSequences
         {
-            get => _orphanAuthorizationSequences;
+            get;
             set
             {
-                if (_orphanAuthorizationSequences != value)
+                if (field != value)
                 {
-                    _orphanAuthorizationSequences = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(OrphanAuthorizationSequences));
                 }
             }
-        }
+        } = [];
 
-        private AuthorizationSequenceGraphQLModel? _nextAuthorizationSequenceId;
         public AuthorizationSequenceGraphQLModel? NextAuthorizationSequenceId
         {
-            get => _nextAuthorizationSequenceId;
+            get;
             set
             {
-                if (_nextAuthorizationSequenceId != value)
+                if (field != value)
                 {
-                    _nextAuthorizationSequenceId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(NextAuthorizationSequenceId));
                     this.TrackChange(nameof(NextAuthorizationSequenceId));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -273,83 +274,78 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         #region Form Properties
 
-        private string _number = string.Empty;
         public string Number
         {
-            get => _number;
+            get;
             set
             {
-                if (_number != value)
+                if (field != value)
                 {
-                    _number = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Number));
                     ValidateProperty(nameof(Number), value);
                     this.TrackChange(nameof(Number));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _prefix = string.Empty;
         public string Prefix
         {
-            get => _prefix;
+            get;
             set
             {
-                if (_prefix != value)
+                if (field != value)
                 {
-                    _prefix = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Prefix));
                     ValidateProperty(nameof(Prefix), value);
                     this.TrackChange(nameof(Prefix));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _technicalKey = string.Empty;
         public string TechnicalKey
         {
-            get => _technicalKey;
+            get;
             set
             {
-                if (_technicalKey != value)
+                if (field != value)
                 {
-                    _technicalKey = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TechnicalKey));
                     ValidateProperty(nameof(TechnicalKey), value);
                     this.TrackChange(nameof(TechnicalKey));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _reference = string.Empty;
         public string Reference
         {
-            get => _reference;
+            get;
             set
             {
-                if (_reference != value)
+                if (field != value)
                 {
-                    _reference = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Reference));
                     ValidateProperty(nameof(Reference), value);
                     this.TrackChange(nameof(Reference));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private int? _startRange;
         public int? StartRange
         {
-            get => _startRange;
+            get;
             set
             {
-                if (_startRange != value)
+                if (field != value)
                 {
-                    _startRange = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(StartRange));
                     ValidateProperty(nameof(StartRange), value);
                     this.TrackChange(nameof(StartRange));
@@ -358,15 +354,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private int? _endRange;
         public int? EndRange
         {
-            get => _endRange;
+            get;
             set
             {
-                if (_endRange != value)
+                if (field != value)
                 {
-                    _endRange = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(EndRange));
                     ValidateProperty(nameof(EndRange), value);
                     this.TrackChange(nameof(EndRange));
@@ -375,15 +370,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private int? _currentInvoiceNumber;
         public int? CurrentInvoiceNumber
         {
-            get => _currentInvoiceNumber;
+            get;
             set
             {
-                if (_currentInvoiceNumber != value)
+                if (field != value)
                 {
-                    _currentInvoiceNumber = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CurrentInvoiceNumber));
                     ValidateProperty(nameof(CurrentInvoiceNumber), value);
                     this.TrackChange(nameof(CurrentInvoiceNumber));
@@ -392,63 +386,59 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private DateOnly? _startDate = DateOnly.FromDateTime(DateTime.Now);
         public DateOnly? StartDate
         {
-            get => _startDate;
+            get;
             set
             {
-                if (_startDate != value)
+                if (field != value)
                 {
-                    _startDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(StartDate));
                     this.TrackChange(nameof(StartDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = DateOnly.FromDateTime(DateTime.Now);
 
-        private DateOnly? _endDate = DateOnly.FromDateTime(DateTime.Now);
         public DateOnly? EndDate
         {
-            get => _endDate;
+            get;
             set
             {
-                if (_endDate != value)
+                if (field != value)
                 {
-                    _endDate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(EndDate));
                     this.TrackChange(nameof(EndDate));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = DateOnly.FromDateTime(DateTime.Now);
 
-        private bool _isActive = true;
-        public bool IsActive
+        public new bool IsActive
         {
-            get => _isActive;
+            get;
             set
             {
-                if (_isActive != value)
+                if (field != value)
                 {
-                    _isActive = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
                     this.TrackChange(nameof(IsActive));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = true;
 
-        private int? _costCenterId;
         public int? CostCenterId
         {
-            get => _costCenterId;
+            get;
             set
             {
-                if (_costCenterId != value)
+                if (field != value)
                 {
-                    _costCenterId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenterId));
                     ValidateProperty(nameof(CostCenterId), value);
                     this.TrackChange(nameof(CostCenterId));
@@ -457,15 +447,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private int? _authorizationSequenceTypeId;
         public int? AuthorizationSequenceTypeId
         {
-            get => _authorizationSequenceTypeId;
+            get;
             set
             {
-                if (_authorizationSequenceTypeId != value)
+                if (field != value)
                 {
-                    _authorizationSequenceTypeId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AuthorizationSequenceTypeId));
                     NotifyOfPropertyChange(nameof(TechnicalKey));
                     this.TrackChange(nameof(AuthorizationSequenceTypeId));
@@ -476,36 +465,34 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             }
         }
 
-        private char _mode = 'A';
         public char Mode
         {
-            get => _mode;
+            get;
             set
             {
-                if (_mode != value)
+                if (field != value)
                 {
-                    _mode = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Mode));
                     this.TrackChange(nameof(Mode));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = 'A';
 
-        private string _origin = "MANUAL";
         public string Origin
         {
-            get => _origin;
+            get;
             set
             {
-                if (_origin != value)
+                if (field != value)
                 {
-                    _origin = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Origin));
                     this.TrackChange(nameof(Origin));
                 }
             }
-        }
+        } = "MANUAL";
 
         public bool EnabledToCreated => Entity == null;
 
@@ -521,8 +508,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -592,7 +580,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     if (string.IsNullOrEmpty(value)) AddError(propertyName, "La referencia no puede estar vacía");
                     break;
                 case nameof(TechnicalKey):
-                    var selectedType = Entity != null
+                    AuthorizationSequenceTypeGraphQLModel? selectedType = Entity != null
                         ? Entity.AuthorizationSequenceType
                         : AuthorizationSequenceTypeId is > 0
                             ? AuthorizationSequenceTypes.FirstOrDefault(f => f.Id == AuthorizationSequenceTypeId)
@@ -669,7 +657,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             IRepository<DianCertificateGraphQLModel> dianCertService,
             IEventAggregator eventAggregator,
             CostCenterCache costCenterCache,
-            AuthorizationSequenceTypeCache authorizationSequenceTypeCache)
+            AuthorizationSequenceTypeCache authorizationSequenceTypeCache,
+            JoinableTaskFactory joinableTaskFactory)
         {
             _authorizationSequenceService = authorizationSequenceService;
             _dianConfigService = dianConfigService;
@@ -677,6 +666,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _eventAggregator = eventAggregator;
             _costCenterCache = costCenterCache;
             _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
+            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -691,11 +681,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 IsBusy = true;
                 SelectedSequenceOrigin = SequenceOriginEnum.M;
 
-                var tasks = new List<Task>
-                {
+                List<Task> tasks =
+                [
                     _costCenterCache.EnsureLoadedAsync(),
                     _authorizationSequenceTypeCache.EnsureLoadedAsync()
-                };
+                ];
 
                 if (IsNewRecord)
                 {
@@ -708,36 +698,32 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 AuthorizationSequenceTypes = [.. _authorizationSequenceTypeCache.Items];
                 AvailableAuthorizationSequenceTypes = [.. _authorizationSequenceTypeCache.Items];
 
-                CostCenterId = _entity?.CostCenter?.Id;
-                AuthorizationSequenceTypeId = _entity?.AuthorizationSequenceType?.Id;
+                CostCenterId = Entity?.CostCenter?.Id;
+                AuthorizationSequenceTypeId = Entity?.AuthorizationSequenceType?.Id;
 
                 if (LoadOrphan) await LoadOrphanSequencesAsync();
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.OnViewReady: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
 
                 ValidateProperties();
-                this.AcceptChanges();
 
-                if (Entity == null)
-                {
-                    this.TrackChange(nameof(Mode));
-                    this.TrackChange(nameof(Origin));
-                    this.TrackChange(nameof(StartDate));
-                    this.TrackChange(nameof(EndDate));
-                }
+                if (IsNewRecord)
+                    SeedDefaultValues();
+                else
+                    SeedCurrentValues();
 
                 NotifyOfPropertyChange(nameof(CanSave));
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(
-                    new System.Action(() => this.SetFocus(() => Number)),
-                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             }
         }
 
@@ -747,14 +733,14 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         private async Task LoadAndCacheDianPrerequisitesAsync()
         {
-            var configTask = LoadActiveDianSoftwareConfigAsync();
-            var certTask = LoadActiveDianCertificateAsync();
+            Task<DianSoftwareConfigGraphQLModel?> configTask = LoadActiveDianSoftwareConfigAsync();
+            Task<DianCertificateGraphQLModel?> certTask = LoadActiveDianCertificateAsync();
             await Task.WhenAll(configTask, certTask);
 
-            _dianConfig = configTask.Result;
-            _dianCertificate = certTask.Result;
+            _dianConfig = await configTask;
+            _dianCertificate = await certTask;
 
-            var reasons = new List<string>();
+            List<string> reasons = [];
             if (_dianConfig == null) reasons.Add("No hay configuración DIAN activa para facturación electrónica");
             if (_dianCertificate == null) reasons.Add("No hay certificado DIAN activo");
 
@@ -776,15 +762,15 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 }
                 else
                 {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", numberingRangeResponse.Message,
-                        MessageBoxButton.OK, MessageBoxImage.Warning));
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
+                    ThemedMessageBox.Show("Atención !", numberingRangeResponse.Message,
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"Error al consultar la DIAN: {e.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SearchAuthorizationSequencesAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -794,14 +780,15 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         private async Task<DianSoftwareConfigGraphQLModel?> LoadActiveDianSoftwareConfigAsync()
         {
-            string query = _dianConfigQuery.Value;
+            var (fragment, query) = _dianConfigQuery.Value;
 
-            dynamic variables = new ExpandoObject();
-            variables.activeDianSoftwareConfigEnvironment = "PRODUCTION";
-            variables.activeDianSoftwareConfigDocumentCategory = "INVOICE";
+            ExpandoObject variables = new GraphQLVariables()
+                .For(fragment, "environment", "PRODUCTION")
+                .For(fragment, "documentCategory", "INVOICE")
+                .Build();
 
-            var context = await _dianConfigService.GetDataContextAsync<ActiveDianSoftwareConfigDataContext>(query, variables);
-            var config = context?.ActiveDianSoftwareConfig;
+            ActiveDianSoftwareConfigDataContext context = await _dianConfigService.GetDataContextAsync<ActiveDianSoftwareConfigDataContext>(query, variables);
+            DianSoftwareConfigGraphQLModel? config = context?.ActiveDianSoftwareConfig;
 
             if (config == null || config.Id < 1) return null;
             if (!config.IsActive) return null;
@@ -811,16 +798,49 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         private async Task<DianCertificateGraphQLModel?> LoadActiveDianCertificateAsync()
         {
-            string query = _dianCertQuery.Value;
+            var (_, query) = _dianCertQuery.Value;
 
-            dynamic variables = new ExpandoObject();
-
-            var context = await _dianCertService.GetDataContextAsync<ActiveDianCertificateDataContext>(query, variables);
-            var cert = context?.ActiveDianCertificate;
+            ActiveDianCertificateDataContext context = await _dianCertService.GetDataContextAsync<ActiveDianCertificateDataContext>(query, new { });
+            DianCertificateGraphQLModel? cert = context?.ActiveDianCertificate;
 
             if (cert == null || cert.Id < 1) return null;
 
             return cert;
+        }
+
+        #endregion
+
+        #region Seed
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(Mode), Mode);
+            this.SeedValue(nameof(Origin), Origin);
+            this.SeedValue(nameof(StartDate), StartDate);
+            this.SeedValue(nameof(EndDate), EndDate);
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.AcceptChanges();
+        }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Number), Number);
+            this.SeedValue(nameof(Prefix), Prefix);
+            this.SeedValue(nameof(TechnicalKey), TechnicalKey);
+            this.SeedValue(nameof(Reference), Reference);
+            this.SeedValue(nameof(StartRange), StartRange);
+            this.SeedValue(nameof(EndRange), EndRange);
+            this.SeedValue(nameof(CurrentInvoiceNumber), CurrentInvoiceNumber);
+            this.SeedValue(nameof(StartDate), StartDate);
+            this.SeedValue(nameof(EndDate), EndDate);
+            this.SeedValue(nameof(Mode), Mode);
+            this.SeedValue(nameof(Origin), Origin);
+            this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(CostCenterId), CostCenterId);
+            this.SeedValue(nameof(AuthorizationSequenceTypeId), AuthorizationSequenceTypeId);
+            this.SeedValue(nameof(NextAuthorizationSequenceId), NextAuthorizationSequenceId);
+            this.AcceptChanges();
         }
 
         #endregion
@@ -847,7 +867,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             else
             {
                 AvailableAuthorizationSequenceTypes = [.. AuthorizationSequenceTypes];
-                var feType = AvailableAuthorizationSequenceTypes.FirstOrDefault(f => f.Prefix == "FE");
+                AuthorizationSequenceTypeGraphQLModel? feType = AvailableAuthorizationSequenceTypes.FirstOrDefault(f => f.Prefix == "FE");
                 AuthorizationSequenceTypeId = feType?.Id;
             }
             NotifyOfPropertyChange(nameof(EnabledAST));
@@ -894,19 +914,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"\r\n{graphQLError.Errors[0].Message}\r\n{graphQLError.Errors[0].Extensions.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
-            }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{currentMethod!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -943,11 +954,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         public async Task LoadDataForEditAsync(int id)
         {
             var (fragment, query) = _loadByIdQuery.Value;
-            var variables = new GraphQLVariables()
+            ExpandoObject variables = new GraphQLVariables()
                 .For(fragment, "id", id)
                 .Build();
 
-            var entity = await _authorizationSequenceService.FindByIdAsync(query, variables);
+            AuthorizationSequenceGraphQLModel entity = await _authorizationSequenceService.FindByIdAsync(query, variables);
             Entity = entity;
             PopulateFromEntity(entity);
         }
@@ -975,22 +986,25 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             try
             {
                 IsBusy = true;
-                string query = _orphanQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.authorizationSequencesFilters = new ExpandoObject();
-                variables.authorizationSequencesFilters.isActive = true;
-                variables.authorizationSequencesFilters.costCenterId = _entity!.CostCenter!.Id;
-                variables.authorizationSequencesFilters.endDateFrom = DateTime.Today.ToString("yyyy-MM-dd");
+                var (fragment, query) = _orphanQuery.Value;
+
+                dynamic filters = new ExpandoObject();
+                filters.isActive = true;
+                filters.costCenterId = Entity!.CostCenter!.Id;
+                filters.endDateFrom = DateTime.Today.ToString("yyyy-MM-dd");
+
+                ExpandoObject variables = new GraphQLVariables()
+                    .For(fragment, "filters", filters)
+                    .Build();
 
                 AuthorizationSequenceDetailDataContext source = await _authorizationSequenceService.GetDataContextAsync<AuthorizationSequenceDetailDataContext>(query, variables);
 
                 ObservableCollection<AuthorizationSequenceGraphQLModel>? entries = source?.AuthorizationSequences?.Entries;
                 if (entries != null)
                 {
-                    List<AuthorizationSequenceGraphQLModel> orphans = entries
+                    List<AuthorizationSequenceGraphQLModel> orphans = [.. entries
                         .Where(f => f.NextAuthorizationSequence == null)
-                        .Where(f => f.Id != Entity!.Id)
-                        .ToList();
+                        .Where(f => f.Id != Entity!.Id)];
 
                     if (Entity!.NextAuthorizationSequence != null && !orphans.Any(f => f.Id == Entity.NextAuthorizationSequence.Id))
                     {
@@ -1025,11 +1039,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(e => e.IsActive)
                     .Field(e => e.Origin)
                     .Select(e => e.CostCenter, cos => cos
-                        .Field(c => c.Id)
-                        .Field(c => c.Name))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name))
                     .Select(e => e.AuthorizationSequenceType, type => type
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -1058,11 +1072,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(e => e.IsActive)
                     .Field(e => e.Origin)
                     .Select(e => e.CostCenter, cos => cos
-                        .Field(c => c.Id)
-                        .Field(c => c.Name))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name))
                     .Select(e => e.AuthorizationSequenceType, type => type
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq
@@ -1070,11 +1084,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
+            List<GraphQLQueryParameter> parameters =
+            [
                 new("data", "UpdateAuthorizationSequenceInput!"),
                 new("id", "ID!")
-            };
+            ];
             var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         });
@@ -1098,20 +1112,20 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(e => e.StartRange)
                 .Field(e => e.EndRange)
                 .Select(e => e.NextAuthorizationSequence, cat => cat
-                    .Field(c => c.Id)
-                    .Field(c => c.Description))
+                    .Field(c => c!.Id)
+                    .Field(c => c!.Description))
                 .Select(e => e.CostCenter, cat => cat
-                    .Field(c => c.Id)
-                    .Field(c => c.Name)
-                    .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
+                    .Field(c => c!.Id)
+                    .Field(c => c!.Name)
+                    .Select(e => e!.FeCreditDefaultAuthorizationSequence, dep => dep
                         .Field(d => d.Id)
                         .Field(d => d.Description))
-                    .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
+                    .Select(e => e!.FeCashDefaultAuthorizationSequence, dep => dep
                         .Field(d => d.Id)
                         .Field(d => d.Description)))
                 .Select(e => e.AuthorizationSequenceType, cat => cat
-                    .Field(c => c.Id)
-                    .Field(c => c.Name))
+                    .Field(c => c!.Id)
+                    .Field(c => c!.Name))
                 .Build();
 
             var fragment = new GraphQLQueryFragment("authorizationSequence",
@@ -1119,7 +1133,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _dianConfigQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _dianConfigQuery = new(() =>
         {
             var fields = FieldSpec<DianSoftwareConfigGraphQLModel>
                 .Create()
@@ -1132,13 +1146,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Field(f => f.IsActive)
                 .Build();
 
-            var envParam = new GraphQLQueryParameter("environment", "DianEnvironment!");
-            var catParam = new GraphQLQueryParameter("documentCategory", "DianDocumentCategory!");
-            var fragment = new GraphQLQueryFragment("activeDianSoftwareConfig", [envParam, catParam], fields);
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("activeDianSoftwareConfig",
+                [new("environment", "DianEnvironment!"), new("documentCategory", "DianDocumentCategory!")],
+                fields);
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _dianCertQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _dianCertQuery = new(() =>
         {
             var fields = FieldSpec<DianCertificateGraphQLModel>
                 .Create()
@@ -1148,10 +1162,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 .Build();
 
             var fragment = new GraphQLQueryFragment("activeDianCertificate", [], fields);
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _orphanQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _orphanQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
                 .Create()
@@ -1170,40 +1184,31 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(e => e.StartRange)
                     .Field(e => e.EndRange)
                     .Select(e => e.NextAuthorizationSequence, cat => cat
-                        .Field(c => c.Id)
-                        .Field(c => c.Description))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Description))
                     .Select(e => e.CostCenter, cat => cat
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)
-                        .Select(e => e.FeCreditDefaultAuthorizationSequence, dep => dep
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)
+                        .Select(e => e!.FeCreditDefaultAuthorizationSequence, dep => dep
                             .Field(d => d.Id)
                             .Field(d => d.Description))
-                        .Select(e => e.FeCashDefaultAuthorizationSequence, dep => dep
+                        .Select(e => e!.FeCashDefaultAuthorizationSequence, dep => dep
                             .Field(d => d.Id)
                             .Field(d => d.Description)))
                     .Select(e => e.AuthorizationSequenceType, cat => cat
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Name)))
                 .Field(o => o.PageNumber)
                 .Field(o => o.PageSize)
                 .Field(o => o.TotalPages)
                 .Field(o => o.TotalEntries)
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
-            var fragment = new GraphQLQueryFragment("authorizationSequencesPage", [paginationParam, filtersParam], fields, "AuthorizationSequences");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("authorizationSequencesPage",
+                [new("filters", "AuthorizationSequenceFilters")],
+                fields, "AuthorizationSequences");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
-
-        #endregion
-
-        #region Helper
-
-        public new void AcceptChanges()
-        {
-            ViewModelExtensions.AcceptChanges(this);
-        }
 
         #endregion
     }

@@ -315,9 +315,7 @@ namespace NetErp.Billing.Customers.ViewModels
             base.OnViewReady(view);
             try
             {
-                await Task.WhenAll(
-                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer),
-                    _permissionCache.EnsureLoadedAsync());
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
                 NotifyOfPropertyChange(nameof(HasCreatePermission));
                 NotifyOfPropertyChange(nameof(HasEditPermission));
                 NotifyOfPropertyChange(nameof(HasDeletePermission));
