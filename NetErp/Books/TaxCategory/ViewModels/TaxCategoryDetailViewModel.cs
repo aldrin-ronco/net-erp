@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -11,6 +12,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -25,7 +27,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
         private readonly IRepository<TaxCategoryGraphQLModel> _taxCategoryService;
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
-        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -33,33 +35,44 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         public bool IsNewRecord => TaxCategoryId == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 450;
+
         #endregion
 
         #region Form Properties
 
-        private int _taxCategoryId;
         public int TaxCategoryId
         {
-            get => _taxCategoryId;
+            get;
             set
             {
-                if (_taxCategoryId != value)
+                if (field != value)
                 {
-                    _taxCategoryId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TaxCategoryId));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                     NotifyOfPropertyChange(nameof(IsCodeReadOnly));
@@ -67,68 +80,64 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        private string _code = string.Empty;
         public string Code
         {
-            get => _code;
+            get;
             set
             {
-                if (_code != value)
+                if (field != value)
                 {
-                    _code = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Code));
                     ValidateProperty(nameof(Code));
                     if (IsNewRecord) this.TrackChange(nameof(Code));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
         public bool IsCodeReadOnly => !IsNewRecord;
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _prefix = string.Empty;
         public string Prefix
         {
-            get => _prefix;
+            get;
             set
             {
-                if (_prefix != value)
+                if (field != value)
                 {
-                    _prefix = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Prefix));
                     ValidateProperty(nameof(Prefix));
                     this.TrackChange(nameof(Prefix));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _usesPercentage;
         public bool UsesPercentage
         {
-            get => _usesPercentage;
+            get;
             set
             {
-                if (_usesPercentage != value)
+                if (field != value)
                 {
-                    _usesPercentage = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(UsesPercentage));
                     this.TrackChange(nameof(UsesPercentage));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -136,15 +145,14 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        private bool _generatedTaxAccountIsRequired;
         public bool GeneratedTaxAccountIsRequired
         {
-            get => _generatedTaxAccountIsRequired;
+            get;
             set
             {
-                if (_generatedTaxAccountIsRequired != value)
+                if (field != value)
                 {
-                    _generatedTaxAccountIsRequired = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(GeneratedTaxAccountIsRequired));
                     NotifyOfPropertyChange(nameof(IsReadOnlyGeneratedTaxRefundAccountIsRequired));
                     this.TrackChange(nameof(GeneratedTaxAccountIsRequired));
@@ -154,15 +162,14 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        private bool _generatedTaxRefundAccountIsRequired;
         public bool GeneratedTaxRefundAccountIsRequired
         {
-            get => _generatedTaxRefundAccountIsRequired;
+            get;
             set
             {
-                if (_generatedTaxRefundAccountIsRequired != value)
+                if (field != value)
                 {
-                    _generatedTaxRefundAccountIsRequired = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(GeneratedTaxRefundAccountIsRequired));
                     this.TrackChange(nameof(GeneratedTaxRefundAccountIsRequired));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -170,15 +177,14 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        private bool _deductibleTaxAccountIsRequired;
         public bool DeductibleTaxAccountIsRequired
         {
-            get => _deductibleTaxAccountIsRequired;
+            get;
             set
             {
-                if (_deductibleTaxAccountIsRequired != value)
+                if (field != value)
                 {
-                    _deductibleTaxAccountIsRequired = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxAccountIsRequired));
                     NotifyOfPropertyChange(nameof(IsReadOnlyDeductibleTaxRefundAccountIsRequired));
                     this.TrackChange(nameof(DeductibleTaxAccountIsRequired));
@@ -188,15 +194,14 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        private bool _deductibleTaxRefundAccountIsRequired;
         public bool DeductibleTaxRefundAccountIsRequired
         {
-            get => _deductibleTaxRefundAccountIsRequired;
+            get;
             set
             {
-                if (_deductibleTaxRefundAccountIsRequired != value)
+                if (field != value)
                 {
-                    _deductibleTaxRefundAccountIsRequired = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxRefundAccountIsRequired));
                     this.TrackChange(nameof(DeductibleTaxRefundAccountIsRequired));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -227,8 +232,9 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -250,11 +256,8 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
         private void ClearErrors(string propertyName)
         {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
+            _errors.Remove(propertyName);
+            RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperty(string propertyName)
@@ -323,7 +326,7 @@ namespace NetErp.Books.TaxCategory.ViewModels
             IRepository<TaxCategoryGraphQLModel> taxCategoryService,
             IEventAggregator eventAggregator,
             StringLengthCache stringLengthCache,
-            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory)
         {
             _taxCategoryService = taxCategoryService;
             _eventAggregator = eventAggregator;
@@ -400,23 +403,10 @@ namespace NetErp.Books.TaxCategory.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -424,27 +414,20 @@ namespace NetErp.Books.TaxCategory.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<TaxCategoryGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<TaxCategoryGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    var (_, query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                    return await _taxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    var (_, query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = TaxCategoryId;
-                    return await _taxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
-                }
+                var (_, query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _taxCategoryService.CreateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw new AsyncException(innerException: ex);
+                var (_, query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = TaxCategoryId;
+                return await _taxCategoryService.UpdateAsync<UpsertResponseType<TaxCategoryGraphQLModel>>(query, variables);
             }
         }
 
