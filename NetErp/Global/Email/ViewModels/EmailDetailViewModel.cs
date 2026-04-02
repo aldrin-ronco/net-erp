@@ -271,7 +271,7 @@ namespace NetErp.Global.Email.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -432,10 +432,11 @@ namespace NetErp.Global.Email.ViewModels
 
         public async Task LoadDataForEditAsync(int id)
         {
-            var (_, query) = _loadByIdQuery.Value;
+            var (fragment, query) = _loadByIdQuery.Value;
 
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
+            ExpandoObject variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
 
             EmailGraphQLModel entity = await _emailService.FindByIdAsync(query, variables);
 
