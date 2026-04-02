@@ -5,12 +5,16 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -21,7 +25,8 @@ namespace NetErp.Books.Tax.ViewModels
     public class TaxViewModel : Screen,
         IHandle<TaxCreateMessage>,
         IHandle<TaxUpdateMessage>,
-        IHandle<TaxDeleteMessage>
+        IHandle<TaxDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,49 +38,48 @@ namespace NetErp.Books.Tax.ViewModels
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCategoryCache _taxCategoryCache;
         private readonly StringLengthCache _stringLengthCache;
-        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly DebouncedAction _searchDebounce = new();
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<TaxGraphQLModel> _taxes = [];
         public ObservableCollection<TaxGraphQLModel> Taxes
         {
-            get => _taxes;
+            get;
             set
             {
-                if (_taxes != value)
+                if (field != value)
                 {
-                    _taxes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Taxes));
                 }
             }
-        }
+        } = [];
 
-        private TaxGraphQLModel? _selectedTax;
         public TaxGraphQLModel? SelectedTax
         {
-            get => _selectedTax;
+            get;
             set
             {
-                if (_selectedTax != value)
+                if (field != value)
                 {
-                    _selectedTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedTax));
                     NotifyOfPropertyChange(nameof(CanEditTax));
                     NotifyOfPropertyChange(nameof(CanDeleteTax));
@@ -83,99 +87,110 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 2) _ = LoadTaxesAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadTaxesAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _showOnlyActive = true;
         public bool ShowOnlyActive
         {
-            get => _showOnlyActive;
+            get;
             set
             {
-                if (_showOnlyActive != value)
+                if (field != value)
                 {
-                    _showOnlyActive = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowOnlyActive));
                     PageIndex = 1;
                     _ = LoadTaxesAsync();
                 }
             }
-        }
+        } = true;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Tax.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Tax.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Tax.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditTax => SelectedTax != null;
-        public bool CanDeleteTax => SelectedTax != null;
+        public bool CanCreateTax => HasCreatePermission && !IsBusy;
+        public bool CanEditTax => HasEditPermission && SelectedTax != null;
+        public bool CanDeleteTax => HasDeletePermission && SelectedTax != null;
 
         #endregion
 
@@ -233,8 +248,9 @@ namespace NetErp.Books.Tax.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             TaxCategoryCache taxCategoryCache,
             StringLengthCache stringLengthCache,
-            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory,
-            IGraphQLClient graphQLClient)
+            JoinableTaskFactory joinableTaskFactory,
+            IGraphQLClient graphQLClient,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _taxService = taxService;
@@ -245,6 +261,7 @@ namespace NetErp.Books.Tax.ViewModels
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -257,6 +274,7 @@ namespace NetErp.Books.Tax.ViewModels
             base.OnViewReady(view);
             try
             {
+                IsBusy = true;
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Tax);
                 await LoadTaxesAsync();
             }
@@ -265,11 +283,22 @@ namespace NetErp.Books.Tax.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
             }
+            finally
+            {
+                IsBusy = false;
+            }
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateTax));
+            NotifyOfPropertyChange(nameof(CanEditTax));
+            NotifyOfPropertyChange(nameof(CanDeleteTax));
+            this.SetFocus(() => FilterSearch);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -290,20 +319,18 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
+                TaxDetailViewModel detail = new(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 detail.SetForNew();
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo impuesto");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateTaxAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(CreateTaxAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -317,21 +344,19 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new TaxDetailViewModel(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
+                TaxDetailViewModel detail = new(_taxService, _eventAggregator, _auxiliaryAccountingAccountCache, _taxCategoryCache, _stringLengthCache, _joinableTaskFactory, _graphQLClient);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedTax.Id);
                 detail.SetForEdit();
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar impuesto");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditTaxAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(EditTaxAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -347,10 +372,10 @@ namespace NetErp.Books.Tax.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteTaxQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedTax.Id)
                     .Build();
-                var validation = await _taxService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _taxService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -369,7 +394,11 @@ namespace NetErp.Books.Tax.ViewModels
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedTax = await ExecuteDeleteAsync(SelectedTax.Id);
+                var (deleteFragment, deleteQuery) = _deleteTaxQuery.Value;
+                ExpandoObject deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedTax.Id)
+                    .Build();
+                DeleteResponseType deletedTax = await _taxService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedTax.Success)
                 {
@@ -383,43 +412,14 @@ namespace NetErp.Books.Tax.ViewModels
                     new TaxDeleteMessage { DeletedTax = deletedTax },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteTaxAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeleteTaxAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
-            }
-        }
-
-        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
-        {
-            try
-            {
-                var (fragment, query) = _deleteTaxQuery.Value;
-                var variables = new GraphQLVariables()
-                    .For(fragment, "id", id)
-                    .Build();
-                return await _taxService.DeleteAsync<DeleteResponseType>(query, variables);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -432,16 +432,15 @@ namespace NetErp.Books.Tax.ViewModels
             try
             {
                 IsBusy = true;
-
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadTaxesQuery.Value;
 
-                dynamic filters = new System.Dynamic.ExpandoObject();
+                dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
                 if (ShowOnlyActive) filters.isActive = true;
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -449,18 +448,14 @@ namespace NetErp.Books.Tax.ViewModels
                 PageType<TaxGraphQLModel> result = await _taxService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                Taxes = new ObservableCollection<TaxGraphQLModel>(result.Entries);
+                Taxes = [.. result.Entries];
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadTaxesAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadTaxesAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -558,6 +553,17 @@ namespace NetErp.Books.Tax.ViewModels
             await LoadTaxesAsync();
             SelectedTax = null;
             _notificationService.ShowSuccess(message.DeletedTax.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateTax));
+            NotifyOfPropertyChange(nameof(CanEditTax));
+            NotifyOfPropertyChange(nameof(CanDeleteTax));
+            return Task.CompletedTask;
         }
 
         #endregion

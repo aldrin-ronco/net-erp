@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -12,6 +13,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +32,7 @@ namespace NetErp.Books.Tax.ViewModels
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly TaxCategoryCache _taxCategoryCache;
         private readonly StringLengthCache _stringLengthCache;
-        private readonly Microsoft.VisualStudio.Threading.JoinableTaskFactory _joinableTaskFactory;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
 
@@ -38,15 +40,27 @@ namespace NetErp.Books.Tax.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
-        public bool IsBusy
+        public double DialogWidth
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 500;
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -56,47 +70,44 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region Form Properties
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private decimal? _rate;
         public decimal? Rate
         {
-            get => _rate;
+            get;
             set
             {
-                if (_rate != value)
+                if (field != value)
                 {
-                    _rate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Rate));
                     ValidateDecimalProperty(nameof(Rate), value);
                     this.TrackChange(nameof(Rate));
@@ -105,15 +116,14 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private bool _isActive;
         public bool IsActive
         {
-            get => _isActive;
+            get;
             set
             {
-                if (_isActive != value)
+                if (field != value)
                 {
-                    _isActive = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
                     this.TrackChange(nameof(IsActive));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -121,65 +131,61 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private string _formula = string.Empty;
         public string Formula
         {
-            get => _formula;
+            get;
             set
             {
-                if (_formula != value)
+                if (field != value)
                 {
-                    _formula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Formula));
                     this.TrackChange(nameof(Formula));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _alternativeFormula = string.Empty;
         public string AlternativeFormula
         {
-            get => _alternativeFormula;
+            get;
             set
             {
-                if (_alternativeFormula != value)
+                if (field != value)
                 {
-                    _alternativeFormula = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AlternativeFormula));
                     this.TrackChange(nameof(AlternativeFormula));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
         #endregion
 
         #region TaxCategory Selection
 
-        private ObservableCollection<TaxCategoryGraphQLModel> _taxCategories = [];
         public ObservableCollection<TaxCategoryGraphQLModel> TaxCategories
         {
-            get => _taxCategories;
+            get;
             set
             {
-                if (_taxCategories != value)
+                if (field != value)
                 {
-                    _taxCategories = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TaxCategories));
                 }
             }
-        }
+        } = [];
 
-        private TaxCategoryGraphQLModel? _selectedTaxCategoryGraphQLModel;
         public TaxCategoryGraphQLModel? SelectedTaxCategoryGraphQLModel
         {
-            get => _selectedTaxCategoryGraphQLModel;
+            get;
             set
             {
-                if (_selectedTaxCategoryGraphQLModel != value)
+                if (field != value)
                 {
-                    _selectedTaxCategoryGraphQLModel = value;
+                    field = value;
                     TaxCategoryId = value?.Id;
                     NotifyOfPropertyChange(nameof(SelectedTaxCategoryGraphQLModel));
                     NotifyOfPropertyChange(nameof(IsVisibleGeneratedTaxSection));
@@ -202,15 +208,14 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private int? _taxCategoryId;
         public int? TaxCategoryId
         {
-            get => _taxCategoryId;
+            get;
             set
             {
-                if (_taxCategoryId != value)
+                if (field != value)
                 {
-                    _taxCategoryId = value;
+                    field = value;
                     this.TrackChange(nameof(TaxCategoryId));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -221,43 +226,40 @@ namespace NetErp.Books.Tax.ViewModels
 
         #region Accounting Account Selections
 
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountOperations = [];
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountOperations
         {
-            get => _accountingAccountOperations;
+            get;
             set
             {
-                if (_accountingAccountOperations != value)
+                if (field != value)
                 {
-                    _accountingAccountOperations = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountOperations));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccountDevolutions = [];
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccountDevolutions
         {
-            get => _accountingAccountDevolutions;
+            get;
             set
             {
-                if (_accountingAccountDevolutions != value)
+                if (field != value)
                 {
-                    _accountingAccountDevolutions = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccountDevolutions));
                 }
             }
-        }
+        } = [];
 
-        private int? _generatedTaxAccountId;
         public int? GeneratedTaxAccountId
         {
-            get => _generatedTaxAccountId;
+            get;
             set
             {
-                if (_generatedTaxAccountId != value)
+                if (field != value)
                 {
-                    _generatedTaxAccountId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(GeneratedTaxAccountId));
                     ValidateIntProperty(nameof(GeneratedTaxAccountId), value);
                     this.TrackChange(nameof(GeneratedTaxAccountId));
@@ -268,15 +270,14 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private int? _generatedTaxRefundAccountId;
         public int? GeneratedTaxRefundAccountId
         {
-            get => _generatedTaxRefundAccountId;
+            get;
             set
             {
-                if (_generatedTaxRefundAccountId != value)
+                if (field != value)
                 {
-                    _generatedTaxRefundAccountId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(GeneratedTaxRefundAccountId));
                     ValidateIntProperty(nameof(GeneratedTaxRefundAccountId), value);
                     this.TrackChange(nameof(GeneratedTaxRefundAccountId));
@@ -285,15 +286,14 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private int? _deductibleTaxAccountId;
         public int? DeductibleTaxAccountId
         {
-            get => _deductibleTaxAccountId;
+            get;
             set
             {
-                if (_deductibleTaxAccountId != value)
+                if (field != value)
                 {
-                    _deductibleTaxAccountId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxAccountId));
                     ValidateIntProperty(nameof(DeductibleTaxAccountId), value);
                     this.TrackChange(nameof(DeductibleTaxAccountId));
@@ -304,15 +304,14 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        private int? _deductibleTaxRefundAccountId;
         public int? DeductibleTaxRefundAccountId
         {
-            get => _deductibleTaxRefundAccountId;
+            get;
             set
             {
-                if (_deductibleTaxRefundAccountId != value)
+                if (field != value)
                 {
-                    _deductibleTaxRefundAccountId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DeductibleTaxRefundAccountId));
                     ValidateIntProperty(nameof(DeductibleTaxRefundAccountId), value);
                     this.TrackChange(nameof(DeductibleTaxRefundAccountId));
@@ -361,8 +360,9 @@ namespace NetErp.Books.Tax.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -499,7 +499,7 @@ namespace NetErp.Books.Tax.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             TaxCategoryCache taxCategoryCache,
             StringLengthCache stringLengthCache,
-            Microsoft.VisualStudio.Threading.JoinableTaskFactory joinableTaskFactory,
+            JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient)
         {
             _taxService = taxService;
@@ -569,11 +569,11 @@ namespace NetErp.Books.Tax.ViewModels
         public async Task LoadDataForEditAsync(int id)
         {
             var (fragment, query) = _loadByIdQuery.Value;
-            var variables = new GraphQLVariables()
+            ExpandoObject variables = new GraphQLVariables()
                 .For(fragment, "id", id)
                 .Build();
 
-            var tax = await _taxService.FindByIdAsync(query, variables);
+            TaxGraphQLModel tax = await _taxService.FindByIdAsync(query, variables);
             PopulateFromTax(tax);
         }
 
@@ -621,23 +621,10 @@ namespace NetErp.Books.Tax.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -645,27 +632,20 @@ namespace NetErp.Books.Tax.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<TaxGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<TaxGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    var (_, query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                    return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    var (_, query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = Id;
-                    return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
-                }
+                var (_, query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _taxService.CreateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw new AsyncException(innerException: ex);
+                var (_, query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
+                return await _taxService.UpdateAsync<UpsertResponseType<TaxGraphQLModel>>(query, variables);
             }
         }
 
