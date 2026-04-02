@@ -8,10 +8,12 @@ using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Global;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -21,7 +23,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
 {
     public class DianCertificateViewModel : Screen,
         IHandle<DianCertificateCreateMessage>,
-        IHandle<DianCertificateDeleteMessage>
+        IHandle<DianCertificateDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -30,48 +33,47 @@ namespace NetErp.Global.DianCertificate.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateCertificate));
                 }
             }
         }
 
-        private ObservableCollection<DianCertificateGraphQLModel> _certificates = [];
         public ObservableCollection<DianCertificateGraphQLModel> Certificates
         {
-            get => _certificates;
+            get;
             set
             {
-                if (_certificates != value)
+                if (field != value)
                 {
-                    _certificates = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Certificates));
                 }
             }
-        }
+        } = [];
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
@@ -80,15 +82,14 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private DianCertificateGraphQLModel? _selectedCertificate;
         public DianCertificateGraphQLModel? SelectedCertificate
         {
-            get => _selectedCertificate;
+            get;
             set
             {
-                if (_selectedCertificate != value)
+                if (field != value)
                 {
-                    _selectedCertificate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCertificate));
                     NotifyOfPropertyChange(nameof(CanDeleteCertificate));
                 }
@@ -97,15 +98,14 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         private int _defaultCertificateId;
 
-        private bool _isValidFilter = true;
         public bool IsValidFilter
         {
-            get => _isValidFilter;
+            get;
             set
             {
-                if (_isValidFilter != value)
+                if (field != value)
                 {
-                    _isValidFilter = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsValidFilter));
                     if (_isInitialized)
                     {
@@ -114,19 +114,18 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     }
                 }
             }
-        }
+        } = true;
 
         private readonly DebouncedAction _searchDebounce = new();
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
@@ -135,73 +134,77 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     }
                 }
             }
-        }
+        } = string.Empty;
 
         #endregion
 
         #region Pagination
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.DianCertificate.Create);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.DianCertificate.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanDeleteCertificate => SelectedCertificate != null;
+        public bool CanCreateCertificate => HasCreatePermission && !IsBusy;
+        public bool CanDeleteCertificate => HasDeletePermission && SelectedCertificate != null;
 
         #endregion
 
@@ -252,7 +255,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
             IRepository<DianCertificateGraphQLModel> dianCertificateService,
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             DisplayName = "Certificados DIAN";
             _eventAggregator = eventAggregator;
@@ -260,6 +264,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             _notificationService = notificationService;
             _dialogService = dialogService;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -273,6 +278,13 @@ namespace NetErp.Global.DianCertificate.ViewModels
             try
             {
                 IsBusy = true;
+
+                // Notificar permisos
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateCertificate));
+                NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+
                 await LoadDefaultCertificateIdAsync();
                 await LoadCertificatesAsync();
                 _isInitialized = true;
@@ -283,7 +295,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -297,6 +309,8 @@ namespace NetErp.Global.DianCertificate.ViewModels
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
+                Certificates.Clear();
+                SelectedCertificate = null;
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -310,7 +324,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new DianCertificateDetailViewModel(_dianCertificateService, _eventAggregator, _joinableTaskFactory);
+                DianCertificateDetailViewModel detail = new(_dianCertificateService, _eventAggregator, _joinableTaskFactory);
                 IsBusy = false;
 
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
@@ -322,7 +336,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateCertificateAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(CreateCertificateAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -339,10 +353,10 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedCertificate.Id)
                     .Build();
-                var validation = await _dianCertificateService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _dianCertificateService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -375,18 +389,11 @@ namespace NetErp.Global.DianCertificate.ViewModels
                     new DianCertificateDeleteMessage { DeletedCertificate = deletedRecord },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteCertificateAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(DeleteCertificateAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -400,7 +407,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             try
             {
                 var (fragment, query) = _deleteQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "id", id)
                     .Build();
                 return await _dianCertificateService.DeleteAsync<DeleteResponseType>(query, variables);
@@ -425,11 +432,11 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
                 var (fragment, query) = _loadQuery.Value;
 
-                dynamic filters = new System.Dynamic.ExpandoObject();
+                dynamic filters = new ExpandoObject();
                 if (IsValidFilter) filters.isValid = IsValidFilter;
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { page = PageIndex, pageSize = PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -437,7 +444,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 PageType<DianCertificateGraphQLModel> result = await _dianCertificateService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                foreach (var cert in result.Entries)
+                foreach (DianCertificateGraphQLModel cert in result.Entries)
                 {
                     cert.IsDefault = cert.Id == _defaultCertificateId;
                 }
@@ -449,7 +456,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadCertificatesAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadCertificatesAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -463,7 +470,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             try
             {
                 var (_, query) = _globalConfigQuery.Value;
-                var context = await _dianCertificateService.GetDataContextAsync<GlobalConfigDianCertificateContext>(query, new { });
+                GlobalConfigDianCertificateContext? context = await _dianCertificateService.GetDataContextAsync<GlobalConfigDianCertificateContext>(query, new { });
                 _defaultCertificateId = context?.GlobalConfig?.DefaultDianCertificate?.Id ?? 0;
             }
             catch
@@ -552,6 +559,15 @@ namespace NetErp.Global.DianCertificate.ViewModels
             ShowEmptyState = Certificates == null || Certificates.Count == 0;
             SelectedCertificate = null;
             _notificationService.ShowSuccess(message.DeletedCertificate.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateCertificate));
+            NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+            return Task.CompletedTask;
         }
 
         #endregion
