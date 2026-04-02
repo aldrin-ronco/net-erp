@@ -13,6 +13,7 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -23,7 +24,8 @@ namespace NetErp.Global.AwsS3Config.ViewModels
     public class AwsS3ConfigViewModel : Screen,
         IHandle<AwsS3ConfigCreateMessage>,
         IHandle<AwsS3ConfigUpdateMessage>,
-        IHandle<AwsS3ConfigDeleteMessage>
+        IHandle<AwsS3ConfigDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,67 +35,65 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateAwsS3Config));
                 }
             }
         }
 
-        private ObservableCollection<AwsS3ConfigGraphQLModel> _awsS3Configs = [];
         public ObservableCollection<AwsS3ConfigGraphQLModel> AwsS3Configs
         {
-            get => _awsS3Configs;
+            get;
             set
             {
-                if (_awsS3Configs != value)
+                if (field != value)
                 {
-                    _awsS3Configs = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AwsS3Configs));
                 }
             }
-        }
+        } = [];
 
         private bool _isInitialized;
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private AwsS3ConfigGraphQLModel? _selectedItem;
         public AwsS3ConfigGraphQLModel? SelectedItem
         {
-            get => _selectedItem;
+            get;
             set
             {
-                if (_selectedItem != value)
+                if (field != value)
                 {
-                    _selectedItem = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedItem));
                     NotifyOfPropertyChange(nameof(CanEditAwsS3Config));
                     NotifyOfPropertyChange(nameof(CanDeleteAwsS3Config));
@@ -103,83 +103,95 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
         private readonly DebouncedAction _searchDebounce = new();
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = _searchDebounce.RunAsync(LoadAwsS3ConfigsAsync);
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadAwsS3ConfigsAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AwsS3Config.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AwsS3Config.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AwsS3Config.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditAwsS3Config => SelectedItem != null;
-        public bool CanDeleteAwsS3Config => SelectedItem != null;
+        public bool CanCreateAwsS3Config => HasCreatePermission && !IsBusy;
+        public bool CanEditAwsS3Config => HasEditPermission && SelectedItem != null;
+        public bool CanDeleteAwsS3Config => HasDeletePermission && SelectedItem != null;
 
         #endregion
 
@@ -235,7 +247,8 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _awsS3ConfigService = awsS3ConfigService;
@@ -243,6 +256,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -256,6 +270,14 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AwsS3Config);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateAwsS3Config));
+                NotifyOfPropertyChange(nameof(CanEditAwsS3Config));
+                NotifyOfPropertyChange(nameof(CanDeleteAwsS3Config));
+
                 await LoadAwsS3ConfigsAsync();
                 _isInitialized = true;
                 ShowEmptyState = AwsS3Configs == null || AwsS3Configs.Count == 0;
@@ -266,7 +288,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -278,6 +300,8 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
+                AwsS3Configs.Clear();
+                SelectedItem = null;
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -291,9 +315,13 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AwsS3ConfigDetailViewModel(_awsS3ConfigService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                AwsS3ConfigDetailViewModel detail = new(_awsS3ConfigService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+
                 await _dialogService.ShowDialogAsync(detail, "Nueva configuración AWS S3");
             }
             catch (Exception ex)
@@ -301,7 +329,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateAwsS3ConfigAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(CreateAwsS3ConfigAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -317,9 +345,13 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AwsS3ConfigDetailViewModel(_awsS3ConfigService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                AwsS3ConfigDetailViewModel detail = new(_awsS3ConfigService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 await detail.LoadDataForEditAsync(SelectedItem.Id);
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+
                 await _dialogService.ShowDialogAsync(detail, "Editar configuración AWS S3");
             }
             catch (Exception ex)
@@ -327,7 +359,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditAwsS3ConfigAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(EditAwsS3ConfigAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -345,10 +377,10 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedItem.Id)
                     .Build();
-                var validation = await _awsS3ConfigService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _awsS3ConfigService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -381,18 +413,11 @@ namespace NetErp.Global.AwsS3Config.ViewModels
                     new AwsS3ConfigDeleteMessage { DeletedAwsS3Config = deletedRecord },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteAwsS3ConfigAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(DeleteAwsS3ConfigAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -406,7 +431,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             try
             {
                 var (fragment, query) = _deleteQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "id", id)
                     .Build();
                 return await _awsS3ConfigService.DeleteAsync<DeleteResponseType>(query, variables);
@@ -431,10 +456,10 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
                 var (fragment, query) = _loadQuery.Value;
 
-                dynamic filters = new System.Dynamic.ExpandoObject();
+                dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "filters", filters)
                     .Build();
 
@@ -449,7 +474,7 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadAwsS3ConfigsAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadAwsS3ConfigsAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -529,6 +554,17 @@ namespace NetErp.Global.AwsS3Config.ViewModels
             ShowEmptyState = AwsS3Configs == null || AwsS3Configs.Count == 0;
             SelectedItem = null;
             _notificationService.ShowSuccess(message.DeletedAwsS3Config.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateAwsS3Config));
+            NotifyOfPropertyChange(nameof(CanEditAwsS3Config));
+            NotifyOfPropertyChange(nameof(CanDeleteAwsS3Config));
+            return Task.CompletedTask;
         }
 
         #endregion

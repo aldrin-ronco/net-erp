@@ -20,14 +20,18 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Smtp.ViewModels
 {
-    public class SmtpDetailViewModel : Screen, INotifyDataErrorInfo
+    public class SmtpDetailViewModel(
+        IRepository<SmtpGraphQLModel> smtpService,
+        IEventAggregator eventAggregator,
+        StringLengthCache stringLengthCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<SmtpGraphQLModel> _smtpService;
-        private readonly IEventAggregator _eventAggregator;
-        private readonly StringLengthCache _stringLengthCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IRepository<SmtpGraphQLModel> _smtpService = smtpService;
+        private readonly IEventAggregator _eventAggregator = eventAggregator;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
 
         #endregion
 
@@ -149,8 +153,8 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return Enumerable.Empty<string>();
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -172,24 +176,20 @@ namespace NetErp.Global.Smtp.ViewModels
 
         private void ClearErrors(string propertyName)
         {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
+            _errors.Remove(propertyName);
+            RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty;
             ClearErrors(propertyName);
             switch (propertyName)
             {
                 case nameof(Name):
-                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
                     break;
                 case nameof(Host):
-                    if (string.IsNullOrEmpty(Host)) AddError(propertyName, "El host no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El host no puede estar vacío");
                     break;
             }
         }
@@ -231,22 +231,6 @@ namespace NetErp.Global.Smtp.ViewModels
                 _cancelCommand ??= new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
-        }
-
-        #endregion
-
-        #region Constructor
-
-        public SmtpDetailViewModel(
-            IRepository<SmtpGraphQLModel> smtpService,
-            IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _smtpService = smtpService;
-            _eventAggregator = eventAggregator;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion

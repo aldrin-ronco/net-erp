@@ -33,6 +33,23 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
         #endregion
 
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 420;
+
+        #endregion
+
         #region State
 
         public bool IsNewRecord => Id == 0;
@@ -266,6 +283,9 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         public void SetForNew()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(AccessKey), AccessKey);
+            this.SeedValue(nameof(SecretKey), SecretKey);
             this.SeedValue(nameof(Region), Region);
             this.AcceptChanges();
             ValidateProperties();
@@ -294,11 +314,11 @@ namespace NetErp.Global.AwsS3Config.ViewModels
         public async Task LoadDataForEditAsync(int id)
         {
             var (fragment, query) = _loadByIdQuery.Value;
-            var variables = new GraphQLVariables()
+            System.Dynamic.ExpandoObject variables = new GraphQLVariables()
                 .For(fragment, "id", id)
                 .Build();
 
-            var entity = await _awsS3ConfigService.FindByIdAsync(query, variables);
+            AwsS3ConfigGraphQLModel entity = await _awsS3ConfigService.FindByIdAsync(query, variables);
             SetForEdit(entity);
         }
 
@@ -332,18 +352,11 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al realizar operación.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
