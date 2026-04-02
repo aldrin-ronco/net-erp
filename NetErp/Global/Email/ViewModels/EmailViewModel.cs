@@ -26,7 +26,8 @@ namespace NetErp.Global.Email.ViewModels
     public class EmailViewModel : Screen,
         IHandle<EmailDeleteMessage>,
         IHandle<EmailUpdateMessage>,
-        IHandle<EmailCreateMessage>
+        IHandle<EmailCreateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -37,6 +38,7 @@ namespace NetErp.Global.Email.ViewModels
         private readonly SmtpCache _smtpCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
         private readonly DebouncedAction _searchDebounce = new();
 
         #endregion
@@ -50,7 +52,8 @@ namespace NetErp.Global.Email.ViewModels
             IDialogService dialogService,
             SmtpCache smtpCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _emailService = emailService;
@@ -59,7 +62,8 @@ namespace NetErp.Global.Email.ViewModels
             _smtpCache = smtpCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
-            _eventAggregator.SubscribeOnUIThread(this);
+            _permissionCache = permissionCache;
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -120,6 +124,7 @@ namespace NetErp.Global.Email.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateEmail));
                 }
             }
         }
@@ -151,8 +156,17 @@ namespace NetErp.Global.Email.ViewModels
             }
         } = true;
 
-        public bool CanEditEmail => SelectedItem is not null;
-        public bool CanDeleteEmail => SelectedItem is not null;
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Email.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Email.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Email.Delete);
+
+        #endregion
+
+        public bool CanCreateEmail => HasCreatePermission && !IsBusy;
+        public bool CanEditEmail => HasEditPermission && SelectedItem is not null;
+        public bool CanDeleteEmail => HasDeletePermission && SelectedItem is not null;
 
         private bool _isInitialized;
 
@@ -216,18 +230,25 @@ namespace NetErp.Global.Email.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Email);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateEmail));
+                NotifyOfPropertyChange(nameof(CanEditEmail));
+                NotifyOfPropertyChange(nameof(CanDeleteEmail));
+
                 await LoadEmailsAsync();
                 _isInitialized = true;
                 ShowEmptyState = Emails == null || Emails.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
-                this.SetFocus(() => FilterSearch);
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -240,6 +261,7 @@ namespace NetErp.Global.Email.ViewModels
             {
                 _eventAggregator.Unsubscribe(this);
                 Emails?.Clear();
+                SelectedItem = null;
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -274,7 +296,9 @@ namespace NetErp.Global.Email.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadEmailsAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadEmailsAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -304,7 +328,7 @@ namespace NetErp.Global.Email.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(CreateEmailAsync)} \r\n{ex.GetErrorMessage()}",
+                    text: $"{GetType().Name}.{nameof(CreateEmailAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
@@ -336,7 +360,7 @@ namespace NetErp.Global.Email.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(EditEmailAsync)} \r\n{ex.GetErrorMessage()}",
+                    text: $"{GetType().Name}.{nameof(EditEmailAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             finally
@@ -350,43 +374,55 @@ namespace NetErp.Global.Email.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
-                var (_, canDeleteQuery) = _canDeleteEmailQuery.Value;
-                object canDeleteVariables = new { canDeleteResponseId = SelectedItem?.Id };
-                CanDeleteType validation = await _emailService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
+                var (canDeleteFragment, canDeleteQuery) = _canDeleteEmailQuery.Value;
+                ExpandoObject canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedItem?.Id)
+                    .Build();
+                CanDeleteType validation = await _emailService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
+                    if (ThemedMessageBox.Show("Atención!",
+                        "¿Confirma que desea eliminar el registro seleccionado?",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !", "El registro no puede ser eliminado" +
-                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    ThemedMessageBox.Show("Atención!",
+                        $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                var (_, deleteQuery) = _deleteEmailQuery.Value;
-                object deleteVariables = new { deleteResponseId = SelectedItem?.Id };
-                DeleteResponseType deletedEmail = await _emailService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
+                var (deleteFragment, deleteQuery) = _deleteEmailQuery.Value;
+                ExpandoObject deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedItem?.Id)
+                    .Build();
+                DeleteResponseType deletedEmail = await _emailService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedEmail.Success)
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"No pudo ser eliminado el registro \n\n {deletedEmail.Message} \n\n Verifica la información e intenta más tarde.");
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedEmail.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new EmailDeleteMessage { DeletedEmail = deletedEmail });
+                await _eventAggregator.PublishOnCurrentThreadAsync(new EmailDeleteMessage { DeletedEmail = deletedEmail });
                 NotifyOfPropertyChange(nameof(CanDeleteEmail));
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeleteEmailAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteEmailAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -416,6 +452,17 @@ namespace NetErp.Global.Email.ViewModels
             await LoadEmailsAsync();
             ShowEmptyState = Emails == null || Emails.Count == 0;
             _notificationService.ShowSuccess(message.DeletedEmail.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateEmail));
+            NotifyOfPropertyChange(nameof(CanEditEmail));
+            NotifyOfPropertyChange(nameof(CanDeleteEmail));
+            return Task.CompletedTask;
         }
 
         #endregion
