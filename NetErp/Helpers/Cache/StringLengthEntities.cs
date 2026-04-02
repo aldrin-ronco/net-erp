@@ -51,6 +51,7 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] WithholdingCertificateConfig = [typeof(WithholdingCertificateConfigGraphQLModel)];
         public static readonly Type[] IdentificationType = [typeof(IdentificationTypeGraphQLModel)];
         public static readonly Type[] AccountingBook = [typeof(AccountingBookGraphQLModel)];
+        public static readonly Type[] AccountingPresentation = [typeof(AccountingPresentationGraphQLModel)];
         public static readonly Type[] TaxCategory = [typeof(TaxCategoryGraphQLModel)];
         public static readonly Type[] Tax = [typeof(TaxGraphQLModel)];
         public static readonly Type[] AccountingGroup = [typeof(AccountingGroupGraphQLModel)];

@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 
 namespace NetErp.Books.AccountingPresentations.Views
@@ -7,10 +8,13 @@ namespace NetErp.Books.AccountingPresentations.Views
         public AccountingPresentationDetailView()
         {
             InitializeComponent();
-            Loaded += (s, e) =>
-            {
-                if (PresentationName != null) PresentationName.Focus();
-            };
+            Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            PresentationName.Focus();
         }
     }
 }

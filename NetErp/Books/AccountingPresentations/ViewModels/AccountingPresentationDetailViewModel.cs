@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -7,7 +6,6 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
-using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -24,14 +22,20 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingPresentations.ViewModels
 {
-    public class AccountingPresentationDetailViewModel : Screen, INotifyDataErrorInfo
+    public class AccountingPresentationDetailViewModel(
+        IRepository<AccountingPresentationGraphQLModel> accountingPresentationService,
+        IEventAggregator eventAggregator,
+        AccountingBookCache accountingBookCache,
+        JoinableTaskFactory joinableTaskFactory,
+        StringLengthCache stringLengthCache) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService;
-        private readonly IEventAggregator _eventAggregator;
-        private readonly AccountingBookCache _accountingBookCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IRepository<AccountingPresentationGraphQLModel> _accountingPresentationService = accountingPresentationService;
+        private readonly IEventAggregator _eventAggregator = eventAggregator;
+        private readonly AccountingBookCache _accountingBookCache = accountingBookCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
 
         #endregion
 
@@ -39,68 +43,89 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 500;
+
         #endregion
 
         #region Form Properties
 
-        public int Id { get; set; }
-
-        private string _name = string.Empty;
-        public string Name
+        public int Id
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        public string Name
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private List<int> _accountingBookIds = [];
         public List<int> AccountingBookIds
         {
-            get => _accountingBookIds;
+            get;
             set
             {
-                if (_accountingBookIds != value)
+                if (field != value)
                 {
-                    _accountingBookIds = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingBookIds));
                     this.TrackChange(nameof(AccountingBookIds));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = [];
 
-        private bool _allowsClosure;
         public bool AllowsClosure
         {
-            get => _allowsClosure;
+            get;
             set
             {
-                if (_allowsClosure != value)
+                if (field != value)
                 {
-                    _allowsClosure = value;
+                    field = value;
                     ClosureAccountingBookId = null;
                     NotifyOfPropertyChange(nameof(AllowsClosure));
                     this.TrackChange(nameof(AllowsClosure));
@@ -109,15 +134,14 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
-        private int? _closureAccountingBookId;
         public int? ClosureAccountingBookId
         {
-            get => _closureAccountingBookId;
+            get;
             set
             {
-                if (_closureAccountingBookId != value)
+                if (field != value)
                 {
-                    _closureAccountingBookId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ClosureAccountingBookId));
                     this.TrackChange(nameof(ClosureAccountingBookId));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -129,39 +153,43 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         #region Collections
 
-        private ObservableCollection<AccountingBookDTO> _accountingBooks = [];
         public ObservableCollection<AccountingBookDTO> AccountingBooks
         {
-            get => _accountingBooks;
+            get;
             set
             {
-                if (_accountingBooks != value)
+                if (field != value)
                 {
-                    _accountingBooks = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingBooks));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<AccountingBookGraphQLModel> _accountingBooksToClosure = [];
         public ObservableCollection<AccountingBookGraphQLModel> AccountingBooksToClosure
         {
-            get => _accountingBooksToClosure;
+            get;
             set
             {
-                if (_accountingBooksToClosure != value)
+                if (field != value)
                 {
-                    _accountingBooksToClosure = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingBooksToClosure));
                 }
             }
-        }
+        } = [];
+
+        #endregion
+
+        #region StringLength Properties
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<AccountingPresentationGraphQLModel>(nameof(AccountingPresentationGraphQLModel.Name));
 
         #endregion
 
         #region Validation (INotifyDataErrorInfo)
 
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -169,8 +197,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -181,7 +210,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -192,11 +221,8 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         private void ClearErrors(string propertyName)
         {
-            if (_errors.ContainsKey(propertyName))
-            {
-                _errors.Remove(propertyName);
-                RaiseErrorsChanged(propertyName);
-            }
+            _errors.Remove(propertyName);
+            RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
@@ -250,31 +276,13 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         #endregion
 
-        #region Constructor
-
-        public AccountingPresentationDetailViewModel(
-            IRepository<AccountingPresentationGraphQLModel> accountingPresentationService,
-            IEventAggregator eventAggregator,
-            AccountingBookCache accountingBookCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _accountingPresentationService = accountingPresentationService;
-            _eventAggregator = eventAggregator;
-            _accountingBookCache = accountingBookCache;
-            _joinableTaskFactory = joinableTaskFactory;
-        }
-
-        #endregion
-
         #region Initialization
 
         public async Task InitializeAsync()
         {
             await _accountingBookCache.EnsureLoadedAsync();
 
-            var books = _accountingBookCache.Items
-                .Select(b => new AccountingBookDTO { Id = b.Id, Name = b.Name, IsChecked = false })
-                .ToList();
+            List<AccountingBookDTO> books = [.. _accountingBookCache.Items.Select(b => new AccountingBookDTO { Id = b.Id, Name = b.Name, IsChecked = false })];
 
             AccountingBooks = [.. books];
             AccountingBooksToClosure = [.. _accountingBookCache.Items];
@@ -288,34 +296,25 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         {
             base.OnViewReady(view);
             ValidateProperties();
-            this.AcceptChanges();
-            if (IsNewRecord)
-            {
-                this.SeedValue(nameof(AllowsClosure), false);
-            }
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         #endregion
 
-        #region Load for Edit
+        #region SetForNew / SetForEdit
 
-        public async Task LoadDataForEditAsync(int id)
+        public void SetForNew()
         {
-            string query = _loadByIdQuery.Value;
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = id;
-
-            var entity = await _accountingPresentationService.FindByIdAsync(query, variables);
-            PopulateFromEntity(entity);
+            this.ClearSeeds();
+            this.SeedValue(nameof(AllowsClosure), AllowsClosure);
+            this.AcceptChanges();
         }
 
-        private void PopulateFromEntity(AccountingPresentationGraphQLModel entity)
+        public void SetForEdit(AccountingPresentationGraphQLModel entity)
         {
-            var checkedIds = entity.AccountingBooks.Select(p => p.Id).ToHashSet();
+            HashSet<int> checkedIds = entity.AccountingBooks.Select(p => p.Id).ToHashSet();
 
-            var books = _accountingBookCache.Items
-                .Select(b => new AccountingBookDTO { Id = b.Id, Name = b.Name, IsChecked = checkedIds.Contains(b.Id) })
-                .ToList();
+            List<AccountingBookDTO> books = [.. _accountingBookCache.Items.Select(b => new AccountingBookDTO { Id = b.Id, Name = b.Name, IsChecked = checkedIds.Contains(b.Id) })];
 
             AccountingBooks = [.. books];
             AccountingBooksToClosure = [.. _accountingBookCache.Items];
@@ -324,9 +323,29 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             Name = entity.Name;
             AllowsClosure = entity.AllowsClosure;
             ClosureAccountingBookId = entity.ClosureAccountingBook?.Id;
-            AccountingBookIds = checkedIds.ToList();
+            AccountingBookIds = [.. checkedIds];
             NotifyOfPropertyChange(nameof(IsNewRecord));
+
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(AllowsClosure), AllowsClosure);
+            this.SeedValue(nameof(ClosureAccountingBookId), ClosureAccountingBookId);
+            this.SeedValue(nameof(AccountingBookIds), AccountingBookIds);
             this.AcceptChanges();
+        }
+
+        #endregion
+
+        #region Load for Edit
+
+        public async Task LoadDataForEditAsync(int id)
+        {
+            var (fragment, query) = _loadByIdQuery.Value;
+            ExpandoObject variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
+
+            AccountingPresentationGraphQLModel entity = await _accountingPresentationService.FindByIdAsync(query, variables);
+            SetForEdit(entity);
         }
 
         #endregion
@@ -335,10 +354,9 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
         public void ToggleActive(RoutedEventArgs args)
         {
-            List<int> selectedIds = AccountingBooks
+            List<int> selectedIds = [.. AccountingBooks
                 .Where(b => b.IsChecked)
-                .Select(b => b.Id!.Value)
-                .ToList();
+                .Select(b => b.Id!.Value)];
 
             if (!selectedIds.SequenceEqual(AccountingBookIds))
             {
@@ -355,15 +373,14 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
-                var excludes = !AllowsClosure ? new[] { nameof(ClosureAccountingBookId) } : null;
+                string[]? excludes = !AllowsClosure ? [nameof(ClosureAccountingBookId)] : null;
 
                 UpsertResponseType<AccountingPresentationGraphQLModel> result = await ExecuteSaveAsync(excludes);
                 if (!result.Success)
                 {
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -381,9 +398,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -391,7 +406,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<AccountingPresentationGraphQLModel>> ExecuteSaveAsync(string[]? excludes)
+        private async Task<UpsertResponseType<AccountingPresentationGraphQLModel>> ExecuteSaveAsync(string[]? excludes)
         {
             if (IsNewRecord)
             {
@@ -450,16 +465,16 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
+            List<GraphQLQueryParameter> parameters =
+            [
                 new("data", "UpdateAccountingPresentationInput!"),
                 new("id", "ID!")
-            };
+            ];
             var fragment = new GraphQLQueryFragment("updateAccountingPresentation", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         });
 
-        private static readonly Lazy<string> _loadByIdQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>
         {
             var fields = FieldSpec<AccountingPresentationGraphQLModel>
                 .Create()
@@ -470,13 +485,13 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                     .Field(c => c.Id)
                     .Field(c => c.Name))
                 .Select(e => e.ClosureAccountingBook, acc => acc
-                    .Field(c => c.Id)
-                    .Field(c => c.Name))
+                    .Field(c => c!.Id)
+                    .Field(c => c!.Name))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("accountingPresentation", [parameter], fields, "SingleItemResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingPresentation",
+                [new("id", "ID!")], fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
         #endregion
