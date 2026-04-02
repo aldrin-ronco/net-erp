@@ -160,5 +160,13 @@ namespace NetErp.Helpers
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
         }
+
+        public static class DianCertificate
+        {
+            private const string Prefix = "dian_certificate";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Delete = $"{Prefix}.delete";
+        }
     }
 }

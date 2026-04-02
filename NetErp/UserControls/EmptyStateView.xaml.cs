@@ -53,6 +53,10 @@ namespace NetErp.UserControls
             DependencyProperty.Register(nameof(ButtonIcon), typeof(ImageSource), typeof(EmptyStateView),
                 new PropertyMetadata(null));
 
+        public static readonly DependencyProperty HasPermissionProperty =
+            DependencyProperty.Register(nameof(HasPermission), typeof(bool), typeof(EmptyStateView),
+                new PropertyMetadata(true, OnHasPermissionChanged));
+
         #endregion
 
         #region Properties
@@ -111,6 +115,12 @@ namespace NetErp.UserControls
             set => SetValue(ContextInfoProperty, value);
         }
 
+        public bool HasPermission
+        {
+            get => (bool)GetValue(HasPermissionProperty);
+            set => SetValue(HasPermissionProperty, value);
+        }
+
         #endregion
 
         public EmptyStateView()
@@ -139,7 +149,13 @@ namespace NetErp.UserControls
         private void UpdateButtonEnabled()
         {
             if (ActionButton == null) return;
-            ActionButton.IsEnabled = !_isExecuting && (Command?.CanExecute(null) ?? false);
+            ActionButton.IsEnabled = !_isExecuting && HasPermission && (Command?.CanExecute(null) ?? false);
+        }
+
+        private static void OnHasPermissionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EmptyStateView view)
+                view.UpdateButtonEnabled();
         }
 
         private async void OnActionButtonClick(object sender, RoutedEventArgs e)

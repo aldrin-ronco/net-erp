@@ -30,47 +30,44 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         #region Dialog Size
 
-        private double _dialogWidth = 600;
         public double DialogWidth
         {
-            get => _dialogWidth;
+            get;
             set
             {
-                if (_dialogWidth != value)
+                if (field != value)
                 {
-                    _dialogWidth = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DialogWidth));
                 }
             }
-        }
+        } = 600;
 
         #endregion
 
         #region State
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private bool _isExtracted;
         public bool IsExtracted
         {
-            get => _isExtracted;
+            get;
             set
             {
-                if (_isExtracted != value)
+                if (field != value)
                 {
-                    _isExtracted = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsExtracted));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -81,35 +78,33 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         #region File Selection
 
-        private string _filePath = string.Empty;
         public string FilePath
         {
-            get => _filePath;
+            get;
             set
             {
-                if (_filePath != value)
+                if (field != value)
                 {
-                    _filePath = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilePath));
                     NotifyOfPropertyChange(nameof(CanExtract));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _filePassword = string.Empty;
         public string FilePassword
         {
-            get => _filePassword;
+            get;
             set
             {
-                if (_filePassword != value)
+                if (field != value)
                 {
-                    _filePassword = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilePassword));
                     NotifyOfPropertyChange(nameof(CanExtract));
                 }
             }
-        }
+        } = string.Empty;
 
         public bool CanExtract => !string.IsNullOrEmpty(FilePath) && !string.IsNullOrEmpty(FilePassword);
 
@@ -117,99 +112,92 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         #region Certificate Properties
 
-        private string _certificatePem = string.Empty;
         public string CertificatePem
         {
-            get => _certificatePem;
+            get;
             set
             {
-                if (_certificatePem != value)
+                if (field != value)
                 {
-                    _certificatePem = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CertificatePem));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _privateKeyPem = string.Empty;
         public string PrivateKeyPem
         {
-            get => _privateKeyPem;
+            get;
             set
             {
-                if (_privateKeyPem != value)
+                if (field != value)
                 {
-                    _privateKeyPem = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PrivateKeyPem));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _serialNumber = string.Empty;
         public string SerialNumber
         {
-            get => _serialNumber;
+            get;
             set
             {
-                if (_serialNumber != value)
+                if (field != value)
                 {
-                    _serialNumber = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SerialNumber));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _issuer = string.Empty;
         public string Issuer
         {
-            get => _issuer;
+            get;
             set
             {
-                if (_issuer != value)
+                if (field != value)
                 {
-                    _issuer = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Issuer));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _subject = string.Empty;
         public string Subject
         {
-            get => _subject;
+            get;
             set
             {
-                if (_subject != value)
+                if (field != value)
                 {
-                    _subject = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Subject));
                 }
             }
-        }
+        } = string.Empty;
 
-        private DateTime? _validFrom;
         public DateTime? ValidFrom
         {
-            get => _validFrom;
+            get;
             set
             {
-                if (_validFrom != value)
+                if (field != value)
                 {
-                    _validFrom = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ValidFrom));
                 }
             }
         }
 
-        private DateTime? _validTo;
         public DateTime? ValidTo
         {
-            get => _validTo;
+            get;
             set
             {
-                if (_validTo != value)
+                if (field != value)
                 {
-                    _validTo = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ValidTo));
                 }
             }
@@ -285,7 +273,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
 
         private void BrowseFile()
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog
+            Microsoft.Win32.OpenFileDialog dialog = new()
             {
                 Filter = "Certificados PKCS#12 (*.p12;*.pfx)|*.p12;*.pfx",
                 Title = "Seleccionar certificado digital"
@@ -297,7 +285,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
         }
 
-        public Task ExtractCertificateAsync()
+        public async Task ExtractCertificateAsync()
         {
             try
             {
@@ -317,32 +305,33 @@ namespace NetErp.Global.DianCertificate.ViewModels
             }
             catch (CryptographicException)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
                     "No se pudo abrir el certificado. Verifique que la contraseña sea correcta y que el archivo sea un certificado PKCS#12 válido.",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"Error al extraer el certificado: {ex.Message}",
+                    $"Error al extraer el certificado: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
             }
-            return Task.CompletedTask;
         }
 
         private static (string certPem, string keyPem, string serial, string issuer, string subject, DateTime validFrom, DateTime validTo)
             ExtractFromP12(string filePath, string password)
         {
-            using var cert = X509CertificateLoader.LoadPkcs12FromFile(filePath, password, X509KeyStorageFlags.Exportable);
+            using X509Certificate2 cert = X509CertificateLoader.LoadPkcs12FromFile(filePath, password, X509KeyStorageFlags.Exportable);
 
             string certPem = cert.ExportCertificatePem();
 
             string keyPem;
-            using (var rsa = cert.GetRSAPrivateKey())
+            using (RSA? rsa = cert.GetRSAPrivateKey())
             {
                 if (rsa != null)
                 {
@@ -350,7 +339,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
                 }
                 else
                 {
-                    using var ecdsa = cert.GetECDsaPrivateKey();
+                    using ECDsa? ecdsa = cert.GetECDsaPrivateKey();
                     keyPem = ecdsa != null
                         ? new string(PemEncoding.Write("PRIVATE KEY", ecdsa.ExportPkcs8PrivateKey()))
                         : throw new CryptographicException("No se encontró una clave privada compatible (RSA o ECDSA) en el certificado.");
@@ -370,16 +359,19 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 IsBusy = true;
 
-                var (_, query) = _createQuery.Value;
-                dynamic variables = new ExpandoObject();
-                variables.createResponseInput = new ExpandoObject();
-                variables.createResponseInput.certificatePem = CertificatePem;
-                variables.createResponseInput.privateKeyPem = PrivateKeyPem;
-                variables.createResponseInput.serialNumber = SerialNumber;
-                variables.createResponseInput.issuer = Issuer;
-                variables.createResponseInput.subject = Subject;
-                variables.createResponseInput.validFrom = ValidFrom?.ToString("o");
-                variables.createResponseInput.validTo = ValidTo?.ToString("o");
+                var (fragment, query) = _createQuery.Value;
+                ExpandoObject variables = new GraphQLVariables()
+                    .For(fragment, "input", new
+                    {
+                        certificatePem = CertificatePem,
+                        privateKeyPem = PrivateKeyPem,
+                        serialNumber = SerialNumber,
+                        issuer = Issuer,
+                        subject = Subject,
+                        validFrom = ValidFrom?.ToString("o"),
+                        validTo = ValidTo?.ToString("o")
+                    })
+                    .Build();
 
                 UpsertResponseType<DianCertificateGraphQLModel> result = await _dianCertificateService.CreateAsync<UpsertResponseType<DianCertificateGraphQLModel>>(query, variables);
 
@@ -404,7 +396,7 @@ namespace NetErp.Global.DianCertificate.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
