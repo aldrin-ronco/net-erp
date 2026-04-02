@@ -177,5 +177,14 @@ namespace NetErp.Helpers
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
         }
+
+        public static class AwsS3Config
+        {
+            private const string Prefix = "aws_s3_config";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
     }
 }
