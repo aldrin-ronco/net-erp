@@ -168,5 +168,14 @@ namespace NetErp.Helpers
             public const string Create = $"{Prefix}.create";
             public const string Delete = $"{Prefix}.delete";
         }
+
+        public static class Smtp
+        {
+            private const string Prefix = "smtp";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
     }
 }
