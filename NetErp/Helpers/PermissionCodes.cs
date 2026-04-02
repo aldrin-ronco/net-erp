@@ -116,6 +116,15 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class WithholdingCertificate
+        {
+            private const string Prefix = "withholding_certificate";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
         public static class AuthorizationSequence
         {
             private const string Prefix = "authorization_sequence";
