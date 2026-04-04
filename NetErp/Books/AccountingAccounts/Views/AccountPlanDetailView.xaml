@@ -20,7 +20,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8" MinWidth="550">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -256,7 +258,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

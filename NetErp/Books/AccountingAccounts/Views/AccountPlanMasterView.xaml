@@ -9,20 +9,18 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core">
     <UserControl.Resources>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
-        <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
 
-        <HierarchicalDataTemplate  DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+        <HierarchicalDataTemplate DataType="{x:Type model:AccountingAccountDTO}" ItemsSource="{Binding Childrens, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateAsyncCommand, Source={StaticResource DataContextProxy}}">
+                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
                                 <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Command="{Binding Data.EditAsyncCommand, Source={StaticResource DataContextProxy}}"
-                            CommandParameter="{Binding Row.Code}">
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
                                 <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
                             </MenuItem.Icon>
@@ -36,8 +34,7 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Command="{Binding Path=Data.DeleteAsyncCommand, Source={StaticResource DataContextProxy}}"
-                            CommandParameter="{Binding Row}">
+                        <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
                                 <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
                             </MenuItem.Icon>
@@ -62,7 +59,6 @@
                                         <Condition Binding="{Binding Row.IsAuxiliary}" Value="false"/>
                                         <Condition Binding="{Binding Row.IsExpanded}" Value="false"/>
                                     </MultiDataTrigger.Conditions>
-                                    <!--PlaceHolderImage-->
                                     <Setter Property="Source" Value="{dx:DXImage 'SvgImages/Icon Builder/Actions_FolderClose.svg'}"/>
                                 </MultiDataTrigger>
                                 <!--Open Folder-->
@@ -75,7 +71,6 @@
                                 </MultiDataTrigger>
                                 <!--Cuenta Auxiliar-->
                                 <DataTrigger Binding="{Binding Row.IsAuxiliary}" Value="true">
-                                    <!--PlaceHolderImage-->
                                     <Setter Property="Source" Value="{dx:DXImage 'Images/Miscellaneous/HighlightActiveElements_16x16.png'}"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -83,18 +78,14 @@
                     </Image.Style>
                 </Image>
                 <TextBlock Text="{Binding Row.Code}" Margin="4 0 0 0"
-               ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
-
+                           ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
                 <TextBlock Text=" - " VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding Row.Name}"
-               ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
-
+                           ContextMenuService.Placement="MousePoint" VerticalAlignment="Center"/>
             </StackPanel>
         </HierarchicalDataTemplate>
     </UserControl.Resources>
-    <dxmvvm:Interaction.Behaviors>
-        <dxmvvm:EventToCommand EventName="Loaded" Command="{Binding InitializeCommand}"/>
-    </dxmvvm:Interaction.Behaviors>
+
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
                             IndicatorType="BouncingDot"
@@ -104,7 +95,7 @@
                             Background="Transparent">
 
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="5" Padding="10,10,10,0">
-            <Grid Name="GridMain">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -140,24 +131,51 @@
                 </dxg:TreeViewControl>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
-                    <Button Command="{Binding CreateAsyncCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegationConverter}}"
-                            Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                    <!-- Nuevo -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanCreateAccount}"
+                            Command="{Binding CreateCommand}">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasCreatePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
                     </Button>
-                    <Button Command="{Binding ReportAsyncCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegationConverter}}"
-                            Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                    <!-- Reporte -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            Command="{Binding ReportCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Reports/Report_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>

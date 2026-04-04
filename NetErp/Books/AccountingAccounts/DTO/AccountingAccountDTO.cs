@@ -1,135 +1,119 @@
-﻿using Caliburn.Micro;
-using Common.Helpers;
-using DevExpress.Mvvm;
-using DevExpress.Xpf.Core;
+using Caliburn.Micro;
 using NetErp.Books.AccountingAccounts.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Books.AccountingAccounts.DTO
 {
-    public class AccountingAccountDTO : BindableBase
+    public class AccountingAccountDTO : PropertyChangedBase
     {
+        public AccountPlanMasterViewModel? Context { get; set; }
 
-        private AccountPlanMasterViewModel _context;
-        public AccountPlanMasterViewModel Context
-        {
-            get { return _context; }
-            set { SetValue(ref _context, value); }
-        }
-
-        private bool _isDummyChild = false;
         public bool IsDummyChild
         {
-            get { return _isDummyChild; }
-            set { SetValue(ref _isDummyChild, value); }
-        }
-
-        public bool IsAuxiliary
-        {
-            get { return (this._code.Trim().Length >= 8); }
-        }
-
-        private bool _isExpanded;
-        public bool IsExpanded
-        {
-            get { return _isExpanded; }
+            get;
             set
             {
-                SetValue(ref _isExpanded, value, changedCallback: OnIsExpandedChanged);
-            }
-        }
-
-        void OnIsExpandedChanged()
-        {
-            try
-            {
-                if (_childrens != null)
+                if (field != value)
                 {
-                    if (_isExpanded && _childrens.Count > 0)
-                    {
-                        if (_childrens[0].IsDummyChild)
-                            _context.LoadChildren(this, _context.accounts);
-                    }
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsDummyChild));
                 }
             }
-            catch (AsyncException ex)
+        }
+
+        public bool IsAuxiliary => Code.Trim().Length >= 8;
+
+        public bool IsExpanded
+        {
+            get;
+            set
             {
-                Execute.OnUIThread(() =>
+                if (field != value)
                 {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsExpanded));
+                    OnIsExpandedChanged();
+                }
             }
         }
 
-        private bool _isSelected;
+        private void OnIsExpandedChanged()
+        {
+            if (Childrens != null && IsExpanded && Childrens.Count > 0)
+            {
+                if (Childrens[0].IsDummyChild)
+                    Context?.LoadChildren(this, Context.Accounts);
+            }
+        }
+
         public bool IsSelected
         {
-            get { return _isSelected; }
-            set { SetValue(ref _isSelected, value); }
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsSelected));
+                }
+            }
         }
 
-        private int _id;
         public int Id
         {
-            get { return _id; }
+            get;
             set
             {
-                SetValue(ref _id, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                }
             }
         }
 
-        private string _code = string.Empty;
         public string Code
         {
-            get { return _code; }
+            get;
             set
             {
-                SetValue(ref _code, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Code));
+                }
             }
-        }
+        } = string.Empty;
 
-        private string _name;
         public string Name
         {
-            get { return _name; }
+            get;
             set
             {
-                SetValue(ref _name, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Name));
+                }
             }
-        }
+        } = string.Empty;
 
-        private ObservableCollection<AccountingAccountDTO> _childrens;
         public ObservableCollection<AccountingAccountDTO> Childrens
         {
-            get { return _childrens; }
+            get;
             set
             {
-                SetValue(ref _childrens, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Childrens));
+                }
             }
-        }
-
-        public AccountingAccountDTO()
-        {
-
-        }
-
-        public AccountingAccountDTO(int id, string code, string name, ObservableCollection<AccountingAccountDTO> childrens)
-        {
-            this._id = id;
-            this._code = code;
-            this._name = name;
-            this._childrens = childrens;
-        }
+        } = [];
 
         public override string ToString()
         {
-            return $"{this._code} - {this._name}";
+            return $"{Code} - {Name}";
         }
-
     }
 }

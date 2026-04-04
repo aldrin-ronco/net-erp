@@ -71,6 +71,15 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class AccountingAccount
+        {
+            private const string Prefix = "accounting_account";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
         public static class AccountingEntity
         {
             private const string Prefix = "accounting_entity";

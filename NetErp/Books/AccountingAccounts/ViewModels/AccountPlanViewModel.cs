@@ -2,70 +2,97 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
     public class AccountPlanViewModel : Conductor<object>.Collection.OneActive
     {
+        #region Dependencies
 
-        private AccountPlanMasterViewModel _accountPlanMasterViewModel;
-        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+
+        #endregion
+
+        #region Constructor
+
+        public AccountPlanViewModel(
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            Helpers.Services.INotificationService notificationService,
+            Helpers.IDialogService dialogService,
+            IEventAggregator eventAggregator,
+            StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
+            JoinableTaskFactory joinableTaskFactory)
+        {
+            _accountingAccountService = accountingAccountService;
+            _notificationService = notificationService;
+            _dialogService = dialogService;
+            _eventAggregator = eventAggregator;
+            _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
+            _joinableTaskFactory = joinableTaskFactory;
+        }
+
+        #endregion
+
+        #region Master ViewModel
+
+        private AccountPlanMasterViewModel? _accountPlanMasterViewModel;
 
         public AccountPlanMasterViewModel AccountPlanMasterViewModel
         {
             get
             {
-                if (_accountPlanMasterViewModel is null) _accountPlanMasterViewModel = new AccountPlanMasterViewModel(_notificationService, _accountingAccountService, _dialogService);
+                _accountPlanMasterViewModel ??= new AccountPlanMasterViewModel(
+                    _accountingAccountService,
+                    _notificationService,
+                    _dialogService,
+                    _eventAggregator,
+                    _stringLengthCache,
+                    _permissionCache,
+                    _joinableTaskFactory);
                 return _accountPlanMasterViewModel;
             }
         }
 
+        #endregion
 
-        public AccountPlanViewModel(Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
-            Helpers.IDialogService dialogService)
-        {
-            this._accountingAccountService = accountingAccountService;
-            this._notificationService = notificationService;
-            this._dialogService = dialogService;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ActivateMasterViewModel();
-                }
-                catch (AsyncException ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
-        }
+        #region Lifecycle
 
-
-        public async Task ActivateMasterViewModel()
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await ActivateItemAsync(AccountPlanMasterViewModel, new CancellationToken());
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingAccount);
+                await ActivateItemAsync(AccountPlanMasterViewModel, cancellationToken);
             }
             catch (Exception ex)
             {
-
-                throw new AsyncException(innerException: ex);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnActivateAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
             }
+            await base.OnActivateAsync(cancellationToken);
         }
+
+        #endregion
     }
 }

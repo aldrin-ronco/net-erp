@@ -1,17 +1,19 @@
 using Caliburn.Micro;
 using Common.Extensions;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
@@ -30,6 +32,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         private static readonly List<string> _marginPrefixes = new List<string>() { "2408", "2365", "2367", "2368" };
 
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly List<AccountingAccountGraphQLModel> _accounts;
         private readonly int _selectedItemId;
 
@@ -700,14 +704,44 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         public AccountPlanDetailViewModel(
             IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            IEventAggregator eventAggregator,
+            JoinableTaskFactory joinableTaskFactory,
             List<AccountingAccountGraphQLModel> accounts,
             int selectedItemId = 0)
         {
             _accountingAccountService = accountingAccountService;
+            _eventAggregator = eventAggregator;
+            _joinableTaskFactory = joinableTaskFactory;
             _accounts = accounts;
             _selectedItemId = selectedItemId;
             NotifyOfPropertyChange(nameof(CanSave));
         }
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 600;
+
+        public double DialogHeight
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
+                }
+            }
+        } = 550;
 
         #endregion
 
@@ -718,11 +752,9 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             base.OnViewReady(view);
             PopulateInfo(Code);
             SetReadOnlyState(Code);
-            // Defer focus so the dialog layout is fully rendered
-            Application.Current.Dispatcher.BeginInvoke(new System.Action(() =>
-            {
-                SetLevelFocus(Code);
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
+            Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(() => SetLevelFocus(Code)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         #endregion
@@ -771,7 +803,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         }
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AccountingAccountGraphQLModel>>
                 .Create()
@@ -791,14 +823,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateAccountingAccountInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateAccountingAccount", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateAccountingAccount",
+                [new("data", "UpdateAccountingAccountInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         public async Task<UpsertResponseType<AccountingAccountGraphQLModel>> UpdateAsync()
@@ -878,19 +906,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
                 if (model is null) throw new Exception("model no puede ser null");
 
-                string query = _updateQuery.Value;
+                (GraphQLQueryFragment fragment, string query) = _updateQuery.Value;
 
-                object variables = new
-                {
-                    updateResponseId = model.Id,
-                    updateResponseData = new
-                    {
-
-                        model.Name,
-                        model.Margin,
-                        model.MarginBasis
-                    }
-                };
+                dynamic variables = new GraphQLVariables()
+                    .For(fragment, "id", model.Id)
+                    .For(fragment, "data", new { model.Name, model.Margin, model.MarginBasis })
+                    .Build();
 
                 UpsertResponseType<AccountingAccountGraphQLModel> updatedAccount = await _accountingAccountService.UpdateAsync<UpsertResponseType<AccountingAccountGraphQLModel>>(query, variables);
                 return updatedAccount;
@@ -902,7 +923,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
 
-        private static readonly Lazy<string> _insertQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _insertQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<List<AccountingAccountGraphQLModel>>>
                 .Create()
@@ -922,13 +943,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "[CreateAccountingAccountInput!]!");
-
-            var fragment = new GraphQLQueryFragment("createAccountingAccounts", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createAccountingAccounts",
+                [new("input", "[CreateAccountingAccountInput!]!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
         /// <summary>
         /// Guarda la nueva cuenta contable o actualiza los cambios
@@ -1005,14 +1023,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 };
                 models.Add(modelLv5);
 
-                string query = _insertQuery.Value;
+                (GraphQLQueryFragment fragment, string query) = _insertQuery.Value;
 
                 var modelsWithOutIds = from model in models
                                        select new { model.Code, model.Name, model.Nature, model.Margin, model.MarginBasis };
 
-                dynamic variables = new ExpandoObject();
-                variables.createResponseInput = new ExpandoObject();
-                variables.createResponseInput = modelsWithOutIds;
+                dynamic variables = new GraphQLVariables()
+                    .For(fragment, "input", modelsWithOutIds)
+                    .Build();
                 UpsertResponseType<List<AccountingAccountGraphQLModel>> response = await _accountingAccountService.CreateAsync<UpsertResponseType<List<AccountingAccountGraphQLModel>>>(query, variables);
                 return response;
             }
@@ -1035,7 +1053,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 if (accountCode.Length >= 1)
                 {
-                    var lv1 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv1 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 1)
                               select account;
@@ -1059,8 +1077,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv1" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfoLv1)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1071,7 +1088,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 if (accountCode.Length >= 2)
                 {
-                    var lv2 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv2 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 2)
                               select account;
@@ -1096,8 +1113,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv2" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfoLv2)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1134,8 +1150,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv3" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfoLv3)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1146,7 +1161,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 if (accountCode.Length >= 6)
                 {
-                    var lv4 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv4 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 6)
                               select account;
@@ -1171,8 +1186,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoLv4" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfoLv4)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1182,7 +1196,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 if (accountCode.Length >= 8)
                 {
-                    var lv5 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv5 = from account
                     in _accounts
                               where account.Code == accountCode
                               select account;
@@ -1211,8 +1225,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfoNameLv5" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfoNameLv5)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1227,7 +1240,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Lv1
                 if (accountCode.Length >= 1)
                 {
-                    var lv1 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv1 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 1)
                               select account;
@@ -1252,7 +1265,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Lv2
                 if (accountCode.Length >= 2)
                 {
-                    var lv2 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv2 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 2)
                               select account;
@@ -1303,7 +1316,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Lv4
                 if (accountCode.Length >= 6)
                 {
-                    var lv4 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv4 = from account
                     in _accounts
                               where account.Code == accountCode.Substring(0, 6)
                               select account;
@@ -1328,7 +1341,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Lv5
                 if (accountCode.Length >= 8)
                 {
-                    var lv5 = from account
+                    IEnumerable<AccountingAccountGraphQLModel> lv5 = from account
                     in _accounts
                               where account.Code == accountCode
                               select account;
@@ -1350,8 +1363,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateInfo" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(PopulateInfo)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1434,8 +1446,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "SetLevelFocus" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetLevelFocus)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1465,8 +1476,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "SetReadOnlyState" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetReadOnlyState)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1497,8 +1507,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxNameStyleForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetTextBoxNameStyleForExistingAccountCode)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1518,8 +1527,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "SetTextBoxSelectionForExistingAccountCode" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetTextBoxSelectionForExistingAccountCode)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1527,11 +1535,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                var result = from account in _accounts
-                             where account.Code == accountCode
-                             select account;
-
-                return (result.ToList().Count > 0);
+                return _accounts.Any(account => account.Code == accountCode);
             }
             catch (Exception)
             {
@@ -1541,26 +1545,16 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         public void CleanUpControls()
         {
-            try
-            {
-                // Codigos de Cuentas
-                this.Lv5Code = "";
-                this.Lv1Code = "";
-                this.Lv2Code = "";
-                this.Lv3Code = "";
-                this.Lv4Code = "";
-                // Nombres de Cuentas
-                this.Lv1Name = "";
-                this.Lv2Name = "";
-                this.Lv3Name = "";
-                this.Lv4Name = "";
-                this.Lv5Name = "";
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "CleanUpControls" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
+            Lv5Code = "";
+            Lv1Code = "";
+            Lv2Code = "";
+            Lv3Code = "";
+            Lv4Code = "";
+            Lv1Name = "";
+            Lv2Name = "";
+            Lv3Name = "";
+            Lv4Name = "";
+            Lv5Name = "";
         }
         #endregion
 
@@ -1590,38 +1584,54 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             try
             {
-                this.IsBusy = true;
-                if (this.IsNewRecord)
+                IsBusy = true;
+                if (IsNewRecord)
                 {
-                    UpsertResponseType<List<AccountingAccountGraphQLModel>> result = await Task.Run(() => this.InsertAsync());
+                    UpsertResponseType<List<AccountingAccountGraphQLModel>> result = await InsertAsync();
                     if (!result.Success)
                     {
-                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                        ThemedMessageBox.Show(
+                            text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
+                            title: $"{result.Message}!",
+                            messageBoxButtons: MessageBoxButton.OK,
+                            icon: MessageBoxImage.Error);
                         return;
                     }
-                    Messenger.Default.Send(new AccountingAccountCreateListMessage() { UpsertList = result });
+                    await _eventAggregator.PublishOnCurrentThreadAsync(
+                        new AccountingAccountCreateListMessage { UpsertList = result },
+                        CancellationToken.None);
                 }
                 else
                 {
                     if (_selectedItemId <= 0) throw new ArgumentException("No se ha seleccionado una cuenta contable para editar");
-                    UpsertResponseType<AccountingAccountGraphQLModel> result = await Task.Run(() => this.UpdateAsync());
+                    UpsertResponseType<AccountingAccountGraphQLModel> result = await UpdateAsync();
                     if (!result.Success)
                     {
-                        ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
+                        ThemedMessageBox.Show(
+                            text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
+                            title: $"{result.Message}!",
+                            messageBoxButtons: MessageBoxButton.OK,
+                            icon: MessageBoxImage.Error);
                         return;
                     }
-                    Messenger.Default.Send(new AccountingAccountUpdateMessage() { UpsertAccount = result });
+                    await _eventAggregator.PublishOnCurrentThreadAsync(
+                        new AccountingAccountUpdateMessage { UpsertAccount = result },
+                        CancellationToken.None);
                 }
                 await TryCloseAsync(true);
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
-                this.IsBusy = false;
+                IsBusy = false;
             }
         }
 
