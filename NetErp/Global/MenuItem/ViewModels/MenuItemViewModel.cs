@@ -23,7 +23,8 @@ namespace NetErp.Global.MenuItem.ViewModels
     public class MenuItemViewModel : Screen,
         IHandle<MenuItemCreateMessage>,
         IHandle<MenuItemUpdateMessage>,
-        IHandle<MenuItemDeleteMessage>
+        IHandle<MenuItemDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,6 +34,7 @@ namespace NetErp.Global.MenuItem.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly MenuModuleCache _menuModuleCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -233,11 +235,21 @@ namespace NetErp.Global.MenuItem.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.MenuItem.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.MenuItem.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.MenuItem.Delete);
+        public bool HasReorderPermission => _permissionCache.IsAllowed(PermissionCodes.MenuItem.Reorder);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditMenuItem => SelectedMenuItem != null;
-        public bool CanDeleteMenuItem => SelectedMenuItem != null;
-        public bool CanReorder => SelectedModuleId.HasValue && SelectedGroupId.HasValue && MenuItems.Count > 1;
+        public bool CanCreateMenuItem => HasCreatePermission;
+        public bool CanEditMenuItem => HasEditPermission && SelectedMenuItem != null;
+        public bool CanDeleteMenuItem => HasDeletePermission && SelectedMenuItem != null;
+        public bool CanReorder => HasReorderPermission && SelectedModuleId.HasValue && SelectedGroupId.HasValue && MenuItems.Count > 1;
 
         #endregion
 
@@ -304,6 +316,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             Helpers.IDialogService dialogService,
             MenuModuleCache menuModuleCache,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -312,9 +325,10 @@ namespace NetErp.Global.MenuItem.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _menuModuleCache = menuModuleCache ?? throw new ArgumentNullException(nameof(menuModuleCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
 
-            _eventAggregator.SubscribeOnUIThread(this);
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -329,6 +343,16 @@ namespace NetErp.Global.MenuItem.ViewModels
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.MenuItem);
                 await _menuModuleCache.EnsureLoadedAsync();
                 Modules = new ObservableCollection<MenuModuleGraphQLModel>(_menuModuleCache.Items);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(HasReorderPermission));
+                NotifyOfPropertyChange(nameof(CanCreateMenuItem));
+                NotifyOfPropertyChange(nameof(CanEditMenuItem));
+                NotifyOfPropertyChange(nameof(CanDeleteMenuItem));
+                NotifyOfPropertyChange(nameof(CanReorder));
+
                 await LoadAllItemsAsync();
                 this.SetFocus(() => FilterSearch);
             }
@@ -337,7 +361,7 @@ namespace NetErp.Global.MenuItem.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -388,7 +412,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadAllItemsAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadAllItemsAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -469,7 +493,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateMenuItemAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(CreateMenuItemAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -503,7 +527,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditMenuItemAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(EditMenuItemAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -536,7 +560,7 @@ namespace NetErp.Global.MenuItem.ViewModels
                 {
                     IsBusy = false;
                     ThemedMessageBox.Show("Atención!",
-                        "El registro no puede ser eliminado" + (char)13 + (char)13 + validation.Message,
+                        $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
@@ -556,18 +580,11 @@ namespace NetErp.Global.MenuItem.ViewModels
                     new MenuItemDeleteMessage { DeletedMenuItem = deletedItem },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteMenuItemAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(DeleteMenuItemAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -578,18 +595,11 @@ namespace NetErp.Global.MenuItem.ViewModels
 
         public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-            try
-            {
-                (GraphQLQueryFragment fragment, string query) = _deleteQuery.Value;
-                dynamic variables = new GraphQLVariables()
-                    .For(fragment, "id", id)
-                    .Build();
-                return await _menuItemService.DeleteAsync<DeleteResponseType>(query, variables);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            (GraphQLQueryFragment fragment, string query) = _deleteQuery.Value;
+            dynamic variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
+            return await _menuItemService.DeleteAsync<DeleteResponseType>(query, variables);
         }
 
         #endregion
@@ -628,7 +638,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(ReorderAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(ReorderAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -718,6 +728,19 @@ namespace NetErp.Global.MenuItem.ViewModels
             await LoadAllItemsAsync();
             SelectedMenuItem = null;
             _notificationService.ShowSuccess(message.DeletedMenuItem.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(HasReorderPermission));
+            NotifyOfPropertyChange(nameof(CanCreateMenuItem));
+            NotifyOfPropertyChange(nameof(CanEditMenuItem));
+            NotifyOfPropertyChange(nameof(CanDeleteMenuItem));
+            NotifyOfPropertyChange(nameof(CanReorder));
+            return Task.CompletedTask;
         }
 
         #endregion

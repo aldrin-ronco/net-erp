@@ -164,7 +164,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
