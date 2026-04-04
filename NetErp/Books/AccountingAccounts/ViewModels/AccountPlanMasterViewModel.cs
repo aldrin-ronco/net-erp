@@ -1,464 +1,623 @@
-using Common.Extensions;
+using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
-using DevExpress.Mvvm.DataAnnotations;
-using GraphQL.Client.Http;
+using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
+using NetErp.Books.AccountingAccounts.DTO;
+using NetErp.Helpers;
+using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using Extensions.Books;
-using DevExpress.Xpf.Core;
-using System.Dynamic;
-using System.Threading;
-using Caliburn.Micro;
-using NetErp.Books.AccountingAccounts.DTO;
-using Common.Helpers;
-using Common.Validators;
-using Models.Billing;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using static Models.Global.GraphQLResponseTypes;
-using NetErp.Helpers;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
-    public class AccountPlanMasterViewModel : ViewModelBase
+    public class AccountPlanMasterViewModel : Screen,
+        IHandle<AccountingAccountCreateListMessage>,
+        IHandle<AccountingAccountUpdateMessage>,
+        IHandle<AccountingAccountDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
+        #region Dependencies
 
-        #region "Propiedades"
-
-        public List<AccountingAccountGraphQLModel> accounts = [];
-
-        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
+        private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
-        private ObservableCollection<AccountingAccountDTO> _accountingAccounts = [];
+        #endregion
+
+        #region Constructor
+
+        public AccountPlanMasterViewModel(
+            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
+            Helpers.Services.INotificationService notificationService,
+            Helpers.IDialogService dialogService,
+            IEventAggregator eventAggregator,
+            StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
+            JoinableTaskFactory joinableTaskFactory)
+        {
+            _accountingAccountService = accountingAccountService;
+            _notificationService = notificationService;
+            _dialogService = dialogService;
+            _eventAggregator = eventAggregator;
+            _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
+            _joinableTaskFactory = joinableTaskFactory;
+            _eventAggregator.SubscribeOnPublishedThread(this);
+        }
+
+        #endregion
+
+        #region Properties
+
+        public List<AccountingAccountGraphQLModel> Accounts { get; set; } = [];
+
         public ObservableCollection<AccountingAccountDTO> AccountingAccounts
         {
-            get { return _accountingAccounts; }
+            get;
             set
             {
-                SetValue(ref _accountingAccounts, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(AccountingAccounts));
+                }
             }
-        }
+        } = [];
 
-        private AccountingAccountDTO? _selectedItem = null;
         public AccountingAccountDTO? SelectedItem
         {
-            get { return _selectedItem; }
+            get;
             set
             {
-                SetValue(ref _selectedItem, value);
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedItem));
+                    NotifyOfPropertyChange(nameof(CanEditAccount));
+                    NotifyOfPropertyChange(nameof(CanDeleteAccount));
+                }
             }
         }
 
-        // Is Busy
-        private bool _isBusy = false;
         public bool IsBusy
         {
-            get { return _isBusy; }
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    SetValue(ref _isBusy, value);
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
         #endregion
 
-        #region "Constructores"
-        public AccountPlanMasterViewModel(Helpers.Services.INotificationService notificationService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
-            Helpers.IDialogService dialogService)
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Delete);
+
+        public bool CanCreateAccount => HasCreatePermission;
+        public bool CanEditAccount => HasEditPermission && SelectedItem != null;
+        public bool CanDeleteAccount => HasDeletePermission && SelectedItem != null;
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _createCommand;
+        public ICommand CreateCommand
         {
+            get
+            {
+                _createCommand ??= new AsyncCommand(CreateAsync);
+                return _createCommand;
+            }
+        }
+
+        private ICommand? _editCommand;
+        public ICommand EditCommand
+        {
+            get
+            {
+                _editCommand ??= new AsyncCommand(EditAsync);
+                return _editCommand;
+            }
+        }
+
+        private ICommand? _deleteCommand;
+        public ICommand DeleteCommand
+        {
+            get
+            {
+                _deleteCommand ??= new AsyncCommand(DeleteAsync);
+                return _deleteCommand;
+            }
+        }
+
+        private ICommand? _reportCommand;
+        public ICommand ReportCommand
+        {
+            get
+            {
+                _reportCommand ??= new AsyncCommand(ReportAsync);
+                return _reportCommand;
+            }
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override async void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
             try
             {
-                Messenger.Default.Register<AccountingAccountCreateListMessage>(this, OnAccountingAccountCreateListMessage);
-                Messenger.Default.Register<AccountingAccountUpdateMessage>(this, OnAccountingAccountUpdateMessage);
-                Messenger.Default.Register<AccountingAccountDeleteMessage>(this, OnAccountingAccountDeleteMessage);
-                this._accountingAccountService = accountingAccountService;
-                this._notificationService = notificationService;
-                this._dialogService = dialogService;
+                IsBusy = true;
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateAccount));
+                NotifyOfPropertyChange(nameof(CanEditAccount));
+                NotifyOfPropertyChange(nameof(CanDeleteAccount));
+
+                await LoadAccountsAsync();
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "AccountPlanMasterViewModel" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                _eventAggregator.Unsubscribe(this);
+                AccountingAccounts.Clear();
+                Accounts.Clear();
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
         #endregion
 
-        #region "Methods"
+        #region Data Loading
 
-        /// <summary>
-        /// Carga los hijos de una cuenta contable
-        /// </summary>
-        /// <param name="parent">Code del padre para carga de hijos</param>
-        /// <param name="accounts">Instancia de List<BooksAccountingAccountModel> con las cuentas del PUC</param>
+        private async Task LoadAccountsAsync()
+        {
+            (GraphQLQueryFragment fragment, string query) = _loadQuery.Value;
+
+            dynamic variables = new GraphQLVariables()
+                .For(fragment, "pagination", new { PageSize = -1 })
+                .Build();
+
+            PageType<AccountingAccountGraphQLModel> result = await _accountingAccountService.GetPageAsync(query, variables);
+            Accounts = [.. result.Entries];
+            AccountingAccounts = PopulateAccountingAccountDTO(Accounts);
+        }
+
+        #endregion
+
+        #region Tree Operations
+
         public void LoadChildren(AccountingAccountDTO parent, List<AccountingAccountGraphQLModel> accounts)
         {
-            try
+            string parentCode = parent.Code.Trim();
+            if (!parent.Childrens[0].IsDummyChild) return;
+
+            int nLevel = parent.Code.Trim().Length switch
             {
-                string parentCode = parent.Code.Trim();
-                if (parent.Childrens[0].IsDummyChild)
+                1 => 2,
+                2 => 4,
+                4 => 6,
+                _ => 8,
+            };
+
+            parent.Childrens.RemoveAt(0);
+
+            IEnumerable<AccountingAccountGraphQLModel> sorted = accounts
+                .Where(a => a.Code.Trim().Length == nLevel && a.Code.Trim().StartsWith(parentCode.Trim()))
+                .OrderBy(a => a.Code);
+
+            foreach (AccountingAccountGraphQLModel account in sorted)
+            {
+                AccountingAccountDTO child = new()
                 {
-                    // Calcular la longitud del código de los hijos en función de la longitud del código del padre
-                    int nLevel = 0;
-                    nLevel = parent.Code.Trim().Length switch
-                    {
-                        1 => 2,
-                        2 => 4,
-                        4 => 6,
-                        _ => 8,
-                    };
-
-                    // Remove DummyChild
-                    App.Current.Dispatcher.Invoke((System.Action)delegate
-                    {
-                        parent.Childrens.Remove(parent.Childrens[0]);
-                    });
-
-                    // Obtenemos todos los hijos del padre en cuestion
-                    var sorted = from account
-                                 in accounts
-                                 where account.Code.Trim().Length == nLevel && account.Code.Trim().Substring(0, parentCode.Trim().Length) == parentCode.Trim()
-                                 orderby account.Code ascending
-                                 select account;
-
-                    foreach (AccountingAccountGraphQLModel account in sorted)
-                    {
-                        AccountingAccountDTO _account = new()
-                        {
-                            Id = account.Id,
-                            Code = account.Code.Trim(),
-                            Name = account.Name.Trim(),
-                            Context = this,
-                            Childrens = parent.Code.Trim().Length == 6 ? [] : [ new AccountingAccountDTO() { IsDummyChild = true, Childrens = [], Code = "000", Name = "Fucking Dummy" }]
-                        };
-
-                        App.Current.Dispatcher.Invoke((System.Action)delegate
-                        {
-                            parent.Childrens.Add(_account);
-                        });
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-
-                throw new AsyncException(innerException: ex);
+                    Id = account.Id,
+                    Code = account.Code.Trim(),
+                    Name = account.Name.Trim(),
+                    Context = this,
+                    Childrens = parent.Code.Trim().Length == 6
+                        ? []
+                        : [new AccountingAccountDTO { IsDummyChild = true, Code = "000", Name = "DummyChild" }]
+                };
+                parent.Childrens.Add(child);
             }
         }
 
-        /// <summary>
-        /// Busca una cuenta contable en el arbol
-        /// </summary>
-        /// <param name="content"></param>
         public void SearchAccount(string content)
         {
+            IEnumerable<AccountingAccountDTO>? lv1 = null;
+            IEnumerable<AccountingAccountDTO>? lv2 = null;
+            IEnumerable<AccountingAccountDTO>? lv3 = null;
+            IEnumerable<AccountingAccountDTO>? lv4 = null;
+            IEnumerable<AccountingAccountDTO>? lv5 = null;
+            string lv1Code = content.Trim().Length >= 1 ? content[..1] : "";
+            string lv2Code = content.Trim().Length >= 2 ? content[..2] : "";
+            string lv3Code = content.Trim().Length >= 4 ? content[..4] : "";
+            string lv4Code = content.Trim().Length >= 6 ? content[..6] : "";
+            string lv5Code = content.Trim().Length >= 8 ? content : "";
 
-            try
+            lv1 = AccountingAccounts.Where(a => a.Code.Trim() == lv1Code);
+            if (!lv1.Any()) return;
+
+            if (!string.IsNullOrEmpty(lv2Code))
             {
-                IEnumerable<AccountingAccountDTO>? lv_1 = null;
-                IEnumerable<AccountingAccountDTO>? lv_2 = null;
-                IEnumerable<AccountingAccountDTO>? lv_3 = null;
-                IEnumerable<AccountingAccountDTO>? lv_4 = null;
-                IEnumerable<AccountingAccountDTO>? lv_5 = null;
-                string lv1 = content.Trim().Length >= 1 ? content.Substring(0, 1) : "";
-                string lv2 = content.Trim().Length >= 2 ? content.Substring(0, 2) : "";
-                string lv3 = content.Trim().Length >= 4 ? content.Substring(0, 4) : "";
-                string lv4 = content.Trim().Length >= 6 ? content.Substring(0, 6) : "";
-                string lv5 = content.Trim().Length >= 8 ? content : "";
-
-                // Leve1
-                lv_1 = from account
-                in _accountingAccounts
-                       where account.Code.Trim() == lv1
-                       select account;
-
-                if (lv_1 == null)
-                {
-                    return;
-                }
-
-                // Level2
-                if (!string.IsNullOrEmpty(lv2))
-                {
-                    if (lv_1.First().Childrens[0].IsDummyChild)
-                    {
-                        LoadChildren(lv_1.First(), accounts);
-                    }
-                    lv_1.First().IsExpanded = true;
-                    lv_2 = from account
-                            in lv_1.First().Childrens
-                           where account.Code.Trim() == lv2
-                           select account;
-                }
-                else
-                {
-                    lv_1.First().IsSelected = true;
-                    SelectedItem = lv_1.First();
-                    return;
-                }
-
-                // Level3
-                if (!string.IsNullOrEmpty(lv3))
-                {
-                    if (lv_2.First().Childrens[0].IsDummyChild)
-                    {
-                        LoadChildren(lv_2.First(), accounts);
-                    }
-                    lv_2.First().IsExpanded = true;
-                    lv_3 = from account
-                            in lv_2.First().Childrens
-                           where account.Code.Trim() == lv3
-                           select account;
-                }
-                else
-                {
-                    lv_2.First().IsSelected = true;
-                    SelectedItem = lv_2.First();
-                    return;
-                }
-
-                // Level4
-                if (!string.IsNullOrEmpty(lv4))
-                {
-                    if (lv_3.First().Childrens[0].IsDummyChild)
-                    {
-                        LoadChildren(lv_3.First(), accounts);
-                    }
-                    lv_3.First().IsExpanded = true;
-                    lv_4 = from account
-                           in lv_3.First().Childrens
-                           where account.Code.Trim() == lv4
-                           select account;
-                }
-                else
-                {
-                    lv_3.First().IsSelected = true;
-                    SelectedItem = lv_3.First();
-                    return;
-                }
-
-                if (!string.IsNullOrEmpty(lv5))
-                {
-                    if (lv_4.First().Childrens[0].IsDummyChild)
-                    {
-                        LoadChildren(lv_4.First(), accounts);
-                    }
-                    lv_4.First().IsExpanded = true;
-                    lv_5 = from account
-                           in lv_4.First().Childrens
-                           where account.Code.Trim() == lv5
-                           select account;
-                }
-                else
-                {
-                    lv_4.First().IsSelected = true;
-                    SelectedItem = lv_4.First();
-                    return;
-                }
-
-                if (lv_5 != null)
-                {
-                    lv_5.First().IsSelected = true;
-                    SelectedItem = lv_5.First();
-                }
+                if (lv1.First().Childrens[0].IsDummyChild) LoadChildren(lv1.First(), Accounts);
+                lv1.First().IsExpanded = true;
+                lv2 = lv1.First().Childrens.Where(a => a.Code.Trim() == lv2Code);
             }
-            catch (AsyncException)
+            else
             {
-                throw;
+                lv1.First().IsSelected = true;
+                SelectedItem = lv1.First();
+                return;
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrEmpty(lv3Code))
             {
-                throw new AsyncException(innerException: ex);
+                if (lv2.First().Childrens[0].IsDummyChild) LoadChildren(lv2.First(), Accounts);
+                lv2.First().IsExpanded = true;
+                lv3 = lv2.First().Childrens.Where(a => a.Code.Trim() == lv3Code);
+            }
+            else
+            {
+                lv2.First().IsSelected = true;
+                SelectedItem = lv2.First();
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(lv4Code))
+            {
+                if (lv3.First().Childrens[0].IsDummyChild) LoadChildren(lv3.First(), Accounts);
+                lv3.First().IsExpanded = true;
+                lv4 = lv3.First().Childrens.Where(a => a.Code.Trim() == lv4Code);
+            }
+            else
+            {
+                lv3.First().IsSelected = true;
+                SelectedItem = lv3.First();
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(lv5Code))
+            {
+                if (lv4.First().Childrens[0].IsDummyChild) LoadChildren(lv4.First(), Accounts);
+                lv4.First().IsExpanded = true;
+                lv5 = lv4.First().Childrens.Where(a => a.Code.Trim() == lv5Code);
+            }
+            else
+            {
+                lv4.First().IsSelected = true;
+                SelectedItem = lv4.First();
+                return;
+            }
+
+            if (lv5 != null && lv5.Any())
+            {
+                lv5.First().IsSelected = true;
+                SelectedItem = lv5.First();
             }
         }
+
         public ObservableCollection<AccountingAccountDTO> PopulateAccountingAccountDTO(List<AccountingAccountGraphQLModel> accounts)
         {
-            Dictionary<String, AccountingAccountDTO> parents = new Dictionary<string, AccountingAccountDTO>();
             ObservableCollection<AccountingAccountDTO> accountsDTO = [];
-            // Ordenamos la lista en funcion a la longitud del codigo
-            // var sorted = from item in accounts orderby item.Code.Trim().Length ascending select item;
-            try
-            {
-                var sorted = from item
-                     in accounts
-                             where item.Code.Trim().Length == 1
-                             orderby item.Code ascending
-                             select item;
 
-                foreach (AccountingAccountGraphQLModel account in sorted)
+            IEnumerable<AccountingAccountGraphQLModel> sorted = accounts
+                .Where(a => a.Code.Trim().Length == 1)
+                .OrderBy(a => a.Code);
+
+            foreach (AccountingAccountGraphQLModel account in sorted)
+            {
+                AccountingAccountDTO dto = new()
                 {
-                    string parent_code = string.Empty;
-                    parent_code = account.Code.Trim().Length switch
-                    {
-                        1 => account.Code.Trim(),
-                        2 => account.Code.Trim().Substring(0, 1),
-                        4 => account.Code.Trim().Substring(0, 2),
-                        6 => account.Code.Trim().Substring(0, 4),
-                        _ => account.Code.Trim().Substring(0, 6) // Default
-                    };
-
-                    if (!parents.ContainsKey(parent_code))
-                    {
-                        AccountingAccountDTO _account = new()
-                        {
-                            Id = account.Id,
-                            Code = account.Code.Trim(),
-                            Name = account.Name.Trim(),
-                            Context = this,
-                            Childrens = [new AccountingAccountDTO() { IsDummyChild = true, Childrens = [], Code = "000", Name = "Fucking Dummy" }]
-                        };
-                        accountsDTO.Add(_account);
-                        parents.Add(parent_code, _account);
-                    }
-
-                }
+                    Id = account.Id,
+                    Code = account.Code.Trim(),
+                    Name = account.Name.Trim(),
+                    Context = this,
+                    Childrens = [new AccountingAccountDTO { IsDummyChild = true, Code = "000", Name = "DummyChild" }]
+                };
+                accountsDTO.Add(dto);
             }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "PopulateAccountingAccountDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
+
             return accountsDTO;
         }
 
-        public async Task DeleteAccountFromAccountsDTOAsync(string code)
+        private void DeleteAccountFromTree(string code)
+        {
+            AccountingAccountDTO? lv1 = code.Length >= 1 ? AccountingAccounts.FirstOrDefault(x => x.Code == code[..1]) : null;
+            AccountingAccountDTO? lv2 = code.Length >= 2 && lv1 != null ? lv1.Childrens.FirstOrDefault(x => x.Code == code[..2]) : null;
+            AccountingAccountDTO? lv3 = code.Length >= 4 && lv2 != null ? lv2.Childrens.FirstOrDefault(x => x.Code == code[..4]) : null;
+            AccountingAccountDTO? lv4 = code.Length >= 6 && lv3 != null ? lv3.Childrens.FirstOrDefault(x => x.Code == code[..6]) : null;
+            AccountingAccountDTO? lv5 = code.Length >= 8 && lv4 != null ? lv4.Childrens.FirstOrDefault(x => x.Code == code[..8]) : null;
+
+            if (code.Length == 1 && lv1 != null) AccountingAccounts.Remove(lv1);
+            else if (code.Length == 2 && lv1 != null && lv2 != null) lv1.Childrens.Remove(lv2);
+            else if (code.Length == 4 && lv2 != null && lv3 != null) lv2.Childrens.Remove(lv3);
+            else if (code.Length == 6 && lv3 != null && lv4 != null) lv3.Childrens.Remove(lv4);
+            else if (code.Length >= 8 && lv4 != null && lv5 != null) lv4.Childrens.Remove(lv5);
+        }
+
+        private void RemoveAccountInMemory(int id)
+        {
+            AccountingAccountGraphQLModel? account = Accounts.FirstOrDefault(x => x.Id == id);
+            if (account != null) Accounts.Remove(account);
+        }
+
+        #endregion
+
+        #region CRUD Operations
+
+        public async Task CreateAsync()
         {
             try
             {
-                AccountingAccountDTO? Lv1 = null;
-                AccountingAccountDTO? Lv2 = null;
-                AccountingAccountDTO? Lv3 = null;
-                AccountingAccountDTO? Lv4 = null;
-                AccountingAccountDTO? Lv5 = null;
+                IsBusy = true;
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _joinableTaskFactory, Accounts);
+                IsBusy = false;
 
-                if (code.Length >= 1)
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
                 {
-                    Lv1 = this.AccountingAccounts.Where(x => x.Code == code.Substring(0, 1)).FirstOrDefault();
-                };
-                if (code.Length >= 2)
-                {
-                    if (Lv1 == null) throw new Exception("LV1 no puede ser null");
-                    Lv2 = Lv1.Childrens.Where(x => x.Code == code.Substring(0, 2)).FirstOrDefault();
-                };
-                if (code.Length >= 4)
-                {
-                    if (Lv2 == null) throw new Exception("LV2 no puede ser null");
-                    Lv3 = Lv2.Childrens.Where(x => x.Code == code.Substring(0, 4)).FirstOrDefault();
-                };
-                if (code.Length >= 6)
-                {
-                    if (Lv3 == null) throw new Exception("LV3 no puede ser null");
-                    Lv4 = Lv3.Childrens.Where(x => x.Code == code.Substring(0, 6)).FirstOrDefault();
-                };
-                if (code.Length >= 8)
-                {
-                    if (Lv4 == null) throw new Exception("LV4 no puede ser null");
-                    Lv5 = Lv4.Childrens.Where(x => x.Code == code.Substring(0, 8)).FirstOrDefault();
-                    if (Lv5 == null) throw new Exception("LV5 no puede ser null");
-                };
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+                    detail.DialogHeight = parentView.ActualHeight * 0.70;
+                }
 
-                if (code.Length == 1)
-                {
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.AccountingAccounts.Remove(Lv1);
-                    });
-                }
-                else
-                {
-                    if (code.Length == 2)
-                    {
-                        App.Current.Dispatcher.Invoke(() =>
-                        {
-                            Lv1.Childrens.Remove(Lv2);
-                        });
-                    }
-                    else
-                    {
-                        if (code.Length == 4)
-                        {
-                            App.Current.Dispatcher.Invoke(() =>
-                            {
-                                Lv2.Childrens.Remove(Lv3);
-                            });
-                        }
-                        else
-                        {
-                            if (code.Length == 6)
-                            {
-                                App.Current.Dispatcher.Invoke(() =>
-                                {
-                                    Lv3.Childrens.Remove(Lv4);
-                                });
-                            }
-                            else
-                            {
-                                App.Current.Dispatcher.Invoke(() =>
-                                {
-                                    Lv4.Childrens.Remove(Lv5);
-                                });
-                            }
-                        }
-                    }
-                }
+                await _dialogService.ShowDialogAsync(detail, "Nueva cuenta contable");
             }
             catch (Exception ex)
             {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "DeleteAccountFromAccountsDTO" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private static readonly Lazy<string> _deleteAccountingAccountQuery = new(() =>
+        public async Task EditAsync()
         {
-            var fields = FieldSpec<DeleteResponseType>
-            .Create()
-            .Field(f => f.DeletedId)
-            .Field(f => f.Message)
-            .Field(f => f.Success)
-            .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-
-            var fragment = new GraphQLQueryFragment("deleteAccountingAccount", [parameter], fields, alias: "DeleteResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        });
-        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
-        {
+            if (SelectedItem == null) return;
             try
             {
-                string query = _deleteAccountingAccountQuery.Value;
+                IsBusy = true;
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _joinableTaskFactory, Accounts, selectedItemId: SelectedItem.Id);
+                detail.Code = SelectedItem.Code;
+                IsBusy = false;
 
-                object variables = new
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
                 {
-                    deleteResponseId = (int)id
-                };
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+                    detail.DialogHeight = parentView.ActualHeight * 0.70;
+                }
 
-                DeleteResponseType deleteResponse = await _accountingAccountService.DeleteAsync<DeleteResponseType>(query, variables);
-
-                return deleteResponse;
+                await _dialogService.ShowDialogAsync(detail, "Modificar cuenta contable");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(EditAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        private static readonly Lazy<string> _initializeQuery = new(() =>
+        public async Task DeleteAsync()
+        {
+            if (SelectedItem == null) return;
+            try
+            {
+                IsBusy = true;
+
+                (GraphQLQueryFragment canDeleteFragment, string canDeleteQuery) = _canDeleteQuery.Value;
+                dynamic canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedItem.Id)
+                    .Build();
+                CanDeleteType validation = await _accountingAccountService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+
+                if (validation.CanDelete)
+                {
+                    IsBusy = false;
+                    if (ThemedMessageBox.Show("Atención!",
+                        "¿Confirma que desea eliminar la cuenta contable?",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                }
+                else
+                {
+                    IsBusy = false;
+                    ThemedMessageBox.Show("Atención!",
+                        $"Esta cuenta contable no puede ser eliminada\r\n\r\n{validation.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                IsBusy = true;
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteQuery.Value;
+                dynamic deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedItem.Id)
+                    .Build();
+                DeleteResponseType deleteResponse = await _accountingAccountService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
+
+                if (!deleteResponse.Success)
+                {
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No fue posible eliminar la cuenta contable\r\n\r\n{deleteResponse.Message}",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Error);
+                    return;
+                }
+
+                RemoveAccountInMemory(SelectedItem.Id);
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new AccountingAccountDeleteMessage
+                    {
+                        DeletedAccountingAccount = new() { Id = SelectedItem.Id, Code = SelectedItem.Code },
+                        DeletedResponseType = deleteResponse
+                    },
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task ReportAsync()
+        {
+            if (!DirectoryHelper.Exists(ApplicationPaths.Reports.Books))
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Información",
+                    text: $"No fue posible encontrar la ruta {DirectoryHelper.GetFullPath(ApplicationPaths.Reports.Books)}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                (GraphQLQueryFragment fragment, string query) = _reportQuery.Value;
+                dynamic variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .Build();
+
+                PageType<AccountingAccountGraphQLModel> result = await _accountingAccountService.GetPageAsync(query, variables);
+
+                Stimulsoft.Report.StiReport report = new();
+                report.Load(ApplicationPaths.Reports.Templates.AccountingAccountReport);
+
+                var company = new { Name = SessionInfo.CurrentCompany!.CompanyEntity.SearchName };
+
+                await report.RegBusinessObjectAsync("Company", "Company", "Company", company);
+                await report.RegBusinessObjectAsync("AccountingAccounts", "AccountingAccounts", "AccountingAccounts", result.Entries);
+                report.ShowWithWpf();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(ReportAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        public async Task HandleAsync(AccountingAccountCreateListMessage message, CancellationToken cancellationToken)
+        {
+            if (Accounts.Count == 0) return;
+            Accounts.AddRange(message.UpsertList.Entity);
+            AccountingAccounts = PopulateAccountingAccountDTO(Accounts);
+            SearchAccount(message.UpsertList.Entity[^1].Code);
+            _notificationService.ShowSuccess(message.UpsertList.Message);
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(AccountingAccountUpdateMessage message, CancellationToken cancellationToken)
+        {
+            if (Accounts.Count == 0) return;
+            AccountingAccountGraphQLModel? existing = Accounts.FirstOrDefault(a => a.Id == message.UpsertAccount.Entity.Id);
+            if (existing != null)
+            {
+                int index = Accounts.IndexOf(existing);
+                Accounts[index] = message.UpsertAccount.Entity;
+            }
+            AccountingAccounts = PopulateAccountingAccountDTO(Accounts);
+            SearchAccount(message.UpsertAccount.Entity.Code);
+            _notificationService.ShowSuccess(message.UpsertAccount.Message);
+            await Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(AccountingAccountDeleteMessage message, CancellationToken cancellationToken)
+        {
+            DeleteAccountFromTree(message.DeletedAccountingAccount.Code);
+            _notificationService.ShowSuccess(message.DeletedResponseType.Message);
+            await Task.CompletedTask;
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateAccount));
+            NotifyOfPropertyChange(nameof(CanEditAccount));
+            NotifyOfPropertyChange(nameof(CanDeleteAccount));
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
             var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
                 .Create()
@@ -475,16 +634,13 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                         .Field(f => f.Id)))
                 .Build();
 
-            var parameters = new GraphQLQueryParameter("pagination", "Pagination");
-
-            var fragment = new GraphQLQueryFragment("accountingAccountsPage", [parameters], fields, "PageResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
+            var fragment = new GraphQLQueryFragment("accountingAccountsPage",
+                [new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        private static readonly Lazy<string> _canDeleteAccountingAccountQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteQuery = new(() =>
         {
             var fields = FieldSpec<CanDeleteType>
                 .Create()
@@ -492,124 +648,26 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-
-            var fragment = new GraphQLQueryFragment("canDeleteAccountingAccount", [parameter], fields, alias: "CanDeleteResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery();
+            var fragment = new GraphQLQueryFragment("canDeleteAccountingAccount",
+                [new("id", "ID!")],
+                fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        #endregion
-
-        #region "Commands"
-
-        [Command]
-        public async void Initialize()
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteQuery = new(() =>
         {
-            if (AccountingAccounts.Count > 0) return; // Execute initialize just once
-            try
-            {
-                this.IsBusy = true;
-                string query = _initializeQuery.Value;
-;
-                // Loading Data
+            var fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
 
-                dynamic variables = new ExpandoObject();
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.pageSize = -1;
-                PageType<AccountingAccountGraphQLModel> result = await this._accountingAccountService.GetPageAsync(query, variables);
-                accounts = [.. result.Entries];
-                this.AccountingAccounts = PopulateAccountingAccountDTO(accounts);
-
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                if (graphQLError != null && currentMethod != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod.Name.Between("<", ">"))} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Initialize" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                this.IsBusy = false;
-            }
-        }
-
-        public bool CanInitialize()
-        {
-            return true;
-        }
-
-        [Command]
-        public async Task CreateAsync(object parameter)
-        {
-            var detail = new AccountPlanDetailViewModel(_accountingAccountService, accounts);
-            await _dialogService.ShowDialogAsync(detail, "Nueva cuenta contable");
-        }
-
-        public bool CanCreate(object parameter)
-        {
-            return true;
-        }
-
-        [Command]
-        public async Task ReportAsync(object parameter)
-        {
-            // Verificar si las carpetas existen en la ruta de instalación
-            if (!DirectoryHelper.Exists(ApplicationPaths.Reports.Books))
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show(title: "Información", text: $"No fue posible encontrar la ruta {DirectoryHelper.GetFullPath(ApplicationPaths.Reports.Books)}",
-                    messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information));
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                var (fragment, query) = _reportQuery.Value;
-                var variables = new GraphQLVariables()
-                    .For(fragment, "pagination", new { PageSize = -1 })
-                    .Build();
-
-                PageType<AccountingAccountGraphQLModel> result = await _accountingAccountService.GetPageAsync(query, variables);
-
-                var report = new Stimulsoft.Report.StiReport();
-                report.Load(ApplicationPaths.Reports.Templates.AccountingAccountReport);
-
-                var company = new
-                {
-                    Name = SessionInfo.CurrentCompany!.CompanyEntity.SearchName
-                };
-
-                await report.RegBusinessObjectAsync("Company", "Company", "Company", company);
-                await report.RegBusinessObjectAsync("AccountingAccounts", "AccountingAccounts", "AccountingAccounts", result.Entries);
-                report.ShowWithWpf();
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(ReportAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+            var fragment = new GraphQLQueryFragment("deleteAccountingAccount",
+                [new("id", "ID!")],
+                fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _reportQuery = new(() =>
         {
@@ -621,215 +679,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     .Field(f => f.Nature))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("accountingAccountsPage", [parameter], fields, "PageResponse");
-            var query = new GraphQLQueryBuilder([fragment]).GetQuery();
-
-            return (fragment, query);
+            var fragment = new GraphQLQueryFragment("accountingAccountsPage",
+                [new("pagination", "Pagination")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
 
-        [Command]
-        public async Task EditAsync(object code)
-        {
-            if (SelectedItem == null) return;
-            var detail = new AccountPlanDetailViewModel(
-                _accountingAccountService,
-                accounts,
-                selectedItemId: SelectedItem.Id);
-            detail.Code = (string)code;
-            await _dialogService.ShowDialogAsync(detail, "Modificar cuenta contable");
-        }
-
-        public bool CanEdit(object code)
-        {
-            return true;
-        }
-
-        [Command]
-        public async Task DeleteAsync(AccountingAccountDTO account)
-        {
-            try
-            {
-
-                this.IsBusy = true;
-                string query = _canDeleteAccountingAccountQuery.Value;
-
-                object variables = new { canDeleteResponseId = account.Id };
-
-                var validation = await this._accountingAccountService.CanDeleteAsync(query, variables);
-
-                this.IsBusy = false;
-
-                if (validation.CanDelete)
-                {
-                    MessageBoxResult result = ThemedMessageBox.Show(title: "Atención!", text: "¿Confirma que desea eliminar la cuenta contable?", messageBoxButtons: MessageBoxButton.YesNo, image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "Esta cuenta contable no puede ser eliminada" +
-                        (char)13 + (char)13 + validation.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-
-                this.IsBusy = true;
-                DeleteResponseType deleteResponse = await Task.Run(() => this.ExecuteDeleteAsync(account.Id));
-                RemoveAccountInMemory(accounts, account.Id);
-                if (deleteResponse.Success is false)
-                {
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: "No fue posible eliminar la cuenta contable" +
-                        (char)13 + (char)13 + deleteResponse.Message, messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                    return;
-                }
-                Messenger.Default.Send(new AccountingAccountDeleteMessage() { DeletedAccountingAccount = new()
-                {
-                    Id = account.Id,
-                    Code = account.Code
-                }, DeletedResponseType = deleteResponse});
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Extensions.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Delete" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                this.IsBusy = false;
-            }
-        }
-        public bool CanDelete(object id)
-        {
-            return true;
-        }
-
-        #endregion
-
-        #region "Messages"
-        /// <summary>
-        /// Recibe el resultado de la creacion de una cuenta contable, teniendo en cuenta que la creacion de un auxiliar implica la creacion de sus padres
-        /// </summary>
-        /// <param name="message">Instancia de List<BooksAccountingAccountModel> con la lista de cuentas creadas, auxiliar y padres</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        ///
-
-        void OnAccountingAccountCreateListMessage(AccountingAccountCreateListMessage message)
-        {
-            try
-            {
-                IsBusy = true;
-                if (this.accounts.Count == 0) { return; }
-                _ = Task.Run(() => accounts.AddRange(message.UpsertList.Entity))
-                  .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => AccountingAccounts = PopulateAccountingAccountDTO(accounts)))
-                  .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SearchAccount(message.UpsertList.Entity[message.UpsertList.Entity.Count - 1].Code)));
-                _notificationService.ShowSuccess(message.UpsertList.Message);
-            }
-            catch (AsyncException ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        /// <summary>
-        /// Recibe el resultado de la actualizacion de una cuenta contable existente
-        /// </summary>
-        /// <param name="message">Instancia de BooksAccountingAccountModel con los datos de la cuenta actualizados</param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        ///
-
-        void OnAccountingAccountUpdateMessage(AccountingAccountUpdateMessage message)
-        {
-            try
-            {
-                IsBusy = true;
-                if (this.accounts.Count == 0) { return; }
-                _ = Task.Run(() => accounts.Replace(message.UpsertAccount.Entity))
-                    .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => AccountingAccounts = PopulateAccountingAccountDTO(accounts)))
-                    .ContinueWith(antecedent => App.Current.Dispatcher.Invoke(() => SearchAccount(message.UpsertAccount.Entity.Code)));
-
-                _notificationService.ShowSuccess(message.UpsertAccount.Message);
-            }
-            catch (AsyncException ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        async void OnAccountingAccountDeleteMessage(AccountingAccountDeleteMessage message)
-        {
-            try
-            {
-                IsBusy = true;
-                await DeleteAccountFromAccountsDTOAsync(message.DeletedAccountingAccount.Code);
-                _notificationService.ShowSuccess(message.DeletedResponseType.Message);
-            }
-            catch (AsyncException ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private void RemoveAccountInMemory(List<AccountingAccountGraphQLModel> accounts, int id)
-        {
-            try
-            {
-                AccountingAccountGraphQLModel? account = accounts.FirstOrDefault(x => x.Id == id);
-                if (account != null) accounts.Remove(account);
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "RemoveAccountInMemory" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-        }
         #endregion
     }
 }
