@@ -4,6 +4,7 @@
              xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:model="clr-namespace:NetErp.Books.AccountingAccounts.DTO"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
              xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core">
@@ -14,15 +15,40 @@
             <StackPanel Orientation="Horizontal" Margin="-1,0,0,0">
                 <StackPanel.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Nueva cuenta (Ctrl + N)" Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}">
+                        <MenuItem Header="Nueva cuenta (Ctrl + N)"
+                                  Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"
+                                  IsEnabled="{Binding Path=Data.HasCreatePermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                                <Image Width="16" Height="16">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Data.HasCreatePermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}">
+                        <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
+                                  IsEnabled="{Binding Path=Data.HasEditPermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                                <Image Width="16" Height="16">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Data.HasEditPermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -34,9 +60,21 @@
                             </MenuItem.Header>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}">
+                        <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
+                                  IsEnabled="{Binding Path=Data.HasDeletePermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                                <Image Width="16" Height="16">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Path=Data.HasDeletePermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -94,14 +132,69 @@
                             IsBusyAtStartup="False"
                             Background="Transparent">
 
-        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="5" Padding="10,10,10,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="8" Margin="5" Padding="10,0,10,0">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <dxg:TreeViewControl
+                <!-- Row 0: Search -->
+                <StackPanel Grid.Row="0" Width="420" HorizontalAlignment="Center" Margin="0,20,0,10">
+                    <TextBlock Text="¿Qué cuenta desea buscar?" FontSize="13" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                    <Grid>
+                    <dxe:TextEdit x:Name="SearchTextBox"
+                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  NullText="Buscar por código o nombre de cuenta..."
+                                  FontSize="13"
+                                  CharacterCasing="Upper"
+                                  BorderBrush="#ced4da"
+                                  Background="White"
+                                  Padding="30,6,12,6"
+                                  VerticalContentAlignment="Center"/>
+                    <TextBlock Text="&#x1F50D;"
+                               FontSize="14"
+                               Foreground="#6c757d"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="10,0,0,0"
+                               IsHitTestVisible="False"/>
+
+                    <!-- Search Results Popup -->
+                    <Popup IsOpen="{Binding ShowSearchResults}"
+                           Placement="Bottom"
+                           PlacementTarget="{Binding RelativeSource={RelativeSource AncestorType=Grid}}"
+                           StaysOpen="False"
+                           AllowsTransparency="True"
+                           Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}}">
+                        <Border Background="White" BorderBrush="#ced4da" BorderThickness="1"
+                                CornerRadius="0,0,6,6" MaxHeight="300">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                            </Border.Effect>
+                            <ListBox ItemsSource="{Binding SearchResults}"
+                                     SelectedItem="{Binding SelectedSearchResult, Mode=TwoWay}"
+                                     BorderThickness="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="6,4">
+                                            <TextBlock Text="{Binding Code}" FontWeight="SemiBold"
+                                                       Foreground="#2c3e50" Width="70"/>
+                                            <TextBlock Text="{Binding Name}" Foreground="#495057"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Popup>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Row 1: Tree -->
+                <dxg:TreeViewControl Grid.Row="1"
                     ItemsSource="{Binding Path=AccountingAccounts, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                     h:TreeViewExtension.SelectItemOnRightClick="True"
                     ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -112,8 +205,7 @@
                     ShowBorder="False" ShowSearchPanel="False" AllowEditing="False"
                     TreeDerivationMode="HierarchicalDataTemplate"
                     ExpandStateBinding="{Binding IsExpanded, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Grid.Row="0">
+                    SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:TreeViewControl.NodeStyle>
                         <Style TargetType="dxg:RowControl">
                             <Setter Property="Foreground" Value="Black"/>
@@ -130,7 +222,7 @@
                     </dxg:TreeViewControl.NodeStyle>
                 </dxg:TreeViewControl>
 
-                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                     <!-- Nuevo -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanCreateAccount}"
@@ -168,21 +260,38 @@
                     </Button>
                     <!-- Reporte -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanReport}"
                             Command="{Binding ReportCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Reports/Report_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Reports/Report_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Reporte" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.7"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasReportPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Reporte" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
                 </StackPanel>
             </Grid>

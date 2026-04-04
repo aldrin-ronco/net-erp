@@ -96,6 +96,92 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
+        #region Search
+
+        private readonly DebouncedAction _searchDebounce = new();
+
+        public string SearchText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SearchText));
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        SearchResults = [];
+                        ShowSearchResults = false;
+                    }
+                    else if (value.Length >= 2)
+                    {
+                        _ = _searchDebounce.RunAsync(() => { FilterSearchResults(); return Task.CompletedTask; });
+                    }
+                }
+            }
+        } = string.Empty;
+
+        public ObservableCollection<AccountingAccountGraphQLModel> SearchResults
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SearchResults));
+                }
+            }
+        } = [];
+
+        public AccountingAccountGraphQLModel? SelectedSearchResult
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedSearchResult));
+                    if (value != null)
+                    {
+                        SearchAccount(value.Code);
+                        SearchText = string.Empty;
+                        ShowSearchResults = false;
+                    }
+                }
+            }
+        }
+
+        public bool ShowSearchResults
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowSearchResults));
+                }
+            }
+        }
+
+        private void FilterSearchResults()
+        {
+            string search = SearchText.Trim().ToUpperInvariant();
+            List<AccountingAccountGraphQLModel> results = [.. Accounts
+                .Where(a => a.Code.Contains(search) ||
+                            a.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase))
+                .OrderBy(a => a.Code)
+                .Take(15)];
+
+            SearchResults = new ObservableCollection<AccountingAccountGraphQLModel>(results);
+            ShowSearchResults = results.Count > 0;
+        }
+
+        #endregion
+
         public bool IsBusy
         {
             get;
@@ -116,10 +202,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Create);
         public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Edit);
         public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Delete);
+        public bool HasReportPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingAccount.Report);
 
         public bool CanCreateAccount => HasCreatePermission;
         public bool CanEditAccount => HasEditPermission && SelectedItem != null;
         public bool CanDeleteAccount => HasDeletePermission && SelectedItem != null;
+        public bool CanReport => HasReportPermission;
 
         #endregion
 
@@ -179,9 +267,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 NotifyOfPropertyChange(nameof(HasCreatePermission));
                 NotifyOfPropertyChange(nameof(HasEditPermission));
                 NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(HasReportPermission));
                 NotifyOfPropertyChange(nameof(CanCreateAccount));
                 NotifyOfPropertyChange(nameof(CanEditAccount));
                 NotifyOfPropertyChange(nameof(CanDeleteAccount));
+                NotifyOfPropertyChange(nameof(CanReport));
 
                 await LoadAccountsAsync();
             }
@@ -402,7 +492,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
                 {
-                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+                    detail.DialogWidth = parentView.ActualWidth * 0.60;
                     detail.DialogHeight = parentView.ActualHeight * 0.70;
                 }
 
@@ -433,7 +523,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
                 {
-                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+                    detail.DialogWidth = parentView.ActualWidth * 0.60;
                     detail.DialogHeight = parentView.ActualHeight * 0.70;
                 }
 
@@ -607,9 +697,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             NotifyOfPropertyChange(nameof(HasCreatePermission));
             NotifyOfPropertyChange(nameof(HasEditPermission));
             NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(HasReportPermission));
             NotifyOfPropertyChange(nameof(CanCreateAccount));
             NotifyOfPropertyChange(nameof(CanEditAccount));
             NotifyOfPropertyChange(nameof(CanDeleteAccount));
+            NotifyOfPropertyChange(nameof(CanReport));
             return Task.CompletedTask;
         }
 

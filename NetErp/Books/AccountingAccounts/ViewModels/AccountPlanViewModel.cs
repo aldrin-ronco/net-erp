@@ -73,6 +73,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         #region Lifecycle
 
+#pragma warning disable CS0618, CS0672
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             try
@@ -92,6 +93,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
             await base.OnActivateAsync(cancellationToken);
         }
+#pragma warning restore CS0618, CS0672
 
         #endregion
     }
