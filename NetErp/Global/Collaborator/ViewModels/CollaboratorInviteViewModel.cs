@@ -274,19 +274,20 @@ namespace NetErp.Global.Collaborator.ViewModels
                 }
 
                 // 2. Create account reference in Main API
-                var (_, createQuery) = _createAccountQuery.Value;
-                dynamic createVariables = new ExpandoObject();
-                createVariables.createResponseInput = new
-                {
-                    id = SelectedAccount!.Id,
-                    email = SelectedAccount!.Email,
-                    firstName = SelectedAccount!.FirstName,
-                    middleName = SelectedAccount!.MiddleName,
-                    firstLastName = SelectedAccount!.FirstLastName,
-                    middleLastName = SelectedAccount!.MiddleLastName,
-                    profession = SelectedAccount!.Profession,
-                    photoUrl = SelectedAccount!.PhotoUrl
-                };
+                (GraphQLQueryFragment createFragment, string createQuery) = _createAccountQuery.Value;
+                dynamic createVariables = new GraphQLVariables()
+                    .For(createFragment, "input", new
+                    {
+                        id = SelectedAccount!.Id,
+                        email = SelectedAccount!.Email,
+                        firstName = SelectedAccount!.FirstName,
+                        middleName = SelectedAccount!.MiddleName,
+                        firstLastName = SelectedAccount!.FirstLastName,
+                        middleLastName = SelectedAccount!.MiddleLastName,
+                        profession = SelectedAccount!.Profession,
+                        photoUrl = SelectedAccount!.PhotoUrl
+                    })
+                    .Build();
                 await _accountService.CreateAsync<UpsertResponseType<AccountGraphQLModel>>(createQuery, createVariables);
 
                 await TryCloseAsync(true);

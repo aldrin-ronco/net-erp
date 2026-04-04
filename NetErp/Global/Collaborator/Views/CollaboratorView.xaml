@@ -13,27 +13,28 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
-    <busyIndicator:BusyMask x:Name="BusyIndicator"
-                            IsBusy="{Binding IsBusy}"
-                            IndicatorType="BouncingDot"
-                            BusyContent="Por favor espere..."
-                            BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False">
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="5">
+        <Grid>
 
-        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="5">
-            <Grid>
+            <!-- Empty State -->
+            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                               Title="No hay colaboradores registrados"
+                               Message="Invite un nuevo colaborador para comenzar"
+                               ContextInfo="Los colaboradores son usuarios que tienen acceso al sistema para gestionar la información de esta empresa."
+                               Command="{Binding InviteCollaboratorCommand}"
+                               ButtonText="Invitar"
+                               HasPermission="{Binding HasInvitePermission}"/>
 
-                <!-- Empty State -->
-                <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                   Title="No hay colaboradores registrados"
-                                   Message="Invite un nuevo colaborador para comenzar"
-                                   ContextInfo="Los colaboradores son usuarios que tienen acceso al sistema para gestionar la información de esta empresa."
-                                   Command="{Binding InviteCollaboratorCommand}"
-                                   ButtonText="Invitar"/>
-
-                <!-- Content -->
-                <Grid Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+            <!-- Content -->
+            <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                    Visibility="{Binding HasRecords, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                    IsBusy="{Binding IsBusy}"
+                                    IndicatorType="BouncingDot"
+                                    BusyContent="Por favor espere..."
+                                    BusyContentMargin="0,20,0,0"
+                                    IsBusyAtStartup="False">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -124,69 +125,117 @@
 
                         <!-- Invitar -->
                         <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                                IsEnabled="{Binding IsBusy, Converter={dxmvvm:BooleanNegationConverter}}"
+                                IsEnabled="{Binding CanInviteCollaborator}"
                                 Command="{Binding InviteCollaboratorCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Grid>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Invitar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                       Margin="0,0,-2,12">
                                     <Image.Style>
                                         <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.4"/>
-                                                </Trigger>
+                                                <DataTrigger Binding="{Binding HasInvitePermission}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Invitar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
+                            </Grid>
                         </Button>
 
                         <!-- Editar -->
                         <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                                 IsEnabled="{Binding CanEditCollaborator}"
                                 Command="{Binding EditCollaboratorCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Grid>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                       Margin="0,0,-2,12">
                                     <Image.Style>
                                         <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.4"/>
-                                                </Trigger>
+                                                <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
+                            </Grid>
                         </Button>
 
                         <!-- Eliminar -->
                         <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                                 IsEnabled="{Binding CanDeleteCollaborator}"
                                 Command="{Binding DeleteCollaboratorCommand}">
-                            <StackPanel HorizontalAlignment="Center">
-                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Grid>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                       Margin="0,0,-2,12">
                                     <Image.Style>
                                         <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.4"/>
-                                                </Trigger>
+                                                <DataTrigger Binding="{Binding HasDeletePermission}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Image.Style>
                                 </Image>
-                                <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
+                            </Grid>
                         </Button>
 
                     </StackPanel>
 
                 </Grid>
+            </busyIndicator:BusyMask>
 
-            </Grid>
-        </Border>
-    </busyIndicator:BusyMask>
+        </Grid>
+    </Border>
 </UserControl>

@@ -196,6 +196,22 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class Collaborator
+        {
+            private const string Prefix = "collaborator";
+
+            public const string Invite = $"{Prefix}.invite";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class CompanyPermissionDefault
+        {
+            private const string Prefix = "company_permission_default";
+
+            public const string Edit = $"{Prefix}.edit";
+        }
+
         public static class AccessProfile
         {
             private const string Prefix = "access_profile";
