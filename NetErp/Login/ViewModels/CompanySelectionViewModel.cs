@@ -341,7 +341,8 @@ namespace NetErp.Login.ViewModels
                     // Empresa ya existe en la API principal — usar el ID directamente
                     currentCompany = new CompanyGraphQLModel
                     {
-                        Id = loginCompany.TenantCompanyId.Value
+                        Id = loginCompany.TenantCompanyId.Value,
+                        CompanyEntity = new() { SearchName = loginCompany.SearchName }
                     };
                     needsSeeds = string.Equals(loginCompany.SeedStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
                 }

@@ -20,6 +20,8 @@ using Common.Validators;
 using Models.Billing;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
+using NetErp.Helpers;
+using System.IO;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
@@ -562,6 +564,69 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             return true;
         }
+
+        [Command]
+        public async Task ReportAsync(object parameter)
+        {
+            // Verificar si las carpetas existen en la ruta de instalación
+            if (!DirectoryHelper.Exists(ApplicationPaths.Reports.Books))
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                    ThemedMessageBox.Show(title: "Información", text: $"No fue posible encontrar la ruta {DirectoryHelper.GetFullPath(ApplicationPaths.Reports.Books)}",
+                    messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Information));
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                var (fragment, query) = _reportQuery.Value;
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .Build();
+
+                PageType<AccountingAccountGraphQLModel> result = await _accountingAccountService.GetPageAsync(query, variables);
+
+                var report = new Stimulsoft.Report.StiReport();
+                report.Load(ApplicationPaths.Reports.Templates.AccountingAccountReport);
+
+                var company = new
+                {
+                    Name = SessionInfo.CurrentCompany!.CompanyEntity.SearchName
+                };
+
+                await report.RegBusinessObjectAsync("Company", "Company", "Company", company);
+                await report.RegBusinessObjectAsync("AccountingAccounts", "AccountingAccounts", "AccountingAccounts", result.Entries);
+                report.ShowWithWpf();
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                    ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(ReportAsync)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _reportQuery = new(() =>
+        {
+            var fields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
+                .Create()
+                .SelectList(list => list.Entries, entries => entries
+                    .Field(f => f.Code)
+                    .Field(f => f.Name)
+                    .Field(f => f.Nature))
+                .Build();
+
+            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("accountingAccountsPage", [parameter], fields, "PageResponse");
+            var query = new GraphQLQueryBuilder([fragment]).GetQuery();
+
+            return (fragment, query);
+        });
 
         [Command]
         public async Task EditAsync(object code)

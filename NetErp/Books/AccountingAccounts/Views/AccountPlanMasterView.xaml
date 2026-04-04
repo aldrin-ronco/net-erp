@@ -148,6 +148,24 @@
                             <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Button>
+                    <Button Command="{Binding ReportAsyncCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegationConverter}}"
+                            Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Reports/Report_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.4"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Reporte" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
