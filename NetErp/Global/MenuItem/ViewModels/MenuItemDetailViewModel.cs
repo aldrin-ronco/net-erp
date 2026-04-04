@@ -456,7 +456,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             await TryCloseAsync(false);
         }
 
-        #endregion
+        #endregion@
 
         #region GraphQL Queries
 

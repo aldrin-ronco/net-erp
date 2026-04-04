@@ -21,7 +21,8 @@
                                Title="No hay perfiles de acceso registrados"
                                Message="Cree un nuevo perfil de acceso para comenzar"
                                ContextInfo="Los perfiles de acceso determinan a qué opciones del menú puede acceder cada colaborador del sistema."
-                               Command="{Binding CreateProfileCommand}"/>
+                               Command="{Binding CreateProfileCommand}"
+                               HasPermission="{Binding HasCreatePermission}"/>
 
             <!-- Content -->
             <busyIndicator:BusyMask x:Name="BusyIndicator"
@@ -62,7 +63,7 @@
                                         <Style TargetType="Image">
                                             <Style.Triggers>
                                                 <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                    <Setter Property="Opacity" Value="0.7"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -216,60 +217,108 @@
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanCreateProfile}"
                             Command="{Binding CreateProfileCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasCreatePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                     <!-- Copiar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanCloneProfile}"
                             Command="{Binding CloneProfileCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Edit/Copy_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Copy_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Copiar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasClonePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Copiar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                     <!-- Editar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanEditProfile}"
                             Command="{Binding EditProfileCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                     <!-- Guardar (solo en modo edición) -->
@@ -283,7 +332,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -303,7 +352,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -317,20 +366,36 @@
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanDeleteProfile}"
                             Command="{Binding DeleteProfileCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasDeletePermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                 </StackPanel>

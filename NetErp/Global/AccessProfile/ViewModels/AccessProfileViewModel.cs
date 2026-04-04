@@ -25,7 +25,8 @@ namespace NetErp.Global.AccessProfile.ViewModels
 {
     public class AccessProfileViewModel : Screen,
         IHandle<AccessProfileCreateMessage>,
-        IHandle<AccessProfileUpdateMessage>
+        IHandle<AccessProfileUpdateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -35,6 +36,7 @@ namespace NetErp.Global.AccessProfile.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -48,6 +50,7 @@ namespace NetErp.Global.AccessProfile.ViewModels
             Helpers.Services.INotificationService notificationService,
             IDialogService dialogService,
             StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
@@ -56,8 +59,9 @@ namespace NetErp.Global.AccessProfile.ViewModels
             _notificationService = notificationService;
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
-            _eventAggregator.SubscribeOnUIThread(this);
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -148,11 +152,20 @@ namespace NetErp.Global.AccessProfile.ViewModels
                 }
             }
         } = true;
-        public bool CanCreateProfile => !IsEditing;
-        public bool CanCloneProfile => SelectedProfile is not null && !IsEditing;
-        public bool CanEditProfileHeader => SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
-        public bool CanEditProfile => SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
-        public bool CanDeleteProfile => SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccessProfile.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccessProfile.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccessProfile.Delete);
+        public bool HasClonePermission => _permissionCache.IsAllowed(PermissionCodes.AccessProfile.Clone);
+
+        #endregion
+
+        public bool CanCreateProfile => HasCreatePermission && !IsEditing;
+        public bool CanCloneProfile => HasClonePermission && SelectedProfile is not null && !IsEditing;
+        public bool CanEditProfileHeader => HasEditPermission && SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
+        public bool CanEditProfile => HasEditPermission && SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
+        public bool CanDeleteProfile => HasDeletePermission && SelectedProfile is not null && !SelectedProfile.IsSystemAdmin && !IsEditing;
         public bool CanSaveMenuChanges => IsEditing && HasMenuChanges;
 
         private bool _isInitialized;
@@ -346,6 +359,17 @@ namespace NetErp.Global.AccessProfile.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccessProfile);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(HasClonePermission));
+                NotifyOfPropertyChange(nameof(CanCreateProfile));
+                NotifyOfPropertyChange(nameof(CanCloneProfile));
+                NotifyOfPropertyChange(nameof(CanEditProfileHeader));
+                NotifyOfPropertyChange(nameof(CanEditProfile));
+                NotifyOfPropertyChange(nameof(CanDeleteProfile));
+
                 await LoadMenuHierarchyAsync();
                 BuildMenuTree();
                 await LoadProfilesAsync();
@@ -358,7 +382,7 @@ namespace NetErp.Global.AccessProfile.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -550,8 +574,10 @@ namespace NetErp.Global.AccessProfile.ViewModels
             {
                 IsBusy = true;
 
-                var (_, canDeleteQuery) = _canDeleteQuery.Value;
-                object canDeleteVariables = new { canDeleteResponseId = SelectedProfile!.Id };
+                (GraphQLQueryFragment canDeleteFragment, string canDeleteQuery) = _canDeleteQuery.Value;
+                dynamic canDeleteVariables = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedProfile!.Id)
+                    .Build();
                 CanDeleteType validation = await _accessProfileService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
@@ -562,14 +588,17 @@ namespace NetErp.Global.AccessProfile.ViewModels
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !", "El perfil no puede ser eliminado" +
-                        (char)13 + (char)13 + validation.Message, MessageBoxButton.OK, MessageBoxImage.Information);
+                    ThemedMessageBox.Show("Atención !",
+                        $"El perfil no puede ser eliminado\r\n\r\n{validation.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
                 IsBusy = true;
-                var (_, deleteQuery) = _deleteQuery.Value;
-                object deleteVariables = new { deleteResponseId = SelectedProfile.Id };
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteQuery.Value;
+                dynamic deleteVariables = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedProfile.Id)
+                    .Build();
                 DeleteResponseType deletedProfile = await _accessProfileService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
                 if (!deletedProfile.Success)
@@ -614,6 +643,20 @@ namespace NetErp.Global.AccessProfile.ViewModels
             AccessProfileGraphQLModel? updated = Profiles.FirstOrDefault(p => p.Id == selectedId);
             if (updated != null) SelectedProfile = updated;
             _notificationService.ShowSuccess(message.UpdatedAccessProfile.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(HasClonePermission));
+            NotifyOfPropertyChange(nameof(CanCreateProfile));
+            NotifyOfPropertyChange(nameof(CanCloneProfile));
+            NotifyOfPropertyChange(nameof(CanEditProfileHeader));
+            NotifyOfPropertyChange(nameof(CanEditProfile));
+            NotifyOfPropertyChange(nameof(CanDeleteProfile));
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -737,10 +780,11 @@ namespace NetErp.Global.AccessProfile.ViewModels
             {
                 IsBusy = true;
 
-                var (_, query) = _loadByIdQuery.Value;
+                (GraphQLQueryFragment fragment, string query) = _loadByIdQuery.Value;
 
-                dynamic variables = new ExpandoObject();
-                variables.singleItemResponseId = profileId;
+                ExpandoObject variables = new GraphQLVariables()
+                    .For(fragment, "id", profileId)
+                    .Build();
 
                 AccessProfileGraphQLModel entity = await _accessProfileService.FindByIdAsync(query, variables);
 
@@ -817,12 +861,14 @@ namespace NetErp.Global.AccessProfile.ViewModels
             IEnumerable<int> toAdd = currentIds.Except(_originalMenuItemIds);
             IEnumerable<int> toRemove = _originalMenuItemIds.Except(currentIds);
 
-            var (_, createQuery) = _createMenuItemQuery.Value;
-            var (_, deleteQuery) = _deleteMenuItemQuery.Value;
+            (GraphQLQueryFragment createFragment, string createQuery) = _createMenuItemQuery.Value;
+            (GraphQLQueryFragment deleteFragment, string deleteMenuItemQuery) = _deleteMenuItemQuery.Value;
 
             foreach (int menuItemId in toAdd)
             {
-                object variables = new { createResponseInput = new { accessProfileId = profileId, menuItemId } };
+                dynamic variables = new GraphQLVariables()
+                    .For(createFragment, "input", new { accessProfileId = profileId, menuItemId })
+                    .Build();
                 await _accessProfileService.CreateAsync<UpsertResponseType<AccessProfileMenuItemGraphQLModel>>(createQuery, variables);
             }
 
@@ -830,8 +876,10 @@ namespace NetErp.Global.AccessProfile.ViewModels
             {
                 if (_originalMenuItemRelationIds.TryGetValue(menuItemId, out int relationId))
                 {
-                    object variables = new { deleteResponseId = relationId };
-                    await _accessProfileService.DeleteAsync<DeleteResponseType>(deleteQuery, variables);
+                    dynamic variables = new GraphQLVariables()
+                        .For(deleteFragment, "id", relationId)
+                        .Build();
+                    await _accessProfileService.DeleteAsync<DeleteResponseType>(deleteMenuItemQuery, variables);
                 }
             }
         }
