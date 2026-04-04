@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Global;
 using Models.Login;
 using NetErp.Global.UserPermission.DTO;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -23,7 +24,8 @@ using IDialogService = NetErp.Helpers.IDialogService;
 
 namespace NetErp.Global.UserPermission.ViewModels
 {
-    public class UserPermissionViewModel : Screen
+    public class UserPermissionViewModel : Screen,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -35,6 +37,7 @@ namespace NetErp.Global.UserPermission.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IDialogService _dialogService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -50,6 +53,7 @@ namespace NetErp.Global.UserPermission.ViewModels
             Helpers.Services.INotificationService notificationService,
             IDialogService dialogService,
             IEventAggregator eventAggregator,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _menuModuleService = menuModuleService;
@@ -60,7 +64,9 @@ namespace NetErp.Global.UserPermission.ViewModels
             _notificationService = notificationService;
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -187,6 +193,13 @@ namespace NetErp.Global.UserPermission.ViewModels
 
         public bool HasModuleFilterSelected => SelectedModuleFilter is not null;
 
+        #region Permissions
+
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.UserPermission.Edit);
+        public bool HasBatchAssignPermission => _permissionCache.IsAllowed(PermissionCodes.UserPermission.BatchAssign);
+
+        #endregion
+
         public bool HasChanges
         {
             get
@@ -199,7 +212,8 @@ namespace NetErp.Global.UserPermission.ViewModels
             }
         }
 
-        public bool CanSave => HasChanges;
+        public bool CanSave => HasEditPermission && HasChanges;
+        public bool CanBatchAssign => HasBatchAssignPermission;
 
         #endregion
 
@@ -256,6 +270,11 @@ namespace NetErp.Global.UserPermission.ViewModels
             {
                 IsBusy = true;
                 await _collaboratorCache.EnsureLoadedAsync();
+
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasBatchAssignPermission));
+                NotifyOfPropertyChange(nameof(CanSave));
+                NotifyOfPropertyChange(nameof(CanBatchAssign));
                 await LoadMenuHierarchyAsync();
                 await LoadPermissionDefinitionsAsync();
                 await LoadCompanyPermissionDefaultsAsync();
@@ -281,6 +300,7 @@ namespace NetErp.Global.UserPermission.ViewModels
         {
             if (close)
             {
+                _eventAggregator.Unsubscribe(this);
                 TreeNodes.Clear();
                 DisplayTreeNodes.Clear();
                 _allPermissionNodes.Clear();
@@ -645,9 +665,9 @@ namespace NetErp.Global.UserPermission.ViewModels
             {
                 IsBusy = true;
 
-                var (_, createQuery) = _createMutation.Value;
-                var (_, updateQuery) = _updateMutation.Value;
-                var (_, deleteQuery) = _deleteMutation.Value;
+                (GraphQLQueryFragment createFragment, string createQuery) = _createMutation.Value;
+                (GraphQLQueryFragment updateFragment, string updateQuery) = _updateMutation.Value;
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteMutation.Value;
 
                 int accountId = SelectedCollaborator!.Account.Id;
 
@@ -659,16 +679,17 @@ namespace NetErp.Global.UserPermission.ViewModels
                     {
                         // CREATE
                         string valueStr = ToGraphQLValue(node.UserValue.Value);
-                        dynamic variables = new ExpandoObject();
-                        variables.createResponseInput = new
-                        {
-                            accountId,
-                            permissionDefinitionId = node.Id,
-                            value = valueStr,
-                            expiresAt = node.ExpiresAt == null
-                            ? null
-                            : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
-                        };
+                        dynamic variables = new GraphQLVariables()
+                            .For(createFragment, "input", new
+                            {
+                                accountId,
+                                permissionDefinitionId = node.Id,
+                                value = valueStr,
+                                expiresAt = node.ExpiresAt == null
+                                ? null
+                                : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
+                            })
+                            .Build();
                         UpsertResponseType<UserPermissionGraphQLModel> result =
                             await _userPermissionService.CreateAsync<UpsertResponseType<UserPermissionGraphQLModel>>(createQuery, variables);
                         if (!result.Success)
@@ -682,15 +703,16 @@ namespace NetErp.Global.UserPermission.ViewModels
                     {
                         // UPDATE
                         string valueStr = ToGraphQLValue(node.UserValue.Value);
-                        dynamic variables = new ExpandoObject();
-                        variables.updateResponseId = node.UserPermissionId;
-                        variables.updateResponseData = new
-                        {
-                            value = valueStr,
-                            expiresAt = node.ExpiresAt == null
-                            ? null
-                            : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
-                        };
+                        dynamic variables = new GraphQLVariables()
+                            .For(updateFragment, "id", node.UserPermissionId)
+                            .For(updateFragment, "data", new
+                            {
+                                value = valueStr,
+                                expiresAt = node.ExpiresAt == null
+                                ? null
+                                : new DateTimeOffset(DateTime.SpecifyKind(node.ExpiresAt.Value, DateTimeKind.Utc)).ToString("O")
+                            })
+                            .Build();
                         UpsertResponseType<UserPermissionGraphQLModel> result =
                             await _userPermissionService.UpdateAsync<UpsertResponseType<UserPermissionGraphQLModel>>(updateQuery, variables);
                         if (!result.Success)
@@ -702,8 +724,9 @@ namespace NetErp.Global.UserPermission.ViewModels
                     else if (node.OriginalUserValue != null && node.UserValue == null)
                     {
                         // DELETE
-                        dynamic variables = new ExpandoObject();
-                        variables.deleteResponseId = node.UserPermissionId;
+                        dynamic variables = new GraphQLVariables()
+                            .For(deleteFragment, "id", node.UserPermissionId)
+                            .Build();
                         DeleteResponseType result = await _userPermissionService.DeleteAsync<DeleteResponseType>(deleteQuery, variables);
                         if (!result.Success)
                         {
@@ -785,6 +808,19 @@ namespace NetErp.Global.UserPermission.ViewModels
             {
                 IsBusy = false;
             }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasBatchAssignPermission));
+            NotifyOfPropertyChange(nameof(CanSave));
+            NotifyOfPropertyChange(nameof(CanBatchAssign));
+            return Task.CompletedTask;
         }
 
         #endregion
