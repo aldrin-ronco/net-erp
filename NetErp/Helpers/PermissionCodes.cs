@@ -196,6 +196,16 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class AccessProfile
+        {
+            private const string Prefix = "access_profile";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+            public const string Clone = $"{Prefix}.clone";
+        }
+
         public static class MenuItem
         {
             private const string Prefix = "menu_item";
