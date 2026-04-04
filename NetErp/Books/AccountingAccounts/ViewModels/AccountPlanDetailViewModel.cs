@@ -38,15 +38,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         private readonly int _selectedItemId;
 
         public Dictionary<char, string> AccountNature => Dictionaries.BooksDictionaries.AccountNatureDictionary;
-        private decimal _margin;
         public decimal Margin
         {
-            get { return _margin; }
+            get;
             set
             {
-                if (_margin != value)
+                if (field != value)
                 {
-                    _margin = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Margin));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
@@ -95,13 +94,13 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get { return RequiresMargin ? Visibility.Visible : Visibility.Collapsed; }
         }
 
-        private string _selectedAccountNature;
+        private string? _selectedAccountNature;
 
         public string SelectedAccountNature
         {
             get
             {
-                return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? "D" : "C" : _selectedAccountNature;
+                return IsNewRecord ? _debitAccounts.Any(x => x.Contains(Lv1Code)) ? "D" : "C" : _selectedAccountNature ?? "";
             }
             set
             {
@@ -140,15 +139,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         }
 
         // Focus handling
-        private bool _lv5CodeIsFocused;
         public bool Lv5CodeIsFocused
         {
-            get { return _lv5CodeIsFocused; }
+            get;
             set
             {
-                if (_lv5CodeIsFocused != value)
+                if (field != value)
                 {
-                    _lv5CodeIsFocused = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Lv5CodeIsFocused));
                 }
             }
@@ -156,105 +154,36 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         //Visibilidad
 
-        private Visibility _lv1Visibility;
-        public Visibility Lv1Visibility
-        {
-            get { return this._code.Length >= 1 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                if (_lv1Visibility != value)
-                {
-                    _lv1Visibility = value;
-                    NotifyOfPropertyChange(nameof(Lv1Visibility));
-                }
-            }
-        }
-
-
-        private Visibility _lv2Visibility;
-        public Visibility Lv2Visibility
-        {
-            get { return this._code.Length >= 2 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                if (_lv2Visibility != value)
-                {
-                    _lv2Visibility = value;
-                    NotifyOfPropertyChange(nameof(Lv2Visibility));
-                }
-            }
-        }
-
-
-        private Visibility _lv3Visibility;
-        public Visibility Lv3Visibility
-        {
-            get { return this._code.Length >= 4 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                if (_lv3Visibility != value)
-                {
-                    _lv3Visibility = value;
-                    NotifyOfPropertyChange(nameof(Lv3Visibility));
-                }
-            }
-        }
-
-        private Visibility _lv4Visibility;
-        public Visibility Lv4Visibility
-        {
-            get { return this._code.Length >= 6 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                if (_lv4Visibility != value)
-                {
-                    _lv4Visibility = value;
-                    NotifyOfPropertyChange(nameof(Lv4Visibility));
-                }
-            }
-        }
-
-
-        private Visibility _lv5Visibility;
-        public Visibility Lv5Visibility
-        {
-            get { return this._code.Length >= 8 || this.IsNewRecord ? Visibility.Visible : Visibility.Collapsed; }
-            set
-            {
-                if (_lv5Visibility != value)
-                {
-                    _lv5Visibility = value;
-                    NotifyOfPropertyChange(nameof(Lv5Visibility));
-                }
-            }
-        }
+        public Visibility Lv1Visibility => _code.Length >= 1 || IsNewRecord ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility Lv2Visibility => _code.Length >= 2 || IsNewRecord ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility Lv3Visibility => _code.Length >= 4 || IsNewRecord ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility Lv4Visibility => _code.Length >= 6 || IsNewRecord ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility Lv5Visibility => _code.Length >= 8 || IsNewRecord ? Visibility.Visible : Visibility.Collapsed;
 
 
         // Seleccion de Texto para Lv5 (Auxiliar)
 
-        private int _selectionStart;
         public int SelectionStart
         {
-            get { return _selectionStart; }
+            get;
             set
             {
-                if (_selectionStart != value)
+                if (field != value)
                 {
-                    _selectionStart = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectionStart));
                 }
             }
         }
 
-        private int _selectionLength;
         public int SelectionLength
         {
-            get { return _selectionLength; }
+            get;
             set
             {
-                if (_selectionLength != value)
+                if (field != value)
                 {
-                    _selectionLength = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectionLength));
                 }
             }
@@ -262,82 +191,42 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // Codigos de cuentas
 
-        private string _lv1Code = string.Empty;
         public string Lv1Code
         {
-            get { return _lv1Code; }
+            get;
             set
             {
-                if (_lv1Code != value)
+                if (field != value)
                 {
-                    _lv1Code = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Lv1Code));
                     OnLV1CodeChanged();
                 }
             }
-        }
+        } = string.Empty;
 
         protected void OnLV1CodeChanged()
         {
             NotifyOfPropertyChange(nameof(SelectedAccountNature));
         }
 
-        private string _lv2Code = string.Empty;
-        public string Lv2Code
-        {
-            get { return _lv2Code; }
-            set
-            {
-                if (_lv2Code != value)
-                {
-                    _lv2Code = value;
-                    NotifyOfPropertyChange(nameof(Lv2Code));
-                }
-            }
-        }
+        public string Lv2Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv2Code)); } } } = string.Empty;
+        public string Lv3Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv3Code)); } } } = string.Empty;
+        public string Lv4Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv4Code)); } } } = string.Empty;
 
-        private string _lv3Code = string.Empty;
-        public string Lv3Code
-        {
-            get { return _lv3Code; }
-            set
-            {
-                if (_lv3Code != value)
-                {
-                    _lv3Code = value;
-                    NotifyOfPropertyChange(nameof(Lv3Code));
-                }
-            }
-        }
-
-        private string _lv4Code = string.Empty;
-        public string Lv4Code
-        {
-            get { return _lv4Code; }
-            set
-            {
-                if (_lv4Code != value)
-                {
-                    _lv4Code = value;
-                    NotifyOfPropertyChange(nameof(Lv4Code));
-                }
-            }
-        }
-
-        private string _lv5Code = string.Empty;
         public string Lv5Code
         {
-            get { return _lv5Code; }
+            get;
             set
             {
-                if (_lv5Code != value)
+                if (field != value)
                 {
-                    _lv5Code = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Lv5Code));
                     OnLv5CodeChanged();
                 }
             }
-        }
+        } = string.Empty;
 
         protected void OnLv5CodeChanged()
         {
@@ -376,7 +265,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     PopulateInfoNameLv5(Lv5Code);
                     SetReadOnlyState(Lv5Code);
                     SetTextBoxSelectionForExistingAccountCode(Lv5Code);
-                    SetTextBoxNameStyleForExistingAccountCode(Lv5Code);
+                    NotifyOfPropertyChange(nameof(AccountCodeExists));
                     SetNextFocus(Lv5Code);
                 }
             }
@@ -384,80 +273,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // Nombres de las cuentas
 
-        private string _lv1Name = string.Empty;
-        public string Lv1Name
-        {
-            get { return _lv1Name; }
-            set
-            {
-                if (_lv1Name != value)
-                {
-                    _lv1Name = value;
-                    NotifyOfPropertyChange(nameof(Lv1Name));
-                    OnAccountingAccountNameChanged();
-                }
-            }
-        }
-
-        private string _lv2Name = string.Empty;
-        public string Lv2Name
-        {
-            get { return _lv2Name; }
-            set
-            {
-                if (_lv2Name != value)
-                {
-                    _lv2Name = value;
-                    NotifyOfPropertyChange(nameof(Lv2Name));
-                    OnAccountingAccountNameChanged();
-                }
-            }
-        }
-
-        private string _lv3Name = string.Empty;
-        public string Lv3Name
-        {
-            get { return _lv3Name; }
-            set
-            {
-                if (_lv3Name != value)
-                {
-                    _lv3Name = value;
-                    NotifyOfPropertyChange(nameof(Lv3Name));
-                    OnAccountingAccountNameChanged();
-                }
-            }
-        }
-
-        private string _lv4Name = string.Empty;
-        public string Lv4Name
-        {
-            get { return _lv4Name; }
-            set
-            {
-                if (_lv4Name != value)
-                {
-                    _lv4Name = value;
-                    NotifyOfPropertyChange(nameof(Lv4Name));
-                    OnAccountingAccountNameChanged();
-                }
-            }
-        }
-
-        private string _lv5Name = string.Empty;
-        public string Lv5Name
-        {
-            get { return _lv5Name; }
-            set
-            {
-                if (_lv5Name != value)
-                {
-                    _lv5Name = value;
-                    NotifyOfPropertyChange(nameof(Lv5Name));
-                    OnAccountingAccountNameChanged();
-                }
-            }
-        }
+        public string Lv1Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv1Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv2Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv2Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv3Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv3Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv4Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv4Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv5Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv5Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
         protected void OnAccountingAccountNameChanged()
         {
             NotifyOfPropertyChange(nameof(CanSave));
@@ -465,183 +285,20 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // Focos en codigos de las cuentas
 
-        private bool _isFocusedLv5Code;
-        public bool IsFocusedLv5Code
-        {
-            get { return _isFocusedLv5Code; }
-            set
-            {
-                if (_isFocusedLv5Code != value)
-                {
-                    _isFocusedLv5Code = value;
-                    NotifyOfPropertyChange(nameof(IsFocusedLv5Code));
-                }
-            }
-        }
-
-        private bool _lv5NameIsFocused;
-
-        public bool Lv5NameIsFocused
-        {
-            get { return _lv5NameIsFocused; }
-            set
-            {
-                if (_lv5NameIsFocused != value)
-                {
-                    _lv5NameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(Lv5NameIsFocused));
-                }
-            }
-        }
-
-        private bool _lv4NameIsFocused;
-
-        public bool Lv4NameIsFocused
-        {
-            get { return _lv4NameIsFocused; }
-            set
-            {
-                if (_lv4NameIsFocused != value)
-                {
-                    _lv4NameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(Lv4NameIsFocused));
-                }
-            }
-        }
-
-        private bool _lv3NameIsFocused;
-
-        public bool Lv3NameIsFocused
-        {
-            get { return _lv3NameIsFocused; }
-            set
-            {
-                if (_lv3NameIsFocused != value)
-                {
-                    _lv3NameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(Lv3NameIsFocused));
-                }
-            }
-        }
-
-        private bool _lv2NameIsFocused;
-
-        public bool Lv2NameIsFocused
-        {
-            get { return _lv2NameIsFocused; }
-            set
-            {
-                if (_lv2NameIsFocused != value)
-                {
-                    _lv2NameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(Lv2NameIsFocused));
-                }
-            }
-        }
-
-        private bool _lv1NameIsFocused;
-
-        public bool Lv1NameIsFocused
-        {
-            get { return _lv1NameIsFocused; }
-            set
-            {
-                if (_lv1NameIsFocused != value)
-                {
-                    _lv1NameIsFocused = value;
-                    NotifyOfPropertyChange(nameof(Lv1NameIsFocused));
-                }
-            }
-        }
+        public bool IsFocusedLv5Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsFocusedLv5Code)); } } }
+        public bool Lv5NameIsFocused { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv5NameIsFocused)); } } }
+        public bool Lv4NameIsFocused { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv4NameIsFocused)); } } }
+        public bool Lv3NameIsFocused { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv3NameIsFocused)); } } }
+        public bool Lv2NameIsFocused { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv2NameIsFocused)); } } }
+        public bool Lv1NameIsFocused { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv1NameIsFocused)); } } }
         // IsReadonly Name
 
-        private bool _isReadOnlyLv1Name;
-        public bool IsReadOnlyLv1Name
-        {
-            get { return _isReadOnlyLv1Name; }
-            set
-            {
-                if (_isReadOnlyLv1Name != value)
-                {
-                    _isReadOnlyLv1Name = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv1Name));
-                }
-            }
-        }
-
-        private bool _isReadOnlyLv2Name;
-        public bool IsReadOnlyLv2Name
-        {
-            get { return _isReadOnlyLv2Name; }
-            set
-            {
-                if (_isReadOnlyLv2Name != value)
-                {
-                    _isReadOnlyLv2Name = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv2Name));
-                }
-            }
-        }
-
-        private bool _isReadOnlyLv3Name;
-        public bool IsReadOnlyLv3Name
-        {
-            get { return _isReadOnlyLv3Name; }
-            set
-            {
-                if (_isReadOnlyLv3Name != value)
-                {
-                    _isReadOnlyLv3Name = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv3Name));
-                }
-            }
-        }
-
-        private bool _isReadOnlyLv4Name;
-        public bool IsReadOnlyLv4Name
-        {
-            get { return _isReadOnlyLv4Name; }
-            set
-            {
-                if (_isReadOnlyLv4Name != value)
-                {
-                    _isReadOnlyLv4Name = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv4Name));
-                }
-            }
-        }
-
-
-        private bool _isReadOnlyLv5Name;
-        public bool IsReadOnlyLv5Name
-        {
-            get { return _isReadOnlyLv5Name; }
-            set
-            {
-                if (_isReadOnlyLv5Name != value)
-                {
-                    _isReadOnlyLv5Name = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv5Name));
-                }
-            }
-        }
-
-
-        // IsReadOnly Code
-
-        private bool _isReadOnlyLv5Code;
-        public bool IsReadOnlyLv5Code
-        {
-            get { return _isReadOnlyLv5Code; }
-            set
-            {
-                if (_isReadOnlyLv5Code != value)
-                {
-                    _isReadOnlyLv5Code = value;
-                    NotifyOfPropertyChange(nameof(IsReadOnlyLv5Code));
-                }
-            }
-        }
+        public bool IsReadOnlyLv1Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv1Name)); } } }
+        public bool IsReadOnlyLv2Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv2Name)); } } }
+        public bool IsReadOnlyLv3Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv3Name)); } } }
+        public bool IsReadOnlyLv4Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv4Name)); } } }
+        public bool IsReadOnlyLv5Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv5Name)); } } }
+        public bool IsReadOnlyLv5Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv5Code)); } } }
 
 
         // Es nuevo registro ?
@@ -663,38 +320,20 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // Styles
 
-        private string _lv5NameStyle = "TextBoxDefault";
-        public string Lv5NameStyle
-        {
-            get { return _lv5NameStyle; }
-            set
-            {
-                if (_lv5NameStyle != value)
-                {
-                    _lv5NameStyle = value;
-                    NotifyOfPropertyChange(nameof(Lv5NameStyle));
-                }
-            }
-        }
+        public bool AccountCodeExists => IsNewRecord && Lv5Code.Length >= 8 && AccountCodeExist(Lv5Code);
 
-
-        private bool _isBusy = false;
         public bool IsBusy
         {
-            get { return _isBusy; }
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
-                    OnIsBusyChanged();
+                    NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
-        protected void OnIsBusyChanged()
-        {
-            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         #endregion
@@ -752,9 +391,12 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             base.OnViewReady(view);
             PopulateInfo(Code);
             SetReadOnlyState(Code);
-            Application.Current.Dispatcher.BeginInvoke(
-                new System.Action(() => SetLevelFocus(Code)),
-                System.Windows.Threading.DispatcherPriority.Loaded);
+            if (view is FrameworkElement fe)
+            {
+                fe.Dispatcher.BeginInvoke(
+                    new System.Action(() => SetLevelFocus(Code)),
+                    System.Windows.Threading.DispatcherPriority.Loaded);
+            }
         }
 
         #endregion
@@ -1001,7 +643,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 // Crear el nivel 4 en caso de no existir
                 if (!this.IsReadOnlyLv4Name)
                 {
-                    AccountingAccountGraphQLModel model = new AccountingAccountGraphQLModel()
+                    AccountingAccountGraphQLModel model = new()
                     {
                         Code = this.Lv4Code.RemoveExtraSpaces().Trim(),
                         Name = this.Lv4Name.RemoveExtraSpaces().Trim(),
@@ -1034,7 +676,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 UpsertResponseType<List<AccountingAccountGraphQLModel>> response = await _accountingAccountService.CreateAsync<UpsertResponseType<List<AccountingAccountGraphQLModel>>>(query, variables);
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -1055,7 +697,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv1 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 1)
+                              where account.Code == accountCode[..1]
                               select account;
 
                     if (lv1 != null && lv1.ToList().Count > 0)
@@ -1066,7 +708,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv1Code = accountCode.Substring(0, 1);
+                        this.Lv1Code = accountCode[..1];
                     }
                 }
                 else
@@ -1090,7 +732,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv2 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 2)
+                              where account.Code == accountCode[..2]
                               select account;
 
                     if (lv2 != null && lv2.ToList().Count > 0)
@@ -1101,7 +743,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv2Code = accountCode.Substring(0, 2);
+                        this.Lv2Code = accountCode[..2];
                     }
                 }
                 else
@@ -1126,7 +768,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     var lv3 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 4)
+                              where account.Code == accountCode[..4]
                               select new { account.Code, account.Name, account.Nature };
 
                     if (lv3 != null && lv3.ToList().Count > 0)
@@ -1138,7 +780,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv3Code = accountCode.Substring(0, 4);
+                        this.Lv3Code = accountCode[..4];
                     }
                 }
                 else
@@ -1163,7 +805,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv4 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 6)
+                              where account.Code == accountCode[..6]
                               select account;
 
                     if (lv4 != null && lv4.ToList().Count > 0)
@@ -1174,7 +816,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        Lv4Code = accountCode.Substring(0, 6);
+                        Lv4Code = accountCode[..6];
                     }
                 }
                 else
@@ -1242,7 +884,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv1 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 1)
+                              where account.Code == accountCode[..1]
                               select account;
 
                     if (lv1 != null && lv1.ToList().Count > 0)
@@ -1253,7 +895,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv1Code = accountCode.Substring(0, 1);
+                        this.Lv1Code = accountCode[..1];
                     }
                 }
                 else
@@ -1267,7 +909,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv2 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 2)
+                              where account.Code == accountCode[..2]
                               select account;
 
                     if (lv2 != null && lv2.ToList().Count > 0)
@@ -1278,7 +920,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv2Code = accountCode.Substring(0, 2);
+                        this.Lv2Code = accountCode[..2];
                     }
                 }
                 else
@@ -1292,7 +934,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     var lv3 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 4)
+                              where account.Code == accountCode[..4]
                               select new { account.Code, account.Name, account.Nature };
 
                     if (lv3 != null && lv3.ToList().Count > 0)
@@ -1304,7 +946,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        this.Lv3Code = accountCode.Substring(0, 4);
+                        this.Lv3Code = accountCode[..4];
                     }
                 }
                 else
@@ -1318,7 +960,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     IEnumerable<AccountingAccountGraphQLModel> lv4 = from account
                     in _accounts
-                              where account.Code == accountCode.Substring(0, 6)
+                              where account.Code == accountCode[..6]
                               select account;
 
                     if (lv4 != null && lv4.ToList().Count > 0)
@@ -1329,7 +971,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     }
                     else
                     {
-                        Lv4Code = accountCode.Substring(0, 6);
+                        Lv4Code = accountCode[..6];
                     }
                 }
                 else
@@ -1464,11 +1106,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 }
                 else
                 {
-                    IsReadOnlyLv1Name = accountCode.Length == 1 ? false : true;
-                    IsReadOnlyLv2Name = accountCode.Length == 2 ? false : true;
-                    IsReadOnlyLv3Name = accountCode.Length == 4 ? false : true;
-                    IsReadOnlyLv4Name = accountCode.Length == 6 ? false : true;
-                    IsReadOnlyLv5Name = accountCode.Length >= 8 ? false : true;
+                    IsReadOnlyLv1Name = accountCode.Length != 1;
+                    IsReadOnlyLv2Name = accountCode.Length != 2;
+                    IsReadOnlyLv3Name = accountCode.Length != 4;
+                    IsReadOnlyLv4Name = accountCode.Length != 6;
+                    IsReadOnlyLv5Name = accountCode.Length < 8;
                 }
 
                 IsReadOnlyLv5Code = this.IsNewRecord ? false : true;
@@ -1477,37 +1119,6 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             catch (Exception ex)
             {
                 ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetReadOnlyState)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        public void SetTextBoxNameStyleForExistingAccountCode(string accountCode)
-        {
-            // Si la longitud del codigo recibido es menor de 8 regreso sin procesar nada
-            try
-            {
-                if (accountCode.Length < 8)
-                {
-                    if (this.Lv5NameStyle.ToLower() != "TextBoxDefault".ToLower())
-                    {
-                        this.Lv5NameStyle = "TextBoxDefault";
-                    }
-                }
-                else
-                {
-                    if (AccountCodeExist(accountCode))
-                    {
-                        this.Lv5NameStyle = "TextBoxDanger";
-                    }
-                    else
-                    {
-                        this.Lv5NameStyle = "TextBoxDefault";
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                ThemedMessageBox.Show("Atención!", $"{GetType().Name}.{nameof(SetTextBoxNameStyleForExistingAccountCode)}: {ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
