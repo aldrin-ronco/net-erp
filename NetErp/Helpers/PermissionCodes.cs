@@ -196,6 +196,14 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class UserPermission
+        {
+            private const string Prefix = "user_permission";
+
+            public const string Edit = $"{Prefix}.edit";
+            public const string BatchAssign = $"{Prefix}.batch_assign";
+        }
+
         public static class Collaborator
         {
             private const string Prefix = "collaborator";

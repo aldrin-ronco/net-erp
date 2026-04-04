@@ -172,6 +172,7 @@
                                             <dxe:ComboBoxEdit
                                                 EditValue="{Binding RowData.Row.UserValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                IsEnabled="{Binding DataContext.HasEditPermission, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 ItemsSource="{Binding RowData.Row.ApplicableOptions}"
                                                 ValueMember="Value"
                                                 DisplayMember="Display"
@@ -197,6 +198,7 @@
                                             <dxe:DateEdit
                                                 EditValue="{Binding RowData.Row.ExpiresAt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Visibility="{Binding RowData.Row.HasUserOverride, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                IsEnabled="{Binding DataContext.HasEditPermission, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 AllowNullInput="True"
                                                 NullText="Permanente"
                                                 NullValueButtonPlacement="EditBox"
@@ -234,20 +236,36 @@
                             IsEnabled="{Binding CanSave}"
                             Command="{Binding SaveCommand}"
                             Visibility="{Binding HasCollaboratorSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                     <!-- Deshacer -->
@@ -261,7 +279,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -273,21 +291,38 @@
 
                     <!-- Asignación masiva -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanBatchAssign}"
                             Command="{Binding BatchAssignCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Actions/Apply_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/People/UserGroup_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Masivo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasBatchAssignPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Masivo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                 </StackPanel>

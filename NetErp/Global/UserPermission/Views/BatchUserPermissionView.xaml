@@ -298,7 +298,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -318,7 +318,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
