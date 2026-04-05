@@ -137,7 +137,7 @@ namespace NetErp.Billing.Zones.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
-                    this.TrackChange(nameof(Name));
+                    this.TrackChange(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -152,7 +152,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
-                    this.TrackChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -220,6 +220,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(Name), Name);
             this.SeedValue(nameof(IsActive), IsActive);
             this.AcceptChanges();
         }
@@ -261,19 +262,14 @@ namespace NetErp.Billing.Zones.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al realizar operación.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
