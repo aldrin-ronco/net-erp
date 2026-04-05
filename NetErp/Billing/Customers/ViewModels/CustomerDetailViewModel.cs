@@ -1393,26 +1393,34 @@ namespace NetErp.Billing.Customers.ViewModels
 
         private void ValidateProperty(string propertyName, string? value)
         {
-            ClearErrors(propertyName);
-            foreach (string error in _validator.Validate(propertyName, value, BuildValidationContext()))
-                AddError(propertyName, error);
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value, BuildValidationContext());
+            SetPropertyErrors(propertyName, errors);
         }
 
         private void ValidateProperty(string propertyName, object? value)
         {
-            ClearErrors(propertyName);
-            foreach (string error in _validator.ValidateSelection(propertyName, value))
-                AddError(propertyName, error);
+            IReadOnlyList<string> errors = _validator.ValidateSelection(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperties()
         {
-            foreach (var (prop, errors) in _validator.ValidateAll(BuildValidationContext()))
-            {
-                ClearErrors(prop);
-                foreach (string error in errors)
-                    AddError(prop, error);
-            }
+            Dictionary<string, IReadOnlyList<string>> allErrors = _validator.ValidateAll(BuildValidationContext());
+            foreach (string prop in allErrors.Keys)
+                SetPropertyErrors(prop, allErrors[prop]);
         }
 
         #endregion
