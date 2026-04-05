@@ -234,9 +234,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="30,20"
                       MaxHeight="500"
-                      CanContentScroll="True"
-                      VirtualizingPanel.IsVirtualizing="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      CanContentScroll="False"
                       Focusable="False">
                 <StackPanel>
                     <TextBlock Text="Empresas recientes"
