@@ -141,8 +141,11 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         private void ClearErrors(string propertyName)
         {
+            if (_errors.ContainsKey(propertyName))
+            {
+                RaiseErrorsChanged(propertyName);
+            }
             _errors.Remove(propertyName);
-            RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)

@@ -194,8 +194,11 @@ namespace NetErp.Global.AwsS3Config.ViewModels
 
         private void ClearErrors(string propertyName)
         {
-            _errors.Remove(propertyName); // Existence verification not needed, remove do check 
-            RaiseErrorsChanged(propertyName);
+            if (_errors.ContainsKey(propertyName))
+            {
+                RaiseErrorsChanged(propertyName);
+            }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)

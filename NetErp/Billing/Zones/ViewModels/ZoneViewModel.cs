@@ -6,6 +6,7 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
+using NetErp.Billing.Zones.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -33,6 +34,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly ZoneValidator _validator;
 
         #endregion
 
@@ -244,7 +246,8 @@ namespace NetErp.Billing.Zones.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            ZoneValidator validator)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
@@ -252,6 +255,7 @@ namespace NetErp.Billing.Zones.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -303,7 +307,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForNew();
                 IsBusy = false;
 
@@ -334,7 +338,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForEdit(SelectedZone);
                 IsBusy = false;
 
