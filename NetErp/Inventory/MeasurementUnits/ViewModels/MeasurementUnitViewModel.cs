@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Models.Global;
+using NetErp.Inventory.MeasurementUnits.Validators;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.MeasurementUnits.ViewModels
@@ -36,6 +37,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly MeasurementUnitValidator _validator;
 
         #endregion
 
@@ -243,7 +245,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            MeasurementUnitValidator validator)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
@@ -252,6 +255,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -309,7 +313,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             try
             {
                 IsBusy = true;
-                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForNew();
                 IsBusy = false;
 
@@ -340,7 +344,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             try
             {
                 IsBusy = true;
-                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                MeasurementUnitDetailViewModel detail = new(_measurementUnitService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForEdit(SelectedMeasurementUnit);
                 IsBusy = false;
 
