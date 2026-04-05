@@ -172,6 +172,7 @@ namespace NetErp
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MeasurementUnitCache>());
 
             // Validators
+            _ = kernel.Bind<Billing.Customers.Validators.CustomerValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<Billing.Zones.Validators.ZoneValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<Inventory.MeasurementUnits.Validators.MeasurementUnitValidator>().ToSelf().InSingletonScope();
 
