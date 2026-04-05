@@ -44,6 +44,15 @@ namespace NetErp.Helpers
             private static string BuildField(string propertyName) => $"{Prefix}.{StringLengthCache.ToSnakeCase(propertyName)}";
         }
 
+        public static class Zone
+        {
+            private const string Prefix = "zone";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
         public static class Catalog
         {
             private const string Prefix = "catalog";

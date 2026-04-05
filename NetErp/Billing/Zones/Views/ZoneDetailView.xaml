@@ -6,6 +6,7 @@
              xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
              xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
              xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:h="clr-namespace:NetErp.Helpers"
              xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="450"
@@ -19,7 +20,7 @@
                 CornerRadius="8" Margin="8,0,8,8"
                 Width="{Binding DialogWidth}"
                 Height="{Binding DialogHeight}">
-            <Grid Margin="15,15,15,5">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -57,7 +58,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
