@@ -394,9 +394,21 @@ namespace NetErp.Billing.Zones.ViewModels
 
         private void ValidateProperty(string propertyName, string value)
         {
-            ClearErrors(propertyName);
-            foreach (var error in _validator.Validate(propertyName, value))
-                AddError(propertyName, error);
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         #endregion

@@ -7,10 +7,8 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
-using Models.Books;
 using Models.Global;
-using NetErp.Billing.Zones.DTO;
-using NetErp.Global.CostCenters.DTO;
+using NetErp.Billing.Sellers.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -19,7 +17,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -30,7 +27,8 @@ namespace NetErp.Billing.Sellers.ViewModels
     public class SellerViewModel : Screen,
         IHandle<SellerCreateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SellerDeleteMessage>
+        IHandle<SellerDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -48,6 +46,8 @@ namespace NetErp.Billing.Sellers.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
+        private readonly SellerValidator _validator;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
@@ -57,46 +57,44 @@ namespace NetErp.Billing.Sellers.ViewModels
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateSeller));
                 }
             }
         }
 
         private readonly DebouncedAction _searchDebounce = new();
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
@@ -105,75 +103,70 @@ namespace NetErp.Billing.Sellers.ViewModels
                     }
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _showActiveSellersOnly = true;
         public bool ShowActiveSellersOnly
         {
-            get => _showActiveSellersOnly;
+            get;
             set
             {
-                if (_showActiveSellersOnly != value)
+                if (field != value)
                 {
-                    _showActiveSellersOnly = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowActiveSellersOnly));
                     _ = LoadSellersAsync();
                 }
             }
-        }
+        } = true;
 
-        private int? _selectedCostCenterId;
         public int? SelectedCostCenterId
         {
-            get => _selectedCostCenterId;
+            get;
             set
             {
-                if (_selectedCostCenterId != value)
+                if (field != value)
                 {
-                    _selectedCostCenterId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterId));
                     _ = LoadSellersAsync();
                 }
             }
         }
 
-        private ObservableCollection<CostCenterGraphQLModel> _costCenters = [];
         public ObservableCollection<CostCenterGraphQLModel> CostCenters
         {
-            get => _costCenters;
+            get;
             set
             {
-                if (_costCenters != value)
+                if (field != value)
                 {
-                    _costCenters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(CostCenters));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<SellerDTO> _sellers = [];
         public ObservableCollection<SellerDTO> Sellers
         {
-            get => _sellers;
+            get;
             set
             {
-                if (_sellers != value)
+                if (field != value)
                 {
-                    _sellers = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Sellers));
                 }
             }
-        }
+        } = [];
 
-        private SellerDTO? _selectedSeller;
         public SellerDTO? SelectedSeller
         {
-            get => _selectedSeller;
+            get;
             set
             {
-                if (_selectedSeller != value)
+                if (field != value)
                 {
-                    _selectedSeller = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedSeller));
                     NotifyOfPropertyChange(nameof(CanDeleteSeller));
                     NotifyOfPropertyChange(nameof(CanEditSeller));
@@ -181,68 +174,73 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
         }
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Seller.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Seller.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Seller.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditSeller => SelectedSeller is not null;
-        public bool CanDeleteSeller => SelectedSeller is not null;
+        public bool CanCreateSeller => HasCreatePermission && !IsBusy;
+        public bool CanEditSeller => HasEditPermission && SelectedSeller is not null;
+        public bool CanDeleteSeller => HasDeletePermission && SelectedSeller is not null;
 
         #endregion
 
@@ -305,7 +303,9 @@ namespace NetErp.Billing.Sellers.ViewModels
             StringLengthCache stringLengthCache,
             Helpers.IDialogService dialogService,
             JoinableTaskFactory joinableTaskFactory,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            SellerValidator validator,
+            PermissionCache permissionCache)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -319,6 +319,8 @@ namespace NetErp.Billing.Sellers.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -333,6 +335,14 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Seller);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateSeller));
+                NotifyOfPropertyChange(nameof(CanEditSeller));
+                NotifyOfPropertyChange(nameof(CanDeleteSeller));
+
                 await _costCenterCache.EnsureLoadedAsync();
                 CostCenters = [.. _costCenterCache.Items];
                 await LoadSellersAsync();
@@ -346,7 +356,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -372,7 +382,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
@@ -389,7 +399,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateSellerAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(CreateSellerAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -404,7 +414,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
+                var detail = new SellerDetailViewModel(_sellerService, _eventAggregator, _identificationTypeCache, _countryCache, _zoneCache, _costCenterCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSeller.Id);
                 IsBusy = false;
@@ -421,7 +431,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditSellerAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(EditSellerAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -474,18 +484,11 @@ namespace NetErp.Billing.Sellers.ViewModels
                     new SellerDeleteMessage { DeletedSeller = deletedSeller },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteSellerAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(DeleteSellerAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -534,7 +537,7 @@ namespace NetErp.Billing.Sellers.ViewModels
                     .For(fragment, "filters", filters)
                     .Build();
 
-                var result = await _sellerService.GetPageAsync(query, variables);
+                PageType<SellerGraphQLModel> result = await _sellerService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
                 Sellers = new ObservableCollection<SellerDTO>(AutoMapper.Map<ObservableCollection<SellerDTO>>(result.Entries));
@@ -546,7 +549,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadSellersAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadSellersAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -568,12 +571,12 @@ namespace NetErp.Billing.Sellers.ViewModels
                     .Field(e => e.Id)
                     .Field(e => e.IsActive)
                     .Select(e => e.AccountingEntity, acc => acc
-                        .Field(c => c.Id)
-                        .Field(c => c.VerificationDigit)
-                        .Field(c => c.IdentificationNumber)
-                        .Field(c => c.Address)
-                        .Field(c => c.SearchName)
-                        .Field(c => c.TelephonicInformation)))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.VerificationDigit)
+                        .Field(c => c!.IdentificationNumber)
+                        .Field(c => c!.Address)
+                        .Field(c => c!.SearchName)
+                        .Field(c => c!.TelephonicInformation)))
                 .Build();
 
             var fragment = new GraphQLQueryFragment("sellersPage",
@@ -632,6 +635,17 @@ namespace NetErp.Billing.Sellers.ViewModels
             ShowEmptyState = Sellers == null || Sellers.Count == 0;
             SelectedSeller = null;
             _notificationService.ShowSuccess(message.DeletedSeller.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateSeller));
+            NotifyOfPropertyChange(nameof(CanEditSeller));
+            NotifyOfPropertyChange(nameof(CanDeleteSeller));
+            return Task.CompletedTask;
         }
 
         #endregion

@@ -440,19 +440,28 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         private void ValidateProperty(string propertyName, string value)
         {
-            ClearErrors(propertyName);
-            foreach (var error in _validator.Validate(propertyName, value))
-                AddError(propertyName, error);
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperties()
         {
-            foreach (var (prop, errors) in _validator.ValidateAll(Name, Abbreviation, Type, DianCode))
-            {
-                ClearErrors(prop);
-                foreach (var error in errors)
-                    AddError(prop, error);
-            }
+            Dictionary<string, IReadOnlyList<string>> allErrors = _validator.ValidateAll(Name, Abbreviation, Type, DianCode);
+            foreach (string prop in allErrors.Keys)
+                SetPropertyErrors(prop, allErrors[prop]);
         }
 
         #endregion
