@@ -112,39 +112,17 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             ObservableCollection<CostCenterGraphQLModel> costCenters,
             ObservableCollection<AccountingSourceGraphQLModel> accountingSources)
         {
+            // Las colecciones recibidas del Master se ignoran porque SetForNew lee directo
+            // del cache singleton (mismo dato). Se conservan en la firma por compatibilidad
+            // con el call site del Master; pueden eliminarse en una iteración posterior.
             AccountingEntriesDetailViewModel instance = new(this,
                 this._accountingEntryMasterService,
                 this._accountingEntityService,
                 this._accountingEntryDraftMasterService,
                 this._accountingEntryDraftDetailService,
                 this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
-            // Header
-            instance.SelectedAccountingEntryDraftMaster = null;
-            instance.DraftMasterId = 0;
-            instance.SelectedAccountingBookId = accountingBooks.FirstOrDefault().Id;
-            instance.SelectedCostCenterId = costCenters.FirstOrDefault().Id;
-            instance.SelectedAccountingSourceId = accountingSources.FirstOrDefault().Id;
-            instance.SelectedCostCenterOnEntryId = costCenters.FirstOrDefault().Id;
-            instance.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>();
-            instance.EntriesPageIndex = 1;
-            instance.EntriesPageSize = 50;
-            instance.EntriesTotalCount = 0;
-            instance.EntriesResponseTime = "";
-            instance.TotalDebit = 0;
-            instance.TotalCredit = 0;
-            instance.DocumentDate = DateTime.Now.Date;
-            instance.Description = "";
 
-            // Entry Point
-            instance.SelectedAccountingAccountOnEntryId = 0;
-            instance.SelectedAccountingEntityOnEntryId = 0;
-            instance.SelectedCostCenterOnEntryId = 0;
-            instance.RecordDetail = "";
-            instance.Debit = 0;
-            instance.Credit = 0;
-            instance.Base = 0;
-            instance.IsFilterSearchAccountinEntityOnEditMode = true;
-            instance.FilterSearchAccountingEntity = "";
+            instance.SetForNew();
 
             await ActivateItemAsync(instance, new System.Threading.CancellationToken());
         }
@@ -153,8 +131,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                object variables;
                 AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
+
+                // Cargar líneas del borrador
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
@@ -181,66 +160,19 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     }
                 }";
 
-                variables = new
-                {
-                    draftMasterId = model.Id,
-                };
+                object variables = new { draftMasterId = model.Id };
 
-                // Iniciar cronometro
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-
-                // Get Entries
                 var entries = await this._accountingEntryDraftDetailService.GetListAsync(query, variables);
+                stopwatch.Stop();
 
-                // Totals
-                var totals =(
-                    from entry in entries
-                    select new{entry.Credit, entry.Debit}).ToList();
+                var mappedEntries = this.Mapper.Map<IEnumerable<AccountingEntryDraftDetailDTO>>(entries);
+                decimal totalDebit = entries.Sum(e => e.Debit);
+                decimal totalCredit = entries.Sum(e => e.Credit);
+                string responseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                //query = @"
-                //query($draftMasterId:ID){
-                //    AccountingEntryTotals: accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
-                //    debit
-                //    credit
-                //    }
-                //}";
-
-                //variables = new
-                //{
-                //    DraftMasterId = model.Id,
-                //};
-                //var totals = await AccountingEntryDraftMasterService.GetDataContext<AccountingEntryTotals>(query, variables);
-                //stopwatch.Stop();
-
-
-                instance.TotalCredit = totals.Sum(c => c.Credit);
-                instance.TotalDebit = totals.Sum(d => d.Debit);
-
-                //instance.EntriesTotalCount = entries.PageResponse.Count;
-                // Others            
-
-                // Header
-                instance.SelectedAccountingEntryDraftMaster = model;
-                instance.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                instance.DraftMasterId = model.Id;
-                instance.SelectedAccountingBookId = model.AccountingBook.Id;
-                instance.SelectedCostCenterId = model.CostCenter.Id;
-                instance.SelectedAccountingSourceId = model.AccountingSource.Id;
-                instance.DocumentDate = model.DocumentDate;
-                instance.Description = model.Description;
-                instance.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(this.Mapper.Map<IEnumerable<AccountingEntryDraftDetailDTO>>(entries));
-
-                // Entry Point
-                instance.SelectedAccountingAccountOnEntryId = 0;
-                instance.SelectedAccountingEntityOnEntryId = 0;
-                instance.SelectedCostCenterOnEntryId = 0;
-                instance.RecordDetail = "";
-                instance.Debit = 0;
-                instance.Credit = 0;
-                instance.Base = 0;
-                instance.IsFilterSearchAccountinEntityOnEditMode = true;
-                instance.FilterSearchAccountingEntity = "";
+                instance.SetForEdit(model, mappedEntries, totalDebit, totalCredit, responseTime);
 
                 await ActivateItemAsync(instance, new System.Threading.CancellationToken());
             }

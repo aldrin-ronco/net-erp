@@ -243,10 +243,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _documentDate = value;
                     NotifyOfPropertyChange(nameof(DocumentDate));
+                    this.TrackChange(nameof(DocumentDate));
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // TODO: refactor pendiente — auto-save por setter (Task.Run) eliminado.
-                    // El cambio se persistirá vía CanSave + ExecuteSaveAsync (Bloque 3 del refactor).
-                    // Requiere análisis junto con EndRowEditingAsync por integridad transaccional.
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
@@ -262,11 +261,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _description = value;
                     NotifyOfPropertyChange(nameof(Description));
+                    this.TrackChange(nameof(Description));
                     ValidateProperty(nameof(Description), value, 0);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // TODO: refactor pendiente — auto-save por setter (Task.Run) eliminado.
-                    // El cambio se persistirá vía CanSave + ExecuteSaveAsync (Bloque 3 del refactor).
-                    // Requiere análisis junto con EndRowEditingAsync por integridad transaccional.
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
@@ -432,7 +430,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedAccountingBookId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingBookId));
+                    this.TrackChange(nameof(SelectedAccountingBookId));
                     NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
@@ -447,8 +447,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedCostCenterId = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterId));
+                    this.TrackChange(nameof(SelectedCostCenterId));
                     ValidateProperty(nameof(SelectedCostCenterId), null, value);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
@@ -515,8 +517,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedAccountingSourceId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingSourceId));
+                    this.TrackChange(nameof(SelectedAccountingSourceId));
                     ValidateProperty(nameof(SelectedAccountingSourceId), null, value);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
+                    NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
@@ -874,17 +878,128 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await CacheBatchLoader.LoadAsync(
                _graphQLClient, default,
                _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _auxiliaryAccountingAccountCache);
+
+            // Solo carga las colecciones locales para los bindings de la vista.
+            // La selección por defecto la maneja SetForNew/SetForEdit, llamados por el Conductor
+            // ANTES de ActivateItemAsync (siguiendo el patrón estándar Seller/Customer).
             CostCenters = [.. _costCenterCache.Items];
             this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
-            this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;
             this.AccountingBooks = [.. _accountingBookCache.Items];
-            this.SelectedAccountingBookId = this.AccountingBooks.FirstOrDefault().Id;
             this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
             this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
-            this.SelectedAccountingSourceId = this.AccountingSources.FirstOrDefault().Id;
             this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
-            
-            
+        }
+
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+        {
+            await InitializeAsync();
+            await base.OnInitializedAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Inicializa el ViewModel para crear un nuevo borrador de comprobante contable.
+        /// Llamado por el Conductor ANTES de ActivateItemAsync. Asume que los caches ya
+        /// fueron cargados por el Master (CacheBatchLoader en Master.OnInitializedAsync).
+        /// </summary>
+        public void SetForNew()
+        {
+            // Header
+            SelectedAccountingEntryDraftMaster = null;
+            DraftMasterId = 0;
+            SelectedAccountingBookId = _accountingBookCache.Items.FirstOrDefault()?.Id ?? 0;
+            SelectedCostCenterId = _costCenterCache.Items.FirstOrDefault()?.Id ?? 0;
+            SelectedAccountingSourceId = _notAnnulledAccountingSourceCache.Items.FirstOrDefault()?.Id ?? 0;
+            SelectedCostCenterOnEntryId = _costCenterCache.Items.FirstOrDefault()?.Id ?? 0;
+            AccountingEntries = [];
+            EntriesPageIndex = 1;
+            EntriesPageSize = 50;
+            EntriesTotalCount = 0;
+            EntriesResponseTime = "";
+            TotalDebit = 0;
+            TotalCredit = 0;
+            DocumentDate = DateTime.Now.Date;
+            Description = "";
+
+            // Entry Point (formulario de captura de líneas)
+            SelectedAccountingAccountOnEntryId = 0;
+            SelectedAccountingEntityOnEntryId = 0;
+            RecordDetail = "";
+            Debit = 0;
+            Credit = 0;
+            Base = 0;
+            IsFilterSearchAccountinEntityOnEditMode = true;
+            FilterSearchAccountingEntity = "";
+
+            SeedDefaultValues();
+        }
+
+        /// <summary>
+        /// Inicializa el ViewModel para editar un borrador existente.
+        /// Llamado por el Conductor ANTES de ActivateItemAsync, después de cargar las líneas
+        /// y los totales del borrador.
+        /// </summary>
+        public void SetForEdit(AccountingEntryDraftGraphQLModel model,
+                               IEnumerable<AccountingEntryDraftDetailDTO> entries,
+                               decimal totalDebit,
+                               decimal totalCredit,
+                               string responseTime)
+        {
+            // Header
+            SelectedAccountingEntryDraftMaster = model;
+            DraftMasterId = model.Id;
+            SelectedAccountingBookId = model.AccountingBook.Id;
+            SelectedCostCenterId = model.CostCenter.Id;
+            SelectedAccountingSourceId = model.AccountingSource.Id;
+            DocumentDate = model.DocumentDate;
+            Description = model.Description;
+
+            // Líneas y totales
+            AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(entries);
+            TotalDebit = totalDebit;
+            TotalCredit = totalCredit;
+            EntriesResponseTime = responseTime;
+
+            // Entry Point (formulario de captura de líneas)
+            SelectedAccountingAccountOnEntryId = 0;
+            SelectedAccountingEntityOnEntryId = 0;
+            SelectedCostCenterOnEntryId = 0;
+            RecordDetail = "";
+            Debit = 0;
+            Credit = 0;
+            Base = 0;
+            IsFilterSearchAccountinEntityOnEditMode = true;
+            FilterSearchAccountingEntity = "";
+
+            SeedCurrentValues();
+        }
+
+        /// <summary>
+        /// Para CREATE: limpia seeds previos, siembra solo defaults significativos y acepta cambios.
+        /// Para los borradores, los defaults son las selecciones iniciales del header.
+        /// </summary>
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(SelectedAccountingBookId), SelectedAccountingBookId);
+            this.SeedValue(nameof(SelectedCostCenterId), SelectedCostCenterId);
+            this.SeedValue(nameof(SelectedAccountingSourceId), SelectedAccountingSourceId);
+            this.SeedValue(nameof(DocumentDate), DocumentDate);
+            this.SeedValue(nameof(Description), Description);
+            this.AcceptChanges();
+        }
+
+        /// <summary>
+        /// Para EDIT: siembra TODOS los campos editables del header con su valor actual del borrador.
+        /// Sin ClearSeeds aquí: AcceptChanges al final limpia el HashSet de cambios pero conserva los seeds.
+        /// </summary>
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(SelectedAccountingBookId), SelectedAccountingBookId);
+            this.SeedValue(nameof(SelectedCostCenterId), SelectedCostCenterId);
+            this.SeedValue(nameof(SelectedAccountingSourceId), SelectedAccountingSourceId);
+            this.SeedValue(nameof(DocumentDate), DocumentDate);
+            this.SeedValue(nameof(Description), Description);
+            this.AcceptChanges();
         }
 
         public AccountingEntriesDetailViewModel(AccountingEntriesViewModel context,
@@ -908,15 +1023,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _graphQLClient = graphQLClient;
-
-            // TODO (Bloque 3 del refactor): mover InitializeAsync a OnInitializedAsync.
-            // Hoy se ejecuta sincronicamente bloqueando el thread del constructor porque el
-            // Conductor (ActivateDetailViewForNewAsync / ActivateDetailViewForEditAsync) sobreescribe
-            // SelectedAccountingBookId/CostCenterId/SourceId DESPUÉS del constructor pero ANTES de
-            // ActivateItemAsync. Si se mueve a OnInitializedAsync sin reescribir esos overrides
-            // como SetForNew/SetForEdit, se pierden los valores. Se aborda en Bloque 3.
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
         }
 
         /*public async Task ExecuteSearchForAccountingEntityMatchAsync()
