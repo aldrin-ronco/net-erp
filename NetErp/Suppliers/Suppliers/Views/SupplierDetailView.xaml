@@ -21,19 +21,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <h:SimpleBooleanConverter x:Key="SimpleBooleanConverter" True="False" False="True"/>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
     </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.55"/>
-    </UserControl.Width>
-    <UserControl.Height>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenHeight}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.85"/>
-    </UserControl.Height>
 
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -41,7 +29,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -56,6 +46,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Regimen -->
@@ -64,7 +55,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Regimen" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="0" Text="Régimen" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <dxe:ComboBoxEdit Grid.Column="1"
                                           Padding="2"
                                           IsEnabled="{Binding IsNewRecord, Mode=OneWay}"
@@ -102,7 +93,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Numero" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="0" Text="Número" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <dxe:TextEdit x:Name="IdentificationNumber"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Column="1"
@@ -133,7 +124,7 @@
                                      Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                      IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                                      Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PN}"/>
-                        <RadioButton Grid.Column="2" Content="Persona Juridica" GroupName="CaptureType" Margin="15,0,0,0"
+                        <RadioButton Grid.Column="2" Content="Persona Jurídica" GroupName="CaptureType" Margin="15,0,0,0"
                                      Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                      IsChecked="{Binding SelectedCaptureType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged,
                                      Converter={StaticResource EnumBooleanConverter}, ConverterParameter=PJ}"/>
@@ -144,8 +135,15 @@
                                      TabContentCacheMode="CacheTabsOnSelecting"
                                      SelectedIndex="{Binding Path=SelectedIndexPage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
 
-                        <!-- TAB: Datos Basicos -->
-                        <dx:DXTabItem Header="Datos Basicos">
+                        <!-- TAB: Datos Básicos -->
+                        <dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
+                            <dx:DXTabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Datos Básicos" VerticalAlignment="Center"/>
+                                    <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                                             Visibility="{Binding Data.HasBasicDataErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </dx:DXTabItem.Header>
                             <Grid Margin="0,8,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -170,8 +168,8 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Razon Social (PJ) -->
-                                <TextBlock Text="Razon Social" Grid.Column="0" Grid.Row="0" Margin="0,0,0,3" FontSize="13"
+                                <!-- Razón Social (PJ) -->
+                                <TextBlock Text="Razón Social" Grid.Column="0" Grid.Row="0" Margin="0,0,0,3" FontSize="13"
                                            Visibility="{Binding CaptureInfoAsPJ, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 <dxe:TextEdit x:Name="BusinessName" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1"
                                               Style="{StaticResource FocusedHighlightStyle}"
@@ -212,8 +210,8 @@
                                               Visibility="{Binding CaptureInfoAsPN, Converter={StaticResource BooleanToVisibilityConverter}}"
                                               Margin="4,0,0,8" Padding="3" BorderBrush="#C8CED6"/>
 
-                                <!-- Telefonos -->
-                                <TextBlock Text="Telefono Fijo 1" Grid.Column="0" Grid.Row="4" Margin="0,0,4,3" FontSize="13"/>
+                                <!-- Teléfonos -->
+                                <TextBlock Text="Teléfono Fijo 1" Grid.Column="0" Grid.Row="4" Margin="0,0,4,3" FontSize="13"/>
                                 <dxe:TextEdit x:Name="PrimaryPhone" Grid.Column="0" Grid.Row="5"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding PrimaryPhoneMaxLength}"
@@ -221,7 +219,7 @@
                                               cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="0,0,4,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
-                                <TextBlock Text="Telefono Fijo 2" Grid.Column="1" Grid.Row="4" Margin="4,0,4,3" FontSize="13"/>
+                                <TextBlock Text="Teléfono Fijo 2" Grid.Column="1" Grid.Row="4" Margin="4,0,4,3" FontSize="13"/>
                                 <dxe:TextEdit x:Name="SecondaryPhone" Grid.Column="1" Grid.Row="5"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding SecondaryPhoneMaxLength}"
@@ -245,8 +243,8 @@
                                               cal:Message.Attach="[Event LostFocus] = [Action PhoneInputLostFocus($source)]"
                                               Margin="4,0,0,8" Padding="3" BorderBrush="#C8CED6" Validation.ErrorTemplate="{x:Null}"/>
 
-                                <!-- Pais -->
-                                <TextBlock Text="Pais" Grid.Column="0" Grid.Row="6" Margin="0,0,0,3" FontSize="13"/>
+                                <!-- País -->
+                                <TextBlock Text="País" Grid.Column="0" Grid.Row="6" Margin="0,0,0,3" FontSize="13"/>
                                 <dxg:LookUpEdit Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="7"
                                                 Margin="0,0,0,8" Padding="3"
                                                 AutoPopulateColumns="False"
@@ -254,7 +252,7 @@
                                                 FilterCondition="Contains"
                                                 ImmediatePopup="True"
                                                 ClearSelectionOnBackspace="True"
-                                                NullText="Seleccione un pais..."
+                                                NullText="Seleccione un país..."
                                                 ItemsSource="{Binding Path=Countries}"
                                                 DisplayMember="Name" ValueMember="Id"
                                                 SelectedItem="{Binding Path=SelectedCountry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -264,7 +262,7 @@
                                             <dxg:GridControl Name="PART_GridControl">
                                                 <dxg:GridControl.View><dxg:TableView AutoWidth="True"/></dxg:GridControl.View>
                                                 <dxg:GridControl.Columns>
-                                                    <dxg:GridColumn Header="Nombre del pais" FieldName="Name"/>
+                                                    <dxg:GridColumn Header="Nombre del país" FieldName="Name"/>
                                                 </dxg:GridControl.Columns>
                                             </dxg:GridControl>
                                         </ControlTemplate>
@@ -334,8 +332,8 @@
                                     </dxg:LookUpEdit.ItemsPanel>
                                 </dxg:LookUpEdit>
 
-                                <!-- Direccion -->
-                                <TextBlock Text="Direccion" Grid.Column="0" Grid.Row="12" Margin="0,0,0,3" FontSize="13"/>
+                                <!-- Dirección -->
+                                <TextBlock Text="Dirección" Grid.Column="0" Grid.Row="12" Margin="0,0,0,3" FontSize="13"/>
                                 <dxe:TextEdit x:Name="Address" Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="13"
                                               Style="{StaticResource FocusedHighlightStyle}"
                                               MaxLength="{Binding AddressMaxLength}"
@@ -344,7 +342,14 @@
                         </dx:DXTabItem>
 
                         <!-- TAB: Retenciones -->
-                        <dx:DXTabItem Header="Retenciones">
+                        <dx:DXTabItem ToolTip="{Binding Data.WithholdingTabTooltip, Source={StaticResource DataContextProxy}}">
+                            <dx:DXTabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Retenciones" VerticalAlignment="Center"/>
+                                    <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                                             Visibility="{Binding Data.HasWithholdingErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </dx:DXTabItem.Header>
                             <Grid Margin="0,8,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
@@ -431,7 +436,7 @@
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Grid.Column="0" Grid.Row="0" FontSize="13" Margin="0,0,4,5">
-                                        <Run Text="Descripcion"/>
+                                        <Run Text="Descripción"/>
                                         <Run Text=" ( Ej: Gerencia, Compras )" Foreground="Gray"/>
                                     </TextBlock>
                                     <TextBlock Grid.Column="1" Grid.Row="0" FontSize="13" Margin="4,0,0,5">
@@ -478,7 +483,7 @@
                                           ItemsSource="{Binding Path=Emails, Mode=OneWay}"
                                           SelectedItem="{Binding Path=SelectedEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Descripcion" Width="*"
+                                        <DataGridTextColumn Header="Descripción" Width="*"
                                                             Binding="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         <DataGridTextColumn Header="Email" Width="*"
                                                             Binding="{Binding Path=Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
@@ -513,28 +518,33 @@
                                 <!-- Exento de IVA -->
                                 <dxe:CheckEdit Margin="0,0,0,6"
                                                IsChecked="{Binding IsTaxFree, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                               Content="Este proveedor esta exento de IVA"
+                                               Content="Este proveedor está exento de IVA"
                                                Style="{StaticResource BlueCheckedTextStyle}" Padding="2"/>
                             </StackPanel>
                         </dx:DXTabItem>
                     </dx:DXTabControl>
+
+                    <!-- Leyenda indicador de error -->
+                    <StackPanel Orientation="Horizontal" Grid.Row="5" Margin="0,4,0,0">
+                        <Ellipse Width="8" Height="8" Fill="#FFA500" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="Indica que la pestaña contiene campos obligatorios pendientes por diligenciar"
+                                   Foreground="Gray" FontSize="11" FontStyle="Italic" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Grid>
 
                 <!-- Button bar centered -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding SaveCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -545,10 +555,8 @@
                     </Button>
                     <!-- Cancelar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsCancel="True">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsCancel="True"
+                            Command="{Binding CancelCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
                             <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>

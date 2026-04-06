@@ -5,16 +5,18 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
 using Models.Suppliers;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Suppliers.Suppliers.Validators;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,7 +28,8 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
     public class SupplierViewModel : Screen,
         IHandle<SupplierCreateMessage>,
         IHandle<SupplierUpdateMessage>,
-        IHandle<SupplierDeleteMessage>
+        IHandle<SupplierDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -36,73 +39,76 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly Helpers.IDialogService _dialogService;
 
-        // Caches
         private readonly IGraphQLClient _graphQLClient;
         private readonly IdentificationTypeCache _identificationTypeCache;
         private readonly CountryCache _countryCache;
         private readonly WithholdingTypeCache _withholdingTypeCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly SupplierValidator _validator;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateSupplier));
+                    NotifyOfPropertyChange(nameof(CanEditSupplier));
+                    NotifyOfPropertyChange(nameof(CanDeleteSupplier));
                 }
             }
         }
 
-        private string _filterSearch = string.Empty;
+        private readonly DebouncedAction _searchDebounce = new();
+
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = LoadSuppliersAsync();
+                        _ = _searchDebounce.RunAsync(() => LoadSuppliersAsync());
                     }
                 }
             }
-        }
+        } = string.Empty;
 
-        private ObservableCollection<SupplierDTO> _suppliers = [];
         public ObservableCollection<SupplierDTO> Suppliers
         {
-            get => _suppliers;
+            get;
             set
             {
-                if (_suppliers != value)
+                if (field != value)
                 {
-                    _suppliers = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Suppliers));
                 }
             }
-        }
+        } = [];
 
-        private SupplierDTO? _selectedSupplier;
         public SupplierDTO? SelectedSupplier
         {
-            get => _selectedSupplier;
+            get;
             set
             {
-                if (_selectedSupplier != value)
+                if (field != value)
                 {
-                    _selectedSupplier = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedSupplier));
                     NotifyOfPropertyChange(nameof(CanDeleteSupplier));
                     NotifyOfPropertyChange(nameof(CanEditSupplier));
@@ -110,82 +116,108 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
         }
 
-        private ObservableCollection<AccountingAccountGraphQLModel> _accountingAccounts = [];
         public ObservableCollection<AccountingAccountGraphQLModel> AccountingAccounts
         {
-            get => _accountingAccounts;
+            get;
             set
             {
-                if (_accountingAccounts != value)
+                if (field != value)
                 {
-                    _accountingAccounts = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingAccounts));
                 }
             }
-        }
+        } = [];
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
+                }
+            }
+        } = string.Empty;
+
+        #endregion
+
+        #region Empty State
+
+        private bool _isInitialized;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
+
+        public bool ShowEmptyState
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Supplier.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Supplier.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Supplier.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditSupplier => SelectedSupplier is not null;
-        public bool CanDeleteSupplier => SelectedSupplier is not null;
+        public bool CanCreateSupplier => HasCreatePermission && !IsBusy;
+        public bool CanEditSupplier => HasEditPermission && SelectedSupplier is not null && !IsBusy;
+        public bool CanDeleteSupplier => HasDeletePermission && SelectedSupplier is not null && !IsBusy;
 
         #endregion
 
@@ -245,7 +277,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             WithholdingTypeCache withholdingTypeCache,
             StringLengthCache stringLengthCache,
             Helpers.IDialogService dialogService,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            JoinableTaskFactory joinableTaskFactory,
+            SupplierValidator validator,
+            PermissionCache permissionCache)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -257,6 +292,9 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
+            _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -268,9 +306,34 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Supplier);
-            await LoadSuppliersAsync(withDependencies: true);
-            this.SetFocus(() => FilterSearch);
+            try
+            {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Supplier);
+
+                await _permissionCache.EnsureLoadedAsync();
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateSupplier));
+                NotifyOfPropertyChange(nameof(CanEditSupplier));
+                NotifyOfPropertyChange(nameof(CanDeleteSupplier));
+
+                await LoadSuppliersAsync(withDependencies: true);
+                _isInitialized = true;
+                ShowEmptyState = Suppliers == null || Suppliers.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
+                this.SetFocus(() => FilterSearch);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -292,17 +355,25 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient);
+                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator);
                 await detail.InitializeAsync();
                 detail.SetForNew();
                 IsBusy = false;
+
+                if (this.GetView() is FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.6;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Nuevo proveedor");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(CreateSupplierAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -316,17 +387,25 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SupplierDetailViewModel(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient);
+                SupplierDetailViewModel detail = new(_supplierService, _eventAggregator, AccountingAccounts, _identificationTypeCache, _countryCache, _withholdingTypeCache, _stringLengthCache, AutoMapper, _graphQLClient, _joinableTaskFactory, _validator);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedSupplier.Id);
                 IsBusy = false;
+
+                if (this.GetView() is FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.6;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Editar proveedor");
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(EditSupplierAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -340,11 +419,12 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
-                string canDeleteQuery = GetCanDeleteSupplierQuery();
-                object canDeleteVars = new { canDeleteResponseId = SelectedSupplier.Id };
-                var validation = await _supplierService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                (GraphQLQueryFragment canDeleteFragment, string canDeleteQuery) = _canDeleteSupplierQuery.Value;
+                object canDeleteVars = new GraphQLVariables()
+                    .For(canDeleteFragment, "id", SelectedSupplier.Id)
+                    .Build();
+                CanDeleteType validation = await _supplierService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -363,31 +443,30 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
 
                 IsBusy = true;
-                string deleteQuery = GetDeleteSupplierQuery();
-                object deleteVars = new { deleteResponseId = SelectedSupplier.Id };
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteSupplierQuery.Value;
+                object deleteVars = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedSupplier.Id)
+                    .Build();
                 DeleteResponseType deletedSupplier = await _supplierService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
 
                 if (!deletedSupplier.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedSupplier.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedSupplier.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
-                await _eventAggregator.PublishOnUIThreadAsync(new SupplierDeleteMessage { DeletedSupplier = deletedSupplier });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content!.ToString()!);
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{exGraphQL.Message}\r\n{graphQLError.Errors[0].Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new SupplierDeleteMessage { DeletedSupplier = deletedSupplier },
+                    CancellationToken.None);
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteSupplierAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -405,27 +484,23 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             {
                 IsBusy = true;
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                string query = GetLoadSuppliersDataQuery(withDependencies);
-
-                dynamic variables = new ExpandoObject();
-
-                variables.pageResponseFilters = new ExpandoObject();
-                if (!string.IsNullOrEmpty(FilterSearch))
-                {
-                    variables.pageResponseFilters.Matching = FilterSearch;
-                }
-
-                variables.pageResponsePagination = new ExpandoObject();
-                variables.pageResponsePagination.Page = PageIndex;
-                variables.pageResponsePagination.PageSize = PageSize;
+                dynamic filters = new System.Dynamic.ExpandoObject();
+                if (!string.IsNullOrEmpty(FilterSearch)) filters.Matching = FilterSearch.Trim().RemoveExtraSpaces();
 
                 if (withDependencies)
                 {
-                    variables.accountingAccountsFilters = new ExpandoObject();
-                    variables.accountingAccountsFilters.only_auxiliary_accounts = true;
+                    (GraphQLQueryFragment suppliersFragment, GraphQLQueryFragment accountingAccountsFragment, string query) = _loadSuppliersWithDepsQuery.Value;
+
+                    dynamic accountingFilters = new System.Dynamic.ExpandoObject();
+                    accountingFilters.only_auxiliary_accounts = true;
+
+                    object variables = new GraphQLVariables()
+                        .For(suppliersFragment, "pagination", new { Page = PageIndex, PageSize })
+                        .For(suppliersFragment, "filters", filters)
+                        .For(accountingAccountsFragment, "filters", accountingFilters)
+                        .Build();
 
                     SupplierDataContext result = await _supplierService.GetDataContextAsync<SupplierDataContext>(query, variables);
                     TotalCount = result.Suppliers.TotalEntries;
@@ -434,6 +509,13 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 }
                 else
                 {
+                    (GraphQLQueryFragment fragment, string query) = _loadSuppliersQuery.Value;
+
+                    object variables = new GraphQLVariables()
+                        .For(fragment, "pagination", new { Page = PageIndex, PageSize })
+                        .For(fragment, "filters", filters)
+                        .Build();
+
                     PageType<SupplierGraphQLModel> result = await _supplierService.GetPageAsync(query, variables);
                     TotalCount = result.TotalEntries;
                     Suppliers = AutoMapper.Map<ObservableCollection<SupplierDTO>>(result.Entries);
@@ -444,9 +526,10 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod()!.Name.Between("<", ">")} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadSuppliersAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -458,34 +541,34 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         #region GraphQL Queries
 
-        public string GetLoadSuppliersDataQuery(bool withDependencies = false)
+        private static FieldSpec<PageType<SupplierGraphQLModel>> BuildSuppliersFields()
         {
-            var suppliersFields = FieldSpec<PageType<SupplierGraphQLModel>>
+            return FieldSpec<PageType<SupplierGraphQLModel>>
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.IsTaxFree)
                     .Field(e => e.IcaWithholdingRate)
                     .Select(e => e.IcaAccountingAccount, acc => acc
-                        .Field(c => c.Id)
-                        .Field(c => c.Code)
-                        .Field(c => c.Name))
+                        .Field(c => c!.Id)
+                        .Field(c => c!.Code)
+                        .Field(c => c!.Name))
                     .Select(e => e.AccountingEntity, acc => acc
-                        .Field(c => c.Id)
-                        .Field(c => c.IdentificationNumber)
-                        .Field(c => c.VerificationDigit)
-                        .Field(c => c.CaptureType)
-                        .Field(c => c.SearchName)
-                        .Field(c => c.FirstLastName)
-                        .Field(c => c.MiddleLastName)
-                        .Field(c => c.BusinessName)
-                        .Field(c => c.PrimaryPhone)
-                        .Field(c => c.SecondaryPhone)
-                        .Field(c => c.PrimaryCellPhone)
-                        .Field(c => c.SecondaryCellPhone)
-                        .Field(c => c.Address)
-                        .Field(c => c.TelephonicInformation)
-                        .SelectList(e => e.Emails, email => email
+                        .Field(c => c!.Id)
+                        .Field(c => c!.IdentificationNumber)
+                        .Field(c => c!.VerificationDigit)
+                        .Field(c => c!.CaptureType)
+                        .Field(c => c!.SearchName)
+                        .Field(c => c!.FirstLastName)
+                        .Field(c => c!.MiddleLastName)
+                        .Field(c => c!.BusinessName)
+                        .Field(c => c!.PrimaryPhone)
+                        .Field(c => c!.SecondaryPhone)
+                        .Field(c => c!.PrimaryCellPhone)
+                        .Field(c => c!.SecondaryCellPhone)
+                        .Field(c => c!.Address)
+                        .Field(c => c!.TelephonicInformation)
+                        .SelectList(e => e!.Emails, email => email
                             .Field(c => c.Id)
                             .Field(c => c.Email)
                             .Field(c => c.Description)
@@ -493,10 +576,24 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                 .Field(o => o.PageNumber)
                 .Field(o => o.PageSize)
                 .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
-                .Build();
+                .Field(o => o.TotalEntries);
+        }
 
-            var accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadSuppliersQuery = new(() =>
+        {
+            Dictionary<string, object> fields = BuildSuppliersFields().Build();
+
+            GraphQLQueryFragment fragment = new("suppliersPage",
+                [new("filters", "SupplierFilters"), new("pagination", "Pagination")],
+                fields, "pageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment SuppliersFragment, GraphQLQueryFragment AccountingAccountsFragment, string Query)> _loadSuppliersWithDepsQuery = new(() =>
+        {
+            Dictionary<string, object> suppliersFields = BuildSuppliersFields().Build();
+
+            Dictionary<string, object> accountingAccountFields = FieldSpec<PageType<AccountingAccountGraphQLModel>>
                 .Create()
                 .SelectList(it => it.Entries, entries => entries
                     .Field(e => e.Id)
@@ -504,50 +601,44 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
                     .Field(e => e.Code))
                 .Build();
 
-            var accountingAccountParameters = new GraphQLQueryParameter("filters", "AccountingAccountFilters");
-            var accountingAccountFragment = new GraphQLQueryFragment("accountingAccountsPage", [accountingAccountParameters], accountingAccountFields, "AccountingAccounts");
+            GraphQLQueryFragment suppliersFragment = new("suppliersPage",
+                [new("pagination", "Pagination"), new("filters", "SupplierFilters")],
+                suppliersFields, "suppliers");
 
-            var suppliersPagParameters = new GraphQLQueryParameter("pagination", "Pagination");
-            var suppliersParameters = new GraphQLQueryParameter("filters", "SupplierFilters");
-            var suppliersFragment = new GraphQLQueryFragment("suppliersPage", [suppliersPagParameters, suppliersParameters], suppliersFields, withDependencies ? "suppliers" : "pageResponse");
+            GraphQLQueryFragment accountingAccountsFragment = new("accountingAccountsPage",
+                [new("filters", "AccountingAccountFilters")],
+                accountingAccountFields, "accountingAccounts");
 
-            var builder = withDependencies
-                ? new GraphQLQueryBuilder([suppliersFragment, accountingAccountFragment])
-                : new GraphQLQueryBuilder([suppliersFragment]);
+            return (suppliersFragment, accountingAccountsFragment,
+                    new GraphQLQueryBuilder([suppliersFragment, accountingAccountsFragment]).GetQuery());
+        });
 
-            return builder.GetQuery();
-        }
-
-        public string GetCanDeleteSupplierQuery()
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteSupplierQuery = new(() =>
         {
-            var fields = FieldSpec<CanDeleteType>
+            Dictionary<string, object> fields = FieldSpec<CanDeleteType>
                 .Create()
                 .Field(f => f.CanDelete)
                 .Field(f => f.Message)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("canDeleteSupplier", [parameter], fields, alias: "CanDeleteResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
+            GraphQLQueryFragment fragment = new("canDeleteSupplier",
+                [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
-            return builder.GetQuery();
-        }
-
-        public string GetDeleteSupplierQuery()
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteSupplierQuery = new(() =>
         {
-            var fields = FieldSpec<DeleteResponseType>
+            Dictionary<string, object> fields = FieldSpec<DeleteResponseType>
                 .Create()
                 .Field(f => f.DeletedId)
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("deleteSupplier", [parameter], fields, alias: "DeleteResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
+            GraphQLQueryFragment fragment = new("deleteSupplier",
+                [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
 
         #endregion
 
@@ -555,6 +646,7 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
 
         public async Task HandleAsync(SupplierCreateMessage message, CancellationToken cancellationToken)
         {
+            ShowEmptyState = false;
             await LoadSuppliersAsync();
             _notificationService.ShowSuccess(message.CreatedSupplier.Message);
         }
@@ -568,8 +660,20 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
         public async Task HandleAsync(SupplierDeleteMessage message, CancellationToken cancellationToken)
         {
             await LoadSuppliersAsync();
+            ShowEmptyState = Suppliers == null || Suppliers.Count == 0;
             SelectedSupplier = null;
             _notificationService.ShowSuccess(message.DeletedSupplier.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateSupplier));
+            NotifyOfPropertyChange(nameof(CanEditSupplier));
+            NotifyOfPropertyChange(nameof(CanDeleteSupplier));
+            return Task.CompletedTask;
         }
 
         #endregion
