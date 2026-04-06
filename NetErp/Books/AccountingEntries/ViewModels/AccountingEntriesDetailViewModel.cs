@@ -244,6 +244,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _documentDate = value;
                     NotifyOfPropertyChange(nameof(DocumentDate));
                     this.TrackChange(nameof(DocumentDate));
+                    ValidateProperty(nameof(DocumentDate), null);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                     NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
@@ -421,6 +422,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         // Selected Accounting Book
         private int _selectedAccountingBookId;
+        [ExpandoPath("accountingBookId")]
         public int SelectedAccountingBookId
         {
             get { return _selectedAccountingBookId; }
@@ -431,6 +433,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _selectedAccountingBookId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingBookId));
                     this.TrackChange(nameof(SelectedAccountingBookId));
+                    ValidateProperty(nameof(SelectedAccountingBookId), null, value);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                     NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
@@ -438,6 +441,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         private int _selectedCostCenterId = 0;
+        [ExpandoPath("costCenterId")]
         public int SelectedCostCenterId
         {
             get { return _selectedCostCenterId; }
@@ -508,6 +512,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         // Selected Accounting Source
         private int _selectedAccountingSourceId = 0;
+        [ExpandoPath("accountingSourceId")]
         public int SelectedAccountingSourceId
         {
             get { return _selectedAccountingSourceId; }
@@ -561,6 +566,18 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 this.IsBusy = true;
                 this.Refresh();
+
+                // Si hay cambios pendientes en el header del borrador, persistirlos antes
+                // de finalizar. Solo aplica cuando el borrador ya existe (DraftMasterId > 0);
+                // si es un borrador nuevo (DraftMasterId == 0) no hay nada que actualizar
+                // porque los datos del header se enviarán dentro de createAccountingEntryDraft
+                // junto con la primera línea — ese flujo no aplica aquí porque PublishAccountingEntry
+                // requiere un borrador ya creado.
+                if (DraftMasterId != 0 && this.HasChanges())
+                {
+                    await UpdateDraftHeaderAsync();
+                }
+
                 var createdEntry = await this.ExecutePublishAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(createdEntry);
                 if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDraftMasterDeleteMessage { Id = this.DraftMasterId });
@@ -663,8 +680,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                // Aqui deben haber mas validaciones, que no hayan cosas vacias, etc..
-                return (TotalDiference == 0 && TotalCredit > 0);
+                // Domain rules: las líneas deben cuadrar y haber al menos un crédito.
+                // Adicional: el header no debe tener errores de validación pendientes
+                // (descripción vacía, libro/fuente sin seleccionar, etc.).
+                return (TotalDiference == 0 && TotalCredit > 0) && !this.HasErrors;
             }
         }
 
@@ -1168,58 +1187,56 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return builder.GetQuery();
         }
 
-        public async Task<AccountingEntryDraftGraphQLModel> UpdateAccountingEntryDraftMasterAsync(string field)
+        /// <summary>
+        /// Persiste los cambios pendientes del header del borrador (descripción, fecha, libro,
+        /// centro de costo, fuente). Solo manda los campos modificados gracias a ChangeCollector
+        /// + ChangeTracker. Llamado desde PublishAccountingEntryAsync antes de finalize cuando
+        /// hay cambios y existe un borrador (DraftMasterId > 0).
+        /// </summary>
+        public async Task<AccountingEntryDraftGraphQLModel> UpdateDraftHeaderAsync()
         {
-            try
-            {
-                string query = @"
-                mutation($data:UpdateAccountingEntryDraftMasterInput!, $id:Int!) {
-                    UpdateResponse: updateAccountingEntryDraftMaster(data:$data, id:$id) {
+            string query = @"
+            mutation($data:UpdateAccountingEntryDraftMasterInput!, $id:Int!) {
+                UpdateResponse: updateAccountingEntryDraftMaster(data:$data, id:$id) {
+                id
+                masterId
+                accountingBook {
                     id
-                    masterId  
-                    accountingBook {
-                        id
-                        name
-                    }
-                    costCenter {
-                        id
-                        name
-                    }
-                    accountingSource {
-                        id
-                        name
-                    }
-                    documentNumber
-                    documentDate
-                    createdAt
-                    description
-                    createdBy
-                    }
-                }";
-                DateTime? parsedDocumentDate = DateTimeHelper.DateTimeKindUTC(DocumentDate);
-                object variables = field switch
-                {
-                    nameof(DocumentDate) => new
-                    {
-                        Data = new { DocumentDate = parsedDocumentDate },
-                        Id = this.DraftMasterId
-                    },
-                    nameof(Description) => new
-                    {
-                        Data = new { Description },
-                        Id = this.DraftMasterId
-                    },
-                    _ => new { },
-                };
-                var result = await this._accountingEntryDraftMasterService.UpdateAsync(query, variables);
-                var message = new AccountingEntryDraftMasterUpdateMessage() { UpdatedAccountingEntryDraftMaster = this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(result) };
-                await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
-                return result;
-            }
-            catch (Exception)
+                    name
+                }
+                costCenter {
+                    id
+                    name
+                }
+                accountingSource {
+                    id
+                    name
+                }
+                documentNumber
+                documentDate
+                createdAt
+                description
+                createdBy
+                }
+            }";
+
+            dynamic variables = ChangeCollector.CollectChanges(this, prefix: "data");
+
+            // ChangeCollector serializa DateTime sin Kind. La API requiere Kind=Utc para
+            // documentDate, igual que el código original (DateTimeHelper.DateTimeKindUTC).
+            var dataDict = (IDictionary<string, object>)variables.data;
+            if (dataDict.TryGetValue("documentDate", out var dateVal) && dateVal is DateTime dt)
             {
-                throw;
+                dataDict["documentDate"] = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
             }
+
+            variables.id = (int)this.DraftMasterId;
+
+            var result = await this._accountingEntryDraftMasterService.UpdateAsync(query, (object)variables);
+            var message = new AccountingEntryDraftMasterUpdateMessage() { UpdatedAccountingEntryDraftMaster = this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(result) };
+            await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
+            this.AcceptChanges();
+            return result;
         }
 
         #endregion
@@ -1511,6 +1528,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 _errors[propertyName].Add(error);
                 RaiseErrorsChanged(propertyName);
+                NotifyOfPropertyChange(nameof(CanAddRecord));
+                NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
             }
         }
 
@@ -1520,6 +1539,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
+                NotifyOfPropertyChange(nameof(CanAddRecord));
+                NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
             }
         }
 
@@ -1528,11 +1549,17 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             ClearErrors(propertyName);
             switch (propertyName)
             {
+                case nameof(SelectedAccountingBookId):
+                    if (intValue <= 0) AddError(propertyName, "El libro contable no puede estar vacío");
+                    break;
                 case nameof(SelectedCostCenterId):
                     if (intValue <= 0) AddError(propertyName, "El centro de costo no puede estar vacío");
                     break;
                 case nameof(SelectedAccountingSourceId):
                     if (intValue <= 0) AddError(propertyName, "La fuente contable no puede estar vacía");
+                    break;
+                case nameof(DocumentDate):
+                    if (DocumentDate is null) AddError(propertyName, "La fecha del documento no puede estar vacía");
                     break;
                 case nameof(SelectedAccountingAccountOnEntryId):
                     if (intValue <= 0) AddError(propertyName, "La cuenta contable no puede estar vacía");
@@ -1562,8 +1589,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private void ValidateProperties()
         {
+            ValidateProperty(nameof(SelectedAccountingBookId), null, SelectedAccountingBookId);
             ValidateProperty(nameof(SelectedCostCenterId), null, SelectedCostCenterId);
             ValidateProperty(nameof(SelectedAccountingSourceId), null, SelectedAccountingSourceId);
+            ValidateProperty(nameof(DocumentDate), null);
             ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, SelectedAccountingAccountOnEntryId);
             ValidateProperty(nameof(SelectedAccountingEntityOnEntryId), null, SelectedAccountingEntityOnEntryId);
             ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, SelectedCostCenterOnEntryId);
