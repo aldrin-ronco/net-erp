@@ -504,7 +504,6 @@
                     MinRowHeight="30"
                     AlternatingRowBackground="Beige"
                     Background="Transparent"
-                    cal:Message.Attach="[Event RowEditEnding] = [Action EndRowEditingAsync]"
                     ItemsSource="{Binding Path=AccountingEntries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     SelectedItem="{Binding Path=SelectedAccountingEntryDraftDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     CanUserDeleteRows="False">

@@ -32,7 +32,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private readonly IGraphQLClient _graphQLClient;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
@@ -67,11 +66,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IEventAggregator eventAggregator,
                                           Helpers.Services.INotificationService notificationService,
                                           IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-                                          IRepository<AccountingAccountGraphQLModel> accountingAccountService,
                                           IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
                                           IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
                                           IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
-                                          IRepository<AccountingEntryDetailGraphQLModel> accountingEntryDetailService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
@@ -82,7 +79,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.EventAggregator = eventAggregator;
             this.Mapper = mapper;
             this._accountingEntityService = accountingEntityService;
-            this._accountingAccountService = accountingAccountService;
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             this._accountingEntryMasterService = accountingEntryMasterService;
@@ -93,8 +89,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _graphQLClient = graphQLClient;
 
-            _ = this.ActivateMasterViewAsync();
-            
+        }
+
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+        {
+            await ActivateMasterViewAsync();
+            await base.OnInitializedAsync(cancellationToken);
         }
 
         public async Task ActivateMasterViewAsync()
@@ -117,7 +117,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this._accountingEntityService,
                 this._accountingEntryDraftMasterService,
                 this._accountingEntryDraftDetailService,
-                this._accountingAccountService,
                 this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
             // Header
             instance.SelectedAccountingEntryDraftMaster = null;
@@ -155,7 +154,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 object variables;
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._accountingAccountService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
                 string query = @"
                 query($draftMasterId:ID) {
                   ListResponse: accountingEntriesDraftDetail(draftMasterId: $draftMasterId) {
@@ -254,9 +253,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
       
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
-
-            // Desconectar eventos para evitar memory leaks
-            EventAggregator.Unsubscribe(this);
+            if (close)
+            {
+                // Desconectar eventos para evitar memory leaks (solo cuando el tab se cierra,
+                // no al cambiar de tab — el sistema MDI mantiene la instancia viva).
+                EventAggregator.Unsubscribe(this);
+            }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
     }

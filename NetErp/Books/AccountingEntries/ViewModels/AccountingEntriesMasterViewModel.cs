@@ -721,10 +721,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
             // Mensajes
             this.Context.EventAggregator.SubscribeOnUIThread(this);
+        }
 
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
-            
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+        {
+            await InitializeAsync();
+            await base.OnInitializedAsync(cancellationToken);
         }
 
         public async Task InitializeAsync()

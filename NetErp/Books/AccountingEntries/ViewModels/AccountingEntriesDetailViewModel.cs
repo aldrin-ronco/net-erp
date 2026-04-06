@@ -55,7 +55,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService; 
         private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
-        private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
 
         
 
@@ -245,9 +244,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _documentDate = value;
                     NotifyOfPropertyChange(nameof(DocumentDate));
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // Con esto evito que vaya a la API en la primera asignación
-                    if (this.SelectedAccountingEntryDraftMaster != null && this.SelectedAccountingEntryDraftMaster.DocumentDate != value)
-                        _ = Task.Run(() => UpdateAccountingEntryDraftMasterAsync(nameof(DocumentDate)));
+                    // TODO: refactor pendiente — auto-save por setter (Task.Run) eliminado.
+                    // El cambio se persistirá vía CanSave + ExecuteSaveAsync (Bloque 3 del refactor).
+                    // Requiere análisis junto con EndRowEditingAsync por integridad transaccional.
                 }
             }
         }
@@ -265,9 +264,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     NotifyOfPropertyChange(nameof(Description));
                     ValidateProperty(nameof(Description), value, 0);
                     NotifyOfPropertyChange(nameof(CanAddRecord));
-                    // Con esto evito que vaya a la API en la primera asignación
-                    if (this.SelectedAccountingEntryDraftMaster != null && this.SelectedAccountingEntryDraftMaster.Description != value && !string.IsNullOrEmpty(Description))
-                        _ = Task.Run(() => UpdateAccountingEntryDraftMasterAsync(nameof(Description)));
+                    // TODO: refactor pendiente — auto-save por setter (Task.Run) eliminado.
+                    // El cambio se persistirá vía CanSave + ExecuteSaveAsync (Bloque 3 del refactor).
+                    // Requiere análisis junto con EndRowEditingAsync por integridad transaccional.
                 }
             }
         }
@@ -665,91 +664,97 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task EndRowEditingAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                string query = @"
-                mutation($data:UpdateAccountingEntryDraftDetailInput!, $id:Int!) {
-                  UpdateResponse: updateAccountingEntryDraftDetail(data:$data, id:$id) {
-                    id
-                    draftMasterId
-                    accountingAccount {
-                      id
-                      code
-                      name      
-                    }
-                    accountingEntity {
-                      id
-                      identificationNumber
-                      verificationDigit
-                      businessName
-                      searchName
-                    }
-                    costCenter {
-                      id
-                      name
-                    }
-                    recordDetail
-                    debit
-                    credit
-                    base
-                  }
-                }";
-
-
-                dynamic variables = new ExpandoObject();
-                variables.Data = new ExpandoObject();
-                variables.Id = SelectedAccountingEntryDraftDetail.Id;
-                variables.Data.AccountingAccountId = SelectedAccountingEntryDraftDetail.AccountingAccount.Id;
-                variables.Data.AccountingEntityId = SelectedAccountingEntryDraftDetail.AccountingEntity.Id;
-                variables.Data.CostCenterId = SelectedAccountingEntryDraftDetail.CostCenter.Id;
-                variables.Data.RecordDetail = SelectedAccountingEntryDraftDetail.RecordDetail;
-                variables.Data.Debit = SelectedAccountingEntryDraftDetail.Debit;
-                variables.Data.Credit = SelectedAccountingEntryDraftDetail.Credit;
-                variables.Data.Base = SelectedAccountingEntryDraftDetail.Base;
-
-                AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
-                // Actualizo el registro en la lista
-                var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
-                if (entryToUpdate != null)
-                {
-                    entryToUpdate.AccountingAccount = updatedEntry.AccountingAccount;
-                    entryToUpdate.AccountingEntity = updatedEntry.AccountingEntity;
-                    entryToUpdate.CostCenter = updatedEntry.CostCenter;
-                    entryToUpdate.RecordDetail = updatedEntry.RecordDetail;
-                    entryToUpdate.Debit = updatedEntry.Debit;
-                    entryToUpdate.Credit = updatedEntry.Credit;
-                    entryToUpdate.Base = updatedEntry.Base;
-                }
-                // Totals
-                query = @"
-                    query($draftMasterId:ID!){
-                        accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
-                        debit
-                        credit
-                        }
-                    }";
-                variables = new
-                {
-                    this.DraftMasterId
-                };
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
-                this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
-                this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
-                this.IsBusy = false;
-                _notificationService.ShowSuccess("Actualización exitosa");
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+        // TODO: refactor pendiente — edición inline por celda deshabilitada.
+        // Este método persistía cada celda inmediatamente al API. Requiere análisis de UX e
+        // integridad transaccional antes de re-habilitarse (mismo patrón que el auto-save de
+        // DocumentDate/Description en los setters del header). Se conserva el código completo
+        // como referencia y se reactivará en una iteración posterior del refactor.
+        // El binding en AccountingEntriesDetailView.xaml también está comentado.
+        //public async Task EndRowEditingAsync()
+        //{
+        //    try
+        //    {
+        //        IsBusy = true;
+        //        string query = @"
+        //        mutation($data:UpdateAccountingEntryDraftDetailInput!, $id:Int!) {
+        //          UpdateResponse: updateAccountingEntryDraftDetail(data:$data, id:$id) {
+        //            id
+        //            draftMasterId
+        //            accountingAccount {
+        //              id
+        //              code
+        //              name
+        //            }
+        //            accountingEntity {
+        //              id
+        //              identificationNumber
+        //              verificationDigit
+        //              businessName
+        //              searchName
+        //            }
+        //            costCenter {
+        //              id
+        //              name
+        //            }
+        //            recordDetail
+        //            debit
+        //            credit
+        //            base
+        //          }
+        //        }";
+        //
+        //
+        //        dynamic variables = new ExpandoObject();
+        //        variables.Data = new ExpandoObject();
+        //        variables.Id = SelectedAccountingEntryDraftDetail.Id;
+        //        variables.Data.AccountingAccountId = SelectedAccountingEntryDraftDetail.AccountingAccount.Id;
+        //        variables.Data.AccountingEntityId = SelectedAccountingEntryDraftDetail.AccountingEntity.Id;
+        //        variables.Data.CostCenterId = SelectedAccountingEntryDraftDetail.CostCenter.Id;
+        //        variables.Data.RecordDetail = SelectedAccountingEntryDraftDetail.RecordDetail;
+        //        variables.Data.Debit = SelectedAccountingEntryDraftDetail.Debit;
+        //        variables.Data.Credit = SelectedAccountingEntryDraftDetail.Credit;
+        //        variables.Data.Base = SelectedAccountingEntryDraftDetail.Base;
+        //
+        //        AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
+        //        // Actualizo el registro en la lista
+        //        var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
+        //        if (entryToUpdate != null)
+        //        {
+        //            entryToUpdate.AccountingAccount = updatedEntry.AccountingAccount;
+        //            entryToUpdate.AccountingEntity = updatedEntry.AccountingEntity;
+        //            entryToUpdate.CostCenter = updatedEntry.CostCenter;
+        //            entryToUpdate.RecordDetail = updatedEntry.RecordDetail;
+        //            entryToUpdate.Debit = updatedEntry.Debit;
+        //            entryToUpdate.Credit = updatedEntry.Credit;
+        //            entryToUpdate.Base = updatedEntry.Base;
+        //        }
+        //        // Totals
+        //        query = @"
+        //            query($draftMasterId:ID!){
+        //                accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
+        //                debit
+        //                credit
+        //                }
+        //            }";
+        //        variables = new
+        //        {
+        //            this.DraftMasterId
+        //        };
+        //        var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
+        //        this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
+        //        this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
+        //        this.IsBusy = false;
+        //        _notificationService.ShowSuccess("Actualización exitosa");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Information));
+        //    }
+        //    finally
+        //    {
+        //        IsBusy = false;
+        //    }
+        //}
 
         public bool CanDeleteAccountingEntries
         {
@@ -887,7 +892,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
             IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
             IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
-            IRepository<AccountingAccountGraphQLModel> accountingAccountService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
@@ -902,14 +906,17 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntityService = accountingEntityService;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
-            this._accountingAccountService = accountingAccountService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _graphQLClient = graphQLClient;
 
+            // TODO (Bloque 3 del refactor): mover InitializeAsync a OnInitializedAsync.
+            // Hoy se ejecuta sincronicamente bloqueando el thread del constructor porque el
+            // Conductor (ActivateDetailViewForNewAsync / ActivateDetailViewForEditAsync) sobreescribe
+            // SelectedAccountingBookId/CostCenterId/SourceId DESPUÉS del constructor pero ANTES de
+            // ActivateItemAsync. Si se mueve a OnInitializedAsync sin reescribir esos overrides
+            // como SetForNew/SetForEdit, se pierden los valores. Se aborda en Bloque 3.
             var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            
             joinable.Run(async () => await InitializeAsync());
-            
         }
 
         /*public async Task ExecuteSearchForAccountingEntityMatchAsync()

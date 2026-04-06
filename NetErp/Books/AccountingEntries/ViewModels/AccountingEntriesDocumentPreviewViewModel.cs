@@ -13,6 +13,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -239,10 +240,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             // Mensajes
             this._eventAggregator = IoC.Get<IEventAggregator>();
             this._eventAggregator.SubscribeOnUIThread(this);
+        }
 
-            var joinable = new JoinableTaskFactory(new JoinableTaskContext());
-            joinable.Run(async () => await InitializeAsync());
-           
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
+        {
+            await InitializeAsync();
+            await base.OnInitializedAsync(cancellationToken);
         }
 
         // Print
