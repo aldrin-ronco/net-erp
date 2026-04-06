@@ -72,11 +72,11 @@
                                    ShowGroupPanel="False" AlternateRowBackground="Beige"/>
                 </dxg:GridControl.View>
 
-                <dxg:GridColumn Header="Nombre o razón social" Width="*" Binding="{Binding Customer.Entity.SearchName, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Nombre o razón social" Width="*" Binding="{Binding Customer.AccountingEntity.SearchName, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="N.I.T" Width="*" Binding="{Binding Customer.Entity.IdentificationNumberWithVerificationDigit, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="N.I.T" Width="*" Binding="{Binding Customer.AccountingEntity.IdentificationNumberWithVerificationDigit, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="Información teléfonica" Width="*" Binding="{Binding Customer.Entity.TelephonicInformation, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxg:GridColumn Header="Información teléfonica" Width="*" Binding="{Binding Customer.AccountingEntity.TelephonicInformation, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <dxg:GridColumn Header="Autorizado" Width="120" Binding="{Binding Limit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
                     <dxg:GridColumn.EditSettings>
