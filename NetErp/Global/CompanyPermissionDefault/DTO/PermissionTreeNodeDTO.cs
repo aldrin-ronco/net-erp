@@ -67,6 +67,21 @@ namespace NetErp.Global.CompanyPermissionDefault.DTO
             _ => PermissionBrush
         };
 
+        private static readonly SolidColorBrush ModuleBgBrush = new((Color)ColorConverter.ConvertFromString("#F0F0F0"));
+        private static readonly SolidColorBrush GroupBgBrush = new((Color)ColorConverter.ConvertFromString("#F5F5F5"));
+        private static readonly SolidColorBrush ItemBgBrush = new((Color)ColorConverter.ConvertFromString("#FAFAFA"));
+        private static readonly SolidColorBrush PermTypeGroupBgBrush = new((Color)ColorConverter.ConvertFromString("#FDFDFD"));
+        private static readonly SolidColorBrush TransparentBrush = Brushes.Transparent;
+
+        public SolidColorBrush NodeBackground => NodeType switch
+        {
+            PermissionTreeNodeType.Module => ModuleBgBrush,
+            PermissionTreeNodeType.Group => GroupBgBrush,
+            PermissionTreeNodeType.Item => ItemBgBrush,
+            PermissionTreeNodeType.PermissionTypeGroup => PermTypeGroupBgBrush,
+            _ => TransparentBrush
+        };
+
         // Permission-level properties
         public string Code { get; set; } = string.Empty;
         public string PermissionType { get; set; } = string.Empty;

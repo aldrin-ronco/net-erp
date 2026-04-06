@@ -13,6 +13,7 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -23,7 +24,8 @@ namespace NetErp.Global.Smtp.ViewModels
     public class SmtpViewModel : Screen,
         IHandle<SmtpCreateMessage>,
         IHandle<SmtpUpdateMessage>,
-        IHandle<SmtpDeleteMessage>
+        IHandle<SmtpDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,67 +35,65 @@ namespace NetErp.Global.Smtp.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateSmtp));
                 }
             }
         }
 
-        private ObservableCollection<SmtpGraphQLModel> _smtps = [];
         public ObservableCollection<SmtpGraphQLModel> Smtps
         {
-            get => _smtps;
+            get;
             set
             {
-                if (_smtps != value)
+                if (field != value)
                 {
-                    _smtps = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Smtps));
                 }
             }
-        }
+        } = [];
 
         private bool _isInitialized;
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private SmtpGraphQLModel? _selectedSmtp;
         public SmtpGraphQLModel? SelectedSmtp
         {
-            get => _selectedSmtp;
+            get;
             set
             {
-                if (_selectedSmtp != value)
+                if (field != value)
                 {
-                    _selectedSmtp = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedSmtp));
                     NotifyOfPropertyChange(nameof(CanEditSmtp));
                     NotifyOfPropertyChange(nameof(CanDeleteSmtp));
@@ -103,83 +103,95 @@ namespace NetErp.Global.Smtp.ViewModels
 
         private readonly DebouncedAction _searchDebounce = new();
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = _searchDebounce.RunAsync(LoadSmtpsAsync);
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadSmtpsAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Smtp.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Smtp.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Smtp.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditSmtp => SelectedSmtp != null;
-        public bool CanDeleteSmtp => SelectedSmtp != null;
+        public bool CanCreateSmtp => HasCreatePermission && !IsBusy;
+        public bool CanEditSmtp => HasEditPermission && SelectedSmtp != null;
+        public bool CanDeleteSmtp => HasDeletePermission && SelectedSmtp != null;
 
         #endregion
 
@@ -235,7 +247,8 @@ namespace NetErp.Global.Smtp.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _smtpService = smtpService;
@@ -243,6 +256,7 @@ namespace NetErp.Global.Smtp.ViewModels
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -256,6 +270,14 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Smtp);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateSmtp));
+                NotifyOfPropertyChange(nameof(CanEditSmtp));
+                NotifyOfPropertyChange(nameof(CanDeleteSmtp));
+
                 await LoadSmtpsAsync();
                 _isInitialized = true;
                 ShowEmptyState = Smtps == null || Smtps.Count == 0;
@@ -266,7 +288,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -278,6 +300,8 @@ namespace NetErp.Global.Smtp.ViewModels
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
+                Smtps.Clear();
+                SelectedSmtp = null;
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -291,9 +315,13 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SmtpDetailViewModel(_smtpService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                SmtpDetailViewModel detail = new(_smtpService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+
                 await _dialogService.ShowDialogAsync(detail, "Nuevo SMTP");
             }
             catch (Exception ex)
@@ -301,7 +329,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateSmtpAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(CreateSmtpAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -317,9 +345,13 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new SmtpDetailViewModel(_smtpService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                SmtpDetailViewModel detail = new(_smtpService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedSmtp);
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
+
                 await _dialogService.ShowDialogAsync(detail, "Editar SMTP");
             }
             catch (Exception ex)
@@ -327,7 +359,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditSmtpAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(EditSmtpAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -345,10 +377,10 @@ namespace NetErp.Global.Smtp.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteSmtpQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedSmtp.Id)
                     .Build();
-                var validation = await _smtpService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _smtpService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -381,21 +413,12 @@ namespace NetErp.Global.Smtp.ViewModels
                     new SmtpDeleteMessage { DeletedSmtp = deletedSmtp },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteSmtpAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(DeleteSmtpAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -410,7 +433,7 @@ namespace NetErp.Global.Smtp.ViewModels
             try
             {
                 var (fragment, query) = _deleteSmtpQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "id", id)
                     .Build();
                 return await _smtpService.DeleteAsync<DeleteResponseType>(query, variables);
@@ -435,10 +458,10 @@ namespace NetErp.Global.Smtp.ViewModels
 
                 var (fragment, query) = _loadSmtpsQuery.Value;
 
-                dynamic filters = new System.Dynamic.ExpandoObject();
+                dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -455,7 +478,7 @@ namespace NetErp.Global.Smtp.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadSmtpsAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(LoadSmtpsAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }
@@ -537,6 +560,17 @@ namespace NetErp.Global.Smtp.ViewModels
             ShowEmptyState = Smtps == null || Smtps.Count == 0;
             SelectedSmtp = null;
             _notificationService.ShowSuccess(message.DeletedSmtp.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateSmtp));
+            NotifyOfPropertyChange(nameof(CanEditSmtp));
+            NotifyOfPropertyChange(nameof(CanDeleteSmtp));
+            return Task.CompletedTask;
         }
 
         #endregion

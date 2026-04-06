@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
+using NetErp.Billing.Zones.Validators;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -29,6 +30,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly ZoneValidator _validator;
 
         #endregion
 
@@ -135,7 +137,7 @@ namespace NetErp.Billing.Zones.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
-                    this.TrackChange(nameof(Name));
+                    this.TrackChange(nameof(Name), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -150,21 +152,13 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
-                    this.TrackChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
         }
 
-        public bool CanSave
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(Name?.Trim())) return false;
-                if (!this.HasChanges()) return false;
-                return _errors.Count <= 0;
-            }
-        }
+        public bool CanSave => _validator.CanSave(Name, this.HasChanges(), HasErrors);
 
         #endregion
 
@@ -174,12 +168,14 @@ namespace NetErp.Billing.Zones.ViewModels
             IRepository<ZoneGraphQLModel> zoneService,
             IEventAggregator eventAggregator,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            ZoneValidator validator)
         {
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         }
 
         #endregion
@@ -224,6 +220,7 @@ namespace NetErp.Billing.Zones.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(Name), Name);
             this.SeedValue(nameof(IsActive), IsActive);
             this.AcceptChanges();
         }
@@ -265,19 +262,14 @@ namespace NetErp.Billing.Zones.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al realizar operación.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -395,21 +387,28 @@ namespace NetErp.Billing.Zones.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            ClearErrors(propertyName);
-            switch (propertyName)
-            {
-                case nameof(Name):
-                    if (string.IsNullOrEmpty(value?.Trim()))
-                        AddError(propertyName, "El nombre de la zona no puede estar vacío");
-                    break;
-            }
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         #endregion

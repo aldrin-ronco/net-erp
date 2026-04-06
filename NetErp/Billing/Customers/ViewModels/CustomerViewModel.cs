@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
 using Models.Suppliers;
+using NetErp.Billing.Customers.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -19,6 +20,7 @@ using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Models.Global;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.Customers.ViewModels
@@ -29,7 +31,8 @@ namespace NetErp.Billing.Customers.ViewModels
         IHandle<CustomerUpdateMessage>,
         IHandle<AccountingEntityUpdateMessage>,
         IHandle<SellerUpdateMessage>,
-        IHandle<SupplierUpdateMessage>
+        IHandle<SupplierUpdateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -45,51 +48,51 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly WithholdingTypeCache _withholdingTypeCache;
         private readonly ZoneCache _zoneCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CustomerValidator _validator;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateCustomer));
                 }
             }
         }
 
-        private ObservableCollection<CustomerGraphQLModel> _customers = [];
         public ObservableCollection<CustomerGraphQLModel> Customers
         {
-            get => _customers;
+            get;
             set
             {
-                if (_customers != value)
+                if (field != value)
                 {
-                    _customers = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Customers));
                     NotifyOfPropertyChange(nameof(CanDeleteCustomer));
                 }
             }
-        }
+        } = [];
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
@@ -100,15 +103,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private CustomerGraphQLModel? _selectedCustomer;
         public CustomerGraphQLModel? SelectedCustomer
         {
-            get => _selectedCustomer;
+            get;
             set
             {
-                if (_selectedCustomer != value)
+                if (field != value)
                 {
-                    _selectedCustomer = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCustomer));
                     NotifyOfPropertyChange(nameof(CanDeleteCustomer));
                     NotifyOfPropertyChange(nameof(CanEditCustomer));
@@ -118,15 +120,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
         private readonly DebouncedAction _searchDebounce = new();
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
@@ -135,85 +136,89 @@ namespace NetErp.Billing.Customers.ViewModels
                     }
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _showActiveCustomersOnly = true;
         public bool ShowActiveCustomersOnly
         {
-            get => _showActiveCustomersOnly;
+            get;
             set
             {
-                if (_showActiveCustomersOnly != value)
+                if (field != value)
                 {
-                    _showActiveCustomersOnly = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowActiveCustomersOnly));
                     _ = LoadCustomersAsync();
                 }
             }
-        }
+        } = true;
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Customer.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditCustomer => SelectedCustomer != null;
-        public bool CanDeleteCustomer => SelectedCustomer != null;
+        public bool CanCreateCustomer => HasCreatePermission && !IsBusy;
+        public bool CanEditCustomer => HasEditPermission && SelectedCustomer != null;
+        public bool CanDeleteCustomer => HasDeletePermission && SelectedCustomer != null;
 
         #endregion
 
@@ -273,8 +278,10 @@ namespace NetErp.Billing.Customers.ViewModels
                                  WithholdingTypeCache withholdingTypeCache,
                                  ZoneCache zoneCache,
                                  StringLengthCache stringLengthCache,
+                                 PermissionCache permissionCache,
                                  JoinableTaskFactory joinableTaskFactory,
-                                 IGraphQLClient graphQLClient)
+                                 IGraphQLClient graphQLClient,
+                                 CustomerValidator validator)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -286,8 +293,10 @@ namespace NetErp.Billing.Customers.ViewModels
             _withholdingTypeCache = withholdingTypeCache ?? throw new ArgumentNullException(nameof(withholdingTypeCache));
             _zoneCache = zoneCache ?? throw new ArgumentNullException(nameof(zoneCache));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -302,6 +311,12 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Customer);
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateCustomer));
+                NotifyOfPropertyChange(nameof(CanEditCustomer));
+                NotifyOfPropertyChange(nameof(CanDeleteCustomer));
                 await LoadCustomersAsync();
                 _isInitialized = true;
                 ShowEmptyState = Customers == null || Customers.Count == 0;
@@ -313,7 +328,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -339,18 +354,27 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.55;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Nuevo cliente");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateCustomerAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(CreateCustomerAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -364,18 +388,27 @@ namespace NetErp.Billing.Customers.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient);
+                var detail = new CustomerDetailViewModel(_customerService, _eventAggregator, _identificationTypeCache, _countryCache, _withholdingTypeCache, _zoneCache, _stringLengthCache, AutoMapper, _joinableTaskFactory, _graphQLClient, _validator);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedCustomer.Id);
                 IsBusy = false;
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.55;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 await _dialogService.ShowDialogAsync(detail, "Editar cliente");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditCustomerAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(EditCustomerAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -427,19 +460,14 @@ namespace NetErp.Billing.Customers.ViewModels
                     new CustomerDeleteMessage { DeletedCustomer = deletedCustomer },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteCustomerAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteCustomerAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -497,9 +525,11 @@ namespace NetErp.Billing.Customers.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadCustomersAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(LoadCustomersAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -599,6 +629,17 @@ namespace NetErp.Billing.Customers.ViewModels
         public Task HandleAsync(SupplierUpdateMessage message, CancellationToken cancellationToken)
         {
             return LoadCustomersAsync();
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateCustomer));
+            NotifyOfPropertyChange(nameof(CanEditCustomer));
+            NotifyOfPropertyChange(nameof(CanDeleteCustomer));
+            return Task.CompletedTask;
         }
 
         #endregion

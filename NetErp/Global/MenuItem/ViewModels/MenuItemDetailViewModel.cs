@@ -372,6 +372,9 @@ namespace NetErp.Global.MenuItem.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(ItemKey), ItemKey);
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Icon), Icon);
             this.SeedValue(nameof(IsActive), IsActive);
             this.SeedValue(nameof(IsLockable), IsLockable);
             this.AcceptChanges();
@@ -418,18 +421,11 @@ namespace NetErp.Global.MenuItem.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al realizar operación.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -440,25 +436,18 @@ namespace NetErp.Global.MenuItem.ViewModels
 
         public async Task<UpsertResponseType<MenuItemGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    (GraphQLQueryFragment _, string query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                    return await _menuItemService.CreateAsync<UpsertResponseType<MenuItemGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    (GraphQLQueryFragment _, string query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = Id;
-                    return await _menuItemService.UpdateAsync<UpsertResponseType<MenuItemGraphQLModel>>(query, variables);
-                }
+                (GraphQLQueryFragment _, string query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _menuItemService.CreateAsync<UpsertResponseType<MenuItemGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw new AsyncException(innerException: ex);
+                (GraphQLQueryFragment _, string query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
+                return await _menuItemService.UpdateAsync<UpsertResponseType<MenuItemGraphQLModel>>(query, variables);
             }
         }
 
@@ -467,7 +456,7 @@ namespace NetErp.Global.MenuItem.ViewModels
             await TryCloseAsync(false);
         }
 
-        #endregion
+        #endregion@
 
         #region GraphQL Queries
 

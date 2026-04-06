@@ -6,8 +6,8 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
 using NetErp.Helpers;
-using IDialogService = NetErp.Helpers.IDialogService;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
@@ -18,13 +18,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
+using IDialogService = NetErp.Helpers.IDialogService;
 
 namespace NetErp.Books.AccountingPresentations.ViewModels
 {
     public class AccountingPresentationViewModel : Screen,
         IHandle<AccountingPresentationCreateMessage>,
         IHandle<AccountingPresentationUpdateMessage>,
-        IHandle<AccountingPresentationDeleteMessage>
+        IHandle<AccountingPresentationDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,49 +35,49 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly IDialogService _dialogService;
         private readonly AccountingBookCache _accountingBookCache;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly DebouncedAction _searchDebounce = new();
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<AccountingPresentationGraphQLModel> _accountingPresentations = [];
         public ObservableCollection<AccountingPresentationGraphQLModel> AccountingPresentations
         {
-            get => _accountingPresentations;
+            get;
             set
             {
-                if (_accountingPresentations != value)
+                if (field != value)
                 {
-                    _accountingPresentations = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingPresentations));
                 }
             }
-        }
+        } = [];
 
-        private AccountingPresentationGraphQLModel? _selectedPresentation;
         public AccountingPresentationGraphQLModel? SelectedPresentation
         {
-            get => _selectedPresentation;
+            get;
             set
             {
-                if (_selectedPresentation != value)
+                if (field != value)
                 {
-                    _selectedPresentation = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedPresentation));
                     NotifyOfPropertyChange(nameof(CanEditPresentation));
                     NotifyOfPropertyChange(nameof(CanDeletePresentation));
@@ -83,83 +85,95 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadAccountingPresentationsAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadAccountingPresentationsAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingPresentation.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingPresentation.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingPresentation.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditPresentation => SelectedPresentation != null;
-        public bool CanDeletePresentation => SelectedPresentation != null;
+        public bool CanCreatePresentation => HasCreatePermission && !IsBusy;
+        public bool CanEditPresentation => HasEditPermission && SelectedPresentation != null;
+        public bool CanDeletePresentation => HasDeletePermission && SelectedPresentation != null;
 
         #endregion
 
@@ -215,14 +229,18 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             Helpers.Services.INotificationService notificationService,
             IDialogService dialogService,
             AccountingBookCache accountingBookCache,
-            JoinableTaskFactory joinableTaskFactory)
+            StringLengthCache stringLengthCache,
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _accountingPresentationService = accountingPresentationService;
             _notificationService = notificationService;
             _dialogService = dialogService;
             _accountingBookCache = accountingBookCache;
+            _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -233,16 +251,42 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await LoadAccountingPresentationsAsync();
+            try
+            {
+                IsBusy = true;
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingPresentation);
+                await LoadAccountingPresentationsAsync();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreatePresentation));
+            NotifyOfPropertyChange(nameof(CanEditPresentation));
+            NotifyOfPropertyChange(nameof(CanDeletePresentation));
+            this.SetFocus(() => FilterSearch);
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         #endregion
@@ -254,17 +298,18 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingPresentationDetailViewModel(_accountingPresentationService, _eventAggregator, _accountingBookCache, _joinableTaskFactory);
+                AccountingPresentationDetailViewModel detail = new(_accountingPresentationService, _eventAggregator, _accountingBookCache, _joinableTaskFactory, _stringLengthCache);
                 await detail.InitializeAsync();
+                detail.SetForNew();
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nueva presentación contable");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{nameof(CreatePresentationAsync)} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(CreatePresentationAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -278,18 +323,18 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingPresentationDetailViewModel(_accountingPresentationService, _eventAggregator, _accountingBookCache, _joinableTaskFactory);
+                AccountingPresentationDetailViewModel detail = new(_accountingPresentationService, _eventAggregator, _accountingBookCache, _joinableTaskFactory, _stringLengthCache);
                 await detail.InitializeAsync();
                 await detail.LoadDataForEditAsync(SelectedPresentation.Id);
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar presentación contable");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{nameof(EditPresentationAsync)} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(EditPresentationAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -303,24 +348,24 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingPresentationQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedPresentation.Id)
                     .Build();
-                var validation = await _accountingPresentationService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _accountingPresentationService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
                     IsBusy = false;
-                    if (ThemedMessageBox.Show("Atención !", "¿Confirma que desea eliminar el registro seleccionado?",
+                    if (ThemedMessageBox.Show("Atención!",
+                        "¿Confirma que desea eliminar el registro seleccionado?",
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No) return;
                 }
                 else
                 {
                     IsBusy = false;
-                    ThemedMessageBox.Show("Atención !",
+                    ThemedMessageBox.Show("Atención!",
                         $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -328,7 +373,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
 
                 IsBusy = true;
                 var (deleteFragment, deleteQuery) = _deleteAccountingPresentationQuery.Value;
-                var deleteVars = new GraphQLVariables()
+                ExpandoObject deleteVars = new GraphQLVariables()
                     .For(deleteFragment, "id", SelectedPresentation.Id)
                     .Build();
                 DeleteResponseType deletedPresentation = await _accountingPresentationService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
@@ -336,7 +381,8 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
                 if (!deletedPresentation.Success)
                 {
                     ThemedMessageBox.Show(title: "Atención!",
-                        text: $"No pudo ser eliminado el registro \n\n {deletedPresentation.Message} \n\n Verifica la información e intenta más tarde.");
+                        text: $"No pudo ser eliminado el registro\r\n\r\n{deletedPresentation.Message}\r\n\r\nVerifique la información e intente más tarde.",
+                        messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
                     return;
                 }
 
@@ -345,9 +391,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{nameof(DeletePresentationAsync)} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeletePresentationAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -364,16 +408,14 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             try
             {
                 IsBusy = true;
-
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadAccountingPresentationsQuery.Value;
 
                 dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.name = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -388,9 +430,7 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención !",
-                    $"{GetType().Name}.{nameof(LoadAccountingPresentationsAsync)} \r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadAccountingPresentationsAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -470,6 +510,17 @@ namespace NetErp.Books.AccountingPresentations.ViewModels
             await LoadAccountingPresentationsAsync();
             SelectedPresentation = null;
             _notificationService.ShowSuccess(message.DeletedAccountingPresentation.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreatePresentation));
+            NotifyOfPropertyChange(nameof(CanEditPresentation));
+            NotifyOfPropertyChange(nameof(CanDeletePresentation));
+            return Task.CompletedTask;
         }
 
         #endregion

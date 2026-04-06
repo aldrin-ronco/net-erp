@@ -12,6 +12,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -19,14 +20,35 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Smtp.ViewModels
 {
-    public class SmtpDetailViewModel : Screen, INotifyDataErrorInfo
+    public class SmtpDetailViewModel(
+        IRepository<SmtpGraphQLModel> smtpService,
+        IEventAggregator eventAggregator,
+        StringLengthCache stringLengthCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<SmtpGraphQLModel> _smtpService;
-        private readonly IEventAggregator _eventAggregator;
-        private readonly StringLengthCache _stringLengthCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IRepository<SmtpGraphQLModel> _smtpService = smtpService;
+        private readonly IEventAggregator _eventAggregator = eventAggregator;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+
+        #endregion
+
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 420;
 
         #endregion
 
@@ -34,15 +56,14 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public bool IsNewRecord => SmtpId == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -52,64 +73,60 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #region Form Properties
 
-        private int _smtpId;
         public int SmtpId
         {
-            get => _smtpId;
+            get;
             set
             {
-                if (_smtpId != value)
+                if (field != value)
                 {
-                    _smtpId = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SmtpId));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _host = string.Empty;
         public string Host
         {
-            get => _host;
+            get;
             set
             {
-                if (_host != value)
+                if (field != value)
                 {
-                    _host = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Host));
                     ValidateProperty(nameof(Host), value);
                     this.TrackChange(nameof(Host));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _port;
         public int Port
         {
-            get => _port;
+            get;
             set
             {
-                if (_port != value)
+                if (field != value)
                 {
-                    _port = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Port));
                     this.TrackChange(nameof(Port));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -136,8 +153,8 @@ namespace NetErp.Global.Smtp.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -161,22 +178,21 @@ namespace NetErp.Global.Smtp.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty;
             ClearErrors(propertyName);
             switch (propertyName)
             {
                 case nameof(Name):
-                    if (string.IsNullOrEmpty(Name)) AddError(propertyName, "El nombre no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
                     break;
                 case nameof(Host):
-                    if (string.IsNullOrEmpty(Host)) AddError(propertyName, "El host no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El host no puede estar vacío");
                     break;
             }
         }
@@ -222,27 +238,14 @@ namespace NetErp.Global.Smtp.ViewModels
 
         #endregion
 
-        #region Constructor
-
-        public SmtpDetailViewModel(
-            IRepository<SmtpGraphQLModel> smtpService,
-            IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _smtpService = smtpService;
-            _eventAggregator = eventAggregator;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
-        }
-
-        #endregion
-
         #region SetForNew / SetForEdit
 
         public void SetForNew()
         {
             this.ClearSeeds();
+            this.SeedValue(nameof(Name), Name);
+            this.SeedValue(nameof(Host), Host);
+            this.SeedValue(nameof(Port), Port);
             this.AcceptChanges();
             ValidateProperties();
         }
@@ -291,21 +294,12 @@ namespace NetErp.Global.Smtp.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
             }

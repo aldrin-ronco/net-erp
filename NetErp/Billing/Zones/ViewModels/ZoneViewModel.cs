@@ -6,6 +6,8 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
+using Models.Global;
+using NetErp.Billing.Zones.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -23,7 +25,8 @@ namespace NetErp.Billing.Zones.ViewModels
     public class ZoneViewModel : Screen,
         IHandle<ZoneCreateMessage>,
         IHandle<ZoneDeleteMessage>,
-        IHandle<ZoneUpdateMessage>
+        IHandle<ZoneUpdateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -33,6 +36,8 @@ namespace NetErp.Billing.Zones.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly ZoneValidator _validator;
 
         #endregion
 
@@ -65,6 +70,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyOfPropertyChange(nameof(CanCreateZone));
                 }
             }
         }
@@ -185,10 +191,19 @@ namespace NetErp.Billing.Zones.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Zone.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Zone.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Zone.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditZone => SelectedZone != null;
-        public bool CanDeleteZone => SelectedZone != null;
+        public bool CanCreateZone => HasCreatePermission && !IsBusy;
+        public bool CanEditZone => HasEditPermission && SelectedZone != null;
+        public bool CanDeleteZone => HasDeletePermission && SelectedZone != null;
 
         #endregion
 
@@ -244,7 +259,9 @@ namespace NetErp.Billing.Zones.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache,
+            ZoneValidator validator)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
@@ -252,6 +269,8 @@ namespace NetErp.Billing.Zones.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -266,6 +285,14 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Zone);
+
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateZone));
+                NotifyOfPropertyChange(nameof(CanEditZone));
+                NotifyOfPropertyChange(nameof(CanDeleteZone));
+
                 await LoadZonesAsync();
                 _isInitialized = true;
                 ShowEmptyState = Zones == null || Zones.Count == 0;
@@ -277,7 +304,7 @@ namespace NetErp.Billing.Zones.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -303,7 +330,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForNew();
                 IsBusy = false;
 
@@ -318,9 +345,11 @@ namespace NetErp.Billing.Zones.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateZoneAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(CreateZoneAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -334,7 +363,7 @@ namespace NetErp.Billing.Zones.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                var detail = new ZoneDetailViewModel(_zoneService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator);
                 detail.SetForEdit(SelectedZone);
                 IsBusy = false;
 
@@ -349,9 +378,11 @@ namespace NetErp.Billing.Zones.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditZoneAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(EditZoneAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -403,19 +434,14 @@ namespace NetErp.Billing.Zones.ViewModels
                     new ZoneDeleteMessage { DeletedZone = deletedZone },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al eliminar el registro.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteZoneAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(DeleteZoneAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -471,9 +497,11 @@ namespace NetErp.Billing.Zones.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadZonesAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(LoadZonesAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -552,6 +580,17 @@ namespace NetErp.Billing.Zones.ViewModels
             ShowEmptyState = Zones == null || Zones.Count == 0;
             SelectedZone = null;
             _notificationService.ShowSuccess(message.DeletedZone.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateZone));
+            NotifyOfPropertyChange(nameof(CanEditZone));
+            NotifyOfPropertyChange(nameof(CanDeleteZone));
+            return Task.CompletedTask;
         }
 
         #endregion

@@ -17,14 +17,7 @@
     <UserControl.Resources>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
         <h:DateOnlyToDateTimeConverter x:Key="DateOnlyConverter"/>
-        <h:MultiplyConverter x:Key="MultiplyConverter"/>
     </UserControl.Resources>
-
-    <UserControl.Width>
-        <Binding Source="{x:Static SystemParameters.PrimaryScreenWidth}"
-                 Converter="{StaticResource MultiplyConverter}"
-                 ConverterParameter="0.65"/>
-    </UserControl.Width>
 
     <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -32,7 +25,8 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -41,12 +35,12 @@
 
                 <!-- Form content -->
                 <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="30,25,30,20">
+                    <StackPanel Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
 
                         <!-- Origin Selection (only for new records) -->
                         <StackPanel Orientation="Horizontal"
                                     Visibility="{Binding OriginVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Margin="0,0,0,12">
+                                    Margin="0,0,0,8">
                             <RadioButton Content="Manual"
                                          Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
                                          GroupName="SequenceType"
@@ -65,12 +59,10 @@
                         </StackPanel>
 
                         <!-- DIAN Search Button -->
-                        <Button Margin="0,0,0,12" Padding="8,6"
+                        <Button Margin="0,0,0,8" Padding="8,6"
                                 HorizontalAlignment="Stretch"
+                                Command="{Binding SearchDianCommand}"
                                 Visibility="{Binding Lv1Visibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
-                            <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Command="{Binding SearchDianCommand}" EventName="Click"/>
-                            </dxmvvm:Interaction.Behaviors>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="{dx:DXImage 'Images/Spreadsheet/FunctionsLookupAndReference_16x16.png'}"
                                        Margin="0,0,4,0" Width="16"/>
@@ -80,11 +72,12 @@
 
                         <!-- DIAN Authorization Selection -->
                         <StackPanel Visibility="{Binding AuthorizationsVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Margin="0,0,0,12">
-                            <TextBlock Text="Selecciona una autorización" FontSize="13" Margin="0,0,0,5"/>
+                                    Margin="0,0,0,8">
+                            <TextBlock Text="Selecciona una autorización" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:ComboBoxEdit
                                 ItemsSource="{Binding AuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
+                                Padding="2"
                                 DisplayMember="Description"
                                 EditValue="{Binding SelectedDianAuthorization, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 NullText="Seleccione una autorización"
@@ -96,10 +89,11 @@
                         <StackPanel Visibility="{Binding FieldsVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}">
 
                             <!-- Centro de Costo -->
-                            <TextBlock Text="Centro de costo" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Centro de costo" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:ComboBoxEdit
                                 ItemsSource="{Binding CostCenters, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
+                                Padding="2"
                                 DisplayMember="Name"
                                 ValueMember="Id"
                                 EditValue="{Binding CostCenterId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -107,10 +101,10 @@
                                 NullText="Centro de costo al que se asignará esta numeración"
                                 ShowNullTextForEmptyValue="True"
                                 BorderBrush="#C8CED6"
-                                Margin="0,0,0,12"/>
+                                Margin="0,0,0,8"/>
 
                             <!-- No Autorizacion + Fechas + Prefijo + Rango de facturación -->
-                            <Grid Margin="0,0,0,12">
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="3*"/>
                                     <ColumnDefinition Width="10"/>
@@ -264,6 +258,7 @@
                                         VerticalAlignment="Stretch"
                                         ItemsSource="{Binding ModeDictionary, UpdateSourceTrigger=PropertyChanged}"
                                         IsTextEditable="False"
+                                        Padding="2"
                                         DisplayMember="Value"
                                         ValueMember="Key"
                                         EditValue="{Binding Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -272,10 +267,11 @@
                             </Grid>
 
                             <!-- Tipo de Autorización -->
-                            <TextBlock Text="Tipo de autorización" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Tipo de autorización" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:ComboBoxEdit
                                 ItemsSource="{Binding AvailableAuthorizationSequenceTypes, UpdateSourceTrigger=PropertyChanged}"
                                 IsTextEditable="False"
+                                Padding="2"
                                 DisplayMember="Name"
                                 ValueMember="Id"
                                 EditValue="{Binding AuthorizationSequenceTypeId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -283,20 +279,20 @@
                                 NullText="Seleccione tipo de autorización"
                                 ShowNullTextForEmptyValue="True"
                                 BorderBrush="#C8CED6"
-                                Margin="0,0,0,12"/>
+                                Margin="0,0,0,8"/>
 
                             <!-- Referencia -->
-                            <TextBlock Text="Referencia" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Referencia" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:TextEdit
                                 Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                 CharacterCasing="Upper"
                                 x:Name="Reference"
                                 BorderBrush="#C8CED6"
-                                Margin="0,0,0,12"/>
+                                Margin="0,0,0,8"/>
 
                             <!-- Clave Técnica -->
-                            <TextBlock Text="Clave técnica" FontSize="13" Margin="0,0,0,5"/>
+                            <TextBlock Text="Clave técnica" FontSize="13" Margin="0,0,0,3"/>
                             <dxe:TextEdit
                                 Style="{StaticResource FocusedHighlightStyle}"
                                 Text="{Binding TechnicalKey, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
@@ -304,15 +300,16 @@
                                 IsReadOnly="{Binding SequenceD, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                 x:Name="TechnicalKey"
                                 BorderBrush="#C8CED6"
-                                Margin="0,0,0,12"/>
+                                Margin="0,0,0,8"/>
 
                             <!-- Resolución de Relevo -->
                             <StackPanel Visibility="{Binding ReliefVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
-                                        Margin="0,0,0,12">
-                                <TextBlock Text="Resolución de relevo" FontSize="13" Margin="0,0,0,5"/>
+                                        Margin="0,0,0,8">
+                                <TextBlock Text="Resolución de relevo" FontSize="13" Margin="0,0,0,3"/>
                                 <dxe:ComboBoxEdit
                                     ItemsSource="{Binding OrphanAuthorizationSequences, UpdateSourceTrigger=PropertyChanged}"
                                     IsTextEditable="False"
+                                    Padding="2"
                                     DisplayMember="Description"
                                     ValueMember="Id"
                                     EditValue="{Binding NextAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -324,6 +321,7 @@
                             <!-- Activa -->
                             <dxe:CheckEdit Content="Autorización activa"
                                            Style="{StaticResource BlueCheckedTextStyle}"
+                                           Padding="2"
                                            IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                     </StackPanel>
@@ -333,17 +331,15 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                            Command="{Binding SaveCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -354,10 +350,8 @@
                     </Button>
                     <!-- Cancelar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                            IsCancel="True">
-                        <dxmvvm:Interaction.Behaviors>
-                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                        </dxmvvm:Interaction.Behaviors>
+                            IsCancel="True"
+                            Command="{Binding CancelCommand}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
                             <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>

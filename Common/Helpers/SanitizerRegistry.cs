@@ -45,5 +45,14 @@ namespace Common.Helpers
             // 3️) Sin sanitización
             return value;
         }
+
+        /// <summary>
+        /// Limpia todos los sanitizadores registrados. Solo para uso en tests.
+        /// </summary>
+        internal static void ResetForTesting()
+        {
+            _typeSanitizers.Clear();
+            _propertySanitizers.Clear();
+        }
     }
 }

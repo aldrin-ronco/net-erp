@@ -31,8 +31,8 @@
             <dxe:ButtonEdit
                 Grid.Row="1"
                 Margin="10,0,10,0"
-                NullText="Escribe por lo menos 3 letras para iniciar la busqueda"
-                ToolTip="Escribe aqui para buscar"
+                NullText="Escribe por lo menos 3 letras para iniciar la búsqueda"
+                ToolTip="Escribe aquí para buscar"
                 MinHeight="25"
                 CharacterCasing="Upper"
                 BorderBrush="#C8CED6"
@@ -52,10 +52,8 @@
                                     BusyContentMargin="0,20,0,0"
                                     Grid.Row="2">
                 <dxg:GridControl Margin="10,6,10,0"
-                                 EnableSmartColumnsGeneration="True"
-                                 AutoGenerateColumns="None"
-                                 SelectedItem="{Binding Path=SelectedPresentation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 ItemsSource="{Binding Path=AccountingPresentations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                 SelectedItem="{Binding SelectedPresentation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 ItemsSource="{Binding AccountingPresentations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <dxg:GridControl.View>
                         <dxg:TableView AllowEditing="False"
                                        AllowCascadeUpdate="False"
@@ -69,9 +67,9 @@
                                        AlternateRowBackground="Beige"/>
                     </dxg:GridControl.View>
 
-                    <dxg:GridColumn Header="Nombre de la presentación" Width="*" HorizontalHeaderContentAlignment="Center"
+                    <dxg:GridColumn Header="Nombre de la presentación" Width="*" HorizontalHeaderContentAlignment="Left"
                                     Binding="{Binding Name}"/>
-                    <dxg:GridColumn Header="Libro para cierre contable" Width="*" HorizontalHeaderContentAlignment="Center"
+                    <dxg:GridColumn Header="Libro para cierre contable" Width="*" HorizontalHeaderContentAlignment="Left"
                                     Binding="{Binding ClosureAccountingBook.Name}"/>
                 </dxg:GridControl>
             </busyIndicator:BusyMask>
@@ -91,36 +89,108 @@
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
                 <!-- Nuevo -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsEnabled="{Binding Path=IsBusy, Converter={dxmvvm:BooleanNegationConverter}}">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding CreatePresentationCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
+                        IsEnabled="{Binding CanCreatePresentation}"
+                        Command="{Binding CreatePresentationCommand}">
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/New_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Nuevo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="0,0,-2,12">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasCreatePermission}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Grid>
                 </Button>
                 <!-- Editar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsEnabled="{Binding CanEditPresentation}">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding EditPresentationCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
+                        IsEnabled="{Binding CanEditPresentation}"
+                        Command="{Binding EditPresentationCommand}">
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="0,0,-2,12">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Grid>
                 </Button>
                 <!-- Eliminar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsEnabled="{Binding CanDeletePresentation}">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding DeletePresentationCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
-                    <StackPanel HorizontalAlignment="Center">
-                        <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                    </StackPanel>
+                        IsEnabled="{Binding CanDeletePresentation}"
+                        Command="{Binding DeletePresentationCommand}">
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/DeleteList_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Eliminar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="0,0,-2,12">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasDeletePermission}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Grid>
                 </Button>
             </StackPanel>
         </Grid>

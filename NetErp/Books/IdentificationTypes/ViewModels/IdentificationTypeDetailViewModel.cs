@@ -12,6 +12,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -19,42 +20,57 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.IdentificationTypes.ViewModels
 {
-    public class IdentificationTypeDetailViewModel : Screen, INotifyDataErrorInfo
+    public class IdentificationTypeDetailViewModel(
+        IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
+        IEventAggregator eventAggregator,
+        StringLengthCache stringLengthCache,
+        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService;
-        private readonly IEventAggregator _eventAggregator;
-        private readonly StringLengthCache _stringLengthCache;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
-
+        private readonly IRepository<IdentificationTypeGraphQLModel> _identificationTypeService = identificationTypeService;
+        private readonly IEventAggregator _eventAggregator = eventAggregator;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+        
         #endregion
 
         #region Properties
 
-        private bool _isBusy;
-        public bool IsBusy
+        public double DialogWidth
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 450;
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                     NotifyOfPropertyChange(nameof(IsReadOnlyCode));
@@ -62,49 +78,46 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        private string _code = string.Empty;
         public string Code
         {
-            get => _code;
+            get;
             set
             {
-                if (_code != value)
+                if (field != value)
                 {
-                    _code = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Code));
                     ValidateProperty(nameof(Code));
                     this.TrackChange(nameof(Code));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name));
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _hasVerificationDigit;
         public bool HasVerificationDigit
         {
-            get => _hasVerificationDigit;
+            get;
             set
             {
-                if (_hasVerificationDigit != value)
+                if (field != value)
                 {
-                    _hasVerificationDigit = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(HasVerificationDigit));
                     this.TrackChange(nameof(HasVerificationDigit));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -112,15 +125,14 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        private bool _allowsLetters;
         public bool AllowsLetters
         {
-            get => _allowsLetters;
+            get;
             set
             {
-                if (_allowsLetters != value)
+                if (field != value)
                 {
-                    _allowsLetters = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AllowsLetters));
                     this.TrackChange(nameof(AllowsLetters));
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -128,22 +140,21 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        private int _minimumDocumentLength = 7;
         public int MinimumDocumentLength
         {
-            get => _minimumDocumentLength;
+            get;
             set
             {
-                if (_minimumDocumentLength != value)
+                if (field != value)
                 {
-                    _minimumDocumentLength = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(MinimumDocumentLength));
                     ValidateProperty(nameof(MinimumDocumentLength));
                     this.TrackChange(nameof(MinimumDocumentLength));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = 7;
 
         public bool IsNewRecord => Id == 0;
         public bool IsReadOnlyCode => !IsNewRecord;
@@ -180,8 +191,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -205,9 +217,9 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName)
@@ -259,22 +271,6 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 _cancelCommand ??= new AsyncCommand(CancelAsync);
                 return _cancelCommand;
             }
-        }
-
-        #endregion
-
-        #region Constructor
-
-        public IdentificationTypeDetailViewModel(
-            IRepository<IdentificationTypeGraphQLModel> identificationTypeService,
-            IEventAggregator eventAggregator,
-            StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _identificationTypeService = identificationTypeService;
-            _eventAggregator = eventAggregator;
-            _stringLengthCache = stringLengthCache;
-            _joinableTaskFactory = joinableTaskFactory;
         }
 
         #endregion
@@ -338,23 +334,10 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -362,29 +345,22 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<IdentificationTypeGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<IdentificationTypeGraphQLModel>> ExecuteSaveAsync()
         {
-            try
-            {
-                string[] excludes = IsNewRecord ? [] : [nameof(Code)];
+            string[] excludes = IsNewRecord ? [] : [nameof(Code)];
 
-                if (IsNewRecord)
-                {
-                    var (_, query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
-                    return await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    var (_, query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
-                    variables.updateResponseId = Id;
-                    return await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
-                }
-            }
-            catch (Exception ex)
+            if (IsNewRecord)
             {
-                throw new AsyncException(innerException: ex);
+                var (_, query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput", excludeProperties: excludes);
+                return await _identificationTypeService.CreateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
+            }
+            else
+            {
+                var (_, query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData", excludeProperties: excludes);
+                variables.updateResponseId = Id;
+                return await _identificationTypeService.UpdateAsync<UpsertResponseType<IdentificationTypeGraphQLModel>>(query, variables);
             }
         }
 

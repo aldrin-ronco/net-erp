@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Global;
 using NetErp.Global.CompanyPermissionDefault.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,8 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 {
-    public class CompanyPermissionDefaultViewModel : Screen
+    public class CompanyPermissionDefaultViewModel : Screen,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -28,6 +30,8 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         private readonly IRepository<PermissionDefinitionGraphQLModel> _permissionDefinitionService;
         private readonly IRepository<CompanyPermissionDefaultGraphQLModel> _companyPermDefaultService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -39,13 +43,18 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             IRepository<PermissionDefinitionGraphQLModel> permissionDefinitionService,
             IRepository<CompanyPermissionDefaultGraphQLModel> companyPermDefaultService,
             Helpers.Services.INotificationService notificationService,
+            IEventAggregator eventAggregator,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _menuModuleService = menuModuleService;
             _permissionDefinitionService = permissionDefinitionService;
             _companyPermDefaultService = companyPermDefaultService;
             _notificationService = notificationService;
+            _eventAggregator = eventAggregator;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -139,6 +148,12 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 
         public bool HasModuleFilterSelected => SelectedModuleFilter is not null;
 
+        #region Permissions
+
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.CompanyPermissionDefault.Edit);
+
+        #endregion
+
         public bool HasChanges
         {
             get
@@ -151,7 +166,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             }
         }
 
-        public bool CanSave => HasChanges;
+        public bool CanSave => HasEditPermission && HasChanges;
 
         #endregion
 
@@ -196,6 +211,10 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             try
             {
                 IsBusy = true;
+
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(CanSave));
+
                 await LoadMenuHierarchyAsync();
                 await LoadPermissionDefinitionsAsync();
                 await LoadCompanyPermissionDefaultsAsync();
@@ -208,7 +227,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
@@ -223,6 +242,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
         {
             if (close)
             {
+                _eventAggregator.Unsubscribe(this);
                 TreeNodes.Clear();
                 DisplayTreeNodes.Clear();
                 _allPermissionNodes.Clear();
@@ -323,8 +343,8 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                         };
 
                         // Group permissions by type (ACTION / FIELD)
-                        var actionPerms = permsForItem.Where(p => p.PermissionType == "ACTION").ToList();
-                        var fieldPerms = permsForItem.Where(p => p.PermissionType == "FIELD").ToList();
+                        List<PermissionDefinitionGraphQLModel> actionPerms = permsForItem.Where(p => p.PermissionType == "ACTION").ToList();
+                        List<PermissionDefinitionGraphQLModel> fieldPerms = permsForItem.Where(p => p.PermissionType == "FIELD").ToList();
 
                         if (actionPerms.Count > 0)
                         {
@@ -466,9 +486,9 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             {
                 IsBusy = true;
 
-                var (_, createQuery) = _createMutation.Value;
-                var (_, updateQuery) = _updateMutation.Value;
-                var (_, deleteQuery) = _deleteMutation.Value;
+                (GraphQLQueryFragment createFragment, string createQuery) = _createMutation.Value;
+                (GraphQLQueryFragment updateFragment, string updateQuery) = _updateMutation.Value;
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteMutation.Value;
 
                 foreach (PermissionTreeNodeDTO node in _allPermissionNodes)
                 {
@@ -478,8 +498,9 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                     {
                         // CREATE: was "not set", now has a value
                         string valueStr = ToGraphQLValue(node.CompanyDefaultValue.Value);
-                        dynamic variables = new ExpandoObject();
-                        variables.createResponseInput = new { permissionDefinitionId = node.Id, defaultValue = valueStr };
+                        dynamic variables = new GraphQLVariables()
+                            .For(createFragment, "input", new { permissionDefinitionId = node.Id, defaultValue = valueStr })
+                            .Build();
                         UpsertResponseType<CompanyPermissionDefaultGraphQLModel> result =
                             await _companyPermDefaultService.CreateAsync<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>(createQuery, variables);
                         if (!result.Success)
@@ -493,9 +514,10 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                     {
                         // UPDATE: changed value
                         string valueStr = ToGraphQLValue(node.CompanyDefaultValue.Value);
-                        dynamic variables = new ExpandoObject();
-                        variables.updateResponseId = node.CompanyPermissionDefaultId;
-                        variables.updateResponseData = new { defaultValue = valueStr };
+                        dynamic variables = new GraphQLVariables()
+                            .For(updateFragment, "id", node.CompanyPermissionDefaultId)
+                            .For(updateFragment, "data", new { defaultValue = valueStr })
+                            .Build();
                         UpsertResponseType<CompanyPermissionDefaultGraphQLModel> result =
                             await _companyPermDefaultService.UpdateAsync<UpsertResponseType<CompanyPermissionDefaultGraphQLModel>>(updateQuery, variables);
                         if (!result.Success)
@@ -507,8 +529,9 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                     else if (node.OriginalCompanyDefaultValue != null && node.CompanyDefaultValue == null)
                     {
                         // DELETE: was set, now "not set"
-                        dynamic variables = new ExpandoObject();
-                        variables.deleteResponseId = node.CompanyPermissionDefaultId;
+                        dynamic variables = new GraphQLVariables()
+                            .For(deleteFragment, "id", node.CompanyPermissionDefaultId)
+                            .Build();
                         DeleteResponseType result = await _companyPermDefaultService.DeleteAsync<DeleteResponseType>(deleteQuery, variables);
                         if (!result.Success)
                         {
@@ -524,6 +547,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                 _notificationService.ShowSuccess("Valores predeterminados actualizados correctamente");
                 NotifyOfPropertyChange(nameof(HasChanges));
                 NotifyOfPropertyChange(nameof(CanSave));
+                await _eventAggregator.PublishOnCurrentThreadAsync(new CompanyPermissionDefaultChangedMessage());
             }
             catch (Exception ex)
             {
@@ -550,6 +574,17 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
             PermissionDefaultValue.Optional => "OPTIONAL",
             _ => "ALLOWED"
         };
+
+        #endregion
+
+        #region Event Handlers
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(CanSave));
+            return Task.CompletedTask;
+        }
 
         #endregion
 

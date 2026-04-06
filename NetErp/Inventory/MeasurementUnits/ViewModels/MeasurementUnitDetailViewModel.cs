@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Inventory;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Inventory.MeasurementUnits.Validators;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,7 +27,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         IRepository<MeasurementUnitGraphQLModel> measurementUnitService,
         IEventAggregator eventAggregator,
         StringLengthCache stringLengthCache,
-        JoinableTaskFactory joinableTaskFactory) : Screen, INotifyDataErrorInfo
+        JoinableTaskFactory joinableTaskFactory,
+        MeasurementUnitValidator validator) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
@@ -34,6 +36,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         private readonly IEventAggregator _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
         private readonly StringLengthCache _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
         private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+        private readonly MeasurementUnitValidator _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
         #endregion
 
@@ -186,11 +189,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
 
         #region Button States
 
-        public bool CanSave => !HasErrors && this.HasChanges()
-                               && !string.IsNullOrEmpty(Name)
-                               && !string.IsNullOrEmpty(Abbreviation)
-                               && !string.IsNullOrEmpty(Type)
-                               && !string.IsNullOrEmpty(DianCode);
+        public bool CanSave => _validator.CanSave(Name, Abbreviation, Type, DianCode,
+                                                  this.HasChanges(), HasErrors);
 
         #endregion
 
@@ -433,38 +433,35 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty;
-            ClearErrors(propertyName);
-            switch (propertyName)
-            {
-                case nameof(Name):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El nombre no puede estar vacío");
-                    break;
-                case nameof(Abbreviation):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La abreviación no puede estar vacía");
-                    break;
-                case nameof(Type):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El tipo no puede estar vacío");
-                    break;
-                case nameof(DianCode):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El código DIAN no puede estar vacío");
-                    break;
-            }
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(Name), Name);
-            ValidateProperty(nameof(Abbreviation), Abbreviation);
-            ValidateProperty(nameof(Type), Type);
-            ValidateProperty(nameof(DianCode), DianCode);
+            Dictionary<string, IReadOnlyList<string>> allErrors = _validator.ValidateAll(Name, Abbreviation, Type, DianCode);
+            foreach (string prop in allErrors.Keys)
+                SetPropertyErrors(prop, allErrors[prop]);
         }
 
         #endregion

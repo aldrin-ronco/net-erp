@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
 using Models.Global;
+using NetErp.Billing.Customers.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -44,6 +45,7 @@ namespace NetErp.Billing.Customers.ViewModels
         private readonly IMapper _autoMapper;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CustomerValidator _validator;
 
         #endregion
 
@@ -78,6 +80,36 @@ namespace NetErp.Billing.Customers.ViewModels
                 return _cancelCommand;
             }
         }
+
+        #endregion
+
+        #region Dialog Size
+
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 600;
+
+        public double DialogHeight
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
+                }
+            }
+        } = 700;
 
         #endregion
 
@@ -153,7 +185,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedRegime));
-                    this.TrackChange(nameof(SelectedRegime));
+                    this.TrackChange(nameof(SelectedRegime), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -170,7 +202,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(FirstName), value);
                     NotifyOfPropertyChange(nameof(FirstName));
-                    this.TrackChange(nameof(FirstName));
+                    this.TrackChange(nameof(FirstName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -186,7 +218,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(MiddleName));
-                    this.TrackChange(nameof(MiddleName));
+                    this.TrackChange(nameof(MiddleName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -203,7 +235,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(FirstLastName), value);
                     NotifyOfPropertyChange(nameof(FirstLastName));
-                    this.TrackChange(nameof(FirstLastName));
+                    this.TrackChange(nameof(FirstLastName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -219,7 +251,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(MiddleLastName));
-                    this.TrackChange(nameof(MiddleLastName));
+                    this.TrackChange(nameof(MiddleLastName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -236,7 +268,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(PrimaryPhone), value);
                     NotifyOfPropertyChange(nameof(PrimaryPhone));
-                    this.TrackChange(nameof(PrimaryPhone));
+                    this.TrackChange(nameof(PrimaryPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -253,7 +285,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(SecondaryPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryPhone));
-                    this.TrackChange(nameof(SecondaryPhone));
+                    this.TrackChange(nameof(SecondaryPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -270,7 +302,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(PrimaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(PrimaryCellPhone));
-                    this.TrackChange(nameof(PrimaryCellPhone));
+                    this.TrackChange(nameof(PrimaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -287,7 +319,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(SecondaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(SecondaryCellPhone));
-                    this.TrackChange(nameof(SecondaryCellPhone));
+                    this.TrackChange(nameof(SecondaryCellPhone), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -303,7 +335,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(Address));
-                    this.TrackChange(nameof(Address));
+                    this.TrackChange(nameof(Address), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -320,7 +352,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(BusinessName), value);
                     NotifyOfPropertyChange(nameof(BusinessName));
-                    this.TrackChange(nameof(BusinessName));
+                    this.TrackChange(nameof(BusinessName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -336,7 +368,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(TradeName));
-                    this.TrackChange(nameof(TradeName));
+                    this.TrackChange(nameof(TradeName), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -380,7 +412,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(IdentificationNumberMask));
-                    this.TrackChange(nameof(SelectedIdentificationType));
+                    this.TrackChange(nameof(SelectedIdentificationType), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                     ValidateProperty(nameof(IdentificationNumber), field);
                 }
@@ -411,7 +443,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(SelectedCountry), field);
                     NotifyOfPropertyChange(nameof(SelectedCountry));
-                    this.TrackChange(nameof(SelectedCountry));
+                    this.TrackChange(nameof(SelectedCountry), value);
                     if (field != null)
                     {
                         SelectedDepartment = SelectedCountry?.Departments.FirstOrDefault();
@@ -433,7 +465,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(SelectedDepartment), field);
                     NotifyOfPropertyChange(nameof(SelectedDepartment));
-                    this.TrackChange(nameof(SelectedDepartment));
+                    this.TrackChange(nameof(SelectedDepartment), value);
                     if (field != null)
                     {
                         if (SelectedDepartment?.Cities.Count > 0)
@@ -458,7 +490,7 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(SelectedCityId), field);
                     NotifyOfPropertyChange(nameof(SelectedCityId));
-                    this.TrackChange(nameof(SelectedCityId));
+                    this.TrackChange(nameof(SelectedCityId), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -475,9 +507,9 @@ namespace NetErp.Billing.Customers.ViewModels
                     field = value;
                     ValidateProperty(nameof(IdentificationNumber), value);
                     NotifyOfPropertyChange(nameof(IdentificationNumber));
-                    this.TrackChange(nameof(IdentificationNumber));
+                    this.TrackChange(nameof(IdentificationNumber), value);
                     NotifyOfPropertyChange(nameof(VerificationDigit));
-                    this.TrackChange(nameof(VerificationDigit));
+                    this.TrackChange(nameof(VerificationDigit), VerificationDigit);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -552,7 +584,7 @@ namespace NetErp.Billing.Customers.ViewModels
                         field.CollectionChanged += Emails_CollectionChanged!;
 
                     NotifyOfPropertyChange(nameof(Emails));
-                    this.TrackChange(nameof(Emails));
+                    this.TrackChange(nameof(Emails), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -598,7 +630,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(SelectedCaptureType));
-                    this.TrackChange(nameof(SelectedCaptureType));
+                    this.TrackChange(nameof(SelectedCaptureType), value);
                     NotifyOfPropertyChange(nameof(CaptureInfoAsPN));
                     NotifyOfPropertyChange(nameof(CaptureInfoAsPJ));
                     if (CaptureInfoAsPN)
@@ -639,7 +671,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(CreditTerm));
-                    this.TrackChange(nameof(CreditTerm));
+                    this.TrackChange(nameof(CreditTerm), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -654,7 +686,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsActive));
-                    this.TrackChange(nameof(IsActive));
+                    this.TrackChange(nameof(IsActive), value);
 
                     if (field)
                     {
@@ -680,7 +712,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(IsTaxFree));
-                    this.TrackChange(nameof(IsTaxFree));
+                    this.TrackChange(nameof(IsTaxFree), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -695,7 +727,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(BlockingReason));
-                    this.TrackChange(nameof(BlockingReason));
+                    this.TrackChange(nameof(BlockingReason), value);
 
                     if (!IsActive)
                     {
@@ -716,7 +748,7 @@ namespace NetErp.Billing.Customers.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(RetainsAnyBasis));
-                    this.TrackChange(nameof(RetainsAnyBasis));
+                    this.TrackChange(nameof(RetainsAnyBasis), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -737,23 +769,26 @@ namespace NetErp.Billing.Customers.ViewModels
             return !currentEmails.All(email => seedSet.Contains(email));
         }
 
-        public bool CanSave
+        public bool CanSave => _validator.CanSave(new CustomerCanSaveContext
         {
-            get
-            {
-                if (SelectedIdentificationType == null) return false;
-                if (string.IsNullOrEmpty(IdentificationNumber.Trim()) || IdentificationNumber.Length < SelectedIdentificationType.MinimumDocumentLength) return false;
-                if (SelectedIdentificationType.HasVerificationDigit && string.IsNullOrEmpty(VerificationDigit)) return false;
-                if (CaptureInfoAsPJ && string.IsNullOrEmpty(BusinessName)) return false;
-                if (CaptureInfoAsPN && (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstLastName))) return false;
-                if (SelectedCountry == null) return false;
-                if (SelectedDepartment == null) return false;
-                if (SelectedCityId == 0) return false;
-                if (_errors.Count > 0) return false;
-                if (!IsNewRecord && !this.HasChanges() && !HasEmailChanges()) return false;
-                return true;
-            }
-        }
+            SelectedIdentificationType = SelectedIdentificationType,
+            IdentificationNumber = IdentificationNumber,
+            MinimumDocumentLength = SelectedIdentificationType?.MinimumDocumentLength ?? 0,
+            HasVerificationDigit = SelectedIdentificationType?.HasVerificationDigit ?? false,
+            VerificationDigit = VerificationDigit,
+            CaptureInfoAsPJ = CaptureInfoAsPJ,
+            CaptureInfoAsPN = CaptureInfoAsPN,
+            BusinessName = BusinessName,
+            FirstName = FirstName,
+            FirstLastName = FirstLastName,
+            SelectedCountry = SelectedCountry,
+            SelectedDepartment = SelectedDepartment,
+            SelectedCityId = SelectedCityId ?? 0,
+            HasErrors = _errors.Count > 0,
+            IsNewRecord = IsNewRecord,
+            HasChanges = this.HasChanges(),
+            HasEmailChanges = HasEmailChanges()
+        });
 
         #endregion
 
@@ -799,7 +834,8 @@ namespace NetErp.Billing.Customers.ViewModels
             StringLengthCache stringLengthCache,
             IMapper autoMapper,
             JoinableTaskFactory joinableTaskFactory,
-            IGraphQLClient graphQLClient)
+            IGraphQLClient graphQLClient,
+            CustomerValidator validator)
         {
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -811,6 +847,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _autoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
 
             Emails = [];
         }
@@ -1056,19 +1093,14 @@ namespace NetErp.Billing.Customers.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"Error al realizar operación.\r\n{ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
             finally
             {
@@ -1322,8 +1354,8 @@ namespace NetErp.Billing.Customers.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
 
         private void AddError(string propertyName, string error)
@@ -1342,79 +1374,53 @@ namespace NetErp.Billing.Customers.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
+
+        private CustomerValidationContext BuildValidationContext() => new()
+        {
+            CaptureInfoAsPN = CaptureInfoAsPN,
+            CaptureInfoAsPJ = CaptureInfoAsPJ,
+            IsActive = IsActive,
+            MinimumDocumentLength = SelectedIdentificationType?.MinimumDocumentLength ?? 0,
+            BusinessName = BusinessName,
+            FirstName = FirstName,
+            FirstLastName = FirstLastName,
+            IdentificationNumber = IdentificationNumber
+        };
 
         private void ValidateProperty(string propertyName, string? value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            ClearErrors(propertyName);
-            if (propertyName.Contains("Phone"))
-            {
-                value = value.Replace(" ", "").Replace(Convert.ToChar(9).ToString(), "");
-                value = value.Replace(Convert.ToChar(44).ToString(), "").Replace(Convert.ToChar(59).ToString(), "");
-                value = value.Replace(Convert.ToChar(45).ToString(), "").Replace(Convert.ToChar(95).ToString(), "");
-            }
-            switch (propertyName)
-            {
-                case nameof(IdentificationNumber):
-                    if (string.IsNullOrEmpty(value) || value.Trim().Length < SelectedIdentificationType?.MinimumDocumentLength) AddError(propertyName, "El número de identificación no puede estar vacío");
-                    break;
-                case nameof(FirstName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer nombre no puede estar vacío");
-                    break;
-                case nameof(FirstLastName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPN) AddError(propertyName, "El primer apellido no puede estar vacío");
-                    break;
-                case nameof(BusinessName):
-                    if (string.IsNullOrEmpty(value.Trim()) && CaptureInfoAsPJ) AddError(propertyName, "La razón social no puede estar vacía");
-                    break;
-                case nameof(BlockingReason):
-                    if (string.IsNullOrEmpty(value.Trim()) && !IsActive) AddError(propertyName, "Debe especificar un motivo de bloqueo");
-                    break;
-                case nameof(PrimaryPhone):
-                    if (value.Length != 7 && !string.IsNullOrEmpty(PrimaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                    break;
-                case nameof(SecondaryPhone):
-                    if (value.Length != 7 && !string.IsNullOrEmpty(SecondaryPhone)) AddError(propertyName, "El número de teléfono debe contener 7 digitos");
-                    break;
-                case nameof(PrimaryCellPhone):
-                    if (value.Length != 10 && !string.IsNullOrEmpty(PrimaryCellPhone)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                    break;
-                case nameof(SecondaryCellPhone):
-                    if (value.Length != 10 && !string.IsNullOrEmpty(SecondaryCellPhone)) AddError(propertyName, "El número de teléfono celular debe contener 10 digitos");
-                    break;
-            }
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value, BuildValidationContext());
+            SetPropertyErrors(propertyName, errors);
         }
 
         private void ValidateProperty(string propertyName, object? value)
         {
-            ClearErrors(propertyName);
-            switch (propertyName)
-            {
-                case nameof(SelectedCountry):
-                    if (value == null) AddError(propertyName, "Debe seleccionar un país");
-                    break;
-                case nameof(SelectedDepartment):
-                    if (value == null) AddError(propertyName, "Debe seleccionar un departamento");
-                    break;
-                case nameof(SelectedCityId):
-                    if (value is int cityId && cityId == 0) AddError(propertyName, "Debe seleccionar un municipio");
-                    break;
-            }
+            IReadOnlyList<string> errors = _validator.ValidateSelection(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
         private void ValidateProperties()
         {
-            if (CaptureInfoAsPJ) ValidateProperty(nameof(BusinessName), BusinessName);
-            if (CaptureInfoAsPN)
-            {
-                ValidateProperty(nameof(FirstName), FirstName);
-                ValidateProperty(nameof(FirstLastName), FirstLastName);
-                ValidateProperty(nameof(IdentificationNumber), IdentificationNumber);
-            }
+            Dictionary<string, IReadOnlyList<string>> allErrors = _validator.ValidateAll(BuildValidationContext());
+            foreach (string prop in allErrors.Keys)
+                SetPropertyErrors(prop, allErrors[prop]);
         }
 
         #endregion

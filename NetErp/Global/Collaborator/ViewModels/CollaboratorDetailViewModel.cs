@@ -141,10 +141,11 @@ namespace NetErp.Global.Collaborator.ViewModels
         {
             AccountId = accountId;
 
-            var (_, query) = _loadAccountQuery.Value;
+            (GraphQLQueryFragment fragment, string query) = _loadAccountQuery.Value;
 
-            dynamic variables = new ExpandoObject();
-            variables.singleItemResponseId = accountId;
+            ExpandoObject variables = new GraphQLVariables()
+                .For(fragment, "id", accountId)
+                .Build();
 
             AccountGraphQLModel account = await _accountService.FindByIdAsync(query, variables);
 
@@ -215,31 +216,34 @@ namespace NetErp.Global.Collaborator.ViewModels
                 // Profiles
                 if (!_originalProfileIds.SetEquals(selectedProfileIds.ToHashSet()))
                 {
-                    var (_, query) = _associateProfilesQuery.Value;
-                    dynamic variables = new ExpandoObject();
-                    variables.updateResponseAccountId = AccountId;
-                    variables.updateResponseAccessProfileIds = selectedProfileIds;
-                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(query, variables);
+                    (GraphQLQueryFragment profileFragment, string profileQuery) = _associateProfilesQuery.Value;
+                    dynamic variables = new GraphQLVariables()
+                        .For(profileFragment, "accountId", AccountId)
+                        .For(profileFragment, "accessProfileIds", selectedProfileIds)
+                        .Build();
+                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(profileQuery, variables);
                 }
 
                 // Emails
                 if (!_originalEmailIds.SetEquals(selectedEmailIds.ToHashSet()))
                 {
-                    var (_, query) = _associateEmailsQuery.Value;
-                    dynamic variables = new ExpandoObject();
-                    variables.updateResponseAccountId = AccountId;
-                    variables.updateResponseEmailIds = selectedEmailIds;
-                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(query, variables);
+                    (GraphQLQueryFragment emailFragment, string emailQuery) = _associateEmailsQuery.Value;
+                    dynamic variables = new GraphQLVariables()
+                        .For(emailFragment, "accountId", AccountId)
+                        .For(emailFragment, "emailIds", selectedEmailIds)
+                        .Build();
+                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(emailQuery, variables);
                 }
 
                 // Cost Centers
                 if (!_originalCostCenterIds.SetEquals(selectedCostCenterIds.ToHashSet()))
                 {
-                    var (_, query) = _associateCostCentersQuery.Value;
-                    dynamic variables = new ExpandoObject();
-                    variables.updateResponseAccountId = AccountId;
-                    variables.updateResponseCostCenterIds = selectedCostCenterIds;
-                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(query, variables);
+                    (GraphQLQueryFragment costCenterFragment, string costCenterQuery) = _associateCostCentersQuery.Value;
+                    dynamic variables = new GraphQLVariables()
+                        .For(costCenterFragment, "accountId", AccountId)
+                        .For(costCenterFragment, "costCenterIds", selectedCostCenterIds)
+                        .Build();
+                    await _accountService.UpdateAsync<UpsertResponseType<AccountGraphQLModel>>(costCenterQuery, variables);
                 }
 
                 await TryCloseAsync(true);

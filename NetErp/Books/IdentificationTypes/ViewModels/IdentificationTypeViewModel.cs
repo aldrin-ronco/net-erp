@@ -4,14 +4,16 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using Models.Global;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -22,7 +24,8 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
     public class IdentificationTypeViewModel : Screen,
         IHandle<IdentificationTypeCreateMessage>,
         IHandle<IdentificationTypeUpdateMessage>,
-        IHandle<IdentificationTypeDeleteMessage>
+        IHandle<IdentificationTypeDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -32,48 +35,47 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         private readonly Helpers.IDialogService _dialogService;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly DebouncedAction _searchDebounce = new();
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<IdentificationTypeGraphQLModel> _identificationTypes = [];
         public ObservableCollection<IdentificationTypeGraphQLModel> IdentificationTypes
         {
-            get => _identificationTypes;
+            get;
             set
             {
-                if (_identificationTypes != value)
+                if (field != value)
                 {
-                    _identificationTypes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IdentificationTypes));
                 }
             }
-        }
+        } = [];
 
-        private IdentificationTypeGraphQLModel? _selectedIdentificationType;
         public IdentificationTypeGraphQLModel? SelectedIdentificationType
         {
-            get => _selectedIdentificationType;
+            get;
             set
             {
-                if (_selectedIdentificationType != value)
+                if (field != value)
                 {
-                    _selectedIdentificationType = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedIdentificationType));
                     NotifyOfPropertyChange(nameof(CanEditIdentificationType));
                     NotifyOfPropertyChange(nameof(CanDeleteIdentificationType));
@@ -81,83 +83,95 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = LoadIdentificationTypesAsync();
+                    if (string.IsNullOrEmpty(value) || value.Length >= 3)
+                    {
+                        PageIndex = 1;
+                        _ = _searchDebounce.RunAsync(LoadIdentificationTypesAsync);
+                    }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.IdentificationType.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.IdentificationType.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.IdentificationType.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditIdentificationType => SelectedIdentificationType != null;
-        public bool CanDeleteIdentificationType => SelectedIdentificationType != null;
+        public bool CanCreateIdentificationType => HasCreatePermission && !IsBusy;
+        public bool CanEditIdentificationType => HasEditPermission && SelectedIdentificationType != null;
+        public bool CanDeleteIdentificationType => HasDeletePermission && SelectedIdentificationType != null;
 
         #endregion
 
@@ -213,7 +227,8 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             Helpers.Services.INotificationService notificationService,
             Helpers.IDialogService dialogService,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             _eventAggregator = eventAggregator;
             _identificationTypeService = identificationTypeService;
@@ -221,6 +236,7 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             _dialogService = dialogService;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -231,8 +247,33 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.IdentificationType);
-            await LoadIdentificationTypesAsync();
+            try
+            {
+                IsBusy = true;
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.IdentificationType);
+                await LoadIdentificationTypesAsync();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateIdentificationType));
+            NotifyOfPropertyChange(nameof(CanEditIdentificationType));
+            NotifyOfPropertyChange(nameof(CanDeleteIdentificationType));
+            this.SetFocus(() => FilterSearch);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -253,19 +294,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                IdentificationTypeDetailViewModel detail = new(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForNew();
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo tipo de documento");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateIdentificationTypeAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(CreateIdentificationTypeAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -279,19 +318,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new IdentificationTypeDetailViewModel(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
+                IdentificationTypeDetailViewModel detail = new(_identificationTypeService, _eventAggregator, _stringLengthCache, _joinableTaskFactory);
                 detail.SetForEdit(SelectedIdentificationType);
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                    detail.DialogWidth = parentView.ActualWidth * 0.50;
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar tipo de documento");
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditIdentificationTypeAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(EditIdentificationTypeAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -307,10 +344,10 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteIdentificationTypeQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                ExpandoObject canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedIdentificationType.Id)
                     .Build();
-                var validation = await _identificationTypeService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
+                CanDeleteType validation = await _identificationTypeService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
 
                 if (validation.CanDelete)
                 {
@@ -343,23 +380,10 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                     new IdentificationTypeDeleteMessage { DeletedIdentificationType = deletedIdentificationType },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteIdentificationTypeAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeleteIdentificationTypeAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -367,20 +391,13 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             }
         }
 
-        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
+        private async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
         {
-            try
-            {
-                var (fragment, query) = _deleteIdentificationTypeQuery.Value;
-                var variables = new GraphQLVariables()
-                    .For(fragment, "id", id)
-                    .Build();
-                return await _identificationTypeService.DeleteAsync<DeleteResponseType>(query, variables);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            var (fragment, query) = _deleteIdentificationTypeQuery.Value;
+            ExpandoObject variables = new GraphQLVariables()
+                .For(fragment, "id", id)
+                .Build();
+            return await _identificationTypeService.DeleteAsync<DeleteResponseType>(query, variables);
         }
 
         #endregion
@@ -392,15 +409,14 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             try
             {
                 IsBusy = true;
-
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadIdentificationTypesQuery.Value;
 
-                dynamic filters = new System.Dynamic.ExpandoObject();
+                dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
@@ -408,18 +424,14 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
                 PageType<IdentificationTypeGraphQLModel> result = await _identificationTypeService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                IdentificationTypes = new ObservableCollection<IdentificationTypeGraphQLModel>(result.Entries);
+                IdentificationTypes = [.. result.Entries];
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadIdentificationTypesAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadIdentificationTypesAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -499,6 +511,17 @@ namespace NetErp.Books.IdentificationTypes.ViewModels
             await LoadIdentificationTypesAsync();
             SelectedIdentificationType = null;
             _notificationService.ShowSuccess(message.DeletedIdentificationType.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateIdentificationType));
+            NotifyOfPropertyChange(nameof(CanEditIdentificationType));
+            NotifyOfPropertyChange(nameof(CanDeleteIdentificationType));
+            return Task.CompletedTask;
         }
 
         #endregion

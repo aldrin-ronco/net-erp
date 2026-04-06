@@ -171,6 +171,13 @@ namespace NetErp
             _ = kernel.Bind<MeasurementUnitCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MeasurementUnitCache>());
 
+            // Validators
+            _ = kernel.Bind<Billing.Customers.Validators.CustomerValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<Billing.Zones.Validators.ZoneValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<Inventory.MeasurementUnits.Validators.MeasurementUnitValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<Billing.Sellers.Validators.SellerValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Suppliers.Suppliers.Validators.SupplierValidator>().ToSelf().InSingletonScope();
+
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
 
@@ -194,7 +201,9 @@ namespace NetErp
 
             _ = kernel.Bind<AccessProfileCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccessProfileCache>());
-            
+
+            _ = kernel.Bind<PermissionCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<PermissionCache>());
 
             //_ = kernel.Bind<IGenericDataAccess<CountryGraphQLModel>>().To<CountryService>().InSingletonScope();
             //_ = kernel.Bind<IGenericDataAccess<SupplierGraphQLModel>>().To<SupplierService>().InSingletonScope();

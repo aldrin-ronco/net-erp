@@ -6,12 +6,14 @@ using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Models.Books;
+using Models.Global;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -23,7 +25,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
     public class WithholdingCertificateConfigMasterViewModel : Screen,
         IHandle<WithholdingCertificateConfigDeleteMessage>,
         IHandle<WithholdingCertificateConfigUpdateMessage>,
-        IHandle<WithholdingCertificateConfigCreateMessage>
+        IHandle<WithholdingCertificateConfigCreateMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -35,6 +38,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PermissionCache _permissionCache;
+        private readonly DebouncedAction _searchDebounce = new();
 
         public WithholdingCertificateConfigViewModel Context { get; set; }
 
@@ -46,58 +51,54 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         public bool HasRecords => _isInitialized && !ShowEmptyState;
 
-        private bool _showEmptyState;
         public bool ShowEmptyState
         {
-            get => _showEmptyState;
+            get;
             set
             {
-                if (_showEmptyState != value)
+                if (field != value)
                 {
-                    _showEmptyState = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
-        private ObservableCollection<WithholdingCertificateConfigGraphQLModel> _certificates = [];
         public ObservableCollection<WithholdingCertificateConfigGraphQLModel> Certificates
         {
-            get => _certificates;
+            get;
             set
             {
-                if (_certificates != value)
+                if (field != value)
                 {
-                    _certificates = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Certificates));
                 }
             }
-        }
+        } = [];
 
-        private WithholdingCertificateConfigGraphQLModel? _selectedCertificate;
         public WithholdingCertificateConfigGraphQLModel? SelectedCertificate
         {
-            get => _selectedCertificate;
+            get;
             set
             {
-                if (_selectedCertificate != value)
+                if (field != value)
                 {
-                    _selectedCertificate = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedCertificate));
                     NotifyOfPropertyChange(nameof(CanEditCertificate));
                     NotifyOfPropertyChange(nameof(CanDeleteCertificate));
@@ -105,85 +106,91 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             }
         }
 
-        private readonly DebouncedAction _searchDebounce = new();
-
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3) _ = _searchDebounce.RunAsync(LoadCertificatesAsync);
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
+        #endregion
+
+        #region Pagination
+
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.WithholdingCertificate.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.WithholdingCertificate.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.WithholdingCertificate.Delete);
 
         #endregion
 
         #region Button States
 
-        public bool CanEditCertificate => SelectedCertificate != null;
-        public bool CanDeleteCertificate => SelectedCertificate != null;
+        public bool CanCreateCertificate => HasCreatePermission && !IsBusy;
+        public bool CanEditCertificate => HasEditPermission && SelectedCertificate != null;
+        public bool CanDeleteCertificate => HasDeletePermission && SelectedCertificate != null;
 
         #endregion
 
@@ -242,7 +249,8 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             AccountingAccountGroupCache accountingAccountGroupCache,
             CostCenterCache costCenterCache,
             StringLengthCache stringLengthCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            PermissionCache permissionCache)
         {
             Context = context;
             _notificationService = notificationService;
@@ -253,6 +261,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _costCenterCache = costCenterCache;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _permissionCache = permissionCache;
             Context.EventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -267,6 +276,13 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             _isInitialized = true;
             ShowEmptyState = Certificates == null || Certificates.Count == 0;
             NotifyOfPropertyChange(nameof(HasRecords));
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateCertificate));
+            NotifyOfPropertyChange(nameof(CanEditCertificate));
+            NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+            this.SetFocus(() => FilterSearch);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -287,7 +303,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new WithholdingCertificateConfigDetailViewModel(
+                WithholdingCertificateConfigDetailViewModel detail = new(
                     Context, _withholdingCertificateConfigService,
                     _accountingAccountGroupService, _accountingAccountGroupCache,
                     _costCenterCache, _stringLengthCache, _joinableTaskFactory);
@@ -306,11 +322,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al crear el registro.\r\n{GetType().Name}.{nameof(CreateAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(CreateAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -324,7 +336,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new WithholdingCertificateConfigDetailViewModel(
+                WithholdingCertificateConfigDetailViewModel detail = new(
                     Context, _withholdingCertificateConfigService,
                     _accountingAccountGroupService, _accountingAccountGroupCache,
                     _costCenterCache, _stringLengthCache, _joinableTaskFactory);
@@ -344,11 +356,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al editar el registro.\r\n{GetType().Name}.{nameof(EditAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(EditAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -364,11 +372,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 IsBusy = true;
 
                 var (canDeleteFragment, canDeleteQuery) = _canDeleteQuery.Value;
-                var canDeleteVariables = new GraphQLVariables()
+                ExpandoObject canDeleteVariables = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedCertificate.Id)
                     .Build();
-
-                var validation = await _withholdingCertificateConfigService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
+                CanDeleteType validation = await _withholdingCertificateConfigService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
 
                 if (validation.CanDelete)
                 {
@@ -387,7 +394,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 }
 
                 IsBusy = true;
-                DeleteResponseType deletedCertificate = await ExecuteDeleteAsync(SelectedCertificate.Id);
+                var (deleteFragment, deleteQuery) = _deleteQuery.Value;
+                ExpandoObject deleteVariables = new GraphQLVariables()
+                    .For(deleteFragment, "id", SelectedCertificate.Id)
+                    .Build();
+                DeleteResponseType deletedCertificate = await _withholdingCertificateConfigService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
 
                 if (!deletedCertificate.Success)
                 {
@@ -401,43 +412,14 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                     new WithholdingCertificateConfigDeleteMessage { DeletedWithholdingCertificateConfig = deletedCertificate },
                     CancellationToken.None);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al eliminar el registro.\r\n{GetType().Name}.{nameof(DeleteAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(DeleteAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsBusy = false;
-            }
-        }
-
-        public async Task<DeleteResponseType> ExecuteDeleteAsync(int id)
-        {
-            try
-            {
-                var (fragment, query) = _deleteQuery.Value;
-                var variables = new GraphQLVariables()
-                    .For(fragment, "id", id)
-                    .Build();
-                return await _withholdingCertificateConfigService.DeleteAsync<DeleteResponseType>(query, variables);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
             }
         }
 
@@ -450,11 +432,10 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             try
             {
                 IsBusy = true;
-
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadQuery.Value;
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "filters", new
                     {
                         name = string.IsNullOrEmpty(FilterSearch)
@@ -467,18 +448,14 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 PageType<WithholdingCertificateConfigGraphQLModel> result = await _withholdingCertificateConfigService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
-                Certificates = new ObservableCollection<WithholdingCertificateConfigGraphQLModel>(result.Entries);
+                Certificates = [.. result.Entries];
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al cargar los datos.\r\n{GetType().Name}.{nameof(LoadCertificatesAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(LoadCertificatesAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -559,6 +536,17 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             ShowEmptyState = Certificates == null || Certificates.Count == 0;
             SelectedCertificate = null;
             _notificationService.ShowSuccess(message.DeletedWithholdingCertificateConfig.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateCertificate));
+            NotifyOfPropertyChange(nameof(CanEditCertificate));
+            NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+            return Task.CompletedTask;
         }
 
         #endregion

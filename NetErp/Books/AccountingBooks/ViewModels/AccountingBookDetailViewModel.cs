@@ -1,5 +1,4 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -7,25 +6,32 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Dynamic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingBooks.ViewModels
 {
-    public class AccountingBookDetailViewModel : Screen, INotifyDataErrorInfo
+    public class AccountingBookDetailViewModel(
+        IRepository<AccountingBookGraphQLModel> accountingBookService,
+        IEventAggregator eventAggregator,
+        JoinableTaskFactory joinableTaskFactory,
+        StringLengthCache stringLengthCache) : Screen, INotifyDataErrorInfo
     {
         #region Dependencies
 
-        private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService;
-        private readonly IEventAggregator _eventAggregator;
-        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IRepository<AccountingBookGraphQLModel> _accountingBookService = accountingBookService;
+        private readonly IEventAggregator _eventAggregator = eventAggregator;
+        private readonly JoinableTaskFactory _joinableTaskFactory = joinableTaskFactory;
+        private readonly StringLengthCache _stringLengthCache = stringLengthCache;
 
         #endregion
 
@@ -33,48 +39,77 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
+        public double DialogWidth
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 400;
+
         #endregion
 
         #region Form Properties
 
-        public int Id { get; set; }
-
-        private string _name = string.Empty;
-        public string Name
+        public int Id
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        public string Name
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
+
+        #endregion
+
+        #region StringLength Properties
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<AccountingBookGraphQLModel>(nameof(AccountingBookGraphQLModel.Name));
 
         #endregion
 
         #region Validation (INotifyDataErrorInfo)
 
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -82,8 +117,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -94,7 +130,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -107,9 +143,9 @@ namespace NetErp.Books.AccountingBooks.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
         private void ValidateProperty(string propertyName, string value)
@@ -160,38 +196,32 @@ namespace NetErp.Books.AccountingBooks.ViewModels
 
         #endregion
 
-        #region Constructor
-
-        public AccountingBookDetailViewModel(
-            IRepository<AccountingBookGraphQLModel> accountingBookService,
-            IEventAggregator eventAggregator,
-            JoinableTaskFactory joinableTaskFactory)
-        {
-            _accountingBookService = accountingBookService;
-            _eventAggregator = eventAggregator;
-            _joinableTaskFactory = joinableTaskFactory;
-        }
-
-        #endregion
-
         #region Lifecycle
 
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
             ValidateProperties();
-            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
         }
 
         #endregion
 
-        #region Load for Edit
+        #region SetForNew / SetForEdit
 
-        public void LoadForEdit(AccountingBookGraphQLModel entity)
+        public void SetForNew()
+        {
+            this.ClearSeeds();
+            this.AcceptChanges();
+        }
+
+        public void SetForEdit(AccountingBookGraphQLModel entity)
         {
             Id = entity.Id;
             Name = entity.Name;
             NotifyOfPropertyChange(nameof(IsNewRecord));
+
+            this.SeedValue(nameof(Name), Name);
             this.AcceptChanges();
         }
 
@@ -204,12 +234,11 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             try
             {
                 IsBusy = true;
-                Refresh();
                 UpsertResponseType<AccountingBookGraphQLModel> result = await ExecuteSaveAsync();
                 if (!result.Success)
                 {
                     ThemedMessageBox.Show(
-                        text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo",
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
                         title: $"{result.Message}!",
                         messageBoxButtons: MessageBoxButton.OK,
                         icon: MessageBoxImage.Error);
@@ -227,9 +256,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -237,7 +264,7 @@ namespace NetErp.Books.AccountingBooks.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<AccountingBookGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<AccountingBookGraphQLModel>> ExecuteSaveAsync()
         {
             if (IsNewRecord)
             {
@@ -296,11 +323,11 @@ namespace NetErp.Books.AccountingBooks.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
+            List<GraphQLQueryParameter> parameters =
+            [
                 new("data", "UpdateAccountingBookInput!"),
                 new("id", "ID!")
-            };
+            ];
             var fragment = new GraphQLQueryFragment("updateAccountingBook", parameters, fields, "UpdateResponse");
             return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
         });

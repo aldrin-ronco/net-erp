@@ -24,7 +24,8 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Global.Collaborator.ViewModels
 {
-    public class CollaboratorViewModel : Screen
+    public class CollaboratorViewModel : Screen,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -37,6 +38,7 @@ namespace NetErp.Global.Collaborator.ViewModels
         private readonly EmailCache _emailCache;
         private readonly AccessProfileCache _accessProfileCache;
         private readonly CostCenterCache _costCenterCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly DebouncedAction _searchDebounce = new();
 
@@ -54,6 +56,7 @@ namespace NetErp.Global.Collaborator.ViewModels
             EmailCache emailCache,
             AccessProfileCache accessProfileCache,
             CostCenterCache costCenterCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
@@ -65,7 +68,9 @@ namespace NetErp.Global.Collaborator.ViewModels
             _emailCache = emailCache;
             _accessProfileCache = accessProfileCache;
             _costCenterCache = costCenterCache;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
         #endregion
@@ -156,8 +161,17 @@ namespace NetErp.Global.Collaborator.ViewModels
             }
         } = string.Empty;
 
-        public bool CanEditCollaborator => SelectedItem is not null;
-        public bool CanDeleteCollaborator => SelectedItem is not null && !SelectedItem.IsOwner;
+        #region Permissions
+
+        public bool HasInvitePermission => _permissionCache.IsAllowed(PermissionCodes.Collaborator.Invite);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.Collaborator.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Collaborator.Delete);
+
+        #endregion
+
+        public bool CanInviteCollaborator => HasInvitePermission;
+        public bool CanEditCollaborator => HasEditPermission && SelectedItem is not null;
+        public bool CanDeleteCollaborator => HasDeletePermission && SelectedItem is not null && !SelectedItem.IsOwner;
 
         private bool _isInitialized;
         public bool HasRecords => _isInitialized && !ShowEmptyState;
@@ -226,6 +240,13 @@ namespace NetErp.Global.Collaborator.ViewModels
                     _accessProfileCache.EnsureLoadedAsync(),
                     _costCenterCache.EnsureLoadedAsync());
 
+                NotifyOfPropertyChange(nameof(HasInvitePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanInviteCollaborator));
+                NotifyOfPropertyChange(nameof(CanEditCollaborator));
+                NotifyOfPropertyChange(nameof(CanDeleteCollaborator));
+
                 await LoadCollaboratorsAsync();
                 _isInitialized = true;
                 ShowEmptyState = Collaborators == null || Collaborators.Count == 0;
@@ -248,6 +269,7 @@ namespace NetErp.Global.Collaborator.ViewModels
         {
             if (close)
             {
+                _eventAggregator.Unsubscribe(this);
                 Collaborators?.Clear();
                 FilteredCollaborators?.Clear();
             }
@@ -450,11 +472,6 @@ namespace NetErp.Global.Collaborator.ViewModels
                     return;
                 }
 
-                // Delete from Main API
-                var (_, deleteQuery) = _deleteAccountQuery.Value;
-                object deleteVariables = new { deleteResponseId = SelectedItem.AccountId };
-                await _accountService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
                 _collaboratorCache.Clear();
                 await _collaboratorCache.EnsureLoadedAsync();
                 await LoadCollaboratorsAsync();
@@ -470,6 +487,21 @@ namespace NetErp.Global.Collaborator.ViewModels
             {
                 IsBusy = false;
             }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasInvitePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanInviteCollaborator));
+            NotifyOfPropertyChange(nameof(CanEditCollaborator));
+            NotifyOfPropertyChange(nameof(CanDeleteCollaborator));
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -491,20 +523,6 @@ namespace NetErp.Global.Collaborator.ViewModels
             GraphQLQueryParameter paginationParam = new("pagination", "Pagination");
             GraphQLQueryFragment fragment = new("accountsPage", [filtersParam, paginationParam], fields, "PageResponse");
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
-
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteAccountQuery = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<DeleteResponseType>
-                .Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
-
-            GraphQLQueryParameter parameter = new("id", "ID!");
-            GraphQLQueryFragment fragment = new("deleteAccount", [parameter], fields, alias: "DeleteResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         private static readonly Lazy<string> _deleteCollaboratorMutation = new(() => @"

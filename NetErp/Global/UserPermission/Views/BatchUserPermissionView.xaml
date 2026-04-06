@@ -1,0 +1,336 @@
+<UserControl x:Class="NetErp.Global.UserPermission.Views.BatchUserPermissionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1000"
+             Background="#EEF1F5">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False">
+
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+
+            <Grid Margin="15,15,15,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Main content (two panels) -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT PANEL: Permissions Tree -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Seleccionar permisos" FontSize="13" Margin="0,0,0,6"/>
+
+                        <!-- Filters -->
+                        <Grid Grid.Row="1" Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <dxe:ComboBoxEdit Grid.Column="0"
+                                              ItemsSource="{Binding PermissionTypeOptions}"
+                                              EditValue="{Binding SelectedPermissionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              ValueMember="Value"
+                                              DisplayMember="Display"
+                                              IsTextEditable="False"
+                                              AllowNullInput="True"
+                                              NullText="Tipo de permiso"
+                                              NullValueButtonPlacement="EditBox"
+                                              ShowNullValueButtonOnFocusOnly="False"
+                                              Padding="2"
+                                              BorderBrush="#C8CED6"/>
+
+                            <dxe:ComboBoxEdit Grid.Column="2"
+                                              ItemsSource="{Binding ModuleFilters}"
+                                              SelectedItem="{Binding SelectedModuleFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              AllowNullInput="True"
+                                              NullText="Todos los módulos"
+                                              NullValueButtonPlacement="EditBox"
+                                              ShowNullValueButtonOnFocusOnly="False"
+                                              Padding="2"
+                                              BorderBrush="#C8CED6"
+                                              Visibility="{Binding HasPermissionTypeSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+
+                            <dxe:ComboBoxEdit Grid.Column="4"
+                                              ItemsSource="{Binding GroupFilters}"
+                                              SelectedItem="{Binding SelectedGroupFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMember="Name"
+                                              IsTextEditable="False"
+                                              AllowNullInput="True"
+                                              NullText="Todos los grupos"
+                                              NullValueButtonPlacement="EditBox"
+                                              ShowNullValueButtonOnFocusOnly="False"
+                                              Padding="2"
+                                              BorderBrush="#C8CED6"
+                                              Visibility="{Binding HasModuleFilterSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+                        </Grid>
+
+                        <!-- TreeList -->
+                        <Border Grid.Row="2" BorderBrush="#C8CED6" BorderThickness="1" CornerRadius="4">
+                            <dxg:TreeListControl x:Name="PermissionTreeList"
+                                                 ItemsSource="{Binding DisplayTreeNodes}">
+                                <dxg:TreeListControl.Columns>
+
+                                    <dxg:TreeListColumn FieldName="IsSelected" Header="" Width="40">
+                                        <dxg:TreeListColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{Binding RowData.Row.NodeBackground}">
+                                                    <dxe:CheckEdit IsChecked="{Binding RowData.Row.IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                   HorizontalAlignment="Center"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </dxg:TreeListColumn.CellTemplate>
+                                    </dxg:TreeListColumn>
+
+                                    <dxg:TreeListColumn FieldName="Name" Header="Permiso" Width="*">
+                                        <dxg:TreeListColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{Binding RowData.Row.NodeBackground}">
+                                                    <TextBlock Text="{Binding RowData.Row.DisplayName}"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="{Binding RowData.Row.NodeFontWeight}"
+                                                               FontSize="{Binding RowData.Row.NodeFontSize}"
+                                                               Foreground="{Binding RowData.Row.NodeForeground}"
+                                                               Padding="4,1,0,1"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </dxg:TreeListColumn.CellTemplate>
+                                    </dxg:TreeListColumn>
+
+                                </dxg:TreeListControl.Columns>
+                                <dxg:TreeListControl.View>
+                                    <dxg:TreeListView x:Name="PermissionTreeView"
+                                                      AllowEditing="False"
+                                                      ShowIndicator="False"
+                                                      ShowColumnHeaders="False"
+                                                      AlternateRowBackground="Transparent"
+                                                      ChildNodesPath="Children"
+                                                      TreeDerivationMode="ChildNodesSelector"
+                                                      RowMinHeight="26"/>
+                                </dxg:TreeListControl.View>
+                            </dxg:TreeListControl>
+                        </Border>
+
+                        <!-- Permission count -->
+                        <TextBlock Grid.Row="3" Foreground="Gray" FontSize="11" FontStyle="Italic" Margin="0,4,0,0">
+                            <Run Text="{Binding SelectedPermissionCount, Mode=OneWay}"/>
+                            <Run Text="permiso(s) seleccionado(s)"/>
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- Separator -->
+                    <Border Grid.Column="1" Width="1" Background="#E0E0E0" Margin="0,0,0,0"/>
+
+                    <!-- RIGHT PANEL: Config + Users -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Configuration -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="Configuración" FontSize="13" Margin="0,0,0,6"/>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <RadioButton Content="Asignar valor"
+                                             Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                             IsChecked="{Binding IsAssignMode, Mode=TwoWay}"/>
+                                <RadioButton Content="Limpiar (revertir a default)"
+                                             Style="{StaticResource BlueRadioButtonCheckedTextStyle}"
+                                             IsChecked="{Binding IsDeleteMode, Mode=TwoWay}"
+                                             Margin="15,0,0,0"/>
+                            </StackPanel>
+
+                            <Grid Visibility="{Binding IsAssignMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Valor a asignar" FontSize="13" Margin="0,0,0,3"/>
+                                    <dxe:ComboBoxEdit ItemsSource="{Binding ApplicableValueOptions}"
+                                                      EditValue="{Binding SelectedValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      ValueMember="Value"
+                                                      DisplayMember="Display"
+                                                      IsTextEditable="False"
+                                                      AllowNullInput="True"
+                                                      NullText="Seleccione un valor"
+                                                      NullValueButtonPlacement="EditBox"
+                                                      ShowNullValueButtonOnFocusOnly="False"
+                                                      Padding="2"
+                                                      BorderBrush="#C8CED6">
+                                        <dxe:ComboBoxEdit.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="2">
+                                                    <Image Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                                <Setter Property="Opacity" Value="0.8"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsPositive}" Value="True">
+                                                                        <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
+                                                                        <Setter Property="Opacity" Value="1.0"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                    <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </dxe:ComboBoxEdit.ItemTemplate>
+                                    </dxe:ComboBoxEdit>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Expiración (opcional)" FontSize="13" Margin="0,0,0,3"/>
+                                    <dxe:DateEdit EditValue="{Binding ExpiresAt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  AllowNullInput="True"
+                                                  NullText="Permanente"
+                                                  NullValueButtonPlacement="EditBox"
+                                                  ShowNullValueButtonOnFocusOnly="False"
+                                                  MinValue="{x:Static sys:DateTime.Today}"
+                                                  MaskType="DateTime"
+                                                  Mask="d"
+                                                  Padding="2"
+                                                  BorderBrush="#C8CED6"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Users label -->
+                        <TextBlock Grid.Row="1" Text="Seleccionar colaboradores" FontSize="13" Margin="0,0,0,6"/>
+
+                        <!-- Users grid -->
+                        <Border Grid.Row="2" BorderBrush="#C8CED6" BorderThickness="1" CornerRadius="4">
+                            <dxg:GridControl ItemsSource="{Binding Collaborators}">
+                                <dxg:GridControl.View>
+                                    <dxg:TableView AllowEditing="False"
+                                                   ShowGroupPanel="False"
+                                                   ShowIndicator="False"
+                                                   AlternateRowBackground="Beige"
+                                                   AllowColumnMoving="False"
+                                                   RowMinHeight="28"/>
+                                </dxg:GridControl.View>
+                                <dxg:GridColumn Width="45" HorizontalHeaderContentAlignment="Center"
+                                                AllowSorting="False">
+                                    <dxg:GridColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <CheckBox HorizontalAlignment="Center"
+                                                      IsChecked="{Binding DataContext.IsAllCollaboratorsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                        </DataTemplate>
+                                    </dxg:GridColumn.HeaderTemplate>
+                                    <dxg:GridColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Margin="4" HorizontalAlignment="Center"
+                                                      IsChecked="{Binding RowData.Row.IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </dxg:GridColumn.CellTemplate>
+                                </dxg:GridColumn>
+                                <dxg:GridColumn FieldName="FullName" Header="Nombre" Width="*"
+                                                AllowEditing="False" AllowSorting="False"/>
+                            </dxg:GridControl>
+                        </Border>
+
+                        <!-- Collaborator count -->
+                        <TextBlock Grid.Row="3" Foreground="Gray" FontSize="11" FontStyle="Italic" Margin="0,4,0,0">
+                            <Run Text="{Binding SelectedCollaboratorCount, Mode=OneWay}"/>
+                            <Run Text="colaborador(es) seleccionado(s)"/>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+
+                <!-- Row 1: Action Buttons -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+
+                    <!-- Aplicar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanApply}"
+                            Command="{Binding ApplyCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Aplicar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Cancelar -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True"
+                            Command="{Binding CancelCommand}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
+
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

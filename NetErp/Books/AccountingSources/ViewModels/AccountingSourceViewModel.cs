@@ -24,7 +24,8 @@ namespace NetErp.Books.AccountingSources.ViewModels
     public class AccountingSourceViewModel : Screen,
         IHandle<AccountingSourceCreateMessage>,
         IHandle<AccountingSourceUpdateMessage>,
-        IHandle<AccountingSourceDeleteMessage>
+        IHandle<AccountingSourceDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Dependencies
 
@@ -36,6 +37,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly ProcessTypeCache _processTypeCache;
         private readonly MenuModuleCache _menuModuleCache;
+        private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -189,10 +191,19 @@ namespace NetErp.Books.AccountingSources.ViewModels
 
         #endregion
 
+        #region Permissions
+
+        public bool HasCreatePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingSource.Create);
+        public bool HasEditPermission => _permissionCache.IsAllowed(PermissionCodes.AccountingSource.Edit);
+        public bool HasDeletePermission => _permissionCache.IsAllowed(PermissionCodes.AccountingSource.Delete);
+
+        #endregion
+
         #region Button States
 
-        public bool CanEditSource => SelectedAccountingSource != null;
-        public bool CanDeleteSource => SelectedAccountingSource != null;
+        public bool CanCreateSource => HasCreatePermission && !IsBusy;
+        public bool CanEditSource => HasEditPermission && SelectedAccountingSource != null;
+        public bool CanDeleteSource => HasDeletePermission && SelectedAccountingSource != null;
 
         #endregion
 
@@ -250,6 +261,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
             ProcessTypeCache processTypeCache,
             MenuModuleCache menuModuleCache,
+            PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
             IGraphQLClient graphQLClient)
         {
@@ -260,6 +272,7 @@ namespace NetErp.Books.AccountingSources.ViewModels
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _processTypeCache = processTypeCache;
             _menuModuleCache = menuModuleCache;
+            _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
             _eventAggregator.SubscribeOnPublishedThread(this);
@@ -274,6 +287,12 @@ namespace NetErp.Books.AccountingSources.ViewModels
             base.OnViewReady(view);
             await _menuModuleCache.EnsureLoadedAsync();
             Modules = _menuModuleCache.Items;
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateSource));
+            NotifyOfPropertyChange(nameof(CanEditSource));
+            NotifyOfPropertyChange(nameof(CanDeleteSource));
             await LoadAccountingSourcesAsync();
         }
 
@@ -525,6 +544,17 @@ namespace NetErp.Books.AccountingSources.ViewModels
             await LoadAccountingSourcesAsync();
             SelectedAccountingSource = null;
             _notificationService.ShowSuccess(message.DeletedAccountingSource.Message);
+        }
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyOfPropertyChange(nameof(HasCreatePermission));
+            NotifyOfPropertyChange(nameof(HasEditPermission));
+            NotifyOfPropertyChange(nameof(HasDeletePermission));
+            NotifyOfPropertyChange(nameof(CanCreateSource));
+            NotifyOfPropertyChange(nameof(CanEditSource));
+            NotifyOfPropertyChange(nameof(CanDeleteSource));
+            return Task.CompletedTask;
         }
 
         #endregion

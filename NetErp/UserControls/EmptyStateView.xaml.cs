@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,6 +12,10 @@ namespace NetErp.UserControls
     {
         private static readonly ImageSource DefaultImage = new BitmapImage(
             new Uri("pack://application:,,,/NetErp;component/Resources/Images/vecteezy_desert-landscape-404-error-page-concept-illustration-flat_9007135.jpg"));
+
+        private bool _isExecuting;
+
+        #region Dependency Properties
 
         public static readonly DependencyProperty ImageSourceProperty =
             DependencyProperty.Register(nameof(ImageSource), typeof(ImageSource), typeof(EmptyStateView),
@@ -30,7 +35,7 @@ namespace NetErp.UserControls
 
         public static readonly DependencyProperty CommandProperty =
             DependencyProperty.Register(nameof(Command), typeof(ICommand), typeof(EmptyStateView),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnCommandChanged));
 
         public static readonly DependencyProperty ButtonTextProperty =
             DependencyProperty.Register(nameof(ButtonText), typeof(string), typeof(EmptyStateView),
@@ -47,6 +52,14 @@ namespace NetErp.UserControls
         public static readonly DependencyProperty ButtonIconProperty =
             DependencyProperty.Register(nameof(ButtonIcon), typeof(ImageSource), typeof(EmptyStateView),
                 new PropertyMetadata(null));
+
+        public static readonly DependencyProperty HasPermissionProperty =
+            DependencyProperty.Register(nameof(HasPermission), typeof(bool), typeof(EmptyStateView),
+                new PropertyMetadata(true, OnHasPermissionChanged));
+
+        #endregion
+
+        #region Properties
 
         public ImageSource ImageSource
         {
@@ -102,9 +115,72 @@ namespace NetErp.UserControls
             set => SetValue(ContextInfoProperty, value);
         }
 
+        public bool HasPermission
+        {
+            get => (bool)GetValue(HasPermissionProperty);
+            set => SetValue(HasPermissionProperty, value);
+        }
+
+        #endregion
+
         public EmptyStateView()
         {
             InitializeComponent();
+        }
+
+        private static void OnCommandChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not EmptyStateView view) return;
+
+            if (e.OldValue is ICommand oldCommand)
+                oldCommand.CanExecuteChanged -= view.OnCanExecuteChanged;
+
+            if (e.NewValue is ICommand newCommand)
+                newCommand.CanExecuteChanged += view.OnCanExecuteChanged;
+
+            view.UpdateButtonEnabled();
+        }
+
+        private void OnCanExecuteChanged(object? sender, EventArgs e)
+        {
+            UpdateButtonEnabled();
+        }
+
+        private void UpdateButtonEnabled()
+        {
+            if (ActionButton == null) return;
+            ActionButton.IsEnabled = !_isExecuting && HasPermission && (Command?.CanExecute(null) ?? false);
+        }
+
+        private static void OnHasPermissionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EmptyStateView view)
+                view.UpdateButtonEnabled();
+        }
+
+        private async void OnActionButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (_isExecuting || Command == null || !Command.CanExecute(null)) return;
+
+            _isExecuting = true;
+            ActionButton.IsEnabled = false;
+            try
+            {
+                // Ceder el UI thread para que WPF renderice el estado deshabilitado.
+                // ContextIdle (prioridad 3) se ejecuta DESPUÉS de que Render (prioridad 7)
+                // y todas las operaciones de mayor prioridad hayan completado.
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+                if (Command is DevExpress.Mvvm.AsyncCommand asyncCommand)
+                    await asyncCommand.ExecuteAsync(null);
+                else
+                    Command.Execute(null);
+            }
+            finally
+            {
+                _isExecuting = false;
+                UpdateButtonEnabled();
+            }
         }
     }
 }

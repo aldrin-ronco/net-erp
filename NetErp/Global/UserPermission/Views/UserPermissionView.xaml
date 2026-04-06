@@ -102,32 +102,34 @@
                             <dxg:TreeListColumn FieldName="Name" Header="Opción / Permiso" Width="*">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Margin="6,3,4,3">
-                                            <!-- Icono estado (solo permisos) -->
-                                            <Image Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
-                                                   Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-                                                <Image.Style>
-                                                    <Style TargetType="Image">
-                                                        <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
-                                                        <Setter Property="ToolTip" Value="Denegado / Requerido"/>
-                                                        <Setter Property="Opacity" Value="{Binding RowData.Row.NegativeIconOpacity}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding RowData.Row.IsEffectivelyPositive}" Value="True">
-                                                                <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
-                                                                <Setter Property="ToolTip" Value="Permitido / Opcional"/>
-                                                                <Setter Property="Opacity" Value="{Binding RowData.Row.PositiveIconOpacity}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Image.Style>
-                                            </Image>
-                                            <TextBlock Text="{Binding RowData.Row.DisplayName}"
-                                                       VerticalAlignment="Center"
-                                                       FontWeight="{Binding RowData.Row.NodeFontWeight}"
-                                                       FontSize="{Binding RowData.Row.NodeFontSize}"
-                                                       Foreground="{Binding RowData.Row.NodeForeground}"
-                                                       Padding="0,1,0,1"/>
-                                        </StackPanel>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <StackPanel Orientation="Horizontal" Margin="6,3,4,3">
+                                                <!-- Icono estado (solo permisos) -->
+                                                <Image Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                       Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
+                                                            <Setter Property="ToolTip" Value="Denegado / Requerido"/>
+                                                            <Setter Property="Opacity" Value="{Binding RowData.Row.NegativeIconOpacity}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RowData.Row.IsEffectivelyPositive}" Value="True">
+                                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Validation.png'}"/>
+                                                                    <Setter Property="ToolTip" Value="Permitido / Opcional"/>
+                                                                    <Setter Property="Opacity" Value="{Binding RowData.Row.PositiveIconOpacity}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                                <TextBlock Text="{Binding RowData.Row.DisplayName}"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="{Binding RowData.Row.NodeFontWeight}"
+                                                           FontSize="{Binding RowData.Row.NodeFontSize}"
+                                                           Foreground="{Binding RowData.Row.NodeForeground}"
+                                                           Padding="0,1,0,1"/>
+                                            </StackPanel>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -136,10 +138,12 @@
                             <dxg:TreeListColumn FieldName="Code" Header="Código" Width="180">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding RowData.Row.Code}"
-                                                   Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                                   FontSize="11" Foreground="Gray"
-                                                   VerticalAlignment="Center" Margin="6,3"/>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <TextBlock Text="{Binding RowData.Row.Code}"
+                                                       Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                       FontSize="11" Foreground="Gray"
+                                                       VerticalAlignment="Center" Margin="6,3"/>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -149,10 +153,12 @@
                                                 HorizontalHeaderContentAlignment="Center">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding RowData.Row.EffectiveDefaultDisplay}"
-                                                   Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                                   FontSize="11"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,3"/>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <TextBlock Text="{Binding RowData.Row.EffectiveDefaultDisplay}"
+                                                       Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                       FontSize="11"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="6,3"/>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -162,20 +168,23 @@
                                                 HorizontalHeaderContentAlignment="Center">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <dxe:ComboBoxEdit
-                                            EditValue="{Binding RowData.Row.UserValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                            ItemsSource="{Binding RowData.Row.ApplicableOptions}"
-                                            ValueMember="Value"
-                                            DisplayMember="Display"
-                                            IsTextEditable="False"
-                                            AllowNullInput="True"
-                                            NullText="Sin establecer"
-                                            NullValueButtonPlacement="EditBox"
-                                            ShowNullValueButtonOnFocusOnly="False"
-                                            Padding="2"
-                                            BorderThickness="0"
-                                            ShowBorder="False"/>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <dxe:ComboBoxEdit
+                                                EditValue="{Binding RowData.Row.UserValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Visibility="{Binding RowData.Row.IsPermission, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                IsEnabled="{Binding DataContext.HasEditPermission, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                ItemsSource="{Binding RowData.Row.ApplicableOptions}"
+                                                ValueMember="Value"
+                                                DisplayMember="Display"
+                                                IsTextEditable="False"
+                                                AllowNullInput="True"
+                                                NullText="Sin establecer"
+                                                NullValueButtonPlacement="EditBox"
+                                                ShowNullValueButtonOnFocusOnly="False"
+                                                Padding="2"
+                                                BorderThickness="0"
+                                                ShowBorder="False"/>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -185,19 +194,22 @@
                                                 HorizontalHeaderContentAlignment="Center">
                                 <dxg:TreeListColumn.CellTemplate>
                                     <DataTemplate>
-                                        <dxe:DateEdit
-                                            EditValue="{Binding RowData.Row.ExpiresAt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            Visibility="{Binding RowData.Row.HasUserOverride, Converter={dxmvvm:BooleanToVisibilityConverter}}"
-                                            AllowNullInput="True"
-                                            NullText="Permanente"
-                                            NullValueButtonPlacement="EditBox"
-                                            ShowNullValueButtonOnFocusOnly="False"
-                                            MinValue="{x:Static sys:DateTime.Today}"
-                                            MaskType="DateTime"
-                                            Mask="d"
-                                            Padding="2"
-                                            BorderThickness="0"
-                                            ShowBorder="False"/>
+                                        <Border Background="{Binding RowData.Row.NodeBackground}">
+                                            <dxe:DateEdit
+                                                EditValue="{Binding RowData.Row.ExpiresAt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Visibility="{Binding RowData.Row.HasUserOverride, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                                IsEnabled="{Binding DataContext.HasEditPermission, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                AllowNullInput="True"
+                                                NullText="Permanente"
+                                                NullValueButtonPlacement="EditBox"
+                                                ShowNullValueButtonOnFocusOnly="False"
+                                                MinValue="{x:Static sys:DateTime.Today}"
+                                                MaskType="DateTime"
+                                                Mask="d"
+                                                Padding="2"
+                                                BorderThickness="0"
+                                                ShowBorder="False"/>
+                                        </Border>
                                     </DataTemplate>
                                 </dxg:TreeListColumn.CellTemplate>
                             </dxg:TreeListColumn>
@@ -217,40 +229,57 @@
                 </Border>
 
                 <!-- Row 3: Action Buttons -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10"
-                            Visibility="{Binding HasCollaboratorSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,10">
 
                     <!-- Guardar -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding CanSave}"
-                            Command="{Binding SaveCommand}">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            Command="{Binding SaveCommand}"
+                            Visibility="{Binding HasCollaboratorSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
                                 <Image.Style>
                                     <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Image.Style>
                             </Image>
-                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
+                        </Grid>
                     </Button>
 
                     <!-- Deshacer -->
                     <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                             IsEnabled="{Binding HasChanges}"
-                            Command="{Binding UndoCommand}">
+                            Command="{Binding UndoCommand}"
+                            Visibility="{Binding HasCollaboratorSelected, Converter={dxmvvm:BooleanToVisibilityConverter}}">
                         <StackPanel HorizontalAlignment="Center">
                             <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                                 <Image.Style>
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -258,6 +287,42 @@
                             </Image>
                             <TextBlock Text="Deshacer" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
+                    </Button>
+
+                    <!-- Asignación masiva -->
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanBatchAssign}"
+                            Command="{Binding BatchAssignCommand}">
+                        <Grid>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Image Source="{dx:DXImage 'Images/People/UserGroup_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.7"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="Masivo" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}" Width="14" Height="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                   Margin="0,0,-2,12">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasBatchAssignPermission}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                        </Grid>
                     </Button>
 
                 </StackPanel>

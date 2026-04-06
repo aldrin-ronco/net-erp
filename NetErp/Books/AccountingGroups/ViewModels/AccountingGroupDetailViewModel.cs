@@ -39,15 +39,14 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         public bool IsNewRecord => Id == 0;
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
@@ -57,65 +56,61 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         #region Dialog Size
 
-        private double _dialogWidth = 600;
         public double DialogWidth
         {
-            get => _dialogWidth;
+            get;
             set
             {
-                if (_dialogWidth != value)
+                if (field != value)
                 {
-                    _dialogWidth = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(DialogWidth));
                 }
             }
-        }
+        } = 600;
 
         #endregion
 
         #region Form Properties
 
-        private int _id;
         public int Id
         {
-            get => _id;
+            get;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Id));
                     NotifyOfPropertyChange(nameof(IsNewRecord));
                 }
             }
         }
 
-        private string _name = string.Empty;
         public string Name
         {
-            get => _name;
+            get;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Name));
                     ValidateStringProperty(nameof(Name), value);
                     this.TrackChange(nameof(Name));
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
-        }
+        } = string.Empty;
 
-        private bool _allowAiu;
         public bool AllowAiu
         {
-            get => _allowAiu;
+            get;
             set
             {
-                if (_allowAiu != value)
+                if (field != value)
                 {
-                    _allowAiu = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AllowAiu));
                     NotifyOfPropertyChange(nameof(IsVisibleAiu));
                     this.TrackChange(nameof(AllowAiu));
@@ -131,30 +126,28 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         #region Account Selections
 
-        private ObservableCollection<AccountingAccountGraphQLModel> _auxiliaryAccounts = [];
         public ObservableCollection<AccountingAccountGraphQLModel> AuxiliaryAccounts
         {
-            get => _auxiliaryAccounts;
+            get;
             set
             {
-                if (_auxiliaryAccounts != value)
+                if (field != value)
                 {
-                    _auxiliaryAccounts = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AuxiliaryAccounts));
                 }
             }
-        }
+        } = [];
 
-        private AccountingAccountGraphQLModel? _selectedAccountCost;
         [ExpandoPath("accountCostId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountCost
         {
-            get => _selectedAccountCost;
+            get;
             set
             {
-                if (_selectedAccountCost != value)
+                if (field != value)
                 {
-                    _selectedAccountCost = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountCost));
                     ValidateIntProperty(nameof(SelectedAccountCost), value?.Id);
                     this.TrackChange(nameof(SelectedAccountCost));
@@ -163,16 +156,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountIncome;
         [ExpandoPath("accountIncomeId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountIncome
         {
-            get => _selectedAccountIncome;
+            get;
             set
             {
-                if (_selectedAccountIncome != value)
+                if (field != value)
                 {
-                    _selectedAccountIncome = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountIncome));
                     ValidateIntProperty(nameof(SelectedAccountIncome), value?.Id);
                     this.TrackChange(nameof(SelectedAccountIncome));
@@ -183,16 +175,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountIncomeReverse;
         [ExpandoPath("accountIncomeReverseId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountIncomeReverse
         {
-            get => _selectedAccountIncomeReverse;
+            get;
             set
             {
-                if (_selectedAccountIncomeReverse != value)
+                if (field != value)
                 {
-                    _selectedAccountIncomeReverse = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountIncomeReverse));
                     ValidateIntProperty(nameof(SelectedAccountIncomeReverse), value?.Id);
                     this.TrackChange(nameof(SelectedAccountIncomeReverse));
@@ -201,16 +192,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountInventory;
         [ExpandoPath("accountInventoryId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountInventory
         {
-            get => _selectedAccountInventory;
+            get;
             set
             {
-                if (_selectedAccountInventory != value)
+                if (field != value)
                 {
-                    _selectedAccountInventory = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountInventory));
                     ValidateIntProperty(nameof(SelectedAccountInventory), value?.Id);
                     this.TrackChange(nameof(SelectedAccountInventory));
@@ -219,16 +209,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountAiuAdministration;
         [ExpandoPath("accountAiuAdministrationId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountAiuAdministration
         {
-            get => _selectedAccountAiuAdministration;
+            get;
             set
             {
-                if (_selectedAccountAiuAdministration != value)
+                if (field != value)
                 {
-                    _selectedAccountAiuAdministration = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuAdministration));
                     ValidateIntProperty(nameof(SelectedAccountAiuAdministration), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuAdministration));
@@ -237,16 +226,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountAiuUnforeseen;
         [ExpandoPath("accountAiuUnforeseenId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountAiuUnforeseen
         {
-            get => _selectedAccountAiuUnforeseen;
+            get;
             set
             {
-                if (_selectedAccountAiuUnforeseen != value)
+                if (field != value)
                 {
-                    _selectedAccountAiuUnforeseen = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuUnforeseen));
                     ValidateIntProperty(nameof(SelectedAccountAiuUnforeseen), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuUnforeseen));
@@ -255,16 +243,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private AccountingAccountGraphQLModel? _selectedAccountAiuUtility;
         [ExpandoPath("accountAiuUtilityId", SerializeAsId = true)]
         public AccountingAccountGraphQLModel? SelectedAccountAiuUtility
         {
-            get => _selectedAccountAiuUtility;
+            get;
             set
             {
-                if (_selectedAccountAiuUtility != value)
+                if (field != value)
                 {
-                    _selectedAccountAiuUtility = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountAiuUtility));
                     ValidateIntProperty(nameof(SelectedAccountAiuUtility), value?.Id);
                     this.TrackChange(nameof(SelectedAccountAiuUtility));
@@ -277,72 +264,67 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         #region Tax Selections
 
-        private ObservableCollection<TaxGraphQLModel> _purchasePrimaryTaxes = [];
         public ObservableCollection<TaxGraphQLModel> PurchasePrimaryTaxes
         {
-            get => _purchasePrimaryTaxes;
+            get;
             set
             {
-                if (_purchasePrimaryTaxes != value)
+                if (field != value)
                 {
-                    _purchasePrimaryTaxes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PurchasePrimaryTaxes));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<TaxGraphQLModel> _purchaseSecondaryTaxes = [];
         public ObservableCollection<TaxGraphQLModel> PurchaseSecondaryTaxes
         {
-            get => _purchaseSecondaryTaxes;
+            get;
             set
             {
-                if (_purchaseSecondaryTaxes != value)
+                if (field != value)
                 {
-                    _purchaseSecondaryTaxes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PurchaseSecondaryTaxes));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<TaxGraphQLModel> _salesPrimaryTaxes = [];
         public ObservableCollection<TaxGraphQLModel> SalesPrimaryTaxes
         {
-            get => _salesPrimaryTaxes;
+            get;
             set
             {
-                if (_salesPrimaryTaxes != value)
+                if (field != value)
                 {
-                    _salesPrimaryTaxes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SalesPrimaryTaxes));
                 }
             }
-        }
+        } = [];
 
-        private ObservableCollection<TaxGraphQLModel> _salesSecondaryTaxes = [];
         public ObservableCollection<TaxGraphQLModel> SalesSecondaryTaxes
         {
-            get => _salesSecondaryTaxes;
+            get;
             set
             {
-                if (_salesSecondaryTaxes != value)
+                if (field != value)
                 {
-                    _salesSecondaryTaxes = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SalesSecondaryTaxes));
                 }
             }
-        }
+        } = [];
 
-        private TaxGraphQLModel? _selectedPurchasePrimaryTax;
         [ExpandoPath("purchasePrimaryTaxId", SerializeAsId = true)]
         public TaxGraphQLModel? SelectedPurchasePrimaryTax
         {
-            get => _selectedPurchasePrimaryTax;
+            get;
             set
             {
-                if (_selectedPurchasePrimaryTax != value)
+                if (field != value)
                 {
-                    _selectedPurchasePrimaryTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedPurchasePrimaryTax));
                     this.TrackChange(nameof(SelectedPurchasePrimaryTax));
                     ValidateIntProperty(nameof(SelectedPurchasePrimaryTax), value?.Id);
@@ -354,16 +336,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private TaxGraphQLModel? _selectedPurchaseSecondaryTax;
         [ExpandoPath("purchaseSecondaryTaxId", SerializeAsId = true)]
         public TaxGraphQLModel? SelectedPurchaseSecondaryTax
         {
-            get => _selectedPurchaseSecondaryTax;
+            get;
             set
             {
-                if (_selectedPurchaseSecondaryTax != value)
+                if (field != value)
                 {
-                    _selectedPurchaseSecondaryTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedPurchaseSecondaryTax));
                     this.TrackChange(nameof(SelectedPurchaseSecondaryTax), value?.Id > 0 ? value : null);
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -371,16 +352,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private TaxGraphQLModel? _selectedSalesPrimaryTax;
         [ExpandoPath("salesPrimaryTaxId", SerializeAsId = true)]
         public TaxGraphQLModel? SelectedSalesPrimaryTax
         {
-            get => _selectedSalesPrimaryTax;
+            get;
             set
             {
-                if (_selectedSalesPrimaryTax != value)
+                if (field != value)
                 {
-                    _selectedSalesPrimaryTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedSalesPrimaryTax));
                     this.TrackChange(nameof(SelectedSalesPrimaryTax));
                     ValidateIntProperty(nameof(SelectedSalesPrimaryTax), value?.Id);
@@ -395,16 +375,15 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        private TaxGraphQLModel? _selectedSalesSecondaryTax;
         [ExpandoPath("salesSecondaryTaxId", SerializeAsId = true)]
         public TaxGraphQLModel? SelectedSalesSecondaryTax
         {
-            get => _selectedSalesSecondaryTax;
+            get;
             set
             {
-                if (_selectedSalesSecondaryTax != value)
+                if (field != value)
                 {
-                    _selectedSalesSecondaryTax = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedSalesSecondaryTax));
                     this.TrackChange(nameof(SelectedSalesSecondaryTax), value?.Id > 0 ? value : null);
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -434,8 +413,9 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null!;
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
         }
 
         private void RaiseErrorsChanged(string propertyName)
@@ -687,23 +667,10 @@ namespace NetErp.Books.AccountingGroups.ViewModels
 
                 await TryCloseAsync(true);
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al realizar operación.\r\n{GetType().Name}.{nameof(SaveAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error);
+                ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -711,27 +678,20 @@ namespace NetErp.Books.AccountingGroups.ViewModels
             }
         }
 
-        public async Task<UpsertResponseType<AccountingGroupGraphQLModel>> ExecuteSaveAsync()
+        private async Task<UpsertResponseType<AccountingGroupGraphQLModel>> ExecuteSaveAsync()
         {
-            try
+            if (IsNewRecord)
             {
-                if (IsNewRecord)
-                {
-                    var (_, query) = _createQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                    return await _accountingGroupService.CreateAsync<UpsertResponseType<AccountingGroupGraphQLModel>>(query, variables);
-                }
-                else
-                {
-                    var (_, query) = _updateQuery.Value;
-                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                    variables.updateResponseId = Id;
-                    return await _accountingGroupService.UpdateAsync<UpsertResponseType<AccountingGroupGraphQLModel>>(query, variables);
-                }
+                var (_, query) = _createQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                return await _accountingGroupService.CreateAsync<UpsertResponseType<AccountingGroupGraphQLModel>>(query, variables);
             }
-            catch (Exception ex)
+            else
             {
-                throw new AsyncException(innerException: ex);
+                var (_, query) = _updateQuery.Value;
+                dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                variables.updateResponseId = Id;
+                return await _accountingGroupService.UpdateAsync<UpsertResponseType<AccountingGroupGraphQLModel>>(query, variables);
             }
         }
 

@@ -9,7 +9,6 @@
              Name="ucAccountDetail"
              Background="#EEF1F5">
     <UserControl.Resources>
-        <h:StringToStyleConverter x:Key="StringToStyleConverter"/>
         <dxmvvm:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
     </UserControl.Resources>
@@ -20,7 +19,9 @@
                             BusyContent="Por favor espere..."
                             BusyContentMargin="0,20,0,0">
         <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
-                CornerRadius="8" Margin="8,0,8,8" MinWidth="550">
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -28,14 +29,8 @@
                 </Grid.RowDefinitions>
 
                 <!-- Form content -->
-                <Grid Grid.Row="0" Background="Transparent" h:EnterKeyTraversal.IsEnabled="True">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="8*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Grid Name="GridDetails" Grid.Column="1" VerticalAlignment="Center">
+                <Grid Grid.Row="0" Background="Transparent" h:EnterKeyTraversal.IsEnabled="True"
+                      Margin="20,0,20,0" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <!--Labels-->
                             <ColumnDefinition Width="auto"/>
@@ -58,148 +53,125 @@
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="DETALLES DE CUENTA CONTABLE" Grid.ColumnSpan="3" HorizontalAlignment="Center" Padding="10" FontSize="16" FontWeight="Bold" Margin="0,5,0,10"/>
 
                         <!--Clase-->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Clase" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}" />
-                        <TextBox Text="{Binding Path=Data.Lv1Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="#C8CED6"
-                             Grid.Row="1" Grid.Column="1"
-                             Margin="10 5 10 5" Padding="3"
-                             TextAlignment="Center"
-                             TabIndex="0"
-                             IsReadOnly="True"/>
-
-                        <TextBox Text="{Binding Path=Data.Lv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv1Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="#C8CED6"
-                             TabIndex="5"
-                             IsReadOnly="{Binding Path=Data.IsReadOnlyLv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="1" Grid.Column="2"
-                             CharacterCasing="Upper"
-                             Margin="0 5 10 5" Padding="3">
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Clase" VerticalAlignment="Center" Margin="10,5,0,5"
+                                   Visibility="{Binding Path=Data.Lv1Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv1Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv1Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      Grid.Row="1" Grid.Column="1"
+                                      IsReadOnly="True" Padding="3" BorderBrush="#C8CED6"
+                                      HorizontalContentAlignment="Center"
+                                      Margin="10,5,10,5"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv1Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="1" Grid.Column="2"
+                                      CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                                      Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv1NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
                         <!--Grupo-->
-                        <!--Grupo.Label-->
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Grupo" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv2Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-                        <!--Grupo.Code-->
-                        <TextBox Text="{Binding Path=Data.Lv2Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv2Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="#C8CED6"
-                             Grid.Row="2" Grid.Column="1"
-                             Margin="10 5 10 5" Padding="3"
-                             TabIndex="1"
-                             TextAlignment="Center"
-                             IsReadOnly="True"/>
-
-                        <!--Grupo.Name-->
-                        <TextBox Text="{Binding Path=Data.Lv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv2Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             BorderBrush="#C8CED6"
-                             TabIndex="6"
-                             IsReadOnly="{Binding Path=Data.IsReadOnlyLv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="2" Grid.Column="2"
-                             CharacterCasing="Upper"
-                             Margin="0 5 10 5" Padding="3">
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Grupo" VerticalAlignment="Center" Margin="10,5,0,5"
+                                   Visibility="{Binding Path=Data.Lv2Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv2Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv2Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      Grid.Row="2" Grid.Column="1"
+                                      IsReadOnly="True" Padding="3" BorderBrush="#C8CED6"
+                                      HorizontalContentAlignment="Center"
+                                      Margin="10,5,10,5"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv2Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="2" Grid.Column="2"
+                                      CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                                      Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv2NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
                         <!--Cuenta-->
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Cuenta" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv3Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-                        <TextBox Text="{Binding Path=Data.Lv3Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv3Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="3" Grid.Column="1"
-                             Margin="10 5 10 5" Padding="3"
-                             BorderBrush="#C8CED6"
-                             TabIndex="2"
-                             TextAlignment="Center"
-                             IsReadOnly="True"/>
-
-                        <TextBox Text="{Binding Path=Data.Lv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv3Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="3" Grid.Column="2"
-                             TabIndex="7"
-                             IsReadOnly="{Binding Path=Data.IsReadOnlyLv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Margin="0 5 10 5" Padding="3"
-                             CharacterCasing="Upper"
-                             BorderBrush="#C8CED6">
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Cuenta" VerticalAlignment="Center" Margin="10,5,0,5"
+                                   Visibility="{Binding Path=Data.Lv3Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv3Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv3Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      Grid.Row="3" Grid.Column="1"
+                                      IsReadOnly="True" Padding="3" BorderBrush="#C8CED6"
+                                      HorizontalContentAlignment="Center"
+                                      Margin="10,5,10,5"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv3Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="3" Grid.Column="2"
+                                      CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                                      Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv3NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
                         <!--SubCuenta-->
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Sub Cuenta" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv4Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-                        <TextBox Text="{Binding Path=Data.Lv4Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv4Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="4" Grid.Column="1"
-                             Margin="10 5 10 5" Padding="3"
-                             BorderBrush="#C8CED6"
-                             TabIndex="3"
-                             TextAlignment="Center"
-                             IsReadOnly="True"/>
-
-                        <TextBox Text="{Binding Path=Data.Lv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv4Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="4" Grid.Column="2"
-                             TabIndex="8"
-                             IsReadOnly="{Binding Path=Data.IsReadOnlyLv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Margin="0 5 10 5" Padding="3"
-                             CharacterCasing="Upper"
-                             BorderBrush="#C8CED6">
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Sub Cuenta" VerticalAlignment="Center" Margin="10,5,0,5"
+                                   Visibility="{Binding Path=Data.Lv4Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv4Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv4Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      Grid.Row="4" Grid.Column="1"
+                                      IsReadOnly="True" Padding="3" BorderBrush="#C8CED6"
+                                      HorizontalContentAlignment="Center"
+                                      Margin="10,5,10,5"/>
+                        <dxe:TextEdit Text="{Binding Path=Data.Lv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv4Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="4" Grid.Column="2"
+                                      CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                                      Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv4NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
                         <!--Auxiliar-->
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Auxiliar" VerticalAlignment="Center" Margin="10 5 0 5" Visibility="{Binding Path=Data.Lv5Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"/>
-
-                        <TextBox x:Name="Lv5Code"
-                            Text="{Binding Path=Data.Lv5Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                            Visibility="{Binding Path=Data.Lv5Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                            IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                            Grid.Row="5" Grid.Column="1"
-                            TabIndex="4"
-                            MaxLength="8"
-                            Margin="10 5 10 5" Padding="3"
-                            BorderBrush="#C8CED6"
-                            TextAlignment="Center">
-                            <TextBox.Style>
-                                <Style TargetType="{x:Type TextBox}">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsFocused" Value="True">
-                                            <Setter Property="Background" Value="#EBF5FB"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                    <Setter Property="VerticalAlignment" Value="Stretch"/>
-                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                                </Style>
-                            </TextBox.Style>
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Auxiliar" VerticalAlignment="Center" Margin="10,5,0,5"
+                                   Visibility="{Binding Path=Data.Lv5Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"/>
+                        <dxe:TextEdit x:Name="Lv5Code"
+                                      Text="{Binding Path=Data.Lv5Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv5Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="5" Grid.Column="1"
+                                      MaxLength="8" Padding="3" BorderBrush="#C8CED6"
+                                      HorizontalContentAlignment="Center"
+                                      Margin="10,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv5CodeIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
-                        <TextBox
-                             Name="Lv5Name"
-                             Text="{Binding Path=Data.Lv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Visibility="{Binding Path=Data.Lv5Visibility, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             Grid.Row="5" Grid.Column="2"
-                             Margin="0 5 10 5" Padding="3"
-                             TabIndex="9"
-                             Style="{Binding Path=Data.Lv5NameStyle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}, Converter={StaticResource StringToStyleConverter}}"
-                             IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
-                             CharacterCasing="Upper"
-                             BorderBrush="#C8CED6">
+                        <dxe:TextEdit x:Name="Lv5Name"
+                                      Text="{Binding Path=Data.Lv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Visibility="{Binding Path=Data.Lv5Visibility, Mode=OneWay, Source={StaticResource DataContextProxy}}"
+                                      IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
+                                      Style="{StaticResource FocusedHighlightStyle}"
+                                      Grid.Row="5" Grid.Column="2"
+                                      CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                                      Margin="0,5,10,5">
+                            <dxe:TextEdit.Foreground>
+                                <Binding Path="Data.AccountCodeExists" Source="{StaticResource DataContextProxy}">
+                                    <Binding.Converter>
+                                        <dxmvvm:BooleanToObjectConverter TrueValue="Red" FalseValue="Black"/>
+                                    </Binding.Converter>
+                                </Binding>
+                            </dxe:TextEdit.Foreground>
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}" PropertyName="Lv5NameIsFocused"/>
                             </dxmvvm:Interaction.Behaviors>
-                        </TextBox>
+                        </dxe:TextEdit>
 
                         <!--Naturaleza-->
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="Naturaleza" VerticalAlignment="Center" Margin="10 5 0 5"/>
@@ -239,7 +211,6 @@
                                          TabIndex="12"/>
                         </StackPanel>
 
-                    </Grid>
                 </Grid>
 
                 <!-- Button bar centered -->
@@ -256,7 +227,7 @@
                                     <Style TargetType="Image">
                                         <Style.Triggers>
                                             <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" Value="0.4"/>
+                                                <Setter Property="Opacity" Value="0.7"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
