@@ -1040,6 +1040,7 @@ namespace NetErp.Billing.Sellers.ViewModels
             }
 
         }
+
         public async Task LoadDataForEditAsync(int id)
         {
             try
@@ -1057,12 +1058,13 @@ namespace NetErp.Billing.Sellers.ViewModels
                 throw new AsyncException(innerException: ex);
             }
         }
+
         public void SetForEdit(SellerGraphQLModel seller)
         {
             Id = seller.Id;
             IsActive = seller.IsActive;
 
-            SelectedCaptureType = Enum.Parse<BooksDictionaries.CaptureTypeEnum>(seller.AccountingEntity.CaptureType);
+            SelectedCaptureType = Enum.Parse<BooksDictionaries.CaptureTypeEnum>(seller?.AccountingEntity?.CaptureType ?? "PN");
             SelectedIdentificationType = _identificationTypeCache.Items.FirstOrDefault(x => x.Code == seller?.AccountingEntity?.IdentificationType.Code);
             IdentificationNumber = seller?.AccountingEntity?.IdentificationNumber ?? "";
             FirstName = seller?.AccountingEntity?.FirstName ?? "";
