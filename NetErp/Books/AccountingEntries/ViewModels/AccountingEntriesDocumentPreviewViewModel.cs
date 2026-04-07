@@ -22,7 +22,6 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 {
     public class AccountingEntriesDocumentPreviewViewModel : Screen
     {
-        private IEventAggregator _eventAggregator;
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
 
@@ -236,10 +235,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryMasterService = accountingEntryMasterService;
             this.SelectedAccountingEntry = selectedAccountingEntry;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
-
-            // Mensajes
-            this._eventAggregator = IoC.Get<IEventAggregator>();
-            this._eventAggregator.SubscribeOnUIThread(this);
+            // Nota: este VM no implementa IHandle<> de ningún mensaje, por lo que
+            // NO se suscribe al EventAggregator. Solo publica (cancel/delete/edit→draft).
         }
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
@@ -442,7 +439,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 var result = await this.ExecuteEditAccountingEntryAsync();
 
                 // Informar a la vista de que la entrada ahora tiene un draft
-                await this._eventAggregator.PublishOnUIThreadAsync(result);
+                await this.Context.EventAggregator.PublishOnUIThreadAsync(result);
 
                 if (result != null)
                 {

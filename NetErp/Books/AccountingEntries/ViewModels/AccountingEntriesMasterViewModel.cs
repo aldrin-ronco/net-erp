@@ -729,6 +729,18 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             await base.OnInitializedAsync(cancellationToken);
         }
 
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                // Solo al cerrar el tab del módulo. En cambios internos entre Master/Detail
+                // (close=false) la suscripción se conserva para seguir recibiendo mensajes
+                // de Create/Update/Delete publicados por el Detail y DocumentPreview.
+                this.Context.EventAggregator.Unsubscribe(this);
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
         public async Task InitializeAsync()
         {
             await CacheBatchLoader.LoadAsync(

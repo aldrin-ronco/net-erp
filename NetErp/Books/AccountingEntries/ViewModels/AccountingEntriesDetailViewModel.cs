@@ -1042,6 +1042,20 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _graphQLClient = graphQLClient;
+
+            // Suscribir para recibir los handlers de AccountingAccount / CostCenter
+            // (mantener colecciones locales sincronizadas con cambios de otros módulos).
+            this.Context.EventAggregator.SubscribeOnUIThread(this);
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close)
+            {
+                // Solo al cerrar definitivamente (no al cambiar de pantalla interna).
+                this.Context.EventAggregator.Unsubscribe(this);
+            }
+            return base.OnDeactivateAsync(close, cancellationToken);
         }
 
         /*public async Task ExecuteSearchForAccountingEntityMatchAsync()
