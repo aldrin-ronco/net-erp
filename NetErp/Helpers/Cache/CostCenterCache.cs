@@ -31,14 +31,43 @@ namespace NetErp.Helpers.Cache
             var fields = FieldSpec<PageType<CostCenterGraphQLModel>>
                 .Create()
                 .SelectList(x => x.Entries, entries => entries
-                    .Field(x => x.Id)
-                    .Field(x => x.Name)
-                    .Field(x => x.IsTaxable)
-                    .Field(x => x.PriceListIncludeTax)
-                    .Select(x => x.CompanyLocation, location => location
-                        .Field(x => x.Id)
-                        .Field(x => x.Name))
-                )
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.TradeName)
+                    .Field(e => e.Status)
+                    .Field(e => e.ShortName)
+                    .Field(e => e.Address)
+                    .Field(e => e.PrimaryPhone)
+                    .Field(e => e.SecondaryPhone)
+                    .Field(e => e.PrimaryCellPhone)
+                    .Field(e => e.SecondaryCellPhone)
+                    .Field(e => e.DateControlType)
+                    .Field(e => e.ShowChangeWindowOnCash)
+                    .Field(e => e.AllowBuy)
+                    .Field(e => e.AllowSell)
+                    .Field(e => e.IsTaxable)
+                    .Field(e => e.PriceListIncludeTax)
+                    .Field(e => e.InvoicePriceIncludeTax)
+                    .Field(e => e.InvoiceCopiesToPrint)
+                    .Field(e => e.RequiresConfirmationToPrintCopies)
+                    .Field(e => e.AllowRepeatItemsOnSales)
+                    .Field(e => e.TaxToCost)
+                    .Field(e => e.DefaultInvoiceObservation)
+                    .Field(e => e.InvoiceFooter)
+                    .Field(e => e.RemissionFooter)
+                    .Select(e => e.CompanyLocation, loc => loc
+                        .Field(l => l.Id)
+                        .Field(l => l.Name))
+                    .Select(e => e.Country, country => country
+                        .Field(c => c.Id).Field(c => c.Code).Field(c => c.Name))
+                    .Select(e => e.Department, dept => dept
+                        .Field(d => d.Id).Field(d => d.Code).Field(d => d.Name))
+                    .Select(e => e.City, city => city
+                        .Field(c => c.Id).Field(c => c.Code).Field(c => c.Name))
+                    .Select(e => e.FeCreditDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
+                    .Select(e => e.FeCashDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
+                    .Select(e => e.PeDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
+                    .Select(e => e.DsDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id)))
                 .Build();
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");

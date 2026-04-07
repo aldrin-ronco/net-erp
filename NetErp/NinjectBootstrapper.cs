@@ -114,6 +114,12 @@ namespace NetErp
             _ = kernel.Bind<StorageCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StorageCache>());
 
+            _ = kernel.Bind<CompanyCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CompanyCache>());
+
+            _ = kernel.Bind<CompanyLocationCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CompanyLocationCache>());
+
             _ = kernel.Bind<PaymentMethodCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<PaymentMethodCache>());
 

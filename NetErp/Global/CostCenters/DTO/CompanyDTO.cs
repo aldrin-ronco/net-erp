@@ -89,14 +89,7 @@ namespace NetErp.Global.CostCenters.DTO
 					NotifyOfPropertyChange(nameof(IsExpanded));
 					if(_locations != null)
 					{
-						if(_isExpanded && _locations.Count > 0)
-						{
-							if (_locations[0].IsDummyChild)
-							{
-								System.Windows.Application.Current.Dispatcher.BeginInvoke(
-									new System.Action(() => { _ = Context.LoadCompaniesLocationsAsync(this); }));
-                            }
-						}
+						// Lazy-load removido: el árbol ahora se carga completo desde caches en BuildTree().
 					}
                 }
 			}

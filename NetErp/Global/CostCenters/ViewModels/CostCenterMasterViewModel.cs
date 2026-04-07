@@ -57,6 +57,10 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly AuthorizationSequenceCache _authorizationSequenceCache;
+        private readonly CompanyCache _companyCache;
+        private readonly CompanyLocationCache _companyLocationCache;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly StorageCache _storageCache;
         private readonly IGraphQLClient _graphQLClient;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
@@ -81,6 +85,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             AuthorizationSequenceCache authorizationSequenceCache,
+            CompanyCache companyCache,
+            CompanyLocationCache companyLocationCache,
+            CostCenterCache costCenterCache,
+            StorageCache storageCache,
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory,
             CompanyValidator companyValidator,
@@ -99,6 +107,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
             _authorizationSequenceCache = authorizationSequenceCache ?? throw new ArgumentNullException(nameof(authorizationSequenceCache));
+            _companyCache = companyCache ?? throw new ArgumentNullException(nameof(companyCache));
+            _companyLocationCache = companyLocationCache ?? throw new ArgumentNullException(nameof(companyLocationCache));
+            _costCenterCache = costCenterCache ?? throw new ArgumentNullException(nameof(costCenterCache));
+            _storageCache = storageCache ?? throw new ArgumentNullException(nameof(storageCache));
             _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _companyValidator = companyValidator ?? throw new ArgumentNullException(nameof(companyValidator));
@@ -285,21 +297,23 @@ namespace NetErp.Global.CostCenters.ViewModels
             base.OnViewReady(view);
             try
             {
-                // PermissionCache ya fue pre-cargado por el Shell al seleccionar la empresa
-                // (ver ShellViewModel.HandleAsync(CompanySelectedMessage)). Los módulos consumen
-                // las propiedades HasXPermission sin tocar EnsureLoadedAsync.
+                IsBusy = true;
+
+                // PermissionCache ya fue pre-cargado por el Shell al seleccionar la empresa.
+                // Todas las entidades del árbol (Company, CompanyLocation, CostCenter, Storage)
+                // + lookups (Country, AuthorizationSequence) cargan en UNA sola HTTP request vía batch.
                 await Task.WhenAll(
                     _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.CostCenters),
                     CacheBatchLoader.LoadAsync(_graphQLClient, default,
-                        _countryCache, _authorizationSequenceCache));
+                        _countryCache, _authorizationSequenceCache,
+                        _companyCache, _companyLocationCache, _costCenterCache, _storageCache));
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     NotifyAllPermissionStates();
                     Countries = _countryCache.Items;
+                    BuildTree();
                 });
-
-                await LoadCompanyAsync();
             }
             catch (Exception ex)
             {
@@ -311,6 +325,56 @@ namespace NetErp.Global.CostCenters.ViewModels
                     image: MessageBoxImage.Error);
                 await TryCloseAsync();
             }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Construye el árbol completo desde las caches. Todas las entidades ya están en memoria,
+        /// así que esto es puro filtrado/mapeo sin red.
+        /// </summary>
+        private void BuildTree()
+        {
+            ObservableCollection<CompanyDTO> newCompanies = [];
+
+            foreach (CompanyGraphQLModel companyModel in _companyCache.Items)
+            {
+                CompanyDTO companyDTO = Context.AutoMapper.Map<CompanyDTO>(companyModel);
+                companyDTO.Context = this;
+                companyDTO.Locations.Clear();
+
+                foreach (CompanyLocationGraphQLModel locationModel in _companyLocationCache.Items
+                    .Where(l => l.Company != null && l.Company.Id == companyModel.Id))
+                {
+                    CompanyLocationDTO locationDTO = Context.AutoMapper.Map<CompanyLocationDTO>(locationModel);
+                    locationDTO.Context = this;
+                    locationDTO.DummyItems.Clear();
+
+                    CostCenterDummyDTO ccDummy = new(this, locationDTO);
+                    foreach (CostCenterGraphQLModel ccModel in _costCenterCache.Items
+                        .Where(c => c.CompanyLocation != null && c.CompanyLocation.Id == locationModel.Id))
+                    {
+                        ccDummy.CostCenters.Add(Context.AutoMapper.Map<CostCenterDTO>(ccModel));
+                    }
+
+                    StorageDummyDTO sDummy = new(this, locationDTO);
+                    foreach (StorageGraphQLModel storageModel in _storageCache.Items
+                        .Where(s => s.CompanyLocation != null && s.CompanyLocation.Id == locationModel.Id))
+                    {
+                        sDummy.Storages.Add(Context.AutoMapper.Map<StorageDTO>(storageModel));
+                    }
+
+                    locationDTO.DummyItems.Add(ccDummy);
+                    locationDTO.DummyItems.Add(sDummy);
+                    companyDTO.Locations.Add(locationDTO);
+                }
+
+                newCompanies.Add(companyDTO);
+            }
+
+            Companies = newCompanies;
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -345,191 +409,6 @@ namespace NetErp.Global.CostCenters.ViewModels
             NotifyOfPropertyChange(nameof(CanDeleteCompanyLocation));
             NotifyOfPropertyChange(nameof(CanDeleteCostCenter));
             NotifyOfPropertyChange(nameof(CanDeleteStorage));
-        }
-
-        #endregion
-
-        #region Tree Loading
-
-        public async Task LoadCompanyAsync()
-        {
-            try
-            {
-                IsBusy = true;
-
-                (GraphQLQueryFragment fragment, string query) = _loadCompanyQuery.Value;
-                object variables = new GraphQLVariables()
-                    .For(fragment, "id", SessionInfo.CurrentCompany!.Id)
-                    .Build();
-
-                CompanyGraphQLModel company = await _companyService.FindByIdAsync(query, variables);
-                CompanyDTO mappedCompany = Context.AutoMapper.Map<CompanyDTO>(company);
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Companies.Clear();
-                    mappedCompany.Context = this;
-                    mappedCompany.Locations.Add(new CompanyLocationDTO { IsDummyChild = true, Name = "Cargando..." });
-                    Companies.Add(mappedCompany);
-                });
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show("Atención!",
-                        $"{GetType().Name}.{nameof(LoadCompanyAsync)}: {ex.GetErrorMessage()}",
-                        MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task LoadCompaniesLocationsAsync(CompanyDTO company)
-        {
-            try
-            {
-                IsBusy = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    if (company.Locations.Count > 0) company.Locations.RemoveAt(0);
-                });
-
-                (GraphQLQueryFragment fragment, string query) = _loadCompaniesLocationsQuery.Value;
-                object variables = new GraphQLVariables()
-                    .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
-                    .Build();
-
-                PageType<CompanyLocationGraphQLModel> source = await _companyLocationService.GetPageAsync(query, variables);
-                ObservableCollection<CompanyLocationDTO> locations = Context.AutoMapper.Map<ObservableCollection<CompanyLocationDTO>>(source.Entries);
-
-                if (locations.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (CompanyLocationDTO location in locations)
-                        {
-                            location.Context = this;
-                            location.DummyItems.Add(new CostCenterDummyDTO(this, location));
-                            location.DummyItems.Add(new StorageDummyDTO(this, location));
-                            company.Locations.Add(location);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => company.IsExpanded = false);
-                    _notificationService.ShowInfo("Esta empresa no tiene sedes registradas");
-                }
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show("Atención!",
-                        $"{GetType().Name}.{nameof(LoadCompaniesLocationsAsync)}: {ex.GetErrorMessage()}",
-                        MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task LoadCostCentersAsync(CompanyLocationDTO location, CostCenterDummyDTO costCenterDummyDTO)
-        {
-            try
-            {
-                IsBusy = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    if (costCenterDummyDTO.CostCenters.Count > 0) costCenterDummyDTO.CostCenters.RemoveAt(0);
-                });
-
-                (GraphQLQueryFragment fragment, string query) = _loadCostCentersQuery.Value;
-                object variables = new GraphQLVariables()
-                    .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
-                    .For(fragment, "filters", new { CompanyLocationId = location.Id })
-                    .Build();
-
-                PageType<CostCenterGraphQLModel> result = await _costCenterService.GetPageAsync(query, variables);
-                ObservableCollection<CostCenterDTO> costCenters = Context.AutoMapper.Map<ObservableCollection<CostCenterDTO>>(result.Entries);
-
-                if (costCenters.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (CostCenterDTO costCenter in costCenters)
-                        {
-                            costCenterDummyDTO.CostCenters.Add(costCenter);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => costCenterDummyDTO.IsExpanded = false);
-                    _notificationService.ShowInfo("Esta sede no tiene centros de costo registrados");
-                }
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show("Atención!",
-                        $"{GetType().Name}.{nameof(LoadCostCentersAsync)}: {ex.GetErrorMessage()}",
-                        MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task LoadStoragesAsync(CompanyLocationDTO location, StorageDummyDTO storageDummyDTO)
-        {
-            try
-            {
-                IsBusy = true;
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    if (storageDummyDTO.Storages.Count > 0) storageDummyDTO.Storages.RemoveAt(0);
-                });
-
-                (GraphQLQueryFragment fragment, string query) = _loadStoragesQuery.Value;
-                object variables = new GraphQLVariables()
-                    .For(fragment, "pagination", new { Page = 1, PageSize = -1 })
-                    .For(fragment, "filters", new { CompanyLocationId = location.Id })
-                    .Build();
-
-                PageType<StorageGraphQLModel> result = await _storageService.GetPageAsync(query, variables);
-                ObservableCollection<StorageDTO> storages = Context.AutoMapper.Map<ObservableCollection<StorageDTO>>(result.Entries);
-
-                if (storages.Count > 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (StorageDTO storage in storages)
-                        {
-                            storageDummyDTO.Storages.Add(storage);
-                        }
-                    });
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() => storageDummyDTO.IsExpanded = false);
-                    _notificationService.ShowInfo("Esta sede no tiene bodegas registradas");
-                }
-            }
-            catch (Exception ex)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                    ThemedMessageBox.Show("Atención!",
-                        $"{GetType().Name}.{nameof(LoadStoragesAsync)}: {ex.GetErrorMessage()}",
-                        MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
         }
 
         #endregion
@@ -843,33 +722,21 @@ namespace NetErp.Global.CostCenters.ViewModels
 
         #region Tree Refresh Handlers
 
-        public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
         {
             CostCenterDTO costCenterDTO = Context.AutoMapper.Map<CostCenterDTO>(message.CreatedCostCenter.Entity);
             CompanyDTO? companyDTO = Companies.FirstOrDefault(c => c.Id == costCenterDTO.CompanyLocation.Company.Id);
-            if (companyDTO is null) return;
+            if (companyDTO is null) return Task.CompletedTask;
             CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(l => l.Id == costCenterDTO.CompanyLocation.Id);
-            if (companyLocationDTO is null) return;
+            if (companyLocationDTO is null) return Task.CompletedTask;
             CostCenterDummyDTO? costCenterDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(d => d is CostCenterDummyDTO) as CostCenterDummyDTO;
-            if (costCenterDummyDTO is null) return;
+            if (costCenterDummyDTO is null) return Task.CompletedTask;
 
-            if (!costCenterDummyDTO.IsExpanded && costCenterDummyDTO.CostCenters.Count > 0 && costCenterDummyDTO.CostCenters[0].IsDummyChild)
-            {
-                await LoadCostCentersAsync(companyLocationDTO, costCenterDummyDTO);
-                costCenterDummyDTO.IsExpanded = true;
-                CostCenterDTO? costCenter = costCenterDummyDTO.CostCenters.FirstOrDefault(x => x.Id == costCenterDTO.Id);
-                if (costCenter is null) return;
-                _notificationService.ShowSuccess(message.CreatedCostCenter.Message);
-                SelectedItem = costCenter;
-                return;
-            }
-            if (!costCenterDummyDTO.IsExpanded)
-            {
-                costCenterDummyDTO.IsExpanded = true;
-            }
+            if (!costCenterDummyDTO.IsExpanded) costCenterDummyDTO.IsExpanded = true;
             costCenterDummyDTO.CostCenters.Add(costCenterDTO);
             SelectedItem = costCenterDTO;
             _notificationService.ShowSuccess(message.CreatedCostCenter.Message);
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(CostCenterUpdateMessage message, CancellationToken cancellationToken)
@@ -940,33 +807,21 @@ namespace NetErp.Global.CostCenters.ViewModels
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
         {
             StorageDTO storageDTO = Context.AutoMapper.Map<StorageDTO>(message.CreatedStorage.Entity);
             CompanyDTO? companyDTO = Companies.FirstOrDefault(c => c.Id == storageDTO.CompanyLocation.Company.Id);
-            if (companyDTO is null) return;
+            if (companyDTO is null) return Task.CompletedTask;
             CompanyLocationDTO? companyLocationDTO = companyDTO.Locations.FirstOrDefault(l => l.Id == storageDTO.CompanyLocation.Id);
-            if (companyLocationDTO is null) return;
+            if (companyLocationDTO is null) return Task.CompletedTask;
             StorageDummyDTO? storageDummyDTO = companyLocationDTO.DummyItems.FirstOrDefault(d => d is StorageDummyDTO) as StorageDummyDTO;
-            if (storageDummyDTO is null) return;
+            if (storageDummyDTO is null) return Task.CompletedTask;
 
-            if (!storageDummyDTO.IsExpanded && storageDummyDTO.Storages.Count > 0 && storageDummyDTO.Storages[0].IsDummyChild)
-            {
-                await LoadStoragesAsync(companyLocationDTO, storageDummyDTO);
-                storageDummyDTO.IsExpanded = true;
-                StorageDTO? storage = storageDummyDTO.Storages.FirstOrDefault(x => x.Id == storageDTO.Id);
-                if (storage is null) return;
-                SelectedItem = storage;
-                _notificationService.ShowSuccess(message.CreatedStorage.Message);
-                return;
-            }
-            if (!storageDummyDTO.IsExpanded)
-            {
-                storageDummyDTO.IsExpanded = true;
-            }
+            if (!storageDummyDTO.IsExpanded) storageDummyDTO.IsExpanded = true;
             storageDummyDTO.Storages.Add(storageDTO);
             SelectedItem = storageDTO;
             _notificationService.ShowSuccess(message.CreatedStorage.Message);
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(StorageUpdateMessage message, CancellationToken cancellationToken)
@@ -1011,32 +866,20 @@ namespace NetErp.Global.CostCenters.ViewModels
             return Task.CompletedTask;
         }
 
-        public async Task HandleAsync(CompanyLocationCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CompanyLocationCreateMessage message, CancellationToken cancellationToken)
         {
             CompanyLocationDTO companyLocationDTO = Context.AutoMapper.Map<CompanyLocationDTO>(message.CreatedCompanyLocation.Entity);
             CompanyDTO? companyDTO = Companies.FirstOrDefault(c => c.Id == companyLocationDTO.Company.Id);
-            if (companyDTO is null) return;
+            if (companyDTO is null) return Task.CompletedTask;
 
-            if (!companyDTO.IsExpanded && companyDTO.Locations.Count > 0 && companyDTO.Locations[0].IsDummyChild)
-            {
-                await LoadCompaniesLocationsAsync(companyDTO);
-                companyDTO.IsExpanded = true;
-                CompanyLocationDTO? location = companyDTO.Locations.FirstOrDefault(x => x.Id == companyLocationDTO.Id);
-                if (location is null) return;
-                _notificationService.ShowSuccess(message.CreatedCompanyLocation.Message);
-                SelectedItem = location;
-                return;
-            }
-            if (!companyDTO.IsExpanded)
-            {
-                companyDTO.IsExpanded = true;
-            }
+            if (!companyDTO.IsExpanded) companyDTO.IsExpanded = true;
             companyLocationDTO.Context = this;
             companyLocationDTO.DummyItems.Add(new CostCenterDummyDTO(this, companyLocationDTO));
             companyLocationDTO.DummyItems.Add(new StorageDummyDTO(this, companyLocationDTO));
             companyDTO.Locations.Add(companyLocationDTO);
             SelectedItem = companyLocationDTO;
             _notificationService.ShowSuccess(message.CreatedCompanyLocation.Message);
+            return Task.CompletedTask;
         }
 
         public Task HandleAsync(CompanyLocationUpdateMessage message, CancellationToken cancellationToken)
@@ -1088,107 +931,6 @@ namespace NetErp.Global.CostCenters.ViewModels
         #endregion
 
         #region GraphQL Queries
-
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadCompanyQuery = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<CompanyGraphQLModel>
-                .Create()
-                .Field(f => f.Id)
-                .Select(f => f.CompanyEntity, ce => ce.Field(c => c.SearchName))
-                .Build();
-            GraphQLQueryFragment fragment = new("company",
-                [new("id", "ID!")], fields, "SingleItemResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
-
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadCompaniesLocationsQuery = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<CompanyLocationGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Select(e => e.Company, company => company.Field(c => c.Id)))
-                .Build();
-            GraphQLQueryFragment fragment = new("companyLocationsPage",
-                [new("pagination", "Pagination")], fields, "PageResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
-
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadStoragesQuery = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<StorageGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Address)
-                    .Field(e => e.Status)
-                    .Select(e => e.City, city => city
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)
-                        .Select(c => c.Department, dept => dept
-                            .Field(d => d.Id)
-                            .Field(d => d.Code)
-                            .Field(d => d.Name)
-                            .Select(d => d.Country, country => country
-                                .Field(co => co.Id)
-                                .Field(co => co.Code)
-                                .Field(co => co.Name))))
-                    .Select(e => e.CompanyLocation, loc => loc.Field(l => l.Id)))
-                .Build();
-            GraphQLQueryFragment fragment = new("storagesPage",
-                [new("pagination", "Pagination"), new("filters", "StorageFilters")],
-                fields, "PageResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
-
-        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadCostCentersQuery = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<CostCenterGraphQLModel>>
-                .Create()
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.TradeName)
-                    .Field(e => e.Status)
-                    .Field(e => e.ShortName)
-                    .Field(e => e.Address)
-                    .Field(e => e.PrimaryPhone)
-                    .Field(e => e.SecondaryPhone)
-                    .Field(e => e.PrimaryCellPhone)
-                    .Field(e => e.SecondaryCellPhone)
-                    .Field(e => e.DateControlType)
-                    .Field(e => e.ShowChangeWindowOnCash)
-                    .Field(e => e.AllowBuy)
-                    .Field(e => e.AllowSell)
-                    .Field(e => e.IsTaxable)
-                    .Field(e => e.PriceListIncludeTax)
-                    .Field(e => e.InvoicePriceIncludeTax)
-                    .Field(e => e.InvoiceCopiesToPrint)
-                    .Field(e => e.RequiresConfirmationToPrintCopies)
-                    .Field(e => e.AllowRepeatItemsOnSales)
-                    .Field(e => e.TaxToCost)
-                    .Field(e => e.DefaultInvoiceObservation)
-                    .Field(e => e.InvoiceFooter)
-                    .Field(e => e.RemissionFooter)
-                    .Select(e => e.CompanyLocation, loc => loc.Field(l => l.Id))
-                    .Select(e => e.Country, country => country
-                        .Field(c => c.Id).Field(c => c.Code).Field(c => c.Name))
-                    .Select(e => e.Department, dept => dept
-                        .Field(d => d.Id).Field(d => d.Code).Field(d => d.Name))
-                    .Select(e => e.City, city => city
-                        .Field(c => c.Id).Field(c => c.Code).Field(c => c.Name))
-                    .Select(e => e.FeCreditDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
-                    .Select(e => e.FeCashDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
-                    .Select(e => e.PeDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id))
-                    .Select(e => e.DsDefaultAuthorizationSequence!, seq => seq.Field(s => s.Id)))
-                .Build();
-            GraphQLQueryFragment fragment = new("costCentersPage",
-                [new("pagination", "Pagination"), new("filters", "CostCenterFilters")],
-                fields, "PageResponse");
-            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
-        });
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteCompanyLocationQuery = new(() =>
         {
