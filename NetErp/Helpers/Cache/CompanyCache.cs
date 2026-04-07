@@ -14,55 +14,41 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class StorageCache : IEntityCache<StorageGraphQLModel>, IBatchLoadableCache,
-        IHandle<StorageCreateMessage>,
-        IHandle<StorageUpdateMessage>,
-        IHandle<StorageDeleteMessage>
+    public class CompanyCache : IEntityCache<CompanyGraphQLModel>, IBatchLoadableCache,
+        IHandle<CompanyCreateMessage>,
+        IHandle<CompanyUpdateMessage>,
+        IHandle<CompanyDeleteMessage>
     {
-        private readonly IRepository<StorageGraphQLModel> _service;
+        private readonly IRepository<CompanyGraphQLModel> _service;
         private readonly Lock _lock = new();
 
-        private readonly ObservableCollection<StorageGraphQLModel> _items = [];
-        public ReadOnlyObservableCollection<StorageGraphQLModel> Items { get; }
+        private readonly ObservableCollection<CompanyGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<CompanyGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
-            var fields = FieldSpec<PageType<StorageGraphQLModel>>
+            var fields = FieldSpec<PageType<CompanyGraphQLModel>>
                 .Create()
                 .SelectList(x => x.Entries, entries => entries
                     .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Address)
-                    .Field(e => e.Status)
-                    .Select(e => e.City, city => city
-                        .Field(c => c.Id)
-                        .Field(c => c.Name)
-                        .Select(c => c.Department, dept => dept
-                            .Field(d => d.Id)
-                            .Field(d => d.Code)
-                            .Field(d => d.Name)
-                            .Select(d => d.Country, country => country
-                                .Field(co => co.Id)
-                                .Field(co => co.Code)
-                                .Field(co => co.Name))))
-                    .Select(e => e.CompanyLocation, loc => loc.Field(l => l.Id)))
+                    .Select(e => e.CompanyEntity, ce => ce.Field(c => c.SearchName)))
                 .Build();
 
             var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("storagesPage", [parameter], fields, "PageResponse");
+            var fragment = new GraphQLQueryFragment("companiesPage", [parameter], fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);
         });
 
-        public StorageCache(
-            IRepository<StorageGraphQLModel> service,
+        public CompanyCache(
+            IRepository<CompanyGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
             eventAggregator.SubscribeOnUIThread(this);
-            Items = new ReadOnlyObservableCollection<StorageGraphQLModel>(_items);
+            Items = new ReadOnlyObservableCollection<CompanyGraphQLModel>(_items);
         }
 
         public async Task EnsureLoadedAsync()
@@ -84,9 +70,7 @@ namespace NetErp.Helpers.Cache
                     {
                         _items.Clear();
                         foreach (var item in result.Entries)
-                        {
                             _items.Add(item);
-                        }
                         IsInitialized = true;
                     }
                 });
@@ -108,7 +92,7 @@ namespace NetErp.Helpers.Cache
 
         public void PopulateFromBatchResponse(JToken data)
         {
-            var page = data.ToObject<PageType<StorageGraphQLModel>>();
+            var page = data.ToObject<PageType<CompanyGraphQLModel>>();
             if (page == null) return;
 
             UiDispatcher.Invoke(() =>
@@ -137,7 +121,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Add(StorageGraphQLModel item)
+        public void Add(CompanyGraphQLModel item)
         {
             UiDispatcher.Invoke(() =>
             {
@@ -149,7 +133,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Update(StorageGraphQLModel item)
+        public void Update(CompanyGraphQLModel item)
         {
             UiDispatcher.Invoke(() =>
             {
@@ -180,30 +164,24 @@ namespace NetErp.Helpers.Cache
 
         #region IHandle Implementations
 
-        public Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CompanyCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedStorage?.Entity != null)
-            {
-                Add(message.CreatedStorage.Entity);
-            }
+            if (message.CreatedCompany?.Entity != null)
+                Add(message.CreatedCompany.Entity);
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(StorageUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CompanyUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.UpdatedStorage?.Entity != null)
-            {
-                Update(message.UpdatedStorage.Entity);
-            }
+            if (message.UpdatedCompany?.Entity != null)
+                Update(message.UpdatedCompany.Entity);
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(StorageDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(CompanyDeleteMessage message, CancellationToken cancellationToken)
         {
-            if (message.DeletedStorage?.DeletedId > 0)
-            {
-                Remove(message.DeletedStorage.DeletedId.Value);
-            }
+            if (message.DeletedCompany?.DeletedId > 0)
+                Remove(message.DeletedCompany.DeletedId.Value);
             return Task.CompletedTask;
         }
 

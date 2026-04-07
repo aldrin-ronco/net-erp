@@ -30,6 +30,10 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly AuthorizationSequenceCache _authorizationSequenceCache;
+        private readonly CompanyCache _companyCache;
+        private readonly CompanyLocationCache _companyLocationCache;
+        private readonly CostCenterCache _costCenterCache;
+        private readonly StorageCache _storageCache;
         private readonly IGraphQLClient _graphQLClient;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly CompanyValidator _companyValidator;
@@ -54,6 +58,10 @@ namespace NetErp.Global.CostCenters.ViewModels
                     _stringLengthCache,
                     _permissionCache,
                     _authorizationSequenceCache,
+                    _companyCache,
+                    _companyLocationCache,
+                    _costCenterCache,
+                    _storageCache,
                     _graphQLClient,
                     _joinableTaskFactory,
                     _companyValidator,
@@ -77,6 +85,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             AuthorizationSequenceCache authorizationSequenceCache,
+            CompanyCache companyCache,
+            CompanyLocationCache companyLocationCache,
+            CostCenterCache costCenterCache,
+            StorageCache storageCache,
             IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory,
             CompanyValidator companyValidator,
@@ -96,6 +108,10 @@ namespace NetErp.Global.CostCenters.ViewModels
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
             _authorizationSequenceCache = authorizationSequenceCache;
+            _companyCache = companyCache;
+            _companyLocationCache = companyLocationCache;
+            _costCenterCache = costCenterCache;
+            _storageCache = storageCache;
             _graphQLClient = graphQLClient;
             _joinableTaskFactory = joinableTaskFactory;
             _companyValidator = companyValidator;

@@ -91,17 +91,7 @@ namespace NetErp.Global.CostCenters.DTO
                 {
                     _isExpanded = value;
                     NotifyOfPropertyChange(nameof(IsExpanded));
-                    if (_costCenters != null)
-                    {
-                        if (_isExpanded && _costCenters.Count > 0)
-                        {
-                            if (_costCenters[0].IsDummyChild)
-                            {
-                                System.Windows.Application.Current.Dispatcher.BeginInvoke(
-                                    new System.Action(() => { _ = Context.LoadCostCentersAsync(Location, this); }));
-                            }
-                        }
-                    }
+                    // Lazy-load removido: el árbol ahora se carga completo desde caches en BuildTree().
                 }
             }
         }
@@ -116,7 +106,7 @@ namespace NetErp.Global.CostCenters.DTO
         {
             Context = context;
             this._location = location;
-            this._costCenters = [new() { IsDummyChild = true, Name = "Cargando..." }];
+            this._costCenters = [];
         }
     }
     
