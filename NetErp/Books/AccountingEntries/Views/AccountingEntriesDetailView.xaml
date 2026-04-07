@@ -240,7 +240,8 @@
                                 Padding="2"/>
                     <!--Descripcion-->
                     <TextBlock Text="Descripción" Grid.Column="1" Grid.Row="0"/>
-                    <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                    <dxe:TextEdit Text="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                             MaxLength="{Binding Path=DescriptionMaxLength}"
                              Grid.Column="1" Grid.Row="1" Margin="0 4 0 0" CharacterCasing="Upper"
                              TextWrapping="WrapWithOverflow"
                              TabIndex="4"
@@ -436,6 +437,7 @@
                     TabIndex="10"
                     CharacterCasing="Upper"
                     Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    MaxLength="{Binding Path=RecordDetailMaxLength}"
                     Margin="4"/>
                     <!--Debito-->
                     <TextBlock Text="Débito" Grid.Row="0" Grid.Column="4" HorizontalAlignment="Right" Margin="0 0 4 0"/>
@@ -648,6 +650,7 @@
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
                                     <dxe:TextEdit Text="{Binding Path=RecordDetail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        MaxLength="{Binding Path=DataContext.RecordDetailMaxLength, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
                                         TextWrapping="WrapWithOverflow" CharacterCasing="Upper"
                                         VerticalContentAlignment="Center"
                                         Padding="3"/>

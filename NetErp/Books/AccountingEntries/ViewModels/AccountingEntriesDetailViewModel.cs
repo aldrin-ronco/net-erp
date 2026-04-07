@@ -64,6 +64,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         // Context
         public AccountingEntriesViewModel Context { get; set; }
 
+        // StringLength constraints (backed by StringLengthCache via el Conductor).
+        // MaxLength = 0 en DevExpress TextEdit significa sin límite, por lo que si el
+        // cache no tiene la entrada aún, el binding no restringe la entrada.
+        public int DescriptionMaxLength => Context.StringLengthCache.GetMaxLength<AccountingEntryDraftGraphQLModel>(nameof(AccountingEntryDraftGraphQLModel.Description));
+        public int RecordDetailMaxLength => Context.StringLengthCache.GetMaxLength<AccountingEntryDraftDetailGraphQLModel>(nameof(AccountingEntryDraftDetailGraphQLModel.RecordDetail));
+
         // Parent record reference
         public AccountingEntryDraftGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
 

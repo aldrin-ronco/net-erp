@@ -40,6 +40,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly AccountingBookCache _accountingBookCache;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
+        private readonly StringLengthCache _stringLengthCache;
 
 
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -73,6 +74,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
              AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
+             StringLengthCache stringLengthCache,
              IGraphQLClient graphQLClient
                                           )
         {
@@ -87,12 +89,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _accountingBookCache = accountingBookCache;
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
+            _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
-
         }
+
+        public StringLengthCache StringLengthCache => _stringLengthCache;
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
+            await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntries);
             await ActivateMasterViewAsync();
             await base.OnInitializedAsync(cancellationToken);
         }
