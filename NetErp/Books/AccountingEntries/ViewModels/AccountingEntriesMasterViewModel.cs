@@ -743,9 +743,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         public async Task InitializeAsync()
         {
-            await CacheBatchLoader.LoadAsync(
-               _graphQLClient, default,
-               _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache);
+            // Los caches ya fueron cargados centralizadamente por el Conductor en
+            // OnInitializedAsync vía CacheBatchLoader. Aquí solo se materializan las
+            // colecciones locales que la vista bindea.
             CostCenters =[.. _costCenterCache.Items];
             this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             this.SelectedCostCenterId = this.CostCenters.FirstOrDefault().Id;

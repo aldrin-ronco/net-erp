@@ -898,13 +898,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
        
 
 
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
-            await CacheBatchLoader.LoadAsync(
-               _graphQLClient, default,
-               _costCenterCache, _accountingBookCache, _notAnnulledAccountingSourceCache, _auxiliaryAccountingAccountCache);
-
-            // Solo carga las colecciones locales para los bindings de la vista.
+            // Los caches ya fueron cargados centralizadamente por el Conductor en
+            // OnInitializedAsync vía CacheBatchLoader. Aquí solo se materializan las
+            // colecciones locales que la vista bindea.
             // La selección por defecto la maneja SetForNew/SetForEdit, llamados por el Conductor
             // ANTES de ActivateItemAsync (siguiendo el patrón estándar Seller/Customer).
             CostCenters = [.. _costCenterCache.Items];
@@ -913,6 +911,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
             this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
             this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
+            return Task.CompletedTask;
         }
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)

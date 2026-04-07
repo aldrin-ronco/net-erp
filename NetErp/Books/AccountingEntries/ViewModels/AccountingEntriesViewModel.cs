@@ -97,7 +97,19 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
+            // Carga centralizada: una sola request HTTP para todos los caches del módulo.
+            // Los cache singletons ya inicializados en otra ventana se saltan automáticamente.
+            // Master y Detail leen las colecciones locales de estos mismos caches ya poblados.
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient,
+                cancellationToken,
+                _costCenterCache,
+                _accountingBookCache,
+                _notAnnulledAccountingSourceCache,
+                _auxiliaryAccountingAccountCache);
+
             await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntries);
+
             await ActivateMasterViewAsync();
             await base.OnInitializedAsync(cancellationToken);
         }
