@@ -6,7 +6,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace NetErp.Helpers.Cache
 {
@@ -33,7 +32,7 @@ namespace NetErp.Helpers.Cache
 
         public async Task EnsureLoadedAsync()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock) { if (_isLoaded) return; }
             });
@@ -55,7 +54,7 @@ namespace NetErp.Helpers.Cache
                 throw new Exception($"Error al cargar colaboradores: {error.Message}");
             }
 
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -71,7 +70,7 @@ namespace NetErp.Helpers.Cache
 
         public void Clear()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
