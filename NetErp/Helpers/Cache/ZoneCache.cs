@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
-using System.Windows;
 
 namespace NetErp.Helpers.Cache
 {
@@ -70,7 +69,7 @@ namespace NetErp.Helpers.Cache
 
                 var result = await _service.GetPageAsync(query, variables);
 
-                Application.Current.Dispatcher.Invoke(() =>
+                UiDispatcher.Invoke(() =>
                 {
                     lock (_lock)
                     {
@@ -103,7 +102,7 @@ namespace NetErp.Helpers.Cache
             var page = data.ToObject<PageType<ZoneGraphQLModel>>();
             if (page == null) return;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -121,7 +120,7 @@ namespace NetErp.Helpers.Cache
 
         public void Clear()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -133,7 +132,7 @@ namespace NetErp.Helpers.Cache
 
         public void Add(ZoneGraphQLModel item)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -145,7 +144,7 @@ namespace NetErp.Helpers.Cache
 
         public void Update(ZoneGraphQLModel item)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -161,7 +160,7 @@ namespace NetErp.Helpers.Cache
 
         public void Remove(int id)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {

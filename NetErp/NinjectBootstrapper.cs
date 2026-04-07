@@ -209,6 +209,15 @@ namespace NetErp
             _ = kernel.Bind<AccessProfileCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AccessProfileCache>());
 
+            _ = kernel.Bind<PermissionDefinitionCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<PermissionDefinitionCache>());
+
+            _ = kernel.Bind<CompanyPermissionDefaultCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CompanyPermissionDefaultCache>());
+
+            _ = kernel.Bind<UserPermissionCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<UserPermissionCache>());
+
             _ = kernel.Bind<PermissionCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<PermissionCache>());
 

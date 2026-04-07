@@ -2,33 +2,37 @@ using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
 using Models.Global;
-using NetErp.Helpers.GraphQLQueryBuilder;
-using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
     /// <summary>
-    /// Cache that loads and resolves permission values for the current user.
-    /// Precomputes the cascade: UserPermission → CompanyPermissionDefault → SystemDefault.
-    /// Provides synchronous O(1) lookups by permission code.
-    /// Cleared on logout/company switch via IEntityCache.
+    /// Resolver de permisos del usuario actual. NO hace HTTP por sí mismo — depende de
+    /// <see cref="PermissionDefinitionCache"/>, <see cref="CompanyPermissionDefaultCache"/>
+    /// y <see cref="UserPermissionCache"/> para obtener los datos.
+    /// Aplica la cascada: <c>UserPermission &gt; CompanyPermissionDefault &gt; SystemDefault</c>
+    /// y expone lookups O(1) vía <see cref="IsAllowed"/>, <see cref="IsRequired"/>, etc.
+    ///
+    /// Diseño: al separar el fetching de la lógica de cascada, las 3 sub-caches pueden
+    /// participar en batches combinados con otros caches (via <see cref="CacheBatchLoader"/>),
+    /// reduciendo round-trips HTTP en módulos que cargan múltiples caches a la vez.
+    /// Cleared on logout/company switch via <see cref="IEntityCache"/>.
     /// </summary>
     public class PermissionCache : IEntityCache,
         IHandle<CompanyPermissionDefaultChangedMessage>,
         IHandle<UserPermissionChangedMessage>
     {
-        private readonly IRepository<PermissionDefinitionGraphQLModel> _permDefService;
-        private readonly IRepository<CompanyPermissionDefaultGraphQLModel> _companyPermDefService;
-        private readonly IRepository<UserPermissionGraphQLModel> _userPermService;
+        private readonly PermissionDefinitionCache _permissionDefinitionCache;
+        private readonly CompanyPermissionDefaultCache _companyPermissionDefaultCache;
+        private readonly UserPermissionCache _userPermissionCache;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly IEventAggregator _eventAggregator;
+
         private readonly Lock _lock = new();
         private readonly Dictionary<string, ResolvedPermission> _permissions = [];
         private bool _isLoaded;
@@ -36,60 +40,63 @@ namespace NetErp.Helpers.Cache
         public bool IsInitialized => _isLoaded;
 
         public PermissionCache(
-            IRepository<PermissionDefinitionGraphQLModel> permDefService,
-            IRepository<CompanyPermissionDefaultGraphQLModel> companyPermDefService,
-            IRepository<UserPermissionGraphQLModel> userPermService,
+            PermissionDefinitionCache permissionDefinitionCache,
+            CompanyPermissionDefaultCache companyPermissionDefaultCache,
+            UserPermissionCache userPermissionCache,
+            IGraphQLClient graphQLClient,
             IEventAggregator eventAggregator)
         {
-            _permDefService = permDefService;
-            _companyPermDefService = companyPermDefService;
-            _userPermService = userPermService;
+            _permissionDefinitionCache = permissionDefinitionCache;
+            _companyPermissionDefaultCache = companyPermissionDefaultCache;
+            _userPermissionCache = userPermissionCache;
+            _graphQLClient = graphQLClient;
             _eventAggregator = eventAggregator;
             _eventAggregator.SubscribeOnUIThread(this);
         }
 
+        /// <summary>
+        /// Carga los datos necesarios (si no están ya cargados) y ejecuta la cascada de resolución.
+        /// Si las 3 sub-caches ya fueron cargadas por un batch externo, esto solo ejecuta la cascada
+        /// (sin HTTP). Si no, dispara 1 HTTP combinado con los 3 fragments via <see cref="CacheBatchLoader"/>.
+        /// </summary>
         public async Task EnsureLoadedAsync()
         {
             lock (_lock) { if (_isLoaded) return; }
-            await LoadAndResolveAsync();
+
+            // Carga batch de las 3 sub-caches (no-op si ya están inicializadas por un batch externo)
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient,
+                default,
+                _permissionDefinitionCache,
+                _companyPermissionDefaultCache,
+                _userPermissionCache);
+
+            ResolveCascade();
         }
 
-        private async Task LoadAndResolveAsync()
+        /// <summary>
+        /// Ejecuta la cascada de resolución a partir de los datos en las 3 sub-caches.
+        /// No hace HTTP. Pre-requisito: las 3 sub-caches deben estar cargadas.
+        /// </summary>
+        private void ResolveCascade()
         {
-            // Single HTTP request with 3 fragments
-            var (_, query) = _combinedQuery.Value;
-
-            dynamic filters = new ExpandoObject();
-            filters.accountId = SessionInfo.LoginAccountId;
-
-            ExpandoObject variables = new GraphQLVariables()
-                .For(_combinedPermDefsFragment.Value, "pagination", new { pageSize = -1 })
-                .For(_combinedCompanyDefsFragment.Value, "pagination", new { pageSize = -1 })
-                .For(_combinedUserPermsFragment.Value, "filters", filters)
-                .For(_combinedUserPermsFragment.Value, "pagination", new { pageSize = -1 })
-                .Build();
-
-            PermissionDataContext result = await _permDefService.GetDataContextAsync<PermissionDataContext>(query, variables);
-
-            PageType<PermissionDefinitionGraphQLModel> permDefs = result.PermDefs;
-            PageType<CompanyPermissionDefaultGraphQLModel> companyDefaults = result.CompanyDefs;
-            PageType<UserPermissionGraphQLModel> userPerms = result.UserPerms;
-
             // Index company defaults and user permissions by permissionDefinition.Id
-            Dictionary<int, string> companyDefaultsByPermId = companyDefaults.Entries
+            Dictionary<int, string> companyDefaultsByPermId = _companyPermissionDefaultCache.Items
                 .Where(cd => cd.PermissionDefinition != null)
-                .ToDictionary(cd => cd.PermissionDefinition!.Id, cd => cd.DefaultValue);
+                .GroupBy(cd => cd.PermissionDefinition!.Id)
+                .ToDictionary(g => g.Key, g => g.First().DefaultValue);
 
-            Dictionary<int, UserPermissionGraphQLModel> userPermsByPermId = userPerms.Entries
+            Dictionary<int, UserPermissionGraphQLModel> userPermsByPermId = _userPermissionCache.Items
                 .Where(up => up.PermissionDefinition != null)
-                .ToDictionary(up => up.PermissionDefinition!.Id);
+                .GroupBy(up => up.PermissionDefinition!.Id)
+                .ToDictionary(g => g.Key, g => g.First());
 
             // Resolve cascade for each permission definition
             lock (_lock)
             {
                 _permissions.Clear();
 
-                foreach (PermissionDefinitionGraphQLModel permDef in permDefs.Entries)
+                foreach (PermissionDefinitionGraphQLModel permDef in _permissionDefinitionCache.Items)
                 {
                     string effectiveValue = permDef.SystemDefault;
 
@@ -101,12 +108,10 @@ namespace NetErp.Helpers.Cache
                     if (userPermsByPermId.TryGetValue(permDef.Id, out UserPermissionGraphQLModel? userPerm))
                     {
                         bool isExpired = false;
-                        DateTime? expiresAt = null;
 
                         if (!string.IsNullOrEmpty(userPerm.ExpiresAt) &&
                             DateTime.TryParse(userPerm.ExpiresAt, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsed))
                         {
-                            expiresAt = parsed;
                             isExpired = parsed < DateTime.UtcNow;
                         }
 
@@ -189,16 +194,18 @@ namespace NetErp.Helpers.Cache
         }
 
         /// <summary>
-        /// Forces a full reload of permissions and notifies all listeners.
+        /// Forces a full reload of permissions (clears sub-caches + re-batches + re-resolves)
+        /// and notifies all listeners via <see cref="PermissionsCacheRefreshedMessage"/>.
         /// </summary>
         public async Task ReloadAsync()
         {
-            lock (_lock)
-            {
-                _permissions.Clear();
-                _isLoaded = false;
-            }
-            await LoadAndResolveAsync();
+            // Clear local state + sub-caches
+            _permissionDefinitionCache.Clear();
+            _companyPermissionDefaultCache.Clear();
+            _userPermissionCache.Clear();
+            Clear();
+
+            await EnsureLoadedAsync();
             await _eventAggregator.PublishOnCurrentThreadAsync(new PermissionsCacheRefreshedMessage());
         }
 
@@ -212,77 +219,9 @@ namespace NetErp.Helpers.Cache
             await ReloadAsync();
         }
 
-        #region GraphQL Queries
-
-        private static readonly Lazy<GraphQLQueryFragment> _combinedPermDefsFragment = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<PermissionDefinitionGraphQLModel>>
-                .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Code)
-                    .Field(e => e.PermissionType)
-                    .Field(e => e.SystemDefault))
-                .Build();
-
-            return new GraphQLQueryFragment("permissionDefinitionsPage", [new("pagination", "Pagination")], fields, "PermDefs");
-        });
-
-        private static readonly Lazy<GraphQLQueryFragment> _combinedCompanyDefsFragment = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<CompanyPermissionDefaultGraphQLModel>>
-                .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.DefaultValue)
-                    .Select(e => e.PermissionDefinition, pd => pd
-                        .Field(p => p!.Id)))
-                .Build();
-
-            return new GraphQLQueryFragment("companyPermissionDefaultsPage", [new("pagination", "Pagination")], fields, "CompanyDefs");
-        });
-
-        private static readonly Lazy<GraphQLQueryFragment> _combinedUserPermsFragment = new(() =>
-        {
-            Dictionary<string, object> fields = FieldSpec<PageType<UserPermissionGraphQLModel>>
-                .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Value)
-                    .Field(e => e.ExpiresAt)
-                    .Select(e => e.PermissionDefinition, pd => pd
-                        .Field(p => p!.Id)))
-                .Build();
-
-            return new GraphQLQueryFragment("userPermissionsPage",
-                [new("filters", "UserPermissionFilters"), new("pagination", "Pagination")],
-                fields, "UserPerms");
-        });
-
-        private static readonly Lazy<(List<GraphQLQueryFragment> Fragments, string Query)> _combinedQuery = new(() =>
-        {
-            List<GraphQLQueryFragment> fragments =
-            [
-                _combinedPermDefsFragment.Value,
-                _combinedCompanyDefsFragment.Value,
-                _combinedUserPermsFragment.Value
-            ];
-            string query = new QueryBuilder(fragments).GetQuery();
-            return (fragments, query);
-        });
-
-        #endregion
-
         #region Internal Types
 
         private record ResolvedPermission(string Code, string PermissionType, string EffectiveValue);
-
-        private class PermissionDataContext
-        {
-            public PageType<PermissionDefinitionGraphQLModel> PermDefs { get; set; } = new();
-            public PageType<CompanyPermissionDefaultGraphQLModel> CompanyDefs { get; set; } = new();
-            public PageType<UserPermissionGraphQLModel> UserPerms { get; set; } = new();
-        }
 
         #endregion
     }

@@ -57,6 +57,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly AuthorizationSequenceCache _authorizationSequenceCache;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         private readonly CompanyValidator _companyValidator;
@@ -80,6 +81,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             AuthorizationSequenceCache authorizationSequenceCache,
+            IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory,
             CompanyValidator companyValidator,
             CompanyLocationValidator companyLocationValidator,
@@ -97,6 +99,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _permissionCache = permissionCache ?? throw new ArgumentNullException(nameof(permissionCache));
             _authorizationSequenceCache = authorizationSequenceCache ?? throw new ArgumentNullException(nameof(authorizationSequenceCache));
+            _graphQLClient = graphQLClient ?? throw new ArgumentNullException(nameof(graphQLClient));
             _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
             _companyValidator = companyValidator ?? throw new ArgumentNullException(nameof(companyValidator));
             _companyLocationValidator = companyLocationValidator ?? throw new ArgumentNullException(nameof(companyLocationValidator));
@@ -282,11 +285,13 @@ namespace NetErp.Global.CostCenters.ViewModels
             base.OnViewReady(view);
             try
             {
-                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.CostCenters);
-
-                await _permissionCache.EnsureLoadedAsync();
-                await _countryCache.EnsureLoadedAsync();
-                await _authorizationSequenceCache.EnsureLoadedAsync();
+                // PermissionCache ya fue pre-cargado por el Shell al seleccionar la empresa
+                // (ver ShellViewModel.HandleAsync(CompanySelectedMessage)). Los módulos consumen
+                // las propiedades HasXPermission sin tocar EnsureLoadedAsync.
+                await Task.WhenAll(
+                    _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.CostCenters),
+                    CacheBatchLoader.LoadAsync(_graphQLClient, default,
+                        _countryCache, _authorizationSequenceCache));
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -900,10 +905,17 @@ namespace NetErp.Global.CostCenters.ViewModels
             costCenterToUpdate.InvoiceCopiesToPrint = costCenterDTO.InvoiceCopiesToPrint;
             costCenterToUpdate.RequiresConfirmationToPrintCopies = costCenterDTO.RequiresConfirmationToPrintCopies;
             costCenterToUpdate.TaxToCost = costCenterDTO.TaxToCost;
+            costCenterToUpdate.DefaultInvoiceObservation = costCenterDTO.DefaultInvoiceObservation;
+            costCenterToUpdate.InvoiceFooter = costCenterDTO.InvoiceFooter;
+            costCenterToUpdate.RemissionFooter = costCenterDTO.RemissionFooter;
             costCenterToUpdate.Country = costCenterDTO.Country;
             costCenterToUpdate.Department = costCenterDTO.Department;
             costCenterToUpdate.City = costCenterDTO.City;
             costCenterToUpdate.CompanyLocation = costCenterDTO.CompanyLocation;
+            costCenterToUpdate.FeCreditDefaultAuthorizationSequence = costCenterDTO.FeCreditDefaultAuthorizationSequence;
+            costCenterToUpdate.FeCashDefaultAuthorizationSequence = costCenterDTO.FeCashDefaultAuthorizationSequence;
+            costCenterToUpdate.PeDefaultAuthorizationSequence = costCenterDTO.PeDefaultAuthorizationSequence;
+            costCenterToUpdate.DsDefaultAuthorizationSequence = costCenterDTO.DsDefaultAuthorizationSequence;
             _notificationService.ShowSuccess(message.UpdatedCostCenter.Message);
             return Task.CompletedTask;
         }

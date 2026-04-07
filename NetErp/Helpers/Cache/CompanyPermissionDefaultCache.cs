@@ -15,47 +15,44 @@ using static Models.Global.GraphQLResponseTypes;
 namespace NetErp.Helpers.Cache
 {
     /// <summary>
-    /// Cache de resoluciones de autorización (DIAN) scoped al company actual via header company-id.
-    /// Solo carga Id + Description (lo necesario para mostrar en ComboBox de selección).
-    /// Sincronización en vivo via mensajes Create/Update/Delete del módulo AuthorizationSequence.
+    /// Cache de defaults de permisos por compañía (override level 2 sobre SystemDefault).
+    /// Data-only cache: no hace lógica de cascada. Consumido por <see cref="PermissionCache"/>
+    /// para resolver permisos efectivos. Scoped por company vía header company-id.
     /// </summary>
-    public class AuthorizationSequenceCache : IEntityCache<AuthorizationSequenceGraphQLModel>, IBatchLoadableCache,
-        IHandle<AuthorizationSequenceCreateMessage>,
-        IHandle<AuthorizationSequenceUpdateMessage>,
-        IHandle<AuthorizationSequenceDeleteMessage>
+    public class CompanyPermissionDefaultCache : IEntityCache<CompanyPermissionDefaultGraphQLModel>, IBatchLoadableCache
     {
-        private readonly IRepository<AuthorizationSequenceGraphQLModel> _service;
+        private readonly IRepository<CompanyPermissionDefaultGraphQLModel> _service;
         private readonly Lock _lock = new();
 
-        private readonly ObservableCollection<AuthorizationSequenceGraphQLModel> _items = [];
-        public ReadOnlyObservableCollection<AuthorizationSequenceGraphQLModel> Items { get; }
+        private readonly ObservableCollection<CompanyPermissionDefaultGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<CompanyPermissionDefaultGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
-            var fields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
+            var fields = FieldSpec<PageType<CompanyPermissionDefaultGraphQLModel>>
                 .Create()
                 .SelectList(x => x.Entries, entries => entries
                     .Field(x => x.Id)
-                    .Field(x => x.Description)
-                )
+                    .Field(x => x.DefaultValue)
+                    .Select(x => x.PermissionDefinition, pd => pd
+                        .Field(p => p!.Id)))
                 .Build();
 
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
-            var fragment = new GraphQLQueryFragment("authorizationSequencesPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
+            var fragment = new GraphQLQueryFragment("companyPermissionDefaultsPage", [parameter], fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);
         });
 
-        public AuthorizationSequenceCache(
-            IRepository<AuthorizationSequenceGraphQLModel> service,
+        public CompanyPermissionDefaultCache(
+            IRepository<CompanyPermissionDefaultGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
             eventAggregator.SubscribeOnUIThread(this);
-            Items = new ReadOnlyObservableCollection<AuthorizationSequenceGraphQLModel>(_items);
+            Items = new ReadOnlyObservableCollection<CompanyPermissionDefaultGraphQLModel>(_items);
         }
 
         public async Task EnsureLoadedAsync()
@@ -67,7 +64,6 @@ namespace NetErp.Helpers.Cache
                 var (fragment, query) = _loadQuery.Value;
                 var variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { PageSize = -1 })
-                    .For(fragment, "filters", new { IsCurrent = true })
                     .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
@@ -98,12 +94,11 @@ namespace NetErp.Helpers.Cache
         public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
         {
             variables.For(batchFragment, "pagination", new { PageSize = -1 });
-            variables.For(batchFragment, "filters", new { IsCurrent = true });
         }
 
         public void PopulateFromBatchResponse(JToken data)
         {
-            var page = data.ToObject<PageType<AuthorizationSequenceGraphQLModel>>();
+            var page = data.ToObject<PageType<CompanyPermissionDefaultGraphQLModel>>();
             if (page == null) return;
 
             UiDispatcher.Invoke(() =>
@@ -132,7 +127,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Add(AuthorizationSequenceGraphQLModel item)
+        public void Add(CompanyPermissionDefaultGraphQLModel item)
         {
             UiDispatcher.Invoke(() =>
             {
@@ -144,7 +139,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Update(AuthorizationSequenceGraphQLModel item)
+        public void Update(CompanyPermissionDefaultGraphQLModel item)
         {
             UiDispatcher.Invoke(() =>
             {
@@ -172,38 +167,5 @@ namespace NetErp.Helpers.Cache
                 }
             });
         }
-
-        #region IHandle Implementations
-
-        public Task HandleAsync(AuthorizationSequenceCreateMessage message, CancellationToken cancellationToken)
-        {
-            var created = message.CreatedAuthorizationSequence?.Entity;
-            if (created != null)
-            {
-                Add(created);
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AuthorizationSequenceUpdateMessage message, CancellationToken cancellationToken)
-        {
-            var updated = message.UpdatedAuthorizationSequence?.Entity;
-            if (updated != null)
-            {
-                Update(updated);
-            }
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(AuthorizationSequenceDeleteMessage message, CancellationToken cancellationToken)
-        {
-            if (message.DeletedAuthorizationSequence?.DeletedId > 0)
-            {
-                Remove(message.DeletedAuthorizationSequence.DeletedId.Value);
-            }
-            return Task.CompletedTask;
-        }
-
-        #endregion
     }
 }

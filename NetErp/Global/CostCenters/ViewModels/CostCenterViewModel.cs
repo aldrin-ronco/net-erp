@@ -30,6 +30,7 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly AuthorizationSequenceCache _authorizationSequenceCache;
+        private readonly IGraphQLClient _graphQLClient;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly CompanyValidator _companyValidator;
         private readonly CompanyLocationValidator _companyLocationValidator;
@@ -53,6 +54,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                     _stringLengthCache,
                     _permissionCache,
                     _authorizationSequenceCache,
+                    _graphQLClient,
                     _joinableTaskFactory,
                     _companyValidator,
                     _companyLocationValidator,
@@ -75,6 +77,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             AuthorizationSequenceCache authorizationSequenceCache,
+            IGraphQLClient graphQLClient,
             JoinableTaskFactory joinableTaskFactory,
             CompanyValidator companyValidator,
             CompanyLocationValidator companyLocationValidator,
@@ -93,6 +96,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
             _authorizationSequenceCache = authorizationSequenceCache;
+            _graphQLClient = graphQLClient;
             _joinableTaskFactory = joinableTaskFactory;
             _companyValidator = companyValidator;
             _companyLocationValidator = companyLocationValidator;

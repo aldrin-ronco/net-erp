@@ -9,7 +9,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
@@ -72,7 +71,7 @@ namespace NetErp.Helpers.Cache
             var result = await _service.GetPageAsync(query, variables);
 
             // OC mutations must run on UI thread because Items may be bound to UI controls
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -100,7 +99,7 @@ namespace NetErp.Helpers.Cache
             var page = data.ToObject<PageType<CountryGraphQLModel>>();
             if (page == null) return;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -118,7 +117,7 @@ namespace NetErp.Helpers.Cache
 
         public void Clear()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -130,7 +129,7 @@ namespace NetErp.Helpers.Cache
 
         public void Add(CountryGraphQLModel item)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -142,7 +141,7 @@ namespace NetErp.Helpers.Cache
 
         public void Update(CountryGraphQLModel item)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {
@@ -158,7 +157,7 @@ namespace NetErp.Helpers.Cache
 
         public void Remove(int id)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            UiDispatcher.Invoke(() =>
             {
                 lock (_lock)
                 {

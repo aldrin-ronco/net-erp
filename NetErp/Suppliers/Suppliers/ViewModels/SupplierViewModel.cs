@@ -308,9 +308,11 @@ namespace NetErp.Suppliers.Suppliers.ViewModels
             base.OnViewReady(view);
             try
             {
+                // PermissionCache ya fue pre-cargado por el Shell al seleccionar la empresa
+                // (ver ShellViewModel.HandleAsync(CompanySelectedMessage)). Los módulos consumen
+                // las propiedades HasXPermission sin tocar EnsureLoadedAsync.
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.Supplier);
 
-                await _permissionCache.EnsureLoadedAsync();
                 NotifyOfPropertyChange(nameof(HasCreatePermission));
                 NotifyOfPropertyChange(nameof(HasEditPermission));
                 NotifyOfPropertyChange(nameof(HasDeletePermission));
