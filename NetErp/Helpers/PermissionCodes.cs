@@ -71,6 +71,40 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class Company
+        {
+            private const string Prefix = "company";
+
+            public const string Edit = $"{Prefix}.edit";
+        }
+
+        public static class CompanyLocation
+        {
+            private const string Prefix = "company_location";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class CostCenter
+        {
+            private const string Prefix = "cost_center";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class Storage
+        {
+            private const string Prefix = "storage";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
         public static class Catalog
         {
             private const string Prefix = "catalog";

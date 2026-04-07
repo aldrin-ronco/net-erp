@@ -1,15 +1,17 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Caliburn.Micro;
+using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Global;
+using NetErp.Global.CostCenters.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NetErp.Global.CostCenters.ViewModels
 {
@@ -22,18 +24,40 @@ namespace NetErp.Global.CostCenters.ViewModels
         private readonly IRepository<CompanyLocationGraphQLModel> _companyLocationService;
         private readonly IRepository<CostCenterGraphQLModel> _costCenterService;
         private readonly IRepository<StorageGraphQLModel> _storageService;
-        private readonly IRepository<CountryGraphQLModel> _countryService;
-        private readonly Helpers.IDialogService _dialogService;
-        private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly NetErp.Helpers.IDialogService _dialogService;
+        private readonly NetErp.Helpers.Services.INotificationService _notificationService;
         private readonly CountryCache _countryCache;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
+        private readonly AuthorizationSequenceCache _authorizationSequenceCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly CompanyValidator _companyValidator;
+        private readonly CompanyLocationValidator _companyLocationValidator;
+        private readonly CostCenterValidator _costCenterValidator;
+        private readonly StorageValidator _storageValidator;
 
         private CostCenterMasterViewModel? _costCenterMasterViewModel;
         public CostCenterMasterViewModel CostCenterMasterViewModel
         {
             get
             {
-                if (_costCenterMasterViewModel is null)
-                    _costCenterMasterViewModel = new CostCenterMasterViewModel(this, _companyService, _companyLocationService, _costCenterService, _storageService, _countryService, _dialogService, _notificationService, _countryCache);
+                _costCenterMasterViewModel ??= new CostCenterMasterViewModel(
+                    this,
+                    _companyService,
+                    _companyLocationService,
+                    _costCenterService,
+                    _storageService,
+                    _dialogService,
+                    _notificationService,
+                    _countryCache,
+                    _stringLengthCache,
+                    _permissionCache,
+                    _authorizationSequenceCache,
+                    _joinableTaskFactory,
+                    _companyValidator,
+                    _companyLocationValidator,
+                    _costCenterValidator,
+                    _storageValidator);
                 return _costCenterMasterViewModel;
             }
         }
@@ -45,10 +69,17 @@ namespace NetErp.Global.CostCenters.ViewModels
             IRepository<CompanyLocationGraphQLModel> companyLocationService,
             IRepository<CostCenterGraphQLModel> costCenterService,
             IRepository<StorageGraphQLModel> storageService,
-            IRepository<CountryGraphQLModel> countryService,
-            Helpers.IDialogService dialogService,
-            Helpers.Services.INotificationService notificationService,
-            CountryCache countryCache)
+            NetErp.Helpers.IDialogService dialogService,
+            NetErp.Helpers.Services.INotificationService notificationService,
+            CountryCache countryCache,
+            StringLengthCache stringLengthCache,
+            PermissionCache permissionCache,
+            AuthorizationSequenceCache authorizationSequenceCache,
+            JoinableTaskFactory joinableTaskFactory,
+            CompanyValidator companyValidator,
+            CompanyLocationValidator companyLocationValidator,
+            CostCenterValidator costCenterValidator,
+            StorageValidator storageValidator)
         {
             EventAggregator = eventAggregator;
             AutoMapper = mapper;
@@ -56,38 +87,34 @@ namespace NetErp.Global.CostCenters.ViewModels
             _companyLocationService = companyLocationService;
             _costCenterService = costCenterService;
             _storageService = storageService;
-            _countryService = countryService;
             _dialogService = dialogService;
             _notificationService = notificationService;
             _countryCache = countryCache;
-            
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await ActivateMasterViewAsync();
-                }
-                catch (Exception ex)
-                {
-                    await Execute.OnUIThreadAsync(() =>
-                    {
-                        ThemedMessageBox.Show(title: "Error de inicialización", text: $"Error al activar vista de centro de costo: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                        return Task.CompletedTask;
-                    });
-                }
-            });
+            _stringLengthCache = stringLengthCache;
+            _permissionCache = permissionCache;
+            _authorizationSequenceCache = authorizationSequenceCache;
+            _joinableTaskFactory = joinableTaskFactory;
+            _companyValidator = companyValidator;
+            _companyLocationValidator = companyLocationValidator;
+            _costCenterValidator = costCenterValidator;
+            _storageValidator = storageValidator;
         }
 
-        public async Task ActivateMasterViewAsync()
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
+            await base.OnActivateAsync(cancellationToken);
             try
             {
-                await ActivateItemAsync(CostCenterMasterViewModel, new System.Threading.CancellationToken());
+                await ActivateItemAsync(CostCenterMasterViewModel, cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Error de inicialización",
+                    text: $"{GetType().Name}.{nameof(OnActivateAsync)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
             }
         }
     }

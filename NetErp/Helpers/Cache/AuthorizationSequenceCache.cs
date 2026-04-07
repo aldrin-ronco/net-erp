@@ -1,61 +1,62 @@
 using Caliburn.Micro;
 using Common.Helpers;
 using Common.Interfaces;
-using Models.Books;
+using Models.Global;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json.Linq;
+using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Models.Global.GraphQLResponseTypes;
-using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System.Windows;
+using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Helpers.Cache
 {
-    public class AccountingBookCache : IEntityCache<AccountingBookGraphQLModel>, IBatchLoadableCache,
-        IHandle<AccountingBookCreateMessage>,
-        IHandle<AccountingBookUpdateMessage>,
-        IHandle<AccountingBookDeleteMessage>
+    /// <summary>
+    /// Cache de resoluciones de autorización (DIAN) scoped al company actual via header company-id.
+    /// Solo carga Id + Description (lo necesario para mostrar en ComboBox de selección).
+    /// Sincronización en vivo via mensajes Create/Update/Delete del módulo AuthorizationSequence.
+    /// </summary>
+    public class AuthorizationSequenceCache : IEntityCache<AuthorizationSequenceGraphQLModel>, IBatchLoadableCache,
+        IHandle<AuthorizationSequenceCreateMessage>,
+        IHandle<AuthorizationSequenceUpdateMessage>,
+        IHandle<AuthorizationSequenceDeleteMessage>
     {
-        private readonly IRepository<AccountingBookGraphQLModel> _service;
+        private readonly IRepository<AuthorizationSequenceGraphQLModel> _service;
         private readonly Lock _lock = new();
 
-        private readonly ObservableCollection<AccountingBookGraphQLModel> _items = [];
-        public ReadOnlyObservableCollection<AccountingBookGraphQLModel> Items { get; }
+        private readonly ObservableCollection<AuthorizationSequenceGraphQLModel> _items = [];
+        public ReadOnlyObservableCollection<AuthorizationSequenceGraphQLModel> Items { get; }
         public bool IsInitialized { get; private set; }
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
         {
-            var fields = FieldSpec<PageType<AccountingBookGraphQLModel>>
+            var fields = FieldSpec<PageType<AuthorizationSequenceGraphQLModel>>
                 .Create()
-                .SelectList(it => it.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
+                .SelectList(x => x.Entries, entries => entries
+                    .Field(x => x.Id)
+                    .Field(x => x.Description)
                 )
-                .Field(o => o.PageNumber)
-                .Field(o => o.PageSize)
-                .Field(o => o.TotalPages)
-                .Field(o => o.TotalEntries)
                 .Build();
 
             var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var filtersParam = new GraphQLQueryParameter("filters", "AccountingBookFilters");
-            var fragment = new GraphQLQueryFragment("accountingBooksPage", [paginationParam, filtersParam], fields, "PageResponse");
+            var filtersParam = new GraphQLQueryParameter("filters", "AuthorizationSequenceFilters");
+            var fragment = new GraphQLQueryFragment("authorizationSequencesPage", [paginationParam, filtersParam], fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);
         });
 
-        public AccountingBookCache(
-            IRepository<AccountingBookGraphQLModel> service,
+        public AuthorizationSequenceCache(
+            IRepository<AuthorizationSequenceGraphQLModel> service,
             IEventAggregator eventAggregator)
         {
             _service = service;
             eventAggregator.SubscribeOnUIThread(this);
-            Items = new ReadOnlyObservableCollection<AccountingBookGraphQLModel>(_items);
+            Items = new ReadOnlyObservableCollection<AuthorizationSequenceGraphQLModel>(_items);
         }
 
         public async Task EnsureLoadedAsync()
@@ -65,7 +66,10 @@ namespace NetErp.Helpers.Cache
             try
             {
                 var (fragment, query) = _loadQuery.Value;
-                dynamic variables = new GraphQLVariables().Build();
+                var variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { IsCurrent = true })
+                    .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
 
@@ -92,11 +96,15 @@ namespace NetErp.Helpers.Cache
 
         public GraphQLQueryFragment LoadFragment => _loadQuery.Value.Fragment;
 
-        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment) { }
+        public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
+        {
+            variables.For(batchFragment, "pagination", new { PageSize = -1 });
+            variables.For(batchFragment, "filters", new { IsCurrent = true });
+        }
 
         public void PopulateFromBatchResponse(JToken data)
         {
-            var page = data.ToObject<PageType<AccountingBookGraphQLModel>>();
+            var page = data.ToObject<PageType<AuthorizationSequenceGraphQLModel>>();
             if (page == null) return;
 
             Application.Current.Dispatcher.Invoke(() =>
@@ -125,7 +133,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Add(AccountingBookGraphQLModel item)
+        public void Add(AuthorizationSequenceGraphQLModel item)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -137,7 +145,7 @@ namespace NetErp.Helpers.Cache
             });
         }
 
-        public void Update(AccountingBookGraphQLModel item)
+        public void Update(AuthorizationSequenceGraphQLModel item)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -168,35 +176,31 @@ namespace NetErp.Helpers.Cache
 
         #region IHandle Implementations
 
-        public Task HandleAsync(AccountingBookDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AuthorizationSequenceCreateMessage message, CancellationToken cancellationToken)
         {
-            if (message.DeletedAccountingBook?.DeletedId > 0)
+            var created = message.CreatedAuthorizationSequence?.Entity;
+            if (created != null)
             {
-                Remove(message.DeletedAccountingBook.DeletedId.Value);
+                Add(created);
             }
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingBookCreateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AuthorizationSequenceUpdateMessage message, CancellationToken cancellationToken)
         {
-            if (message.CreatedAccountingBook != null)
+            var updated = message.UpdatedAuthorizationSequence?.Entity;
+            if (updated != null)
             {
-                Add(message.CreatedAccountingBook.Entity);
+                Update(updated);
             }
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingBookUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AuthorizationSequenceDeleteMessage message, CancellationToken cancellationToken)
         {
-            var book = message.UpdatedAccountingBook?.Entity;
-
-            if (book != null)
+            if (message.DeletedAuthorizationSequence?.DeletedId > 0)
             {
-                var existing = _items.FirstOrDefault(x => x.Id == book.Id);
-                if (existing != null)
-                    Update(book);
-                else
-                    Add(book);
+                Remove(message.DeletedAuthorizationSequence.DeletedId.Value);
             }
             return Task.CompletedTask;
         }

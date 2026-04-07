@@ -68,7 +68,7 @@ namespace NetErp.Global.CostCenters.DTO
         public bool IsExpanded
         {
             get { return _isExpanded; }
-            set 
+            set
             {
                 if (_isExpanded != value)
                 {
@@ -80,7 +80,8 @@ namespace NetErp.Global.CostCenters.DTO
                         {
                             if (_storages[0].IsDummyChild)
                             {
-                                _ = Context.LoadStoragesAsync(CompanyLocation, this);
+                                System.Windows.Application.Current.Dispatcher.BeginInvoke(
+                                    new System.Action(() => { _ = Context.LoadStoragesAsync(CompanyLocation, this); }));
                             }
                         }
                     }
@@ -111,7 +112,7 @@ namespace NetErp.Global.CostCenters.DTO
         {
             this.Context = context;
             this._companyLocation = companyLocation;
-            this._storages = [new() { IsDummyChild = true, Name = "Fucking Dummy" }];
+            this._storages = [new() { IsDummyChild = true, Name = "Cargando..." }];
         }
 
     }

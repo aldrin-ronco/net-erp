@@ -67,6 +67,9 @@ namespace NetErp.Helpers.Cache
         // Suppliers
         public static readonly Type[] Supplier = [typeof(SupplierGraphQLModel), typeof(AccountingEntityGraphQLModel)];
 
+        // CostCenters
+        public static readonly Type[] CostCenters = [typeof(CompanyGraphQLModel), typeof(CompanyLocationGraphQLModel), typeof(CostCenterGraphQLModel), typeof(StorageGraphQLModel)];
+
         // Inventory
         public static readonly Type[] CatalogItem = [typeof(CatalogGraphQLModel), typeof(ItemGraphQLModel), typeof(ItemTypeGraphQLModel), typeof(ItemCategoryGraphQLModel), typeof(ItemSubCategoryGraphQLModel)];
         public static readonly Type[] MeasurementUnit = [typeof(MeasurementUnitGraphQLModel)];
