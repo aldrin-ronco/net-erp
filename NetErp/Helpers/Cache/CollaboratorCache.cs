@@ -6,6 +6,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NetErp.Helpers.Cache
 {
@@ -32,7 +33,10 @@ namespace NetErp.Helpers.Cache
 
         public async Task EnsureLoadedAsync()
         {
-            lock (_lock) { if (_isLoaded) return; }
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                lock (_lock) { if (_isLoaded) return; }
+            });
 
             int companyId = SessionInfo.LoginCompanyId;
             if (companyId == 0) throw new InvalidOperationException("LoginCompanyId no está establecido. Seleccione una empresa antes de cargar colaboradores.");
@@ -51,24 +55,30 @@ namespace NetErp.Helpers.Cache
                 throw new Exception($"Error al cargar colaboradores: {error.Message}");
             }
 
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                foreach (CollaboratorGraphQLModel collaborator in result.Data.CollaboratorsPage.Entries)
+                lock (_lock)
                 {
-                    _items.Add(collaborator);
+                    _items.Clear();
+                    foreach (CollaboratorGraphQLModel collaborator in result.Data.CollaboratorsPage.Entries)
+                    {
+                        _items.Add(collaborator);
+                    }
+                    _isLoaded = true;
                 }
-                _isLoaded = true;
-            }
+            });
         }
 
         public void Clear()
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                _isLoaded = false;
-            }
+                lock (_lock)
+                {
+                    _items.Clear();
+                    _isLoaded = false;
+                }
+            });
         }
 
         private static readonly Lazy<string> _loadQuery = new(() =>

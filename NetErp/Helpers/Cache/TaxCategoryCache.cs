@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Models.Global.GraphQLResponseTypes;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System.Windows;
 
 namespace NetErp.Helpers.Cache
 {
@@ -72,15 +73,18 @@ namespace NetErp.Helpers.Cache
 
                 var result = await _service.GetPageAsync(query, variables);
 
-                lock (_lock)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    _items.Clear();
-                    foreach (var item in result.Entries)
+                    lock (_lock)
                     {
-                        _items.Add(item);
+                        _items.Clear();
+                        foreach (var item in result.Entries)
+                        {
+                            _items.Add(item);
+                        }
+                        IsInitialized = true;
                     }
-                    IsInitialized = true;
-                }
+                });
             }
             catch (Exception ex)
             {
@@ -90,11 +94,14 @@ namespace NetErp.Helpers.Cache
 
         public void Add(TaxCategoryGraphQLModel item)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                if (!_items.Any(x => x.Id == item.Id))
-                    _items.Add(item);
-            }
+                lock (_lock)
+                {
+                    if (!_items.Any(x => x.Id == item.Id))
+                        _items.Add(item);
+                }
+            });
         }
 
         #region IBatchLoadableCache
@@ -108,47 +115,59 @@ namespace NetErp.Helpers.Cache
             var page = data.ToObject<PageType<TaxCategoryGraphQLModel>>();
             if (page == null) return;
 
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                foreach (var item in page.Entries)
-                    _items.Add(item);
-                IsInitialized = true;
-            }
+                lock (_lock)
+                {
+                    _items.Clear();
+                    foreach (var item in page.Entries)
+                        _items.Add(item);
+                    IsInitialized = true;
+                }
+            });
         }
 
         #endregion
 
         public void Clear()
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                IsInitialized = false;
-            }
+                lock (_lock)
+                {
+                    _items.Clear();
+                    IsInitialized = false;
+                }
+            });
         }
 
         public void Remove(int id)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                var item = _items.FirstOrDefault(x => x.Id == id);
-                if (item != null)
-                    _items.Remove(item);
-            }
+                lock (_lock)
+                {
+                    var item = _items.FirstOrDefault(x => x.Id == id);
+                    if (item != null)
+                        _items.Remove(item);
+                }
+            });
         }
 
         public void Update(TaxCategoryGraphQLModel item)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                var existing = _items.FirstOrDefault(x => x.Id == item.Id);
-                if (existing != null)
+                lock (_lock)
                 {
-                    var index = _items.IndexOf(existing);
-                    _items[index] = item;
+                    var existing = _items.FirstOrDefault(x => x.Id == item.Id);
+                    if (existing != null)
+                    {
+                        var index = _items.IndexOf(existing);
+                        _items[index] = item;
+                    }
                 }
-            }
+            });
         }
 
         #region IHandle Implementations

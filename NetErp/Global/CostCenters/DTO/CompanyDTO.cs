@@ -81,11 +81,11 @@ namespace NetErp.Global.CostCenters.DTO
 		public bool IsExpanded
 		{
 			get { return _isExpanded; }
-			set 
+			set
 			{
 				if (_isExpanded != value)
 				{
-                    _isExpanded = value; 
+                    _isExpanded = value;
 					NotifyOfPropertyChange(nameof(IsExpanded));
 					if(_locations != null)
 					{
@@ -93,7 +93,8 @@ namespace NetErp.Global.CostCenters.DTO
 						{
 							if (_locations[0].IsDummyChild)
 							{
-								_ = Context.LoadCompaniesLocationsAsync(this);
+								System.Windows.Application.Current.Dispatcher.BeginInvoke(
+									new System.Action(() => { _ = Context.LoadCompaniesLocationsAsync(this); }));
                             }
 						}
 					}

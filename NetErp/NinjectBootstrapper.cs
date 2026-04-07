@@ -159,6 +159,9 @@ namespace NetErp
             _ = kernel.Bind<AuthorizationSequenceTypeCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuthorizationSequenceTypeCache>());
 
+            _ = kernel.Bind<AuthorizationSequenceCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<AuthorizationSequenceCache>());
+
             _ = kernel.Bind<MenuModuleCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<MenuModuleCache>());
 
@@ -177,6 +180,10 @@ namespace NetErp
             _ = kernel.Bind<Inventory.MeasurementUnits.Validators.MeasurementUnitValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<Billing.Sellers.Validators.SellerValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Suppliers.Suppliers.Validators.SupplierValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CompanyValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CompanyLocationValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CostCenterValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Global.CostCenters.Validators.StorageValidator>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
@@ -460,6 +467,11 @@ namespace NetErp
                 _ = cfg.CreateMap<CompanyGraphQLModel, CompanyDTO>();
                 _ = cfg.CreateMap<CompanyLocationGraphQLModel, CompanyLocationDTO>();
                 _ = cfg.CreateMap<StorageGraphQLModel, StorageDTO>();
+                // Reverse mappings for tree+modal flow (DTO from tree → GraphQLModel for DetailViewModels)
+                _ = cfg.CreateMap<CostCenterDTO, CostCenterGraphQLModel>();
+                _ = cfg.CreateMap<CompanyDTO, CompanyGraphQLModel>();
+                _ = cfg.CreateMap<CompanyLocationDTO, CompanyLocationGraphQLModel>();
+                _ = cfg.CreateMap<StorageDTO, StorageGraphQLModel>();
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();

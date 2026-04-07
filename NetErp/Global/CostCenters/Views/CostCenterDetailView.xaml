@@ -1,0 +1,469 @@
+<UserControl x:Class="NetErp.Global.CostCenters.Views.CostCenterDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="720"
+             Background="#EEF1F5">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+    </UserControl.Resources>
+    <busyIndicator:BusyMask x:Name="BusyIndicator"
+                            IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Por favor espere..."
+                            BusyContentMargin="0,20,0,0">
+        <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+                CornerRadius="8" Margin="8,0,8,8"
+                Width="{Binding DialogWidth}"
+                Height="{Binding DialogHeight}">
+            <Grid Margin="15,15,15,5" h:EnterKeyTraversal.IsEnabled="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Estado del centro de costo (siempre visible) -->
+                <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#D9DDE3" BorderThickness="1"
+                        CornerRadius="6" Padding="10,8" Margin="0,0,0,8">
+                    <StackPanel>
+                        <TextBlock Text="Estado del centro de costo" FontSize="13" Margin="0,0,0,4"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <RadioButton Content="Activo" IsChecked="{Binding IsStatusActive, Mode=TwoWay}" GroupName="CostCenterStatusTop">
+                                <RadioButton.Style>
+                                    <Style TargetType="RadioButton">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RadioButton.Style>
+                            </RadioButton>
+                            <RadioButton Content="Solo lectura" IsChecked="{Binding IsStatusReadOnly, Mode=TwoWay}" Margin="15,0,0,0" GroupName="CostCenterStatusTop">
+                                <RadioButton.Style>
+                                    <Style TargetType="RadioButton">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                                <Setter Property="Foreground" Value="#FF8C00"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RadioButton.Style>
+                            </RadioButton>
+                            <RadioButton Content="Inactivo" IsChecked="{Binding IsStatusInactive, Mode=TwoWay}" Margin="15,0,0,0" GroupName="CostCenterStatusTop">
+                                <RadioButton.Style>
+                                    <Style TargetType="RadioButton">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                                <Setter Property="Foreground" Value="Red"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RadioButton.Style>
+                            </RadioButton>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Foreground="Gray"
+                                   Visibility="{Binding IsStatusActive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Run Foreground="Blue">Activo:</Run> el centro de costo puede ser usado sin restricción para registrar y consultar información.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Foreground="Gray"
+                                   Visibility="{Binding IsStatusReadOnly, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Run Foreground="#FF8C00">Solo lectura:</Run> permite consultar los registros existentes pero no permite registrar información nueva.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Foreground="Gray"
+                                   Visibility="{Binding IsStatusInactive, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Run Foreground="Red">Inactivo:</Run> no permite consultar el centro de costo ni registrar nuevos datos. Se remueve completamente de las vistas.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <dx:DXTabControl Grid.Row="1" Padding="8" TabContentCacheMode="CacheTabsOnSelecting">
+
+                    <!-- TAB 1: Datos básicos -->
+                    <dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
+                        <dx:DXTabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Datos básicos" VerticalAlignment="Center"/>
+                                <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                                         Visibility="{Binding Data.HasBasicDataErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </dx:DXTabItem.Header>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="4">
+                                <TextBlock Text="Nombre" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:TextEdit x:Name="Name" Style="{StaticResource FocusedHighlightStyle}"
+                                              CharacterCasing="Upper" Padding="3"
+                                              MaxLength="{Binding NameMaxLength}" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Nombre comercial" FontSize="13" Margin="0,0,0,3"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Nombre corto" FontSize="13" Margin="0,0,0,3"/>
+                                    <dxe:TextEdit Grid.Row="1" Grid.Column="0" x:Name="TradeName"
+                                                  Style="{StaticResource FocusedHighlightStyle}"
+                                                  CharacterCasing="Upper" Padding="3"
+                                                  MaxLength="{Binding TradeNameMaxLength}" BorderBrush="#C8CED6"/>
+                                    <dxe:TextEdit Grid.Row="1" Grid.Column="2" x:Name="ShortName"
+                                                  Style="{StaticResource FocusedHighlightStyle}"
+                                                  CharacterCasing="Upper" Padding="3"
+                                                  MaxLength="{Binding ShortNameMaxLength}" BorderBrush="#C8CED6"/>
+                                </Grid>
+
+                                <!-- País -->
+                                <TextBlock Text="País" FontSize="13" Margin="0,0,0,3"/>
+                                <dxg:LookUpEdit Margin="0,0,0,8" Padding="3"
+                                                AutoPopulateColumns="False"
+                                                IsCaseSensitiveSearch="False"
+                                                FilterCondition="Contains"
+                                                ImmediatePopup="True"
+                                                ClearSelectionOnBackspace="True"
+                                                NullText="Seleccione un país..."
+                                                ItemsSource="{Binding Countries}"
+                                                DisplayMember="Name"
+                                                EditValue="{Binding SelectedCountry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                BorderBrush="#C8CED6">
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.View><dxg:TableView AutoWidth="True"/></dxg:GridControl.View>
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn Header="Nombre del país" FieldName="Name"/>
+                                                </dxg:GridControl.Columns>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+                                    <dxg:LookUpEdit.ItemsPanel>
+                                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                    </dxg:LookUpEdit.ItemsPanel>
+                                </dxg:LookUpEdit>
+
+                                <!-- Departamento -->
+                                <TextBlock Text="Departamento" FontSize="13" Margin="0,0,0,3"/>
+                                <dxg:LookUpEdit Margin="0,0,0,8" Padding="3"
+                                                AutoPopulateColumns="False"
+                                                IsCaseSensitiveSearch="False"
+                                                FilterCondition="Contains"
+                                                ImmediatePopup="True"
+                                                ClearSelectionOnBackspace="True"
+                                                NullText="Seleccione un departamento..."
+                                                CharacterCasing="Upper"
+                                                ItemsSource="{Binding SelectedCountry.Departments, Mode=OneWay}"
+                                                DisplayMember="Name"
+                                                EditValue="{Binding SelectedDepartment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                BorderBrush="#C8CED6">
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.View><dxg:TableView AutoWidth="True" ShowSearchPanelMode="Never"/></dxg:GridControl.View>
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn Header="Nombre del departamento" FieldName="Name"/>
+                                                </dxg:GridControl.Columns>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+                                    <dxg:LookUpEdit.ItemsPanel>
+                                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                    </dxg:LookUpEdit.ItemsPanel>
+                                </dxg:LookUpEdit>
+
+                                <!-- Municipio -->
+                                <TextBlock Text="Municipio" FontSize="13" Margin="0,0,0,3"/>
+                                <dxg:LookUpEdit Margin="0,0,0,8" Padding="3"
+                                                AutoPopulateColumns="False"
+                                                IsCaseSensitiveSearch="False"
+                                                FilterCondition="Contains"
+                                                ImmediatePopup="True"
+                                                ClearSelectionOnBackspace="True"
+                                                NullText="Seleccione un municipio..."
+                                                CharacterCasing="Upper"
+                                                ItemsSource="{Binding SelectedDepartment.Cities, Mode=OneWay}"
+                                                DisplayMember="Name"
+                                                EditValue="{Binding SelectedCity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                BorderBrush="#C8CED6">
+                                    <dxg:LookUpEdit.PopupContentTemplate>
+                                        <ControlTemplate>
+                                            <dxg:GridControl Name="PART_GridControl">
+                                                <dxg:GridControl.View><dxg:TableView AutoWidth="True" ShowSearchPanelMode="Never"/></dxg:GridControl.View>
+                                                <dxg:GridControl.Columns>
+                                                    <dxg:GridColumn Header="Nombre del municipio" FieldName="Name"/>
+                                                </dxg:GridControl.Columns>
+                                            </dxg:GridControl>
+                                        </ControlTemplate>
+                                    </dxg:LookUpEdit.PopupContentTemplate>
+                                    <dxg:LookUpEdit.ItemsPanel>
+                                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                                    </dxg:LookUpEdit.ItemsPanel>
+                                </dxg:LookUpEdit>
+
+                                <TextBlock Text="Dirección" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:TextEdit x:Name="Address" Style="{StaticResource FocusedHighlightStyle}"
+                                              CharacterCasing="Upper" Padding="3"
+                                              MaxLength="{Binding AddressMaxLength}" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </dx:DXTabItem>
+
+                    <!-- TAB 2: Teléfonos -->
+                    <dx:DXTabItem ToolTip="{Binding Data.PhoneTabTooltip, Source={StaticResource DataContextProxy}}">
+                        <dx:DXTabItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Teléfonos" VerticalAlignment="Center"/>
+                                <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                                         Visibility="{Binding Data.HasPhoneErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </dx:DXTabItem.Header>
+                        <Grid Margin="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Teléfono primario" FontSize="13" Margin="0,0,0,3"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Teléfono secundario" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Grid.Row="1" Grid.Column="0" x:Name="PrimaryPhone"
+                                          Style="{StaticResource FocusedHighlightStyle}" Padding="3"
+                                          NullText="### ## ##"
+                                          MaxLength="{Binding PrimaryPhoneMaxLength}" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
+                            <dxe:TextEdit Grid.Row="1" Grid.Column="2" x:Name="SecondaryPhone"
+                                          Style="{StaticResource FocusedHighlightStyle}" Padding="3"
+                                          NullText="### ## ##"
+                                          MaxLength="{Binding SecondaryPhoneMaxLength}" BorderBrush="#C8CED6" Margin="0,0,0,8"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Celular primario" FontSize="13" Margin="0,0,0,3"/>
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Celular secundario" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Grid.Row="3" Grid.Column="0" x:Name="PrimaryCellPhone"
+                                          Style="{StaticResource FocusedHighlightStyle}" Padding="3"
+                                          NullText="### ### ## ##"
+                                          MaxLength="{Binding PrimaryCellPhoneMaxLength}" BorderBrush="#C8CED6"/>
+                            <dxe:TextEdit Grid.Row="3" Grid.Column="2" x:Name="SecondaryCellPhone"
+                                          Style="{StaticResource FocusedHighlightStyle}" Padding="3"
+                                          NullText="### ### ## ##"
+                                          MaxLength="{Binding SecondaryCellPhoneMaxLength}" BorderBrush="#C8CED6"/>
+                        </Grid>
+                    </dx:DXTabItem>
+
+                    <!-- TAB 3: Configuración POS / impuestos -->
+                    <dx:DXTabItem Header="Configuración">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="4">
+                                <TextBlock Text="Control de fechas" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit ItemsSource="{Binding DateControlTypeDictionary}"
+                                                  EditValue="{Binding DateControlType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Value" ValueMember="Key"
+                                                  IsTextEditable="False" Padding="2" BorderBrush="#C8CED6"
+                                                  Margin="0,0,0,8"/>
+
+                                <TextBlock Text="POS / VENTAS" Margin="0,8,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Permitir compras" IsChecked="{Binding AllowBuy, Mode=TwoWay}" Margin="0,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Permitir ventas" IsChecked="{Binding AllowSell, Mode=TwoWay}" Margin="0,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Permitir items repetidos en ventas" IsChecked="{Binding AllowRepeatItemsOnSales, Mode=TwoWay}" Margin="0,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Mostrar ventana de cambio en pago efectivo" IsChecked="{Binding ShowChangeWindowOnCash, Mode=TwoWay}" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="IMPUESTOS" Margin="0,8,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Es gravable" IsChecked="{Binding IsTaxable, Mode=TwoWay}" Margin="0,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Lista de precios incluye impuesto" IsChecked="{Binding PriceListIncludeTax, Mode=TwoWay}" IsEnabled="{Binding IsTaxable}" Margin="20,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Precio en factura incluye impuesto" IsChecked="{Binding InvoicePriceIncludeTax, Mode=TwoWay}" IsEnabled="{Binding IsTaxable}" Margin="20,0,0,4"/>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Impuesto al costo" IsChecked="{Binding TaxToCost, Mode=TwoWay}" Margin="0,0,0,8"/>
+
+                                <TextBlock Text="IMPRESIÓN DE FACTURAS" Margin="0,8,0,4"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <dxe:SpinEdit Width="60"
+                                                  EditValue="{Binding InvoiceCopiesToPrint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  EditValueType="{x:Type sys:Int32}"
+                                                  IsFloatValue="False"
+                                                  MaskType="Numeric" Mask="d"
+                                                  AllowNullInput="False"
+                                                  MinValue="0" MaxValue="10" Padding="2" BorderBrush="#C8CED6"/>
+                                    <TextBlock Text="Copias a imprimir" FontSize="13" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <dxe:CheckEdit Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                                               Content="Requiere confirmación para imprimir copias"
+                                               IsChecked="{Binding RequiresConfirmationToPrintCopies, Mode=TwoWay}"
+                                               IsEnabled="{Binding RequiresConfirmationToPrintCopiesIsEnabled}"
+                                               Margin="20,4,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </dx:DXTabItem>
+
+                    <!-- TAB 4: Resoluciones DIAN -->
+                    <dx:DXTabItem Header="Resoluciones DIAN">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="4">
+                                <TextBlock TextWrapping="Wrap" FontSize="11" FontStyle="Italic" Foreground="Gray" Margin="0,0,0,8">
+                                    Asigne la resolución de autorización DIAN por defecto para cada tipo de documento. Los campos son opcionales: si no se asigna, el documento usará la resolución global de la compañía.
+                                </TextBlock>
+
+                                <TextBlock Text="Factura electrónica - Crédito" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit ItemsSource="{Binding AuthorizationSequences}"
+                                                  EditValue="{Binding FeCreditDefaultAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Description" ValueMember="Id"
+                                                  IsTextEditable="False"
+                                                  AllowNullInput="True"
+                                                  NullText="Sin resolución asignada"
+                                                  NullValueButtonPlacement="EditBox"
+                                                  ShowNullValueButtonOnFocusOnly="False"
+                                                  Padding="2" BorderBrush="#C8CED6"
+                                                  Margin="0,0,0,8"/>
+
+                                <TextBlock Text="Factura electrónica - Contado" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit ItemsSource="{Binding AuthorizationSequences}"
+                                                  EditValue="{Binding FeCashDefaultAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Description" ValueMember="Id"
+                                                  IsTextEditable="False"
+                                                  AllowNullInput="True"
+                                                  NullText="Sin resolución asignada"
+                                                  NullValueButtonPlacement="EditBox"
+                                                  ShowNullValueButtonOnFocusOnly="False"
+                                                  Padding="2" BorderBrush="#C8CED6"
+                                                  Margin="0,0,0,8"/>
+
+                                <TextBlock Text="POS Electrónico" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit ItemsSource="{Binding AuthorizationSequences}"
+                                                  EditValue="{Binding PeDefaultAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Description" ValueMember="Id"
+                                                  IsTextEditable="False"
+                                                  AllowNullInput="True"
+                                                  NullText="Sin resolución asignada"
+                                                  NullValueButtonPlacement="EditBox"
+                                                  ShowNullValueButtonOnFocusOnly="False"
+                                                  Padding="2" BorderBrush="#C8CED6"
+                                                  Margin="0,0,0,8"/>
+
+                                <TextBlock Text="Documento Soporte (Remisiones)" FontSize="13" Margin="0,0,0,3"/>
+                                <dxe:ComboBoxEdit ItemsSource="{Binding AuthorizationSequences}"
+                                                  EditValue="{Binding DsDefaultAuthorizationSequenceId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMember="Description" ValueMember="Id"
+                                                  IsTextEditable="False"
+                                                  AllowNullInput="True"
+                                                  NullText="Sin resolución asignada"
+                                                  NullValueButtonPlacement="EditBox"
+                                                  ShowNullValueButtonOnFocusOnly="False"
+                                                  Padding="2" BorderBrush="#C8CED6"
+                                                  Margin="0,0,0,8"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </dx:DXTabItem>
+
+                    <!-- TAB 5: Textos -->
+                    <dx:DXTabItem Header="Textos">
+                        <Grid Margin="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Observación predeterminada en factura" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Grid.Row="1"
+                                          Style="{StaticResource FocusedHighlightStyle}"
+                                          EditValue="{Binding DefaultInvoiceObservation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          AcceptsReturn="True" TextWrapping="Wrap"
+                                          VerticalContentAlignment="Top"
+                                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                          MaxLength="{Binding DefaultInvoiceObservationMaxLength}"
+                                          BorderBrush="#C8CED6" Padding="3" Margin="0,0,0,8"/>
+
+                            <TextBlock Grid.Row="2" Text="Pie de página de factura" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Grid.Row="3"
+                                          Style="{StaticResource FocusedHighlightStyle}"
+                                          EditValue="{Binding InvoiceFooter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          AcceptsReturn="True" TextWrapping="Wrap"
+                                          VerticalContentAlignment="Top"
+                                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                          MaxLength="{Binding InvoiceFooterMaxLength}"
+                                          BorderBrush="#C8CED6" Padding="3" Margin="0,0,0,8"/>
+
+                            <TextBlock Grid.Row="4" Text="Pie de página de remisión" FontSize="13" Margin="0,0,0,3"/>
+                            <dxe:TextEdit Grid.Row="5"
+                                          Style="{StaticResource FocusedHighlightStyle}"
+                                          EditValue="{Binding RemissionFooter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          AcceptsReturn="True" TextWrapping="Wrap"
+                                          VerticalContentAlignment="Top"
+                                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                                          MaxLength="{Binding RemissionFooterMaxLength}"
+                                          BorderBrush="#C8CED6" Padding="3"/>
+                        </Grid>
+                    </dx:DXTabItem>
+                </dx:DXTabControl>
+
+                <!-- Leyenda de indicadores de tab -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                    <Ellipse Width="8" Height="8" Fill="#FFA500" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Text="Indica que la pestaña contiene campos obligatorios pendientes por diligenciar"
+                               Foreground="Gray" FontSize="11" FontStyle="Italic" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Button bar -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                            IsCancel="True">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
+                        </dxmvvm:Interaction.Behaviors>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </busyIndicator:BusyMask>
+</UserControl>

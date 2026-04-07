@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using static Models.Global.EmailGraphQLModel;
 using static Models.Global.GraphQLResponseTypes;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
+using System.Windows;
 
 namespace NetErp.Helpers.Cache
 {
@@ -64,13 +65,16 @@ namespace NetErp.Helpers.Cache
 
                 PageType<EmailGraphQLModel> result = await _service.GetPageAsync(query, variables);
 
-                lock (_lock)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    _items.Clear();
-                    foreach (EmailGraphQLModel item in result.Entries)
-                        _items.Add(item);
-                    IsInitialized = true;
-                }
+                    lock (_lock)
+                    {
+                        _items.Clear();
+                        foreach (EmailGraphQLModel item in result.Entries)
+                            _items.Add(item);
+                        IsInitialized = true;
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -92,55 +96,70 @@ namespace NetErp.Helpers.Cache
             PageType<EmailGraphQLModel>? page = data.ToObject<PageType<EmailGraphQLModel>>();
             if (page == null) return;
 
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                foreach (EmailGraphQLModel item in page.Entries)
-                    _items.Add(item);
-                IsInitialized = true;
-            }
+                lock (_lock)
+                {
+                    _items.Clear();
+                    foreach (EmailGraphQLModel item in page.Entries)
+                        _items.Add(item);
+                    IsInitialized = true;
+                }
+            });
         }
 
         #endregion
 
         public void Add(EmailGraphQLModel item)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                if (!_items.Any(x => x.Id == item.Id))
-                    _items.Add(item);
-            }
+                lock (_lock)
+                {
+                    if (!_items.Any(x => x.Id == item.Id))
+                        _items.Add(item);
+                }
+            });
         }
 
         public void Update(EmailGraphQLModel item)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                EmailGraphQLModel? existing = _items.FirstOrDefault(x => x.Id == item.Id);
-                if (existing != null)
+                lock (_lock)
                 {
-                    int index = _items.IndexOf(existing);
-                    _items[index] = item;
+                    EmailGraphQLModel? existing = _items.FirstOrDefault(x => x.Id == item.Id);
+                    if (existing != null)
+                    {
+                        int index = _items.IndexOf(existing);
+                        _items[index] = item;
+                    }
                 }
-            }
+            });
         }
 
         public void Remove(int id)
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                EmailGraphQLModel? item = _items.FirstOrDefault(x => x.Id == id);
-                if (item != null) _items.Remove(item);
-            }
+                lock (_lock)
+                {
+                    EmailGraphQLModel? item = _items.FirstOrDefault(x => x.Id == id);
+                    if (item != null) _items.Remove(item);
+                }
+            });
         }
 
         public void Clear()
         {
-            lock (_lock)
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _items.Clear();
-                IsInitialized = false;
-            }
+                lock (_lock)
+                {
+                    _items.Clear();
+                    IsInitialized = false;
+                }
+            });
         }
 
         public Task HandleAsync(EmailCreateMessage message, CancellationToken cancellationToken)

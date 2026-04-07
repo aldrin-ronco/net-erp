@@ -41,11 +41,10 @@ namespace Models.Global
         public CityGraphQLModel City { get; set; } = new();
         public CompanyLocationGraphQLModel CompanyLocation { get; set; } = new();
         public ObservableCollection<CashDrawerGraphQLModel> CashDrawers { get; set; } = [];
-        public AuthorizationSequenceGraphQLModel FeCreditDefaultAuthorizationSequence { get; set; } = new();
-        public AuthorizationSequenceGraphQLModel FeCashDefaultAuthorizationSequence { get; set; } = new();
-
-        public AuthorizationSequenceGraphQLModel PeDefaultAuthorizationSequence { get; set; } = new();
-        public AuthorizationSequenceGraphQLModel DsDefaultAuthorizationSequence { get; set; } = new();
+        public AuthorizationSequenceGraphQLModel? FeCreditDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel? FeCashDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel? PeDefaultAuthorizationSequence { get; set; }
+        public AuthorizationSequenceGraphQLModel? DsDefaultAuthorizationSequence { get; set; }
         public DateTime InsertedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
         public override string ToString()
