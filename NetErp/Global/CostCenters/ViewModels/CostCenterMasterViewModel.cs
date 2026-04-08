@@ -420,6 +420,8 @@ namespace NetErp.Global.CostCenters.ViewModels
             if (SelectedItem is null) return;
             try
             {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
                 switch (SelectedItem)
                 {
                     case CompanyDTO companyDto:
@@ -443,11 +445,20 @@ namespace NetErp.Global.CostCenters.ViewModels
                         $"{GetType().Name}.{nameof(EditAsync)}: {ex.GetErrorMessage()}",
                         MessageBoxButton.OK, MessageBoxImage.Error));
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task NewCompanyLocationAsync()
         {
-            try { await OpenCompanyLocationDialogAsync(null, isNew: true); }
+            try
+            {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                await OpenCompanyLocationDialogAsync(null, isNew: true);
+            }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -455,11 +466,20 @@ namespace NetErp.Global.CostCenters.ViewModels
                         $"{GetType().Name}.{nameof(NewCompanyLocationAsync)}: {ex.GetErrorMessage()}",
                         MessageBoxButton.OK, MessageBoxImage.Error));
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task NewCostCenterAsync()
         {
-            try { await OpenCostCenterDialogAsync(null, isNew: true); }
+            try
+            {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                await OpenCostCenterDialogAsync(null, isNew: true);
+            }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -467,17 +487,30 @@ namespace NetErp.Global.CostCenters.ViewModels
                         $"{GetType().Name}.{nameof(NewCostCenterAsync)}: {ex.GetErrorMessage()}",
                         MessageBoxButton.OK, MessageBoxImage.Error));
             }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public async Task NewStorageAsync()
         {
-            try { await OpenStorageDialogAsync(null, isNew: true); }
+            try
+            {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                await OpenStorageDialogAsync(null, isNew: true);
+            }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                     ThemedMessageBox.Show("Atención!",
                         $"{GetType().Name}.{nameof(NewStorageAsync)}: {ex.GetErrorMessage()}",
                         MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -487,6 +520,7 @@ namespace NetErp.Global.CostCenters.ViewModels
             CompanyGraphQLModel model = Context.AutoMapper.Map<CompanyGraphQLModel>(dto);
             detail.SetForEdit(model);
             ApplyDialogDimensions(detail);
+            IsBusy = false;
             await _dialogService.ShowDialogAsync(detail, "Editar empresa");
         }
 
@@ -502,6 +536,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 detail.SetForEdit(model);
             }
             ApplyDialogDimensions(detail);
+            IsBusy = false;
             await _dialogService.ShowDialogAsync(detail, isNew ? "Nueva sede" : "Editar sede");
         }
 
@@ -518,6 +553,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 detail.SetForEdit(model, countries);
             }
             ApplyDialogDimensions(detail);
+            IsBusy = false;
             await _dialogService.ShowDialogAsync(detail, isNew ? "Nuevo centro de costo" : "Editar centro de costo");
         }
 
@@ -534,6 +570,7 @@ namespace NetErp.Global.CostCenters.ViewModels
                 detail.SetForEdit(model, countries);
             }
             ApplyDialogDimensions(detail);
+            IsBusy = false;
             await _dialogService.ShowDialogAsync(detail, isNew ? "Nueva bodega" : "Editar bodega");
         }
 
