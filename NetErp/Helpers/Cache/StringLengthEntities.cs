@@ -56,7 +56,7 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] TaxCategory = [typeof(TaxCategoryGraphQLModel)];
         public static readonly Type[] Tax = [typeof(TaxGraphQLModel)];
         public static readonly Type[] AccountingGroup = [typeof(AccountingGroupGraphQLModel)];
-        public static readonly Type[] AccountingEntries = [typeof(AccountingEntryDraftGraphQLModel), typeof(AccountingEntryDraftDetailGraphQLModel)];
+        public static readonly Type[] AccountingEntries = [typeof(AccountingEntryDraftGraphQLModel), typeof(AccountingEntryDraftLineGraphQLModel)];
 
         // Global
         public static readonly Type[] AccessProfile = [typeof(AccessProfileGraphQLModel)];

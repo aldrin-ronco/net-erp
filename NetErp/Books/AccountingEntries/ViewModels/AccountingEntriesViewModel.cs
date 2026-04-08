@@ -32,7 +32,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private readonly IGraphQLClient _graphQLClient;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
-        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        private readonly IRepository<AccountingEntryDraftLineGraphQLModel> _accountingEntryDraftLineService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly NotAnnulledAccountingSourceCache _notAnnulledAccountingSourceCache;
@@ -67,7 +67,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                                           IEventAggregator eventAggregator,
                                           Helpers.Services.INotificationService notificationService,
                                           IRepository<AccountingEntityGraphQLModel> accountingEntityService,
-                                          IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
+                                          IRepository<AccountingEntryDraftLineGraphQLModel> accountingEntryDraftLineService,
                                           IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
                                           IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService,
              CostCenterCache costCenterCache,
@@ -81,7 +81,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this.EventAggregator = eventAggregator;
             this.Mapper = mapper;
             this._accountingEntityService = accountingEntityService;
-            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
+            this._accountingEntryDraftLineService = accountingEntryDraftLineService;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._notificationService = notificationService;
@@ -136,7 +136,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this._accountingEntryMasterService,
                 this._accountingEntityService,
                 this._accountingEntryDraftMasterService,
-                this._accountingEntryDraftDetailService,
+                this._accountingEntryDraftLineService,
                 this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
 
             instance.SetForNew();
@@ -148,7 +148,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftDetailService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftLineService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
 
                 // Cargar líneas del borrador
                 string query = @"
@@ -181,10 +181,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                var entries = await this._accountingEntryDraftDetailService.GetListAsync(query, variables);
+                var entries = await this._accountingEntryDraftLineService.GetListAsync(query, variables);
                 stopwatch.Stop();
 
-                var mappedEntries = this.Mapper.Map<IEnumerable<AccountingEntryDraftDetailDTO>>(entries);
+                var mappedEntries = this.Mapper.Map<IEnumerable<AccountingEntryDraftLineDTO>>(entries);
                 decimal totalDebit = entries.Sum(e => e.Debit);
                 decimal totalCredit = entries.Sum(e => e.Credit);
                 string responseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";

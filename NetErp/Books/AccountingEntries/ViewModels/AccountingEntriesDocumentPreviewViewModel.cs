@@ -26,9 +26,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService;
 
 
-        private ObservableCollection<AccountingEntryDetailGraphQLModel> _accountingEntries;
+        private ObservableCollection<AccountingEntryLineGraphQLModel> _accountingEntries;
 
-        public ObservableCollection<AccountingEntryDetailGraphQLModel> AccountingEntries
+        public ObservableCollection<AccountingEntryLineGraphQLModel> AccountingEntries
         {
             get { return _accountingEntries; }
             set
@@ -218,7 +218,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 stopwatch.Stop();
                 this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                this.AccountingEntries = new ObservableCollection<AccountingEntryDetailGraphQLModel>(result.AccountingEntriesDetail);
+                this.AccountingEntries = new ObservableCollection<AccountingEntryLineGraphQLModel>(result.AccountingEntriesDetail);
                 this.SelectedAccountingEntryMaster = result;
                 //this.TotalCount = result.AccountingEntryDetailPage.PageResponse.Count;
 
@@ -267,7 +267,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
                 var result = await ExecuteCancelAccountingEntryAsync();
-                await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryMasterCancellationMessage() { CancelledAccountingEntry = result });
+                await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryCancellationMessage() { CancelledAccountingEntry = result });
                 await this.Context.ActivateMasterViewAsync();
             }
             catch (GraphQLHttpRequestException exGraphQL)
@@ -289,26 +289,26 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             get
             {
-                // Puedo anular el documento si, y solo si ...
-                // El sistema no esta procesando otra tarea
-                // Este documento no tenga un borrador
-                // Este documento no esté ya anulado
-                // El documento no sea un documento de anulacion
-                return !this.IsBusy && (this.SelectedAccountingEntry.DraftMasterId is null)
-                    && string.IsNullOrEmpty(this.SelectedAccountingEntry.State.Trim())
-                    && !this.SelectedAccountingEntry.Annulment;
+                // TODO (Bloque 10 del refactor): el schema actual NO expone la mutación
+                // cancelAccountingEntryMaster. Deshabilitado hasta que el backend la agregue
+                // o se defina otro mecanismo de anulación.
+                return false;
             }
         }
 
         public async Task<AccountingEntryGraphQLModel> ExecuteCancelAccountingEntryAsync()
         {
+            throw new NotImplementedException(
+                "Anulación de comprobantes no está implementada en el schema actual. " +
+                "Se aborda en el Bloque 10 del refactor.");
+            // Código legacy eliminado: apuntaba a cancelAccountingEntryMaster (no existe).
+#pragma warning disable CS0162
             try
             {
                 string query = @"
                 mutation($data: CancelAccountingEntryMasterInput!) {
                   UpdateResponse: cancelAccountingEntryMaster(data:$data) {
                     id
-                    draftMasterId
                     documentNumber
                     accountingBook {
                       id
@@ -328,7 +328,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     createdBy
                     createdAt
                     annulment
-                    state    
+                    state
                   }
                 }";
 
@@ -349,6 +349,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             {
                 throw;
             }
+#pragma warning restore CS0162
         }
 
         // Delete Accounting Entry
@@ -366,7 +367,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 if (deletedRecord > 0)
                 {
                     // Notificar la eliminacion del registro
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryMasterDeleteMessage() { Id = this.SelectedAccountingEntry.Id });
+                    await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDeleteMessage() { Id = this.SelectedAccountingEntry.Id });
                     await this.Context.ActivateMasterViewAsync();
                 }
                 else
@@ -381,41 +382,20 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<int> ExecuteDeleteAccountingEntryAsync()
+        public Task<int> ExecuteDeleteAccountingEntryAsync()
         {
-            try
-            {
-                string query = @"
-                    mutation($masterIds:[ID!]!) {
-                    bulkDeleteAccountingEntryMaster(masterIds:$masterIds) {
-                    count
-                    }
-                }";
-                object variables = new
-                {
-                    MasterIds = new List<BigInteger>() { this.SelectedAccountingEntry.Id }
-                };
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<BulkDeleteAccountingEntryMaster>(query, variables);
-                return result.Count;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            // TODO (Bloque 10 del refactor): el schema actual NO expone bulkDeleteAccountingEntryMaster.
+            throw new NotImplementedException(
+                "Eliminación de comprobantes no está implementada en el schema actual. " +
+                "Se aborda en el Bloque 10 del refactor.");
         }
 
         public bool CanDeleteAccountingEntry
         {
             get
             {
-                // Puedo eliminar el documento si, y solo si ...
-                // El sistema no esta procesando otra tarea
-                // Este documento no tenga un borrador
-                // Este documento no esté ya anulado
-                return !this.IsBusy
-                       && this.SelectedAccountingEntry.DraftMasterId is null
-                       && string.IsNullOrEmpty(this.SelectedAccountingEntry.State.Trim())
-                       && !this.SelectedAccountingEntry.Annulment;
+                // TODO (Bloque 10 del refactor): deshabilitado hasta definir flujo en el schema actual.
+                return false;
             }
         }
 
@@ -478,86 +458,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
-        public async Task<AccountingEntryDraftGraphQLModel> ExecuteEditAccountingEntryAsync()
+        public Task<AccountingEntryDraftGraphQLModel> ExecuteEditAccountingEntryAsync()
         {
-            string query = "";
-            object variables;
-
-            try
-            {
-                if (this.SelectedAccountingEntry.DraftMasterId is null)
-                {
-                    query = @"
-                    mutation($masterId: ID!) {
-                      CreateResponse: createAccountingEntryDraftMasterFromMaster(masterId:$masterId) {
-                        id
-                        masterId
-                        accountingBook {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          name
-                        }
-                        documentDate
-                        documentNumber    
-                        createdAt
-                        description
-                        createdBy    
-                      }
-                    }";
-                    variables = new
-                    {
-                        MasterId = this.SelectedAccountingEntryMaster.Id
-                    };
-                    var result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
-                    return result;
-                }
-                else
-                {
-                    query = @"
-                query($draftMasterId:ID!) {
-                  SingleItemResponse: accountingEntryDraftMaster(draftMasterId:$draftMasterId) {
-                    id
-                    masterId
-                    accountingBook {
-                      id
-                      name
-                    }
-                    costCenter {
-                      id
-                      name
-                    }
-                    accountingSource {
-                      id
-                      name
-                    }
-                    documentNumber
-                    documentDate
-                    createdAt
-                    description
-                    createdBy    
-                    }
-                    }";
-                    variables = new
-                    {
-                        this.SelectedAccountingEntry.DraftMasterId
-                    };
-
-                    var result = await this._accountingEntryDraftMasterService.FindByIdAsync(query, variables);
-                    return result;
-                }
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            // TODO (Bloque 10 del refactor): el schema actual NO expone createAccountingEntryDraftMasterFromMaster
+            // ni accountingEntryDraftMaster(draftMasterId). La edición de un comprobante publicado desde
+            // el preview queda deshabilitada hasta que el backend exponga el flujo de "re-editar".
+            throw new NotImplementedException(
+                "Edición de comprobantes publicados (re-generar borrador) no está implementada " +
+                "en el schema actual. Se aborda en el Bloque 10 del refactor.");
         }
 
         #region Paginacion Comprobantes

@@ -175,8 +175,7 @@
                                 BusyContent="{Binding Path=BusyContent, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                                 x:Name="BusyIndicator"
                                 IndicatorType="BouncingDot"
-                                BusyContentMargin="0,20,0,0"
-                                IsBusyAtStartup="False">
+                                BusyContentMargin="0,20,0,0">
             <DataGrid Margin="0 8 0 0"
                 AutoGenerateColumns="False" 
                 VerticalGridLinesBrush="LightGray"

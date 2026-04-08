@@ -1,28 +1,26 @@
-﻿using Caliburn.Micro;
+using Caliburn.Micro;
 using Models.Books;
 using Models.Global;
 using NetErp.Global.CostCenters.DTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NetErp.Books.AccountingEntries.DTO
 {
-    public class AccountingEntryDraftDetailDTO: PropertyChangedBase
+    /// <summary>
+    /// DTO editable para una línea de borrador de comprobante contable.
+    /// Corresponde al tipo <c>AccountingEntryDraftLine</c> del schema GraphQL.
+    /// </summary>
+    public class AccountingEntryDraftLineDTO : PropertyChangedBase
     {
-
         private BigInteger _id;
         public BigInteger Id
         {
             get { return _id; }
-            set 
+            set
             {
-                if(_id != value)
+                if (_id != value)
                 {
-                    _id = value; 
+                    _id = value;
                     NotifyOfPropertyChange(nameof(Id));
                 }
             }
@@ -80,20 +78,6 @@ namespace NetErp.Books.AccountingEntries.DTO
                 {
                     _base = value;
                     NotifyOfPropertyChange(nameof(Base));
-                }
-            }
-        }
-
-        private AccountingEntryTotals _totals = new();
-        public AccountingEntryTotals Totals
-        {
-            get { return _totals; }
-            set
-            {
-                if (_totals != value)
-                {
-                    _totals = value;
-                    NotifyOfPropertyChange(nameof(Totals));
                 }
             }
         }

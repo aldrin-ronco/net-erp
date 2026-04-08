@@ -273,9 +273,9 @@ namespace NetErp
             _ = kernel.Bind<IRepository<AccountingBookGraphQLModel>>().To<GraphQLRepository<AccountingBookGraphQLModel>>().InSingletonScope();
 
             _ = kernel.Bind<IRepository<AccountingEntryGraphQLModel>>().To<GraphQLRepository<AccountingEntryGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<AccountingEntryDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryLineGraphQLModel>>().To<GraphQLRepository<AccountingEntryLineGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingEntryDraftGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftGraphQLModel>>().InSingletonScope();
-            _ = kernel.Bind<IRepository<AccountingEntryDraftDetailGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftDetailGraphQLModel>>().InSingletonScope();
+            _ = kernel.Bind<IRepository<AccountingEntryDraftLineGraphQLModel>>().To<GraphQLRepository<AccountingEntryDraftLineGraphQLModel>>().InSingletonScope();
 
             _ = kernel.Bind<IRepository<AccountingPresentationGraphQLModel>>().To<GraphQLRepository<AccountingPresentationGraphQLModel>>().InSingletonScope();
             _ = kernel.Bind<IRepository<AccountingSourceGraphQLModel>>().To<GraphQLRepository<AccountingSourceGraphQLModel>>().InSingletonScope();
@@ -442,8 +442,8 @@ namespace NetErp
                 _ = cfg.CreateMap<AccountingSourceGraphQLModel, AccountingSourceDTO>();
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountDTO>();
                 _ = cfg.CreateMap<AccountingEntryGraphQLModel, AccountingEntryMasterDTO>();
-                _ = cfg.CreateMap<AccountingEntryDraftGraphQLModel, AccountingEntryDraftMasterDTO>();
-                _ = cfg.CreateMap<AccountingEntryDraftDetailGraphQLModel, AccountingEntryDraftDetailDTO>();
+                _ = cfg.CreateMap<AccountingEntryDraftGraphQLModel, AccountingEntryDraftDTO>();
+                _ = cfg.CreateMap<AccountingEntryDraftLineGraphQLModel, AccountingEntryDraftLineDTO>();
                 _ = cfg.CreateMap<MeasurementUnitGraphQLModel, MeasurementUnitDTO>();
                 _ = cfg.CreateMap<ItemSizeCategoryGraphQLModel, ItemSizeCategoryDTO>();
                 _ = cfg.CreateMap<ItemSizeValueGraphQLModel, ItemSizeValueDTO>();

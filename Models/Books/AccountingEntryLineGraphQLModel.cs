@@ -1,30 +1,21 @@
-﻿using Models.Global;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Models.Global;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Models.Books
 {
-    public class AccountingEntryDraftDetailGraphQLModel
+    /// <summary>
+    /// Línea de un comprobante contable publicado (read-only).
+    /// Mapea al tipo <c>AccountingEntryLine</c> del schema GraphQL.
+    /// </summary>
+    public class AccountingEntryLineGraphQLModel
     {
+        public BigInteger Id { get; set; } = 0;
         public AccountingAccountGraphQLModel AccountingAccount { get; set; }
         public AccountingEntityGraphQLModel AccountingEntity { get; set; }
         public CostCenterGraphQLModel CostCenter { get; set; }
-        public BigInteger Id { get; set; } = 0;
         public string RecordDetail { get; set; } = string.Empty;
         public decimal Debit { get; set; } = 0;
         public decimal Credit { get; set; } = 0;
         public decimal Base { get; set; } = 0;
-        public AccountingEntryTotals Totals { get; set; }
     }
-
-    //public class AccountingEntryDraftDetailDTO : AccountingEntryDraftDetailGraphQLModel
-    //{
-    //    public bool IsChecked { get; set; } = false;
-
-    //}
-
 }

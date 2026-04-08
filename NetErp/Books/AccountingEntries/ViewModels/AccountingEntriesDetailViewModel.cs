@@ -54,7 +54,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly IRepository<AccountingEntryGraphQLModel> _accountingEntryMasterService;
         private readonly IRepository<AccountingEntityGraphQLModel> _accountingEntityService;
         private readonly IRepository<AccountingEntryDraftGraphQLModel> _accountingEntryDraftMasterService; 
-        private readonly IRepository<AccountingEntryDraftDetailGraphQLModel> _accountingEntryDraftDetailService;
+        private readonly IRepository<AccountingEntryDraftLineGraphQLModel> _accountingEntryDraftLineService;
 
         
 
@@ -68,14 +68,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         // MaxLength = 0 en DevExpress TextEdit significa sin límite, por lo que si el
         // cache no tiene la entrada aún, el binding no restringe la entrada.
         public int DescriptionMaxLength => Context.StringLengthCache.GetMaxLength<AccountingEntryDraftGraphQLModel>(nameof(AccountingEntryDraftGraphQLModel.Description));
-        public int RecordDetailMaxLength => Context.StringLengthCache.GetMaxLength<AccountingEntryDraftDetailGraphQLModel>(nameof(AccountingEntryDraftDetailGraphQLModel.RecordDetail));
+        public int RecordDetailMaxLength => Context.StringLengthCache.GetMaxLength<AccountingEntryDraftLineGraphQLModel>(nameof(AccountingEntryDraftLineGraphQLModel.RecordDetail));
 
         // Parent record reference
         public AccountingEntryDraftGraphQLModel SelectedAccountingEntryDraftMaster { get; set; } = null;
 
         // Accounting Entries
-        private ObservableCollection<AccountingEntryDraftDetailDTO> _accountingEntries;
-        public ObservableCollection<AccountingEntryDraftDetailDTO> AccountingEntries
+        private ObservableCollection<AccountingEntryDraftLineDTO> _accountingEntries;
+        public ObservableCollection<AccountingEntryDraftLineDTO> AccountingEntries
         {
             get { return _accountingEntries; }
             set
@@ -144,8 +144,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
         // Selected Accounting Entry
-        private AccountingEntryDraftDetailDTO _selectedAccountingEntryDraftDetail;
-        public AccountingEntryDraftDetailDTO SelectedAccountingEntryDraftDetail
+        private AccountingEntryDraftLineDTO _selectedAccountingEntryDraftDetail;
+        public AccountingEntryDraftLineDTO SelectedAccountingEntryDraftDetail
         {
             get { return _selectedAccountingEntryDraftDetail; }
             set
@@ -586,7 +586,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
                 var createdEntry = await this.ExecutePublishAccountingEntryAsync();
                 await this.Context.EventAggregator.PublishOnUIThreadAsync(createdEntry);
-                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDraftMasterDeleteMessage { Id = this.DraftMasterId });
+                if (this.DraftMasterId != 0) await this.Context.EventAggregator.PublishOnUIThreadAsync(new AccountingEntryDraftDeleteMessage { Id = this.DraftMasterId });
                 if (createdEntry != null)
                 {
                     await this.Context.ActivateMasterViewAsync();
@@ -608,78 +608,29 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
+        /// <summary>
+        /// Finaliza el borrador vigente vía <c>finalizeAccountingEntryDraft(input: FinalizeAccountingEntryDraftInput!)</c>.
+        /// El schema ya no diferencia "crear publicado" vs "re-publicar": siempre es una única mutación
+        /// que transforma el borrador en un <c>AccountingEntry</c> publicado y retorna ese entry.
+        /// </summary>
         public async Task<AccountingEntryGraphQLModel> ExecutePublishAccountingEntryAsync()
         {
-            AccountingEntryGraphQLModel? entry = null;
-            object variables = new
-            {
-                this.DraftMasterId
-            };
+            var (fragment, query) = _finalizeDraftQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "input", new { draftId = (int)this.DraftMasterId })
+                .Build();
 
-            try
+            var payload = await this._accountingEntryMasterService
+                .CreateAsync<UpsertResponseType<AccountingEntryGraphQLModel>>(query, variables);
+            if (payload is null)
             {
-                if (this.SelectedAccountingEntryDraftMaster is null || this.SelectedAccountingEntryDraftMaster.MasterId is null)
-                {
-                    string query = @"
-                    mutation($draftMasterId:ID!) {
-                      CreateResponse: finalize_accounting_entry_draft(draftId:$draftMasterId) {
-                        id 
-                        draftMasterId
-                        documentNumber
-                        accountingBook {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          name
-                        }
-                        documentDate
-                        createdAt
-                        createdBy
-                        description    
-                      }
-                    }";
-                    entry = await this._accountingEntryMasterService.CreateAsync(query, variables);
-                }
-                else
-                {
-                    string query = @"
-                    mutation($draftMasterId:ID!) {
-                      UpdateResponse: finalize_accounting_entry_draft (draftId:$draftMasterId) {
-                        id
-                        draftMasterId
-                        documentNumber
-                        accountingBook {
-                          id
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          name
-                        }    
-                        documentDate
-                        description
-                        createdBy
-                        createdAt
-                      }
-                    }";
-                    entry = await this._accountingEntryMasterService.UpdateAsync(query, variables);
-                }
+                throw new Exception("No se recibió respuesta al finalizar el borrador.");
             }
-            catch (Exception)
+            if (!payload.Success)
             {
-                throw;
+                throw new Exception(payload.Message ?? "Falló la finalización del borrador.");
             }
-            return entry;
+            return payload.Entity;
         }
 
         public bool CanPublishAccountingEntry
@@ -744,7 +695,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         //        variables.Data.Credit = SelectedAccountingEntryDraftDetail.Credit;
         //        variables.Data.Base = SelectedAccountingEntryDraftDetail.Base;
         //
-        //        AccountingEntryDraftDetailDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftDetailDTO>(await this._accountingEntryDraftDetailService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
+        //        AccountingEntryDraftLineDTO updatedEntry = Context.Mapper.Map<AccountingEntryDraftLineDTO>(await this._accountingEntryDraftLineService.UpdateAsync(query, variables)) ?? throw new Exception("No se pudo actualizar el registro");
         //        // Actualizo el registro en la lista
         //        var entryToUpdate = this.AccountingEntries.FirstOrDefault(x => x.Id == updatedEntry.Id);
         //        if (entryToUpdate != null)
@@ -816,57 +767,35 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this.IsBusy = true;
                 this.Refresh();
 
-                IEnumerable<BigInteger> ids = from e in this.AccountingEntries
-                                              where e.IsChecked
-                                              select e.Id;
+                int[] lineIds = this.AccountingEntries
+                    .Where(e => e.IsChecked)
+                    .Select(e => (int)e.Id)
+                    .ToArray();
 
-                string query = @"
-                mutation($ids: [Int!]!){
-                  Data: deleteListAccountingEntryDraftDetail(ids:$ids){
-                    success
-                    message
-                  }
-                }  ";
+                if (lineIds.Length == 0) return;
 
-                object variables = new
+                var (fragment, query) = _deleteDraftLinesQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "input", new
+                    {
+                        draftId = (int)this.DraftMasterId,
+                        lineIds
+                    })
+                    .Build();
+
+                var payload = await this._accountingEntryDraftLineService
+                    .MutationContextAsync<DeleteDraftLinesPayloadWrapper>(query, variables);
+                var response = payload?.DeleteResponse
+                    ?? throw new Exception("No se recibió respuesta al eliminar las líneas.");
+
+                if (!response.Success)
                 {
-                    Ids = ids
-                };
-
-                var response = await this._accountingEntryDraftDetailService.MutationContextAsync<SuccessResponseDataWrapper>(query, variables);
-
-                if(!response.Data.Success)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{response.Data.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
+                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{this.GetType().Name}.DeleteAccountingEntriesAsync\r\n{response.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
                     return;
                 }
-                // Totals
-                query = @"
-                    query($draftMasterId:ID!){
-                        accountingEntryDraftTotals(draftMasterId:$draftMasterId) {
-                        debit
-                        credit
-                        }
-                    }";
 
-                variables = new
-                {
-                    this.DraftMasterId
-                };
-
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntriesDraftDetailDataContext>(query, variables);
-
-                this.IsBusy = false;
-
-                this.TotalCredit = result.AccountingEntryDraftTotals.Credit;
-                this.TotalDebit = result.AccountingEntryDraftTotals.Debit;
-
-                var itemsToDelete = this.AccountingEntries.Where(x => x.IsChecked).ToList();
-
-                foreach (var item in itemsToDelete)
-                {
-                    this.AccountingEntries.Remove(item); // Queda asi o debo llamar a la pagina ? quien sabe ....
-                }
+                // Recargar líneas del borrador desde el API y recalcular totales client-side.
+                await ReloadDraftLinesAsync();
                 NotifyOfPropertyChange(nameof(CanDeleteAccountingEntries));
                 _notificationService.ShowSuccess("Eliminación exitosa");
             }
@@ -963,7 +892,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         /// y los totales del borrador.
         /// </summary>
         public void SetForEdit(AccountingEntryDraftGraphQLModel model,
-                               IEnumerable<AccountingEntryDraftDetailDTO> entries,
+                               IEnumerable<AccountingEntryDraftLineDTO> entries,
                                decimal totalDebit,
                                decimal totalCredit,
                                string responseTime)
@@ -978,7 +907,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             Description = model.Description;
 
             // Líneas y totales
-            AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(entries);
+            AccountingEntries = new ObservableCollection<AccountingEntryDraftLineDTO>(entries);
             TotalDebit = totalDebit;
             TotalCredit = totalCredit;
             EntriesResponseTime = responseTime;
@@ -1030,7 +959,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             IRepository<AccountingEntryGraphQLModel>accountingEntryMasterService,
             IRepository<AccountingEntityGraphQLModel> accountingEntityService,
             IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService,
-            IRepository<AccountingEntryDraftDetailGraphQLModel> accountingEntryDraftDetailService,
+            IRepository<AccountingEntryDraftLineGraphQLModel> accountingEntryDraftLineService,
              CostCenterCache costCenterCache,
              AccountingBookCache accountingBookCache,
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
@@ -1044,7 +973,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             this._accountingEntryMasterService = accountingEntryMasterService;
             this._accountingEntityService = accountingEntityService;
             this._accountingEntryDraftMasterService = accountingEntryDraftMasterService;
-            this._accountingEntryDraftDetailService = accountingEntryDraftDetailService;
+            this._accountingEntryDraftLineService = accountingEntryDraftLineService;
             this._auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _graphQLClient = graphQLClient;
 
@@ -1208,55 +1137,214 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         /// <summary>
         /// Persiste los cambios pendientes del header del borrador (descripción, fecha, libro,
-        /// centro de costo, fuente). Solo manda los campos modificados gracias a ChangeCollector
-        /// + ChangeTracker. Llamado desde PublishAccountingEntryAsync antes de finalize cuando
-        /// hay cambios y existe un borrador (DraftMasterId > 0).
+        /// centro de costo, fuente) vía <c>updateDraft(input: UpdateDraftInput!)</c>.
+        /// Solo manda los campos modificados gracias a ChangeCollector + ChangeTracker.
+        /// Llamado desde PublishAccountingEntryAsync antes de finalize cuando hay cambios
+        /// y existe un borrador (DraftMasterId > 0).
         /// </summary>
         public async Task<AccountingEntryDraftGraphQLModel> UpdateDraftHeaderAsync()
         {
-            string query = @"
-            mutation($data:UpdateAccountingEntryDraftMasterInput!, $id:Int!) {
-                UpdateResponse: updateAccountingEntryDraftMaster(data:$data, id:$id) {
-                id
-                masterId
-                accountingBook {
-                    id
-                    name
-                }
-                costCenter {
-                    id
-                    name
-                }
-                accountingSource {
-                    id
-                    name
-                }
-                documentNumber
-                documentDate
-                createdAt
-                description
-                createdBy
-                }
-            }";
+            var (fragment, query) = _updateDraftQuery.Value;
 
-            dynamic variables = ChangeCollector.CollectChanges(this, prefix: "data");
-
-            // ChangeCollector serializa DateTime sin Kind. La API requiere Kind=Utc para
-            // documentDate, igual que el código original (DateTimeHelper.DateTimeKindUTC).
-            var dataDict = (IDictionary<string, object>)variables.data;
-            if (dataDict.TryGetValue("documentDate", out var dateVal) && dateVal is DateTime dt)
+            // ChangeCollector arma el input con los campos modificados del header.
+            // El schema espera UpdateDraftInput con draftId DENTRO del input wrapper.
+            dynamic collected = ChangeCollector.CollectChanges(this, prefix: "input");
+            var inputDict = (IDictionary<string, object>)collected.input;
+            inputDict["draftId"] = (int)this.DraftMasterId;
+            if (inputDict.TryGetValue("documentDate", out var dateVal) && dateVal is DateTime dt)
             {
-                dataDict["documentDate"] = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                inputDict["documentDate"] = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
             }
 
-            variables.id = (int)this.DraftMasterId;
+            var result = await this._accountingEntryDraftMasterService
+                .UpdateAsync<UpsertResponseType<AccountingEntryDraftGraphQLModel>>(query, (object)collected);
+            if (!result.Success)
+            {
+                throw new Exception(result.Message ?? "Falló la actualización del borrador.");
+            }
 
-            var result = await this._accountingEntryDraftMasterService.UpdateAsync(query, (object)variables);
-            var message = new AccountingEntryDraftMasterUpdateMessage() { UpdatedAccountingEntryDraftMaster = this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(result) };
+            var message = new AccountingEntryDraftUpdateMessage
+            {
+                UpdatedAccountingEntryDraft = this.Context.Mapper.Map<AccountingEntryDraftDTO>(result.Entity)
+            };
             await this.Context.EventAggregator.PublishOnUIThreadAsync(message);
             this.AcceptChanges();
-            return result;
+            return result.Entity;
         }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        /// <summary>
+        /// <c>createAccountingEntryDraft(input: CreateAccountingEntryDraftInput!)</c>.
+        /// Crea el encabezado del borrador (sin líneas). Las líneas se persisten aparte
+        /// vía <c>upsertDraftLines</c>. El payload del schema usa <c>draft</c> como campo
+        /// de la entidad; aquí se mapea al alias <c>entity</c> de <see cref="UpsertResponseType{T}"/>.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntryDraftGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "draft", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("createAccountingEntryDraft",
+                [new("input", "CreateAccountingEntryDraftInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>updateDraft(input: UpdateDraftInput!)</c>.
+        /// Actualiza campos del header del borrador. <c>draftId</c> viaja DENTRO del input wrapper.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntryDraftGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "draft", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("updateDraft",
+                [new("input", "UpdateDraftInput!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>upsertDraftLines(input: UpsertDraftLinesInput!)</c>.
+        /// Crea y/o actualiza múltiples líneas del borrador en una sola llamada.
+        /// El payload solo retorna contadores y success/errors, no las líneas; por eso
+        /// <see cref="ReloadDraftLinesAsync"/> recarga el borrador después.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _upsertDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertDraftLinesPayloadWrapper.UpsertDraftLinesResponse>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Field(f => f.InsertedCount)
+                .Field(f => f.UpdatedCount)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("upsertDraftLines",
+                [new("input", "UpsertDraftLinesInput!")],
+                fields, "UpsertResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>deleteDraftLines(input: DeleteDraftLinesInput!)</c>.
+        /// Elimina líneas específicas del borrador por id.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<DeleteDraftLinesPayloadWrapper.DeleteDraftLinesResponse>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Field(f => f.DeletedCount)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(e => e.Fields)
+                    .Field(e => e.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("deleteDraftLines",
+                [new("input", "DeleteDraftLinesInput!")],
+                fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>finalizeAccountingEntryDraft(input: FinalizeAccountingEntryDraftInput!)</c>.
+        /// Convierte el borrador en un comprobante publicado (<c>AccountingEntry</c>).
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _finalizeDraftQuery = new(() =>
+        {
+            var fields = FieldSpec<UpsertResponseType<AccountingEntryGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "accountingEntry", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.DocumentDate)
+                    .Field(e => e.DocumentNumber)
+                    .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                    .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("finalizeAccountingEntryDraft",
+                [new("input", "FinalizeAccountingEntryDraftInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        /// <summary>
+        /// <c>accountingEntryDraft(id: ID!)</c>.
+        /// Recarga el borrador entero con sus líneas (incluidas las relaciones: cuenta,
+        /// tercero, centro de costo). Usado tras cada mutación de líneas para refrescar
+        /// la colección local y recalcular totales.
+        /// </summary>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadDraftLinesQuery = new(() =>
+        {
+            var fields = FieldSpec<AccountingEntryDraftGraphQLModel>
+                .Create()
+                .Field(f => f.Id)
+                .Field(f => f.Description)
+                .Field(f => f.DocumentDate)
+                .Field(f => f.DocumentNumber)
+                .SelectList(f => f.Lines, l => l
+                    .Field(x => x.Id)
+                    .Field(x => x.RecordDetail)
+                    .Field(x => x.Debit)
+                    .Field(x => x.Credit)
+                    .Field(x => x.Base)
+                    .Select(x => x.AccountingAccount, a => a.Field(y => y.Id).Field(y => y.Code).Field(y => y.Name))
+                    .Select(x => x.AccountingEntity, a => a.Field(y => y.Id).Field(y => y.IdentificationNumber).Field(y => y.SearchName))
+                    .Select(x => x.CostCenter, c => c.Field(y => y.Id).Field(y => y.Name)))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("accountingEntryDraft",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
         #endregion
 
@@ -1287,175 +1375,123 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
+        /// <summary>
+        /// Agrega una línea al borrador. Flujo alineado al schema actual:
+        /// 1. Si es el primer registro (DraftMasterId == 0) → createAccountingEntryDraft(header only)
+        ///    para materializar el borrador, y luego upsertDraftLines(lines: [firstLine]).
+        /// 2. Si ya existe borrador → upsertDraftLines(lines: [newLine]) directamente.
+        /// Los totales se recalculan client-side desde la colección local.
+        /// </summary>
         public async Task ExecuteAddRecordAsync()
         {
-            try
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            if (this.DraftMasterId == 0)
             {
-                string query;
-                object variables;
-                if (this.DraftMasterId == 0)
+                // Paso 1: crear el borrador con solo el header.
+                var (createFragment, createQuery) = _createDraftQuery.Value;
+                object createVariables = new GraphQLVariables()
+                    .For(createFragment, "input", new
+                    {
+                        accountingBookId = this.SelectedAccountingBookId,
+                        accountingSourceId = this.SelectedAccountingSourceId,
+                        costCenterId = this.SelectedCostCenterId,
+                        createdById = SessionInfo.SessionId,
+                        description = this.Description,
+                        documentDate = DateTimeHelper.DateTimeKindUTC(this.DocumentDate)
+                    })
+                    .Build();
+
+                var draftPayload = await this._accountingEntryDraftMasterService
+                    .CreateAsync<UpsertResponseType<AccountingEntryDraftGraphQLModel>>(createQuery, createVariables);
+                if (draftPayload is null)
                 {
-                    query = @"
-                    mutation ($data: CreateAccountingEntryDraftMasterInput!) {
-                      CreateResponse: createAccountingEntryDraft(data: $data) {
-                        id
-                        accountingBook {
-                          id
-                          name
-                        } 
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingSource {
-                          id
-                          code
-                          name
-                        },
-                        accountingEntriesDraftDetail {
-                            id
-                            draftMasterId
-                            accountingAccount {
-                              id
-                              code
-                              name
-                            }
-                            accountingEntity {
-                              id
-                              identificationNumber
-                              searchName
-                            }
-                            costCenter {
-                              id
-                              name
-                            }
-                            recordDetail
-                            debit
-                            credit
-                            base
-                        }
-                        masterId
-                        documentNumber
-                        documentDate
-                        createdAt
-                        createdBy
-                        description
-                        totals {
-                          debit
-                          credit
-                        }
-                      }  
-                    }";
-                    var DocumentDate = this.DocumentDate.Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                    variables = new
-                    {
-                        Input = new
-                        {
-                            CostCenterId = this.SelectedCostCenterId,
-                            AccountingSourceId = this.SelectedAccountingSourceId,
-                            AccountingBookId = this.SelectedAccountingBookId,
-                            DocumentDate,
-                            this.Description,
-                            createdById = SessionInfo.SessionId,
-                            EntriesDraftDetail = new List<Object>()
-                            {
-                                new
-                                {
-                                    AccountingAccountId = this.SelectedAccountingAccountOnEntryId,
-                                    AccountingEntityId = this.SelectedAccountingEntityOnEntryId,
-                                    CostCenterId = this.SelectedCostCenterId,
-                                    this.RecordDetail,
-                                    this.Debit,
-                                    this.Credit,
-                                    this.Base
-                                }
-                            }
-                        }
-                    };
-
-                    // Iniciar cronometro
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    AccountingEntryDraftGraphQLModel result = await this._accountingEntryDraftMasterService.CreateAsync(query, variables);
-                    stopwatch.Stop();
-
-                    // Message
-                    await this.Context.EventAggregator.PublishOnUIThreadAsync(result);
-
-                    this.TotalCredit = result.Totals.Credit;
-                    this.TotalDebit = result.Totals.Debit;
-                    this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-                    this.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(this.Context.Mapper.Map<IEnumerable<AccountingEntryDraftDetailDTO>>(result.AccountingEntriesDraftDetail));
-                    //this.EntriesTotalCount = result.AccountingEntryDraftDetailPage.PageResponse.Count;
-                    this.DraftMasterId = result.Id;
+                    throw new Exception("No se recibió respuesta al crear el borrador de comprobante.");
                 }
-                else
+                if (!draftPayload.Success)
                 {
-                    query = @"
-                    mutation($data: CreateAccountingEntryDraftDetailInput!) {
-                      CreateResponse: createAccountingEntryDraftDetail(data: $data) {
-                        id
-                        draftMasterId
-                        accountingAccount {
-                          id
-                          code
-                          name
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        accountingEntity {
-                          id
-                          identificationNumber
-                          searchName
-                        }
-                        recordDetail
-                        debit
-                        credit
-                        base
-                        totals {
-                          debit
-                          credit
-                        }
-                      }
-                    }";
-
-                    variables = new
-                    {
-                        Data = new
-                        {
-                            this.DraftMasterId,
-                            AccountingAccountId = this.SelectedAccountingAccountOnEntryId,
-                            AccountingEntityId = this.SelectedAccountingEntityOnEntryId,
-                            CostCenterId = this.SelectedCostCenterOnEntryId,
-                            this.RecordDetail,
-                            this.Debit,
-                            this.Credit,
-                            this.Base
-                        }
-                    };
-                    
-                    // Iniciar cronometro
-                    Stopwatch stopwatch = new Stopwatch();
-                    stopwatch.Start();
-                    var entry = await this._accountingEntryDraftDetailService.CreateAsync(query, variables);
-                    stopwatch.Stop();
-
-                    this.TotalCredit = entry.Totals.Credit;
-                    this.TotalDebit = entry.Totals.Debit;
-                    this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        this.AccountingEntries.Add(this.Context.Mapper.Map<AccountingEntryDraftDetailDTO>(entry));
-                    });
+                    throw new Exception(draftPayload.Message ?? "Falló la creación del borrador.");
                 }
+
+                this.DraftMasterId = draftPayload.Entity.Id;
+                this.SelectedAccountingEntryDraftMaster = draftPayload.Entity;
+                this.AccountingEntries = [];
+
+                // Publicar mensaje de creación del borrador para que el Master lo agregue a su lista.
+                await this.Context.EventAggregator.PublishOnUIThreadAsync(draftPayload.Entity);
             }
-            catch (Exception ex)
+
+            // Paso 2 (siempre): upsert de la línea nueva contra el borrador vigente.
+            var (upsertFragment, upsertQuery) = _upsertDraftLinesQuery.Value;
+            object upsertVariables = new GraphQLVariables()
+                .For(upsertFragment, "input", new
+                {
+                    draftId = (int)this.DraftMasterId,
+                    lines = new[]
+                    {
+                        new
+                        {
+                            accountingAccountId = this.SelectedAccountingAccountOnEntryId,
+                            accountingEntityId = this.SelectedAccountingEntityOnEntryId,
+                            costCenterId = this.SelectedCostCenterOnEntryId,
+                            recordDetail = this.RecordDetail,
+                            debit = this.Debit,
+                            credit = this.Credit,
+                            @base = this.Base
+                        }
+                    }
+                })
+                .Build();
+
+            var upsertPayload = await this._accountingEntryDraftLineService
+                .MutationContextAsync<UpsertDraftLinesPayloadWrapper>(upsertQuery, upsertVariables);
+            var upsertResult = upsertPayload?.UpsertResponse
+                ?? throw new Exception("No se recibió respuesta al agregar la línea.");
+            if (!upsertResult.Success)
             {
-               throw;
+                throw new Exception(upsertResult.Message ?? "Falló el upsert de la línea.");
             }
+
+            stopwatch.Stop();
+            this.EntriesResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+
+            // Recargar las líneas del borrador desde el API para tener los datos completos con relaciones.
+            await ReloadDraftLinesAsync();
+        }
+
+        /// <summary>
+        /// Recarga todas las líneas del borrador actual desde el API.
+        /// Necesario después de cualquier mutación sobre líneas (upsert/delete) porque
+        /// ni upsertDraftLines ni deleteDraftLines retornan los objetos completos con relaciones.
+        /// También recalcula los totales client-side desde la colección recargada.
+        /// </summary>
+        private async Task ReloadDraftLinesAsync()
+        {
+            var (fragment, query) = _loadDraftLinesQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "id", (int)this.DraftMasterId)
+                .Build();
+
+            var draft = await this._accountingEntryDraftMasterService.FindByIdAsync(query, variables);
+            IEnumerable<AccountingEntryDraftLineGraphQLModel> rawLines = draft?.Lines ?? [];
+            var mappedLines = this.Context.Mapper.Map<IEnumerable<AccountingEntryDraftLineDTO>>(rawLines);
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                this.AccountingEntries = new ObservableCollection<AccountingEntryDraftLineDTO>(mappedLines);
+            });
+
+            RecalculateTotals();
+        }
+
+        /// <summary>
+        /// Recalcula TotalDebit y TotalCredit sumando los valores de la colección local de líneas.
+        /// Reemplaza la antigua query <c>accountingEntryDraftTotals</c> del API (ya no existe).
+        /// </summary>
+        private void RecalculateTotals()
+        {
+            this.TotalDebit = this.AccountingEntries?.Sum(e => e.Debit) ?? 0;
+            this.TotalCredit = this.AccountingEntries?.Sum(e => e.Credit) ?? 0;
         }
 
         public bool CanAddRecord
@@ -1729,7 +1765,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     {
                         entry.AccountingAccount = message.UpdatedAccountingAccount;
                     }
-                    this.AccountingEntries = new ObservableCollection<AccountingEntryDraftDetailDTO>(this.AccountingEntries);
+                    this.AccountingEntries = new ObservableCollection<AccountingEntryDraftLineDTO>(this.AccountingEntries);
                 }
 
             }

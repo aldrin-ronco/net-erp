@@ -36,12 +36,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         INotifyDataErrorInfo,
         IHandle<AccountingEntryGraphQLModel>,
         IHandle<AccountingEntryDraftGraphQLModel>,
-        IHandle<AccountingEntryDraftMasterDeleteMessage>,
-        IHandle<AccountingEntryMasterDeleteMessage>,
-        IHandle<AccountingEntryMasterCancellationMessage>,
+        IHandle<AccountingEntryDraftDeleteMessage>,
+        IHandle<AccountingEntryDeleteMessage>,
+        IHandle<AccountingEntryCancellationMessage>,
       
       
-        IHandle<AccountingEntryDraftMasterUpdateMessage>
+        IHandle<AccountingEntryDraftUpdateMessage>
     {
         #region Popiedades
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -109,8 +109,8 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         // Listado de borradores
-        private ObservableCollection<AccountingEntryDraftMasterDTO> _accountingEntriesDraftMaster;
-        public ObservableCollection<AccountingEntryDraftMasterDTO> AccountingEntriesDraftMaster
+        private ObservableCollection<AccountingEntryDraftDTO> _accountingEntriesDraftMaster;
+        public ObservableCollection<AccountingEntryDraftDTO> AccountingEntriesDraftMaster
         {
             get { return _accountingEntriesDraftMaster; }
             set
@@ -608,58 +608,17 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _notificationService.ShowSuccess(IsSelectedTab1 ? "Comprobante(s) contable(s) eliminado(s) correctamente" : "Borrador(es) contable(s) eliminado(s) correctamente");
         }
 
-        public async Task<int> ExecuteDeleteEntryAsync()
+        // TODO (Bloque 10 del refactor): las mutaciones bulkDeleteAccountingEntryMaster y
+        // bulkDeleteAccountingEntryDraftMaster NO existen en el schema actual. El schema solo
+        // expone mutaciones para eliminar líneas de un borrador (deleteDraftLines / clearDraftLines)
+        // y no tiene operación bulk-delete ni para comprobantes publicados ni para borradores.
+        // Este método queda stubbed retornando 0 hasta que el backend exponga las mutaciones o
+        // se defina el flujo correcto (¿finalize → annulment? ¿cascade delete? decisión pendiente).
+        public Task<int> ExecuteDeleteEntryAsync()
         {
-            BigInteger[] ids;
-            string query;
-            int count = 0;
-
-            if (IsSelectedTab1)
-            {
-                ids = [.. (from e in this.AccountingEntriesMaster
-                       where e.IsChecked
-                       select e.Id)];
-
-                query = @"
-                mutation($connectionId: String!, $masterIds:[ID!]!) {
-                  bulkDeleteAccountingEntryMaster(connectionId: $connectionId, masterIds:$masterIds) {
-                    count
-                  }
-                }";
-
-            }
-            else
-            {
-                ids = [.. (from e in this.AccountingEntriesDraftMaster
-                       where e.IsChecked
-                       select e.Id)];
-
-                query = @"
-                mutation($draftMasterIds:[ID!]!) {
-                  bulkDeleteAccountingEntryDraftMaster(draftMasterIds:$draftMasterIds) {
-                    count
-                  }
-                }";
-            }
-
-            object variables = new
-            {
-                MasterIds = ids,
-                DraftMasterIds = ids
-            };
-            //TODO
-            if (IsSelectedTab1)
-            {
-                var result = await this._accountingEntryMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
-                count = result.Count;
-            }
-            else
-            {
-                var result = await this._accountingEntryDraftMasterService.GetDataContextAsync<AccountingEntryCountDelete>(query, variables);
-                count = result.Count;
-            }
-
-            return count;
+            throw new NotImplementedException(
+                "Eliminación de comprobantes no está implementada en el schema actual. " +
+                "Se aborda en el Bloque 10 del refactor junto con DocumentPreview.");
         }
 
         public bool CanDeleteEntry
@@ -773,7 +732,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 
                 string query = GetLoadAccountingEntryDraftsQuery();
                 PageType<AccountingEntryDraftGraphQLModel> result = await _accountingEntryDraftMasterService.GetPageAsync(query, variables);
-                this.AccountingEntriesDraftMaster = new ObservableCollection<AccountingEntryDraftMasterDTO>(this.Context.Mapper.Map<List<AccountingEntryDraftMasterDTO>>(result.Entries));
+                this.AccountingEntriesDraftMaster = new ObservableCollection<AccountingEntryDraftDTO>(this.Context.Mapper.Map<List<AccountingEntryDraftDTO>>(result.Entries));
                 PageIndex = result.PageNumber;
                 PageSize = result.PageSize;
                 TotalCount = result.TotalEntries;
@@ -1412,21 +1371,22 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             try
             {
                 // Actualiza listado de borradores
-                AccountingEntryDraftMasterDTO draft = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.Id).FirstOrDefault();
+                AccountingEntryDraftDTO draft = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.Id).FirstOrDefault();
                 if (draft is null)
                 {
-                    this.AccountingEntriesDraftMaster.Add(this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(message));
+                    this.AccountingEntriesDraftMaster.Add(this.Context.Mapper.Map<AccountingEntryDraftDTO>(message));
                 }
                 else
                 {
-                    Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(this.Context.Mapper.Map<AccountingEntryDraftMasterDTO>(message)));
+                    Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(this.Context.Mapper.Map<AccountingEntryDraftDTO>(message)));
                 }
 
-                // Actualiza listado de comprobantes
-                if (this.AccountingEntriesMaster is null) return Task.CompletedTask;
-                AccountingEntryMasterDTO entry = this.AccountingEntriesMaster.Where(x => x.Id == message.MasterId).FirstOrDefault();
-                if (entry != null && entry.DraftMasterId != message.Id) entry.DraftMasterId = message.Id;
-                this.AccountingEntriesMaster = new ObservableCollection<AccountingEntryMasterDTO>(this.AccountingEntriesMaster);
+                // Nota (refactor schema): el schema actual ya no tiene el back-link
+                // AccountingEntry.draftMasterId. La relación ahora es forward: AccountingEntryDraft.accountingEntry.
+                // Si se necesita el indicador visual "este comprobante publicado tiene un borrador asociado"
+                // hay que implementarlo con una query distinta o cambiar el modelo visual.
+                // Por ahora se omite el cross-link; la lista de comprobantes publicados no cambia al
+                // crearse un borrador nuevo.
             }
             catch (Exception ex)
             {
@@ -1435,11 +1395,11 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingEntryDraftMasterDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryDraftDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                AccountingEntryDraftMasterDTO draft = this.Context.AccountingEntriesMasterViewModel.AccountingEntriesDraftMaster.Where(x => x.Id == message.Id).FirstOrDefault();
+                AccountingEntryDraftDTO draft = this.Context.AccountingEntriesMasterViewModel.AccountingEntriesDraftMaster.Where(x => x.Id == message.Id).FirstOrDefault();
                 if (draft != null) this.AccountingEntriesDraftMaster.Remove(draft);
             }
             catch (Exception ex)
@@ -1449,7 +1409,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingEntryMasterDeleteMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryDeleteMessage message, CancellationToken cancellationToken)
         {
             try
             {
@@ -1463,7 +1423,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             return Task.CompletedTask;
         }
 
-        public Task HandleAsync(AccountingEntryMasterCancellationMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryCancellationMessage message, CancellationToken cancellationToken)
         {
             try
             {
@@ -1488,12 +1448,12 @@ namespace NetErp.Books.AccountingEntries.ViewModels
        
        
 
-        public Task HandleAsync(AccountingEntryDraftMasterUpdateMessage message, CancellationToken cancellationToken)
+        public Task HandleAsync(AccountingEntryDraftUpdateMessage message, CancellationToken cancellationToken)
         {
             try
             {
-                AccountingEntryDraftMasterDTO updatedAccountigEntryDraftMaster = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.UpdatedAccountingEntryDraftMaster.Id).FirstOrDefault();
-                if (updatedAccountigEntryDraftMaster != null) Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(message.UpdatedAccountingEntryDraftMaster));
+                AccountingEntryDraftDTO updatedAccountigEntryDraftMaster = this.AccountingEntriesDraftMaster.Where(x => x.Id == message.UpdatedAccountingEntryDraft.Id).FirstOrDefault();
+                if (updatedAccountigEntryDraftMaster != null) Application.Current.Dispatcher.Invoke(() => this.AccountingEntriesDraftMaster.Replace(message.UpdatedAccountingEntryDraft));
                 _notificationService.ShowSuccess("Actualización exitosa");
             }
             catch (Exception ex)

@@ -48,9 +48,9 @@ namespace Extensions.Books
             accountingSources.Remove(accountingSoureToReplace);
             accountingSources.Insert(index, updatedAccountingSource);
         }
-        public static void Replace(this ObservableCollection<AccountingEntryDraftMasterDTO> accountingEntriesDraft, AccountingEntryDraftMasterDTO updatedAccountingEntryDraft)
+        public static void Replace(this ObservableCollection<AccountingEntryDraftDTO> accountingEntriesDraft, AccountingEntryDraftDTO updatedAccountingEntryDraft)
         {
-            AccountingEntryDraftMasterDTO accountingEntryDraftToReplace = accountingEntriesDraft.Where(x => x.Id == updatedAccountingEntryDraft.Id).FirstOrDefault();
+            AccountingEntryDraftDTO accountingEntryDraftToReplace = accountingEntriesDraft.Where(x => x.Id == updatedAccountingEntryDraft.Id).FirstOrDefault();
             int index = accountingEntriesDraft.IndexOf(accountingEntryDraftToReplace);
             accountingEntriesDraft.Remove(accountingEntryDraftToReplace);
             accountingEntriesDraft.Insert(index, updatedAccountingEntryDraft);
