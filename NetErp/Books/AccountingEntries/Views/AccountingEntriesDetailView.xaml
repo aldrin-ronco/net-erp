@@ -68,7 +68,8 @@
         </Style>
     </UserControl.Resources>
 
-
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="10">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -583,5 +584,5 @@
                         ResponseTime="{Binding Path=EntriesResponseTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>-->
             </Grid>
     </Grid>
-
+    </Border>
 </UserControl>

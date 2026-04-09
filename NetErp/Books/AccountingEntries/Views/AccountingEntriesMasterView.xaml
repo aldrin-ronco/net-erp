@@ -23,12 +23,14 @@
         <h:CheckBoxForeColorConverter x:Key="CheckBoxForeColorConverter"/>
         <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
     </UserControl.Resources>
-    <busyIndicator:BusyMask x:Name="BusyIndicator"
-                            IndicatorType="BouncingDot"
-                            BusyContent="Please wait..."
-                            BusyContentMargin="0,20,0,0"
-                            IsBusyAtStartup="False"
-                            IsBusy="{Binding Path=IsBusy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="10">
+        <busyIndicator:BusyMask x:Name="BusyIndicator"
+                                IndicatorType="BouncingDot"
+                                BusyContent="Por favor espere..."
+                                BusyContentMargin="0,20,0,0"
+                                IsBusyAtStartup="False"
+                                IsBusy="{Binding Path=IsBusy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -451,4 +453,5 @@
             </dx:DXTabControl>
         </Grid>
     </busyIndicator:BusyMask>
+    </Border>
 </UserControl>

@@ -18,6 +18,8 @@
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" FontFamily="Century Gothic">
+    <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
+            CornerRadius="8" Margin="10">
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/> <!--ToolbarTray-->
@@ -323,4 +325,5 @@
                                        ResponseTime="{Binding Path=ResponseTime, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>-->
         <!--Barra de busqueda-->
     </Grid>
+    </Border>
 </UserControl>
