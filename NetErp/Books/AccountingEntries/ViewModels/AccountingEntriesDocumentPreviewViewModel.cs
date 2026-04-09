@@ -7,11 +7,13 @@ using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +102,22 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             }
         }
 
+        // Totales calculados client-side desde las líneas del comprobante.
+        // El schema actual no expone totals en AccountingEntry; se suman al cargar.
+        private decimal _totalDebit;
+        public decimal TotalDebit
+        {
+            get => _totalDebit;
+            set { if (_totalDebit != value) { _totalDebit = value; NotifyOfPropertyChange(nameof(TotalDebit)); } }
+        }
+
+        private decimal _totalCredit;
+        public decimal TotalCredit
+        {
+            get => _totalCredit;
+            set { if (_totalCredit != value) { _totalCredit = value; NotifyOfPropertyChange(nameof(TotalCredit)); } }
+        }
+
         private ICommand _goBackCommand;
 
         public ICommand GoBackCommand
@@ -146,88 +164,61 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
 
 
+        /// <summary>
+        /// Carga el comprobante publicado con sus líneas vía <c>accountingEntry(id: ID!)</c>.
+        /// Alineado al schema actual; reemplaza la query legacy <c>accountingEntryMaster(masterId)</c>.
+        /// </summary>
         public async Task InitializeAsync()
         {
-            try
-            {
-                string query = @"
-                query($masterId:ID){
-                  SingleItemResponse: accountingEntryMaster(masterId: $masterId) {
-                    id
-                    documentNumber
-                    description
-                    accountingBook {
-                      id
-                      name
-                    }
-                    costCenter {
-                      id
-                      name
-                    }
-                    accountingSource {
-                      id
-                      name
-                    }
-                    totals {
-                      debit
-                      credit
-                    }
-                    state
-                    annulment
-                    draftMasterId
-                    documentDate                
-                    createdAt
-                    description
-                    createdBy
-                    cancelledBy
-                    accountingEntriesDetail{
-                        id    
-                        masterId
-                        accountingAccount {
-                          id
-                          code
-                          name
-                        }
-                        accountingEntity {
-                          id
-                          identificationNumber
-                          verificationDigit
-                          searchName
-                        }
-                        costCenter {
-                          id
-                          name
-                        }
-                        recordDetail
-                        debit
-                        credit
-                        base
-                    }
-                    }   
-                  }";
+            var (fragment, query) = _loadAccountingEntryQuery.Value;
+            object variables = new GraphQLVariables()
+                .For(fragment, "id", (int)SelectedAccountingEntry.Id)
+                .Build();
 
-                dynamic variables = new ExpandoObject();
-                //variables.filter = new ExpandoObject();
-                variables.MasterId = SelectedAccountingEntry.Id;
-                // Iniciar cronometro
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            var result = await this._accountingEntryMasterService.FindByIdAsync(query, variables);
+            stopwatch.Stop();
 
-                var result = await this._accountingEntryMasterService.FindByIdAsync(query, variables);
-
-                stopwatch.Stop();
-                this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
-
-                this.AccountingEntries = new ObservableCollection<AccountingEntryLineGraphQLModel>(result.AccountingEntriesDetail);
-                this.SelectedAccountingEntryMaster = result;
-                //this.TotalCount = result.AccountingEntryDetailPage.PageResponse.Count;
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            this.ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
+            var lines = result?.Lines ?? [];
+            this.AccountingEntries = new ObservableCollection<AccountingEntryLineGraphQLModel>(lines);
+            this.SelectedAccountingEntryMaster = result;
+            this.TotalDebit = lines.Sum(l => l.Debit);
+            this.TotalCredit = lines.Sum(l => l.Credit);
         }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadAccountingEntryQuery = new(() =>
+        {
+            var fields = FieldSpec<AccountingEntryGraphQLModel>
+                .Create()
+                .Field(e => e.Id)
+                .Field(e => e.Description)
+                .Field(e => e.DocumentDate)
+                .Field(e => e.DocumentNumber)
+                .Field(e => e.State)
+                .Field(e => e.Annulment)
+                .Field(e => e.InsertedAt)
+                .Select(e => e.AccountingBook, b => b.Field(x => x.Id).Field(x => x.Name))
+                .Select(e => e.CostCenter, c => c.Field(x => x.Id).Field(x => x.Name))
+                .Select(e => e.AccountingSource, s => s.Field(x => x.Id).Field(x => x.Name))
+                .Select(e => e.CreatedBy, u => u.Field(x => x.Id).Field(x => x.FullName))
+                .Select(e => e.CancelledBy, u => u.Field(x => x.Id).Field(x => x.FullName))
+                .SelectList(e => e.Lines, l => l
+                    .Field(x => x.Id)
+                    .Field(x => x.RecordDetail)
+                    .Field(x => x.Debit)
+                    .Field(x => x.Credit)
+                    .Field(x => x.Base)
+                    .Select(x => x.AccountingAccount, a => a.Field(y => y.Id).Field(y => y.Code).Field(y => y.Name))
+                    .Select(x => x.AccountingEntity, a => a.Field(y => y.Id).Field(y => y.IdentificationNumber).Field(y => y.SearchName))
+                    .Select(x => x.CostCenter, c => c.Field(y => y.Id).Field(y => y.Name)))
+                .Build();
+
+            var fragment = new GraphQLQueryFragment("accountingEntry",
+                [new("id", "ID!")],
+                fields, "SingleItemResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
         public AccountingEntriesDocumentPreviewViewModel(AccountingEntriesViewModel context, AccountingEntryMasterDTO selectedAccountingEntry, IRepository<AccountingEntryGraphQLModel> accountingEntryMasterService, IRepository<AccountingEntryDraftGraphQLModel> accountingEntryDraftMasterService)
         {
