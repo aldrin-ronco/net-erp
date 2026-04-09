@@ -427,9 +427,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         #region Selected Items
 
         // Selected Accounting Book
-        private int _selectedAccountingBookId;
+        private int? _selectedAccountingBookId;
         [ExpandoPath("accountingBookId")]
-        public int SelectedAccountingBookId
+        public int? SelectedAccountingBookId
         {
             get { return _selectedAccountingBookId; }
             set
@@ -439,16 +439,16 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _selectedAccountingBookId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingBookId));
                     this.TrackChange(nameof(SelectedAccountingBookId));
-                    ValidateProperty(nameof(SelectedAccountingBookId), null, value);
+                    ValidateProperty(nameof(SelectedAccountingBookId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                     NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        private int _selectedCostCenterId = 0;
+        private int? _selectedCostCenterId;
         [ExpandoPath("costCenterId")]
-        public int SelectedCostCenterId
+        public int? SelectedCostCenterId
         {
             get { return _selectedCostCenterId; }
             set
@@ -458,15 +458,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _selectedCostCenterId = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterId));
                     this.TrackChange(nameof(SelectedCostCenterId));
-                    ValidateProperty(nameof(SelectedCostCenterId), null, value);
+                    ValidateProperty(nameof(SelectedCostCenterId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                     NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
             }
         }
 
-        private int _selectedCostCenterOnEntryId = 0;
-        public int SelectedCostCenterOnEntryId
+        private int? _selectedCostCenterOnEntryId;
+        public int? SelectedCostCenterOnEntryId
         {
             get { return _selectedCostCenterOnEntryId; }
             set
@@ -475,15 +475,15 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedCostCenterOnEntryId = value;
                     NotifyOfPropertyChange(nameof(SelectedCostCenterOnEntryId));
-                    ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, value);
+                    ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
             }
         }
 
         // Cuenta Contable
-        private int _selectedAccountingAccountOnEntryId = 0;
-        public int SelectedAccountingAccountOnEntryId
+        private int? _selectedAccountingAccountOnEntryId;
+        public int? SelectedAccountingAccountOnEntryId
         {
             get { return _selectedAccountingAccountOnEntryId; }
             set
@@ -492,7 +492,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 {
                     _selectedAccountingAccountOnEntryId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingAccountOnEntryId));
-                    ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, value);
+                    ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                 }
             }
@@ -517,9 +517,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         }
 
         // Selected Accounting Source
-        private int _selectedAccountingSourceId = 0;
+        private int? _selectedAccountingSourceId;
         [ExpandoPath("accountingSourceId")]
-        public int SelectedAccountingSourceId
+        public int? SelectedAccountingSourceId
         {
             get { return _selectedAccountingSourceId; }
             set
@@ -529,7 +529,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     _selectedAccountingSourceId = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingSourceId));
                     this.TrackChange(nameof(SelectedAccountingSourceId));
-                    ValidateProperty(nameof(SelectedAccountingSourceId), null, value);
+                    ValidateProperty(nameof(SelectedAccountingSourceId), null, value.GetValueOrDefault());
                     NotifyOfPropertyChange(nameof(CanAddRecord));
                     NotifyOfPropertyChange(nameof(CanPublishAccountingEntry));
                 }
@@ -813,7 +813,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                this.SelectedAccountingAccountOnEntryId = 0;
+                this.SelectedAccountingAccountOnEntryId = null;
                 this.Debit = 0;
                 this.Credit = 0;
                 this.Base = 0;
@@ -834,11 +834,10 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             // colecciones locales que la vista bindea.
             // La selección por defecto la maneja SetForNew/SetForEdit, llamados por el Conductor
             // ANTES de ActivateItemAsync (siguiendo el patrón estándar Seller/Customer).
+            // Sin sentinelas: los combos usan NullText vía DevExpress cuando el valor es null.
             CostCenters = [.. _costCenterCache.Items];
-            this.CostCenters.Insert(0, new CostCenterGraphQLModel() { Id = 0, Name = "SELECCIONE CENTRO DE COSTO" });
             this.AccountingBooks = [.. _accountingBookCache.Items];
             this.AccountingSources = [.. _notAnnulledAccountingSourceCache.Items];
-            this.AccountingSources.Insert(0, new AccountingSourceGraphQLModel() { Id = 0, Name = "SELECCIONE FUENTE CONTABLE" });
             this.AccountingAccounts = new ObservableCollection<AccountingAccountGraphQLModel>(_auxiliaryAccountingAccountCache.Items);
             return Task.CompletedTask;
         }
@@ -856,13 +855,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         /// </summary>
         public void SetForNew()
         {
-            // Header
+            // Header — sin pre-selección automática; los combos muestran su NullText.
             SelectedAccountingEntryDraftMaster = null;
             DraftMasterId = 0;
-            SelectedAccountingBookId = _accountingBookCache.Items.FirstOrDefault()?.Id ?? 0;
-            SelectedCostCenterId = _costCenterCache.Items.FirstOrDefault()?.Id ?? 0;
-            SelectedAccountingSourceId = _notAnnulledAccountingSourceCache.Items.FirstOrDefault()?.Id ?? 0;
-            SelectedCostCenterOnEntryId = _costCenterCache.Items.FirstOrDefault()?.Id ?? 0;
+            SelectedAccountingBookId = null;
+            SelectedCostCenterId = null;
+            SelectedAccountingSourceId = null;
+            SelectedCostCenterOnEntryId = null;
             AccountingEntries = [];
             EntriesPageIndex = 1;
             EntriesPageSize = 50;
@@ -874,7 +873,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             Description = "";
 
             // Entry Point (formulario de captura de líneas)
-            SelectedAccountingAccountOnEntryId = 0;
+            SelectedAccountingAccountOnEntryId = null;
             SelectedAccountingEntityOnEntryId = 0;
             RecordDetail = "";
             Debit = 0;
@@ -913,9 +912,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             EntriesResponseTime = responseTime;
 
             // Entry Point (formulario de captura de líneas)
-            SelectedAccountingAccountOnEntryId = 0;
+            SelectedAccountingAccountOnEntryId = null;
             SelectedAccountingEntityOnEntryId = 0;
-            SelectedCostCenterOnEntryId = 0;
+            SelectedCostCenterOnEntryId = null;
             RecordDetail = "";
             Debit = 0;
             Credit = 0;
@@ -1389,13 +1388,14 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             if (this.DraftMasterId == 0)
             {
                 // Paso 1: crear el borrador con solo el header.
+                // CanAddRecord garantiza que los tres IDs del header no son null al llegar aquí.
                 var (createFragment, createQuery) = _createDraftQuery.Value;
                 object createVariables = new GraphQLVariables()
                     .For(createFragment, "input", new
                     {
-                        accountingBookId = this.SelectedAccountingBookId,
-                        accountingSourceId = this.SelectedAccountingSourceId,
-                        costCenterId = this.SelectedCostCenterId,
+                        accountingBookId = this.SelectedAccountingBookId!.Value,
+                        accountingSourceId = this.SelectedAccountingSourceId!.Value,
+                        costCenterId = this.SelectedCostCenterId!.Value,
                         createdById = SessionInfo.SessionId,
                         description = this.Description,
                         documentDate = DateTimeHelper.DateTimeKindUTC(this.DocumentDate)
@@ -1431,9 +1431,9 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                     {
                         new
                         {
-                            accountingAccountId = this.SelectedAccountingAccountOnEntryId,
+                            accountingAccountId = this.SelectedAccountingAccountOnEntryId!.Value,
                             accountingEntityId = this.SelectedAccountingEntityOnEntryId,
-                            costCenterId = this.SelectedCostCenterOnEntryId,
+                            costCenterId = this.SelectedCostCenterOnEntryId!.Value,
                             recordDetail = this.RecordDetail,
                             debit = this.Debit,
                             credit = this.Credit,
@@ -1644,13 +1644,13 @@ namespace NetErp.Books.AccountingEntries.ViewModels
 
         private void ValidateProperties()
         {
-            ValidateProperty(nameof(SelectedAccountingBookId), null, SelectedAccountingBookId);
-            ValidateProperty(nameof(SelectedCostCenterId), null, SelectedCostCenterId);
-            ValidateProperty(nameof(SelectedAccountingSourceId), null, SelectedAccountingSourceId);
+            ValidateProperty(nameof(SelectedAccountingBookId), null, SelectedAccountingBookId.GetValueOrDefault());
+            ValidateProperty(nameof(SelectedCostCenterId), null, SelectedCostCenterId.GetValueOrDefault());
+            ValidateProperty(nameof(SelectedAccountingSourceId), null, SelectedAccountingSourceId.GetValueOrDefault());
             ValidateProperty(nameof(DocumentDate), null);
-            ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, SelectedAccountingAccountOnEntryId);
+            ValidateProperty(nameof(SelectedAccountingAccountOnEntryId), null, SelectedAccountingAccountOnEntryId.GetValueOrDefault());
             ValidateProperty(nameof(SelectedAccountingEntityOnEntryId), null, SelectedAccountingEntityOnEntryId);
-            ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, SelectedCostCenterOnEntryId);
+            ValidateProperty(nameof(SelectedCostCenterOnEntryId), null, SelectedCostCenterOnEntryId.GetValueOrDefault());
             ValidateProperty(nameof(Description), Description);
             ValidateProperty(nameof(RecordDetail), RecordDetail);
             ValidateProperty(nameof(Debit), null, 0, this.Debit);
