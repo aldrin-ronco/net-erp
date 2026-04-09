@@ -5,11 +5,19 @@ using Common.Interfaces;
 using Common.Validators;
 using DevExpress.Mvvm;
 using DevExpress.Mvvm.Native;
+using DevExpress.Utils.Html.Internal;
 using DevExpress.Xpf.Core;
+using Microsoft.Identity.Client;
 using Microsoft.VisualStudio.Threading;
 using Models.Billing;
-using Models.DTO.Billing;
+using Models.Global;
+
+//using Models.DTO.Billing;
+using NetErp.Billing.CreditLimit.DTO;
+
 using NetErp.Helpers.GraphQLQueryBuilder;
+using NetErp.Helpers.Messages;
+using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,16 +29,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
+using static NetErp.Helpers.PermissionCodes;
 
 namespace NetErp.Billing.CreditLimit.ViewModels
 {
     public class CreditLimitMasterViewModel: Screen,
-        IHandle<CreditLimitManagerMessage>
+        IHandle<CreditLimitManagerMessage>,
+        IHandle<OperationCompletedMessage>
     {
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly ICreditLimitValidator _validator;
         private readonly IRepository<CreditLimitGraphQLModel> _creditLimitService;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly IBackgroundQueueService _backgroundQueueService;
+        private readonly Dictionary<Guid, int> _operationItemMapping = new Dictionary<Guid, int>();
 
         private ObservableCollection<CreditLimitDTO> _creditLimits = [];
 
@@ -109,6 +121,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             CreditLimitViewModel context,
             Helpers.Services.INotificationService notificationService,
             ICreditLimitValidator validator,
+            IBackgroundQueueService backgroundQueueService,
             IRepository<CreditLimitGraphQLModel> creditLimitService,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -117,7 +130,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _creditLimitService = creditLimitService ?? throw new ArgumentNullException(nameof(creditLimitService));
             _joinableTaskFactory = joinableTaskFactory;
-
+            _backgroundQueueService = backgroundQueueService;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
 
@@ -253,7 +266,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                         var creditLimit = loadedCreditLimits.FirstOrDefault(x => x.Id == shadowCreditLimit.Id);
                         if (creditLimit != null)
                         {
-                            creditLimit.CreditLimit = shadowCreditLimit.Limit;
+                            creditLimit.CreditLimit = shadowCreditLimit.CreditLimit;
                         }
                     }
                 }
@@ -287,13 +300,16 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
 
             // 2. Pre-allocar con capacidad conocida para evitar reallocations
-            var newItems = new List<CreditLimitDTO>(loadedCreditLimits.Count);
+            //Context._autoMapper.Map<List<CreditLimitDTO>>(loadedCreditLimits)
+
+            List<CreditLimitDTO> newItems = new List<CreditLimitDTO>(loadedCreditLimits.Count);
 
             // 3. Mapear y conectar en una sola pasada
             foreach (var item in loadedCreditLimits)
             {
                 var dto = Context.AutoMapper.Map<CreditLimitDTO>(item);
                 dto.LimitChanged += OnCreditLimitChanged;
+                dto.Context = this;
                 newItems.Add(dto);
             }
 
@@ -301,85 +317,55 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             CreditLimits = new ObservableCollection<CreditLimitDTO>(newItems);
         }
 
-        private ICommand _saveCommand;
+       
+        private CreditLimitDTO? _selectedCreditLimitItem;
 
-        public ICommand SaveCommand
+        public CreditLimitDTO? SelectedCreditLimitItem
         {
-            get 
+            get { return _selectedCreditLimitItem; }
+            set
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                if (_selectedCreditLimitItem != value)
+                {
+                    _selectedCreditLimitItem = value;
+                    NotifyOfPropertyChange(nameof(SelectedCreditLimitItem));
+                }
             }
         }
 
-        public async Task SaveAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                var managedCreditLimits = await ExecuteSaveAsync();
-                if (!managedCreditLimits.Any()) return;
-                await Context.EventAggregator.PublishOnUIThreadAsync(new CreditLimitManagerMessage { ManagedCreditLimits = managedCreditLimits });
-            }
-            catch (AsyncException ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            catch (Exception ex)
-            {
-                await Execute.OnUIThreadAsync(() =>
-                {
-                    ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{GetCurrentMethodName.Get()} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-                    return Task.CompletedTask;
-                });
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task<IEnumerable<CreditLimitGraphQLModel>> ExecuteSaveAsync()
+        public async void AddModifiedLimit(CreditLimitDTO limit, string modifiedProperty)
         {
             try
             {
-                string query;
+                if (SelectedCreditLimitItem is null) return;
+                
+                /*IPriceListCalculator calculator = _calculatorFactory.GetCalculator(SelectedPriceList.UseAlternativeFormula);
+                calculator.RecalculateProductValues(priceListDetail, modifiedProperty, SelectedPriceList);*/
+                limit.Status = OperationStatus.Pending;
 
-                List<object> creditLimits = ShadowCreditLimits.Where(creditLimit => creditLimit.Limit != creditLimit.OriginalLimit).Select(credit => new
+                var operation = new CreditLimitUpdateOperation(_creditLimitService)
                 {
-                    customerId = credit.Customer.Id,
-                    limit = credit.Limit
-                }).ToList<object>();
+                   NewLimit = limit.CreditLimit,
+                     CustomerId = limit.Customer.Id
+                };
 
-                if (creditLimits.Count == 0) return [];
-
-                query = @"mutation($data: CreditLimitMaganerInput!){
-                          ListResponse: managerCreditLimit(data: $data){
-                            id
-                            limit
-                            used
-                            available
-                            originalLimit
-                          }
-                        }";
-
-                dynamic variables = new ExpandoObject();
-                variables.data = new ExpandoObject();
-                variables.data.creditLimits = creditLimits;
-
-                var result = await _creditLimitService.SendMutationListAsync(query, variables);
-                return result;
+                _operationItemMapping[operation.OperationId] = limit.Customer.Id;
+                await _backgroundQueueService.EnqueueOperationAsync(operation);
+            }
+            catch (InvalidOperationException)
+            {
+                limit.Status = OperationStatus.Failed;
+                _notificationService.ShowError(_backgroundQueueService.GetCriticalErrorMessage());
             }
             catch (Exception ex)
             {
-
-                throw new AsyncException(innerException: ex);
+                limit.Status = OperationStatus.Failed;
+                _notificationService.ShowError($"Error inesperado al procesar \"{limit.Customer.AccountingEntity.FullName}\": {ex.Message}", durationMs: 8000);
             }
         }
+       
+        
+       
 
         private void OnCreditLimitChanged(object sender, LimitChangedEventArgs e)
         {
@@ -393,7 +379,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 
                 // Revertir el cambio
                 creditLimit.LimitChanged -= OnCreditLimitChanged;
-                creditLimit.Limit = e.OldValue;
+                creditLimit.CreditLimit = e.OldValue;
                 creditLimit.LimitChanged += OnCreditLimitChanged;
                 return;
             }
@@ -412,7 +398,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
                 
                 // Temporalmente desconectar el evento para evitar recursión
                 creditLimit.LimitChanged -= OnCreditLimitChanged;
-                creditLimit.Limit = e.OldValue;
+                creditLimit.CreditLimit = e.OldValue;
                 creditLimit.LimitChanged += OnCreditLimitChanged;
                 return;
             }
@@ -435,7 +421,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             var existing = ShadowCreditLimits.FirstOrDefault(x => x.Id == creditLimit.Id);
             if (existing == null)
             {
-                if (creditLimit.Limit != creditLimit.OriginalLimit)
+                if (creditLimit.CreditLimit != creditLimit.OriginalLimit)
                 {
                     ShadowCreditLimits.Add(creditLimit);
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -443,10 +429,10 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             }
             else
             {
-                existing.Limit = creditLimit.Limit;
+                existing.CreditLimit = creditLimit.CreditLimit;
                 
                 // Si volvió al valor original, quitarlo de shadow limits
-                if (creditLimit.Limit == creditLimit.OriginalLimit)
+                if (creditLimit.CreditLimit == creditLimit.OriginalLimit)
                 {
                     ShadowCreditLimits.Remove(existing);
                     NotifyOfPropertyChange(nameof(CanSave));
@@ -503,13 +489,139 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             foreach(var creditLimit in CreditLimits)
             {
-                creditLimit.OriginalLimit = creditLimit.Limit;
+                creditLimit.OriginalLimit = creditLimit.CreditLimit;
             }
             ShadowCreditLimits.Clear();
             NotifyOfPropertyChange(nameof(CanSave));
             _notificationService.ShowSuccess("Guardado exitoso");
             return Task.CompletedTask;
         }
+
+   
+        public Task HandleAsync(OperationCompletedMessage message, CancellationToken cancellationToken)
+        {
+            if (_operationItemMapping.TryGetValue(message.OperationId, out int itemId))
+            {
+                var item = CreditLimits.FirstOrDefault(i => i.Customer.Id == itemId);
+                if (item != null)
+                {
+                    if (message.Success)
+                    {
+                        item.Status = OperationStatus.Saved;
+                        _operationItemMapping.Remove(message.OperationId);
+                    }
+                    else if (message.IsRetrying)
+                    {
+                        item.Status = OperationStatus.Retrying;
+                        item.StatusTooltip = message.ErrorDetail;
+                    }
+                    else
+                    {
+                        item.Status = OperationStatus.Failed;
+                        item.StatusTooltip = message.ErrorDetail ?? message.Exception?.Message;
+                        _operationItemMapping.Remove(message.OperationId);
+                        _notificationService.ShowError(
+                            $"Error al guardar \"{item.Customer.AccountingEntity.FullName}\": {message.ErrorDetail ?? message.Exception?.Message}\n\nSi el problema persiste, comuníquese con soporte técnico.",
+                            durationMs: 6000);
+                    }
+                }
+            }
+
+            return Task.CompletedTask;
+        }
     }
         #endregion
+    public class CreditLimitUpdateOperation : IDataOperation
+    {
+        private readonly IRepository<CreditLimitGraphQLModel> _repository;
+
+        public decimal NewLimit { get; set; }
+     
+        public int CustomerId { get; set; }
+
+        public CreditLimitUpdateOperation(IRepository<CreditLimitGraphQLModel> repository)
+        {
+            _repository = repository;
+        }
+        public object Variables => new
+        {
+            item = new
+            {
+                creditLimit = NewLimit,
+                customerId = CustomerId
+
+            },
+            
+        };
+       
+
+        public static Type OperationResponseType => typeof(CreditLimitGraphQLModel);
+        public Type ResponseType => OperationResponseType;
+        public Guid OperationId { get; set; } = Guid.NewGuid();
+
+        public string DisplayName =>  $"Customer #{CustomerId}";
+
+        public int Id => CustomerId;
+
+        public BatchOperationInfo GetBatchInfo()
+        {
+
+
+            return new BatchOperationInfo
+            {
+                
+              
+                BatchQuery = _batchUpsertCreditLimitMutation.Value,
+
+                ExtractBatchItem = (variables) =>
+                {
+                    return variables.GetType().GetProperty("item")!.GetValue(variables)!;
+                },
+
+                BuildBatchVariables = (batchItems) =>
+                {
+                    return new
+                    {
+                        singleItemResponseInput = new
+                        {
+                            items = batchItems
+                        }
+                    };
+                },
+
+                ExecuteBatchAsync = async (query, variables, cancellationToken) =>
+                {
+                    return await _repository.BatchAsync<BatchResultGraphQLModel>(query, variables, cancellationToken);
+                }
+            };
+        }
+        private static readonly Lazy<string> _batchUpsertCreditLimitMutation = new(() =>
+        {
+            var fields = FieldSpec<BatchResultGraphQLModel>
+                .Create()
+                .Field(f => f.Success)
+               .Field(f => f.Message)
+               .Field(f => f.TotalAffected)
+               .Field(f => f.AffectedIds)
+               .SelectList(f => f.Errors, sq => sq
+                   .Field(e => e.Message))
+               .Build();
+
+
+            var parameters = new List<GraphQLQueryParameter>
+            {
+                new("input", "BatchUpsertCreditLimitsInput!")
+            };
+            var fragment = new GraphQLQueryFragment("batchUpsertCreditLimits", parameters, fields, "SingleItemResponse");
+            var builder = new GraphQLQueryBuilder([fragment]);
+            return builder.GetQuery(GraphQLOperations.MUTATION);
+           
+          
+
+            
+        });
+
+        
+    }
 }
+

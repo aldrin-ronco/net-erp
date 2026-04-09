@@ -47,14 +47,7 @@
 
             <CheckBox Margin="15 0 0 0" Content="Mostrar solo clientes con cupo" HorizontalAlignment="Right" IsChecked="{Binding OnlyCustomersWithCreditLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
 
-            <Button Grid.Column="2" HorizontalAlignment="Right" Margin="10 0 0 0"
-                    IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
-                    Command="{Binding SaveCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Guardar" VerticalAlignment="Center" Margin="0 0 2.5 0"/>
-                    <Image Source="{dx:DXImage 'Images/Save/Save_16x16.png'}" Margin="2.5 0 0 0"/>
-                </StackPanel>
-            </Button>
+           
         </Grid>
         <busyIndicator:BusyMask x:Name="BusyIndicator"
                             IsBusy="{Binding IsBusy}"
@@ -64,12 +57,34 @@
                             IsBusyAtStartup="False"
                             Grid.Row="2">
             <dxg:GridControl Margin="0 10 0 0"
-                         ItemsSource="{Binding Path=CreditLimits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                         ItemsSource="{Binding Path=CreditLimits, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              SelectedItem="{Binding SelectedCreditLimitItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                 <dxg:GridControl.View>
                     <dxg:TableView AllowCascadeUpdate="False" AllowColumnMoving="False" AllowSorting="False"
                                    EnableSelectedRowAppearance="True" AllowDragDrop="False" AllowFilterEditor="False"
                                    AllowResizing="False" AllowColumnFiltering="False"
-                                   ShowGroupPanel="False" AlternateRowBackground="Beige"/>
+                                   ShowGroupPanel="False" AlternateRowBackground="Beige">
+                        <dxg:TableView.RowStyle>
+                            <Style TargetType="dxg:RowControl">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Row.CreditLimit}" Value="0">
+                                        <Setter Property="TextBlock.Foreground" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+                                    <!-- Estilos para estados de operación -->
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Pending">
+                                        <Setter Property="Background" Value="#FFEED0"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Saved">
+                                        <Setter Property="Background" Value="#E0FFE0"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Row.Status}" Value="Failed">
+                                        <Setter Property="Background" Value="#FFE0E0"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </dxg:TableView.RowStyle>
+                    </dxg:TableView>
                 </dxg:GridControl.View>
 
                 <dxg:GridColumn Header="Nombre o razón social" Width="*" Binding="{Binding Customer.AccountingEntity.SearchName, UpdateSourceTrigger=PropertyChanged}"/>
@@ -78,7 +93,7 @@
 
                 <dxg:GridColumn Header="Información teléfonica" Width="*" Binding="{Binding Customer.AccountingEntity.TelephonicInformation, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <dxg:GridColumn Header="Autorizado" Width="120" Binding="{Binding Limit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
+                <dxg:GridColumn Header="Autorizado" Width="120" Binding="{Binding CreditLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalHeaderContentAlignment="Center">
                     <dxg:GridColumn.EditSettings>
                         <dxe:TextEditSettings MaskType="Numeric" MaskCulture="en-US" MaskUseAsDisplayFormat="True"
                                           Mask="{Binding Mask, UpdateSourceTrigger=PropertyChanged}"/>

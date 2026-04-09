@@ -19,6 +19,7 @@ using Models.Global;
 using Models.Inventory;
 using Models.Suppliers;
 using Models.Treasury;
+using NetErp.Billing.CreditLimit.DTO;
 using NetErp.Billing.Customers.ViewModels;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Billing.PriceList.PriceListHelpers;
@@ -36,26 +37,20 @@ using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.Services;
 using NetErp.Inventory.CatalogItems.DTO;
-using NetErp.Inventory.CatalogItems.ViewModels;
 using NetErp.Inventory.ItemSizes.DTO;
 using NetErp.Treasury.Masters.DTO;
 using Ninject;
-using Services.Billing.DAL.PostgreSQL;
-using Services.Books.DAL.PostgreSQL;
+
 using Services.Global.DAL.PostgreSQL;
-using Services.Inventory.DAL.PostgreSQL;
-using Services.Suppliers.DAL.PostgreSQL;
-using Services.Treasury.DAL.PostgreSQL;
+
 using Services.Validators;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
+
 using System.Windows.Controls;
 using static NetErp.Billing.CreditLimit.ViewModels.CreditLimitMasterViewModel;
+using CreditLimitDTO = NetErp.Billing.CreditLimit.DTO.CreditLimitDTO;
 
 
 namespace NetErp
@@ -476,7 +471,9 @@ namespace NetErp
                 _ = cfg.CreateMap<FranchiseGraphQLModel, TreasuryFranchiseMasterTreeDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryBankAccountCostCenterDTO>();
                 _ = cfg.CreateMap<CostCenterGraphQLModel, TreasuryFranchiseCostCenterDTO>();
+                _ = cfg.CreateMap<CreditLimitGraphQLModel, Models.DTO.Billing.CreditLimitDTO>();
                 _ = cfg.CreateMap<CreditLimitGraphQLModel, CreditLimitDTO>();
+
                 _ = cfg.CreateMap<AccountingAccountGraphQLModel, AccountingAccountGroupDTO>();
                 _ = cfg.CreateMap<AccountingAccountGroupDTO, AccountingAccountGroupDTO>();
                 _ = cfg.CreateMap<AccountingAccountGroupFilterGraphQLModel, AccountingAccountGroupFilterDTO>()
