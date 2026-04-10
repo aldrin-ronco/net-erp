@@ -63,6 +63,7 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] Email = [typeof(EmailGraphQLModel), typeof(SmtpGraphQLModel)];
         public static readonly Type[] Smtp = [typeof(SmtpGraphQLModel)];
         public static readonly Type[] AwsS3Config = [typeof(AwsS3ConfigGraphQLModel)];
+        public static readonly Type[] S3StorageLocation = [typeof(S3StorageLocationGraphQLModel)];
 
         // Suppliers
         public static readonly Type[] Supplier = [typeof(SupplierGraphQLModel), typeof(AccountingEntityGraphQLModel)];

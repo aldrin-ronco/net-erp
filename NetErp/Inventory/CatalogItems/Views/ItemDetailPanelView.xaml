@@ -40,7 +40,7 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <Image Source="pack://application:,,,/Resources/Images/vecteezy_analyze-package-shipments_8258746.jpg"
+                <Image Source="pack://application:,,,/Resources/Images/Inventario.jpg"
                        MaxWidth="278" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,14"/>
                 <TextBlock Text="Seleccione un item del árbol para ver sus propiedades"
                            FontSize="13" Foreground="#888"
