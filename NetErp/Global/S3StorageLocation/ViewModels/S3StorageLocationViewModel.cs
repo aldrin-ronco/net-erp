@@ -273,6 +273,7 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
             try
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.S3StorageLocation);
+                await _awsS3ConfigCache.EnsureLoadedAsync();
 
                 NotifyOfPropertyChange(nameof(HasCreatePermission));
                 NotifyOfPropertyChange(nameof(HasEditPermission));

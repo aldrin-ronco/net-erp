@@ -253,8 +253,6 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
-            await _awsS3ConfigCache.EnsureLoadedAsync();
-            AwsS3Configs = [.. _awsS3ConfigCache.Items];
             await base.OnInitializedAsync(cancellationToken);
         }
 
@@ -278,6 +276,7 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
 
         public void SetForNew()
         {
+            LoadComboSources();
             Id = 0;
             Description = string.Empty;
             Key = string.Empty;
@@ -289,6 +288,7 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
 
         public void SetForEdit(S3StorageLocationGraphQLModel entity)
         {
+            LoadComboSources();
             Id = entity.Id;
             Description = entity.Description ?? string.Empty;
             Key = entity.Key ?? string.Empty;
@@ -298,6 +298,11 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
                 ? null
                 : AwsS3Configs.FirstOrDefault(c => c.Id == entity.AwsS3Config.Id);
             SeedCurrentValues();
+        }
+
+        private void LoadComboSources()
+        {
+            AwsS3Configs = [.. _awsS3ConfigCache.Items];
         }
 
         private void SeedDefaultValues()
