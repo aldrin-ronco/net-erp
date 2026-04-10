@@ -1005,7 +1005,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             inputDict["draftId"] = (int)this.DraftMasterId;
             if (inputDict.TryGetValue("documentDate", out var dateVal) && dateVal is DateTime dt)
             {
-                inputDict["documentDate"] = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                inputDict["documentDate"] = dt.ToIsoDate();
             }
 
             var result = await this._accountingEntryDraftMasterService
@@ -1251,7 +1251,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                         costCenterId = this.SelectedCostCenterId!.Value,
                         createdById = SessionInfo.SessionId,
                         description = this.Description,
-                        documentDate = DateTimeHelper.DateTimeKindUTC(this.DocumentDate)
+                        documentDate = this.DocumentDate.ToIsoDate()
                     })
                     .Build();
 
