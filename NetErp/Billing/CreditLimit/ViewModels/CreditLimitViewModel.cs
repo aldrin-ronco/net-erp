@@ -4,8 +4,10 @@ using Common.Helpers;
 using Common.Interfaces;
 using Common.Validators;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using NetErp.Billing.Customers.ViewModels;
+using NetErp.Helpers.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +21,12 @@ namespace NetErp.Billing.CreditLimit.ViewModels
     {
         public IMapper AutoMapper { get; set; }
         public IEventAggregator EventAggregator { get; set; }
-        
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+
         private readonly Helpers.Services.INotificationService _notificationService;
         private readonly ICreditLimitValidator _validator;
         private readonly IRepository<CreditLimitGraphQLModel> _creditLimitService;
+        private readonly IBackgroundQueueService _backgroundQueueService;
 
         private CreditLimitMasterViewModel? _creditLimitMasterViewModel;
 
@@ -30,7 +34,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             get 
             {
-                _creditLimitMasterViewModel ??= new CreditLimitMasterViewModel(this, _notificationService, _validator, _creditLimitService);
+                _creditLimitMasterViewModel ??= new CreditLimitMasterViewModel(this, _notificationService, _validator,_backgroundQueueService , _creditLimitService, _joinableTaskFactory);
                 return _creditLimitMasterViewModel;
             }
         }
@@ -40,13 +44,19 @@ namespace NetErp.Billing.CreditLimit.ViewModels
             IEventAggregator eventAggregator,
             Helpers.Services.INotificationService notificationService,
             ICreditLimitValidator validator,
-            IRepository<CreditLimitGraphQLModel> creditLimitService)
+            IRepository<CreditLimitGraphQLModel> creditLimitService,
+            IBackgroundQueueService backgroundQueueService,
+
+            JoinableTaskFactory joinableTaskFactory)
         {
             AutoMapper = autoMapper ?? throw new ArgumentNullException(nameof(autoMapper));
             EventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _creditLimitService = creditLimitService ?? throw new ArgumentNullException(nameof(creditLimitService));
+            _joinableTaskFactory = joinableTaskFactory;
+                _backgroundQueueService = backgroundQueueService ?? throw new ArgumentNullException(nameof(backgroundQueueService));
+
         }
 
         protected override void OnViewReady(object view)
@@ -91,7 +101,7 @@ namespace NetErp.Billing.CreditLimit.ViewModels
         {
             try
             {
-                await ActivateItemAsync(CreditLimitMasterViewModel ?? new CreditLimitMasterViewModel(this, _notificationService, _validator, _creditLimitService), new System.Threading.CancellationToken());
+                await ActivateItemAsync(CreditLimitMasterViewModel ?? new CreditLimitMasterViewModel(this, _notificationService, _validator, _backgroundQueueService, _creditLimitService, _joinableTaskFactory), new System.Threading.CancellationToken());
             }
             catch(Exception ex)
             {
