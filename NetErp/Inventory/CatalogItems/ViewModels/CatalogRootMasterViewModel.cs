@@ -34,7 +34,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         IHandle<ItemCategoryCreateMessage>, IHandle<ItemCategoryUpdateMessage>, IHandle<ItemCategoryDeleteMessage>,
         IHandle<ItemSubCategoryCreateMessage>, IHandle<ItemSubCategoryUpdateMessage>, IHandle<ItemSubCategoryDeleteMessage>,
         IHandle<ItemCreateMessage>, IHandle<ItemUpdateMessage>, IHandle<ItemDeleteMessage>,
-        IHandle<PermissionsCacheRefreshedMessage>
+        IHandle<PermissionsCacheRefreshedMessage>,
+        IHandle<S3StorageLocationCreateMessage>, IHandle<S3StorageLocationUpdateMessage>,
+        IHandle<AwsS3ConfigCreateMessage>, IHandle<AwsS3ConfigUpdateMessage>
     {
         #region Services
 
@@ -409,21 +411,29 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         }
 
         private ItemDetailViewModel? _panelItemDetail;
-        public ItemDetailViewModel PanelItemDetail
+        public ItemDetailViewModel? PanelItemDetail
         {
-            get
+            get => _panelItemDetail;
+            private set
             {
-                if (_panelItemDetail is null)
+                if (_panelItemDetail != value)
                 {
-                    _panelItemDetail = new ItemDetailViewModel(
-                        _itemService, _eventAggregator, _dialogService, _stringLengthCache,
-                        _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache,
-                        _joinableTaskFactory, _itemValidator, _mapper,
-                        S3Helper, LocalImageCachePath);
-                    _panelItemDetail.HasEditPermission = HasItemEditPermission;
+                    _panelItemDetail = value;
+                    NotifyOfPropertyChange(nameof(PanelItemDetail));
                 }
-                return _panelItemDetail;
             }
+        }
+
+        private void EnsurePanelItemDetail()
+        {
+            if (_panelItemDetail is not null) return;
+            PanelItemDetail = new ItemDetailViewModel(
+                _itemService, _eventAggregator, _dialogService, _stringLengthCache,
+                _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache,
+                _joinableTaskFactory, _itemValidator, _mapper,
+                S3Helper, LocalImageCachePath);
+            _panelItemDetail!.HasEditPermission = HasItemEditPermission;
+            _panelItemDetail.HasAddImagePermission = HasItemAddImagePermission;
         }
 
         private void SyncPanelWithSelection()
@@ -480,6 +490,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         public bool HasItemEditPermission => _permissionCache.IsAllowed(PermissionCodes.Item.Edit);
         public bool HasItemDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Item.Delete);
         public bool HasItemDiscontinuePermission => _permissionCache.IsAllowed(PermissionCodes.Item.Discontinue);
+        public bool HasItemAddImagePermission => _permissionCache.IsAllowed(PermissionCodes.Item.AddImage);
 
         #endregion
 
@@ -542,12 +553,16 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             NotifyOfPropertyChange(nameof(HasItemEditPermission));
             NotifyOfPropertyChange(nameof(HasItemDeletePermission));
             NotifyOfPropertyChange(nameof(HasItemDiscontinuePermission));
+            NotifyOfPropertyChange(nameof(HasItemAddImagePermission));
 
             // The panel-mode ItemDetailViewModel owns the Edit button on ItemDetailPanelView.
             // Push the permission to the panel instance so its CanEnterEditMode re-evaluates
             // whenever permissions change.
             if (_panelItemDetail is not null)
+            {
                 _panelItemDetail.HasEditPermission = HasItemEditPermission;
+                _panelItemDetail.HasAddImagePermission = HasItemAddImagePermission;
+            }
 
             NotifyAllActionStates();
         }
@@ -626,6 +641,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _graphQLClient, cancellationToken,
                     _catalogCache, _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache);
                 await LoadS3ConfigAsync();
+                EnsurePanelItemDetail();
                 BuildTree();
 
                 // Anti-flicker: mark initialized and evaluate empty state from the cache
@@ -759,6 +775,19 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
                 LocalImageCachePath = Path.Combine(appDir, "cache", location.Bucket, location.Directory);
                 Directory.CreateDirectory(LocalImageCachePath);
+
+                // Verify write permissions on cache directory
+                string testFile = Path.Combine(LocalImageCachePath, ".write_test");
+                try
+                {
+                    await File.WriteAllTextAsync(testFile, "test");
+                    File.Delete(testFile);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    throw new InvalidOperationException(
+                        $"No se tienen permisos de escritura en el directorio de cache de imágenes:\r\n\r\n{LocalImageCachePath}\r\n\r\nAsigne permisos de escritura a este directorio para habilitar la gestión de imágenes de productos.");
+                }
 
                 if (location.AwsS3Config is null && SessionInfo.DefaultAwsS3Config is null)
                 {
@@ -1829,6 +1858,46 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             NotifyAllPermissionStates();
             return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — S3 Config Changes
+
+        public async Task HandleAsync(S3StorageLocationCreateMessage message, CancellationToken cancellationToken)
+        {
+            await ReloadS3ConfigAsync();
+        }
+
+        public async Task HandleAsync(S3StorageLocationUpdateMessage message, CancellationToken cancellationToken)
+        {
+            await ReloadS3ConfigAsync();
+        }
+
+        public async Task HandleAsync(AwsS3ConfigCreateMessage message, CancellationToken cancellationToken)
+        {
+            await ReloadS3ConfigAsync();
+        }
+
+        public async Task HandleAsync(AwsS3ConfigUpdateMessage message, CancellationToken cancellationToken)
+        {
+            await ReloadS3ConfigAsync();
+        }
+
+        private async Task ReloadS3ConfigAsync()
+        {
+            try
+            {
+                await LoadS3ConfigAsync();
+                // Recrear el panel con el nuevo S3Helper
+                PanelItemDetail = null;
+                EnsurePanelItemDetail();
+                SyncPanelWithSelection();
+            }
+            catch
+            {
+                // Non-critical — S3 config reload failure doesn't affect core functionality
+            }
         }
 
         #endregion

@@ -104,6 +104,7 @@
     <Resource Include="Resources\Images\vecteezy_no-result-data-document-or-file-not-found-concept_12903861.jpg" />
     <Resource Include="Resources\Images\vecteezy_concept-of-product-inventory-management-warehouse_49225006.jpg" />
     <Resource Include="Resources\Images\vecteezy_analyze-package-shipments_8258746.jpg" />
+    <Resource Include="Resources\Images\Inventario.jpg" />
   </ItemGroup>
 
 </Project>

@@ -100,6 +100,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             DialogHeight = 650;
         }
 
+
         #endregion
 
         #region MaxLength
@@ -645,7 +646,34 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public bool CanAddImage => IsS3Available && Images != null && Images.Count < 4;
+        public bool HasAddImagePermission
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(HasAddImagePermission));
+                    NotifyOfPropertyChange(nameof(CanAddImage));
+                }
+            }
+        } = true;
+
+        public bool CanAddImage => HasAddImagePermission && IsS3Available && Images != null && Images.Count < 4;
+
+        public bool IsLoadingImages
+        {
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsLoadingImages));
+                }
+            }
+        }
 
         #endregion
 
@@ -778,7 +806,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             {
                 ImagePath = fileDialog.FileName,
                 SourceImage = bitmap,
-                S3FileName = fileName.Replace(" ", "_").ToLower(),
+                S3FileName = $"{Guid.NewGuid():N}_{fileName.Replace(" ", "_").ToLower()}",
                 S3Bucket = _s3Helper!.Bucket,
                 S3BucketDirectory = _s3Helper.Directory
             });
@@ -804,48 +832,137 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         {
             if (!IsS3Available || Images.Count == 0) return;
 
-            foreach (ImageByItemDTO image in Images)
+            IsLoadingImages = true;
+            List<string> failedFiles = [];
+
+            try
             {
-                string localPath = Path.Combine(_localImageCachePath, image.S3FileName);
-                if (!Path.Exists(localPath))
-                    await _s3Helper!.DownloadFileAsync(localPath, image.S3FileName);
-                image.SourceImage = LoadBitmap(localPath);
-                image.ImagePath = localPath;
+                // Download missing files in parallel
+                List<Task> downloadTasks = [];
+                foreach (ImageByItemDTO image in Images)
+                {
+                    string localPath = Path.Combine(_localImageCachePath, image.S3FileName);
+                    if (!Path.Exists(localPath))
+                    {
+                        downloadTasks.Add(DownloadSingleImageAsync(image, localPath, failedFiles));
+                    }
+                    else
+                    {
+                        image.ImagePath = localPath;
+                    }
+                }
+
+                if (downloadTasks.Count > 0)
+                    await Task.WhenAll(downloadTasks);
+
+                // Load bitmaps on UI thread (must be sequential — BitmapImage is not thread-safe)
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                foreach (ImageByItemDTO image in Images)
+                {
+                    if (failedFiles.Contains(image.S3FileName)) continue;
+                    string localPath = Path.Combine(_localImageCachePath, image.S3FileName);
+                    if (Path.Exists(localPath))
+                    {
+                        image.SourceImage = LoadBitmap(localPath);
+                        image.ImagePath = localPath;
+                    }
+                }
+
+                if (failedFiles.Count > 0)
+                {
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
+                    ThemedMessageBox.Show(
+                        title: "Atención!",
+                        text: $"No se pudieron descargar {failedFiles.Count} imagen(es):\r\n{string.Join(", ", failedFiles)}\r\n\r\nVerifique la conexión a internet y la configuración de AWS S3.",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        image: MessageBoxImage.Warning);
+                }
+            }
+            finally
+            {
+                IsLoadingImages = false;
             }
         }
 
-        private async Task ApplyS3ChangesAsync()
+        private async Task DownloadSingleImageAsync(ImageByItemDTO image, string localPath, List<string> failedFiles)
         {
-            if (!IsS3Available || Images == null) return;
-
-            if (IsNewRecord)
+            try
             {
-                foreach (ImageByItemDTO image in Images)
-                {
-                    await _s3Helper!.UploadFileAsync(image.ImagePath, image.S3FileName);
-                    string dst = Path.Combine(_localImageCachePath, image.S3FileName);
-                    File.Copy(image.ImagePath, dst, true);
-                }
-                return;
+                await _s3Helper!.DownloadFileAsync(localPath, image.S3FileName);
             }
-
-            // Update: diff against original snapshot
-            HashSet<string> currentNames = [.. Images.Select(i => i.S3FileName)];
-            IEnumerable<string> toDelete = _originalImageS3Names.Where(n => !currentNames.Contains(n));
-            IEnumerable<ImageByItemDTO> toAdd = Images.Where(i => !_originalImageS3Names.Contains(i.S3FileName));
-
-            foreach (string fileName in toDelete)
+            catch
             {
-                await _s3Helper!.DeleteFileAsync(fileName);
-                string dst = Path.Combine(_localImageCachePath, fileName);
-                if (Path.Exists(dst)) File.Delete(dst);
+                lock (failedFiles) failedFiles.Add(image.S3FileName);
             }
+        }
+
+        /// <summary>
+        /// Sube imágenes nuevas a S3 y las copia al cache local.
+        /// Retorna la lista de archivos subidos para rollback si el save a DB falla.
+        /// </summary>
+        private async Task<List<string>> UploadNewImagesToS3Async()
+        {
+            List<string> uploadedFiles = [];
+            if (!IsS3Available || Images == null) return uploadedFiles;
+
+            IEnumerable<ImageByItemDTO> toAdd = IsNewRecord
+                ? Images
+                : Images.Where(i => !_originalImageS3Names.Contains(i.S3FileName));
 
             foreach (ImageByItemDTO image in toAdd)
             {
                 await _s3Helper!.UploadFileAsync(image.ImagePath, image.S3FileName);
                 string dst = Path.Combine(_localImageCachePath, image.S3FileName);
                 File.Copy(image.ImagePath, dst, true);
+                uploadedFiles.Add(image.S3FileName);
+            }
+
+            return uploadedFiles;
+        }
+
+        /// <summary>
+        /// Elimina de S3 y del cache local las imágenes que el usuario removió.
+        /// Solo llamar DESPUÉS de un save exitoso a DB.
+        /// </summary>
+        private async Task DeleteRemovedImagesFromS3Async()
+        {
+            if (!IsS3Available || IsNewRecord) return;
+
+            HashSet<string> currentNames = [.. Images.Select(i => i.S3FileName)];
+            IEnumerable<string> toDelete = _originalImageS3Names.Where(n => !currentNames.Contains(n));
+
+            foreach (string fileName in toDelete)
+            {
+                try
+                {
+                    await _s3Helper!.DeleteFileAsync(fileName);
+                    string dst = Path.Combine(_localImageCachePath, fileName);
+                    if (Path.Exists(dst)) File.Delete(dst);
+                }
+                catch
+                {
+                    // Delete failures are non-critical — orphaned files can be cleaned later
+                }
+            }
+        }
+
+        /// <summary>
+        /// Rollback: elimina de S3 los archivos que se subieron si el save a DB falla.
+        /// </summary>
+        private async Task RollbackUploadsAsync(List<string> uploadedFiles)
+        {
+            foreach (string fileName in uploadedFiles)
+            {
+                try
+                {
+                    await _s3Helper!.DeleteFileAsync(fileName);
+                    string dst = Path.Combine(_localImageCachePath, fileName);
+                    if (Path.Exists(dst)) File.Delete(dst);
+                }
+                catch
+                {
+                    // Best-effort rollback
+                }
             }
         }
 
@@ -1128,6 +1245,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         private void SeedCurrentValues()
         {
+            this.SeedValue(nameof(SubCategoryId), SubCategoryId);
             this.SeedValue(nameof(Name), Name);
             this.SeedValue(nameof(Reference), Reference);
             this.SeedValue(nameof(AllowFraction), AllowFraction);
@@ -1163,12 +1281,18 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             try
             {
                 IsBusy = true;
-                await ApplyS3ChangesAsync();
 
+                // 1. Upload new images to S3 (before DB save to ensure files exist)
+                List<string> uploadedFiles = await UploadNewImagesToS3Async();
+
+                // 2. Save to DB
                 UpsertResponseType<ItemGraphQLModel> result = await ExecuteSaveAsync();
 
                 if (!result.Success)
                 {
+                    // Rollback S3 uploads since DB save failed
+                    await RollbackUploadsAsync(uploadedFiles);
+
                     await _joinableTaskFactory.SwitchToMainThreadAsync();
                     ThemedMessageBox.Show(
                         text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
@@ -1177,6 +1301,9 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                         icon: MessageBoxImage.Error);
                     return;
                 }
+
+                // 3. Delete removed images from S3 (only after successful DB save)
+                await DeleteRemovedImagesFromS3Async();
 
                 await _eventAggregator.PublishOnCurrentThreadAsync(
                     IsNewRecord
@@ -1192,7 +1319,6 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 {
                     // Panel mode: actualizar snapshot y volver a read-only
                     _originalEntity = result.Entity;
-                    foreach (string n in _originalImageS3Names.ToList()) { }
                     _originalImageS3Names.Clear();
                     foreach (ImageByItemDTO img in Images) _originalImageS3Names.Add(img.S3FileName);
                     IsEditing = false;

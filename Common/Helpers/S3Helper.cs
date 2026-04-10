@@ -8,30 +8,30 @@ using System.Threading.Tasks;
 
 namespace Common.Helpers
 {
-    public class S3Helper
+    public class S3Helper : IDisposable
     {
         public string Bucket { get; }
         public string Directory { get; }
 
-        private readonly string _accessKey;
-        private readonly string _secretKey;
-        private readonly RegionEndpoint _region;
+        private readonly AmazonS3Client _client;
+        private bool _disposed;
 
         public S3Helper(string accessKey, string secretKey, RegionEndpoint region, string bucket, string directory)
         {
-            _accessKey = accessKey ?? throw new ArgumentNullException(nameof(accessKey));
-            _secretKey = secretKey ?? throw new ArgumentNullException(nameof(secretKey));
-            _region = region ?? throw new ArgumentNullException(nameof(region));
+            ArgumentNullException.ThrowIfNull(accessKey);
+            ArgumentNullException.ThrowIfNull(secretKey);
+            ArgumentNullException.ThrowIfNull(region);
             Bucket = bucket ?? throw new ArgumentNullException(nameof(bucket));
             Directory = directory ?? throw new ArgumentNullException(nameof(directory));
+            _client = new AmazonS3Client(accessKey, secretKey, region);
         }
 
         public static S3Helper FromStorageLocation(S3StorageLocationGraphQLModel location)
         {
-            var awsConfig = location.AwsS3Config ?? SessionInfo.DefaultAwsS3Config
+            AwsS3ConfigGraphQLModel awsConfig = location.AwsS3Config ?? SessionInfo.DefaultAwsS3Config
                 ?? throw new InvalidOperationException("No se encontró configuración AWS S3. Verifique que la empresa tenga configuración global o que la ubicación de almacenamiento tenga credenciales propias.");
 
-            var region = GlobalDictionaries.AwsSesRegionDictionary[awsConfig.Region];
+            RegionEndpoint region = GlobalDictionaries.AwsSesRegionDictionary[awsConfig.Region];
 
             return new S3Helper(
                 awsConfig.AccessKey,
@@ -41,14 +41,20 @@ namespace Common.Helpers
                 location.Directory);
         }
 
+        private string BuildKey(string s3FileName)
+        {
+            return string.IsNullOrEmpty(Directory)
+                ? s3FileName.Trim()
+                : $"{Directory.Trim()}/{s3FileName.Trim()}";
+        }
+
         public async Task UploadFileAsync(string localFilePath, string s3FileName)
         {
-            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
-            using var utility = new TransferUtility(client);
-            var request = new TransferUtilityUploadRequest
+            using TransferUtility utility = new(_client);
+            TransferUtilityUploadRequest request = new()
             {
                 BucketName = Bucket.Trim(),
-                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}",
+                Key = BuildKey(s3FileName),
                 FilePath = localFilePath
             };
             await utility.UploadAsync(request);
@@ -56,12 +62,11 @@ namespace Common.Helpers
 
         public async Task DownloadFileAsync(string localFilePath, string s3FileName)
         {
-            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
-            using var utility = new TransferUtility(client);
-            var request = new TransferUtilityDownloadRequest
+            using TransferUtility utility = new(_client);
+            TransferUtilityDownloadRequest request = new()
             {
                 BucketName = Bucket.Trim(),
-                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}",
+                Key = BuildKey(s3FileName),
                 FilePath = localFilePath
             };
             await utility.DownloadAsync(request);
@@ -69,13 +74,22 @@ namespace Common.Helpers
 
         public async Task DeleteFileAsync(string s3FileName)
         {
-            using var client = new AmazonS3Client(_accessKey, _secretKey, _region);
-            var request = new Amazon.S3.Model.DeleteObjectRequest
+            Amazon.S3.Model.DeleteObjectRequest request = new()
             {
                 BucketName = Bucket.Trim(),
-                Key = string.IsNullOrEmpty(Directory) ? s3FileName.Trim() : $"{Directory.Trim()}/{s3FileName.Trim()}"
+                Key = BuildKey(s3FileName)
             };
-            await client.DeleteObjectAsync(request);
+            await _client.DeleteObjectAsync(request);
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _client.Dispose();
+                _disposed = true;
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

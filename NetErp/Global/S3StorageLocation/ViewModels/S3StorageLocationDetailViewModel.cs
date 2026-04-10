@@ -1,27 +1,22 @@
-﻿using Amazon;
 using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using Dictionaries;
 using Extensions.Global;
-using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Global;
-using NetErp.Global.S3StorageLocation.ViewModels;
+using NetErp.Global.S3StorageLocation.Validators;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
-using Ninject.Activation;
-using Services.Global.DAL.PostgreSQL;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using static Models.Global.GraphQLResponseTypes;
@@ -30,283 +25,441 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
 {
     public class S3StorageLocationDetailViewModel : Screen, INotifyDataErrorInfo
     {
-        public S3StorageLocationViewModel Context { get; set; }
-        private readonly IRepository<S3StorageLocationGraphQLModel> _s3StorageLocationService;
+        #region Dependencies
+
+        private readonly IRepository<S3StorageLocationGraphQLModel> _service;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly AwsS3ConfigCache _awsS3ConfigCache;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly S3StorageLocationValidator _validator;
 
-        
-        public S3StorageLocationDetailViewModel(S3StorageLocationViewModel context, Helpers.Services.INotificationService notificationService,
-            IRepository<S3StorageLocationGraphQLModel> s3StorageLocationService, AwsS3ConfigCache awsS3ConfigCache)
+        #endregion
+
+        #region MaxLength Properties
+
+        public int DescriptionMaxLength => _stringLengthCache.GetMaxLength<S3StorageLocationGraphQLModel>(nameof(S3StorageLocationGraphQLModel.Description));
+        public int KeyMaxLength => _stringLengthCache.GetMaxLength<S3StorageLocationGraphQLModel>(nameof(S3StorageLocationGraphQLModel.Key));
+        public int BucketMaxLength => _stringLengthCache.GetMaxLength<S3StorageLocationGraphQLModel>(nameof(S3StorageLocationGraphQLModel.Bucket));
+        public int DirectoryMaxLength => _stringLengthCache.GetMaxLength<S3StorageLocationGraphQLModel>(nameof(S3StorageLocationGraphQLModel.Directory));
+
+        #endregion
+
+        #region Dialog Size
+
+        public double DialogWidth
         {
-            Context = context;
-            _s3StorageLocationService = s3StorageLocationService;
-            _errors = new Dictionary<string, List<string>>();
-            _awsS3ConfigCache = awsS3ConfigCache;
-            _ = Task.Run(() => InitializeAsync());
-        }
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogWidth));
+                }
+            }
+        } = 500;
 
-        public async Task InitializeAsync()
+        public double DialogHeight
         {
-            await Task.WhenAll(
-                _awsS3ConfigCache.EnsureLoadedAsync()
-                );
-            AwsS3Configs = new ObservableCollection<AwsS3ConfigGraphQLModel>(_awsS3ConfigCache.Items);
-        }
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(DialogHeight));
+                }
+            }
+        } = 430;
 
-        protected override void OnViewAttached(object view, object context)
-        {
-            base.OnViewAttached(view, context);
-            ValidateProperties();
-            this.AcceptChanges();
+        #endregion
 
-        }
         #region Properties
 
-        private int _id;
-        public int Id
+        private readonly Dictionary<string, List<string>> _errors = [];
+
+        public bool IsBusy
         {
-            get => _id;
+            get;
             set
             {
-                _id = value;
-                NotifyOfPropertyChange(nameof(Id));
-                NotifyOfPropertyChange(nameof(IsNewRecord));
-            }
-        }
-        private string _description;
-
-        public string Description
-        {
-            get => _description;
-            set
-            {
-                _description = value;
-                NotifyOfPropertyChange(nameof(Description));
-                this.TrackChange(nameof(Description));
-                ValidateProperty(nameof(Description), value);
-                NotifyOfPropertyChange(nameof(CanSave));
-
-
-            }
-        }
-        private string _bucket;
-
-        public string Bucket
-        {
-            get => _bucket;
-            set
-            {
-                _bucket = value;
-                NotifyOfPropertyChange(nameof(Bucket));
-                this.TrackChange(nameof(Bucket));
-                ValidateProperty(nameof(Bucket), value);
-
-                NotifyOfPropertyChange(nameof(CanSave));
-
-
-            }
-        }
-        private string _directory;
-
-        public string Directory
-        {
-            get => _directory;
-            set
-            {
-                _directory = value;
-                NotifyOfPropertyChange(nameof(Directory));
-                this.TrackChange(nameof(Directory));
-                ValidateProperty(nameof(Directory), value);
-
-                NotifyOfPropertyChange(nameof(CanSave));
-
-
-            }
-        }
-        private string _key;
-        public string Key
-        {
-            get => _key;
-            set
-            {
-                _key = value;
-                NotifyOfPropertyChange(nameof(Key));
-                this.TrackChange(nameof(Key));
-                ValidateProperty(nameof(Key), value);
-
-                NotifyOfPropertyChange(nameof(CanSave));
-
-
-            }
-        }
-        private AwsS3ConfigGraphQLModel _selectedAwsS3Config;
-        [ExpandoPath("awsS3ConfigId", SerializeAsId = true)]
-
-        public AwsS3ConfigGraphQLModel SelectedAwsS3Config
-        {
-            get => _selectedAwsS3Config;
-            set
-            {
-                _selectedAwsS3Config = value;
-                NotifyOfPropertyChange(nameof(SelectedAwsS3Config));
-                this.TrackChange(nameof(SelectedAwsS3Config));
-                ValidateProperty(nameof(SelectedAwsS3Config), value?.Id);
-
-                NotifyOfPropertyChange(nameof(CanSave));
-
-
-            }
-        }
-        #endregion
-        #region PropertiesAndCommands
-
-        private ObservableCollection<AwsS3ConfigGraphQLModel> _awsS3Configs = [];
-        public ObservableCollection<AwsS3ConfigGraphQLModel> AwsS3Configs
-        {
-            get => _awsS3Configs;
-            set
-            {
-                if (_awsS3Configs != value)
+                if (field != value)
                 {
-                    _awsS3Configs = value;
-                    NotifyOfPropertyChange(nameof(AwsS3Configs));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
                 }
             }
         }
 
         public bool IsNewRecord => Id == 0;
 
-        private ICommand _saveCommand;
+        public int Id
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Id));
+                    NotifyOfPropertyChange(nameof(IsNewRecord));
+                }
+            }
+        }
+
+        public string Description
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Description));
+                    ValidateProperty(nameof(Description), value);
+                    this.TrackChange(nameof(Description), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        } = string.Empty;
+
+        public string Key
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Key));
+                    ValidateProperty(nameof(Key), value);
+                    this.TrackChange(nameof(Key), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        } = string.Empty;
+
+        public string Bucket
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Bucket));
+                    ValidateProperty(nameof(Bucket), value);
+                    this.TrackChange(nameof(Bucket), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        } = string.Empty;
+
+        public string Directory
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(Directory));
+                    ValidateProperty(nameof(Directory), value);
+                    this.TrackChange(nameof(Directory), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        } = string.Empty;
+
+        [ExpandoPath("awsS3ConfigId", SerializeAsId = true)]
+        public AwsS3ConfigGraphQLModel? SelectedAwsS3Config
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SelectedAwsS3Config));
+                    this.TrackChange(nameof(SelectedAwsS3Config), value);
+                    NotifyOfPropertyChange(nameof(CanSave));
+                }
+            }
+        }
+
+        public ObservableCollection<AwsS3ConfigGraphQLModel> AwsS3Configs
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(AwsS3Configs));
+                }
+            }
+        } = [];
+
+        public bool CanSave => _validator.CanSave(this.HasChanges(), HasErrors);
+
+        #endregion
+
+        #region Commands
+
+        private ICommand? _saveCommand;
         public ICommand SaveCommand
         {
             get
             {
-                if (_saveCommand is null) _saveCommand = new AsyncCommand(SaveAsync, CanSave);
+                _saveCommand ??= new AsyncCommand(SaveAsync);
                 return _saveCommand;
             }
         }
-        private ICommand _goBackCommand;
-        public ICommand GoBackCommand
+
+        private ICommand? _cancelCommand;
+        public ICommand CancelCommand
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new RelayCommand(CanGoBack, GoBack);
-                return _goBackCommand;
-            }
-        }
-        public void GoBack(object p)
-        {
-            CleanUpControls();
-            _ = Task.Run(() => Context.ActivateMasterViewAsync());
-
-        }
-        public bool CanGoBack(object p)
-        {
-            return !IsBusy;
-        }
-
-        public bool CanSave
-        {
-            get
-            {
-                if (_errors.Count > 0 || !this.HasChanges()) { return false; }
-                return true;
+                _cancelCommand ??= new AsyncCommand(CancelAsync);
+                return _cancelCommand;
             }
         }
 
         #endregion
-        #region validaciones
 
-        public void CleanUpControls()
+        #region Constructor
+
+        public S3StorageLocationDetailViewModel(
+            IRepository<S3StorageLocationGraphQLModel> service,
+            IEventAggregator eventAggregator,
+            StringLengthCache stringLengthCache,
+            AwsS3ConfigCache awsS3ConfigCache,
+            JoinableTaskFactory joinableTaskFactory,
+            S3StorageLocationValidator validator)
         {
-            Description = "";
-
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
+            _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
+            _awsS3ConfigCache = awsS3ConfigCache ?? throw new ArgumentNullException(nameof(awsS3ConfigCache));
+            _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         }
-        private bool _isBusy = false;
-        public bool IsBusy
+
+        #endregion
+
+        #region Lifecycle
+
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
-            get => _isBusy;
-            set
+            await _awsS3ConfigCache.EnsureLoadedAsync();
+            AwsS3Configs = [.. _awsS3ConfigCache.Items];
+            await base.OnInitializedAsync(cancellationToken);
+        }
+
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            ValidateProperties();
+            this.AcceptChanges();
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        {
+            if (close) this.AcceptChanges();
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        #endregion
+
+        #region SetForNew / SetForEdit
+
+        public void SetForNew()
+        {
+            Id = 0;
+            Description = string.Empty;
+            Key = string.Empty;
+            Bucket = string.Empty;
+            Directory = string.Empty;
+            SelectedAwsS3Config = null;
+            SeedDefaultValues();
+        }
+
+        public void SetForEdit(S3StorageLocationGraphQLModel entity)
+        {
+            Id = entity.Id;
+            Description = entity.Description ?? string.Empty;
+            Key = entity.Key ?? string.Empty;
+            Bucket = entity.Bucket ?? string.Empty;
+            Directory = entity.Directory ?? string.Empty;
+            SelectedAwsS3Config = entity.AwsS3Config is null
+                ? null
+                : AwsS3Configs.FirstOrDefault(c => c.Id == entity.AwsS3Config.Id);
+            SeedCurrentValues();
+        }
+
+        private void SeedDefaultValues()
+        {
+            this.ClearSeeds();
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(Key), Key);
+            this.SeedValue(nameof(Bucket), Bucket);
+            this.SeedValue(nameof(Directory), Directory);
+            this.AcceptChanges();
+        }
+
+        private void SeedCurrentValues()
+        {
+            this.SeedValue(nameof(Description), Description);
+            this.SeedValue(nameof(Key), Key);
+            this.SeedValue(nameof(Bucket), Bucket);
+            this.SeedValue(nameof(Directory), Directory);
+            this.SeedValue(nameof(SelectedAwsS3Config), SelectedAwsS3Config);
+            this.AcceptChanges();
+        }
+
+        #endregion
+
+        #region Save / Cancel
+
+        public async Task SaveAsync()
+        {
+            try
             {
-                if (_isBusy != value)
+                IsBusy = true;
+                UpsertResponseType<S3StorageLocationGraphQLModel> result = await ExecuteSaveAsync();
+
+                if (!result.Success)
                 {
-                    _isBusy = value;
-                    NotifyOfPropertyChange(nameof(IsBusy));
+                    await _joinableTaskFactory.SwitchToMainThreadAsync();
+                    ThemedMessageBox.Show(
+                        text: $"El guardado no ha sido exitoso\r\n\r\n{result.Errors.ToUserMessage()}\r\n\r\nVerifique los datos y vuelva a intentarlo",
+                        title: $"{result.Message}!",
+                        messageBoxButtons: MessageBoxButton.OK,
+                        icon: MessageBoxImage.Error);
+                    return;
                 }
+
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    IsNewRecord
+                        ? new S3StorageLocationCreateMessage { CreatedS3StorageLocation = result }
+                        : new S3StorageLocationUpdateMessage { UpdatedS3StorageLocation = result },
+                    CancellationToken.None);
+
+                await TryCloseAsync(true);
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
-        Dictionary<string, List<string>> _errors;
+        public async Task<UpsertResponseType<S3StorageLocationGraphQLModel>> ExecuteSaveAsync()
+        {
+            try
+            {
+                if (IsNewRecord)
+                {
+                    var (_, query) = _createQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
+                    return await _service.CreateAsync<UpsertResponseType<S3StorageLocationGraphQLModel>>(query, variables);
+                }
+                else
+                {
+                    var (_, query) = _updateQuery.Value;
+                    dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
+                    variables.updateResponseId = Id;
+                    return await _service.UpdateAsync<UpsertResponseType<S3StorageLocationGraphQLModel>>(query, variables);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new AsyncException(innerException: ex);
+            }
+        }
+
+        public async Task CancelAsync()
+        {
+            await TryCloseAsync(false);
+        }
+
+        #endregion
+
+        #region GraphQL Queries
+
+        private static Dictionary<string, object> BuildResponseFields()
+        {
+            return FieldSpec<UpsertResponseType<S3StorageLocationGraphQLModel>>
+                .Create()
+                .Select(selector: f => f.Entity, alias: "entity", overrideName: "s3StorageLocation", nested: sq => sq
+                    .Field(e => e.Id)
+                    .Field(e => e.Description)
+                    .Field(e => e.Key)
+                    .Field(e => e.Bucket)
+                    .Field(e => e.Directory)
+                    .Select(e => e.AwsS3Config, aws => aws
+                        .Field(a => a.Id)
+                        .Field(a => a.Description)))
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .SelectList(f => f.Errors, sq => sq
+                    .Field(f => f.Fields)
+                    .Field(f => f.Message))
+                .Build();
+        }
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
+        {
+            var fields = BuildResponseFields();
+            var fragment = new GraphQLQueryFragment("createS3StorageLocation",
+                [new("input", "CreateS3StorageLocationInput!")],
+                fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
+        {
+            var fields = BuildResponseFields();
+            var fragment = new GraphQLQueryFragment("updateS3StorageLocation",
+                [new("data", "UpdateS3StorageLocationInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo)
+
         public bool HasErrors => _errors.Count > 0;
+
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+        }
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return new List<object>();
-            return _errors[propertyName];
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value)) return Enumerable.Empty<string>();
+            return value;
         }
-        private void ValidateProperty(string propertyName, int? value)
-        {
-            try
-            {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(SelectedAwsS3Config):
-                        if (value.HasValue && value.Value < 1) AddError(propertyName, "Debe seleccionar una configuración");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
 
-
-        }
-        private void ValidateProperty(string propertyName, string value)
-        {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
-            {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Description):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La descripción  no puede estar vacía");
-                        break;
-                    case nameof(Key):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "La clave no puede estar vacía");
-                        break;
-                    case nameof(Bucket):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "El  Bucket no puede estar vacío");
-                        break;
-                    case nameof(Directory):
-                        if (string.IsNullOrEmpty(value)) AddError(propertyName, "Ek directorio no puede esta vacio");
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                _ = Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención !", $"{GetType().Name}.{System.Reflection.MethodBase.GetCurrentMethod().Name.Between("<", ">")} \r\n{ex.Message}", MessageBoxButton.OK, MessageBoxImage.Error));
-            }
-        }
-        private void ValidateProperties()
-        {
-
-
-            ValidateProperty(nameof(Description), Description);
-            ValidateProperty(nameof(Key), Key);
-            ValidateProperty(nameof(Bucket), Bucket);
-            ValidateProperty(nameof(Directory), Directory);
-            ValidateProperty(nameof(SelectedAwsS3Config), SelectedAwsS3Config?.Id);
-        }
         private void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {
@@ -319,205 +472,39 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
         {
             if (_errors.ContainsKey(propertyName))
             {
-                _errors.Remove(propertyName);
                 RaiseErrorsChanged(propertyName);
             }
+            _errors.Remove(propertyName);
         }
 
-        private void RaiseErrorsChanged(string propertyName)
+        private void ValidateProperty(string propertyName, string? value)
         {
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value);
+            SetPropertyErrors(propertyName, errors);
         }
-        #endregion
-        #region ApiMethods
-        public async Task<S3StorageLocationGraphQLModel> LoadDataForEditAsync(int id)
+
+        private void ValidateProperties()
         {
-            try
-            {
-                string query = GetLoadS3StorageLocationByIdQuery();
-
-                dynamic variables = new ExpandoObject();
-
-
-                variables.singleItemResponseId = id;
-
-                var entity = await _s3StorageLocationService.FindByIdAsync(query, variables);
-
-                // Poblar el ViewModel con los datos del entity (sin bloquear UI thread)
-                PopulateFromS3StorageLocation(entity);
-
-                return entity;
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            Dictionary<string, IReadOnlyList<string>> all = _validator.ValidateAll(Description, Key, Bucket, Directory);
+            SetPropertyErrors(nameof(Description), all.TryGetValue(nameof(Description), out var e1) ? e1 : []);
+            SetPropertyErrors(nameof(Key), all.TryGetValue(nameof(Key), out var e2) ? e2 : []);
+            SetPropertyErrors(nameof(Bucket), all.TryGetValue(nameof(Bucket), out var e3) ? e3 : []);
+            SetPropertyErrors(nameof(Directory), all.TryGetValue(nameof(Directory), out var e4) ? e4 : []);
         }
-        public void PopulateFromS3StorageLocation(S3StorageLocationGraphQLModel entity)
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
 
-            Id = entity.Id;
-            Description = entity.Description;
-            Key = entity.Key;
-            Bucket = entity.Bucket;
-            Directory = entity.Directory;
-            SelectedAwsS3Config = entity.AwsS3Config is null ? null : AwsS3Configs.FirstOrDefault(c => c.Id == entity.AwsS3Config.Id);
-
-            this.SeedValue(nameof(Description), Description);
-            this.SeedValue(nameof(Key), Key);
-            this.SeedValue(nameof(Bucket), Bucket);
-            this.SeedValue(nameof(Directory), Directory);
-            this.SeedValue(nameof(SelectedAwsS3Config), SelectedAwsS3Config);
-
-
-            this.AcceptChanges();
-
-
-
-        }
-        public async Task SaveAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                Refresh();
-                UpsertResponseType<S3StorageLocationGraphQLModel> result = await ExecuteSaveAsync();
-                if (!result.Success)
-                {
-                    ThemedMessageBox.Show(text: $"El guardado no ha sido exitoso \n\n {result.Errors.ToUserMessage()} \n\n Verifique los datos y vuelva a intentarlo", title: $"{result.Message}!", messageBoxButtons: MessageBoxButton.OK, icon: MessageBoxImage.Error);
-                    return;
-                }
-                await Context.EventAggregator.PublishOnCurrentThreadAsync(
-                    IsNewRecord
-                        ? new S3StorageLocationCreateMessage() { CreatedS3StorageLocation = result }
-                        : new S3StorageLocationUpdateMessage() { UpdatedS3StorageLocation = result }
-                );
-
-                // Context.EnableOnViewReady = false;
-                await Context.ActivateMasterViewAsync();
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                GraphQLError graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<GraphQLError>(exGraphQL.Content.ToString());
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{graphQLError.Errors[0].Extensions.Message} {graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            catch (Exception ex)
-            {
-                System.Reflection.MethodBase? currentMethod = System.Reflection.MethodBase.GetCurrentMethod();
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{(currentMethod is null ? "Save" : currentMethod.Name.Between("<", ">"))} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-
-
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
         }
 
-        public async Task<UpsertResponseType<S3StorageLocationGraphQLModel>> ExecuteSaveAsync()
-        {
-
-            dynamic variables = new ExpandoObject();
-
-
-            if (IsNewRecord)
-            {
-
-                variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                string query = GetCreateQuery();
-                UpsertResponseType<S3StorageLocationGraphQLModel> groupCreated = await _s3StorageLocationService.CreateAsync<UpsertResponseType<S3StorageLocationGraphQLModel>>(query, variables);
-                return groupCreated;
-            }
-            else
-            {
-
-                string query = GetUpdateQuery();
-                variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
-                variables.updateResponseId = Id;
-                UpsertResponseType<S3StorageLocationGraphQLModel> updatedGroup = await _s3StorageLocationService.UpdateAsync<UpsertResponseType<S3StorageLocationGraphQLModel>>(query, variables);
-                return updatedGroup;
-            }
-
-        }
-        public string GetCreateQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<S3StorageLocationGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "S3StorageLocation", nested: sq => sq
-                   .Field(e => e.Id)
-                  .Field(e => e.Description)
-
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("input", "CreateS3StorageLocationInput!");
-
-            var fragment = new GraphQLQueryFragment("createS3StorageLocation", [parameter], fields, "CreateResponse");
-
-            var builder = new GraphQLQueryBuilder([fragment]);
-
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-        public string GetUpdateQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<S3StorageLocationGraphQLModel>>
-                .Create()
-                .Select(selector: f => f.Entity, alias: "entity", overrideName: "S3StorageLocation", nested: sq => sq
-                    .Field(e => e.Id)
-                   .Field(e => e.Description)
-
-                    )
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .SelectList(f => f.Errors, sq => sq
-                    .Field(f => f.Fields)
-                    .Field(f => f.Message))
-                .Build();
-
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateS3StorageLocationInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateS3StorageLocation", parameters, fields, "UpdateResponse");
-            var builder = new GraphQLQueryBuilder([fragment]);
-            return builder.GetQuery(GraphQLOperations.MUTATION);
-        }
-        public string GetLoadS3StorageLocationByIdQuery()
-        {
-            var S3StorageLocationFields = FieldSpec<S3StorageLocationGraphQLModel>
-             .Create()
-
-                 .Field(e => e.Id)
-
-                 .Field(e => e.Description)
-                 .Field(e => e.Bucket)
-                 .Field(e => e.Directory)
-                 .Field(e => e.Key)
-                  .Select(e => e.AwsS3Config,  acc => acc
-                    .Field(c => c!.Id)
-                    .Field(c => c!.Description)
-                    )
-
-
-
-                 .Build();
-            var S3StorageLocationIdParameter = new GraphQLQueryParameter("id", "ID!");
-
-            var S3StorageLocationFragment = new GraphQLQueryFragment("S3StorageLocation", [S3StorageLocationIdParameter], S3StorageLocationFields, "SingleItemResponse");
-
-            var builder = new GraphQLQueryBuilder([S3StorageLocationFragment]);
-
-            return builder.GetQuery();
-
-        }
         #endregion
     }
 }

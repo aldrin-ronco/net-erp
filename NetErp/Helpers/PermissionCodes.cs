@@ -149,6 +149,7 @@ namespace NetErp.Helpers
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
             public const string Discontinue = $"{Prefix}.discontinue";
+            public const string AddImage = $"{Prefix}.add_image";
         }
 
         public static class MeasurementUnit
@@ -346,6 +347,15 @@ namespace NetErp.Helpers
             public const string Edit = $"{Prefix}.edit";
             public const string Delete = $"{Prefix}.delete";
             public const string Reorder = $"{Prefix}.reorder";
+        }
+
+        public static class S3StorageLocation
+        {
+            private const string Prefix = "s3_storage_location";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
         }
     }
 }

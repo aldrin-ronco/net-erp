@@ -48,6 +48,13 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
+                    <!-- Images loading indicator -->
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                               Text="Cargando imágenes..."
+                               FontSize="12" Foreground="#888"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10"
+                               Visibility="{Binding IsLoadingImages, Converter={dxmvvm:BooleanToVisibilityConverter}}"/>
+
                     <!-- Images Gallery -->
                     <dxlc:TileLayoutControl Background="{x:Null}" Grid.Row="0" Grid.ColumnSpan="2"
                                             ItemsSource="{Binding Images, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -70,9 +77,9 @@
                                     </dxlc:Tile.ContextMenu>
                                     <dxlc:Tile.ContentTemplate>
                                         <DataTemplate>
-                                            <Grid>
-                                                <Image Source="{Binding SourceImage, UpdateSourceTrigger=PropertyChanged}"/>
-                                            </Grid>
+                                            <Border BorderBrush="#D9DDE3" BorderThickness="1" CornerRadius="4" Background="White">
+                                                <Image Source="{Binding SourceImage, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
+                                            </Border>
                                         </DataTemplate>
                                     </dxlc:Tile.ContentTemplate>
                                 </dxlc:Tile>
@@ -80,7 +87,7 @@
                         </dxlc:TileLayoutControl.ItemTemplate>
                     </dxlc:TileLayoutControl>
 
-                    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,5,0,10">
+                    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,10,0,10">
                         <!-- Estado normal: S3 disponible — solo el botón centrado -->
                         <Button HorizontalAlignment="Center"
                                 Command="{Binding AddImageCommand}"

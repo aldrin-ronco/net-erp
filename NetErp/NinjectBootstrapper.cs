@@ -199,6 +199,7 @@ namespace NetErp
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemCategoryValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemSubCategoryValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Global.S3StorageLocation.Validators.S3StorageLocationValidator>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
