@@ -381,7 +381,7 @@ namespace NetErp.Global.Modals.ViewModels
         }
     }
 
-    public enum SearchWithTwoColumnsGridMessageToken { CompanyAccountingEntity, BankAccountingEntity }
+    public enum SearchWithTwoColumnsGridMessageToken { CompanyAccountingEntity, BankAccountingEntity, AccountingEntryAccountingEntity }
 
     public class ReturnedDataFromModalWithTwoColumnsGridViewMessage<XModel>
     {

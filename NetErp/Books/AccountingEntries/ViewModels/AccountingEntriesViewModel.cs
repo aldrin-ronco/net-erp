@@ -41,6 +41,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         private readonly AccountingBookCache _accountingBookCache;
         private readonly AuxiliaryAccountingAccountCache _auxiliaryAccountingAccountCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly Helpers.IDialogService _dialogService;
 
 
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -75,6 +76,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
              NotAnnulledAccountingSourceCache notAnnulledAccountingSourceCache,
              AuxiliaryAccountingAccountCache auxiliaryAccountingAccountCache,
              StringLengthCache stringLengthCache,
+             Helpers.IDialogService dialogService,
              IGraphQLClient graphQLClient
                                           )
         {
@@ -90,6 +92,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
             _notAnnulledAccountingSourceCache = notAnnulledAccountingSourceCache;
             _auxiliaryAccountingAccountCache = auxiliaryAccountingAccountCache;
             _stringLengthCache = stringLengthCache;
+            _dialogService = dialogService;
             _graphQLClient = graphQLClient;
         }
 
@@ -137,7 +140,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
                 this._accountingEntityService,
                 this._accountingEntryDraftMasterService,
                 this._accountingEntryDraftLineService,
-                this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
+                this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _dialogService, _graphQLClient);
 
             instance.SetForNew();
 
@@ -148,7 +151,7 @@ namespace NetErp.Books.AccountingEntries.ViewModels
         {
             try
             {
-                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftLineService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _graphQLClient);
+                AccountingEntriesDetailViewModel instance = new(this, this._accountingEntryMasterService, this._accountingEntityService, this._accountingEntryDraftMasterService, this._accountingEntryDraftLineService, this._costCenterCache, this._accountingBookCache, this._notAnnulledAccountingSourceCache, this._auxiliaryAccountingAccountCache, _dialogService, _graphQLClient);
 
                 // Cargar líneas del borrador
                 string query = @"
