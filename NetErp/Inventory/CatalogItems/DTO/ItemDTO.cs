@@ -165,9 +165,9 @@ namespace NetErp.Inventory.CatalogItems.DTO
             }
         }
 
-        private ObservableCollection<string> _eanCodes;
+        private ObservableCollection<EanCodeByItemDTO> _eanCodes;
 
-        public ObservableCollection<string> EanCodes
+        public ObservableCollection<EanCodeByItemDTO> EanCodes
         {
             get { return _eanCodes; }
             set

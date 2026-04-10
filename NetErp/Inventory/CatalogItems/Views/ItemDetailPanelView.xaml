@@ -1,0 +1,149 @@
+<UserControl x:Class="NetErp.Inventory.CatalogItems.Views.ItemDetailPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:busyIndicator="https://github.com/moh3ngolshani/BusyIndicator"
+             xmlns:local="clr-namespace:NetErp.Inventory.CatalogItems.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="650" d:DesignWidth="500"
+             Background="Transparent">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <!-- Panel-scoped busy mask. Bound to the panel VM's IsBusy (the DataContext inside this
+         UserControl is PanelItemDetail, an ItemDetailViewModel instance). It is independent
+         from the master's BusyMask (tree row) because they read IsBusy from different VMs. -->
+    <busyIndicator:BusyMask IsBusy="{Binding IsBusy}"
+                            IndicatorType="BouncingDot"
+                            BusyContent="Guardando..."
+                            BusyContentMargin="0,20,0,0"
+                            IsBusyAtStartup="False">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="80"/>
+            </Grid.RowDefinitions>
+
+        <!-- Row 0: Content area (placeholder or item content) -->
+        <Grid Grid.Row="0">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasLoadedItem}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <Image Source="pack://application:,,,/Resources/Images/vecteezy_analyze-package-shipments_8258746.jpg"
+                       MaxWidth="278" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                <TextBlock Text="Seleccione un item del árbol para ver sus propiedades"
+                           FontSize="13" Foreground="#888"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <local:ItemDetailContentView
+                Visibility="{Binding HasLoadedItem, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </Grid>
+
+        <!-- Row 1: Action buttons (fixed height, visible only when an item is loaded) -->
+        <Grid Grid.Row="1"
+              Visibility="{Binding HasLoadedItem, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                <!-- Editar (read-only mode) -->
+                <!-- Visibility stays tied to HasLoadedItem + !IsEditing so the button is
+                     shown whenever an item is loaded; IsEnabled carries the permission so
+                     the padlock can render when the user lacks item.edit. -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        Command="{Binding EnterEditModeCommand}"
+                        IsEnabled="{Binding CanEnterEditMode}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding HasLoadedItem}" Value="True"/>
+                                        <Condition Binding="{Binding IsEditing}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Image Source="{dx:DXImage 'Images/Edit/Edit_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.7"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Editar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                               Width="14" Height="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                               Margin="0,0,-2,12">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasEditPermission}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Grid>
+                </Button>
+
+                <!-- Guardar (edit mode) -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                        Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
+                    </dxmvvm:Interaction.Behaviors>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.7"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                        <TextBlock Text="Guardar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Deshacer (edit mode) -->
+                <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
+                        Command="{Binding UndoEditCommand}"
+                        Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel HorizontalAlignment="Center">
+                        <Image Source="{dx:DXImage 'Images/History/Undo_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+        </Grid>
+    </busyIndicator:BusyMask>
+</UserControl>

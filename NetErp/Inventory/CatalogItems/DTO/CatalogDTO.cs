@@ -46,5 +46,19 @@ namespace NetErp.Inventory.CatalogItems.DTO
                 }
             }
         }
+
+        private bool _isExpanded;
+        public bool IsExpanded
+        {
+            get { return _isExpanded; }
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    NotifyOfPropertyChange(nameof(IsExpanded));
+                }
+            }
+        }
     }
 }

@@ -26,6 +26,13 @@ namespace NetErp.Global.Modals.ViewModels
         public SearchWithThreeColumnsGridMessageToken? MessageToken { get; set; }
         public dynamic? Variables { get; set; }
 
+        /// <summary>
+        /// Opcional: callback invocado al seleccionar un item (doble click o enter).
+        /// Cuando se usa este callback, el modal NO publica por Messenger.
+        /// Permite al caller recibir el item sin suscripciones globales.
+        /// </summary>
+        private readonly Func<XModel?, Task>? _onSelectedAsync;
+
         private string _fieldHeader1;
         public string FieldHeader1
         {
@@ -349,7 +356,10 @@ namespace NetErp.Global.Modals.ViewModels
 
         public async Task RowDoubleClickAsync()
         {
-            Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
+            if (_onSelectedAsync != null)
+                await _onSelectedAsync(SelectedItem);
+            else
+                Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);
         }
 
@@ -367,7 +377,10 @@ namespace NetErp.Global.Modals.ViewModels
 
         public async Task EnterKeyAsync()
         {
-            Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
+            if (_onSelectedAsync != null)
+                await _onSelectedAsync(SelectedItem);
+            else
+                Messenger.Default.Send(message: new ReturnedDataFromModalWithThreeColumnsGridViewMessage<XModel>() { ReturnedData = SelectedItem }, token: MessageToken);
             await _dialogService.CloseDialogAsync(this, true);
         }
 
@@ -401,6 +414,34 @@ namespace NetErp.Global.Modals.ViewModels
             Variables = variables;
             SelectedItem = default;
             MessageToken = messageToken;
+            _itemsSource = new ObservableCollection<XModel>();
+            _ = Task.Run(() => LoadItemsSourceAsync());
+        }
+
+        /// <summary>
+        /// Overload que recibe un callback en lugar de usar Messenger.
+        /// Al seleccionar (doble click o enter) se invoca onSelectedAsync con el item y se cierra el modal.
+        /// </summary>
+        public SearchWithThreeColumnsGridViewModel(
+            string query,
+            string fieldHeader1, string fieldHeader2, string fieldHeader3,
+            string fieldData1, string fieldData2, string fieldData3,
+            dynamic? variables,
+            Helpers.IDialogService dialogService,
+            Func<XModel?, Task> onSelectedAsync)
+        {
+            _dialogService = dialogService;
+            _onSelectedAsync = onSelectedAsync ?? throw new ArgumentNullException(nameof(onSelectedAsync));
+            Query = query;
+            _fieldHeader1 = fieldHeader1;
+            _fieldHeader2 = fieldHeader2;
+            _fieldHeader3 = fieldHeader3;
+            _fieldData1 = fieldData1;
+            _fieldData2 = fieldData2;
+            _fieldData3 = fieldData3;
+            Variables = variables;
+            SelectedItem = default;
+            MessageToken = null;
             _itemsSource = new ObservableCollection<XModel>();
             _ = Task.Run(() => LoadItemsSourceAsync());
         }

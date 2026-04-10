@@ -33,7 +33,7 @@ namespace Models.Inventory
         public SystemAccountGraphQLModel CreatedBy { get; set; } = new();
         public DateTime InsertedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public IEnumerable<string> EanCodes { get; set; } = [];
+        public IEnumerable<EanCodeByItemGraphQLModel> EanCodes { get; set; } = [];
         public IEnumerable<ImageByItemGraphQLModel> Images { get; set; } = [];
         public IEnumerable<StockGraphQLModel> Stocks { get; set; } = [];
     }
