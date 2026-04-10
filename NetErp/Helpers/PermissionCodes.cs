@@ -114,6 +114,43 @@ namespace NetErp.Helpers
             public const string Delete = $"{Prefix}.delete";
         }
 
+        public static class ItemType
+        {
+            private const string Prefix = "item_type";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class ItemCategory
+        {
+            private const string Prefix = "item_category";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class ItemSubCategory
+        {
+            private const string Prefix = "item_sub_category";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+        }
+
+        public static class Item
+        {
+            private const string Prefix = "item";
+
+            public const string Create = $"{Prefix}.create";
+            public const string Edit = $"{Prefix}.edit";
+            public const string Delete = $"{Prefix}.delete";
+            public const string Discontinue = $"{Prefix}.discontinue";
+        }
+
         public static class MeasurementUnit
         {
             private const string Prefix = "measurement_unit";

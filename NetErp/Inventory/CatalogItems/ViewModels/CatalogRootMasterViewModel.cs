@@ -3,17 +3,17 @@ using Caliburn.Micro;
 using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
 using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
+using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Inventory.CatalogItems.DTO;
-using NetErp.Inventory.CatalogItems.PanelEditors;
-using NetErp.Inventory.ItemSizes.DTO;
+using NetErp.Inventory.CatalogItems.Validators;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,29 +24,17 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
-using NetErp.Global.Modals.ViewModels;
-using NetErp.Helpers.GraphQLQueryBuilder;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Inventory.CatalogItems.ViewModels
 {
     public class CatalogRootMasterViewModel : Screen,
-        IHandle<ItemTypeCreateMessage>,
-        IHandle<ItemTypeDeleteMessage>,
-        IHandle<ItemTypeUpdateMessage>,
-        IHandle<ItemCategoryCreateMessage>,
-        IHandle<ItemCategoryDeleteMessage>,
-        IHandle<ItemCategoryUpdateMessage>,
-        IHandle<ItemSubCategoryCreateMessage>,
-        IHandle<ItemSubCategoryDeleteMessage>,
-        IHandle<ItemSubCategoryUpdateMessage>,
-        IHandle<CatalogCreateMessage>,
-        IHandle<CatalogUpdateMessage>,
-        IHandle<CatalogDeleteMessage>,
-        IHandle<ItemDeleteMessage>,
-        IHandle<ItemCreateMessage>,
-        IHandle<ItemUpdateMessage>
+        IHandle<CatalogCreateMessage>, IHandle<CatalogUpdateMessage>, IHandle<CatalogDeleteMessage>,
+        IHandle<ItemTypeCreateMessage>, IHandle<ItemTypeUpdateMessage>, IHandle<ItemTypeDeleteMessage>,
+        IHandle<ItemCategoryCreateMessage>, IHandle<ItemCategoryUpdateMessage>, IHandle<ItemCategoryDeleteMessage>,
+        IHandle<ItemSubCategoryCreateMessage>, IHandle<ItemSubCategoryUpdateMessage>, IHandle<ItemSubCategoryDeleteMessage>,
+        IHandle<ItemCreateMessage>, IHandle<ItemUpdateMessage>, IHandle<ItemDeleteMessage>,
+        IHandle<PermissionsCacheRefreshedMessage>
     {
         #region Services
 
@@ -58,319 +46,511 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly IRepository<S3StorageLocationGraphQLModel> _s3LocationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly IEventAggregator _eventAggregator;
+        private readonly IMapper _mapper;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         // Caches
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CatalogCache _catalogCache;
         private readonly MeasurementUnitCache _measurementUnitCache;
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
         private readonly ItemSizeCategoryCache _itemSizeCategoryCache;
         private readonly StringLengthCache _stringLengthCache;
+        private readonly PermissionCache _permissionCache;
 
-        #endregion
-
-        #region PanelEditors
-
-        public CatalogPanelEditor CatalogEditor { get; private set; }
-        public ItemTypePanelEditor ItemTypeEditor { get; private set; }
-        public ItemCategoryPanelEditor ItemCategoryEditor { get; private set; }
-        public ItemSubCategoryPanelEditor ItemSubCategoryEditor { get; private set; }
-        public ItemPanelEditor ItemEditor { get; private set; }
-
-        private ICatalogItemsPanelEditor? _currentPanelEditor;
-        public ICatalogItemsPanelEditor? CurrentPanelEditor
-        {
-            get => _currentPanelEditor;
-            private set
-            {
-                if (_currentPanelEditor != value)
-                {
-                    _currentPanelEditor = value;
-                    NotifyOfPropertyChange(nameof(CurrentPanelEditor));
-                    NotifyOfPropertyChange(nameof(ContentControlVisibility));
-                }
-            }
-        }
-
-        public bool ContentControlVisibility => CurrentPanelEditor != null;
+        // Validators
+        private readonly CatalogValidator _catalogValidator;
+        private readonly ItemTypeValidator _itemTypeValidator;
+        private readonly ItemCategoryValidator _itemCategoryValidator;
+        private readonly ItemSubCategoryValidator _itemSubCategoryValidator;
+        private readonly ItemValidator _itemValidator;
 
         #endregion
 
         #region Properties
 
-        private CatalogViewModel _context;
-        public CatalogViewModel Context
-        {
-            get => _context;
-            set
-            {
-                if (_context != value)
-                {
-                    _context = value;
-                    NotifyOfPropertyChange(nameof(Context));
-                }
-            }
-        }
+        public CatalogViewModel Context { get; private set; }
 
         public S3Helper? S3Helper { get; private set; }
         public string LocalImageCachePath { get; private set; } = string.Empty;
         public bool IsS3Available => S3Helper != null;
 
-        private bool _isNewRecord;
-        public bool IsNewRecord
-        {
-            get => _isNewRecord;
-            set
-            {
-                if (_isNewRecord != value)
-                {
-                    _isNewRecord = value;
-                    NotifyOfPropertyChange(nameof(IsNewRecord));
-                }
-            }
-        }
-
-        private int _selectedIndex;
-        public int SelectedIndex
-        {
-            get => _selectedIndex;
-            set
-            {
-                if (_selectedIndex != value)
-                {
-                    _selectedIndex = value;
-                    NotifyOfPropertyChange(nameof(SelectedIndex));
-                }
-            }
-        }
-
-        private bool _isEditing;
-        public bool IsEditing
-        {
-            get => _isEditing;
-            set
-            {
-                if (_isEditing != value)
-                {
-                    _isEditing = value;
-                    NotifyOfPropertyChange(nameof(IsEditing));
-                    NotifyOfPropertyChange(nameof(TreeViewIsEnable));
-                    NotifyOfPropertyChange(nameof(CanSave));
-                    NotifyOfPropertyChange(nameof(SelectedCatalogIsEnable));
-                    NotifyOfPropertyChange(nameof(MainRibbonPageIsEnable));
-                }
-            }
-        }
-
-        private bool _isBusy;
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set
-            {
-                if (_isBusy != value)
-                {
-                    _isBusy = value;
-                    NotifyOfPropertyChange(nameof(IsBusy));
-                }
-            }
-        }
-
-        private bool _canEdit = true;
-        public bool CanEdit
-        {
-            get => _canEdit;
-            set
-            {
-                if (_canEdit != value)
-                {
-                    _canEdit = value;
-                    NotifyOfPropertyChange(nameof(CanEdit));
-                }
-            }
-        }
-
-        private bool _canUndo;
-        public bool CanUndo
-        {
-            get => _canUndo;
-            set
-            {
-                if (_canUndo != value)
-                {
-                    _canUndo = value;
-                    NotifyOfPropertyChange(nameof(CanUndo));
-                }
-            }
-        }
-
-        public bool CanSave => CurrentPanelEditor?.CanSave ?? false;
-
-        public void RefreshCanSave() => NotifyOfPropertyChange(nameof(CanSave));
-
-        public bool TreeViewIsEnable => !IsEditing;
-        public bool SelectedCatalogIsEnable => !IsEditing;
-        public bool MainRibbonPageIsEnable => !IsEditing;
-
-        public int SelectedSubCategoryIdBeforeNewItem { get; set; }
-
-        #endregion
-
-        #region ComboBox Collections
-
-        private ObservableCollection<MeasurementUnitDTO> _measurementUnits;
-        public ObservableCollection<MeasurementUnitDTO> MeasurementUnits
-        {
-            get => _measurementUnits;
-            set
-            {
-                if (_measurementUnits != value)
-                {
-                    _measurementUnits = value;
-                    NotifyOfPropertyChange(nameof(MeasurementUnits));
-                }
-            }
-        }
-
-        private ObservableCollection<ItemBrandDTO> _itemBrands;
-        public ObservableCollection<ItemBrandDTO> ItemBrands
-        {
-            get => _itemBrands;
-            set
-            {
-                if (_itemBrands != value)
-                {
-                    _itemBrands = value;
-                    NotifyOfPropertyChange(nameof(ItemBrands));
-                }
-            }
-        }
-
-        private ObservableCollection<AccountingGroupDTO> _accountingGroups;
-        public ObservableCollection<AccountingGroupDTO> AccountingGroups
-        {
-            get => _accountingGroups;
-            set
-            {
-                if (_accountingGroups != value)
-                {
-                    _accountingGroups = value;
-                    NotifyOfPropertyChange(nameof(AccountingGroups));
-                }
-            }
-        }
-
-        private ObservableCollection<ItemSizeCategoryDTO> _itemSizeCategories;
-        public ObservableCollection<ItemSizeCategoryDTO> ItemSizeCategories
-        {
-            get => _itemSizeCategories;
-            set
-            {
-                if (_itemSizeCategories != value)
-                {
-                    _itemSizeCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemSizeCategories));
-                }
-            }
-        }
-
-        #endregion
-
-        #region Tree Properties
-
-        private ICatalogItem? _selectedItem;
-        public ICatalogItem? SelectedItem
-        {
-            get => _selectedItem;
-            set
-            {
-                if (_selectedItem != value)
-                {
-                    _selectedItem = value;
-                    NotifyOfPropertyChange(nameof(SelectedItem));
-                    NotifyOfPropertyChange(nameof(ItemDTOIsSelected));
-                    HandleSelectedItemChanged();
-                }
-            }
-        }
-
-        public bool ItemDTOIsSelected => SelectedItem is ItemDTO && SelectedCatalog != null;
-
-        private ObservableCollection<CatalogDTO> _catalogs = [];
         public ObservableCollection<CatalogDTO> Catalogs
         {
-            get => _catalogs;
+            get;
             set
             {
-                if (_catalogs != value)
+                if (field != value)
                 {
-                    _catalogs = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(Catalogs));
+                    // Intentionally NOT notifying HasRecords/ShowEmptyState here — those
+                    // are stored and only evaluated at init / Catalog create / Catalog delete.
+                    // Notifying on every reassignment (e.g. when applying/clearing the filter)
+                    // causes the Content Grid to re-render and the search field to lose focus.
                 }
             }
-        }
+        } = [];
 
-        private CatalogDTO _selectedCatalog;
-        public CatalogDTO SelectedCatalog
+        // Anti-flicker flag: while false, both HasRecords and ShowEmptyState are false,
+        // so neither the EmptyState nor the Content Grid are visible during the initial
+        // load — only the blank Border background shows.
+        private bool _isInitialized;
+
+        /// <summary>Drives the Content Grid visibility. False until the initial load completes.</summary>
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
+
+        /// <summary>
+        /// Stored — NEVER computed from <see cref="Catalogs"/> count. Only updated at
+        /// initialization, on catalog create (→ false), and on catalog delete (re-evaluated).
+        /// Keeping it stored prevents the filter-with-zero-results case from wrongly
+        /// showing the empty state, and prevents focus loss during search re-renders.
+        /// </summary>
+        public bool ShowEmptyState
         {
-            get => _selectedCatalog;
+            get;
             set
             {
-                if (_selectedCatalog != value)
+                if (field != value)
                 {
-                    _selectedCatalog = value;
-                    NotifyOfPropertyChange(nameof(SelectedCatalog));
-                    NotifyOfPropertyChange(nameof(CatalogIsSelected));
-                    NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
-                    NotifyOfPropertyChange(nameof(ItemDTOIsSelected));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        private ObservableCollection<ItemCategoryDTO> _itemsCategories = [];
-        public ObservableCollection<ItemCategoryDTO> ItemCategories
+        #region Search (filter-only tree replacement)
+
+        private const int MinSearchLength = 4;
+
+        private readonly DebouncedAction _searchDebounce = new();
+        private ObservableCollection<CatalogDTO>? _preSearchCatalogs;
+
+        // Monotonic version used to discard results from stale in-flight searches.
+        // DebouncedAction only cancels the delay, not an already-running action body.
+        private int _searchVersion;
+
+        public string FilterSearch
         {
-            get => _itemsCategories;
+            get;
             set
             {
-                if (_itemsCategories != value)
+                if (field != value)
                 {
-                    _itemsCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemCategories));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(FilterSearch));
+
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        ClearSearch();
+                    }
+                    else if (value.Length >= MinSearchLength)
+                    {
+                        _ = _searchDebounce.RunAsync(SearchItemsAsync);
+                    }
+                    else if (IsSearching)
+                    {
+                        // User shrunk the query below the min length while a filter
+                        // is active — revert to the original tree.
+                        ClearSearch();
+                    }
+                }
+            }
+        } = string.Empty;
+
+        public bool IsSearching
+        {
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsSearching));
                 }
             }
         }
 
-        private ObservableCollection<ItemSubCategoryDTO> _itemsSubCategories = [];
-        public ObservableCollection<ItemSubCategoryDTO> ItemSubCategories
+        public bool IsSearchLoading
         {
-            get => _itemsSubCategories;
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsSearchLoading));
+                }
+            }
+        }
+
+        public int MatchedItemsCount
+        {
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(MatchedItemsCount));
+                }
+            }
+        }
+
+        public bool MatchedItemsTruncated
+        {
+            get;
+            private set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(MatchedItemsTruncated));
+                }
+            }
+        }
+
+        public bool FilterSearchIsFocused
+        {
+            get;
             set
             {
-                if (_itemsSubCategories != value)
+                if (field != value)
                 {
-                    _itemsSubCategories = value;
-                    NotifyOfPropertyChange(nameof(ItemSubCategories));
+                    field = value;
+                    NotifyOfPropertyChange(nameof(FilterSearchIsFocused));
                 }
             }
         }
 
-        private ObservableCollection<ItemDTO> _items = [];
-        public ObservableCollection<ItemDTO> Items
+        private void SetFocusOnFilterSearch()
         {
-            get => _items;
+            FilterSearchIsFocused = false;
+            FilterSearchIsFocused = true;
+        }
+
+        private System.Windows.Input.ICommand? _clearSearchCommand;
+        public System.Windows.Input.ICommand ClearSearchCommand => _clearSearchCommand ??= new DevExpress.Mvvm.DelegateCommand(() =>
+        {
+            FilterSearch = string.Empty;
+            SetFocusOnFilterSearch();
+        });
+
+        private const int SearchPageSize = 100;
+
+        private async Task SearchItemsAsync()
+        {
+            if (string.IsNullOrEmpty(FilterSearch) || FilterSearch.Length < MinSearchLength) return;
+
+            // Stamp this invocation; any later invocation bumps the version and
+            // this one's result will be discarded on return.
+            int myVersion = Interlocked.Increment(ref _searchVersion);
+
+            await Application.Current.Dispatcher.InvokeAsync(() => IsSearchLoading = true);
+            try
+            {
+                (GraphQLQueryFragment fragment, string query) = _searchItemsQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = SearchPageSize })
+                    .For(fragment, "filters", new { matching = FilterSearch.Trim().RemoveExtraSpaces() })
+                    .Build();
+
+                PageType<ItemGraphQLModel> result = await _itemService.GetPageAsync(query, variables);
+
+                // Discard stale result (a newer search started after we launched ours).
+                if (myVersion != Volatile.Read(ref _searchVersion)) return;
+
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    // Guard again on the UI thread in case a ClearSearch ran between the
+                    // await and the dispatch.
+                    if (myVersion != Volatile.Read(ref _searchVersion)) return;
+
+                    // Snapshot original tree on first search only. We store a reference
+                    // because the next line reassigns Catalogs to a brand-new instance.
+                    _preSearchCatalogs ??= Catalogs;
+
+                    Catalogs = BuildTreeFromSearchResults(result.Entries);
+                    MatchedItemsCount = result.Entries.Count;
+                    MatchedItemsTruncated = result.Entries.Count >= SearchPageSize;
+                    IsSearching = true;
+                    SelectedItem = null;
+                });
+            }
+            catch (Exception ex)
+            {
+                if (myVersion != Volatile.Read(ref _searchVersion)) return;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                    ThemedMessageBox.Show("Atención!",
+                        $"{GetType().Name}.{nameof(SearchItemsAsync)}: {ex.GetErrorMessage()}",
+                        MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                if (myVersion == Volatile.Read(ref _searchVersion))
+                    await Application.Current.Dispatcher.InvokeAsync(() => IsSearchLoading = false);
+            }
+        }
+
+        private void ClearSearch()
+        {
+            // Invalidate any in-flight search so its late result won't overwrite us.
+            Interlocked.Increment(ref _searchVersion);
+
+            if (_preSearchCatalogs is null)
+            {
+                // No active filter — still reset transient flags just in case.
+                IsSearching = false;
+                IsSearchLoading = false;
+                MatchedItemsCount = 0;
+                MatchedItemsTruncated = false;
+                return;
+            }
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                Catalogs = _preSearchCatalogs;
+                _preSearchCatalogs = null;
+                MatchedItemsCount = 0;
+                MatchedItemsTruncated = false;
+                IsSearching = false;
+                IsSearchLoading = false;
+                SelectedItem = null;
+            });
+        }
+
+        /// <summary>
+        /// Reconstruye el árbol usando solo las rutas (Catalog → ItemType → ItemCategory → ItemSubCategory → Item)
+        /// de los items que matchearon. Mergea items del mismo padre para evitar duplicados.
+        /// </summary>
+        private ObservableCollection<CatalogDTO> BuildTreeFromSearchResults(IEnumerable<ItemGraphQLModel> items)
+        {
+            Dictionary<int, CatalogDTO> catalogs = [];
+
+            foreach (ItemGraphQLModel item in items)
+            {
+                ItemSubCategoryGraphQLModel? subCat = item.SubCategory;
+                ItemCategoryGraphQLModel? cat = subCat?.ItemCategory;
+                ItemTypeGraphQLModel? type = cat?.ItemType;
+                CatalogGraphQLModel? catalog = type?.Catalog;
+                if (subCat == null || cat == null || type == null || catalog == null) continue;
+
+                // Catalog
+                if (!catalogs.TryGetValue(catalog.Id, out CatalogDTO? catalogDTO))
+                {
+                    catalogDTO = _mapper.Map<CatalogDTO>(catalog);
+                    catalogDTO.ItemTypes = [];
+                    catalogDTO.IsExpanded = true;
+                    catalogs[catalog.Id] = catalogDTO;
+                }
+
+                // ItemType
+                ItemTypeDTO? itemTypeDTO = catalogDTO.ItemTypes.FirstOrDefault(t => t.Id == type.Id);
+                if (itemTypeDTO is null)
+                {
+                    itemTypeDTO = _mapper.Map<ItemTypeDTO>(type);
+                    itemTypeDTO.Context = this;
+                    itemTypeDTO.ItemCategories = [];
+                    itemTypeDTO.IsExpanded = true;
+                    catalogDTO.ItemTypes.Add(itemTypeDTO);
+                }
+
+                // ItemCategory
+                ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(c => c.Id == cat.Id);
+                if (itemCategoryDTO is null)
+                {
+                    itemCategoryDTO = _mapper.Map<ItemCategoryDTO>(cat);
+                    itemCategoryDTO.Context = this;
+                    itemCategoryDTO.SubCategories = [];
+                    itemCategoryDTO.IsExpanded = true;
+                    itemTypeDTO.ItemCategories.Add(itemCategoryDTO);
+                }
+
+                // ItemSubCategory
+                ItemSubCategoryDTO? subCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(s => s.Id == subCat.Id);
+                if (subCategoryDTO is null)
+                {
+                    subCategoryDTO = _mapper.Map<ItemSubCategoryDTO>(subCat);
+                    subCategoryDTO.Context = this;
+                    subCategoryDTO.Items = [];
+                    subCategoryDTO.IsExpanded = true;
+                    itemCategoryDTO.SubCategories.Add(subCategoryDTO);
+                }
+
+                // Item
+                if (!subCategoryDTO.Items.Any(i => i.Id == item.Id))
+                {
+                    ItemDTO itemDTO = _mapper.Map<ItemDTO>(item);
+                    itemDTO.Context = this;
+                    subCategoryDTO.Items.Add(itemDTO);
+                }
+            }
+
+            return [.. catalogs.Values];
+        }
+
+        #endregion
+
+        public object? SelectedItem
+        {
+            get;
             set
             {
-                if (_items != value)
+                if (field == value) return;
+                field = value;
+                NotifyOfPropertyChange(nameof(SelectedItem));
+                NotifyAllActionStates();
+
+                // Sync side panel with the new selection
+                SyncPanelWithSelection();
+            }
+        }
+
+        private ItemDetailViewModel? _panelItemDetail;
+        public ItemDetailViewModel PanelItemDetail
+        {
+            get
+            {
+                if (_panelItemDetail is null)
                 {
-                    _items = value;
-                    NotifyOfPropertyChange(nameof(Items));
+                    _panelItemDetail = new ItemDetailViewModel(
+                        _itemService, _eventAggregator, _dialogService, _stringLengthCache,
+                        _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache,
+                        _joinableTaskFactory, _itemValidator, _mapper,
+                        S3Helper, LocalImageCachePath);
+                    _panelItemDetail.HasEditPermission = HasItemEditPermission;
+                }
+                return _panelItemDetail;
+            }
+        }
+
+        private void SyncPanelWithSelection()
+        {
+            if (_panelItemDetail is null) return; // lazy-created, not yet used
+            if (SelectedItem is ItemDTO itemDto)
+            {
+                ItemTypeDTO? itemType = FindItemTypeForItem(itemDto);
+                bool hasComponents = itemType != null && !itemType.StockControl;
+                bool stockControl = itemType?.StockControl ?? false;
+                _panelItemDetail.LoadForPanel(_mapper.Map<ItemGraphQLModel>(itemDto), hasComponents, stockControl);
+            }
+            else
+            {
+                _panelItemDetail.ClearPanel();
+            }
+        }
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                    NotifyAllActionStates();
                 }
             }
         }
 
-        public bool CatalogIsSelected => SelectedCatalog != null;
-        public bool DeleteCatalogButtonEnable => SelectedCatalog != null && SelectedCatalog.ItemTypes.Count == 0;
+        #endregion
+
+        #region Permissions
+
+        public bool HasCatalogCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Catalog.Create);
+        public bool HasCatalogEditPermission => _permissionCache.IsAllowed(PermissionCodes.Catalog.Edit);
+        public bool HasCatalogDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Catalog.Delete);
+
+        public bool HasItemTypeCreatePermission => _permissionCache.IsAllowed(PermissionCodes.ItemType.Create);
+        public bool HasItemTypeEditPermission => _permissionCache.IsAllowed(PermissionCodes.ItemType.Edit);
+        public bool HasItemTypeDeletePermission => _permissionCache.IsAllowed(PermissionCodes.ItemType.Delete);
+
+        public bool HasItemCategoryCreatePermission => _permissionCache.IsAllowed(PermissionCodes.ItemCategory.Create);
+        public bool HasItemCategoryEditPermission => _permissionCache.IsAllowed(PermissionCodes.ItemCategory.Edit);
+        public bool HasItemCategoryDeletePermission => _permissionCache.IsAllowed(PermissionCodes.ItemCategory.Delete);
+
+        public bool HasItemSubCategoryCreatePermission => _permissionCache.IsAllowed(PermissionCodes.ItemSubCategory.Create);
+        public bool HasItemSubCategoryEditPermission => _permissionCache.IsAllowed(PermissionCodes.ItemSubCategory.Edit);
+        public bool HasItemSubCategoryDeletePermission => _permissionCache.IsAllowed(PermissionCodes.ItemSubCategory.Delete);
+
+        public bool HasItemCreatePermission => _permissionCache.IsAllowed(PermissionCodes.Item.Create);
+        public bool HasItemEditPermission => _permissionCache.IsAllowed(PermissionCodes.Item.Edit);
+        public bool HasItemDeletePermission => _permissionCache.IsAllowed(PermissionCodes.Item.Delete);
+        public bool HasItemDiscontinuePermission => _permissionCache.IsAllowed(PermissionCodes.Item.Discontinue);
+
+        #endregion
+
+        #region Can* action states
+
+        public bool CanNewCatalog => HasCatalogCreatePermission && !IsBusy;
+        public bool CanEditCatalog => HasCatalogEditPermission && SelectedItem is CatalogDTO && !IsBusy;
+        public bool CanDeleteCatalog => HasCatalogDeletePermission && SelectedItem is CatalogDTO && !IsBusy;
+        public bool CanNewItemType => HasItemTypeCreatePermission && SelectedItem is CatalogDTO && !IsBusy;
+
+        public bool CanEditItemType => HasItemTypeEditPermission && SelectedItem is ItemTypeDTO && !IsBusy;
+        public bool CanDeleteItemType => HasItemTypeDeletePermission && SelectedItem is ItemTypeDTO && !IsBusy;
+        public bool CanNewItemCategory => HasItemCategoryCreatePermission && SelectedItem is ItemTypeDTO && !IsBusy;
+
+        public bool CanEditItemCategory => HasItemCategoryEditPermission && SelectedItem is ItemCategoryDTO && !IsBusy;
+        public bool CanDeleteItemCategory => HasItemCategoryDeletePermission && SelectedItem is ItemCategoryDTO && !IsBusy;
+        public bool CanNewItemSubCategory => HasItemSubCategoryCreatePermission && SelectedItem is ItemCategoryDTO && !IsBusy;
+
+        public bool CanEditItemSubCategory => HasItemSubCategoryEditPermission && SelectedItem is ItemSubCategoryDTO && !IsBusy;
+        public bool CanDeleteItemSubCategory => HasItemSubCategoryDeletePermission && SelectedItem is ItemSubCategoryDTO && !IsBusy;
+        public bool CanNewItem => HasItemCreatePermission && (SelectedItem is ItemSubCategoryDTO || SelectedItem is ItemDTO) && !IsBusy;
+
+        public bool CanDeleteItem => HasItemDeletePermission && SelectedItem is ItemDTO && !IsBusy;
+        public bool CanDiscontinueItem => HasItemDiscontinuePermission && SelectedItem is ItemDTO && !IsBusy;
+
+        private void NotifyAllActionStates()
+        {
+            NotifyOfPropertyChange(nameof(CanNewCatalog));
+            NotifyOfPropertyChange(nameof(CanEditCatalog));
+            NotifyOfPropertyChange(nameof(CanDeleteCatalog));
+            NotifyOfPropertyChange(nameof(CanNewItemType));
+            NotifyOfPropertyChange(nameof(CanEditItemType));
+            NotifyOfPropertyChange(nameof(CanDeleteItemType));
+            NotifyOfPropertyChange(nameof(CanNewItemCategory));
+            NotifyOfPropertyChange(nameof(CanEditItemCategory));
+            NotifyOfPropertyChange(nameof(CanDeleteItemCategory));
+            NotifyOfPropertyChange(nameof(CanNewItemSubCategory));
+            NotifyOfPropertyChange(nameof(CanEditItemSubCategory));
+            NotifyOfPropertyChange(nameof(CanDeleteItemSubCategory));
+            NotifyOfPropertyChange(nameof(CanNewItem));
+            NotifyOfPropertyChange(nameof(CanDeleteItem));
+            NotifyOfPropertyChange(nameof(CanDiscontinueItem));
+        }
+
+        private void NotifyAllPermissionStates()
+        {
+            NotifyOfPropertyChange(nameof(HasCatalogCreatePermission));
+            NotifyOfPropertyChange(nameof(HasCatalogEditPermission));
+            NotifyOfPropertyChange(nameof(HasCatalogDeletePermission));
+            NotifyOfPropertyChange(nameof(HasItemTypeCreatePermission));
+            NotifyOfPropertyChange(nameof(HasItemTypeEditPermission));
+            NotifyOfPropertyChange(nameof(HasItemTypeDeletePermission));
+            NotifyOfPropertyChange(nameof(HasItemCategoryCreatePermission));
+            NotifyOfPropertyChange(nameof(HasItemCategoryEditPermission));
+            NotifyOfPropertyChange(nameof(HasItemCategoryDeletePermission));
+            NotifyOfPropertyChange(nameof(HasItemSubCategoryCreatePermission));
+            NotifyOfPropertyChange(nameof(HasItemSubCategoryEditPermission));
+            NotifyOfPropertyChange(nameof(HasItemSubCategoryDeletePermission));
+            NotifyOfPropertyChange(nameof(HasItemCreatePermission));
+            NotifyOfPropertyChange(nameof(HasItemEditPermission));
+            NotifyOfPropertyChange(nameof(HasItemDeletePermission));
+            NotifyOfPropertyChange(nameof(HasItemDiscontinuePermission));
+
+            // The panel-mode ItemDetailViewModel owns the Edit button on ItemDetailPanelView.
+            // Push the permission to the panel instance so its CanEnterEditMode re-evaluates
+            // whenever permissions change.
+            if (_panelItemDetail is not null)
+                _panelItemDetail.HasEditPermission = HasItemEditPermission;
+
+            NotifyAllActionStates();
+        }
 
         #endregion
 
@@ -386,12 +566,22 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             IRepository<S3StorageLocationGraphQLModel> s3LocationService,
             Helpers.IDialogService dialogService,
             Helpers.Services.INotificationService notificationService,
+            IEventAggregator eventAggregator,
+            IMapper mapper,
+            JoinableTaskFactory joinableTaskFactory,
+            CatalogCache catalogCache,
             MeasurementUnitCache measurementUnitCache,
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
             ItemSizeCategoryCache itemSizeCategoryCache,
             StringLengthCache stringLengthCache,
-            IGraphQLClient graphQLClient)
+            CatalogValidator catalogValidator,
+            ItemTypeValidator itemTypeValidator,
+            ItemCategoryValidator itemCategoryValidator,
+            ItemSubCategoryValidator itemSubCategoryValidator,
+            ItemValidator itemValidator,
+            IGraphQLClient graphQLClient,
+            PermissionCache permissionCache)
         {
             Context = context;
             _catalogService = catalogService;
@@ -402,1171 +592,144 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _s3LocationService = s3LocationService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _eventAggregator = eventAggregator;
+            _mapper = mapper;
+            _joinableTaskFactory = joinableTaskFactory;
+            _catalogCache = catalogCache;
             _measurementUnitCache = measurementUnitCache;
             _itemBrandCache = itemBrandCache;
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
             _stringLengthCache = stringLengthCache;
+            _catalogValidator = catalogValidator;
+            _itemTypeValidator = itemTypeValidator;
+            _itemCategoryValidator = itemCategoryValidator;
+            _itemSubCategoryValidator = itemSubCategoryValidator;
+            _itemValidator = itemValidator;
             _graphQLClient = graphQLClient;
+            _permissionCache = permissionCache;
 
-            // Initialize PanelEditors
-            CatalogEditor = new CatalogPanelEditor(this, _catalogService, _stringLengthCache);
-            ItemTypeEditor = new ItemTypePanelEditor(this, _itemTypeService, _stringLengthCache);
-            ItemCategoryEditor = new ItemCategoryPanelEditor(this, _itemCategoryService, _stringLengthCache);
-            ItemSubCategoryEditor = new ItemSubCategoryPanelEditor(this, _itemSubCategoryService, _stringLengthCache);
-            ItemEditor = new ItemPanelEditor(this, _itemService, _dialogService, _stringLengthCache);
-
-            // Register for search product messages
-            Messenger.Default.Register<ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel>>(this, SearchWithThreeColumnsGridMessageToken.SearchProduct, false, OnFindProductMessage);
-
-            Context.EventAggregator.SubscribeOnUIThread(this);
+            _eventAggregator.SubscribeOnUIThread(this);
         }
 
         #endregion
 
         #region Lifecycle
 
-        protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
-        {
-            if (Context.EnableOnActivateAsync is false) return;
-            await base.OnActivatedAsync(cancellationToken);
-            await OnStartUpAsync();
-        }
-
-        public async Task OnStartUpAsync()
+        protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
             try
             {
                 IsBusy = true;
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.CatalogItem);
-                await LoadComboBoxesAsync();
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, cancellationToken,
+                    _catalogCache, _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache);
                 await LoadS3ConfigAsync();
-                await LoadCatalogsAsync();
-            }
-            catch (AsyncException ex)
-            {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-                await Context.TryCloseAsync();
+                BuildTree();
+
+                // Anti-flicker: mark initialized and evaluate empty state from the cache
+                // (the authoritative source — not Catalogs which may be a filtered subset).
+                _isInitialized = true;
+                ShowEmptyState = _catalogCache.Items.Count == 0;
+                NotifyOfPropertyChange(nameof(HasRecords));
+
+                // Permissions are already loaded by ShellViewModel when the company is selected.
+                // Just force initial evaluation of all HasXPermission / CanX bindings.
+                NotifyAllPermissionStates();
             }
             catch (Exception ex)
             {
-                await App.Current.Dispatcher.InvokeAsync(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnStartUpAsync)}: {ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-                await Context.TryCloseAsync();
+                Application.Current.Dispatcher.Invoke(() =>
+                    ThemedMessageBox.Show("Atención!",
+                        $"{GetType().Name}.{nameof(OnInitializedAsync)}: {ex.GetErrorMessage()}",
+                        MessageBoxButton.OK, MessageBoxImage.Error));
+                await TryCloseAsync(false);
             }
             finally
             {
                 IsBusy = false;
             }
+            await base.OnInitializedAsync(cancellationToken);
+
+            // Asegurar foco después de que el BusyMask se haya retirado completamente.
+            // OnViewReady solo dispara una vez y a veces compite con la animación del BusyMask
+            // en el primer arranque, dejando el foco sin asignar hasta la primera interacción.
+            Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(SetFocusOnFilterSearch),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
-        protected override async Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
+        protected override void OnViewReady(object view)
+        {
+            base.OnViewReady(view);
+            Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(SetFocusOnFilterSearch),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        }
+
+        protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
-                Context.EventAggregator.Unsubscribe(this);
-                Messenger.Default.Unregister(this);
+                // Invalidate any in-flight search so its late callback becomes a no-op
+                // (prevents dispatching into a VM whose event subscription is already gone).
+                Interlocked.Increment(ref _searchVersion);
+
+                _eventAggregator.Unsubscribe(this);
+                Catalogs?.Clear();
+
+                // Release the pre-search snapshot together with all its DTO references.
+                _preSearchCatalogs?.Clear();
+                _preSearchCatalogs = null;
+
+                IsSearching = false;
+                IsSearchLoading = false;
+                MatchedItemsCount = 0;
+                MatchedItemsTruncated = false;
             }
-            await base.OnDeactivateAsync(close, cancellationToken);
+            return base.OnDeactivateAsync(close, cancellationToken);
+        }
+
+        /// <summary>
+        /// Construye el árbol desde CatalogCache. Catalogs + ItemTypes ya vienen del cache;
+        /// ItemCategories / ItemSubCategories / Items se cargan lazy al expandir cada nodo.
+        /// </summary>
+        private void BuildTree()
+        {
+            // Defensive reset: any active filter state is stale the moment we rebuild the
+            // tree from the cache. Drop the snapshot and invalidate in-flight searches.
+            Interlocked.Increment(ref _searchVersion);
+            _preSearchCatalogs?.Clear();
+            _preSearchCatalogs = null;
+            IsSearching = false;
+            IsSearchLoading = false;
+            MatchedItemsCount = 0;
+            MatchedItemsTruncated = false;
+
+            ObservableCollection<CatalogDTO> newCatalogs = [];
+            foreach (CatalogGraphQLModel catalogModel in _catalogCache.Items)
+            {
+                CatalogDTO catalogDTO = _mapper.Map<CatalogDTO>(catalogModel);
+                foreach (ItemTypeDTO itemType in catalogDTO.ItemTypes)
+                {
+                    itemType.Context = this;
+                    itemType.ItemCategories.Add(new ItemCategoryDTO { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
+                }
+                newCatalogs.Add(catalogDTO);
+            }
+            Catalogs = newCatalogs;
         }
 
         #endregion
 
-        #region HandleSelectedItemChanged
+        #region S3 Initialization
 
-        public void HandleSelectedItemChanged()
-        {
-            if (_selectedItem != null && !(_selectedItem is ItemDTO { IsDummyChild: true })
-                                     && !(_selectedItem is ItemTypeDTO { IsDummyChild: true })
-                                     && !(_selectedItem is ItemCategoryDTO { IsDummyChild: true })
-                                     && !(_selectedItem is ItemSubCategoryDTO { IsDummyChild: true }))
-            {
-                CurrentPanelEditor = _selectedItem switch
-                {
-                    ItemTypeDTO => ItemTypeEditor,
-                    ItemCategoryDTO => ItemCategoryEditor,
-                    ItemSubCategoryDTO => ItemSubCategoryEditor,
-                    ItemDTO => ItemEditor,
-                    _ => null
-                };
-
-                if (!IsNewRecord && CurrentPanelEditor != null)
-                {
-                    IsEditing = false;
-                    CanEdit = true;
-                    CanUndo = false;
-
-                    if (_selectedItem is ItemDTO itemDTO)
-                    {
-                        _ = SetItemForEditAsync(itemDTO);
-                    }
-                    else
-                    {
-                        CurrentPanelEditor.SetForEdit(_selectedItem);
-                    }
-                }
-            }
-            else if (_selectedItem == null)
-            {
-                CurrentPanelEditor = null;
-            }
-        }
-
-        private async Task SetItemForEditAsync(ItemDTO itemDTO)
-        {
-            ItemEditor.SetForEdit(itemDTO);
-            // Download S3 images if needed
-            if (IsS3Available && ItemEditor.Images.Count > 0)
-            {
-                foreach (ImageByItemDTO image in ItemEditor.Images)
-                {
-                    string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
-                    if (!Path.Exists(imagesLocalPath))
-                    {
-                        await S3Helper!.DownloadFileAsync(imagesLocalPath, image.S3FileName);
-                    }
-                    System.Windows.Media.Imaging.BitmapImage bitmap = new();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(imagesLocalPath, UriKind.Absolute);
-                    bitmap.EndInit();
-                    image.SourceImage = bitmap;
-                    image.ImagePath = imagesLocalPath;
-                }
-            }
-        }
-
-        #endregion
-
-        #region Edit/Save/Undo Commands
-
-        public void Edit()
-        {
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-            IsNewRecord = false;
-
-            if (CurrentPanelEditor != null)
-            {
-                CurrentPanelEditor.IsEditing = true;
-            }
-        }
-
-        public async Task SaveAsync()
-        {
-            if (CurrentPanelEditor == null) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                bool saveSuccessful = await CurrentPanelEditor.SaveAsync();
-
-                if (saveSuccessful)
-                {
-                    if (CurrentPanelEditor == CatalogEditor)
-                        CurrentPanelEditor = null;
-
-                    IsEditing = false;
-                    CanUndo = false;
-                    CanEdit = true;
-                    IsNewRecord = false;
-
-                    if (CurrentPanelEditor is ItemPanelEditor itemEditor)
-                        itemEditor.SelectedTabIndex = 0;
-                }
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public void Undo()
-        {
-            bool wasCatalogEditor = CurrentPanelEditor == CatalogEditor;
-
-            CurrentPanelEditor?.Undo();
-
-            if (IsNewRecord || wasCatalogEditor)
-            {
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-            }
-
-            IsEditing = false;
-            CanUndo = false;
-            CanEdit = SelectedItem != null;
-            IsNewRecord = false;
-        }
-
-        private ICommand _editCommand;
-        public ICommand EditCommand
-        {
-            get
-            {
-                _editCommand ??= new DevExpress.Mvvm.DelegateCommand(Edit);
-                return _editCommand;
-            }
-        }
-
-        private ICommand _saveCommand;
-        public ICommand SaveCommand
-        {
-            get
-            {
-                _saveCommand ??= new AsyncCommand(SaveAsync);
-                return _saveCommand;
-            }
-        }
-
-        private ICommand _undoCommand;
-        public ICommand UndoCommand
-        {
-            get
-            {
-                _undoCommand ??= new DevExpress.Mvvm.DelegateCommand(Undo);
-                return _undoCommand;
-            }
-        }
-
-        #endregion
-
-        #region Create Commands (context menus)
-
-        public async Task CreateItemTypeAsync()
-        {
-            if (SelectedCatalog == null) return;
-            IsNewRecord = true;
-            CurrentPanelEditor = ItemTypeEditor;
-            ItemTypeEditor.SetForNew(SelectedCatalog.Id);
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-        }
-
-        public async Task CreateItemCategoryAsync()
-        {
-            if (SelectedItem is not ItemTypeDTO itemType) return;
-            IsNewRecord = true;
-            CurrentPanelEditor = ItemCategoryEditor;
-            ItemCategoryEditor.SetForNew(itemType.Id);
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-        }
-
-        public async Task CreateItemSubCategoryAsync()
-        {
-            if (SelectedItem is not ItemCategoryDTO itemCategory) return;
-            IsNewRecord = true;
-            CurrentPanelEditor = ItemSubCategoryEditor;
-            ItemSubCategoryEditor.SetForNew(itemCategory.Id);
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-        }
-
-        public async Task CreateItemAsync()
-        {
-            if (SelectedItem is not ItemSubCategoryDTO subCategory) return;
-            SelectedSubCategoryIdBeforeNewItem = subCategory.Id;
-            IsNewRecord = true;
-            CurrentPanelEditor = ItemEditor;
-            ItemEditor.SetForNew(subCategory.Id);
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-        }
-
-        public async Task CreateCatalogAsync()
-        {
-            SelectedItem = null;
-            IsNewRecord = true;
-            CurrentPanelEditor = CatalogEditor;
-            CatalogEditor.SetForNew(null);
-            IsEditing = true;
-            CanUndo = true;
-            CanEdit = false;
-        }
-
-        public async Task UpdateCatalogAsync()
-        {
-            if (SelectedCatalog == null) return;
-            SelectedItem = null;
-            CurrentPanelEditor = CatalogEditor;
-            CatalogEditor.SetForEdit(new CatalogDTO { Id = SelectedCatalog.Id, Name = SelectedCatalog.Name });
-            CatalogEditor.IsEditing = true;
-            IsEditing = true;
-            CanEdit = false;
-            CanUndo = true;
-        }
-
-        public bool CanCreateCatalog => true;
-        public bool CanUpdateCatalog => true;
-        public bool CanDeleteCatalog => true;
-        public bool CanCreateItemType => true;
-        public bool CanUpdateItemType => true;
-        public bool CanDeleteItemType => true;
-        public bool CanCreateItemCategory => true;
-        public bool CanUpdateItemCategory => true;
-        public bool CanDeleteItemCategory => true;
-        public bool CanCreateItemSubCategory => true;
-        public bool CanUpdateItemSubCategory => true;
-        public bool CanDeleteItemSubCategory => true;
-        public bool CanCreateItem => true;
-        public bool CanDeleteItem => true;
-        public bool CanDiscontinueItem => true;
-
-        #endregion
-
-        #region Create/Update/Delete Commands (ICommand)
-
-        private ICommand _createCatalogCommand;
-        public ICommand CreateCatalogCommand
-        {
-            get
-            {
-                _createCatalogCommand ??= new AsyncCommand(CreateCatalogAsync, CanCreateCatalog);
-                return _createCatalogCommand;
-            }
-        }
-
-        private ICommand _updateCatalogCommand;
-        public ICommand UpdateCatalogCommand
-        {
-            get
-            {
-                _updateCatalogCommand ??= new AsyncCommand(UpdateCatalogAsync, CanUpdateCatalog);
-                return _updateCatalogCommand;
-            }
-        }
-
-        private ICommand _deleteCatalogCommand;
-        public ICommand DeleteCatalogCommand
-        {
-            get
-            {
-                _deleteCatalogCommand ??= new AsyncCommand(DeleteCatalogAsync, CanDeleteCatalog);
-                return _deleteCatalogCommand;
-            }
-        }
-
-        private ICommand _createItemTypeCommand;
-        public ICommand CreateItemTypeCommand
-        {
-            get
-            {
-                _createItemTypeCommand ??= new AsyncCommand(CreateItemTypeAsync, CanCreateItemType);
-                return _createItemTypeCommand;
-            }
-        }
-
-        private ICommand _updateItemTypeCommand;
-        public ICommand UpdateItemTypeCommand
-        {
-            get
-            {
-                _updateItemTypeCommand ??= new AsyncCommand(UpdateItemTypeAsync, CanUpdateItemType);
-                return _updateItemTypeCommand;
-            }
-        }
-
-        private ICommand _deleteItemTypeCommand;
-        public ICommand DeleteItemTypeCommand
-        {
-            get
-            {
-                _deleteItemTypeCommand ??= new AsyncCommand(DeleteItemTypeAsync, CanDeleteItemType);
-                return _deleteItemTypeCommand;
-            }
-        }
-
-        private ICommand _createItemCategoryCommand;
-        public ICommand CreateItemCategoryCommand
-        {
-            get
-            {
-                _createItemCategoryCommand ??= new AsyncCommand(CreateItemCategoryAsync, CanCreateItemCategory);
-                return _createItemCategoryCommand;
-            }
-        }
-
-        private ICommand _updateItemCategoryCommand;
-        public ICommand UpdateItemCategoryCommand
-        {
-            get
-            {
-                _updateItemCategoryCommand ??= new AsyncCommand(UpdateItemCategoryAsync, CanUpdateItemCategory);
-                return _updateItemCategoryCommand;
-            }
-        }
-
-        private ICommand _deleteItemCategoryCommand;
-        public ICommand DeleteItemCategoryCommand
-        {
-            get
-            {
-                _deleteItemCategoryCommand ??= new AsyncCommand(DeleteItemCategoryAsync, CanDeleteItemCategory);
-                return _deleteItemCategoryCommand;
-            }
-        }
-
-        private ICommand _createItemSubCategoryCommand;
-        public ICommand CreateItemSubCategoryCommand
-        {
-            get
-            {
-                _createItemSubCategoryCommand ??= new AsyncCommand(CreateItemSubCategoryAsync, CanCreateItemSubCategory);
-                return _createItemSubCategoryCommand;
-            }
-        }
-
-        private ICommand _updateItemSubCategoryCommand;
-        public ICommand UpdateItemSubCategoryCommand
-        {
-            get
-            {
-                _updateItemSubCategoryCommand ??= new AsyncCommand(UpdateItemSubCategoryAsync, CanUpdateItemSubCategory);
-                return _updateItemSubCategoryCommand;
-            }
-        }
-
-        private ICommand _deleteItemSubCategoryCommand;
-        public ICommand DeleteItemSubCategoryCommand
-        {
-            get
-            {
-                _deleteItemSubCategoryCommand ??= new AsyncCommand(DeleteItemSubCategoryAsync, CanDeleteItemSubCategory);
-                return _deleteItemSubCategoryCommand;
-            }
-        }
-
-        private ICommand _createItemCommand;
-        public ICommand CreateItemCommand
-        {
-            get
-            {
-                _createItemCommand ??= new AsyncCommand(CreateItemAsync, CanCreateItem);
-                return _createItemCommand;
-            }
-        }
-
-        private ICommand _deleteItemCommand;
-        public ICommand DeleteItemCommand
-        {
-            get
-            {
-                _deleteItemCommand ??= new AsyncCommand(DeleteItemAsync, CanDeleteItem);
-                return _deleteItemCommand;
-            }
-        }
-
-        private ICommand _discontinueItemCommand;
-        public ICommand DiscontinueItemCommand
-        {
-            get
-            {
-                _discontinueItemCommand ??= new AsyncCommand(DiscontinueItemAsync, CanDiscontinueItem);
-                return _discontinueItemCommand;
-            }
-        }
-
-        private ICommand _openSearchProducts;
-        public ICommand OpenSearchProducts
-        {
-            get
-            {
-                _openSearchProducts ??= new RelayCommand(CanOpenSearchProducts, SearchProducts);
-                return _openSearchProducts;
-            }
-        }
-
-        public bool CanOpenSearchProducts(object p) => true;
-
-        #endregion
-
-        #region Update methods (set for edit via context menu)
-
-        public async Task UpdateItemTypeAsync()
-        {
-            if (SelectedItem is not ItemTypeDTO itemType) return;
-            CurrentPanelEditor = ItemTypeEditor;
-            ItemTypeEditor.SetForEdit(itemType);
-            IsEditing = false;
-            CanEdit = true;
-            CanUndo = false;
-        }
-
-        public async Task UpdateItemCategoryAsync()
-        {
-            if (SelectedItem is not ItemCategoryDTO itemCategory) return;
-            CurrentPanelEditor = ItemCategoryEditor;
-            ItemCategoryEditor.SetForEdit(itemCategory);
-            IsEditing = false;
-            CanEdit = true;
-            CanUndo = false;
-        }
-
-        public async Task UpdateItemSubCategoryAsync()
-        {
-            if (SelectedItem is not ItemSubCategoryDTO itemSubCategory) return;
-            CurrentPanelEditor = ItemSubCategoryEditor;
-            ItemSubCategoryEditor.SetForEdit(itemSubCategory);
-            IsEditing = false;
-            CanEdit = true;
-            CanUndo = false;
-        }
-
-        #endregion
-
-        #region Delete Methods
-
-        public async Task DeleteCatalogAsync()
-        {
-            if (SelectedCatalog == null) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                int id = SelectedCatalog.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDeleteCatalog");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _catalogService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea eliminar el catálogo {SelectedCatalog.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                string deleteQuery = GetDeleteMutationQuery("deleteCatalog");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _catalogService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new CatalogDeleteMessage { DeletedCatalog = deleteResult });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteCatalogAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteCatalogAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task DeleteItemTypeAsync()
-        {
-            if (SelectedItem is not ItemTypeDTO itemType) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                int id = itemType.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemType");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _itemTypeService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea eliminar el tipo de item {itemType.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                string deleteQuery = GetDeleteMutationQuery("deleteItemType");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _itemTypeService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemTypeDeleteMessage { DeletedItemType = deleteResult });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteItemTypeAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteItemTypeAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task DeleteItemCategoryAsync()
-        {
-            if (SelectedItem is not ItemCategoryDTO itemCategory) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                int id = itemCategory.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemCategory");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _itemCategoryService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea eliminar la categoría {itemCategory.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                string deleteQuery = GetDeleteMutationQuery("deleteItemCategory");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _itemCategoryService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemCategoryDeleteMessage { DeletedItemCategory = deleteResult });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteItemCategoryAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteItemCategoryAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task DeleteItemSubCategoryAsync()
-        {
-            if (SelectedItem is not ItemSubCategoryDTO itemSubCategory) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                int id = itemSubCategory.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDeleteItemSubCategory");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _itemSubCategoryService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea eliminar la subcategoría {itemSubCategory.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                string deleteQuery = GetDeleteMutationQuery("deleteItemSubCategory");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _itemSubCategoryService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemSubCategoryDeleteMessage { DeletedItemSubCategory = deleteResult });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteItemSubCategoryAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteItemSubCategoryAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task DeleteItemAsync()
-        {
-            if (SelectedItem is not ItemDTO itemDTO) return;
-
-            try
-            {
-                IsBusy = true;
-                Refresh();
-
-                int id = itemDTO.Id;
-                string canDeleteQuery = GetCanDeleteQuery("canDeleteItem");
-                object canDeleteVariables = new { canDeleteResponseId = id };
-                var validation = await _itemService.CanDeleteAsync(canDeleteQuery, canDeleteVariables);
-
-                if (validation.CanDelete)
-                {
-                    IsBusy = false;
-                    MessageBoxResult result = ThemedMessageBox.Show(
-                        title: "Confirme...",
-                        text: $"¿Confirma que desea eliminar el registro {itemDTO.Name}?",
-                        messageBoxButtons: MessageBoxButton.YesNo,
-                        image: MessageBoxImage.Question);
-                    if (result != MessageBoxResult.Yes) return;
-                }
-                else
-                {
-                    IsBusy = false;
-                    Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"El registro no puede ser eliminado\n\n{validation.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                    return;
-                }
-
-                IsBusy = true;
-                Refresh();
-
-                // Delete images from S3 and local repository before deleting the item
-                if (IsS3Available && ItemEditor.Images != null && ItemEditor.Images.Count > 0)
-                {
-                    foreach (ImageByItemDTO image in ItemEditor.Images)
-                    {
-                        string imagesLocalPath = Path.Combine(LocalImageCachePath, image.S3FileName);
-                        if (Path.Exists(imagesLocalPath)) File.Delete(imagesLocalPath);
-                        await S3Helper!.DeleteFileAsync(image.S3FileName);
-                    }
-                }
-
-                string deleteQuery = GetDeleteMutationQuery("deleteItem");
-                object deleteVariables = new { deleteResponseId = id };
-                DeleteResponseType deleteResult = await _itemService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVariables);
-
-                if (!deleteResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo eliminar el registro.\n\n{deleteResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteResult });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DeleteItemAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        public async Task DiscontinueItemAsync()
-        {
-            if (SelectedItem is not ItemDTO itemDTO) return;
-
-            try
-            {
-                MessageBoxResult result = ThemedMessageBox.Show(
-                    title: "Confirme...",
-                    text: $"¿Confirma que desea descontinuar el registro {itemDTO.Name}?",
-                    messageBoxButtons: MessageBoxButton.YesNo,
-                    image: MessageBoxImage.Question);
-                if (result != MessageBoxResult.Yes) return;
-
-                IsBusy = true;
-                Refresh();
-
-                string query = GetDiscontinueItemQuery();
-                object variables = new { updateResponseId = itemDTO.Id, updateResponseData = new { isActive = false } };
-                var updateResult = await _itemService.UpdateAsync<UpsertResponseType<ItemGraphQLModel>>(query, variables);
-
-                if (!updateResult.Success)
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"No se pudo descontinuar el registro.\n\n{updateResult.Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                    return;
-                }
-
-                SelectedItem = null;
-                CurrentPanelEditor = null;
-
-                var deleteMessage = new DeleteResponseType
-                {
-                    DeletedId = itemDTO.Id,
-                    Success = true,
-                    Message = updateResult.Message
-                };
-                await Context.EventAggregator.PublishOnUIThreadAsync(new ItemDeleteMessage { DeletedItem = deleteMessage });
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(DiscontinueItemAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private static string GetDiscontinueItemQuery()
-        {
-            var fields = FieldSpec<UpsertResponseType<ItemGraphQLModel>>
-                .Create()
-                .Field(f => f.Success)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("data", "UpdateItemInput!"),
-                new("id", "ID!")
-            };
-            var fragment = new GraphQLQueryFragment("updateItem", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        #endregion
-
-        #region Search Products
-
-        public async void SearchProducts(object p)
-        {
-            string query = GetSearchProductsQuery();
-
-            string fieldHeader1 = "Código";
-            string fieldHeader2 = "Nombre";
-            string fieldHeader3 = "Referencia";
-            string fieldData1 = "Code";
-            string fieldData2 = "Name";
-            string fieldData3 = "Reference";
-
-            dynamic variables = new ExpandoObject();
-            variables.pageResponseFilters = new ExpandoObject();
-            variables.pageResponseFilters.IsActive = true;
-
-            var viewModel = new SearchWithThreeColumnsGridViewModel<ItemGraphQLModel>(
-                query, fieldHeader1, fieldHeader2, fieldHeader3, fieldData1, fieldData2, fieldData3,
-                variables, SearchWithThreeColumnsGridMessageToken.SearchProduct, _dialogService);
-
-            await _dialogService.ShowDialogAsync(viewModel, "Búsqueda de productos");
-        }
-
-        private static string GetSearchProductsQuery()
-        {
-            var fields = FieldSpec<PageType<ItemGraphQLModel>>
-                .Create()
-                .Field(f => f.PageNumber)
-                .Field(f => f.PageSize)
-                .Field(f => f.TotalPages)
-                .Field(f => f.TotalEntries)
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Field(e => e.Code)
-                    .Field(e => e.Reference)
-                    .Select(e => e.SubCategory, sub => sub
-                        .Field(s => s.Id)
-                        .Select(s => s.ItemCategory, ic => ic
-                            .Field(c => c.Id)
-                            .Select(c => c.ItemType, it => it
-                                .Field(t => t.Id)))))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("filters", "ItemFilters"),
-                new("pagination", "Pagination")
-            };
-            var fragment = new GraphQLQueryFragment("itemsPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        public async void OnFindProductMessage(ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel> message)
-        {
-            IsBusy = true;
-            await OnFindProductMessageAsync(message);
-            IsBusy = false;
-        }
-
-        public async Task OnFindProductMessageAsync(ReturnedDataFromModalWithThreeColumnsGridViewMessage<ItemGraphQLModel> message)
-        {
-            if (message.ReturnedData is null) return;
-            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.ReturnedData);
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
-            if (itemTypeDTO is null) return;
-            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemCategories.Count > 0 && itemTypeDTO.ItemCategories[0].IsDummyChild)
-            {
-                await LoadItemCategoriesAsync(itemTypeDTO);
-                itemTypeDTO.IsExpanded = true;
-            }
-            if (!itemTypeDTO.IsExpanded) itemTypeDTO.IsExpanded = true;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
-            if (itemCategoryDTO is null) return;
-            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
-            {
-                await LoadItemSubCategoriesAsync(itemCategoryDTO);
-                itemCategoryDTO.IsExpanded = true;
-            }
-            if (!itemCategoryDTO.IsExpanded) itemCategoryDTO.IsExpanded = true;
-            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
-            if (itemSubCategoryDTO is null) return;
-            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items.Count > 0 && itemSubCategoryDTO.Items[0].IsDummyChild)
-            {
-                await LoadItemsAsync(itemSubCategoryDTO);
-                itemSubCategoryDTO.IsExpanded = true;
-                ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
-                if (item is null) return;
-                SelectedItem = item;
-                return;
-            }
-            if (!itemSubCategoryDTO.IsExpanded)
-            {
-                itemSubCategoryDTO.IsExpanded = true;
-                ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
-                SelectedItem = item;
-                return;
-            }
-            ItemDTO? selectedItem = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
-            SelectedItem = selectedItem;
-        }
-
-        #endregion
-
-        #region Data Loading
-
-        public async Task LoadS3ConfigAsync()
+        private async Task LoadS3ConfigAsync()
         {
             try
             {
-                var fields = FieldSpec<S3StorageLocationGraphQLModel>
+                Dictionary<string, object> fields = FieldSpec<S3StorageLocationGraphQLModel>
                     .Create()
                     .Field(f => f.Id)
                     .Field(f => f.Key)
@@ -1581,28 +744,25 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                         .Field(a => a.Description))
                     .Build();
 
-                var parameter = new GraphQLQueryParameter("key", "String!");
-                var fragment = new GraphQLQueryFragment("s3StorageLocationByKey", [parameter], fields, "SingleItemResponse");
-                var query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
-                var location = await _s3LocationService.GetSingleItemAsync(query, new { singleItemResponseKey = "product_images" });
+                GraphQLQueryFragment fragment = new("s3StorageLocationByKey",
+                    [new("key", "String!")], fields, "SingleItemResponse");
+                string query = new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.QUERY);
+                S3StorageLocationGraphQLModel? location = await _s3LocationService.GetSingleItemAsync(
+                    query, new { singleItemResponseKey = "product_images" });
 
-                // Si no existe un S3StorageLocation con la key solicitada, se deshabilita S3
                 if (location is null)
                 {
                     S3Helper = null;
-                    _notificationService.ShowWarning("No se encontró configuración de almacenamiento S3 para imágenes de productos. La gestión de imágenes estará deshabilitada.");
                     return;
                 }
 
                 string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
                 LocalImageCachePath = Path.Combine(appDir, "cache", location.Bucket, location.Directory);
-                System.IO.Directory.CreateDirectory(LocalImageCachePath);
+                Directory.CreateDirectory(LocalImageCachePath);
 
-                // Si la ubicación no tiene AwsS3Config propio, buscar en la configuración global de la empresa
                 if (location.AwsS3Config is null && SessionInfo.DefaultAwsS3Config is null)
                 {
                     S3Helper = null;
-                    _notificationService.ShowWarning("No se encontró configuración de credenciales AWS S3. La gestión de imágenes estará deshabilitada.");
                     return;
                 }
 
@@ -1614,295 +774,1138 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        public async Task LoadComboBoxesAsync()
-        {
-            try
-            {
-                await CacheBatchLoader.LoadAsync(
-                    _graphQLClient, default,
-                    _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache);
+        #endregion
 
-                MeasurementUnits = Context.AutoMapper.Map<ObservableCollection<MeasurementUnitDTO>>(_measurementUnitCache.Items);
-                ItemBrands = Context.AutoMapper.Map<ObservableCollection<ItemBrandDTO>>(_itemBrandCache.Items);
-                AccountingGroups = Context.AutoMapper.Map<ObservableCollection<AccountingGroupDTO>>(_accountingGroupCache.Items);
-                ItemSizeCategories = Context.AutoMapper.Map<ObservableCollection<ItemSizeCategoryDTO>>(_itemSizeCategoryCache.Items);
-            }
-            catch (Exception ex) when (ex is not AsyncException)
-            {
-                throw new AsyncException(GetType(), ex);
-            }
-        }
-
-        private static string GetLoadCatalogsQuery()
-        {
-            var fields = FieldSpec<PageType<CatalogGraphQLModel>>
-                .Create()
-                .Field(f => f.PageNumber)
-                .Field(f => f.PageSize)
-                .Field(f => f.TotalPages)
-                .Field(f => f.TotalEntries)
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .SelectList(e => e.ItemTypes, it => it
-                        .Field(t => t.Id)
-                        .Field(t => t.Name)
-                        .Field(t => t.PrefixChar)
-                        .Field(t => t.StockControl)
-                        .Select(t => t.DefaultMeasurementUnit, mu => mu
-                            .Field(m => m.Id))
-                        .Select(t => t.DefaultAccountingGroup, ag => ag
-                            .Field(a => a.Id))
-                        .Select(t => t.Catalog, c => c
-                            .Field(cc => cc.Id))))
-                .Build();
-
-            var paginationParam = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("catalogsPage", [paginationParam], fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        private static string GetCanDeleteQuery(string fragmentName)
-        {
-            var fields = FieldSpec<CanDeleteType>.Create()
-                .Field(f => f.CanDelete)
-                .Field(f => f.Message)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "CanDeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        private static string GetDeleteMutationQuery(string fragmentName)
-        {
-            var fields = FieldSpec<DeleteResponseType>.Create()
-                .Field(f => f.DeletedId)
-                .Field(f => f.Message)
-                .Field(f => f.Success)
-                .Build();
-
-            var parameter = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment(fragmentName, [parameter], fields, "DeleteResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
-        }
-
-        public async Task LoadCatalogsAsync()
-        {
-            try
-            {
-                Refresh();
-                string query = GetLoadCatalogsQuery();
-
-                dynamic variables = new ExpandoObject();
-                variables.PageResponsePagination = new ExpandoObject();
-                variables.PageResponsePagination.PageSize = -1;
-
-                var result = await _catalogService.GetPageAsync(query, variables);
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Catalogs = Context.AutoMapper.Map<ObservableCollection<CatalogDTO>>(result.Entries);
-
-                    if (Catalogs.Count > 0)
-                    {
-                        foreach (CatalogDTO catalog in Catalogs)
-                        {
-                            foreach (ItemTypeDTO itemType in catalog.ItemTypes)
-                            {
-                                itemType.Context = this;
-                                itemType.ItemCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
-                            }
-                        }
-                        SelectedCatalog = Catalogs.First();
-                    }
-                    else
-                    {
-                        SelectedCatalog = null;
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(GetType(), ex);
-            }
-        }
-
-        private static string GetLoadItemCategoriesQuery()
-        {
-            var fields = FieldSpec<PageType<ItemCategoryGraphQLModel>>
-                .Create()
-                .Field(f => f.PageNumber)
-                .Field(f => f.PageSize)
-                .Field(f => f.TotalPages)
-                .Field(f => f.TotalEntries)
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Select(e => e.ItemType, it => it
-                        .Field(t => t.Id)))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "ItemCategoryFilters")
-            };
-            var fragment = new GraphQLQueryFragment("itemCategoriesPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
+        #region Lazy Load (ItemCategories / ItemSubCategories / Items)
 
         public async Task LoadItemCategoriesAsync(ItemTypeDTO itemType)
         {
             try
             {
+                Application.Current.Dispatcher.Invoke(() => itemType.ItemCategories.Clear());
+
+                (GraphQLQueryFragment fragment, string query) = _loadItemCategoriesQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { ItemTypeId = itemType.Id })
+                    .Build();
+
+                PageType<ItemCategoryGraphQLModel> result = await _itemCategoryService.GetPageAsync(query, variables);
+
+                if (result.Entries.Count == 0)
+                {
+                    Application.Current.Dispatcher.Invoke(() => itemType.IsExpanded = false);
+                    _notificationService.ShowInfo("Este tipo de item no tiene categorías registradas");
+                    return;
+                }
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    itemType.ItemCategories.Remove(itemType.ItemCategories[0]);
+                    foreach (ItemCategoryGraphQLModel model in result.Entries)
+                    {
+                        ItemCategoryDTO dto = _mapper.Map<ItemCategoryDTO>(model);
+                        dto.Context = this;
+                        dto.SubCategories.Add(new ItemSubCategoryDTO { IsDummyChild = true, Items = [], Name = "Dummy" });
+                        itemType.ItemCategories.Add(dto);
+                    }
                 });
-
-                string query = GetLoadItemCategoriesQuery();
-
-                dynamic variables = new ExpandoObject();
-                variables.PageResponsePagination = new ExpandoObject();
-                variables.PageResponsePagination.PageSize = -1;
-                variables.PageResponseFilters = new ExpandoObject();
-                variables.PageResponseFilters.ItemTypeId = itemType.Id;
-
-                var result = await _itemCategoryService.GetPageAsync(query, variables);
-                ItemCategories = Context.AutoMapper.Map<ObservableCollection<ItemCategoryDTO>>(result.Entries);
-
-                if (ItemCategories.Count == 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        itemType.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("Este tipo de item no tiene categorías registradas");
-                }
-                else
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (ItemCategoryDTO itemCategory in ItemCategories)
-                        {
-                            itemCategory.Context = this;
-                            itemCategory.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Items = [], Name = "Dummy" });
-                            itemType.ItemCategories.Add(itemCategory);
-                        }
-                    });
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(exGraphQL.Content is null ? "" : exGraphQL.Content.ToString());
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
-                }
-                else { throw; }
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(LoadItemCategoriesAsync)} \r\n{ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error));
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadItemCategoriesAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
-        }
-
-        private static string GetLoadItemSubCategoriesQuery()
-        {
-            var fields = FieldSpec<PageType<ItemSubCategoryGraphQLModel>>
-                .Create()
-                .Field(f => f.PageNumber)
-                .Field(f => f.PageSize)
-                .Field(f => f.TotalPages)
-                .Field(f => f.TotalEntries)
-                .SelectList(f => f.Entries, entries => entries
-                    .Field(e => e.Id)
-                    .Field(e => e.Name)
-                    .Select(e => e.ItemCategory, ic => ic
-                        .Field(c => c.Id)
-                        .Select(c => c.ItemType, it => it
-                            .Field(t => t.Id))))
-                .Build();
-
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "ItemSubCategoryFilters")
-            };
-            var fragment = new GraphQLQueryFragment("itemSubCategoriesPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
         }
 
         public async Task LoadItemSubCategoriesAsync(ItemCategoryDTO itemCategory)
         {
             try
             {
+                Application.Current.Dispatcher.Invoke(() => itemCategory.SubCategories.Clear());
+
+                (GraphQLQueryFragment fragment, string query) = _loadItemSubCategoriesQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { ItemCategoryId = itemCategory.Id })
+                    .Build();
+
+                PageType<ItemSubCategoryGraphQLModel> result = await _itemSubCategoryService.GetPageAsync(query, variables);
+
+                if (result.Entries.Count == 0)
+                {
+                    Application.Current.Dispatcher.Invoke(() => itemCategory.IsExpanded = false);
+                    _notificationService.ShowInfo("Esta categoría no tiene subcategorías registradas");
+                    return;
+                }
+
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    itemCategory.SubCategories.Remove(itemCategory.SubCategories[0]);
-                });
-
-                string query = GetLoadItemSubCategoriesQuery();
-                dynamic variables = new ExpandoObject();
-                variables.PageResponsePagination = new ExpandoObject();
-                variables.PageResponsePagination.PageSize = -1;
-                variables.PageResponseFilters = new ExpandoObject();
-                variables.PageResponseFilters.ItemCategoryId = itemCategory.Id;
-
-                var result = await _itemSubCategoryService.GetPageAsync(query, variables);
-                ItemSubCategories = Context.AutoMapper.Map<ObservableCollection<ItemSubCategoryDTO>>(result.Entries);
-
-                if (ItemSubCategories.Count == 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    foreach (ItemSubCategoryGraphQLModel model in result.Entries)
                     {
-                        itemCategory.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("Esta categoría no tiene subcategorías registradas");
-                }
-                else
-                {
-                    foreach (ItemSubCategoryDTO itemSubCategory in ItemSubCategories)
-                    {
-                        itemSubCategory.Context = this;
-                        itemSubCategory.Items.Add(new ItemDTO() { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
-                        itemCategory.SubCategories.Add(itemSubCategory);
+                        ItemSubCategoryDTO dto = _mapper.Map<ItemSubCategoryDTO>(model);
+                        dto.Context = this;
+                        dto.Items.Add(new ItemDTO { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
+                        itemCategory.SubCategories.Add(dto);
                     }
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(LoadItemSubCategoriesAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
+                });
             }
             catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(LoadItemSubCategoriesAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadItemSubCategoriesAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
             }
         }
 
-        private static string GetLoadItemsQuery()
+        public async Task LoadItemsAsync(ItemSubCategoryDTO itemSubCategory)
         {
-            var fields = FieldSpec<PageType<ItemGraphQLModel>>
+            try
+            {
+                Application.Current.Dispatcher.Invoke(() => itemSubCategory.Items.Clear());
+
+                (GraphQLQueryFragment fragment, string query) = _loadItemsQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "filters", new { SubCategoryId = itemSubCategory.Id, IsActive = true })
+                    .Build();
+
+                PageType<ItemGraphQLModel> result = await _itemService.GetPageAsync(query, variables);
+
+                if (result.Entries.Count == 0)
+                {
+                    Application.Current.Dispatcher.Invoke(() => itemSubCategory.IsExpanded = false);
+                    _notificationService.ShowInfo("Esta subcategoría no tiene productos registrados");
+                    return;
+                }
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (ItemGraphQLModel model in result.Entries)
+                    {
+                        ItemDTO dto = _mapper.Map<ItemDTO>(model);
+                        dto.Context = this;
+                        itemSubCategory.Items.Add(dto);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(LoadItemsAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+
+        #endregion
+
+        #region New / Edit Actions
+
+        public Task NewCatalogAsync() => OpenDialogAsync(() =>
+        {
+            CatalogDetailViewModel detail = new(_catalogService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _catalogValidator);
+            detail.SetForNew();
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Nuevo catálogo");
+
+        public Task EditCatalogAsync() => OpenDialogAsync<CatalogDetailViewModel>(() =>
+        {
+            if (SelectedItem is not CatalogDTO dto) return null;
+            CatalogDetailViewModel detail = new(_catalogService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _catalogValidator);
+            detail.SetForEdit(_mapper.Map<CatalogGraphQLModel>(dto));
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Editar catálogo");
+
+        public Task NewItemTypeAsync() => OpenDialogAsync<ItemTypeDetailViewModel>(() =>
+        {
+            if (SelectedItem is not CatalogDTO catalog) return null;
+
+            ItemTypeDetailViewModel detail = new(_itemTypeService, _eventAggregator, _stringLengthCache,
+                _measurementUnitCache, _accountingGroupCache, _catalogCache, _joinableTaskFactory, _itemTypeValidator);
+            detail.SetForNew(catalog.Id);
+
+            // Prefix letters are unique per company across all catalogs. The VM builds the
+            // pool from CatalogCache; if it is empty, every A-Z is already taken and there is
+            // no valid prefix to assign — abort before showing the dialog. Using the VM's pool
+            // as the single source of truth keeps the check and the combo consistent.
+            if (detail.AvailablePrefixChars.Count == 0)
+            {
+                ThemedMessageBox.Show("Atención",
+                    "No hay prefijos disponibles. Todos los caracteres A-Z están en uso por tipos de item existentes. Edite o elimine un tipo de item para liberar un prefijo.",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return null;
+            }
+
+            ApplyDialogDimensions(detail, 520, 380);
+            return detail;
+        }, "Nuevo tipo de item");
+
+        public Task EditItemTypeAsync() => OpenDialogAsync<ItemTypeDetailViewModel>(() =>
+        {
+            if (SelectedItem is not ItemTypeDTO dto) return null;
+            ItemTypeDetailViewModel detail = new(_itemTypeService, _eventAggregator, _stringLengthCache,
+                _measurementUnitCache, _accountingGroupCache, _catalogCache, _joinableTaskFactory, _itemTypeValidator);
+            detail.SetForEdit(_mapper.Map<ItemTypeGraphQLModel>(dto));
+            ApplyDialogDimensions(detail, 520, 380);
+            return detail;
+        }, "Editar tipo de item");
+
+        public Task NewItemCategoryAsync() => OpenDialogAsync<ItemCategoryDetailViewModel>(() =>
+        {
+            if (SelectedItem is not ItemTypeDTO itemType) return null;
+            ItemCategoryDetailViewModel detail = new(_itemCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _itemCategoryValidator);
+            detail.SetForNew(itemType.Id);
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Nueva categoría");
+
+        public Task EditItemCategoryAsync() => OpenDialogAsync<ItemCategoryDetailViewModel>(() =>
+        {
+            if (SelectedItem is not ItemCategoryDTO dto) return null;
+            ItemCategoryDetailViewModel detail = new(_itemCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _itemCategoryValidator);
+            detail.SetForEdit(_mapper.Map<ItemCategoryGraphQLModel>(dto));
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Editar categoría");
+
+        public Task NewItemSubCategoryAsync() => OpenDialogAsync<ItemSubCategoryDetailViewModel>(() =>
+        {
+            if (SelectedItem is not ItemCategoryDTO itemCategory) return null;
+            ItemSubCategoryDetailViewModel detail = new(_itemSubCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _itemSubCategoryValidator);
+            detail.SetForNew(itemCategory.Id);
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Nueva subcategoría");
+
+        public Task EditItemSubCategoryAsync() => OpenDialogAsync<ItemSubCategoryDetailViewModel>(() =>
+        {
+            if (SelectedItem is not ItemSubCategoryDTO dto) return null;
+            ItemSubCategoryDetailViewModel detail = new(_itemSubCategoryService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _itemSubCategoryValidator);
+            detail.SetForEdit(_mapper.Map<ItemSubCategoryGraphQLModel>(dto));
+            ApplyDialogDimensions(detail, 460, 240);
+            return detail;
+        }, "Editar subcategoría");
+
+        public Task NewItemAsync() => OpenDialogAsync<ItemDetailViewModel>(() =>
+        {
+            ItemSubCategoryDTO? subCategory = SelectedItem switch
+            {
+                ItemSubCategoryDTO sc => sc,
+                ItemDTO item => FindSubCategoryForItem(item),
+                _ => null
+            };
+            if (subCategory is null) return null;
+
+            // Extract defaults from the parent ItemType (via tree navigation)
+            ItemTypeDTO? itemType = FindItemTypeForSubCategory(subCategory);
+            int? defaultMuId = itemType?.DefaultMeasurementUnit?.Id;
+            int? defaultAgId = itemType?.DefaultAccountingGroup?.Id;
+            bool hasComponents = itemType != null && !itemType.StockControl;
+            bool stockControl = itemType?.StockControl ?? false;
+
+            ItemDetailViewModel detail = BuildItemDetailViewModel();
+            detail.SetForNew(subCategory.Id, hasComponents, stockControl, defaultMuId, defaultAgId);
+            ApplyItemDialogDimensions(detail);
+            return detail;
+        }, "Nuevo item");
+
+        private ItemDetailViewModel BuildItemDetailViewModel()
+        {
+            return new ItemDetailViewModel(
+                _itemService, _eventAggregator, _dialogService, _stringLengthCache,
+                _measurementUnitCache, _itemBrandCache, _accountingGroupCache, _itemSizeCategoryCache,
+                _joinableTaskFactory, _itemValidator, _mapper,
+                S3Helper, LocalImageCachePath);
+        }
+
+        private ItemTypeDTO? FindItemTypeForSubCategory(ItemSubCategoryDTO subCategory)
+        {
+            foreach (CatalogDTO catalog in Catalogs)
+                foreach (ItemTypeDTO itemType in catalog.ItemTypes)
+                    foreach (ItemCategoryDTO category in itemType.ItemCategories)
+                        if (category.SubCategories.Any(s => s.Id == subCategory.Id))
+                            return ResolveRichItemType(itemType);
+            return null;
+        }
+
+        private ItemSubCategoryDTO? FindSubCategoryForItem(ItemDTO item)
+        {
+            foreach (CatalogDTO catalog in Catalogs)
+                foreach (ItemTypeDTO itemType in catalog.ItemTypes)
+                    foreach (ItemCategoryDTO category in itemType.ItemCategories)
+                        foreach (ItemSubCategoryDTO subCat in category.SubCategories)
+                            if (subCat.Items.Any(i => i.Id == item.Id))
+                                return subCat;
+            return null;
+        }
+
+        private ItemTypeDTO? FindItemTypeForItem(ItemDTO item)
+        {
+            foreach (CatalogDTO catalog in Catalogs)
+                foreach (ItemTypeDTO itemType in catalog.ItemTypes)
+                    foreach (ItemCategoryDTO category in itemType.ItemCategories)
+                        foreach (ItemSubCategoryDTO subCat in category.SubCategories)
+                            if (subCat.Items.Any(i => i.Id == item.Id))
+                                return ResolveRichItemType(itemType);
+            return null;
+        }
+
+        /// <summary>
+        /// When the search filter is active, <see cref="Catalogs"/> holds a lean tree built
+        /// from the search query (<c>_searchItemsQuery</c>), which only projects Id, Name,
+        /// PrefixChar and StockControl on ItemType — not DefaultMeasurementUnit or
+        /// DefaultAccountingGroup. The pre-search snapshot was built from CatalogCache and
+        /// has the full data, so look up the same Id there to obtain the rich copy.
+        /// Falls back to the lean instance when no snapshot exists (no active filter).
+        /// </summary>
+        private ItemTypeDTO ResolveRichItemType(ItemTypeDTO leanType)
+        {
+            if (_preSearchCatalogs is null || ReferenceEquals(_preSearchCatalogs, Catalogs))
+                return leanType;
+            foreach (CatalogDTO catalog in _preSearchCatalogs)
+            {
+                ItemTypeDTO? rich = catalog.ItemTypes.FirstOrDefault(t => t.Id == leanType.Id);
+                if (rich is not null) return rich;
+            }
+            return leanType;
+        }
+
+        private void ApplyDialogDimensions(CatalogItemsDetailViewModelBase detail, double defaultWidth, double defaultHeight)
+        {
+            detail.DialogWidth = defaultWidth;
+            detail.DialogHeight = defaultHeight;
+            if (this.GetView() is FrameworkElement parent)
+            {
+                detail.DialogWidth = Math.Min(parent.ActualWidth * 0.7, defaultWidth);
+                detail.DialogHeight = Math.Min(parent.ActualHeight * 0.9, defaultHeight);
+            }
+        }
+
+        private void ApplyItemDialogDimensions(CatalogItemsDetailViewModelBase detail)
+        {
+            if (this.GetView() is FrameworkElement parent)
+            {
+                detail.DialogWidth = parent.ActualWidth * 0.7;
+                detail.DialogHeight = parent.ActualHeight * 0.9;
+            }
+        }
+
+        private async Task WithBusy(Func<Task> work)
+        {
+            try
+            {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                await work();
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Shows a dialog after a brief busy phase that covers ONLY the synchronous
+        /// setup (VM construction, default values, dimensions). <see cref="IsBusy"/>
+        /// is released BEFORE awaiting <c>ShowDialogAsync</c> so the busy overlay does
+        /// not linger visibly behind the open dialog. The setup may return <c>null</c>
+        /// to abort (e.g. when the current selection doesn't match the expected type).
+        /// </summary>
+        private async Task OpenDialogAsync<T>(Func<T?> setup, string title) where T : Screen
+        {
+            T? detail = null;
+            try
+            {
+                IsBusy = true;
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+                detail = setup();
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+                return;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+            if (detail is null) return;
+
+            try
+            {
+                await _dialogService.ShowDialogAsync(detail, title);
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{title}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+        }
+
+        #endregion
+
+        #region ICommand wrappers (for XAML bindings from tree context menus)
+
+        private System.Windows.Input.ICommand? _newCatalogCommand;
+        public System.Windows.Input.ICommand NewCatalogCommand => _newCatalogCommand ??= new DevExpress.Mvvm.AsyncCommand(NewCatalogAsync, () => CanNewCatalog);
+
+        private System.Windows.Input.ICommand? _editCatalogCommand;
+        public System.Windows.Input.ICommand EditCatalogCommand => _editCatalogCommand ??= new DevExpress.Mvvm.AsyncCommand(EditCatalogAsync, () => CanEditCatalog);
+
+        private System.Windows.Input.ICommand? _deleteCatalogCommand;
+        public System.Windows.Input.ICommand DeleteCatalogCommand => _deleteCatalogCommand ??= new DevExpress.Mvvm.AsyncCommand(DeleteCatalogAsync, () => CanDeleteCatalog);
+
+        private System.Windows.Input.ICommand? _newItemTypeCommand;
+        public System.Windows.Input.ICommand NewItemTypeCommand => _newItemTypeCommand ??= new DevExpress.Mvvm.AsyncCommand(NewItemTypeAsync, () => CanNewItemType);
+
+        private System.Windows.Input.ICommand? _editItemTypeCommand;
+        public System.Windows.Input.ICommand EditItemTypeCommand => _editItemTypeCommand ??= new DevExpress.Mvvm.AsyncCommand(EditItemTypeAsync, () => CanEditItemType);
+
+        private System.Windows.Input.ICommand? _deleteItemTypeCommand;
+        public System.Windows.Input.ICommand DeleteItemTypeCommand => _deleteItemTypeCommand ??= new DevExpress.Mvvm.AsyncCommand(DeleteItemTypeAsync, () => CanDeleteItemType);
+
+        private System.Windows.Input.ICommand? _newItemCategoryCommand;
+        public System.Windows.Input.ICommand NewItemCategoryCommand => _newItemCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(NewItemCategoryAsync, () => CanNewItemCategory);
+
+        private System.Windows.Input.ICommand? _editItemCategoryCommand;
+        public System.Windows.Input.ICommand EditItemCategoryCommand => _editItemCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(EditItemCategoryAsync, () => CanEditItemCategory);
+
+        private System.Windows.Input.ICommand? _deleteItemCategoryCommand;
+        public System.Windows.Input.ICommand DeleteItemCategoryCommand => _deleteItemCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(DeleteItemCategoryAsync, () => CanDeleteItemCategory);
+
+        private System.Windows.Input.ICommand? _newItemSubCategoryCommand;
+        public System.Windows.Input.ICommand NewItemSubCategoryCommand => _newItemSubCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(NewItemSubCategoryAsync, () => CanNewItemSubCategory);
+
+        private System.Windows.Input.ICommand? _editItemSubCategoryCommand;
+        public System.Windows.Input.ICommand EditItemSubCategoryCommand => _editItemSubCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(EditItemSubCategoryAsync, () => CanEditItemSubCategory);
+
+        private System.Windows.Input.ICommand? _deleteItemSubCategoryCommand;
+        public System.Windows.Input.ICommand DeleteItemSubCategoryCommand => _deleteItemSubCategoryCommand ??= new DevExpress.Mvvm.AsyncCommand(DeleteItemSubCategoryAsync, () => CanDeleteItemSubCategory);
+
+        private System.Windows.Input.ICommand? _newItemCommand;
+        public System.Windows.Input.ICommand NewItemCommand => _newItemCommand ??= new DevExpress.Mvvm.AsyncCommand(NewItemAsync, () => CanNewItem);
+
+        private System.Windows.Input.ICommand? _deleteItemCommand;
+        public System.Windows.Input.ICommand DeleteItemCommand => _deleteItemCommand ??= new DevExpress.Mvvm.AsyncCommand(DeleteItemAsync, () => CanDeleteItem);
+
+        private System.Windows.Input.ICommand? _discontinueItemCommand;
+        public System.Windows.Input.ICommand DiscontinueItemCommand => _discontinueItemCommand ??= new DevExpress.Mvvm.AsyncCommand(DiscontinueItemAsync, () => CanDiscontinueItem);
+
+        #endregion
+
+        #region Delete Actions
+
+        public async Task DeleteCatalogAsync()
+        {
+            if (SelectedItem is not CatalogDTO dto) return;
+            await DeleteEntityAsync(_catalogService, dto.Id,
+                _canDeleteCatalogQuery.Value, _deleteCatalogQuery.Value,
+                $"¿Confirma que desea eliminar el catálogo {dto.Name}?",
+                result => new CatalogDeleteMessage { DeletedCatalog = result });
+        }
+
+        public async Task DeleteItemTypeAsync()
+        {
+            if (SelectedItem is not ItemTypeDTO dto) return;
+            await DeleteEntityAsync(_itemTypeService, dto.Id,
+                _canDeleteItemTypeQuery.Value, _deleteItemTypeQuery.Value,
+                $"¿Confirma que desea eliminar el tipo de item {dto.Name}?",
+                result => new ItemTypeDeleteMessage { DeletedItemType = result });
+        }
+
+        public async Task DeleteItemCategoryAsync()
+        {
+            if (SelectedItem is not ItemCategoryDTO dto) return;
+            await DeleteEntityAsync(_itemCategoryService, dto.Id,
+                _canDeleteItemCategoryQuery.Value, _deleteItemCategoryQuery.Value,
+                $"¿Confirma que desea eliminar la categoría {dto.Name}?",
+                result => new ItemCategoryDeleteMessage { DeletedItemCategory = result });
+        }
+
+        public async Task DeleteItemSubCategoryAsync()
+        {
+            if (SelectedItem is not ItemSubCategoryDTO dto) return;
+            await DeleteEntityAsync(_itemSubCategoryService, dto.Id,
+                _canDeleteItemSubCategoryQuery.Value, _deleteItemSubCategoryQuery.Value,
+                $"¿Confirma que desea eliminar la subcategoría {dto.Name}?",
+                result => new ItemSubCategoryDeleteMessage { DeletedItemSubCategory = result });
+        }
+
+        public async Task DeleteItemAsync()
+        {
+            if (SelectedItem is not ItemDTO dto) return;
+            await DeleteEntityAsync(_itemService, dto.Id,
+                _canDeleteItemQuery.Value, _deleteItemQuery.Value,
+                $"¿Confirma que desea eliminar el item {dto.Name}?",
+                result => new ItemDeleteMessage { DeletedItem = result });
+        }
+
+        private async Task DeleteEntityAsync<TModel>(
+            IRepository<TModel> service,
+            int id,
+            (GraphQLQueryFragment Fragment, string Query) canDelete,
+            (GraphQLQueryFragment Fragment, string Query) delete,
+            string confirmMessage,
+            Func<DeleteResponseType, object> messageBuilder)
+        {
+            try
+            {
+                IsBusy = true;
+
+                object canDeleteVars = new GraphQLVariables()
+                    .For(canDelete.Fragment, "id", id)
+                    .Build();
+                CanDeleteType validation = await service.CanDeleteAsync(canDelete.Query, canDeleteVars);
+
+                if (!validation.CanDelete)
+                {
+                    IsBusy = false;
+                    ThemedMessageBox.Show("Atención!",
+                        $"El registro no puede ser eliminado\r\n\r\n{validation.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                IsBusy = false;
+                if (ThemedMessageBox.Show("Confirme...", confirmMessage,
+                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+                IsBusy = true;
+                object deleteVars = new GraphQLVariables()
+                    .For(delete.Fragment, "id", id)
+                    .Build();
+                DeleteResponseType result = await service.DeleteAsync<DeleteResponseType>(delete.Query, deleteVars);
+
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show("Atención!",
+                        $"No pudo ser eliminado el registro\r\n\r\n{result.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                SelectedItem = null;
+                await _eventAggregator.PublishOnCurrentThreadAsync(messageBuilder(result), CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DeleteEntityAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        public async Task DiscontinueItemAsync()
+        {
+            if (SelectedItem is not ItemDTO itemDTO) return;
+            try
+            {
+                if (ThemedMessageBox.Show("Confirme...",
+                    $"¿Confirma que desea descontinuar el registro {itemDTO.Name}?",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+
+                IsBusy = true;
+                (GraphQLQueryFragment fragment, string query) = _discontinueItemQuery.Value;
+                object variables = new GraphQLVariables()
+                    .For(fragment, "id", itemDTO.Id)
+                    .For(fragment, "data", new { isActive = false })
+                    .Build();
+                UpsertResponseType<ItemGraphQLModel> result = await _itemService.UpdateAsync<UpsertResponseType<ItemGraphQLModel>>(query, variables);
+
+                if (!result.Success)
+                {
+                    ThemedMessageBox.Show("Atención!",
+                        $"No se pudo descontinuar el registro.\r\n\r\n{result.Message}",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                SelectedItem = null;
+                await _eventAggregator.PublishOnCurrentThreadAsync(
+                    new ItemDeleteMessage
+                    {
+                        DeletedItem = new DeleteResponseType { DeletedId = itemDTO.Id, Success = true, Message = result.Message }
+                    }, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Application.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(DiscontinueItemAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error));
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        #endregion
+
+        #region IHandle — Catalog
+
+        /// <summary>
+        /// Yields every CatalogDTO tree that must be kept in sync: the currently displayed
+        /// <see cref="Catalogs"/> and, when the search filter is active, the snapshot of the
+        /// original tree (<c>_preSearchCatalogs</c>) that will be restored on ClearSearch.
+        /// </summary>
+        private IEnumerable<ObservableCollection<CatalogDTO>> CatalogScopes()
+        {
+            yield return Catalogs;
+            if (_preSearchCatalogs is not null && !ReferenceEquals(_preSearchCatalogs, Catalogs))
+                yield return _preSearchCatalogs;
+        }
+
+        /// <summary>
+        /// Runs <paramref name="mirrorAction"/> against the pre-search snapshot so a Create
+        /// that happens while the filter is active also lands in the tree that will be
+        /// restored on <see cref="ClearSearch"/>. No-op when the filter is not active.
+        /// The action is dispatched to the UI thread and the snapshot reference is re-read
+        /// inside the dispatcher callback to guard against a concurrent ClearSearch that may
+        /// have run during an <c>await</c> in the caller.
+        /// </summary>
+        private void MirrorCreateToSnapshot(Action<ObservableCollection<CatalogDTO>> mirrorAction)
+        {
+            // Fast path: no filter active.
+            if (_preSearchCatalogs is null || ReferenceEquals(_preSearchCatalogs, Catalogs)) return;
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                // Re-read under UI thread — ClearSearch may have run between the outer check
+                // and this dispatch (possible when the caller awaited something beforehand).
+                ObservableCollection<CatalogDTO>? snapshot = _preSearchCatalogs;
+                if (snapshot is null || ReferenceEquals(snapshot, Catalogs)) return;
+                mirrorAction(snapshot);
+            });
+        }
+
+        public Task HandleAsync(CatalogCreateMessage message, CancellationToken cancellationToken)
+        {
+            // A catalog was just created → the "no records" state is no longer possible.
+            ShowEmptyState = false;
+
+            CatalogGraphQLModel entity = message.CreatedCatalog.Entity;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                CatalogDTO dto = _mapper.Map<CatalogDTO>(entity);
+                Catalogs.Add(dto);
+                SelectedItem = dto;
+            });
+
+            MirrorCreateToSnapshot(snapshot =>
+            {
+                if (snapshot.Any(c => c.Id == entity.Id)) return;
+                snapshot.Add(_mapper.Map<CatalogDTO>(entity));
+            });
+
+            _notificationService.ShowSuccess(message.CreatedCatalog.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(CatalogUpdateMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                {
+                    CatalogDTO? existing = roots.FirstOrDefault(c => c.Id == message.UpdatedCatalog.Entity.Id);
+                    if (existing != null) existing.Name = message.UpdatedCatalog.Entity.Name;
+                }
+            });
+            _notificationService.ShowSuccess(message.UpdatedCatalog.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(CatalogDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                int id = message.DeletedCatalog.DeletedId ?? 0;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                {
+                    CatalogDTO? toRemove = roots.FirstOrDefault(c => c.Id == id);
+                    if (toRemove != null) roots.Remove(toRemove);
+                }
+
+                // Re-evaluate empty state against the authoritative collection: the pre-search
+                // snapshot when the filter is active, the live tree otherwise. We cannot use
+                // Catalogs directly because it may be a filtered subset.
+                ObservableCollection<CatalogDTO> authoritative = _preSearchCatalogs ?? Catalogs;
+                ShowEmptyState = authoritative.Count == 0;
+            });
+            _notificationService.ShowSuccess(message.DeletedCatalog.Message);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — ItemType
+
+        public Task HandleAsync(ItemTypeCreateMessage message, CancellationToken cancellationToken)
+        {
+            ItemTypeGraphQLModel entity = message.CreatedItemType.Entity;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ItemTypeDTO dto = _mapper.Map<ItemTypeDTO>(entity);
+                dto.Context = this;
+                dto.ItemCategories.Add(new ItemCategoryDTO { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
+                CatalogDTO? catalog = Catalogs.FirstOrDefault(c => c.Id == entity.Catalog?.Id);
+                if (catalog is null) return;
+                catalog.ItemTypes.Add(dto);
+                if (!catalog.IsExpanded) catalog.IsExpanded = true;
+                SelectedItem = dto;
+            });
+
+            MirrorCreateToSnapshot(snapshot =>
+            {
+                CatalogDTO? snapCatalog = snapshot.FirstOrDefault(c => c.Id == entity.Catalog?.Id);
+                if (snapCatalog is null || snapCatalog.ItemTypes.Any(t => t.Id == entity.Id)) return;
+                ItemTypeDTO snapDto = _mapper.Map<ItemTypeDTO>(entity);
+                snapDto.Context = this;
+                snapDto.ItemCategories.Add(new ItemCategoryDTO { IsDummyChild = true, SubCategories = [], Name = "Dummy" });
+                snapCatalog.ItemTypes.Add(snapDto);
+            });
+
+            _notificationService.ShowSuccess(message.CreatedItemType.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(ItemTypeUpdateMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ItemTypeGraphQLModel entity = message.UpdatedItemType.Entity;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                {
+                    CatalogDTO? catalog = roots.FirstOrDefault(c => c.Id == entity.Catalog?.Id);
+                    if (catalog is null) continue;
+                    ItemTypeDTO? existing = catalog.ItemTypes.FirstOrDefault(t => t.Id == entity.Id);
+                    if (existing is null) continue;
+                    existing.Name = entity.Name;
+                    existing.PrefixChar = entity.PrefixChar;
+                    existing.StockControl = entity.StockControl;
+                    existing.DefaultMeasurementUnit = _mapper.Map<Models.Inventory.MeasurementUnitDTO>(entity.DefaultMeasurementUnit);
+                    existing.DefaultAccountingGroup = _mapper.Map<Models.Books.AccountingGroupDTO>(entity.DefaultAccountingGroup);
+                }
+            });
+            _notificationService.ShowSuccess(message.UpdatedItemType.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(ItemTypeDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                int id = message.DeletedItemType.DeletedId ?? 0;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO catalog in roots)
+                    {
+                        ItemTypeDTO? toRemove = catalog.ItemTypes.FirstOrDefault(t => t.Id == id);
+                        if (toRemove != null) { catalog.ItemTypes.Remove(toRemove); break; }
+                    }
+                SelectedItem = null;
+            });
+            _notificationService.ShowSuccess(message.DeletedItemType.Message);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — ItemCategory
+
+        public async Task HandleAsync(ItemCategoryCreateMessage message, CancellationToken cancellationToken)
+        {
+            ItemCategoryGraphQLModel entity = message.CreatedItemCategory.Entity;
+            ItemTypeDTO? itemType = null;
+            foreach (CatalogDTO c in Catalogs)
+            {
+                itemType = c.ItemTypes.FirstOrDefault(t => t.Id == entity.ItemType?.Id);
+                if (itemType != null) break;
+            }
+            if (itemType is null) return;
+
+            if (!itemType.IsExpanded && itemType.ItemCategories.Count > 0 && itemType.ItemCategories[0].IsDummyChild)
+            {
+                await LoadItemCategoriesAsync(itemType);
+                itemType.IsExpanded = true;
+                ItemCategoryDTO? found = itemType.ItemCategories.FirstOrDefault(x => x.Id == entity.Id);
+                if (found != null) SelectedItem = found;
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ItemCategoryDTO dto = _mapper.Map<ItemCategoryDTO>(entity);
+                    dto.Context = this;
+                    dto.SubCategories.Add(new ItemSubCategoryDTO { IsDummyChild = true, Items = [], Name = "Dummy" });
+                    if (!itemType.IsExpanded) itemType.IsExpanded = true;
+                    itemType.ItemCategories.Add(dto);
+                    SelectedItem = dto;
+                });
+            }
+
+            MirrorCreateToSnapshot(snapshot =>
+            {
+                ItemTypeDTO? snapType = null;
+                foreach (CatalogDTO c in snapshot)
+                {
+                    snapType = c.ItemTypes.FirstOrDefault(t => t.Id == entity.ItemType?.Id);
+                    if (snapType != null) break;
+                }
+                if (snapType is null) return;
+                bool isDummy = snapType.ItemCategories.Count > 0 && snapType.ItemCategories[0].IsDummyChild;
+                if (isDummy) return; // will reload from API on next expand
+                if (snapType.ItemCategories.Any(x => x.Id == entity.Id)) return;
+                ItemCategoryDTO snapDto = _mapper.Map<ItemCategoryDTO>(entity);
+                snapDto.Context = this;
+                snapDto.SubCategories.Add(new ItemSubCategoryDTO { IsDummyChild = true, Items = [], Name = "Dummy" });
+                snapType.ItemCategories.Add(snapDto);
+            });
+
+            _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
+        }
+
+        public Task HandleAsync(ItemCategoryUpdateMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ItemCategoryGraphQLModel entity = message.UpdatedItemCategory.Entity;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                        {
+                            ItemCategoryDTO? existing = t.ItemCategories.FirstOrDefault(x => x.Id == entity.Id);
+                            if (existing != null) { existing.Name = entity.Name; break; }
+                        }
+            });
+            _notificationService.ShowSuccess(message.UpdatedItemCategory.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(ItemCategoryDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                int id = message.DeletedItemCategory.DeletedId ?? 0;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                        {
+                            ItemCategoryDTO? toRemove = t.ItemCategories.FirstOrDefault(x => x.Id == id);
+                            if (toRemove != null) { t.ItemCategories.Remove(toRemove); break; }
+                        }
+                SelectedItem = null;
+            });
+            _notificationService.ShowSuccess(message.DeletedItemCategory.Message);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — ItemSubCategory
+
+        public async Task HandleAsync(ItemSubCategoryCreateMessage message, CancellationToken cancellationToken)
+        {
+            ItemSubCategoryGraphQLModel entity = message.CreatedItemSubCategory.Entity;
+            ItemCategoryDTO? parent = null;
+            foreach (CatalogDTO c in Catalogs)
+                foreach (ItemTypeDTO t in c.ItemTypes)
+                {
+                    parent = t.ItemCategories.FirstOrDefault(x => x.Id == entity.ItemCategory?.Id);
+                    if (parent != null) break;
+                }
+            if (parent is null) return;
+
+            if (!parent.IsExpanded && parent.SubCategories.Count > 0 && parent.SubCategories[0].IsDummyChild)
+            {
+                await LoadItemSubCategoriesAsync(parent);
+                parent.IsExpanded = true;
+                ItemSubCategoryDTO? found = parent.SubCategories.FirstOrDefault(x => x.Id == entity.Id);
+                if (found != null) SelectedItem = found;
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ItemSubCategoryDTO dto = _mapper.Map<ItemSubCategoryDTO>(entity);
+                    dto.Context = this;
+                    dto.Items.Add(new ItemDTO { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
+                    if (!parent.IsExpanded) parent.IsExpanded = true;
+                    parent.SubCategories.Add(dto);
+                    SelectedItem = dto;
+                });
+            }
+
+            MirrorCreateToSnapshot(snapshot =>
+            {
+                ItemCategoryDTO? snapParent = null;
+                foreach (CatalogDTO c in snapshot)
+                    foreach (ItemTypeDTO t in c.ItemTypes)
+                    {
+                        snapParent = t.ItemCategories.FirstOrDefault(x => x.Id == entity.ItemCategory?.Id);
+                        if (snapParent != null) break;
+                    }
+                if (snapParent is null) return;
+                bool isDummy = snapParent.SubCategories.Count > 0 && snapParent.SubCategories[0].IsDummyChild;
+                if (isDummy) return;
+                if (snapParent.SubCategories.Any(x => x.Id == entity.Id)) return;
+                ItemSubCategoryDTO snapDto = _mapper.Map<ItemSubCategoryDTO>(entity);
+                snapDto.Context = this;
+                snapDto.Items.Add(new ItemDTO { IsDummyChild = true, EanCodes = [], Name = "Dummy" });
+                snapParent.SubCategories.Add(snapDto);
+            });
+
+            _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
+        }
+
+        public Task HandleAsync(ItemSubCategoryUpdateMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ItemSubCategoryGraphQLModel entity = message.UpdatedItemSubCategory.Entity;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                            foreach (ItemCategoryDTO cat in t.ItemCategories)
+                            {
+                                ItemSubCategoryDTO? existing = cat.SubCategories.FirstOrDefault(x => x.Id == entity.Id);
+                                if (existing != null) { existing.Name = entity.Name; break; }
+                            }
+            });
+            _notificationService.ShowSuccess(message.UpdatedItemSubCategory.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(ItemSubCategoryDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                int id = message.DeletedItemSubCategory.DeletedId ?? 0;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                            foreach (ItemCategoryDTO cat in t.ItemCategories)
+                            {
+                                ItemSubCategoryDTO? toRemove = cat.SubCategories.FirstOrDefault(x => x.Id == id);
+                                if (toRemove != null) { cat.SubCategories.Remove(toRemove); break; }
+                            }
+                SelectedItem = null;
+            });
+            _notificationService.ShowSuccess(message.DeletedItemSubCategory.Message);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — Item
+
+        public async Task HandleAsync(ItemCreateMessage message, CancellationToken cancellationToken)
+        {
+            ItemGraphQLModel entity = message.CreatedItem.Entity;
+            ItemSubCategoryDTO? parent = null;
+            foreach (CatalogDTO c in Catalogs)
+                foreach (ItemTypeDTO t in c.ItemTypes)
+                    foreach (ItemCategoryDTO cat in t.ItemCategories)
+                    {
+                        parent = cat.SubCategories.FirstOrDefault(x => x.Id == entity.SubCategory?.Id);
+                        if (parent != null) break;
+                    }
+            if (parent is null) return;
+
+            if (!parent.IsExpanded && parent.Items.Count > 0 && parent.Items[0].IsDummyChild)
+            {
+                await LoadItemsAsync(parent);
+                parent.IsExpanded = true;
+                ItemDTO? found = parent.Items.FirstOrDefault(x => x.Id == entity.Id);
+                if (found != null) SelectedItem = found;
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ItemDTO dto = _mapper.Map<ItemDTO>(entity);
+                    dto.Context = this;
+                    if (!parent.IsExpanded) parent.IsExpanded = true;
+                    parent.Items.Add(dto);
+                    SelectedItem = dto;
+                });
+            }
+
+            MirrorCreateToSnapshot(snapshot =>
+            {
+                ItemSubCategoryDTO? snapParent = null;
+                foreach (CatalogDTO c in snapshot)
+                    foreach (ItemTypeDTO t in c.ItemTypes)
+                        foreach (ItemCategoryDTO cat in t.ItemCategories)
+                        {
+                            snapParent = cat.SubCategories.FirstOrDefault(x => x.Id == entity.SubCategory?.Id);
+                            if (snapParent != null) break;
+                        }
+                if (snapParent is null) return;
+                bool isDummy = snapParent.Items.Count > 0 && snapParent.Items[0].IsDummyChild;
+                if (isDummy) return;
+                if (snapParent.Items.Any(x => x.Id == entity.Id)) return;
+                ItemDTO snapDto = _mapper.Map<ItemDTO>(entity);
+                snapDto.Context = this;
+                snapParent.Items.Add(snapDto);
+            });
+
+            _notificationService.ShowSuccess(message.CreatedItem.Message);
+        }
+
+        public Task HandleAsync(ItemUpdateMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ItemGraphQLModel entity = message.UpdatedItem.Entity;
+                ItemDTO mapped = _mapper.Map<ItemDTO>(entity);
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                            foreach (ItemCategoryDTO cat in t.ItemCategories)
+                                foreach (ItemSubCategoryDTO sub in cat.SubCategories)
+                                {
+                                    ItemDTO? existing = sub.Items.FirstOrDefault(x => x.Id == entity.Id);
+                                    if (existing is null) continue;
+                                    existing.Name = mapped.Name;
+                                    existing.Reference = mapped.Reference;
+                                    existing.IsActive = mapped.IsActive;
+                                    existing.AllowFraction = mapped.AllowFraction;
+                                    existing.HasExtendedInformation = mapped.HasExtendedInformation;
+                                    existing.MeasurementUnit = mapped.MeasurementUnit;
+                                    existing.Brand = mapped.Brand;
+                                    existing.AccountingGroup = mapped.AccountingGroup;
+                                    existing.SizeCategory = mapped.SizeCategory;
+                                    existing.EanCodes = new ObservableCollection<EanCodeByItemDTO>(mapped.EanCodes ?? []);
+                                    existing.Components = new ObservableCollection<ComponentsByItemDTO>(mapped.Components ?? []);
+                                    existing.Images = new ObservableCollection<ImageByItemDTO>((mapped.Images ?? []).OrderBy(x => x.DisplayOrder));
+                                    break;
+                                }
+            });
+            _notificationService.ShowSuccess(message.UpdatedItem.Message);
+            return Task.CompletedTask;
+        }
+
+        public Task HandleAsync(ItemDeleteMessage message, CancellationToken cancellationToken)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                int id = message.DeletedItem.DeletedId ?? 0;
+                foreach (ObservableCollection<CatalogDTO> roots in CatalogScopes())
+                    foreach (CatalogDTO c in roots)
+                        foreach (ItemTypeDTO t in c.ItemTypes)
+                            foreach (ItemCategoryDTO cat in t.ItemCategories)
+                                foreach (ItemSubCategoryDTO sub in cat.SubCategories)
+                                {
+                                    ItemDTO? toRemove = sub.Items.FirstOrDefault(x => x.Id == id);
+                                    if (toRemove != null) { sub.Items.Remove(toRemove); break; }
+                                }
+                SelectedItem = null;
+            });
+            _notificationService.ShowSuccess(message.DeletedItem.Message);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IHandle — PermissionsCacheRefreshedMessage
+
+        public Task HandleAsync(PermissionsCacheRefreshedMessage message, CancellationToken cancellationToken)
+        {
+            NotifyAllPermissionStates();
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region Queries (Lazy)
+
+        private static Lazy<(GraphQLQueryFragment Fragment, string Query)> BuildCanDeleteLazy(string fragmentName) => new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<CanDeleteType>
                 .Create()
-                .Field(f => f.PageNumber)
-                .Field(f => f.PageSize)
-                .Field(f => f.TotalPages)
-                .Field(f => f.TotalEntries)
+                .Field(f => f.CanDelete)
+                .Field(f => f.Message)
+                .Build();
+            GraphQLQueryFragment fragment = new(fragmentName, [new("id", "ID!")], fields, "CanDeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static Lazy<(GraphQLQueryFragment Fragment, string Query)> BuildDeleteLazy(string fragmentName) => new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<DeleteResponseType>
+                .Create()
+                .Field(f => f.DeletedId)
+                .Field(f => f.Message)
+                .Field(f => f.Success)
+                .Build();
+            GraphQLQueryFragment fragment = new(fragmentName, [new("id", "ID!")], fields, "DeleteResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteCatalogQuery = BuildCanDeleteLazy("canDeleteCatalog");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteItemTypeQuery = BuildCanDeleteLazy("canDeleteItemType");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteItemCategoryQuery = BuildCanDeleteLazy("canDeleteItemCategory");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteItemSubCategoryQuery = BuildCanDeleteLazy("canDeleteItemSubCategory");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _canDeleteItemQuery = BuildCanDeleteLazy("canDeleteItem");
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteCatalogQuery = BuildDeleteLazy("deleteCatalog");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteItemTypeQuery = BuildDeleteLazy("deleteItemType");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteItemCategoryQuery = BuildDeleteLazy("deleteItemCategory");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteItemSubCategoryQuery = BuildDeleteLazy("deleteItemSubCategory");
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _deleteItemQuery = BuildDeleteLazy("deleteItem");
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadItemCategoriesQuery = new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<PageType<ItemCategoryGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.ItemType, it => it.Field(t => t.Id)))
+                .Build();
+            GraphQLQueryFragment fragment = new("itemCategoriesPage",
+                [new("pagination", "Pagination"), new("filters", "ItemCategoryFilters")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadItemSubCategoriesQuery = new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<PageType<ItemSubCategoryGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Select(e => e.ItemCategory, ic => ic
+                        .Field(c => c.Id)
+                        .Select(c => c.ItemType, it => it.Field(t => t.Id))))
+                .Build();
+            GraphQLQueryFragment fragment = new("itemSubCategoriesPage",
+                [new("pagination", "Pagination"), new("filters", "ItemSubCategoryFilters")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadItemsQuery = new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
                 .SelectList(f => f.Entries, entries => entries
                     .Field(e => e.Id)
                     .Field(e => e.Name)
@@ -1914,15 +1917,13 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     .Field(e => e.Billable)
                     .Field(e => e.AmountBasedOnWeight)
                     .Field(e => e.AiuBasedService)
-                    .Field(e => e.EanCodes)
-                    .Select(e => e.MeasurementUnit, mu => mu
-                        .Field(m => m.Id))
-                    .Select(e => e.Brand, b => b
-                        .Field(br => br.Id))
-                    .Select(e => e.AccountingGroup, ag => ag
-                        .Field(a => a.Id))
-                    .Select(e => e.SizeCategory, sc => sc
-                        .Field(s => s.Id))
+                    .SelectList(e => e.EanCodes, ean => ean
+                        .Field(ec => ec.EanCode)
+                        .Field(ec => ec.IsInternal))
+                    .Select(e => e.MeasurementUnit, mu => mu.Field(m => m.Id))
+                    .Select(e => e.Brand, b => b.Field(br => br.Id))
+                    .Select(e => e.AccountingGroup, ag => ag.Field(a => a.Id))
+                    .Select(e => e.SizeCategory, sc => sc.Field(s => s.Id))
                     .SelectList(e => e.Components, comp => comp
                         .Field(c => c.Quantity)
                         .Select(c => c.Component, ci => ci
@@ -1930,394 +1931,80 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                             .Field(i => i.Name)
                             .Field(i => i.Reference)
                             .Field(i => i.Code)
-                            .Select(i => i.MeasurementUnit, mu => mu
-                                .Field(m => m.Id)
-                                .Field(m => m.Name))))
+                            .Select(i => i.MeasurementUnit, mu => mu.Field(m => m.Id).Field(m => m.Name))))
                     .SelectList(e => e.Images, img => img
                         .Field(i => i.DisplayOrder)
                         .Field(i => i.S3Bucket)
                         .Field(i => i.S3BucketDirectory)
                         .Field(i => i.S3FileName)
-                        .Select(i => i.Item, item => item
-                            .Field(it => it.Id)))
+                        .Select(i => i.Item, item => item.Field(it => it.Id)))
                     .Select(e => e.SubCategory, sub => sub
                         .Field(s => s.Id)
                         .Select(s => s.ItemCategory, ic => ic
                             .Field(c => c.Id)
+                            .Select(c => c.ItemType, it => it.Field(t => t.Id).Field(t => t.StockControl)))))
+                .Build();
+            GraphQLQueryFragment fragment = new("itemsPage",
+                [new("pagination", "Pagination"), new("filters", "ItemFilters")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
+
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _searchItemsQuery = new(() =>
+        {
+            Dictionary<string, object> fields = FieldSpec<PageType<ItemGraphQLModel>>
+                .Create()
+                .SelectList(f => f.Entries, entries => entries
+                    .Field(e => e.Id)
+                    .Field(e => e.Name)
+                    .Field(e => e.Code)
+                    .Field(e => e.Reference)
+                    .Field(e => e.IsActive)
+                    .Field(e => e.AllowFraction)
+                    .Field(e => e.HasExtendedInformation)
+                    .Field(e => e.Billable)
+                    .Field(e => e.AmountBasedOnWeight)
+                    .Field(e => e.AiuBasedService)
+                    .SelectList(e => e.EanCodes, ean => ean
+                        .Field(ec => ec.EanCode)
+                        .Field(ec => ec.IsInternal))
+                    .Select(e => e.MeasurementUnit, mu => mu.Field(m => m.Id))
+                    .Select(e => e.Brand, b => b.Field(br => br.Id))
+                    .Select(e => e.AccountingGroup, ag => ag.Field(a => a.Id))
+                    .Select(e => e.SizeCategory, sc => sc.Field(s => s.Id))
+                    .Select(e => e.SubCategory, sub => sub
+                        .Field(s => s.Id)
+                        .Field(s => s.Name)
+                        .Select(s => s.ItemCategory, ic => ic
+                            .Field(c => c.Id)
+                            .Field(c => c.Name)
                             .Select(c => c.ItemType, it => it
                                 .Field(t => t.Id)
-                                .Field(t => t.StockControl)))))
+                                .Field(t => t.Name)
+                                .Field(t => t.PrefixChar)
+                                .Field(t => t.StockControl)
+                                .Select(t => t.Catalog, cat => cat
+                                    .Field(cc => cc.Id)
+                                    .Field(cc => cc.Name))))))
                 .Build();
+            GraphQLQueryFragment fragment = new("itemsPage",
+                [new("pagination", "Pagination"), new("filters", "ItemFilters")],
+                fields, "PageResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
+        });
 
-            var parameters = new List<GraphQLQueryParameter>
-            {
-                new("pagination", "Pagination"),
-                new("filters", "ItemFilters")
-            };
-            var fragment = new GraphQLQueryFragment("itemsPage", parameters, fields, "PageResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery();
-        }
-
-        public async Task LoadItemsAsync(ItemSubCategoryDTO itemSubCategory)
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _discontinueItemQuery = new(() =>
         {
-            try
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    itemSubCategory.Items.Remove(itemSubCategory.Items[0]);
-                });
-
-                string query = GetLoadItemsQuery();
-                dynamic variables = new ExpandoObject();
-                variables.PageResponsePagination = new ExpandoObject();
-                variables.PageResponsePagination.PageSize = -1;
-                variables.PageResponseFilters = new ExpandoObject();
-                variables.PageResponseFilters.SubCategoryId = itemSubCategory.Id;
-                variables.PageResponseFilters.IsActive = true;
-
-                var result = await _itemService.GetPageAsync(query, variables);
-                Items = Context.AutoMapper.Map<ObservableCollection<ItemDTO>>(result.Entries);
-
-                if (Items.Count == 0)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        itemSubCategory.IsExpanded = false;
-                    });
-                    _notificationService.ShowInfo("Esta subcategoría no tiene productos registrados");
-                }
-                else
-                {
-                    foreach (ItemDTO item in Items)
-                    {
-                        item.Context = this;
-                        itemSubCategory.Items.Add(item);
-                    }
-                }
-            }
-            catch (GraphQLHttpRequestException exGraphQL)
-            {
-                Common.Helpers.GraphQLError? graphQLError = Newtonsoft.Json.JsonConvert.DeserializeObject<Common.Helpers.GraphQLError>(
-                    exGraphQL.Content?.ToString() ?? "");
-                if (graphQLError != null)
-                {
-                    App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{graphQLError.Errors[0].Message}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error));
-                }
-                else { throw; }
-            }
-            catch (Exception ex)
-            {
-                App.Current.Dispatcher.Invoke(() => ThemedMessageBox.Show(
-                    title: "Atención!",
-                    text: $"{GetType().Name}.{nameof(LoadItemsAsync)} \r\n{ex.Message}",
-                    messageBoxButtons: MessageBoxButton.OK,
-                    image: MessageBoxImage.Error));
-            }
-        }
-
-        #endregion
-
-        #region Message Handlers
-
-        public Task HandleAsync(ItemTypeCreateMessage message, CancellationToken cancellationToken)
-        {
-            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.CreatedItemType.Entity);
-            itemTypeDTO.Context = this;
-            itemTypeDTO.ItemCategories.Add(new ItemCategoryDTO() { IsDummyChild = true, Name = "Dummy", SubCategories = [] });
-            if (SelectedCatalog.Id != itemTypeDTO.Catalog.Id) return Task.CompletedTask;
-            SelectedCatalog.ItemTypes.Add(itemTypeDTO);
-            IsNewRecord = false;
-            SelectedItem = itemTypeDTO;
-            NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
-            _notificationService.ShowSuccess(message.CreatedItemType.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(ItemTypeDeleteMessage message, CancellationToken cancellationToken)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.DeletedItemType.DeletedId);
-                if (itemTypeDTO is null) return;
-                SelectedCatalog.ItemTypes.Remove(itemTypeDTO);
-                SelectedItem = null;
-                NotifyOfPropertyChange(nameof(DeleteCatalogButtonEnable));
-            });
-            _notificationService.ShowSuccess(message.DeletedItemType.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(ItemTypeUpdateMessage message, CancellationToken cancellationToken)
-        {
-            ItemTypeDTO itemTypeDTO = Context.AutoMapper.Map<ItemTypeDTO>(message.UpdatedItemType.Entity);
-            ItemTypeDTO? itemToUpdate = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemType.Entity.Id);
-            if (itemToUpdate == null) return Task.CompletedTask;
-            itemToUpdate.Id = itemTypeDTO.Id;
-            itemToUpdate.Name = itemTypeDTO.Name;
-            itemToUpdate.PrefixChar = itemTypeDTO.PrefixChar;
-            itemToUpdate.StockControl = itemTypeDTO.StockControl;
-            itemToUpdate.DefaultMeasurementUnit = itemTypeDTO.DefaultMeasurementUnit;
-            itemToUpdate.DefaultAccountingGroup = itemTypeDTO.DefaultAccountingGroup;
-            _notificationService.ShowSuccess(message.UpdatedItemType.Message);
-            return Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(ItemCategoryCreateMessage message, CancellationToken cancellationToken)
-        {
-            IsNewRecord = false;
-            ItemCategoryDTO itemCategoryDTO = Context.AutoMapper.Map<ItemCategoryDTO>(message.CreatedItemCategory.Entity);
-            itemCategoryDTO.Context = this;
-            itemCategoryDTO.SubCategories.Add(new ItemSubCategoryDTO() { IsDummyChild = true, Name = "Dummy", Items = [] });
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemCategoryDTO.ItemType.Id);
-            if (itemTypeDTO is null) return;
-            if (!itemTypeDTO.IsExpanded && itemTypeDTO.ItemCategories.Count > 0 && itemTypeDTO.ItemCategories[0].IsDummyChild)
-            {
-                await LoadItemCategoriesAsync(itemTypeDTO);
-                itemTypeDTO.IsExpanded = true;
-                ItemCategoryDTO? itemCategory = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemCategoryDTO.Id);
-                if (itemCategory is null) return;
-                SelectedItem = itemCategory;
-                _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
-                return;
-            }
-            if (itemTypeDTO.IsExpanded == false)
-            {
-                itemTypeDTO.IsExpanded = true;
-                itemTypeDTO.ItemCategories.Add(itemCategoryDTO);
-                SelectedItem = itemCategoryDTO;
-                _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
-                return;
-            }
-            itemTypeDTO.ItemCategories.Add(itemCategoryDTO);
-            SelectedItem = itemCategoryDTO;
-            _notificationService.ShowSuccess(message.CreatedItemCategory.Message);
-        }
-
-        public Task HandleAsync(ItemCategoryDeleteMessage message, CancellationToken cancellationToken)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
-                {
-                    ItemCategoryDTO? categoryToRemove = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.DeletedItemCategory.DeletedId);
-                    if (categoryToRemove != null)
-                    {
-                        itemTypeDTO.ItemCategories.Remove(categoryToRemove);
-                        break;
-                    }
-                }
-                SelectedItem = null;
-            });
-            _notificationService.ShowSuccess(message.DeletedItemCategory.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(ItemCategoryUpdateMessage message, CancellationToken cancellationToken)
-        {
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.ItemType.Id);
-            if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTOToUpdate = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItemCategory.Entity.Id);
-            if (itemCategoryDTOToUpdate is null) return Task.CompletedTask;
-            itemCategoryDTOToUpdate.Id = message.UpdatedItemCategory.Entity.Id;
-            itemCategoryDTOToUpdate.Name = message.UpdatedItemCategory.Entity.Name;
-            _notificationService.ShowSuccess(message.UpdatedItemCategory.Message);
-            return Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(ItemSubCategoryCreateMessage message, CancellationToken cancellationToken)
-        {
-            IsNewRecord = false;
-            ItemSubCategoryDTO itemSubCategoryDTO = Context.AutoMapper.Map<ItemSubCategoryDTO>(message.CreatedItemSubCategory.Entity);
-            itemSubCategoryDTO.Context = this;
-            itemSubCategoryDTO.Items.Add(new ItemDTO() { IsDummyChild = true, Name = "Dummy" });
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.ItemType.Id);
-            if (itemTypeDTO is null) return;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.ItemCategory.Id);
-            if (itemCategoryDTO is null) return;
-            if (!itemCategoryDTO.IsExpanded && itemCategoryDTO.SubCategories.Count > 0 && itemCategoryDTO.SubCategories[0].IsDummyChild)
-            {
-                await LoadItemSubCategoriesAsync(itemCategoryDTO);
-                itemCategoryDTO.IsExpanded = true;
-                ItemSubCategoryDTO? itemSubCategory = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemSubCategoryDTO.Id);
-                if (itemSubCategory is null) return;
-                SelectedItem = itemSubCategory;
-                _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
-                return;
-            }
-            if (!itemCategoryDTO.IsExpanded)
-            {
-                itemCategoryDTO.IsExpanded = true;
-                itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
-                SelectedItem = itemSubCategoryDTO;
-                _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
-                return;
-            }
-            itemCategoryDTO.SubCategories.Add(itemSubCategoryDTO);
-            SelectedItem = itemSubCategoryDTO;
-            _notificationService.ShowSuccess(message.CreatedItemSubCategory.Message);
-        }
-
-        public Task HandleAsync(ItemSubCategoryDeleteMessage message, CancellationToken cancellationToken)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
-                {
-                    foreach (var itemCategoryDTO in itemTypeDTO.ItemCategories)
-                    {
-                        ItemSubCategoryDTO? subCategoryToRemove = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.DeletedItemSubCategory.DeletedId);
-                        if (subCategoryToRemove != null)
-                        {
-                            itemCategoryDTO.SubCategories.Remove(subCategoryToRemove);
-                            SelectedItem = null;
-                            return;
-                        }
-                    }
-                }
-            });
-            _notificationService.ShowSuccess(message.DeletedItemSubCategory.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(ItemSubCategoryUpdateMessage message, CancellationToken cancellationToken)
-        {
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.ItemType.Id);
-            if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.ItemCategory.Id);
-            if (itemCategoryDTO is null) return Task.CompletedTask;
-            ItemSubCategoryDTO? itemSubCategoryDTOToUpdate = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItemSubCategory.Entity.Id);
-            if (itemSubCategoryDTOToUpdate is null) return Task.CompletedTask;
-            itemSubCategoryDTOToUpdate.Id = message.UpdatedItemSubCategory.Entity.Id;
-            itemSubCategoryDTOToUpdate.Name = message.UpdatedItemSubCategory.Entity.Name;
-            _notificationService.ShowSuccess(message.UpdatedItemSubCategory.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(CatalogCreateMessage message, CancellationToken cancellationToken)
-        {
-            CatalogDTO catalogDTO = Context.AutoMapper.Map<CatalogDTO>(message.CreatedCatalog.Entity);
-            Catalogs.Add(catalogDTO);
-            SelectedCatalog = catalogDTO;
-            _notificationService.ShowSuccess(message.CreatedCatalog.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(CatalogUpdateMessage message, CancellationToken cancellationToken)
-        {
-            CatalogDTO catalogDTO = Context.AutoMapper.Map<CatalogDTO>(message.UpdatedCatalog.Entity);
-            CatalogDTO? catalogToUpdate = Catalogs.FirstOrDefault(x => x.Id == catalogDTO.Id);
-            if (catalogToUpdate is null) return Task.CompletedTask;
-            catalogToUpdate.Id = catalogDTO.Id;
-            catalogToUpdate.Name = catalogDTO.Name;
-            _notificationService.ShowSuccess(message.UpdatedCatalog.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(CatalogDeleteMessage message, CancellationToken cancellationToken)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                CatalogDTO? catalogToRemove = Catalogs.FirstOrDefault(x => x.Id == message.DeletedCatalog.DeletedId);
-                if (catalogToRemove != null)
-                    Catalogs.Remove(catalogToRemove);
-
-                SelectedCatalog = Catalogs.Count > 0 ? Catalogs.First() : null;
-            });
-            _notificationService.ShowSuccess(message.DeletedCatalog.Message);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(ItemDeleteMessage message, CancellationToken cancellationToken)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                foreach (var itemTypeDTO in SelectedCatalog.ItemTypes)
-                {
-                    foreach (var itemCategoryDTO in itemTypeDTO.ItemCategories)
-                    {
-                        foreach (var itemSubCategoryDTO in itemCategoryDTO.SubCategories)
-                        {
-                            ItemDTO? itemToRemove = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == message.DeletedItem.DeletedId);
-                            if (itemToRemove != null)
-                            {
-                                itemSubCategoryDTO.Items.Remove(itemToRemove);
-                                SelectedItem = null;
-                                return;
-                            }
-                        }
-                    }
-                }
-            });
-            _notificationService.ShowSuccess(message.DeletedItem.Message);
-            return Task.CompletedTask;
-        }
-
-        public async Task HandleAsync(ItemCreateMessage message, CancellationToken cancellationToken)
-        {
-            IsNewRecord = false;
-            ItemDTO itemDTO = Context.AutoMapper.Map<ItemDTO>(message.CreatedItem.Entity);
-            itemDTO.Context = this;
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.ItemType.Id);
-            if (itemTypeDTO is null) return;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.ItemCategory.Id);
-            if (itemCategoryDTO is null) return;
-            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == itemDTO.SubCategory.Id);
-            if (itemSubCategoryDTO is null) return;
-            if (!itemSubCategoryDTO.IsExpanded && itemSubCategoryDTO.Items.Count > 0 && itemSubCategoryDTO.Items[0].IsDummyChild)
-            {
-                await LoadItemsAsync(itemSubCategoryDTO);
-                itemSubCategoryDTO.IsExpanded = true;
-                ItemDTO? item = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == itemDTO.Id);
-                if (item is null) return;
-                SelectedItem = item;
-                _notificationService.ShowSuccess(message.CreatedItem.Message);
-                return;
-            }
-            if (!itemSubCategoryDTO.IsExpanded)
-            {
-                itemSubCategoryDTO.IsExpanded = true;
-                itemSubCategoryDTO.Items.Add(itemDTO);
-                SelectedItem = itemDTO;
-                _notificationService.ShowSuccess(message.CreatedItem.Message);
-                return;
-            }
-            itemSubCategoryDTO.Items.Add(itemDTO);
-            SelectedItem = itemDTO;
-            _notificationService.ShowSuccess(message.CreatedItem.Message);
-        }
-
-        public Task HandleAsync(ItemUpdateMessage message, CancellationToken cancellationToken)
-        {
-            ItemDTO item = Context.AutoMapper.Map<ItemDTO>(message.UpdatedItem.Entity);
-            item.Context = this;
-            ItemTypeDTO? itemTypeDTO = SelectedCatalog.ItemTypes.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.ItemType.Id);
-            if (itemTypeDTO is null) return Task.CompletedTask;
-            ItemCategoryDTO? itemCategoryDTO = itemTypeDTO.ItemCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.ItemCategory.Id);
-            if (itemCategoryDTO is null) return Task.CompletedTask;
-            ItemSubCategoryDTO? itemSubCategoryDTO = itemCategoryDTO.SubCategories.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.SubCategory.Id);
-            if (itemSubCategoryDTO is null) return Task.CompletedTask;
-            ItemDTO? itemDTOToUpdate = itemSubCategoryDTO.Items.FirstOrDefault(x => x.Id == message.UpdatedItem.Entity.Id);
-            if (itemDTOToUpdate is null) return Task.CompletedTask;
-            itemDTOToUpdate.Id = item.Id;
-            itemDTOToUpdate.Name = item.Name;
-            itemDTOToUpdate.Reference = item.Reference;
-            itemDTOToUpdate.IsActive = item.IsActive;
-            itemDTOToUpdate.AllowFraction = item.AllowFraction;
-            itemDTOToUpdate.HasExtendedInformation = item.HasExtendedInformation;
-            itemDTOToUpdate.MeasurementUnit = item.MeasurementUnit;
-            itemDTOToUpdate.Brand = item.Brand;
-            itemDTOToUpdate.AccountingGroup = item.AccountingGroup;
-            itemDTOToUpdate.SizeCategory = item.SizeCategory;
-            itemDTOToUpdate.EanCodes = new ObservableCollection<string>(item.EanCodes);
-            itemDTOToUpdate.Components = new ObservableCollection<ComponentsByItemDTO>(item.Components);
-            itemDTOToUpdate.Images = new ObservableCollection<ImageByItemDTO>(item.Images.OrderBy(x => x.DisplayOrder));
-            _notificationService.ShowSuccess(message.UpdatedItem.Message);
-            return Task.CompletedTask;
-        }
+            Dictionary<string, object> fields = FieldSpec<UpsertResponseType<ItemGraphQLModel>>
+                .Create()
+                .Field(f => f.Success)
+                .Field(f => f.Message)
+                .Build();
+            GraphQLQueryFragment fragment = new("updateItem",
+                [new("data", "UpdateItemInput!"), new("id", "ID!")],
+                fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
+        });
 
         #endregion
     }

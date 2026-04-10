@@ -1,12 +1,15 @@
 using AutoMapper;
 using Caliburn.Micro;
 using Common.Interfaces;
+using GraphQL.Client.Http;
+using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Helpers.Cache;
-using NetErp.Inventory.CatalogItems.DTO;
+using NetErp.Inventory.CatalogItems.Validators;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetErp.Inventory.CatalogItems.ViewModels
@@ -24,22 +27,32 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly IRepository<S3StorageLocationGraphQLModel> _s3LocationService;
         private readonly Helpers.IDialogService _dialogService;
         private readonly Helpers.Services.INotificationService _notificationService;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
 
         // Caches
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CatalogCache _catalogCache;
         private readonly MeasurementUnitCache _measurementUnitCache;
         private readonly ItemBrandCache _itemBrandCache;
         private readonly AccountingGroupCache _accountingGroupCache;
         private readonly ItemSizeCategoryCache _itemSizeCategoryCache;
         private readonly StringLengthCache _stringLengthCache;
 
-        private CatalogRootMasterViewModel _catalogRootMasterViewModel;
+        // Validators
+        private readonly CatalogValidator _catalogValidator;
+        private readonly ItemTypeValidator _itemTypeValidator;
+        private readonly ItemCategoryValidator _itemCategoryValidator;
+        private readonly ItemSubCategoryValidator _itemSubCategoryValidator;
+        private readonly ItemValidator _itemValidator;
 
+        private readonly PermissionCache _permissionCache;
+
+        private CatalogRootMasterViewModel? _catalogRootMasterViewModel;
         public CatalogRootMasterViewModel CatalogRootMasterViewModel
         {
             get
             {
-                if (_catalogRootMasterViewModel is null) _catalogRootMasterViewModel = new CatalogRootMasterViewModel(
+                _catalogRootMasterViewModel ??= new CatalogRootMasterViewModel(
                     this,
                     _catalogService,
                     _itemTypeService,
@@ -49,24 +62,33 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _s3LocationService,
                     _dialogService,
                     _notificationService,
+                    EventAggregator,
+                    AutoMapper,
+                    _joinableTaskFactory,
+                    _catalogCache,
                     _measurementUnitCache,
                     _itemBrandCache,
                     _accountingGroupCache,
                     _itemSizeCategoryCache,
                     _stringLengthCache,
-                    _graphQLClient);
+                    _catalogValidator,
+                    _itemTypeValidator,
+                    _itemCategoryValidator,
+                    _itemSubCategoryValidator,
+                    _itemValidator,
+                    _graphQLClient,
+                    _permissionCache);
                 return _catalogRootMasterViewModel;
             }
         }
 
         private bool _enableOnActivateAsync = true;
-
         public bool EnableOnActivateAsync
         {
-            get { return _enableOnActivateAsync; }
+            get => _enableOnActivateAsync;
             set
             {
-                if(_enableOnActivateAsync != value)
+                if (_enableOnActivateAsync != value)
                 {
                     _enableOnActivateAsync = value;
                     NotifyOfPropertyChange(nameof(EnableOnActivateAsync));
@@ -85,12 +107,20 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             IRepository<S3StorageLocationGraphQLModel> s3LocationService,
             Helpers.IDialogService dialogService,
             Helpers.Services.INotificationService notificationService,
+            JoinableTaskFactory joinableTaskFactory,
+            CatalogCache catalogCache,
             MeasurementUnitCache measurementUnitCache,
             ItemBrandCache itemBrandCache,
             AccountingGroupCache accountingGroupCache,
             ItemSizeCategoryCache itemSizeCategoryCache,
             StringLengthCache stringLengthCache,
-            IGraphQLClient graphQLClient)
+            CatalogValidator catalogValidator,
+            ItemTypeValidator itemTypeValidator,
+            ItemCategoryValidator itemCategoryValidator,
+            ItemSubCategoryValidator itemSubCategoryValidator,
+            ItemValidator itemValidator,
+            IGraphQLClient graphQLClient,
+            PermissionCache permissionCache)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -102,24 +132,41 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _s3LocationService = s3LocationService;
             _dialogService = dialogService;
             _notificationService = notificationService;
+            _joinableTaskFactory = joinableTaskFactory;
+            _catalogCache = catalogCache;
             _measurementUnitCache = measurementUnitCache;
             _itemBrandCache = itemBrandCache;
             _accountingGroupCache = accountingGroupCache;
             _itemSizeCategoryCache = itemSizeCategoryCache;
             _stringLengthCache = stringLengthCache;
+            _catalogValidator = catalogValidator;
+            _itemTypeValidator = itemTypeValidator;
+            _itemCategoryValidator = itemCategoryValidator;
+            _itemSubCategoryValidator = itemSubCategoryValidator;
+            _itemValidator = itemValidator;
             _graphQLClient = graphQLClient;
-            Task.Run(ActivateMasterView);
+            _permissionCache = permissionCache;
         }
 
-        public async Task ActivateMasterView()
+        protected override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
+            await base.OnActivateAsync(cancellationToken);
             try
             {
-                await ActivateItemAsync(CatalogRootMasterViewModel, new System.Threading.CancellationToken());
+                // Activate via the Caliburn lifecycle (UI thread) instead of Task.Run.
+                // This ensures CatalogRootMasterViewModel is constructed on the UI thread,
+                // so SubscribeOnUIThread(this) wires the event aggregator handlers correctly
+                // — including IHandle<PermissionsCacheRefreshedMessage> for reactive refresh.
+                await ActivateItemAsync(CatalogRootMasterViewModel, cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    DevExpress.Xpf.Core.ThemedMessageBox.Show(
+                        "Error de inicialización",
+                        $"{GetType().Name}.{nameof(OnActivateAsync)}: {ex.Message}",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error));
             }
         }
     }

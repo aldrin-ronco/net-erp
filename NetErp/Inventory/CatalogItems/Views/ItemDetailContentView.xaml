@@ -1,0 +1,453 @@
+<UserControl x:Class="NetErp.Inventory.CatalogItems.Views.ItemDetailContentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+             xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+             xmlns:h="clr-namespace:NetErp.Helpers"
+             mc:Ignorable="d"
+             d:DesignHeight="650" d:DesignWidth="900">
+    <UserControl.Resources>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+    <dx:DXTabControl Grid.Row="0"
+                     Padding="8"
+                     TabContentCacheMode="CacheTabsOnSelecting"
+                     SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+
+        <!-- Tab 1: Básicos -->
+        <dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
+            <dx:DXTabItem.Header>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Básicos" VerticalAlignment="Center"/>
+                    <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                             Visibility="{Binding Data.HasBasicDataErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+            </dx:DXTabItem.Header>
+            <Grid Margin="10" h:EnterKeyTraversal.IsEnabled="True"
+                  IsEnabled="{Binding IsEditing}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                    <!-- Images Gallery -->
+                    <dxlc:TileLayoutControl Background="{x:Null}" Grid.Row="0" Grid.ColumnSpan="2"
+                                            ItemsSource="{Binding Images, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            HorizontalAlignment="Center" Orientation="Horizontal"
+                                            Padding="0" BreakFlowToFit="False" VerticalAlignment="Center">
+                        <dxlc:TileLayoutControl.ItemTemplate>
+                            <DataTemplate>
+                                <dxlc:Tile Size="Small" Content="{Binding}" Background="White"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <dxlc:Tile.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Eliminar imagen"
+                                                      Command="{Binding Data.DeleteImageCommand, Source={StaticResource DataContextProxy}}"
+                                                      CommandParameter="{Binding}">
+                                                <MenuItem.Icon>
+                                                    <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </dxlc:Tile.ContextMenu>
+                                    <dxlc:Tile.ContentTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Image Source="{Binding SourceImage, UpdateSourceTrigger=PropertyChanged}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </dxlc:Tile.ContentTemplate>
+                                </dxlc:Tile>
+                            </DataTemplate>
+                        </dxlc:TileLayoutControl.ItemTemplate>
+                    </dxlc:TileLayoutControl>
+
+                    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,5,0,10">
+                        <!-- Estado normal: S3 disponible — solo el botón centrado -->
+                        <Button HorizontalAlignment="Center"
+                                Command="{Binding AddImageCommand}"
+                                Visibility="{Binding IsS3Available, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Agregar imagen" VerticalAlignment="Center"/>
+                                <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" VerticalAlignment="Center" Width="16" Height="16" Margin="5,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Estado warning: S3 no configurado — panel informativo con botón embebido -->
+                        <Border Background="#F8F9FA" BorderBrush="#E5E7EB" BorderThickness="1"
+                                CornerRadius="6" Padding="18,16" Margin="5,0"
+                                HorizontalAlignment="Stretch">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsS3Available}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FFA500" BlurRadius="6" ShadowDepth="0" Opacity="0.15"/>
+                            </Border.Effect>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Gestión de imágenes deshabilitada"
+                                           FontSize="13" FontWeight="SemiBold" Foreground="#995E00"
+                                           HorizontalAlignment="Center" Margin="0,0,0,6"/>
+
+                                <TextBlock FontSize="11" Foreground="#7A4A00" TextWrapping="Wrap" LineHeight="16"
+                                           TextAlignment="Center" HorizontalAlignment="Center" MaxWidth="520">
+                                    Para habilitar la carga de imágenes de productos, configure una ubicación de almacenamiento S3 con la clave <Run FontWeight="Bold" Text="product_images"/> y asocie sus credenciales AWS desde el módulo de configuración.
+                                </TextBlock>
+
+                                <Button HorizontalAlignment="Center" Margin="0,14,0,0"
+                                        IsEnabled="False" Opacity="0.6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Agregar imagen" VerticalAlignment="Center"/>
+                                        <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" VerticalAlignment="Center" Width="16" Height="16" Margin="5,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Bottom panel: fields. Same horizontal margin as the upper warning
+                         panel (5,0) so both panels align, fills remaining vertical space via
+                         Row 2 = *. Contains its own ScrollViewer for overflow. -->
+                    <Border Grid.Row="2" Grid.ColumnSpan="2"
+                            Margin="5,0"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            Background="#F8F9FA" BorderBrush="#E5E7EB" BorderThickness="1"
+                            CornerRadius="6" Padding="18,16">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="Código" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"
+                                           Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+                                <dxe:TextEdit Grid.Row="0" Grid.Column="1"
+                                              Text="{Binding Code, Mode=OneWay}"
+                                              IsReadOnly="True" Margin="0,0,0,5" CharacterCasing="Upper"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              Visibility="{Binding IsNewRecord, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}"/>
+
+                                <TextBlock Text="Nombre" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <dxe:TextEdit x:Name="NameEdit" Grid.Row="1" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                              Style="{StaticResource FocusedHighlightStyle}"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              MaxLength="{Binding NameMaxLength}"
+                                              Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
+
+                                <TextBlock Text="Referencia" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <dxe:TextEdit Grid.Row="2" Grid.Column="1" Margin="0,0,0,5" CharacterCasing="Upper"
+                                              Style="{StaticResource FocusedHighlightStyle}"
+                                              Padding="3"
+                                              BorderBrush="#C8CED6"
+                                              MaxLength="{Binding ReferenceMaxLength}"
+                                              Text="{Binding Reference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"/>
+
+                                <TextBlock Text="Unidad de medida" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <dxe:ComboBoxEdit Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                                  ItemsSource="{Binding MeasurementUnits}"
+                                                  DisplayMember="Name"
+                                                  SelectedItem="{Binding SelectedMeasurementUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                                  Padding="2"
+                                                  BorderBrush="#C8CED6"
+                                                  IsTextEditable="False"/>
+
+                                <TextBlock Text="Grupo de tallaje" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <dxe:ComboBoxEdit Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                                  ItemsSource="{Binding Sizes}"
+                                                  DisplayMember="Name"
+                                                  SelectedItem="{Binding SelectedSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  Padding="2"
+                                                  BorderBrush="#C8CED6"
+                                                  IsTextEditable="False"
+                                                  NullText="SELECCIONE UN GRUPO DE TALLAJE"
+                                                  AllowNullInput="True" NullValueButtonPlacement="EditBox"/>
+
+                                <TextBlock Text="Grupo contable" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right"
+                                           Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <dxe:ComboBoxEdit Grid.Row="5" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,5"
+                                                  ItemsSource="{Binding AccountingGroups}"
+                                                  DisplayMember="Name"
+                                                  SelectedItem="{Binding SelectedAccountingGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}"
+                                                  Padding="2"
+                                                  BorderBrush="#C8CED6"
+                                                  IsTextEditable="False"/>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+        </dx:DXTabItem>
+
+        <!-- Tab 2: Códigos de barras -->
+        <dx:DXTabItem Header="Códigos de barras">
+            <Grid Margin="10" IsEnabled="{Binding IsEditing}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <dxe:TextEdit Grid.Column="0"
+                                  Text="{Binding EanCodeDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  CharacterCasing="Upper">
+                        <dxe:TextEdit.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding AddEanCodeCommand}"/>
+                        </dxe:TextEdit.InputBindings>
+                    </dxe:TextEdit>
+                    <Button Grid.Column="1" Margin="5,0,0,0"
+                            Command="{Binding AddEanCodeCommand}">
+                        <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value=".5"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Button>
+                </Grid>
+
+                <dxg:GridControl Grid.Row="1" Margin="0,8,0,0"
+                                 EnableSmartColumnsGeneration="True"
+                                 ItemsSource="{Binding EanCodes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AutoGenerateColumns="None"
+                                 SelectedItem="{Binding SelectedEanCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView AllowCascadeUpdate="False"
+                                       EnableSelectedRowAppearance="True"
+                                       ShowGroupPanel="False"
+                                       AlternateRowBackground="Beige"/>
+                    </dxg:GridControl.View>
+                    <dxg:GridColumn Header="Códigos de barras" Width="*" Binding="{Binding EanCode, Mode=OneWay}"/>
+                    <dxg:GridColumn FixedWidth="True" Width="40">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Image Source="{dx:DXImage 'Images/Actions/Lock_16x16.png'}" Stretch="None"
+                                           Margin="3"
+                                           Visibility="{Binding RowData.Row.IsInternal, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                           ToolTip="Código interno generado automáticamente"/>
+                                    <Button BorderThickness="0" Padding="3" Margin="3"
+                                            Command="{Binding Data.DeleteEanCodeCommand, Source={StaticResource DataContextProxy}}"
+                                            Visibility="{Binding RowData.Row.IsInternal, Converter={dxmvvm:BooleanToVisibilityConverter Inverse=True}}">
+                                        <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Stretch="None"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
+                </dxg:GridControl>
+            </Grid>
+        </dx:DXTabItem>
+
+        <!-- Tab 3: Productos relacionados -->
+        <dx:DXTabItem Header="Productos relacionados">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" IsEnabled="{Binding IsEditing}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Producto" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <dxe:ButtonEdit Grid.Column="1" IsReadOnly="True"
+                                    Text="{Binding DraftComponentName, Mode=OneWay}"
+                                    AllowDefaultButton="False"
+                                    NullText="Buscar producto o servicio...">
+                        <dxe:ButtonEdit.Buttons>
+                            <dxe:ButtonInfo GlyphKind="Search" Command="{Binding OpenSearchComponentsCommand}"
+                                            ToolTip="Buscar producto"/>
+                        </dxe:ButtonEdit.Buttons>
+                    </dxe:ButtonEdit>
+
+                    <TextBlock Text="Ref." Grid.Column="2" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                    <dxe:TextEdit Grid.Column="3" IsReadOnly="True" Width="100"
+                                  Text="{Binding DraftComponentReference, Mode=OneWay}"/>
+
+                    <TextBlock Text="Código" Grid.Column="4" VerticalAlignment="Center" Margin="10,0,5,0"/>
+                    <dxe:TextEdit Grid.Column="5" IsReadOnly="True" Width="100"
+                                  Text="{Binding DraftComponentCode, Mode=OneWay}"/>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,8,0,0" IsEnabled="{Binding IsEditing}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Cantidad" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <dxe:SpinEdit Grid.Column="1" MinValue="0" Width="100"
+                                  Value="{Binding DraftComponentQuantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEnabled="{Binding DraftComponentQuantityEnabled}"
+                                  IsFloatValue="{Binding DraftComponentAllowFraction}">
+                        <dxe:SpinEdit.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding AddComponentCommand}"/>
+                        </dxe:SpinEdit.InputBindings>
+                    </dxe:SpinEdit>
+
+                    <Button Grid.Column="3" Command="{Binding AddComponentCommand}"
+                            Background="Transparent" BorderThickness="0" Padding="4" Cursor="Hand">
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{dx:DXImage 'Images/Actions/Add_16x16.png'}" Stretch="None" VerticalAlignment="Center">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value=".5"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <TextBlock Text="Agregar" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <dxg:GridControl Grid.Row="2" Margin="0,8,0,0"
+                                 EnableSmartColumnsGeneration="False"
+                                 ItemsSource="{Binding Components, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AutoGenerateColumns="None"
+                                 SelectedItem="{Binding SelectedComponent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView AllowCascadeUpdate="False"
+                                       EnableSelectedRowAppearance="True"
+                                       AllowEditing="False"
+                                       ShowGroupPanel="False"
+                                       AutoWidth="True"
+                                       AlternateRowBackground="Beige"/>
+                    </dxg:GridControl.View>
+                    <dxg:GridColumn Header="Nombre del producto" Width="*" Binding="{Binding Component.Name, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Referencia" FixedWidth="True" Width="100" HorizontalHeaderContentAlignment="Center" Binding="{Binding Component.Reference, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Código" FixedWidth="True" Width="100" HorizontalHeaderContentAlignment="Center" Binding="{Binding Component.Code, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Cantidad" FixedWidth="True" Width="90" HorizontalHeaderContentAlignment="Center" Binding="{Binding Quantity, Mode=OneWay}"/>
+                    <dxg:GridColumn Header="Unidad de medida" FixedWidth="True" Width="140" HorizontalHeaderContentAlignment="Center" Binding="{Binding Component.MeasurementUnit.Name, Mode=OneWay}"/>
+
+                    <dxg:GridColumn FixedWidth="True" Width="40">
+                        <dxg:GridColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button BorderThickness="0" Padding="3" Margin="3"
+                                        Command="{Binding Data.DeleteComponentCommand, Source={StaticResource DataContextProxy}}"
+                                        IsEnabled="{Binding Data.IsEditing, Source={StaticResource DataContextProxy}}">
+                                    <Image Source="{dx:DXImage 'Images/Actions/Trash_16x16.png'}" Stretch="None"/>
+                                </Button>
+                            </DataTemplate>
+                        </dxg:GridColumn.CellTemplate>
+                    </dxg:GridColumn>
+                </dxg:GridControl>
+            </Grid>
+        </dx:DXTabItem>
+
+        <!-- Tab 4: Otros datos -->
+        <dx:DXTabItem Header="Otros datos">
+            <Grid Margin="10" IsEnabled="{Binding IsEditing}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Marca" Grid.Row="0" Margin="0,0,0,3" FontSize="13"/>
+                <dxe:ComboBoxEdit Grid.Row="1" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                  ItemsSource="{Binding ItemBrands}"
+                                  DisplayMember="Name"
+                                  SelectedItem="{Binding SelectedBrand, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Padding="2"
+                                  BorderBrush="#C8CED6"
+                                  IsTextEditable="False"
+                                  NullText="SELECCIONE UNA MARCA"
+                                  AllowNullInput="True" NullValueButtonPlacement="EditBox"/>
+
+                <dxe:CheckEdit Content="Registrar información extendida" Grid.Row="2" Margin="0,5,0,5"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding HasExtendedInformation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxe:CheckEdit Content="Permitir fracción" Grid.Row="3" Margin="0,5"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding AllowFraction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                               IsEnabled="{Binding ControlsStock}"/>
+                <dxe:CheckEdit Content="Servicio basado en AIU" Grid.Row="4" Margin="0,5"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding AiuBasedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                               IsEnabled="{Binding ControlsStock, Converter={dxmvvm:BooleanNegationConverter}}"/>
+                <dxe:CheckEdit Content="Aplica para venta" Grid.Row="5" Margin="0,5"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding Billable, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <dxe:CheckEdit Content="Cantidad controlada por báscula en la venta" Grid.Row="6" Margin="0,5"
+                               Style="{StaticResource BlueCheckedTextStyle}" Padding="2"
+                               IsChecked="{Binding AmountBasedOnWeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                               IsEnabled="{Binding ControlsStock}"/>
+            </Grid>
+        </dx:DXTabItem>
+    </dx:DXTabControl>
+
+        <!-- Leyenda de indicadores de error -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,4,0,0">
+            <Ellipse Width="8" Height="8" Fill="#FFA500" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <TextBlock Text="Indica que la pestaña contiene campos obligatorios pendientes por diligenciar"
+                       Foreground="Gray" FontSize="11" FontStyle="Italic" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

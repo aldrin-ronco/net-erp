@@ -111,6 +111,9 @@ namespace NetErp
             _ = kernel.Bind<CostCenterCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CostCenterCache>());
 
+            _ = kernel.Bind<CatalogCache>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<CatalogCache>());
+
             _ = kernel.Bind<StorageCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<StorageCache>());
 
@@ -190,6 +193,12 @@ namespace NetErp
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CompanyLocationValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.CostCenterValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.CostCenters.Validators.StorageValidator>().ToSelf().InSingletonScope();
+
+            _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.CatalogValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemTypeValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemCategoryValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemSubCategoryValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemValidator>().ToSelf().InSingletonScope();
 
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());
@@ -474,7 +483,9 @@ namespace NetErp
                 _ = cfg.CreateMap<ItemTypeGraphQLModel, ItemTypeDTO>();
                 _ = cfg.CreateMap<ItemCategoryGraphQLModel, ItemCategoryDTO>();
                 _ = cfg.CreateMap<ItemSubCategoryGraphQLModel, ItemSubCategoryDTO>();
-                _ = cfg.CreateMap<ItemGraphQLModel, ItemDTO>();
+                _ = cfg.CreateMap<ItemGraphQLModel, ItemDTO>()
+                    .ForMember(dest => dest.EanCodes, opt => opt.MapFrom(src => src.EanCodes));
+                _ = cfg.CreateMap<EanCodeByItemGraphQLModel, EanCodeByItemDTO>();
                 _ = cfg.CreateMap<ItemBrandGraphQLModel, ItemBrandDTO>();
                 _ = cfg.CreateMap<AccountingGroupGraphQLModel, AccountingGroupDTO>();
                 _ = cfg.CreateMap<ComponentsByItemGraphQLModel, ComponentsByItemDTO>();
@@ -487,6 +498,21 @@ namespace NetErp
                 _ = cfg.CreateMap<CompanyDTO, CompanyGraphQLModel>();
                 _ = cfg.CreateMap<CompanyLocationDTO, CompanyLocationGraphQLModel>();
                 _ = cfg.CreateMap<StorageDTO, StorageGraphQLModel>();
+                // CatalogItems reverse mappings (DTO → GraphQLModel) for Edit dialogs
+                _ = cfg.CreateMap<CatalogDTO, CatalogGraphQLModel>();
+                _ = cfg.CreateMap<ItemTypeDTO, ItemTypeGraphQLModel>();
+                _ = cfg.CreateMap<ItemCategoryDTO, ItemCategoryGraphQLModel>();
+                _ = cfg.CreateMap<ItemSubCategoryDTO, ItemSubCategoryGraphQLModel>();
+                _ = cfg.CreateMap<ItemDTO, ItemGraphQLModel>()
+                    .ForMember(dest => dest.EanCodes, opt => opt.MapFrom(src => src.EanCodes));
+                _ = cfg.CreateMap<EanCodeByItemDTO, EanCodeByItemGraphQLModel>();
+                _ = cfg.CreateMap<ComponentsByItemDTO, ComponentsByItemGraphQLModel>();
+                _ = cfg.CreateMap<ImageByItemDTO, ImageByItemGraphQLModel>();
+                _ = cfg.CreateMap<MeasurementUnitDTO, MeasurementUnitGraphQLModel>();
+                _ = cfg.CreateMap<ItemBrandDTO, ItemBrandGraphQLModel>();
+                _ = cfg.CreateMap<AccountingGroupDTO, AccountingGroupGraphQLModel>();
+                _ = cfg.CreateMap<ItemSizeCategoryDTO, ItemSizeCategoryGraphQLModel>();
+                _ = cfg.CreateMap<ItemSizeValueDTO, ItemSizeValueGraphQLModel>();
                 _ = cfg.CreateMap<CountryGraphQLModel, CountryDTO>();
                 _ = cfg.CreateMap<DepartmentGraphQLModel, DepartmentDTO>();
                 _ = cfg.CreateMap<CityGraphQLModel, CityDTO>();

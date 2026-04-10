@@ -34,10 +34,12 @@
                 Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
                 Click="OnActionButtonClick"
                 Visibility="{Binding ButtonVisible, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={dxmvvm:BooleanToVisibilityConverter}}">
-            <Grid>
-                <StackPanel HorizontalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center">
+                <!-- Icon + padlock share a 32x32 Grid so the padlock anchors to the icon
+                     (not to the wider button bounds that include the label text). -->
+                <Grid Width="32" Height="32" HorizontalAlignment="Center">
                     <Image Source="{Binding ButtonIcon, RelativeSource={RelativeSource AncestorType=UserControl}, TargetNullValue={dx:DXImage 'Images/Actions/New_32x32.png'}}"
-                           Width="32" Height="32" HorizontalAlignment="Center">
+                           Width="32" Height="32">
                         <Image.Style>
                             <Style TargetType="Image">
                                 <Style.Triggers>
@@ -48,25 +50,25 @@
                             </Style>
                         </Image.Style>
                     </Image>
-                    <TextBlock Text="{Binding ButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                </StackPanel>
-                <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
-                       Width="14" Height="14"
-                       HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                       Margin="0,0,-2,12">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasPermission, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Grid>
+                    <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                           Width="14" Height="14"
+                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                           Margin="0,0,-2,-2">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasPermission, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Grid>
+                <TextBlock Text="{Binding ButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
         </Button>
     </StackPanel>
 </UserControl>

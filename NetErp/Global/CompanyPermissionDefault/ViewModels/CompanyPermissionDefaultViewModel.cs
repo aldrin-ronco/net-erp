@@ -272,6 +272,7 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
 
             ExpandoObject variables = new GraphQLVariables()
                 .For(fragment, "pagination", new { pageSize = -1 })
+                .For(fragment, "sort", _permissionDefinitionSort)
                 .Build();
 
             PageType<PermissionDefinitionGraphQLModel> result = await _permissionDefinitionService.GetPageAsync(query, variables);
@@ -629,10 +630,21 @@ namespace NetErp.Global.CompanyPermissionDefault.ViewModels
                         .Field(m => m!.Id)))
                 .Build();
 
-            GraphQLQueryParameter pagination = new("pagination", "Pagination");
-            GraphQLQueryFragment fragment = new("permissionDefinitionsPage", [pagination], fields, "PageResponse");
+            List<GraphQLQueryParameter> parameters =
+            [
+                new("pagination", "Pagination"),
+                new("sort", "[PermissionDefinitionSortInput]")
+            ];
+            GraphQLQueryFragment fragment = new("permissionDefinitionsPage", parameters, fields, "PageResponse");
             return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery());
         });
+
+        // Shared sort: ASC by DISPLAY_ORDER, then CODE as a deterministic tiebreaker.
+        private static readonly object[] _permissionDefinitionSort =
+        [
+            new { field = "DISPLAY_ORDER", direction = "ASC" },
+            new { field = "CODE", direction = "ASC" }
+        ];
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _companyPermDefaultsQuery = new(() =>
         {

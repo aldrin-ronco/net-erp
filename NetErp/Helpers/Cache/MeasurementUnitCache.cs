@@ -6,6 +6,7 @@ using NetErp.Helpers.GraphQLQueryBuilder;
 using Newtonsoft.Json.Linq;
 using QueryBuilder = NetErp.Helpers.GraphQLQueryBuilder.GraphQLQueryBuilder;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -36,12 +37,22 @@ namespace NetErp.Helpers.Cache
                 )
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("pagination", "Pagination");
-            var fragment = new GraphQLQueryFragment("measurementUnitsPage", [parameter], fields, "PageResponse");
+            List<GraphQLQueryParameter> parameters =
+            [
+                new("pagination", "Pagination"),
+                new("sort", "[MeasurementUnitSortInput]")
+            ];
+            var fragment = new GraphQLQueryFragment("measurementUnitsPage", parameters, fields, "PageResponse");
             var query = new QueryBuilder([fragment]).GetQuery();
 
             return (fragment, query);
         });
+
+        // Alphabetical (by NAME) so combo boxes always show units in a predictable order.
+        private static readonly object[] _defaultSort =
+        [
+            new { field = "NAME", direction = "ASC" }
+        ];
 
         public MeasurementUnitCache(
             IRepository<MeasurementUnitGraphQLModel> service,
@@ -61,6 +72,7 @@ namespace NetErp.Helpers.Cache
                 var (fragment, query) = _loadQuery.Value;
                 var variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { PageSize = -1 })
+                    .For(fragment, "sort", _defaultSort)
                     .Build();
 
                 var result = await _service.GetPageAsync(query, variables);
@@ -91,6 +103,7 @@ namespace NetErp.Helpers.Cache
         public void ApplyVariables(GraphQLVariables variables, GraphQLQueryFragment batchFragment)
         {
             variables.For(batchFragment, "pagination", new { PageSize = -1 });
+            variables.For(batchFragment, "sort", _defaultSort);
         }
 
         public void PopulateFromBatchResponse(JToken data)
