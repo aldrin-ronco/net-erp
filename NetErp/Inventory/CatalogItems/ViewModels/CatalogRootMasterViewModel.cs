@@ -128,7 +128,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
 
         private const int MinSearchLength = 4;
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
         private ObservableCollection<CatalogDTO>? _preSearchCatalogs;
 
         // Monotonic version used to discard results from stale in-flight searches.
@@ -251,7 +251,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             // this one's result will be discarded on return.
             int myVersion = Interlocked.Increment(ref _searchVersion);
 
-            await Application.Current.Dispatcher.InvokeAsync(() => IsSearchLoading = true);
+            IsSearchLoading = true;
             try
             {
                 (GraphQLQueryFragment fragment, string query) = _searchItemsQuery.Value;
@@ -265,35 +265,28 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 // Discard stale result (a newer search started after we launched ours).
                 if (myVersion != Volatile.Read(ref _searchVersion)) return;
 
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    // Guard again on the UI thread in case a ClearSearch ran between the
-                    // await and the dispatch.
-                    if (myVersion != Volatile.Read(ref _searchVersion)) return;
+                // Snapshot original tree on first search only. We store a reference
+                // because the next line reassigns Catalogs to a brand-new instance.
+                _preSearchCatalogs ??= Catalogs;
 
-                    // Snapshot original tree on first search only. We store a reference
-                    // because the next line reassigns Catalogs to a brand-new instance.
-                    _preSearchCatalogs ??= Catalogs;
-
-                    Catalogs = BuildTreeFromSearchResults(result.Entries);
-                    MatchedItemsCount = result.Entries.Count;
-                    MatchedItemsTruncated = result.Entries.Count >= SearchPageSize;
-                    IsSearching = true;
-                    SelectedItem = null;
-                });
+                Catalogs = BuildTreeFromSearchResults(result.Entries);
+                MatchedItemsCount = result.Entries.Count;
+                MatchedItemsTruncated = result.Entries.Count >= SearchPageSize;
+                IsSearching = true;
+                SelectedItem = null;
             }
             catch (Exception ex)
             {
                 if (myVersion != Volatile.Read(ref _searchVersion)) return;
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                    ThemedMessageBox.Show("Atención!",
-                        $"{GetType().Name}.{nameof(SearchItemsAsync)}: {ex.GetErrorMessage()}",
-                        MessageBoxButton.OK, MessageBoxImage.Error));
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show("Atención!",
+                    $"{GetType().Name}.{nameof(SearchItemsAsync)}: {ex.GetErrorMessage()}",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 if (myVersion == Volatile.Read(ref _searchVersion))
-                    await Application.Current.Dispatcher.InvokeAsync(() => IsSearchLoading = false);
+                    IsSearchLoading = false;
             }
         }
 
@@ -311,16 +304,17 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                 MatchedItemsTruncated = false;
                 return;
             }
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                Catalogs = _preSearchCatalogs;
-                _preSearchCatalogs = null;
-                MatchedItemsCount = 0;
-                MatchedItemsTruncated = false;
-                IsSearching = false;
-                IsSearchLoading = false;
-                SelectedItem = null;
-            });
+
+            // Inline UI update — ClearSearch is already called from the setter
+            // which runs on the UI thread via WPF binding, so no dispatcher
+            // switch is needed here.
+            Catalogs = _preSearchCatalogs;
+            _preSearchCatalogs = null;
+            MatchedItemsCount = 0;
+            MatchedItemsTruncated = false;
+            IsSearching = false;
+            IsSearchLoading = false;
+            SelectedItem = null;
         }
 
         /// <summary>
@@ -596,7 +590,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemSubCategoryValidator itemSubCategoryValidator,
             ItemValidator itemValidator,
             IGraphQLClient graphQLClient,
-            PermissionCache permissionCache)
+            PermissionCache permissionCache,
+            DebouncedAction searchDebounce)
         {
             Context = context;
             _catalogService = catalogService;
@@ -623,6 +618,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemValidator = itemValidator;
             _graphQLClient = graphQLClient;
             _permissionCache = permissionCache;
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }

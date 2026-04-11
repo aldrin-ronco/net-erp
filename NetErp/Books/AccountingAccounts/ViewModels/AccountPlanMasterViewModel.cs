@@ -53,7 +53,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
-            AccountPlanValidator validator)
+            AccountPlanValidator validator,
+            DebouncedAction searchDebounce)
         {
             _accountingAccountService = accountingAccountService;
             _notificationService = notificationService;
@@ -63,6 +64,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _validator = validator;
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -102,7 +104,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         #region Search
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         public string SearchText
         {

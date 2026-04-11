@@ -118,7 +118,7 @@ namespace NetErp.Billing.Customers.ViewModels
             }
         }
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         public string FilterSearch
         {
@@ -281,7 +281,8 @@ namespace NetErp.Billing.Customers.ViewModels
                                  PermissionCache permissionCache,
                                  JoinableTaskFactory joinableTaskFactory,
                                  IGraphQLClient graphQLClient,
-                                 CustomerValidator validator)
+                                 CustomerValidator validator,
+                                 DebouncedAction searchDebounce)
         {
             AutoMapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
@@ -297,6 +298,7 @@ namespace NetErp.Billing.Customers.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
             _graphQLClient = graphQLClient;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }

@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Books;
 using Models.Suppliers;
+using NetErp.Books.AccountingEntities.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -46,49 +47,55 @@ namespace NetErp.Books.AccountingEntities.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly AccountingEntityValidator _validator;
+        private readonly DebouncedAction _searchDebounce;
 
         #endregion
 
         #region Grid Properties
 
-        private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy;
+            get;
             set
             {
-                if (_isBusy != value)
+                if (field != value)
                 {
-                    _isBusy = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(IsBusy));
+                    // CanCreateAccountingEntity depends on !IsBusy. Without this
+                    // explicit notification the binding goes stale whenever a
+                    // DeleteAccountingEntityAsync (or any caller that triggers a
+                    // Refresh() while IsBusy is true) evaluates CanCreate while
+                    // IsBusy is true and caches "false" — the subsequent IsBusy
+                    // reset in the finally block would then never propagate.
+                    NotifyOfPropertyChange(nameof(CanCreateAccountingEntity));
                 }
             }
         }
 
-        private ObservableCollection<AccountingEntityGraphQLModel> _accountingEntities = [];
         public ObservableCollection<AccountingEntityGraphQLModel> AccountingEntities
         {
-            get => _accountingEntities;
+            get;
             set
             {
-                if (_accountingEntities != value)
+                if (field != value)
                 {
-                    _accountingEntities = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(AccountingEntities));
                     NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
                 }
             }
-        }
+        } = [];
 
-        private AccountingEntityGraphQLModel? _selectedAccountingEntity;
         public AccountingEntityGraphQLModel? SelectedAccountingEntity
         {
-            get => _selectedAccountingEntity;
+            get;
             set
             {
-                if (_selectedAccountingEntity != value)
+                if (field != value)
                 {
-                    _selectedAccountingEntity = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(SelectedAccountingEntity));
                     NotifyOfPropertyChange(nameof(CanEditAccountingEntity));
                     NotifyOfPropertyChange(nameof(CanDeleteAccountingEntity));
@@ -96,80 +103,75 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             }
         }
 
-        private string _filterSearch = string.Empty;
         public string FilterSearch
         {
-            get => _filterSearch;
+            get;
             set
             {
-                if (_filterSearch != value)
+                if (field != value)
                 {
-                    _filterSearch = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
                     if (string.IsNullOrEmpty(value) || value.Length >= 3)
                     {
                         PageIndex = 1;
-                        _ = LoadAccountingEntitiesAsync();
+                        _ = _searchDebounce.RunAsync(LoadAccountingEntitiesAsync);
                     }
                 }
             }
-        }
+        } = string.Empty;
 
-        private int _pageIndex = 1;
         public int PageIndex
         {
-            get => _pageIndex;
+            get;
             set
             {
-                if (_pageIndex != value)
+                if (field != value)
                 {
-                    _pageIndex = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageIndex));
                 }
             }
-        }
+        } = 1;
 
-        private int _pageSize = 50;
         public int PageSize
         {
-            get => _pageSize;
+            get;
             set
             {
-                if (_pageSize != value)
+                if (field != value)
                 {
-                    _pageSize = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(PageSize));
                 }
             }
-        }
+        } = 50;
 
-        private int _totalCount;
         public int TotalCount
         {
-            get => _totalCount;
+            get;
             set
             {
-                if (_totalCount != value)
+                if (field != value)
                 {
-                    _totalCount = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(TotalCount));
                 }
             }
         }
 
-        private string _responseTime = string.Empty;
         public string ResponseTime
         {
-            get => _responseTime;
+            get;
             set
             {
-                if (_responseTime != value)
+                if (field != value)
                 {
-                    _responseTime = value;
+                    field = value;
                     NotifyOfPropertyChange(nameof(ResponseTime));
                 }
             }
-        }
+        } = string.Empty;
 
         #endregion
 
@@ -244,7 +246,9 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             CountryCache countryCache,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            AccountingEntityValidator validator,
+            DebouncedAction searchDebounce)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
@@ -255,6 +259,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             _stringLengthCache = stringLengthCache ?? throw new ArgumentNullException(nameof(stringLengthCache));
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
@@ -270,9 +276,14 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AccountingEntity);
             }
-            catch (StringLengthNotAvailableException ex)
+            catch (Exception ex)
             {
-                ThemedMessageBox.Show("Atención!", ex.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
                 await TryCloseAsync();
                 return;
             }
@@ -305,9 +316,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory);
+                AccountingEntityDetailViewModel detail = new(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory, _validator);
                 await detail.LoadCachesAsync();
                 detail.SetForNew();
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.55;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Nuevo tercero");
             }
@@ -315,7 +333,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(CreateAccountingEntityAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(CreateAccountingEntityAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -330,9 +348,16 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
-                var detail = new AccountingEntityDetailViewModel(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory);
+                AccountingEntityDetailViewModel detail = new(_accountingEntityService, _eventAggregator, _identificationTypeCache, _countryCache, _stringLengthCache, _joinableTaskFactory, _validator);
                 await detail.LoadCachesAsync();
                 await detail.LoadDataForEditAsync(SelectedAccountingEntity.Id);
+
+                if (this.GetView() is System.Windows.FrameworkElement parentView)
+                {
+                    detail.DialogWidth = parentView.ActualWidth * 0.55;
+                    detail.DialogHeight = parentView.ActualHeight * 0.95;
+                }
+
                 IsBusy = false;
                 await _dialogService.ShowDialogAsync(detail, "Editar tercero");
             }
@@ -340,7 +365,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(EditAccountingEntityAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(EditAccountingEntityAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -357,8 +382,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 IsBusy = true;
                 Refresh();
 
-                var (canDeleteFragment, canDeleteQuery) = _canDeleteAccountingEntityQuery.Value;
-                var canDeleteVars = new GraphQLVariables()
+                (GraphQLQueryFragment canDeleteFragment, string canDeleteQuery) = _canDeleteAccountingEntityQuery.Value;
+                object canDeleteVars = new GraphQLVariables()
                     .For(canDeleteFragment, "id", SelectedAccountingEntity.Id)
                     .Build();
                 CanDeleteType validation = await _accountingEntityService.CanDeleteAsync(canDeleteQuery, canDeleteVars);
@@ -380,8 +405,8 @@ namespace NetErp.Books.AccountingEntities.ViewModels
                 }
 
                 IsBusy = true;
-                var (deleteFragment, deleteQuery) = _deleteAccountingEntityQuery.Value;
-                var deleteVars = new GraphQLVariables()
+                (GraphQLQueryFragment deleteFragment, string deleteQuery) = _deleteAccountingEntityQuery.Value;
+                object deleteVars = new GraphQLVariables()
                     .For(deleteFragment, "id", SelectedAccountingEntity.Id)
                     .Build();
                 DeleteResponseType deletedAccountingEntity = await _accountingEntityService.DeleteAsync<DeleteResponseType>(deleteQuery, deleteVars);
@@ -399,7 +424,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(DeleteAccountingEntityAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(DeleteAccountingEntityAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -417,21 +442,19 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             try
             {
                 IsBusy = true;
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
-
-                var (fragment, query) = _loadAccountingEntitiesQuery.Value;
+                (GraphQLQueryFragment fragment, string query) = _loadAccountingEntitiesQuery.Value;
 
                 dynamic filters = new ExpandoObject();
                 if (!string.IsNullOrEmpty(FilterSearch)) filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                object variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
 
-                var result = await _accountingEntityService.GetPageAsync(query, variables);
+                PageType<AccountingEntityGraphQLModel> result = await _accountingEntityService.GetPageAsync(query, variables);
 
                 TotalCount = result.TotalEntries;
                 AccountingEntities = new ObservableCollection<AccountingEntityGraphQLModel>(result.Entries);
@@ -443,7 +466,7 @@ namespace NetErp.Books.AccountingEntities.ViewModels
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show("Atención!",
-                    $"{GetType().Name}.{nameof(LoadAccountingEntitiesAsync)}: {ex.Message}",
+                    $"{GetType().Name}.{nameof(LoadAccountingEntitiesAsync)}: {ex.GetErrorMessage()}",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally

@@ -103,7 +103,7 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
             }
         }
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         public string FilterSearch
         {
@@ -248,7 +248,8 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
             AwsS3ConfigCache awsS3ConfigCache,
             JoinableTaskFactory joinableTaskFactory,
             PermissionCache permissionCache,
-            S3StorageLocationValidator validator)
+            S3StorageLocationValidator validator,
+            DebouncedAction searchDebounce)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _service = service ?? throw new ArgumentNullException(nameof(service));
@@ -259,6 +260,7 @@ namespace NetErp.Global.S3StorageLocation.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
             _permissionCache = permissionCache;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }

@@ -39,7 +39,6 @@
                 CharacterCasing="Upper"
                 BorderBrush="#C8CED6"
                 AllowDefaultButton="False"
-                h:FocusBehavior.IsFocused="True"
                 Text="{Binding FilterSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=500}">
                 <dxe:ButtonEdit.Buttons>
                     <dxe:ButtonInfo IsLeft="True" GlyphKind="Search" Margin="4,0,2,0"/>
