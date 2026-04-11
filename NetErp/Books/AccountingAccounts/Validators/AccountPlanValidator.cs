@@ -25,6 +25,9 @@ namespace NetErp.Books.AccountingAccounts.Validators
         {
             return propertyName switch
             {
+                // In edit mode Lv5Code is read-only (IsReadOnlyLv5Code=true in the VM),
+                // so the per-property branch intentionally runs only in new mode. CanSave
+                // keeps a defensive length check for edit-Lv5 mode as a safety net.
                 nameof(AccountPlanValidationContext.Lv5Code) when context.IsNewRecord
                     => ValidateLv5CodeForNew(value as string, context),
                 nameof(AccountPlanValidationContext.Lv1Name)

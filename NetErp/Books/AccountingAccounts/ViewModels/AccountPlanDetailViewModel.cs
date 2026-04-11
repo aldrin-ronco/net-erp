@@ -239,6 +239,10 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         {
             NotifyOfPropertyChange(nameof(CanSave));
             NotifyOfPropertyChange(nameof(MarginVisibility));
+            // Re-evaluate Margin validation: RequiresMargin depends on the code prefix,
+            // so it may have just flipped. If it flipped on and Margin is still 0, the
+            // field needs to show its error indicator so the user knows why Save is blocked.
+            ValidateProperty(nameof(Margin), Margin);
 
             if (IsNewRecord)
             {
