@@ -5,6 +5,7 @@ using Xunit;
 
 namespace NetErp.Tests.Helpers;
 
+[Collection(SanitizerRegistryCollection.Name)]
 public class SanitizerRegistryTests : IDisposable
 {
     public void Dispose()

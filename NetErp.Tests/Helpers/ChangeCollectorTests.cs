@@ -9,6 +9,7 @@ using Xunit;
 
 namespace NetErp.Tests.Helpers;
 
+[Collection(SanitizerRegistryCollection.Name)]
 public class ChangeCollectorTests : IDisposable
 {
     public void Dispose()
