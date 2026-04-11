@@ -229,6 +229,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(Lv5Code));
+                    NotifyOfPropertyChange(nameof(Lv5CodeIsTabStop));
                     ValidateProperty(nameof(Lv5Code), value);
                     OnLv5CodeChanged();
                 }
@@ -309,7 +310,17 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public bool IsReadOnlyLv3Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv3Name)); } } }
         public bool IsReadOnlyLv4Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv4Name)); } } }
         public bool IsReadOnlyLv5Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv5Name)); } } }
-        public bool IsReadOnlyLv5Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv5Code)); } } }
+        public bool IsReadOnlyLv5Code { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(IsReadOnlyLv5Code)); NotifyOfPropertyChange(nameof(Lv5CodeIsTabStop)); } } }
+
+        /// <summary>
+        /// Lv5Code only belongs in the tab order while the user is still typing the
+        /// auxiliary code (length &lt; 8) in new mode. Once the 8-digit code is fully
+        /// entered, SetNextFocus programmatically moves focus to the first empty Name
+        /// field; returning to Lv5Code via tab/enter after that point only risks the
+        /// user accidentally overtyping a valid code. Edit mode is always false since
+        /// the field is read-only there.
+        /// </summary>
+        public bool Lv5CodeIsTabStop => !IsReadOnlyLv5Code && Lv5Code.Length < 8;
 
 
         // Es nuevo registro ?
@@ -375,6 +386,14 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         public int CodeMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Code));
         public int NameMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Name));
+
+        /// <summary>
+        /// RegEx mask for the Lv5Code TextEdit. Restricts input to digits only with a
+        /// maximum length driven by the StringLengthCache. This prevents the user from
+        /// typing letters — account codes are strictly numeric, and the cascading
+        /// populate logic in OnLv5CodeChanged assumes digit input.
+        /// </summary>
+        public string Lv5CodeMask => $"[0-9]{{0,{CodeMaxLength}}}";
 
         #endregion
 

@@ -171,6 +171,34 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             }
         }
 
+        /// <summary>
+        /// Drives the DevExpress FocusBehavior bound to the SearchTextBox. Setting this
+        /// to true (via SetFocusOnSearch) triggers the behavior to focus the element.
+        /// </summary>
+        public bool SearchTextBoxIsFocused
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(SearchTextBoxIsFocused));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Toggles SearchTextBoxIsFocused false → true so the FocusBehavior picks up the
+        /// change and focuses the element. The false→true transition is required because
+        /// the same value would not fire PropertyChanged.
+        /// </summary>
+        private void SetFocusOnSearch()
+        {
+            SearchTextBoxIsFocused = false;
+            SearchTextBoxIsFocused = true;
+        }
+
         private void FilterSearchResults()
         {
             string search = SearchText.Trim().ToUpperInvariant();
@@ -293,6 +321,16 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             {
                 IsBusy = false;
             }
+
+            // Ensure focus lands on the SearchTextBox after the BusyMask animation
+            // has retired. OnViewReady only fires once and the initial focus grab
+            // otherwise competes with the BusyMask transition on first module open
+            // after app launch, leaving the textbox unfocused until the user clicks.
+            // Scheduling at ApplicationIdle + going through the DevExpress FocusBehavior
+            // (via SearchTextBoxIsFocused) is the pattern that works reliably here.
+            Application.Current.Dispatcher.BeginInvoke(
+                new System.Action(SetFocusOnSearch),
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
