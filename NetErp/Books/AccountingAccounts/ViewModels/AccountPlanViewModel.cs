@@ -4,6 +4,7 @@ using Common.Interfaces;
 using DevExpress.Xpf.Core;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Books.AccountingAccounts.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using System;
@@ -24,6 +25,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly AccountPlanValidator _validator;
 
         #endregion
 
@@ -36,7 +38,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             IEventAggregator eventAggregator,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            AccountPlanValidator validator)
         {
             _accountingAccountService = accountingAccountService;
             _notificationService = notificationService;
@@ -45,6 +48,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator;
         }
 
         #endregion
@@ -64,7 +68,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     _eventAggregator,
                     _stringLengthCache,
                     _permissionCache,
-                    _joinableTaskFactory);
+                    _joinableTaskFactory,
+                    _validator);
                 return _accountPlanMasterViewModel;
             }
         }

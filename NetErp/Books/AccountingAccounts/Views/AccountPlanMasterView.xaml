@@ -19,36 +19,48 @@
                                   Command="{Binding Path=Data.CreateCommand, Source={StaticResource DataContextProxy}}"
                                   IsEnabled="{Binding Path=Data.HasCreatePermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Width="16" Height="16">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Path=Data.HasCreatePermission, Source={StaticResource DataContextProxy}}" Value="False">
-                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+                                <Grid>
+                                    <Image Source="{dx:DXImage 'Images/Actions/AddItem_16x16.png'}"/>
+                                    <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                           Width="10" Height="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           Margin="0,0,-3,-3">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=Data.HasCreatePermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Grid>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
                         <MenuItem Command="{Binding Data.EditCommand, Source={StaticResource DataContextProxy}}"
                                   IsEnabled="{Binding Path=Data.HasEditPermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Width="16" Height="16">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Path=Data.HasEditPermission, Source={StaticResource DataContextProxy}}" Value="False">
-                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+                                <Grid>
+                                    <Image Source="{dx:DXImage 'Images/Edit/Edit_16x16.png'}"/>
+                                    <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                           Width="10" Height="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           Margin="0,0,-3,-3">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=Data.HasEditPermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Grid>
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -63,18 +75,24 @@
                         <MenuItem Command="{Binding Path=Data.DeleteCommand, Source={StaticResource DataContextProxy}}"
                                   IsEnabled="{Binding Path=Data.HasDeletePermission, Source={StaticResource DataContextProxy}}">
                             <MenuItem.Icon>
-                                <Image Width="16" Height="16">
-                                    <Image.Style>
-                                        <Style TargetType="Image">
-                                            <Setter Property="Source" Value="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Path=Data.HasDeletePermission, Source={StaticResource DataContextProxy}}" Value="False">
-                                                    <Setter Property="Source" Value="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
+                                <Grid>
+                                    <Image Source="{dx:DXImage 'Images/Edit/Delete_16x16.png'}"/>
+                                    <Image Source="{dx:DXImage 'Images/XAF/BO_Security_Permission.png'}"
+                                           Width="10" Height="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           Margin="0,0,-3,-3">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=Data.HasDeletePermission, Source={StaticResource DataContextProxy}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Grid>
                             </MenuItem.Icon>
                             <MenuItem.Header>
                                 <StackPanel Orientation="Horizontal">
@@ -152,7 +170,12 @@
                                   BorderBrush="#ced4da"
                                   Background="White"
                                   Padding="30,6,12,6"
-                                  VerticalContentAlignment="Center"/>
+                                  VerticalContentAlignment="Center">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:FocusBehavior SourceObject="{Binding Path=Data, Source={StaticResource DataContextProxy}}"
+                                                  PropertyName="SearchTextBoxIsFocused"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxe:TextEdit>
                     <TextBlock Text="&#x1F50D;"
                                FontSize="14"
                                Foreground="#6c757d"
