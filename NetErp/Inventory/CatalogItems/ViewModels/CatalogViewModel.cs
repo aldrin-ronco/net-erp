@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using Models.Inventory;
+using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Inventory.CatalogItems.Validators;
 using System;
@@ -46,6 +47,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
         private readonly ItemValidator _itemValidator;
 
         private readonly PermissionCache _permissionCache;
+        private readonly DebouncedAction _searchDebounce;
 
         private CatalogRootMasterViewModel? _catalogRootMasterViewModel;
         public CatalogRootMasterViewModel CatalogRootMasterViewModel
@@ -77,7 +79,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
                     _itemSubCategoryValidator,
                     _itemValidator,
                     _graphQLClient,
-                    _permissionCache);
+                    _permissionCache,
+                    _searchDebounce);
                 return _catalogRootMasterViewModel;
             }
         }
@@ -120,7 +123,8 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             ItemSubCategoryValidator itemSubCategoryValidator,
             ItemValidator itemValidator,
             IGraphQLClient graphQLClient,
-            PermissionCache permissionCache)
+            PermissionCache permissionCache,
+            DebouncedAction searchDebounce)
         {
             AutoMapper = mapper;
             EventAggregator = eventAggregator;
@@ -146,6 +150,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             _itemValidator = itemValidator;
             _graphQLClient = graphQLClient;
             _permissionCache = permissionCache;
+            _searchDebounce = searchDebounce;
         }
 
         protected override async Task OnActivateAsync(CancellationToken cancellationToken)

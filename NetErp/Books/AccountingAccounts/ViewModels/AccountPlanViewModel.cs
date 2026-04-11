@@ -26,6 +26,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly AccountPlanValidator _validator;
+        private readonly DebouncedAction _searchDebounce;
 
         #endregion
 
@@ -39,7 +40,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
-            AccountPlanValidator validator)
+            AccountPlanValidator validator,
+            DebouncedAction searchDebounce)
         {
             _accountingAccountService = accountingAccountService;
             _notificationService = notificationService;
@@ -49,6 +51,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _validator = validator;
+            _searchDebounce = searchDebounce;
         }
 
         #endregion
@@ -69,7 +72,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                     _stringLengthCache,
                     _permissionCache,
                     _joinableTaskFactory,
-                    _validator);
+                    _validator,
+                    _searchDebounce);
                 return _accountPlanMasterViewModel;
             }
         }

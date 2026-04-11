@@ -102,7 +102,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             }
         }
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         public string FilterSearch
         {
@@ -246,7 +246,8 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
             JoinableTaskFactory joinableTaskFactory,
-            MeasurementUnitValidator validator)
+            MeasurementUnitValidator validator,
+            DebouncedAction searchDebounce)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _measurementUnitService = measurementUnitService ?? throw new ArgumentNullException(nameof(measurementUnitService));
@@ -256,6 +257,7 @@ namespace NetErp.Inventory.MeasurementUnits.ViewModels
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }

@@ -196,6 +196,12 @@ namespace NetErp
             _ = kernel.Bind<NetErp.Inventory.CatalogItems.Validators.ItemValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Global.S3StorageLocation.Validators.S3StorageLocationValidator>().ToSelf().InSingletonScope();
             _ = kernel.Bind<NetErp.Books.AccountingAccounts.Validators.AccountPlanValidator>().ToSelf().InSingletonScope();
+            _ = kernel.Bind<NetErp.Books.AccountingEntities.Validators.AccountingEntityValidator>().ToSelf().InSingletonScope();
+
+            // DebouncedAction se registra como transient (cada VM que lo reciba
+            // debe tener su propia instancia — es stateful, guarda su propio
+            // CancellationTokenSource).
+            _ = kernel.Bind<NetErp.Helpers.DebouncedAction>().ToSelf();
 
             _ = kernel.Bind<ItemBrandCache>().ToSelf().InSingletonScope();
             _ = kernel.Bind<IEntityCache>().ToMethod(ctx => ctx.Kernel.Get<ItemBrandCache>());

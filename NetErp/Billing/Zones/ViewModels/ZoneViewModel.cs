@@ -103,7 +103,7 @@ namespace NetErp.Billing.Zones.ViewModels
             }
         }
 
-        private readonly DebouncedAction _searchDebounce = new();
+        private readonly DebouncedAction _searchDebounce;
 
         public string FilterSearch
         {
@@ -261,7 +261,8 @@ namespace NetErp.Billing.Zones.ViewModels
             StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory,
             PermissionCache permissionCache,
-            ZoneValidator validator)
+            ZoneValidator validator,
+            DebouncedAction searchDebounce)
         {
             _eventAggregator = eventAggregator ?? throw new ArgumentNullException(nameof(eventAggregator));
             _zoneService = zoneService ?? throw new ArgumentNullException(nameof(zoneService));
@@ -271,6 +272,7 @@ namespace NetErp.Billing.Zones.ViewModels
             _joinableTaskFactory = joinableTaskFactory;
             _permissionCache = permissionCache;
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
 
             _eventAggregator.SubscribeOnUIThread(this);
         }
