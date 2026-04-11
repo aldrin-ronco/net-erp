@@ -378,6 +378,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             NotifyOfPropertyChange(nameof(CanSave));
         }
 
+        [ExpandoPath("components")]
         public ObservableCollection<ComponentsByItemDTO> Components
         {
             get;
@@ -401,6 +402,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             NotifyOfPropertyChange(nameof(CanSave));
         }
 
+        [ExpandoPath("images")]
         public ObservableCollection<ImageByItemDTO> Images
         {
             get;
@@ -1350,7 +1352,7 @@ namespace NetErp.Inventory.CatalogItems.ViewModels
             }
         }
 
-        private async Task<UpsertResponseType<ItemGraphQLModel>> ExecuteSaveAsync()
+        public async Task<UpsertResponseType<ItemGraphQLModel>> ExecuteSaveAsync()
         {
             try
             {
