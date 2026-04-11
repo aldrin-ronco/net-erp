@@ -7,6 +7,7 @@ using Xunit;
 
 namespace NetErp.Tests.Helpers;
 
+[Collection(SanitizerRegistryCollection.Name)]
 public class ViewModelExtensionsTests : IDisposable
 {
     public void Dispose()
