@@ -66,6 +66,7 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv1Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="1" Grid.Column="2"
+                                      MaxLength="{Binding Path=Data.NameMaxLength, Source={StaticResource DataContextProxy}}"
                                       CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
                                       Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
@@ -87,6 +88,7 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv2Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="2" Grid.Column="2"
+                                      MaxLength="{Binding Path=Data.NameMaxLength, Source={StaticResource DataContextProxy}}"
                                       CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
                                       Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
@@ -108,6 +110,7 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv3Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="3" Grid.Column="2"
+                                      MaxLength="{Binding Path=Data.NameMaxLength, Source={StaticResource DataContextProxy}}"
                                       CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
                                       Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
@@ -129,6 +132,7 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv4Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="4" Grid.Column="2"
+                                      MaxLength="{Binding Path=Data.NameMaxLength, Source={StaticResource DataContextProxy}}"
                                       CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
                                       Margin="0,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
@@ -145,7 +149,8 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Code, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="5" Grid.Column="1"
-                                      MaxLength="8" Padding="3" BorderBrush="#C8CED6"
+                                      MaxLength="{Binding Path=Data.CodeMaxLength, Source={StaticResource DataContextProxy}}"
+                                      Padding="3" BorderBrush="#C8CED6"
                                       HorizontalContentAlignment="Center"
                                       Margin="10,5,10,5">
                             <dxmvvm:Interaction.Behaviors>
@@ -159,6 +164,7 @@
                                       IsReadOnly="{Binding Path=Data.IsReadOnlyLv5Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Source={StaticResource DataContextProxy}}"
                                       Style="{StaticResource FocusedHighlightStyle}"
                                       Grid.Row="5" Grid.Column="2"
+                                      MaxLength="{Binding Path=Data.NameMaxLength, Source={StaticResource DataContextProxy}}"
                                       CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
                                       Margin="0,5,10,5">
                             <dxe:TextEdit.Foreground>

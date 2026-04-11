@@ -7,6 +7,7 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly List<AccountingAccountGraphQLModel> _accounts;
         private readonly int _selectedItemId;
@@ -344,17 +346,26 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         public AccountPlanDetailViewModel(
             IRepository<AccountingAccountGraphQLModel> accountingAccountService,
             IEventAggregator eventAggregator,
+            StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory,
             List<AccountingAccountGraphQLModel> accounts,
             int selectedItemId = 0)
         {
             _accountingAccountService = accountingAccountService;
             _eventAggregator = eventAggregator;
+            _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
             _accounts = accounts;
             _selectedItemId = selectedItemId;
             NotifyOfPropertyChange(nameof(CanSave));
         }
+
+        #region MaxLength (from StringLengthCache)
+
+        public int CodeMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Code));
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Name));
+
+        #endregion
 
         public double DialogWidth
         {

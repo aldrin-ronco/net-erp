@@ -487,7 +487,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 IsBusy = true;
-                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _joinableTaskFactory, Accounts);
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, Accounts);
                 IsBusy = false;
 
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
@@ -517,7 +517,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 IsBusy = true;
-                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _joinableTaskFactory, Accounts, selectedItemId: SelectedItem.Id);
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, Accounts, selectedItemId: SelectedItem.Id);
                 detail.Code = SelectedItem.Code;
                 IsBusy = false;
 
