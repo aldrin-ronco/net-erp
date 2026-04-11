@@ -7,10 +7,13 @@ using DevExpress.Xpf.Core;
 using Extensions.Global;
 using Microsoft.VisualStudio.Threading;
 using Models.Books;
+using NetErp.Books.AccountingAccounts.Validators;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -21,7 +24,7 @@ using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Books.AccountingAccounts.ViewModels
 {
-    public class AccountPlanDetailViewModel : Screen
+    public class AccountPlanDetailViewModel : Screen, INotifyDataErrorInfo
     {
         #region "Propiedades"
 
@@ -29,15 +32,15 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         private List<string> _debitAccounts = new List<string>() { "1", "5", "6", "7" };
 
-        // Prefijos de cuentas que requieren margen
-        private static readonly List<string> _marginPrefixes = new List<string>() { "2408", "2365", "2367", "2368" };
-
         private readonly IRepository<AccountingAccountGraphQLModel> _accountingAccountService;
         private readonly IEventAggregator _eventAggregator;
         private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly AccountPlanValidator _validator;
         private readonly List<AccountingAccountGraphQLModel> _accounts;
         private readonly int _selectedItemId;
+        private HashSet<string>? _existingCodesSet;
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         public Dictionary<char, string> AccountNature => Dictionaries.BooksDictionaries.AccountNatureDictionary;
         public decimal Margin
@@ -49,6 +52,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(Margin));
+                    ValidateProperty(nameof(Margin), value);
                     NotifyOfPropertyChange(nameof(CanSave));
                 }
             }
@@ -87,7 +91,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             get
             {
                 string code = IsNewRecord ? Lv5Code : Code;
-                return code.Length >= 8 && _marginPrefixes.Any(p => code.StartsWith(p));
+                return AccountPlanValidator.RequiresMarginFor(code);
             }
         }
 
@@ -225,6 +229,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(Lv5Code));
+                    ValidateProperty(nameof(Lv5Code), value);
                     OnLv5CodeChanged();
                 }
             }
@@ -275,11 +280,11 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         // Nombres de las cuentas
 
-        public string Lv1Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv1Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
-        public string Lv2Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv2Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
-        public string Lv3Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv3Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
-        public string Lv4Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv4Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
-        public string Lv5Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv5Name)); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv1Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv1Name)); ValidateProperty(nameof(Lv1Name), value); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv2Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv2Name)); ValidateProperty(nameof(Lv2Name), value); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv3Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv3Name)); ValidateProperty(nameof(Lv3Name), value); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv4Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv4Name)); ValidateProperty(nameof(Lv4Name), value); OnAccountingAccountNameChanged(); } } } = string.Empty;
+        public string Lv5Name { get; set { if (field != value) { field = value; NotifyOfPropertyChange(nameof(Lv5Name)); ValidateProperty(nameof(Lv5Name), value); OnAccountingAccountNameChanged(); } } } = string.Empty;
         protected void OnAccountingAccountNameChanged()
         {
             NotifyOfPropertyChange(nameof(CanSave));
@@ -348,6 +353,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             IEventAggregator eventAggregator,
             StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory,
+            AccountPlanValidator validator,
             List<AccountingAccountGraphQLModel> accounts,
             int selectedItemId = 0)
         {
@@ -355,6 +361,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             _eventAggregator = eventAggregator;
             _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator;
             _accounts = accounts;
             _selectedItemId = selectedItemId;
             NotifyOfPropertyChange(nameof(CanSave));
@@ -364,6 +371,114 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
 
         public int CodeMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Code));
         public int NameMaxLength => _stringLengthCache.GetMaxLength<AccountingAccountGraphQLModel>(nameof(AccountingAccountGraphQLModel.Name));
+
+        #endregion
+
+        #region Validation (INotifyDataErrorInfo + validator delegation)
+
+        /// <summary>
+        /// Cached set of codes currently in the loaded plan. Built lazily from
+        /// <c>_accounts</c> so the duplicate check in the validator is O(1).
+        /// </summary>
+        private HashSet<string> ExistingCodesSet => _existingCodesSet ??= [.. _accounts.Select(a => a.Code)];
+
+        public bool HasErrors => _errors.Count > 0;
+
+        public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        public IEnumerable GetErrors(string? propertyName)
+        {
+            if (string.IsNullOrEmpty(propertyName) || !_errors.TryGetValue(propertyName, out List<string>? value))
+                return Enumerable.Empty<string>();
+            return value;
+        }
+
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
+        {
+            bool hadErrors = _errors.ContainsKey(propertyName);
+
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
+                RaiseErrorsChanged(propertyName);
+        }
+
+        private void RaiseErrorsChanged(string propertyName)
+        {
+            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            NotifyOfPropertyChange(nameof(HasErrors));
+            NotifyOfPropertyChange(nameof(CanSave));
+        }
+
+        private AccountPlanValidationContext BuildValidationContext() => new()
+        {
+            IsNewRecord = IsNewRecord,
+            CodeLength = _code.Length,
+            Lv5Code = Lv5Code,
+            Lv1Name = Lv1Name,
+            Lv2Name = Lv2Name,
+            Lv3Name = Lv3Name,
+            Lv4Name = Lv4Name,
+            Lv5Name = Lv5Name,
+            Margin = Margin,
+            RequiresMargin = RequiresMargin,
+            ExistingCodes = ExistingCodesSet
+        };
+
+        private AccountPlanCanSaveContext BuildCanSaveContext() => new()
+        {
+            IsBusy = IsBusy,
+            IsNewRecord = IsNewRecord,
+            CodeLength = _code.Length,
+            Lv5Code = Lv5Code,
+            Lv1Name = Lv1Name,
+            Lv2Name = Lv2Name,
+            Lv3Name = Lv3Name,
+            Lv4Name = Lv4Name,
+            Lv5Name = Lv5Name,
+            Margin = Margin,
+            RequiresMargin = RequiresMargin,
+            ExistingCodes = ExistingCodesSet
+        };
+
+        private void ValidateProperty(string propertyName, object? value)
+        {
+            IReadOnlyList<string> errors = _validator.Validate(propertyName, value, BuildValidationContext());
+            SetPropertyErrors(propertyName, errors);
+        }
+
+        /// <summary>
+        /// Re-runs validation for all fields in the current context. Useful after bulk
+        /// state changes (mode switches, cascading populate from Lv5Code) where a single
+        /// property notification would miss cross-field dependencies.
+        /// </summary>
+        private void ValidateProperties()
+        {
+            AccountPlanValidationContext context = BuildValidationContext();
+            Dictionary<string, IReadOnlyList<string>> allErrors = _validator.ValidateAll(context);
+
+            string[] allProps =
+            [
+                nameof(AccountPlanValidationContext.Lv5Code),
+                nameof(AccountPlanValidationContext.Lv1Name),
+                nameof(AccountPlanValidationContext.Lv2Name),
+                nameof(AccountPlanValidationContext.Lv3Name),
+                nameof(AccountPlanValidationContext.Lv4Name),
+                nameof(AccountPlanValidationContext.Lv5Name),
+                nameof(AccountPlanValidationContext.Margin)
+            ];
+
+            foreach (string prop in allProps)
+            {
+                IReadOnlyList<string> errs = allErrors.TryGetValue(prop, out IReadOnlyList<string>? list)
+                    ? list
+                    : [];
+                SetPropertyErrors(prop, errs);
+            }
+        }
 
         #endregion
 
@@ -402,6 +517,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             base.OnViewReady(view);
             PopulateInfo(Code);
             SetReadOnlyState(Code);
+            ValidateProperties();
+            NotifyOfPropertyChange(nameof(CanSave));
             if (view is FrameworkElement fe)
             {
                 fe.Dispatcher.BeginInvoke(
@@ -1262,57 +1379,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             await TryCloseAsync(false);
         }
 
-        public bool CanSave
-        {
-            get
-            {
-                if (this.IsBusy) return false;
-                if (RequiresMargin && this.Margin <= 0) return false;
-                if (this.IsNewRecord)
-                {
-                    if (this.Lv5Code.Length < 8) return false;
-                    if (string.IsNullOrEmpty(this.Lv1Name.Trim())) return false;
-                    if (string.IsNullOrEmpty(this.Lv2Name.Trim())) return false;
-                    if (string.IsNullOrEmpty(this.Lv3Name.Trim())) return false;
-                    if (string.IsNullOrEmpty(this.Lv4Name.Trim())) return false;
-                    if (AccountCodeExist(this.Lv5Code)) return false;
-                    if (string.IsNullOrEmpty(this.Lv5Name.Trim())) return false;
-                    return true;
-                }
-                else
-                {
-                    if (this.Lv5Visibility == Visibility.Visible) // Auxiliar
-                    {
-                        return this.Lv5Code.Trim().Length >= 8 && !string.IsNullOrEmpty(this.Lv5Name);
-                    }
-                    else
-                    {
-                        if (this.Lv4Visibility == Visibility.Visible) // Sub Cuenta
-                        {
-                            return !string.IsNullOrEmpty(this.Lv4Name);
-                        }
-                        else
-                        {
-                            if (this.Lv3Visibility == Visibility.Visible) // Cuenta
-                            {
-                                return !string.IsNullOrEmpty(this.Lv3Name);
-                            }
-                            else
-                            {
-                                if (this.Lv2Visibility == Visibility.Visible) // Grupo
-                                {
-                                    return !string.IsNullOrEmpty(this.Lv2Name);
-                                }
-                                else
-                                {
-                                    return !string.IsNullOrEmpty(this.Lv1Name); // Clase
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        public bool CanSave => _validator.CanSave(BuildCanSaveContext());
 
 
 

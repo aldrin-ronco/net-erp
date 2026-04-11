@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Threading;
 using Models.Books;
 using Models.Global;
 using NetErp.Books.AccountingAccounts.DTO;
+using NetErp.Books.AccountingAccounts.Validators;
 using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
@@ -38,6 +39,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
         private readonly StringLengthCache _stringLengthCache;
         private readonly PermissionCache _permissionCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly AccountPlanValidator _validator;
 
         #endregion
 
@@ -50,7 +52,8 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             IEventAggregator eventAggregator,
             StringLengthCache stringLengthCache,
             PermissionCache permissionCache,
-            JoinableTaskFactory joinableTaskFactory)
+            JoinableTaskFactory joinableTaskFactory,
+            AccountPlanValidator validator)
         {
             _accountingAccountService = accountingAccountService;
             _notificationService = notificationService;
@@ -59,6 +62,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             _stringLengthCache = stringLengthCache;
             _permissionCache = permissionCache;
             _joinableTaskFactory = joinableTaskFactory;
+            _validator = validator;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
 
@@ -487,7 +491,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 IsBusy = true;
-                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, Accounts);
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator, Accounts);
                 IsBusy = false;
 
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
@@ -517,7 +521,7 @@ namespace NetErp.Books.AccountingAccounts.ViewModels
             try
             {
                 IsBusy = true;
-                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, Accounts, selectedItemId: SelectedItem.Id);
+                AccountPlanDetailViewModel detail = new(_accountingAccountService, _eventAggregator, _stringLengthCache, _joinableTaskFactory, _validator, Accounts, selectedItemId: SelectedItem.Id);
                 detail.Code = SelectedItem.Code;
                 IsBusy = false;
 
