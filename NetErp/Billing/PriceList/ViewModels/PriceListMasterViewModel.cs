@@ -22,18 +22,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System.Xml.Linq;
 using static Models.Global.GraphQLResponseTypes;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace NetErp.Billing.PriceList.ViewModels
 {
@@ -47,7 +43,8 @@ namespace NetErp.Billing.PriceList.ViewModels
     {
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
-        private readonly Dictionary<Guid, int> _operationItemMapping = new Dictionary<Guid, int>();
+        private readonly Dictionary<Guid, int> _operationItemMapping = [];
+        private readonly DebouncedAction _searchDebounce = new();
         
         // Dependency injection fields
         private readonly Helpers.Services.INotificationService _notificationService;
@@ -111,7 +108,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
                         PageIndex = 1;
-                        if (IsInitialized) _ = LoadPriceListItemsAsync();
+                        if (_isInitialized) _ = _searchDebounce.RunAsync(LoadPriceListItemsAsync);
                     }
                 }
             }
@@ -173,7 +170,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = new();
+        private ObservableCollection<ItemTypeGraphQLModel> _itemTypes = [];
 
         public ObservableCollection<ItemTypeGraphQLModel> ItemTypes
         {
@@ -214,7 +211,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public bool CanShowItemCategories => SelectedItemType != null && SelectedItemType.Id != 0;
 
-        private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = new();
+        private ObservableCollection<ItemCategoryGraphQLModel> _itemsCategories = [];
 
         public ObservableCollection<ItemCategoryGraphQLModel> ItemCategories
         {
@@ -253,7 +250,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = new();
+        private ObservableCollection<ItemSubCategoryGraphQLModel> _itemsSubCategories = [];
 
         public ObservableCollection<ItemSubCategoryGraphQLModel> ItemSubCategories
         {
@@ -583,9 +580,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                 Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
                 SelectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
                 PriceLists = new ObservableCollection<PriceListGraphQLModel>(result.PriceListsPage.Entries);
-                NotifyOfPropertyChange(nameof(ShowEmptyState));
+                _isInitialized = true;
+                ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
-                if(PriceLists is null || PriceLists.Count == 0) return;
+                if (ShowEmptyState) return;
                 SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
                 LoadItemTypes();
             }
@@ -595,24 +593,34 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
             finally
             {
-                IsInitialized = true;
                 _isUpdating = false;
             }
         }
 
-        public bool ShowEmptyState => PriceLists is null || PriceLists.Count == 0;
+        private bool _isInitialized;
 
-        public bool HasRecords => !ShowEmptyState;
+        public bool ShowEmptyState
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                }
+            }
+        }
 
-        public new bool IsInitialized { get; set; } = false;
+        public bool HasRecords => _isInitialized && !ShowEmptyState;
 
         public async Task LoadPriceListItemsAsync()
         {
             try
             {
                 if (ShowEmptyState) return;
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
                 var (fragment, query) = _loadPriceListItemsQuery.Value;
 
@@ -895,18 +903,17 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             PriceLists.Add(message.CreatedPriceList.Entity);
             SelectedPriceList = message.CreatedPriceList.Entity;
-            NotifyOfPropertyChange(nameof(ShowEmptyState));
-                NotifyOfPropertyChange(nameof(HasRecords));
+            ShowEmptyState = false;
             _notificationService.ShowSuccess(message.CreatedPriceList.Message);
             return Task.CompletedTask;
         }
 
         public Task HandleAsync(PriceListUpdateMessage message, CancellationToken cancellationToken)
         {
-            var existing = PriceLists.FirstOrDefault(x => x.Id == message.UpdatedPriceList.Entity.Id);
+            PriceListGraphQLModel? existing = PriceLists.FirstOrDefault(x => x.Id == message.UpdatedPriceList.Entity.Id);
             if (existing != null)
             {
-                var index = PriceLists.IndexOf(existing);
+                int index = PriceLists.IndexOf(existing);
                 PriceLists[index] = message.UpdatedPriceList.Entity;
                 SelectedPriceList = message.UpdatedPriceList.Entity;
             }
@@ -917,21 +924,20 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public Task HandleAsync(PriceListDeleteMessage message, CancellationToken cancellationToken)
         {
-            var toRemove = PriceLists.FirstOrDefault(x => x.Id == message.DeletedPriceList.DeletedId);
+            PriceListGraphQLModel? toRemove = PriceLists.FirstOrDefault(x => x.Id == message.DeletedPriceList.DeletedId);
             if (toRemove != null) PriceLists.Remove(toRemove);
             SelectedPriceList = PriceLists.FirstOrDefault();
-            NotifyOfPropertyChange(nameof(ShowEmptyState));
-                NotifyOfPropertyChange(nameof(HasRecords));
+            ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
             _notificationService.ShowSuccess(message.DeletedPriceList.Message);
             return Task.CompletedTask;
         }
+
         public Task HandleAsync(PriceListArchiveMessage message, CancellationToken cancellationToken)
         {
-            var toRemove = PriceLists.FirstOrDefault(x => x.Id == message.ArchivedPriceList.Entity.Id);
+            PriceListGraphQLModel? toRemove = PriceLists.FirstOrDefault(x => x.Id == message.ArchivedPriceList.Entity.Id);
             if (toRemove != null) PriceLists.Remove(toRemove);
             SelectedPriceList = PriceLists.FirstOrDefault();
-            NotifyOfPropertyChange(nameof(ShowEmptyState));
-                NotifyOfPropertyChange(nameof(HasRecords));
+            ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
             _notificationService.ShowSuccess(message.ArchivedPriceList.Message);
             return Task.CompletedTask;
         }
