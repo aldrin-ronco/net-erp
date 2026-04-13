@@ -58,6 +58,7 @@ namespace NetErp.Helpers.Cache
         public static readonly Type[] AccountingGroup = [typeof(AccountingGroupGraphQLModel)];
 
         // Global
+        public static readonly Type[] AuthorizationSequence = [typeof(AuthorizationSequenceGraphQLModel)];
         public static readonly Type[] AccessProfile = [typeof(AccessProfileGraphQLModel)];
         public static readonly Type[] PermissionDefinition = [typeof(PermissionDefinitionGraphQLModel)];
         public static readonly Type[] Email = [typeof(EmailGraphQLModel), typeof(SmtpGraphQLModel)];

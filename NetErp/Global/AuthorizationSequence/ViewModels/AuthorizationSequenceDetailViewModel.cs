@@ -35,6 +35,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly CostCenterCache _costCenterCache;
         private readonly AuthorizationSequenceTypeCache _authorizationSequenceTypeCache;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #endregion
@@ -498,6 +499,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         #endregion
 
+        #region StringLength Properties
+
+        public int NumberMaxLength => _stringLengthCache.GetMaxLength<AuthorizationSequenceGraphQLModel>(nameof(AuthorizationSequenceGraphQLModel.Number));
+        public string NumberMask => $"[0-9]{{0,{NumberMaxLength}}}";
+        public int PrefixMaxLength => _stringLengthCache.GetMaxLength<AuthorizationSequenceGraphQLModel>(nameof(AuthorizationSequenceGraphQLModel.Prefix));
+        public int TechnicalKeyMaxLength => _stringLengthCache.GetMaxLength<AuthorizationSequenceGraphQLModel>(nameof(AuthorizationSequenceGraphQLModel.TechnicalKey));
+        public int ReferenceMaxLength => _stringLengthCache.GetMaxLength<AuthorizationSequenceGraphQLModel>(nameof(AuthorizationSequenceGraphQLModel.Reference));
+
+        #endregion
+
         #region Validation (INotifyDataErrorInfo)
 
         private readonly Dictionary<string, List<string>> _errors = [];
@@ -518,66 +529,59 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
                 _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
         }
 
         private void ValidateProperty(string propertyName, int? value)
         {
-            ClearErrors(propertyName);
+            List<string> errors = [];
             switch (propertyName)
             {
                 case nameof(CostCenterId):
-                    if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un centro de costo");
+                    if (!value.HasValue || value == 0) errors.Add("Debe seleccionar un centro de costo");
                     break;
                 case nameof(AuthorizationSequenceTypeId):
-                    if (!value.HasValue || value == 0) AddError(propertyName, "Debe seleccionar un tipo de autorización");
+                    if (!value.HasValue || value == 0) errors.Add("Debe seleccionar un tipo de autorización");
                     break;
                 case nameof(StartRange):
-                    if (!value.HasValue) AddError(propertyName, "El rango inicial no puede estar vacío");
+                    if (!value.HasValue) errors.Add("El rango inicial no puede estar vacío");
                     break;
                 case nameof(EndRange):
-                    if (!value.HasValue) AddError(propertyName, "El rango final no puede estar vacío");
+                    if (!value.HasValue) errors.Add("El rango final no puede estar vacío");
                     break;
                 case nameof(CurrentInvoiceNumber):
-                    if (!value.HasValue) AddError(propertyName, "El número de factura no puede estar vacío");
-                    if (value.HasValue && (value < StartRange || value > EndRange)) AddError(propertyName, "El número de factura debe estar dentro del rango");
+                    if (!value.HasValue) errors.Add("El número de factura no puede estar vacío");
+                    if (value.HasValue && (value < StartRange || value > EndRange)) errors.Add("El número de factura debe estar dentro del rango");
                     break;
             }
+            SetPropertyErrors(propertyName, errors);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
             if (string.IsNullOrEmpty(value)) value = string.Empty;
-            ClearErrors(propertyName);
+            List<string> errors = [];
             switch (propertyName)
             {
                 case nameof(Number):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El número de autorización no puede estar vacío");
+                    if (string.IsNullOrEmpty(value)) errors.Add("El número de autorización no puede estar vacío");
                     break;
                 case nameof(Prefix):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "El prefijo no puede estar vacío");
-                    if (!string.IsNullOrEmpty(value) && int.TryParse(value[^1].ToString(), out _)) AddError(propertyName, "El último carácter no debe ser numérico");
+                    if (string.IsNullOrEmpty(value)) errors.Add("El prefijo no puede estar vacío");
+                    if (!string.IsNullOrEmpty(value) && int.TryParse(value[^1].ToString(), out _)) errors.Add("El último carácter no debe ser numérico");
                     break;
                 case nameof(Reference):
-                    if (string.IsNullOrEmpty(value)) AddError(propertyName, "La referencia no puede estar vacía");
+                    if (string.IsNullOrEmpty(value)) errors.Add("La referencia no puede estar vacía");
                     break;
                 case nameof(TechnicalKey):
                     AuthorizationSequenceTypeGraphQLModel? selectedType = Entity != null
@@ -585,9 +589,10 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                         : AuthorizationSequenceTypeId is > 0
                             ? AuthorizationSequenceTypes.FirstOrDefault(f => f.Id == AuthorizationSequenceTypeId)
                             : null;
-                    if (string.IsNullOrEmpty(value) && selectedType?.Prefix == "FE") AddError(propertyName, "La clave técnica no puede estar vacía");
+                    if (string.IsNullOrEmpty(value) && selectedType?.Prefix == "FE") errors.Add("La clave técnica no puede estar vacía");
                     break;
             }
+            SetPropertyErrors(propertyName, errors);
         }
 
         private void ValidateProperties()
@@ -658,6 +663,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             IEventAggregator eventAggregator,
             CostCenterCache costCenterCache,
             AuthorizationSequenceTypeCache authorizationSequenceTypeCache,
+            StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _authorizationSequenceService = authorizationSequenceService;
@@ -666,6 +672,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _eventAggregator = eventAggregator;
             _costCenterCache = costCenterCache;
             _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
+            _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -815,11 +822,21 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
-            this.SeedValue(nameof(Mode), Mode);
-            this.SeedValue(nameof(Origin), Origin);
+            this.SeedValue(nameof(Number), Number);
+            this.SeedValue(nameof(Prefix), Prefix);
+            this.SeedValue(nameof(TechnicalKey), TechnicalKey);
+            this.SeedValue(nameof(Reference), Reference);
+            this.SeedValue(nameof(StartRange), StartRange);
+            this.SeedValue(nameof(EndRange), EndRange);
+            this.SeedValue(nameof(CurrentInvoiceNumber), CurrentInvoiceNumber);
             this.SeedValue(nameof(StartDate), StartDate);
             this.SeedValue(nameof(EndDate), EndDate);
+            this.SeedValue(nameof(Mode), Mode);
+            this.SeedValue(nameof(Origin), Origin);
             this.SeedValue(nameof(IsActive), IsActive);
+            this.SeedValue(nameof(CostCenterId), CostCenterId);
+            this.SeedValue(nameof(AuthorizationSequenceTypeId), AuthorizationSequenceTypeId);
+            this.SeedValue(nameof(NextAuthorizationSequenceId), NextAuthorizationSequenceId);
             this.AcceptChanges();
         }
 
@@ -860,8 +877,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
             if (string.IsNullOrEmpty(authorization.TechnicalKey))
             {
-                AvailableAuthorizationSequenceTypes = new ObservableCollection<AuthorizationSequenceTypeGraphQLModel>(
-                    AuthorizationSequenceTypes.Where(f => f.Prefix != "FE"));
+                AvailableAuthorizationSequenceTypes = [.. AuthorizationSequenceTypes.Where(f => f.Prefix != "FE")];
                 AuthorizationSequenceTypeId = null;
             }
             else
@@ -929,13 +945,13 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         {
             if (IsNewRecord)
             {
-                string query = _createQuery.Value;
+                var (_, query) = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 return await _authorizationSequenceService.CreateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
             }
             else
             {
-                string query = _updateQuery.Value;
+                var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Entity!.Id;
                 return await _authorizationSequenceService.UpdateAsync<UpsertResponseType<AuthorizationSequenceGraphQLModel>>(query, variables);
@@ -1023,7 +1039,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         #region GraphQL Queries
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
                 .Create()
@@ -1051,12 +1067,12 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreateAuthorizationSequenceInput!");
-            var fragment = new GraphQLQueryFragment("createAuthorizationSequence", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createAuthorizationSequence",
+                [new("input", "CreateAuthorizationSequenceInput!")], fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<AuthorizationSequenceGraphQLModel>>
                 .Create()
@@ -1084,13 +1100,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            List<GraphQLQueryParameter> parameters =
-            [
-                new("data", "UpdateAuthorizationSequenceInput!"),
-                new("id", "ID!")
-            ];
-            var fragment = new GraphQLQueryFragment("updateAuthorizationSequence", parameters, fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updateAuthorizationSequence",
+                [new("data", "UpdateAuthorizationSequenceInput!"), new("id", "ID!")], fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadByIdQuery = new(() =>

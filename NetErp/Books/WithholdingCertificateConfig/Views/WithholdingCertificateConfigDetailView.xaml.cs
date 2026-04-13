@@ -15,7 +15,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.Views
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnLoaded;
-            Name.Focus();
+            if (DataContext is WithholdingCertificateConfigDetailViewModel vm)
+            {
+                if (vm.IsNewRecord) Name.Focus();
+                else Description.Focus();
+            }
         }
     }
 }

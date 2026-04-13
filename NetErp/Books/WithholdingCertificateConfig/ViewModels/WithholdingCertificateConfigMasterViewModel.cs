@@ -11,9 +11,11 @@ using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -26,7 +28,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         IHandle<WithholdingCertificateConfigDeleteMessage>,
         IHandle<WithholdingCertificateConfigUpdateMessage>,
         IHandle<WithholdingCertificateConfigCreateMessage>,
-        IHandle<PermissionsCacheRefreshedMessage>
+        IHandle<PermissionsCacheRefreshedMessage>,
+        IHandle<CostCenterCreateMessage>,
+        IHandle<CostCenterDeleteMessage>
     {
         #region Dependencies
 
@@ -49,7 +53,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         private bool _isInitialized;
 
-        public bool HasRecords => _isInitialized && !ShowEmptyState;
+        public bool HasRecords => _isInitialized && !ShowEmptyState && !HasUnmetDependencies;
+
+        public bool CanShowEmptyState => ShowEmptyState && !HasUnmetDependencies;
 
         public bool ShowEmptyState
         {
@@ -60,10 +66,27 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(CanShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
+
+        private List<DependencyItem>? _dependencies;
+        public List<DependencyItem>? Dependencies
+        {
+            get => _dependencies;
+            private set
+            {
+                _dependencies = value;
+                NotifyOfPropertyChange(nameof(Dependencies));
+                NotifyOfPropertyChange(nameof(HasUnmetDependencies));
+                NotifyOfPropertyChange(nameof(CanShowEmptyState));
+                NotifyOfPropertyChange(nameof(HasRecords));
+            }
+        }
+
+        public bool HasUnmetDependencies => Dependencies?.Any(d => !d.IsMet) == true;
 
         public bool IsBusy
         {
@@ -272,17 +295,41 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         protected override async void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            await LoadCertificatesAsync();
-            _isInitialized = true;
-            ShowEmptyState = Certificates == null || Certificates.Count == 0;
-            NotifyOfPropertyChange(nameof(HasRecords));
-            NotifyOfPropertyChange(nameof(HasCreatePermission));
-            NotifyOfPropertyChange(nameof(HasEditPermission));
-            NotifyOfPropertyChange(nameof(HasDeletePermission));
-            NotifyOfPropertyChange(nameof(CanCreateCertificate));
-            NotifyOfPropertyChange(nameof(CanEditCertificate));
-            NotifyOfPropertyChange(nameof(CanDeleteCertificate));
-            this.SetFocus(() => FilterSearch);
+            try
+            {
+                await _costCenterCache.EnsureLoadedAsync();
+
+                EvaluateDependencies();
+                if (HasUnmetDependencies)
+                {
+                    _isInitialized = true;
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    return;
+                }
+
+                await PerformInitialLoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await _joinableTaskFactory.SwitchToMainThreadAsync();
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.GetErrorMessage()}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
+                return;
+            }
+            if (!HasUnmetDependencies)
+            {
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateCertificate));
+                NotifyOfPropertyChange(nameof(CanEditCertificate));
+                NotifyOfPropertyChange(nameof(CanDeleteCertificate));
+                this.SetFocus(() => FilterSearch);
+            }
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -290,6 +337,7 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             if (close)
             {
                 Context.EventAggregator.Unsubscribe(this);
+                Certificates.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -465,6 +513,26 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
 
         #endregion
 
+        #region Dependencies
+
+        private void EvaluateDependencies()
+        {
+            Dependencies =
+            [
+                DependencyDefinitions.CostCenters(_costCenterCache),
+            ];
+        }
+
+        private async Task PerformInitialLoadAsync()
+        {
+            await LoadCertificatesAsync();
+            _isInitialized = true;
+            ShowEmptyState = Certificates == null || Certificates.Count == 0;
+            NotifyOfPropertyChange(nameof(HasRecords));
+        }
+
+        #endregion
+
         #region GraphQL Queries
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
@@ -547,6 +615,28 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
             NotifyOfPropertyChange(nameof(CanEditCertificate));
             NotifyOfPropertyChange(nameof(CanDeleteCertificate));
             return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            EvaluateDependencies();
         }
 
         #endregion

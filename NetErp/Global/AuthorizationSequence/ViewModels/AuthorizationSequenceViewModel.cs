@@ -41,6 +41,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private readonly CostCenterCache _costCenterCache;
         private readonly AuthorizationSequenceTypeCache _authorizationSequenceTypeCache;
         private readonly PermissionCache _permissionCache;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         private readonly DebouncedAction _searchDebounce = new();
 
@@ -327,6 +328,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             CostCenterCache costCenterCache,
             AuthorizationSequenceTypeCache authorizationSequenceTypeCache,
             PermissionCache permissionCache,
+            StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _eventAggregator = eventAggregator;
@@ -338,6 +340,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             _costCenterCache = costCenterCache;
             _authorizationSequenceTypeCache = authorizationSequenceTypeCache;
             _permissionCache = permissionCache;
+            _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
             _eventAggregator.SubscribeOnPublishedThread(this);
         }
@@ -352,6 +355,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             try
             {
                 IsBusy = true;
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.AuthorizationSequence);
                 await _costCenterCache.EnsureLoadedAsync();
 
                 EvaluateDependencies();
@@ -406,6 +410,8 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             if (close)
             {
                 _eventAggregator.Unsubscribe(this);
+                Authorizations.Clear();
+                CostCenters.Clear();
             }
             return base.OnDeactivateAsync(close, cancellationToken);
         }
@@ -426,6 +432,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _eventAggregator,
                     _costCenterCache,
                     _authorizationSequenceTypeCache,
+                    _stringLengthCache,
                     _joinableTaskFactory);
                 if (this.GetView() is System.Windows.FrameworkElement parentView)
                     detail.DialogWidth = parentView.ActualWidth * 0.65;
@@ -457,6 +464,7 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                     _eventAggregator,
                     _costCenterCache,
                     _authorizationSequenceTypeCache,
+                    _stringLengthCache,
                     _joinableTaskFactory);
 
                 await detail.LoadDataForEditAsync(SelectedAuthorizationSequence.Id);
