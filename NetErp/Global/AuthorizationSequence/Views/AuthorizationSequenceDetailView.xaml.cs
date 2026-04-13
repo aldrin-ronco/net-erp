@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace NetErp.Global.AuthorizationSequence.Views
 {
@@ -14,7 +15,11 @@ namespace NetErp.Global.AuthorizationSequence.Views
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             Loaded -= OnLoaded;
-            Number.Focus();
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle, () =>
+            {
+                Number.Focus();
+                Keyboard.Focus(Number);
+            });
         }
     }
 }

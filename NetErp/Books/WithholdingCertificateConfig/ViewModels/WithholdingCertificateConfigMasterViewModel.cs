@@ -621,8 +621,11 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             if (!HasUnmetDependencies) return;
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            // Ceder al dispatcher para que el cache procese el mensaje primero.
+            // JoinableTaskFactory.SwitchToMainThreadAsync() no soporta prioridades.
+            #pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle, cancellationToken);
+            #pragma warning restore VSTHRD001
 
             EvaluateDependencies();
             if (!HasUnmetDependencies)
@@ -633,8 +636,9 @@ namespace NetErp.Books.WithholdingCertificateConfig.ViewModels
         {
             if (HasUnmetDependencies) return;
 
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
-                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            #pragma warning disable VSTHRD001
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle, cancellationToken);
+            #pragma warning restore VSTHRD001
 
             EvaluateDependencies();
         }
