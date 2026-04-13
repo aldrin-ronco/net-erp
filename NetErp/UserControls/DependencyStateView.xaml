@@ -1,0 +1,112 @@
+<UserControl x:Class="NetErp.UserControls.DependencyStateView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="500" d:DesignWidth="600">
+    <UserControl.Resources>
+        <!-- Checkmark geometry (simple check path) -->
+        <Geometry x:Key="CheckmarkGeometry">M 2,6 L 5.5,9.5 L 10,2</Geometry>
+        <!-- Warning triangle geometry -->
+        <Geometry x:Key="WarningGeometry">M 8,1 L 15,14 L 1,14 Z</Geometry>
+    </UserControl.Resources>
+    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
+        <!-- Image -->
+        <Image Source="{Binding ImageSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
+               Width="{Binding ImageWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
+               HorizontalAlignment="Center" Margin="0,0,0,14"/>
+        <!-- Title -->
+        <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   FontSize="16" Foreground="#888" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+        <!-- Message -->
+        <TextBlock Text="{Binding Message, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   FontSize="12" Foreground="#AAA" HorizontalAlignment="Center"
+                   TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,20"/>
+        <!-- Dependency list -->
+        <ItemsControl ItemsSource="{Binding Dependencies, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                      HorizontalAlignment="Center">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="28"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Status icon: checkmark (met) or warning triangle (unmet) -->
+                        <Canvas Grid.Column="0" Width="16" Height="16" VerticalAlignment="Top" Margin="0,2,0,0">
+                            <!-- Green checkmark — visible when IsMet=True -->
+                            <Path Data="{StaticResource CheckmarkGeometry}"
+                                  Stroke="#27AE60" StrokeThickness="2"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Fill="Transparent">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMet}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                            <!-- Orange warning triangle — visible when IsMet=False -->
+                            <Path Data="{StaticResource WarningGeometry}"
+                                  Fill="#FFA500" Stroke="#E8950A" StrokeThickness="0.5">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMet}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Canvas>
+                        <!-- Name + Description -->
+                        <StackPanel Grid.Column="1">
+                            <!-- Dependency name -->
+                            <TextBlock Text="{Binding Name}" FontSize="13">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#555"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMet}" Value="True">
+                                                <Setter Property="Foreground" Value="#888"/>
+                                                <Setter Property="FontWeight" Value="Normal"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <!-- Description — collapsed when dependency is met -->
+                            <TextBlock Text="{Binding Description}"
+                                       FontSize="11" Foreground="#999" TextWrapping="Wrap"
+                                       Margin="0,2,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMet}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <!-- Footer hint -->
+        <TextBlock FontSize="11" Foreground="#999" FontStyle="Italic"
+                   HorizontalAlignment="Center" TextAlignment="Center"
+                   TextWrapping="Wrap" Margin="0,20,0,0"
+                   Text="Los elementos pendientes deben ser configurados antes de continuar."/>
+    </StackPanel>
+</UserControl>
