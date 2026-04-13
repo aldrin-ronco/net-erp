@@ -507,7 +507,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             if (SelectedPriceList is null) return;
             try
             {
-                var viewModel = new CreatePromotionModalViewModel(_dialogService, Context.EventAggregator, SelectedPriceList, _priceListService, _joinableTaskFactory);
+                CreatePromotionModalViewModel viewModel = new(_dialogService, Context.EventAggregator, SelectedPriceList, _priceListService, _stringLengthCache, _joinableTaskFactory);
                 viewModel.SetForNew();
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de promociones");
             }

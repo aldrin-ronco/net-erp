@@ -60,6 +60,7 @@
                               Style="{StaticResource FocusedHighlightStyle}"
                               Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                               CharacterCasing="Upper" Padding="3" BorderBrush="#C8CED6"
+                              MaxLength="{Binding NameMaxLength}"
                               Margin="0,0,0,10">
                     <dxmvvm:Interaction.Behaviors>
                         <dxmvvm:FocusBehavior SourceObject="{Binding}" PropertyName="NameFocus"/>
@@ -104,17 +105,15 @@
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,10">
                 <!-- Guardar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding SaveCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
+                        IsEnabled="{Binding CanSave, UpdateSourceTrigger=PropertyChanged}"
+                        Command="{Binding SaveCommand}">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Save/Save_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Style.Triggers>
                                         <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.4"/>
+                                            <Setter Property="Opacity" Value="0.7"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -125,10 +124,8 @@
                 </Button>
                 <!-- Cancelar -->
                 <Button Background="Transparent" BorderThickness="0" Padding="15,5" Cursor="Hand"
-                        IsCancel="True">
-                    <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand Command="{Binding CancelCommand}" EventName="Click"/>
-                    </dxmvvm:Interaction.Behaviors>
+                        IsCancel="True"
+                        Command="{Binding CancelCommand}">
                     <StackPanel HorizontalAlignment="Center">
                         <Image Source="{dx:DXImage 'Images/Actions/Cancel_32x32.png'}" Width="32" Height="32" HorizontalAlignment="Center"/>
                         <TextBlock Text="Cancelar" HorizontalAlignment="Center" Margin="0,4,0,0"/>
