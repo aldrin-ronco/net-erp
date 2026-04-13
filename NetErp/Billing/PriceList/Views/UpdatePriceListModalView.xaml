@@ -13,6 +13,7 @@
              Background="#EEF1F5">
 
     <UserControl.Resources>
+        <h:BindingProxy x:Key="DataContextProxy" Data="{Binding}"/>
         <h:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
         <h:MultiplyConverter x:Key="MultiplyConverter"/>
         <h:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
@@ -40,7 +41,14 @@
             <dx:DXTabControl Grid.Row="0" Margin="10,10,10,0">
 
                 <!-- Tab 1: Datos Básicos -->
-                <dx:DXTabItem Header="Datos Básicos">
+                <dx:DXTabItem ToolTip="{Binding Data.BasicDataTabTooltip, Source={StaticResource DataContextProxy}}">
+                    <dx:DXTabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Datos Básicos" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="#FFA500" Margin="6,0,0,0" VerticalAlignment="Center"
+                                     Visibility="{Binding Data.HasBasicDataErrors, Source={StaticResource DataContextProxy}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </dx:DXTabItem.Header>
                     <Grid Margin="10,10,10,5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

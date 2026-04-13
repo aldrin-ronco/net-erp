@@ -39,7 +39,13 @@ namespace NetErp.Billing.PriceList.ViewModels
         IHandle<PriceListDeleteMessage>,
         IHandle<OperationCompletedMessage>,
         IHandle<CriticalSystemErrorMessage>,
-        IHandle<PriceListArchiveMessage>
+        IHandle<PriceListArchiveMessage>,
+        IHandle<CatalogCreateMessage>,
+        IHandle<CatalogDeleteMessage>,
+        IHandle<CostCenterCreateMessage>,
+        IHandle<CostCenterDeleteMessage>,
+        IHandle<StorageCreateMessage>,
+        IHandle<StorageDeleteMessage>
     {
         // Flag to prevent cascading reload operations during internal updates
         private bool _isUpdating = false;
@@ -57,6 +63,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         //Caches necesarios en ventanas modales
         private readonly IGraphQLClient _graphQLClient;
+        private readonly CatalogCache _catalogCache;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
@@ -541,7 +548,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 ShowEmptyState = PriceLists == null || PriceLists.Count == 0;
                 NotifyOfPropertyChange(nameof(HasRecords));
                 if (ShowEmptyState) return;
-                SelectedPriceList = PriceLists.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
+                SelectedPriceList = PriceLists?.FirstOrDefault() ?? throw new Exception("SelectedPriceList can't be null");
                 LoadItemTypes();
             }
             catch (Exception ex)
@@ -565,12 +572,31 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(CanShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
 
-        public bool HasRecords => _isInitialized && !ShowEmptyState;
+        public bool CanShowEmptyState => ShowEmptyState && !HasUnmetDependencies;
+
+        public bool HasRecords => _isInitialized && !ShowEmptyState && !HasUnmetDependencies;
+
+        private List<DependencyItem>? _dependencies;
+        public List<DependencyItem>? Dependencies
+        {
+            get => _dependencies;
+            private set
+            {
+                _dependencies = value;
+                NotifyOfPropertyChange(nameof(Dependencies));
+                NotifyOfPropertyChange(nameof(HasUnmetDependencies));
+                NotifyOfPropertyChange(nameof(CanShowEmptyState));
+                NotifyOfPropertyChange(nameof(HasRecords));
+            }
+        }
+
+        public bool HasUnmetDependencies => Dependencies?.Any(d => !d.IsMet) == true;
 
         public async Task LoadPriceListItemsAsync()
         {
@@ -754,32 +780,41 @@ namespace NetErp.Billing.PriceList.ViewModels
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 
-
         protected override void OnViewReady(object view)
         {
             base.OnViewReady(view);
-            this.SetFocus(nameof(FilterSearch));
+            if (!HasUnmetDependencies)
+                this.SetFocus(nameof(FilterSearch));
         }
 
         protected override async Task OnInitializedAsync(CancellationToken cancellationToken)
         {
             try
             {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
                 MainIsBusy = true;
-                await InitializeAsync();
-                await LoadPriceListItemsAsync();
+                await CacheBatchLoader.LoadAsync(
+                    _graphQLClient, cancellationToken,
+                    _catalogCache, _storageCache, _costCenterCache, _paymentMethodCache);
+
+                EvaluateDependencies();
+                if (HasUnmetDependencies)
+                {
+                    _isInitialized = true;
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    return;
+                }
+
+                await PerformInitialLoadAsync();
                 MainIsBusy = false;
-            }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(OnInitializedAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(OnInitializedAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                MainIsBusy = false;
             }
 
             await base.OnInitializedAsync(cancellationToken);
@@ -835,6 +870,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             IPriceListCalculatorFactory calculatorFactory,
             Helpers.IDialogService dialogService,
             IRepository<PriceListGraphQLModel> priceListService,
+            CatalogCache catalogCache,
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
@@ -849,6 +885,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _calculatorFactory = calculatorFactory;
             _dialogService = dialogService;
             _priceListService = priceListService;
+            _catalogCache = catalogCache;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
@@ -900,6 +937,104 @@ namespace NetErp.Billing.PriceList.ViewModels
             _notificationService.ShowSuccess(message.ArchivedPriceList.Message);
             return Task.CompletedTask;
         }
+
+        #region Dependencies
+
+        private void EvaluateDependencies()
+        {
+            Dependencies =
+            [
+                DependencyDefinitions.Catalogs(_catalogCache),
+                DependencyDefinitions.CostCenters(_costCenterCache),
+                DependencyDefinitions.Storages(_storageCache),
+            ];
+        }
+
+        private async Task PerformInitialLoadAsync()
+        {
+            await InitializeAsync();
+            await LoadPriceListItemsAsync();
+        }
+
+        public async Task HandleAsync(CatalogCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CatalogDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+        }
+
+        public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+        }
+
+        public async Task HandleAsync(StorageCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(StorageDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+#pragma warning disable VSTHRD001
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+#pragma warning restore VSTHRD001
+
+            EvaluateDependencies();
+        }
+
+        #endregion
 
         #region Paginacion
 
@@ -1122,11 +1257,11 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(e => e.EndDate)
                     .Field(e => e.Archived)
                     .Select(e => e.Parent, p => p
-                        .Field(pp => pp.Id)
-                        .Field(pp => pp.Name))
+                        .Field(pp => pp!.Id)
+                        .Field(pp => pp!.Name))
                     .Select(e => e.Storage, s => s
-                        .Field(ss => ss.Id)
-                        .Field(ss => ss.Name))
+                        .Field(ss => ss!.Id)
+                        .Field(ss => ss!.Name))
                     .SelectList(e => e.ExcludedPaymentMethods, pm => pm
                         .Field(p => p.Id)
                         .Field(p => p.Name)

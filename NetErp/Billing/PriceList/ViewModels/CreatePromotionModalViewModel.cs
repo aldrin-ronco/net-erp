@@ -311,8 +311,8 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.PriceListIncludeTax)
                     .Field(f => f.UseAlternativeFormula)
                     .Field(f => f.CostMode)
-                    .Select(f => f.Parent, p => p.Field(x => x.Id).Field(x => x.Name))
-                    .Select(f => f.Storage, s => s.Field(x => x.Id).Field(x => x.Name)))
+                    .Select(f => f.Parent, p => p.Field(x => x!.Id).Field(x => x!.Name))
+                    .Select(f => f.Storage, s => s.Field(x => x!.Id).Field(x => x!.Name)))
                 .Field(f => f.Message)
                 .Field(f => f.Success)
                 .SelectList(f => f.Errors, sq => sq

@@ -36,7 +36,13 @@
                     BusyContentMargin="0,20,0,0">
         <Grid>
 
-            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+            <uc:DependencyStateView
+                Visibility="{Binding HasUnmetDependencies, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                Title="Configuración requerida para Listas de precios"
+                Message="Antes de registrar listas de precios, debe configurar los siguientes elementos:"
+                Dependencies="{Binding Dependencies}"/>
+
+            <uc:EmptyStateView Visibility="{Binding CanShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                Title="No hay listas de precios registradas"
                                Message="Cree una nueva lista de precios para comenzar"
                                ContextInfo="Las listas de precios permiten manejar precios predefinidos para diferentes tipos de clientes, por ejemplo: precio al público o precio mayorista."

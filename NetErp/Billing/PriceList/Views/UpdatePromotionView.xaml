@@ -163,7 +163,7 @@
                     <dxe:TextEdit   x:Name="FilterSearch" Padding="2"
                         Style="{StaticResource FocusedHighlightStyle}"
                         BorderBrush="#C8CED6"
-                        Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Delay=500}"
+                        Text="{Binding FilterSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                         NullText="Escribe por lo menos 2 caracteres para iniciar la busqueda"
                         ShowNullTextForEmptyValue="True"
                         ShowNullTextIfFocused="True"

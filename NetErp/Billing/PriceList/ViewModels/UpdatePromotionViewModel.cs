@@ -4,27 +4,25 @@ using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Global;
 using Models.Inventory;
 using NetErp.Billing.PriceList.DTO;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using NetErp.Helpers.Messages;
 using NetErp.Helpers.Services;
-using Services.Billing.DAL.PostgreSQL;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Windows.Threading;
-using Microsoft.VisualStudio.Threading;
 using static Models.Global.GraphQLResponseTypes;
 
 namespace NetErp.Billing.PriceList.ViewModels
@@ -41,6 +39,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IRepository<ItemGraphQLModel> _itemService;
         private readonly IRepository<TempRecordGraphQLModel> _tempRecordService;
         private readonly IRepository<PriceListGraphQLModel> _priceListServiceForModal;
+        private readonly StringLengthCache _stringLengthCache;
+        private readonly DebouncedAction _searchDebounce;
         private readonly JoinableTaskFactory _joinableTaskFactory;
         public PriceListViewModel Context { get; set; }
 
@@ -55,6 +55,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<ItemGraphQLModel> itemService,
             IRepository<TempRecordGraphQLModel> tempRecordService,
             IRepository<PriceListGraphQLModel> priceListServiceForModal,
+            StringLengthCache stringLengthCache,
+            DebouncedAction searchDebounce,
             JoinableTaskFactory joinableTaskFactory)
         {
             Context = context;
@@ -64,6 +66,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             _itemService = itemService;
             _tempRecordService = tempRecordService;
             _priceListServiceForModal = priceListServiceForModal;
+            _stringLengthCache = stringLengthCache;
+            _searchDebounce = searchDebounce ?? throw new ArgumentNullException(nameof(searchDebounce));
             _joinableTaskFactory = joinableTaskFactory;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }
@@ -78,13 +82,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             return Task.CompletedTask;
         }
 
-        private ICommand _goBackCommand;
         public ICommand GoBackCommand
         {
             get
             {
-                if (_goBackCommand is null) _goBackCommand = new AsyncCommand(GoBackAsync);
-                return _goBackCommand;
+                field ??= new AsyncCommand(GoBackAsync);
+                return field;
             }
         }
 
@@ -147,14 +150,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task GoBackAsync()
         {
-            try
-            {
-                await Context.ActivateMasterViewAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            await Context.ActivateMasterViewAsync();
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -379,7 +375,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             
             if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
-                ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
+                ItemCategories = [.. SelectedItemType.ItemCategories];
                 ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
                 _selectedItemCategory = ItemCategories.First(x => x.Id == 0);
                 NotifyOfPropertyChange(nameof(SelectedItemCategory));
@@ -444,15 +440,14 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(FilterSearch));
-                    // Solo ejecutamos la busqueda si esta vacio el filtro o si hay por lo menos 2 caracteres digitados
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
                         PageIndex = 1;
-                        if (IsInitialized) _ = LoadProducts();
+                        if (IsInitialized) _ = _searchDebounce.RunAsync(LoadProducts);
                     }
                 }
             }
-        } = "";
+        } = string.Empty;
 
         public bool MainIsBusy
         {
@@ -481,19 +476,18 @@ namespace NetErp.Billing.PriceList.ViewModels
                     NotifyOfPropertyChange(nameof(CanClearPromotion));
                 }
             }
-        } = false;
+        }
 
         // Propiedad computed que determina si se pueden realizar operaciones de datos
         public bool CanPerformDataOperations => !HasCriticalError;
 
 
-        private ICommand _editCommand;
         public ICommand EditCommand
         {
             get
             {
-                if (_editCommand is null) _editCommand = new AsyncCommand(EditAsync);
-                return _editCommand;
+                field ??= new AsyncCommand(EditAsync);
+                return field;
             }
         }
 
@@ -501,7 +495,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal, _joinableTaskFactory);
+                UpdatePromotionModalViewModel instance = new(_dialogService, Context.EventAggregator, _priceListServiceForModal, _stringLengthCache, _joinableTaskFactory);
                 instance.SetForEdit(new PriceListGraphQLModel
                 {
                     Id = Id,
@@ -519,13 +513,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _addCommand;
         public ICommand AddCommand
         {
             get
             {
-                if (_addCommand is null) _addCommand = new AsyncCommand(AddProductsAsync);
-                return _addCommand;
+                field ??= new AsyncCommand(AddProductsAsync);
+                return field;
             }
         }
 
@@ -540,15 +533,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await _dialogService.ShowDialogAsync(_activeModal, "Agregar productos a la promoción");
                 MainIsBusy = false;
             }
-            catch (AsyncException ex)
-            {
-                await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
-            }
             catch (Exception ex)
             {
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(AddProductsAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(title: "Atención!", text: $"{GetType().Name}.{nameof(AddProductsAsync)} \r\n{ex.GetErrorMessage()}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
         }
 
@@ -585,7 +573,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                foreach (var item in PriceListItems)
+                foreach (PriceListItemDTO item in PriceListItems)
                 {
                     item.UpdatePromotionContext = this;
                 }
@@ -600,29 +588,22 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task InitializeAsync()
         {
-            try
-            {
-                var (query, catalogsFragment) = _catalogsQuery.Value;
+            var (query, catalogsFragment) = _catalogsQuery.Value;
 
-                dynamic variables = new GraphQLVariables()
-                    .For(catalogsFragment, "pagination", new { pageSize = -1 })
-                    .Build();
+            dynamic variables = new GraphQLVariables()
+                .For(catalogsFragment, "pagination", new { pageSize = -1 })
+                .Build();
 
-                var result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
-                Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
-                var selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                IsInitialized = true;
-                _isUpdating = true;
-                _selectedCatalog = selectedCatalog;
-                NotifyOfPropertyChange(nameof(SelectedCatalog));
-                BuildItemTypes();
-                _isUpdating = false;
-                await ReloadDataAsync(_cascadeCancellation.Token);
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            PriceListDataContext result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
+            Catalogs = [.. result.CatalogsPage.Entries];
+            CatalogGraphQLModel selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
+            IsInitialized = true;
+            _isUpdating = true;
+            _selectedCatalog = selectedCatalog;
+            NotifyOfPropertyChange(nameof(SelectedCatalog));
+            BuildItemTypes();
+            _isUpdating = false;
+            await ReloadDataAsync(_cascadeCancellation.Token);
         }
 
         public new bool IsInitialized { get; set; } = false;
@@ -661,7 +642,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _itemsHeaderIsChecked = value;
                     NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
-                    foreach (var item in PriceListItems)
+                    foreach (PriceListItemDTO item in PriceListItems)
                     {
                         item.IsChecked = value;
                     }
@@ -689,7 +670,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public void VerifyItemsInShadowList()
         {
-            foreach (var item in PriceListItems)
+            foreach (PriceListItemDTO item in PriceListItems)
             {
                 if (ShadowItems.Contains(item.Item.Id))
                 {
@@ -698,13 +679,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _deleteListCommand;
         public ICommand DeleteListCommand
         {
             get
             {
-                if (_deleteListCommand is null) _deleteListCommand = new AsyncCommand(DeleteListAsync);
-                return _deleteListCommand;
+                field ??= new AsyncCommand(DeleteListAsync);
+                return field;
             }
         }
 
@@ -731,23 +711,23 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (ShadowItems.Count == 0) return;
 
                 IsBusy = true;
-                var itemIds = ShadowItems.ToList();
+                List<int> itemIds = ShadowItems.ToList();
                 string query = _batchDeleteQuery.Value;
                 int totalDeleted = 0;
-                var failedMessages = new List<string>();
+                List<string> failedMessages = [];
 
                 for (int i = 0; i < itemIds.Count; i += DeleteBatchSize)
                 {
-                    var batch = itemIds.Skip(i).Take(DeleteBatchSize).ToList();
+                    List<int> batch = itemIds.Skip(i).Take(DeleteBatchSize).ToList();
                     var variables = new { input = new { priceListId = Id, itemIds = batch } };
 
-                    var batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
+                    BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(query, variables);
 
                     if (batchResult.Success)
                     {
-                        foreach (var itemId in batch)
+                        foreach (int itemId in batch)
                         {
-                            var item = PriceListItems.FirstOrDefault(x => x.Item.Id == itemId);
+                            PriceListItemDTO? item = PriceListItems.FirstOrDefault(x => x.Item.Id == itemId);
                             if (item != null) PriceListItems.Remove(item);
                             ShadowItems.Remove(itemId);
                         }
@@ -785,13 +765,12 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private ICommand _clearPromotionCommand;
         public ICommand ClearPromotionCommand
         {
             get
             {
-                if (_clearPromotionCommand is null) _clearPromotionCommand = new AsyncCommand(ClearPromotionAsync);
-                return _clearPromotionCommand;
+                field ??= new AsyncCommand(ClearPromotionAsync);
+                return field;
             }
         }
 
@@ -815,7 +794,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
                 IsBusy = true;
                 var variables = new { priceListId = Id };
-                var batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(_purgeQuery.Value, variables);
+                BatchResultGraphQLModel batchResult = await _priceListItemService.BatchAsync<BatchResultGraphQLModel>(_purgeQuery.Value, variables);
 
                 if (!batchResult.Success)
                 {
@@ -933,6 +912,20 @@ namespace NetErp.Billing.PriceList.ViewModels
                 }
             }
         } = 0;
+
+        public ICommand PaginationCommand
+        {
+            get
+            {
+                field ??= new AsyncCommand(ExecuteChangeIndexAsync);
+                return field;
+            }
+        }
+
+        private async Task ExecuteChangeIndexAsync()
+        {
+            await LoadProducts();
+        }
 
         #region Query Builders
 

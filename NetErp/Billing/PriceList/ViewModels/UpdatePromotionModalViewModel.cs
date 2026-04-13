@@ -1,18 +1,19 @@
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using Microsoft.VisualStudio.Threading;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using NetErp.Helpers;
+using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Dynamic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -27,9 +28,23 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IEventAggregator _eventAggregator;
         private readonly Dictionary<string, List<string>> _errors;
         private readonly IRepository<PriceListGraphQLModel> _priceListService;
+        private readonly StringLengthCache _stringLengthCache;
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #region Properties
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
 
         public int Id { get; set; }
 
@@ -116,25 +131,21 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Commands
 
-        private ICommand? _saveCommand;
-
         public ICommand SaveCommand
         {
             get
             {
-                _saveCommand ??= new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                field ??= new AsyncCommand(SaveAsync);
+                return field;
             }
         }
-
-        private ICommand? _cancelCommand;
 
         public ICommand CancelCommand
         {
             get
             {
-                _cancelCommand ??= new AsyncCommand(CancelAsync);
-                return _cancelCommand;
+                field ??= new AsyncCommand(CancelAsync);
+                return field;
             }
         }
 
@@ -160,12 +171,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             Helpers.IDialogService dialogService,
             IEventAggregator eventAggregator,
             IRepository<PriceListGraphQLModel> priceListService,
+            StringLengthCache stringLengthCache,
             JoinableTaskFactory joinableTaskFactory)
         {
             _errors = [];
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
             _priceListService = priceListService;
+            _stringLengthCache = stringLengthCache;
             _joinableTaskFactory = joinableTaskFactory;
         }
 
@@ -201,18 +214,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
 
                 // Override dates with UTC conversion if they were changed
-                var dict = (IDictionary<string, object>)variables;
+                IDictionary<string, object> dict = (IDictionary<string, object>)variables;
                 if (dict.ContainsKey("updateResponseDataStartDate"))
                     dict["updateResponseDataStartDate"] = DateTimeHelper.DateTimeKindUTC(StartDate);
                 if (dict.ContainsKey("updateResponseDataEndDate"))
                     dict["updateResponseDataEndDate"] = DateTimeHelper.DateTimeKindUTC(EndDate);
 
-                var result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
+                UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
@@ -232,9 +246,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -253,12 +271,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
-            _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
+            Dispatcher.CurrentDispatcher.BeginInvoke(() => this.SetFocus(() => Name));
         }
 
         #endregion
 
         #region Validation
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<PriceListGraphQLModel>(nameof(PriceListGraphQLModel.Name));
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -269,57 +289,36 @@ namespace NetErp.Billing.PriceList.ViewModels
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
-        public IEnumerable? GetErrors(string? propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return Enumerable.Empty<string>();
             return _errors[propertyName];
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
-                RaiseErrorsChanged(propertyName);
-            }
-        }
-
-        private void ClearErrors(string propertyName)
-        {
-            if (_errors.ContainsKey(propertyName))
-            {
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
                 _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            List<string> errors = [];
+            switch (propertyName)
             {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vac\u00edo");
-                        break;
-                }
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value.Trim())) errors.Add("El nombre no puede estar vacío");
+                    break;
             }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                });
-            }
+            SetPropertyErrors(propertyName, errors);
         }
 
         #endregion

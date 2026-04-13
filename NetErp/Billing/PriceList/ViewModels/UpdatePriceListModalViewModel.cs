@@ -1,11 +1,11 @@
 using AutoMapper;
 using Caliburn.Micro;
-using Common.Extensions;
 using Common.Helpers;
 using Common.Interfaces;
-using Microsoft.VisualStudio.Threading;
 using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
+using Extensions.Global;
+using Microsoft.VisualStudio.Threading;
 using Models.Billing;
 using Models.Global;
 using NetErp.Billing.PriceList.DTO;
@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -44,6 +43,19 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly JoinableTaskFactory _joinableTaskFactory;
 
         #region Properties
+
+        public bool IsBusy
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    NotifyOfPropertyChange(nameof(IsBusy));
+                }
+            }
+        }
 
         public int Id { get; set; }
 
@@ -319,6 +331,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (field != value)
                 {
                     field = value;
+                    UseAlternativeFormula = value != "D";
                     NotifyOfPropertyChange(nameof(SelectedFormula));
                     NotifyOfPropertyChange(nameof(Formula));
                 }
@@ -353,25 +366,21 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Commands
 
-        private ICommand? _saveCommand;
-
         public ICommand SaveCommand
         {
             get
             {
-                _saveCommand ??= new AsyncCommand(SaveAsync);
-                return _saveCommand;
+                field ??= new AsyncCommand(SaveAsync);
+                return field;
             }
         }
-
-        private ICommand? _cancelCommand;
 
         public ICommand CancelCommand
         {
             get
             {
-                _cancelCommand ??= new AsyncCommand(CancelAsync);
-                return _cancelCommand;
+                field ??= new AsyncCommand(CancelAsync);
+                return field;
             }
         }
 
@@ -431,21 +440,14 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         public async Task InitializeAsync()
         {
-            try
-            {
-                await CacheBatchLoader.LoadAsync(
-                    _graphQLClient, default,
-                    _storageCache, _costCenterCache, _paymentMethodCache);
+            await CacheBatchLoader.LoadAsync(
+                _graphQLClient, default,
+                _storageCache, _costCenterCache, _paymentMethodCache);
 
-                Storages = [.. _storageCache.Items];
-                CostCenters = [.. _costCenterCache.Items];
-                RefreshCostCenters();
-                PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(_paymentMethodCache.Items)];
-            }
-            catch (Exception ex)
-            {
-                throw new AsyncException(innerException: ex);
-            }
+            Storages = [.. _storageCache.Items];
+            CostCenters = [.. _costCenterCache.Items];
+            RefreshCostCenters();
+            PaymentMethods = [.. _autoMapper.Map<ObservableCollection<PaymentMethodPriceListDTO>>(_paymentMethodCache.Items)];
         }
 
         public void SetForEdit(PriceListGraphQLModel priceList)
@@ -475,9 +477,9 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
 
             // Payment methods - uncheck excluded ones
-            foreach (var excluded in priceList.ExcludedPaymentMethods)
+            foreach (PaymentMethodGraphQLModel excluded in priceList.ExcludedPaymentMethods)
             {
-                var pm = PaymentMethods.FirstOrDefault(x => x.Id == excluded.Id);
+                PaymentMethodPriceListDTO? pm = PaymentMethods.FirstOrDefault(x => x.Id == excluded.Id);
                 if (pm != null) pm.IsChecked = false;
             }
 
@@ -509,11 +511,12 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
+                IsBusy = true;
                 var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
 
-                var result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
+                UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.UpdateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
@@ -533,9 +536,13 @@ namespace NetErp.Billing.PriceList.ViewModels
                 await _joinableTaskFactory.SwitchToMainThreadAsync();
                 ThemedMessageBox.Show(
                     title: "Atención!",
-                    text: $"{this.GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
+                    text: $"{GetType().Name}.{nameof(SaveAsync)} \r\n{ex.GetErrorMessage()}",
                     messageBoxButtons: MessageBoxButton.OK,
                     image: MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBusy = false;
             }
         }
 
@@ -555,7 +562,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private void ListenPaymentMethodCheck()
         {
-            foreach (var pm in PaymentMethods)
+            foreach (PaymentMethodPriceListDTO pm in PaymentMethods)
                 pm.PropertyChanged += PaymentMethod_PropertyChanged!;
 
             PaymentMethods.CollectionChanged += PaymentMethod_CollectionChanged!;
@@ -596,13 +603,14 @@ namespace NetErp.Billing.PriceList.ViewModels
             ValidateProperty(nameof(Name), Name);
             this.AcceptChanges();
             NotifyOfPropertyChange(nameof(CanSave));
+            Dispatcher.CurrentDispatcher.BeginInvoke(() => SetFocus(() => Name));
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
         {
             if (close)
             {
-                foreach (var pm in PaymentMethods)
+                foreach (PaymentMethodPriceListDTO pm in PaymentMethods)
                     pm.PropertyChanged -= PaymentMethod_PropertyChanged!;
                 PaymentMethods.CollectionChanged -= PaymentMethod_CollectionChanged!;
             }
@@ -613,33 +621,53 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Validation
 
+        private static readonly string[] _basicDataFields = [nameof(Name), nameof(SelectedStorage)];
+
         public int NameMaxLength => _stringLengthCache.GetMaxLength<PriceListGraphQLModel>(nameof(PriceListGraphQLModel.Name));
 
         public bool HasErrors => _errors.Count > 0;
 
+        public bool HasBasicDataErrors => _basicDataFields.Any(f => _errors.ContainsKey(f));
+
+        public string? BasicDataTabTooltip => GetTabTooltip(_basicDataFields);
+
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
+
+        private string? GetTabTooltip(string[] fields)
+        {
+            List<string> errors = [.. fields
+                .Where(f => _errors.ContainsKey(f))
+                .SelectMany(f => _errors[f])];
+            return errors.Count > 0 ? string.Join("\n", errors) : null;
+        }
 
         private void RaiseErrorsChanged(string propertyName)
         {
             ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            if (_basicDataFields.Contains(propertyName))
+            {
+                NotifyOfPropertyChange(nameof(HasBasicDataErrors));
+                NotifyOfPropertyChange(nameof(BasicDataTabTooltip));
+            }
         }
 
-        public IEnumerable? GetErrors(string? propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return null;
+            if (string.IsNullOrEmpty(propertyName) || !_errors.ContainsKey(propertyName)) return Enumerable.Empty<string>();
             return _errors[propertyName];
         }
 
-        private void AddError(string propertyName, string error)
+        private void SetPropertyErrors(string propertyName, IReadOnlyList<string> errors)
         {
-            if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+            bool hadErrors = _errors.ContainsKey(propertyName);
 
-            if (!_errors[propertyName].Contains(error))
-            {
-                _errors[propertyName].Add(error);
+            if (errors.Count > 0)
+                _errors[propertyName] = [.. errors];
+            else if (hadErrors)
+                _errors.Remove(propertyName);
+
+            if (hadErrors || errors.Count > 0)
                 RaiseErrorsChanged(propertyName);
-            }
         }
 
         private void ClearErrors(string propertyName)
@@ -653,35 +681,23 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         private void ValidateStorage()
         {
-            ClearErrors(nameof(SelectedStorage));
+            List<string> errors = [];
             if (SelectedCostMode == PriceListCostModeEnum.COST_BY_STORAGE && SelectedStorage is null)
-                AddError(nameof(SelectedStorage), "Debe seleccionar una bodega");
+                errors.Add("Debe seleccionar una bodega");
+            SetPropertyErrors(nameof(SelectedStorage), errors);
         }
 
         private void ValidateProperty(string propertyName, string value)
         {
-            if (string.IsNullOrEmpty(value)) value = string.Empty.Trim();
-            try
+            if (string.IsNullOrEmpty(value)) value = string.Empty;
+            List<string> errors = [];
+            switch (propertyName)
             {
-                ClearErrors(propertyName);
-                switch (propertyName)
-                {
-                    case nameof(Name):
-                        if (string.IsNullOrEmpty(value.Trim())) AddError(propertyName, "El nombre no puede estar vacío");
-                        break;
-                }
+                case nameof(Name):
+                    if (string.IsNullOrEmpty(value.Trim())) errors.Add("El nombre no puede estar vacío");
+                    break;
             }
-            catch (Exception ex)
-            {
-                Execute.OnUIThread(() =>
-                {
-                    ThemedMessageBox.Show(
-                        title: "Atención!",
-                        text: $"{this.GetType().Name}.{nameof(ValidateProperty)} \r\n{ex.GetErrorMessage()}",
-                        messageBoxButtons: MessageBoxButton.OK,
-                        image: MessageBoxImage.Error);
-                });
-            }
+            SetPropertyErrors(propertyName, errors);
         }
 
         #endregion
