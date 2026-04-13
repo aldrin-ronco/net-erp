@@ -822,21 +822,11 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         private void SeedDefaultValues()
         {
             this.ClearSeeds();
-            this.SeedValue(nameof(Number), Number);
-            this.SeedValue(nameof(Prefix), Prefix);
-            this.SeedValue(nameof(TechnicalKey), TechnicalKey);
-            this.SeedValue(nameof(Reference), Reference);
-            this.SeedValue(nameof(StartRange), StartRange);
-            this.SeedValue(nameof(EndRange), EndRange);
-            this.SeedValue(nameof(CurrentInvoiceNumber), CurrentInvoiceNumber);
-            this.SeedValue(nameof(StartDate), StartDate);
-            this.SeedValue(nameof(EndDate), EndDate);
             this.SeedValue(nameof(Mode), Mode);
             this.SeedValue(nameof(Origin), Origin);
+            this.SeedValue(nameof(StartDate), StartDate);
+            this.SeedValue(nameof(EndDate), EndDate);
             this.SeedValue(nameof(IsActive), IsActive);
-            this.SeedValue(nameof(CostCenterId), CostCenterId);
-            this.SeedValue(nameof(AuthorizationSequenceTypeId), AuthorizationSequenceTypeId);
-            this.SeedValue(nameof(NextAuthorizationSequenceId), NextAuthorizationSequenceId);
             this.AcceptChanges();
         }
 
