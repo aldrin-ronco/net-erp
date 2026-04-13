@@ -34,6 +34,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private const int BatchSize = 50;
         public PriceListViewModel Context { get; set; }
 
+        private readonly DebouncedAction _searchDebounce = new();
+
         public AddPromotionProductsModalViewModel(
             PriceListViewModel context,
             Helpers.IDialogService dialogService,
@@ -63,7 +65,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             return base.OnDeactivateAsync(close, cancellationToken);
         }
 
-        public new bool IsInitialized { get; set; } = false;
+        private bool _isInitialized;
 
         public int PromotionId { get; set; } = 0;
 
@@ -153,7 +155,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemTypes();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -190,7 +192,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -229,7 +231,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                         _cascadeCancellation = new CancellationTokenSource();
 
                         BuildItemSubCategories();
-                        if (IsInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
+                        if (_isInitialized) _ = ReloadDataAsync(_cascadeCancellation.Token);
                     }
                 }
             }
@@ -259,7 +261,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     _selectedItemSubCategory = value;
                     NotifyOfPropertyChange(nameof(SelectedItemSubCategory));
-                    if (!_isUpdating && value != null && IsInitialized)
+                    if (!_isUpdating && value != null && _isInitialized)
                     {
                         _cascadeCancellation?.Cancel();
                         _cascadeCancellation?.Dispose();
@@ -317,7 +319,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
             if (SelectedItemType != null && SelectedItemType.Id != 0 && SelectedItemType.ItemCategories != null)
             {
-                ItemCategories = new ObservableCollection<ItemCategoryGraphQLModel>(SelectedItemType.ItemCategories);
+                ItemCategories = [.. SelectedItemType.ItemCategories];
                 ItemCategories.Insert(0, new ItemCategoryGraphQLModel { Id = 0, Name = "<< MOSTRAR TODAS LAS CATEGORÍAS DE PRODUCTOS >>" });
                 _selectedItemCategory = ItemCategories.First(x => x.Id == 0);
                 NotifyOfPropertyChange(nameof(SelectedItemCategory));
@@ -399,7 +401,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     if (string.IsNullOrEmpty(value) || value.Length >= 2)
                     {
                         PageIndex = 1;
-                        if (IsInitialized) _ = LoadItemsAsync();
+                        if (_isInitialized) _ = _searchDebounce.RunAsync(LoadItemsAsync);
                     }
                 }
             }
@@ -418,7 +420,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(ItemsHeaderIsChecked));
-                    foreach (var item in Items)
+                    foreach (PromotionCatalogItemDTO item in Items)
                     {
                         item.IsChecked = value;
                     }
@@ -452,19 +454,19 @@ namespace NetErp.Billing.PriceList.ViewModels
                 if (!string.IsNullOrEmpty(FilterSearch))
                     filters.matching = FilterSearch.Trim().RemoveExtraSpaces();
 
-                var variables = new GraphQLVariables()
+                ExpandoObject variables = new GraphQLVariables()
                     .For(fragment, "pagination", new { Page = PageIndex, PageSize })
                     .For(fragment, "filters", filters)
                     .Build();
 
-                var result = await _itemService.GetPageAsync(query, variables);
+                PageType<ItemGraphQLModel> result = await _itemService.GetPageAsync(query, variables);
                 Items = new ObservableCollection<PromotionCatalogItemDTO>(Context.AutoMapper.Map<ObservableCollection<PromotionCatalogItemDTO>>(result.Entries));
                 TotalCount = result.TotalEntries;
 
                 stopwatch.Stop();
                 ResponseTime = $"{stopwatch.Elapsed:hh\\:mm\\:ss\\.ff}";
 
-                foreach (var item in Items)
+                foreach (PromotionCatalogItemDTO item in Items)
                 {
                     item.Context = this;
                     item.IsChecked = SelectedItemIds.Contains(item.Id);
@@ -495,10 +497,10 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .For(catalogsFragment, "pagination", new { pageSize = -1 })
                     .Build();
 
-                var result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
+                PriceListDataContext result = await _priceListItemService.GetDataContextAsync<PriceListDataContext>(query, variables);
                 Catalogs = new ObservableCollection<CatalogGraphQLModel>(result.CatalogsPage.Entries);
-                var selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
-                IsInitialized = true;
+                CatalogGraphQLModel selectedCatalog = Catalogs.FirstOrDefault() ?? throw new Exception("SelectedCatalog can't be null");
+                _isInitialized = true;
                 _isUpdating = true;
                 _selectedCatalog = selectedCatalog;
                 NotifyOfPropertyChange(nameof(SelectedCatalog));
@@ -531,7 +533,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             if (SelectedItemIds.Count == 0) return;
 
-            var confirmation = ThemedMessageBox.Show("Confirme...",
+            MessageBoxResult confirmation = ThemedMessageBox.Show("Confirme...",
                 $"¿Confirma agregar {SelectedItemIds.Count} productos a la promoción?",
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirmation != MessageBoxResult.Yes) return;
