@@ -10,9 +10,11 @@ using NetErp.Helpers;
 using NetErp.Helpers.Cache;
 using NetErp.Helpers.GraphQLQueryBuilder;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Dynamic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -24,7 +26,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
         IHandle<AuthorizationSequenceCreateMessage>,
         IHandle<AuthorizationSequenceUpdateMessage>,
         IHandle<AuthorizationSequenceDeleteMessage>,
-        IHandle<PermissionsCacheRefreshedMessage>
+        IHandle<PermissionsCacheRefreshedMessage>,
+        IHandle<CostCenterCreateMessage>,
+        IHandle<CostCenterDeleteMessage>
     {
         #region Dependencies
 
@@ -274,7 +278,9 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         private bool _isInitialized;
 
-        public bool HasRecords => _isInitialized && !ShowEmptyState;
+        public bool HasRecords => _isInitialized && !ShowEmptyState && !HasUnmetDependencies;
+
+        public bool CanShowEmptyState => ShowEmptyState && !HasUnmetDependencies;
 
         public bool ShowEmptyState
         {
@@ -285,10 +291,27 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
                 {
                     field = value;
                     NotifyOfPropertyChange(nameof(ShowEmptyState));
+                    NotifyOfPropertyChange(nameof(CanShowEmptyState));
                     NotifyOfPropertyChange(nameof(HasRecords));
                 }
             }
         }
+
+        private List<DependencyItem>? _dependencies;
+        public List<DependencyItem>? Dependencies
+        {
+            get => _dependencies;
+            private set
+            {
+                _dependencies = value;
+                NotifyOfPropertyChange(nameof(Dependencies));
+                NotifyOfPropertyChange(nameof(HasUnmetDependencies));
+                NotifyOfPropertyChange(nameof(CanShowEmptyState));
+                NotifyOfPropertyChange(nameof(HasRecords));
+            }
+        }
+
+        public bool HasUnmetDependencies => Dependencies?.Any(d => !d.IsMet) == true;
 
         #endregion
 
@@ -330,11 +353,16 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = true;
                 await _costCenterCache.EnsureLoadedAsync();
-                CostCenters = [.. _costCenterCache.Items];
-                await LoadAuthorizationSequencesAsync();
-                _isInitialized = true;
-                ShowEmptyState = Authorizations == null || Authorizations.Count == 0;
-                NotifyOfPropertyChange(nameof(HasRecords));
+
+                EvaluateDependencies();
+                if (HasUnmetDependencies)
+                {
+                    _isInitialized = true;
+                    NotifyOfPropertyChange(nameof(HasRecords));
+                    return;
+                }
+
+                await PerformInitialLoadAsync();
             }
             catch (Exception ex)
             {
@@ -350,13 +378,27 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             {
                 IsBusy = false;
             }
-            NotifyOfPropertyChange(nameof(HasCreatePermission));
-            NotifyOfPropertyChange(nameof(HasEditPermission));
-            NotifyOfPropertyChange(nameof(HasDeletePermission));
-            NotifyOfPropertyChange(nameof(CanCreateAuthorizationSequence));
-            NotifyOfPropertyChange(nameof(CanEditAuthorizationSequence));
-            NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
-            this.SetFocus(() => FilterSearch);
+            if (!HasUnmetDependencies)
+            {
+                NotifyOfPropertyChange(nameof(HasCreatePermission));
+                NotifyOfPropertyChange(nameof(HasEditPermission));
+                NotifyOfPropertyChange(nameof(HasDeletePermission));
+                NotifyOfPropertyChange(nameof(CanCreateAuthorizationSequence));
+                NotifyOfPropertyChange(nameof(CanEditAuthorizationSequence));
+                NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
+                this.SetFocus(() => FilterSearch);
+            }
+        }
+
+        protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
+        {
+            if (_isInitialized && HasUnmetDependencies)
+            {
+                EvaluateDependencies();
+                if (!HasUnmetDependencies)
+                    await PerformInitialLoadAsync();
+            }
+            await base.OnActivatedAsync(cancellationToken);
         }
 
         protected override Task OnDeactivateAsync(bool close, CancellationToken cancellationToken)
@@ -540,6 +582,27 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
 
         #endregion
 
+        #region Dependencies
+
+        private void EvaluateDependencies()
+        {
+            Dependencies =
+            [
+                DependencyDefinitions.CostCenters(_costCenterCache),
+            ];
+        }
+
+        private async Task PerformInitialLoadAsync()
+        {
+            CostCenters = [.. _costCenterCache.Items];
+            await LoadAuthorizationSequencesAsync();
+            _isInitialized = true;
+            ShowEmptyState = Authorizations == null || Authorizations.Count == 0;
+            NotifyOfPropertyChange(nameof(HasRecords));
+        }
+
+        #endregion
+
         #region GraphQL Queries
 
         private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _loadQuery = new(() =>
@@ -628,6 +691,31 @@ namespace NetErp.Global.AuthorizationSequence.ViewModels
             NotifyOfPropertyChange(nameof(CanEditAuthorizationSequence));
             NotifyOfPropertyChange(nameof(CanDeleteAuthorizationSequence));
             return Task.CompletedTask;
+        }
+
+        public async Task HandleAsync(CostCenterCreateMessage message, CancellationToken cancellationToken)
+        {
+            if (!HasUnmetDependencies) return;
+
+            // Ceder al dispatcher para que el cache procese el mensaje primero.
+            // ContextIdle (prioridad 3) se ejecuta después de que todas las
+            // operaciones de mayor prioridad (incluido el handler del cache) completen.
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            EvaluateDependencies();
+            if (!HasUnmetDependencies)
+                await PerformInitialLoadAsync();
+        }
+
+        public async Task HandleAsync(CostCenterDeleteMessage message, CancellationToken cancellationToken)
+        {
+            if (HasUnmetDependencies) return;
+
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(
+                () => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+            EvaluateDependencies();
         }
 
         #endregion

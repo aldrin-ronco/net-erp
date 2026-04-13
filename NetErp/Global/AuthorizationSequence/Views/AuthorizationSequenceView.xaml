@@ -18,8 +18,14 @@
     <Border Background="White" BorderBrush="#D9DDE3" BorderThickness="1"
             CornerRadius="8" Margin="5">
         <Grid>
+            <!-- Dependency State (highest priority) -->
+            <uc:DependencyStateView Visibility="{Binding HasUnmetDependencies, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+                                    Title="Configuración requerida para Autorizaciones de numeración"
+                                    Message="Antes de registrar autorizaciones de numeración, debe configurar los siguientes elementos:"
+                                    Dependencies="{Binding Dependencies}"/>
+
             <!-- Empty State -->
-            <uc:EmptyStateView Visibility="{Binding ShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
+            <uc:EmptyStateView Visibility="{Binding CanShowEmptyState, Converter={dxmvvm:BooleanToVisibilityConverter}}"
                                Title="No hay autorizaciones de numeración registradas"
                                Message="Cree una nueva autorización de numeración para comenzar"
                                ContextInfo="Las autorizaciones de numeración definen los rangos y consecutivos autorizados para facturación electrónica por centro de costo."
