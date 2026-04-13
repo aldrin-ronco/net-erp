@@ -136,7 +136,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = _createQuery.Value;
+                var (_, query) = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
                 UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
@@ -310,7 +310,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
                 .Create()
@@ -336,9 +336,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreatePriceListInput!");
-            var fragment = new GraphQLQueryFragment("createPriceList", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createPriceList",
+                [new("input", "CreatePriceListInput!")], fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
     }
 }

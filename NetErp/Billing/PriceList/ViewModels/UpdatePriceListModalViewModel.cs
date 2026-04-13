@@ -39,6 +39,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         #region Properties
 
@@ -441,6 +442,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
+            StringLengthCache stringLengthCache,
             IGraphQLClient graphQLClient)
         {
             _errors = [];
@@ -451,6 +453,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
         }
 
@@ -538,7 +541,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = _updateQuery.Value;
+                var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
 
@@ -645,6 +648,8 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region Validation
 
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<PriceListGraphQLModel>(nameof(PriceListGraphQLModel.Name));
+
         public bool HasErrors => _errors.Count > 0;
 
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
@@ -718,7 +723,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region GraphQL Query
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
                 .Create()
@@ -748,10 +753,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var dataParam = new GraphQLQueryParameter("data", "UpdatePriceListInput!");
-            var idParam = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("updatePriceList", [dataParam, idParam], fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updatePriceList",
+                [new("data", "UpdatePriceListInput!"), new("id", "ID!")], fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion

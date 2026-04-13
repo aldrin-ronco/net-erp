@@ -59,7 +59,8 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
-        
+        private readonly StringLengthCache _stringLengthCache;
+
         public PriceListViewModel Context { get; set; }
         public string MaskN2 { get; set; } = "n2";
 
@@ -392,7 +393,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                var viewModel = new CreatePriceListModalViewModel(_dialogService, Context.EventAggregator, _priceListService, _storageCache, _costCenterCache, _graphQLClient);
+                CreatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, _priceListService, _storageCache, _costCenterCache, _stringLengthCache, _graphQLClient);
                 await viewModel.InitializeAsync();
                 viewModel.SetForNew();
                 await _dialogService.ShowDialogAsync(viewModel, "Creación de lista de precios");
@@ -437,7 +438,7 @@ namespace NetErp.Billing.PriceList.ViewModels
                     MainIsBusy = false;
                     return;
                 }
-                var viewModel = new UpdatePriceListModalViewModel(_dialogService, Context.EventAggregator, Context.AutoMapper, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _graphQLClient);
+                UpdatePriceListModalViewModel viewModel = new(_dialogService, Context.EventAggregator, Context.AutoMapper, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient);
                 await viewModel.InitializeAsync();
                 viewModel.SetForEdit(SelectedPriceList);
                 await _dialogService.ShowDialogAsync(viewModel, "Configuración de lista de precios");
@@ -883,6 +884,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
+            StringLengthCache stringLengthCache,
             IGraphQLClient graphQLClient)
         {
             Context = context;
@@ -895,6 +897,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
             Context.EventAggregator.SubscribeOnUIThread(this);
         }

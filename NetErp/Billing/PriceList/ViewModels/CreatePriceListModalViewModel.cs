@@ -1,5 +1,6 @@
 ﻿using Caliburn.Micro;
 using Common.Extensions;
+using Extensions.Global;
 using Common.Helpers;
 using Common.Interfaces;
 using DevExpress.Mvvm;
@@ -35,6 +36,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly IGraphQLClient _graphQLClient;
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         private string _name = string.Empty;
 
@@ -271,9 +273,9 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = _createQuery.Value;
+                var (_, query) = _createQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "createResponseInput");
-                var result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
+                UpsertResponseType<PriceListGraphQLModel> result = await _priceListService.CreateAsync<UpsertResponseType<PriceListGraphQLModel>>(query, variables);
 
                 if (!result.Success)
                 {
@@ -395,14 +397,16 @@ namespace NetErp.Billing.PriceList.ViewModels
             IRepository<PriceListGraphQLModel> priceListService,
             StorageCache storageCache,
             CostCenterCache costCenterCache,
+            StringLengthCache stringLengthCache,
             IGraphQLClient graphQLClient)
         {
-            _errors = new Dictionary<string, List<string>>();
+            _errors = [];
             _dialogService = dialogService;
             _eventAggregator = eventAggregator;
             _priceListService = priceListService;
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
+            _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
         }
 
@@ -412,6 +416,8 @@ namespace NetErp.Billing.PriceList.ViewModels
             _ = Application.Current.Dispatcher.BeginInvoke(new System.Action(() => this.SetFocus(() => Name)), DispatcherPriority.Render);
             ValidateProperty(nameof(Name), Name);
         }
+
+        public int NameMaxLength => _stringLengthCache.GetMaxLength<PriceListGraphQLModel>(nameof(PriceListGraphQLModel.Name));
 
         public bool HasErrors => _errors.Count > 0;
 
@@ -477,7 +483,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             }
         }
 
-        private static readonly Lazy<string> _createQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _createQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
                 .Create()
@@ -503,9 +509,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var parameter = new GraphQLQueryParameter("input", "CreatePriceListInput!");
-            var fragment = new GraphQLQueryFragment("createPriceList", [parameter], fields, "CreateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("createPriceList",
+                [new("input", "CreatePriceListInput!")], fields, "CreateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
     }
 

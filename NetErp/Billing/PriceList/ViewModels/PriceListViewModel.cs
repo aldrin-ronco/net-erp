@@ -36,6 +36,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         private readonly StorageCache _storageCache;
         private readonly CostCenterCache _costCenterCache;
         private readonly PaymentMethodCache _paymentMethodCache;
+        private readonly StringLengthCache _stringLengthCache;
 
         private PriceListMasterViewModel _priceListMasterViewModel;
 
@@ -43,7 +44,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             get 
             {
-                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _graphQLClient);
+                if (_priceListMasterViewModel is null) _priceListMasterViewModel = new PriceListMasterViewModel(this, _priceListItemService, _backgroundQueueService, _notificationService, _calculatorFactory, _dialogService, _priceListService, _storageCache, _costCenterCache, _paymentMethodCache, _stringLengthCache, _graphQLClient);
                 return _priceListMasterViewModel; 
             }
         }
@@ -64,6 +65,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             StorageCache storageCache,
             CostCenterCache costCenterCache,
             PaymentMethodCache paymentMethodCache,
+            StringLengthCache stringLengthCache,
             IGraphQLClient graphQLClient)
         {
             AutoMapper = autoMapper;
@@ -80,6 +82,7 @@ namespace NetErp.Billing.PriceList.ViewModels
             _storageCache = storageCache;
             _costCenterCache = costCenterCache;
             _paymentMethodCache = paymentMethodCache;
+            _stringLengthCache = stringLengthCache;
             _graphQLClient = graphQLClient;
         }
 
@@ -88,15 +91,17 @@ namespace NetErp.Billing.PriceList.ViewModels
             base.OnViewReady(view);
             try
             {
+                await _stringLengthCache.EnsureEntitiesLoadedAsync(StringLengthEntities.PriceList);
                 await ActivateMasterViewAsync();
-            }
-            catch (AsyncException ex)
-            {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{ex.MethodOrigin} \r\n{ex.InnerException?.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                ThemedMessageBox.Show(title: "Atención!", text: $"{this.GetType().Name}.{nameof(OnViewReady)}: {ex.Message}", messageBoxButtons: MessageBoxButton.OK, image: MessageBoxImage.Error);
+                ThemedMessageBox.Show(
+                    title: "Atención!",
+                    text: $"Error al inicializar el módulo.\r\n{GetType().Name}.{nameof(OnViewReady)}: {ex.Message}",
+                    messageBoxButtons: MessageBoxButton.OK,
+                    image: MessageBoxImage.Error);
+                await TryCloseAsync();
             }
         }
 

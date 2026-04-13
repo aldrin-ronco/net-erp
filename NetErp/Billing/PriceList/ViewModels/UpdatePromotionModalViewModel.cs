@@ -207,7 +207,7 @@ namespace NetErp.Billing.PriceList.ViewModels
         {
             try
             {
-                string query = _updateQuery.Value;
+                var (_, query) = _updateQuery.Value;
                 dynamic variables = ChangeCollector.CollectChanges(this, prefix: "updateResponseData");
                 variables.updateResponseId = Id;
 
@@ -335,7 +335,7 @@ namespace NetErp.Billing.PriceList.ViewModels
 
         #region GraphQL Query
 
-        private static readonly Lazy<string> _updateQuery = new(() =>
+        private static readonly Lazy<(GraphQLQueryFragment Fragment, string Query)> _updateQuery = new(() =>
         {
             var fields = FieldSpec<UpsertResponseType<PriceListGraphQLModel>>
                 .Create()
@@ -352,10 +352,9 @@ namespace NetErp.Billing.PriceList.ViewModels
                     .Field(f => f.Message))
                 .Build();
 
-            var dataParam = new GraphQLQueryParameter("data", "UpdatePriceListInput!");
-            var idParam = new GraphQLQueryParameter("id", "ID!");
-            var fragment = new GraphQLQueryFragment("updatePriceList", [dataParam, idParam], fields, "UpdateResponse");
-            return new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION);
+            var fragment = new GraphQLQueryFragment("updatePriceList",
+                [new("data", "UpdatePriceListInput!"), new("id", "ID!")], fields, "UpdateResponse");
+            return (fragment, new GraphQLQueryBuilder([fragment]).GetQuery(GraphQLOperations.MUTATION));
         });
 
         #endregion
